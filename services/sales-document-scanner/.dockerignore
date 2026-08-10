@@ -1,4 +1,8 @@
 *
 !package.json
 !server.mjs
+!clamd-client.mjs
+!clamd.conf
+!freshclam.conf
+!entrypoint.sh
 

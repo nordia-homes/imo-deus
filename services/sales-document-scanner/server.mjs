@@ -1,119 +1,146 @@
 import { createServer } from 'node:http';
-import { createWriteStream } from 'node:fs';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { spawn } from 'node:child_process';
 import { timingSafeEqual } from 'node:crypto';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createClamdScanner, waitForClamd } from './clamd-client.mjs';
 
 const PORT = Number(process.env.PORT || 8080);
 const MAX_REQUEST_BYTES = Number(process.env.MAX_REQUEST_BYTES || 18 * 1024 * 1024);
-const SCAN_TIMEOUT_MS = Number(process.env.SCAN_TIMEOUT_MS || 25_000);
 
-function sendJson(response, status, payload) {
+function sendJson(response, status, payload, headers = {}) {
   response.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
     'cache-control': 'no-store',
     'x-content-type-options': 'nosniff',
+    ...headers,
   });
   response.end(JSON.stringify(payload));
 }
 
-function authorized(request) {
-  const expected = process.env.SCANNER_TOKEN || '';
+function authorized(request, expectedToken) {
   const supplied = request.headers.authorization?.replace(/^Bearer\s+/i, '') || '';
-  if (!expected || expected.length !== supplied.length) return false;
-  return timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
+  if (!expectedToken || expectedToken.length !== supplied.length) return false;
+  return timingSafeEqual(Buffer.from(expectedToken), Buffer.from(supplied));
 }
 
-function runClamScan(filePath) {
-  return new Promise((resolve) => {
-    const child = spawn('clamscan', ['--no-summary', '--stdout', filePath], { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stdout = '';
-    let stderr = '';
-    let settled = false;
-    const finish = (result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      resolve(result);
-    };
-    const timer = setTimeout(() => {
-      child.kill('SIGKILL');
-      finish({ code: 2, timedOut: true });
-    }, SCAN_TIMEOUT_MS);
-    child.stdout.on('data', (chunk) => { stdout += chunk.toString(); });
-    child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
-    child.on('error', (error) => finish({ code: 2, output: error.message, timedOut: false }));
-    child.on('close', (code) => finish({ code: code ?? 2, output: `${stdout}\n${stderr}`.trim(), timedOut: false }));
-  });
-}
-
-async function storeRequest(request, filePath) {
+async function readRequest(request, maxBytes) {
   const declaredLength = Number(request.headers['content-length'] || 0);
-  if (declaredLength > MAX_REQUEST_BYTES) throw Object.assign(new Error('request_too_large'), { status: 413 });
+  if (declaredLength > maxBytes) throw Object.assign(new Error('request_too_large'), { status: 413 });
+  const chunks = [];
   let received = 0;
-  const destination = createWriteStream(filePath, { flags: 'wx', mode: 0o600 });
-  try {
-    for await (const chunk of request) {
-      received += chunk.length;
-      if (received > MAX_REQUEST_BYTES) throw Object.assign(new Error('request_too_large'), { status: 413 });
-      if (!destination.write(chunk)) await new Promise((resolve) => destination.once('drain', resolve));
-    }
-    await new Promise((resolve, reject) => destination.end((error) => error ? reject(error) : resolve()));
-  } catch (error) {
-    destination.destroy();
-    throw error;
+  for await (const chunk of request) {
+    received += chunk.length;
+    if (received > maxBytes) throw Object.assign(new Error('request_too_large'), { status: 413 });
+    chunks.push(chunk);
   }
   if (received === 0) throw Object.assign(new Error('empty_request'), { status: 400 });
+  return Buffer.concat(chunks, received);
 }
 
 export function extractMultipartFile(bytes, contentType) {
   const match = contentType.match(/boundary=(?:"([^"]+)"|([^;\s]+))/i);
   if (!match) throw Object.assign(new Error('multipart_boundary_missing'), { status: 400 });
   const boundary = match[1] || match[2];
+  const boundaryBytes = Buffer.from(`--${boundary}`);
+  const nextBoundaryBytes = Buffer.from(`\r\n--${boundary}`);
   const separator = Buffer.from('\r\n\r\n');
   let cursor = 0;
   while (cursor < bytes.length) {
-    const markerStart = bytes.indexOf(Buffer.from(`--${boundary}`), cursor);
+    const markerStart = bytes.indexOf(boundaryBytes, cursor);
     if (markerStart < 0) break;
-    const headersStart = markerStart + boundary.length + 4;
+    const headersStart = markerStart + boundaryBytes.length + 2;
     const headersEnd = bytes.indexOf(separator, headersStart);
     if (headersEnd < 0) break;
     const headers = bytes.subarray(headersStart, headersEnd).toString('utf8');
     const bodyStart = headersEnd + separator.length;
-    const bodyEnd = bytes.indexOf(Buffer.from(`\r\n--${boundary}`), bodyStart);
+    const bodyEnd = bytes.indexOf(nextBoundaryBytes, bodyStart);
     if (bodyEnd < 0) break;
-    if (/content-disposition:\s*form-data;[^\r\n]*name="file"/i.test(headers)) return bytes.subarray(bodyStart, bodyEnd);
+    if (/content-disposition:\s*form-data;[^\r\n]*name="file"/i.test(headers)) {
+      const file = bytes.subarray(bodyStart, bodyEnd);
+      if (!file.length) throw Object.assign(new Error('empty_file'), { status: 400 });
+      return file;
+    }
     cursor = bodyEnd + 2;
   }
   throw Object.assign(new Error('multipart_file_missing'), { status: 400 });
 }
 
-export function createScannerServer() {
-  return createServer(async (request, response) => {
-    if (request.method === 'GET' && request.url === '/health') return sendJson(response, 200, { ok: true, provider: 'clamav-private' });
-    if (request.method !== 'POST' || request.url !== '/scan') return sendJson(response, 404, { error: 'not_found' });
-    if (!authorized(request)) return sendJson(response, 401, { error: 'unauthorized' });
-    if (!String(request.headers['content-type'] || '').toLowerCase().startsWith('multipart/form-data')) return sendJson(response, 415, { error: 'multipart_required' });
+function scannerFailureMessage(error) {
+  if (error?.code === 'CLAMD_TIMEOUT') return 'Scanarea antivirus a depășit timpul permis.';
+  if (error?.code === 'CLAMD_UNAVAILABLE') return 'Motorul antivirus se reconectează. Încearcă din nou peste câteva secunde.';
+  return 'Scannerul antivirus nu a putut finaliza verificarea.';
+}
 
-    const directory = await mkdtemp(join(tmpdir(), 'imodeus-scan-'));
-    const requestPath = join(directory, 'request-body');
-    const filePath = join(directory, 'attachment');
+export function createScannerServer(options = {}) {
+  const scanner = options.scanner || createClamdScanner();
+  const expectedToken = options.token ?? process.env.SCANNER_TOKEN ?? '';
+  const maxRequestBytes = Number(options.maxRequestBytes || MAX_REQUEST_BYTES);
+
+  return createServer(async (request, response) => {
+    const path = String(request.url || '').split('?')[0];
+    if (request.method === 'GET' && path === '/live') {
+      return sendJson(response, 200, { ok: true, provider: 'clamav-private', service: 'document-scanner' });
+    }
+    if (request.method === 'GET' && path === '/health') {
+      try {
+        await scanner.health();
+        return sendJson(response, 200, { ok: true, ready: true, provider: 'clamav-private', mode: 'persistent-daemon' });
+      } catch (error) {
+        return sendJson(response, 503, { ok: false, ready: false, provider: 'clamav-private', message: scannerFailureMessage(error) }, { 'retry-after': '2' });
+      }
+    }
+    if (request.method !== 'POST' || path !== '/scan') return sendJson(response, 404, { error: 'not_found' });
+    if (!authorized(request, expectedToken)) return sendJson(response, 401, { error: 'unauthorized' });
+    if (!String(request.headers['content-type'] || '').toLowerCase().startsWith('multipart/form-data')) {
+      return sendJson(response, 415, { error: 'multipart_required' });
+    }
+
     try {
-      await storeRequest(request, requestPath);
-      const fileBytes = extractMultipartFile(await readFile(requestPath), String(request.headers['content-type']));
-      await writeFile(filePath, fileBytes, { flag: 'wx', mode: 0o600 });
-      const result = await runClamScan(filePath);
-      if (result.code === 0) return sendJson(response, 200, { safe: true, infected: false, provider: 'clamav-private', message: 'Fisier verificat cu ClamAV.' });
-      if (result.code === 1) return sendJson(response, 200, { safe: false, infected: true, provider: 'clamav-private', message: 'ClamAV a detectat continut periculos.' });
-      return sendJson(response, 503, { safe: false, infected: false, provider: 'clamav-private', message: result.timedOut ? 'Scanarea antivirus a depasit timpul permis.' : 'Scannerul antivirus nu a putut finaliza verificarea.' });
+      const requestBytes = await readRequest(request, maxRequestBytes);
+      const fileBytes = extractMultipartFile(requestBytes, String(request.headers['content-type']));
+      const result = await scanner.scan(fileBytes);
+      if (result.infected) {
+        return sendJson(response, 200, {
+          safe: false,
+          infected: true,
+          provider: 'clamav-private',
+          message: 'ClamAV a detectat conținut periculos.',
+        });
+      }
+      return sendJson(response, 200, {
+        safe: true,
+        infected: false,
+        provider: 'clamav-private',
+        message: 'Fișier verificat cu ClamAV.',
+      });
     } catch (error) {
-      return sendJson(response, Number(error?.status || 500), { error: error?.message || 'scan_failed' });
-    } finally {
-      await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+      const status = Number(error?.status || (String(error?.code || '').startsWith('CLAMD_') ? 503 : 500));
+      if (status === 503) {
+        return sendJson(response, 503, {
+          safe: false,
+          infected: false,
+          provider: 'clamav-private',
+          message: scannerFailureMessage(error),
+        }, { 'retry-after': '2' });
+      }
+      return sendJson(response, status, { error: error?.message || 'scan_failed' });
     }
   });
 }
 
-if (process.env.NODE_ENV !== 'test') createScannerServer().listen(PORT, '0.0.0.0', () => console.log(`Imodeus document scanner listening on ${PORT}`));
+export async function startScannerServer(options = {}) {
+  const scanner = options.scanner || createClamdScanner();
+  await waitForClamd(scanner, {
+    timeoutMs: Number(process.env.CLAMD_STARTUP_TIMEOUT_MS || 180_000),
+    retryMs: Number(process.env.CLAMD_STARTUP_RETRY_MS || 1_000),
+  });
+  const version = await scanner.version().catch(() => 'unknown');
+  return createScannerServer({ ...options, scanner }).listen(PORT, '0.0.0.0', () => {
+    console.log(JSON.stringify({ event: 'scanner_ready', port: PORT, mode: 'persistent-daemon', clamdVersion: version }));
+  });
+}
+
+if (process.env.NODE_ENV !== 'test') {
+  startScannerServer().catch((error) => {
+    console.error(JSON.stringify({ event: 'scanner_start_failed', message: error instanceof Error ? error.message : String(error) }));
+    process.exitCode = 1;
+  });
+}

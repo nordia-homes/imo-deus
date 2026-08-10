@@ -71,6 +71,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -94,6 +95,8 @@ type Props = {
   initialPanel?: 'context' | 'documents';
   onOpenSetup?: (sale: SaleTransaction) => void;
 };
+
+type SalesEmailPanel = 'context' | 'templates' | 'documents' | 'questions' | 'replies' | 'history';
 
 const panelClass = 'relative overflow-hidden rounded-[24px] border border-white/[.85] bg-[radial-gradient(circle_at_100%_0%,rgba(254,243,199,.5),transparent_30%),radial-gradient(circle_at_0%_100%,rgba(204,251,241,.44),transparent_34%),rgba(255,255,255,.94)] shadow-[0_20px_46px_-36px_rgba(13,148,136,.46)] ring-1 ring-slate-900/[.035]';
 const inputClass = 'border-white/90 bg-white/[.78] text-[var(--app-page-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_10px_26px_-22px_rgba(15,23,42,.55)] transition placeholder:text-[var(--app-muted-foreground)] hover:bg-white focus-visible:border-emerald-300 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-emerald-200';
@@ -242,6 +245,8 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
   const [questions, setQuestions] = useState<SaleEmailQuestion[]>([]);
   const [localFiles, setLocalFiles] = useState<GmailRunnerAttachment[]>([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<SalesEmailPanel>(initialPanel);
   const [participants, setParticipants] = useState<SaleParticipant[]>([]);
   const [checklist, setChecklist] = useState<SaleChecklistItem[]>([]);
   const [notary, setNotary] = useState<NonNullable<SaleTransaction['notary']>>({});
@@ -307,6 +312,15 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     [templateLibrary, userProfile?.enabledSalesEmailTemplateIds]
   );
   const recipient = participants.find((item) => item.id === recipientId) || null;
+  const storedAttachmentOptions = useMemo(
+    () => checklist.filter((item) => Boolean(item.downloadUrl)),
+    [checklist]
+  );
+  const selectedStoredAttachments = useMemo(
+    () => storedAttachmentOptions.filter((item) => selectedDocumentIds.includes(item.id)),
+    [selectedDocumentIds, storedAttachmentOptions]
+  );
+  const attachmentCount = selectedStoredAttachments.length + localFiles.length;
   const notaryCcEmail = (notary.email || participants.find((item) => item.role === 'notary')?.email || '').trim();
   const recipientTemplates = useMemo(
     () => templates.filter((item) => !recipient || item.recipientRole === recipient.role),
@@ -336,8 +350,10 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     setQuestions([]);
     setLocalFiles([]);
     setSelectedDocumentIds([]);
+    setAttachmentMenuOpen(false);
+    setActivePanel(initialPanel);
     activeMessageRef.current = null;
-  }, [open, sale?.id, sale?.stage]);
+  }, [initialPanel, open, sale?.id, sale?.stage]);
 
   useEffect(() => {
     const desktop = window.imodeusDesktop;
@@ -536,12 +552,35 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
   };
 
   const selectLocalFiles = async () => {
+    setAttachmentMenuOpen(false);
     if (typeof window.imodeusDesktop?.selectGmailRunnerFiles !== 'function') {
       toast({ title: 'Atașamente locale indisponibile', description: 'Deschide Imodeus Desktop pentru atașarea automată. În browser poți atașa manual după deschiderea Gmail.' });
       return;
     }
     const result = await window.imodeusDesktop.selectGmailRunnerFiles();
-    if (!result.canceled) setLocalFiles((current) => [...current, ...result.files]);
+    if (!result.canceled) {
+      setLocalFiles((current) => {
+        const files = new Map<string, GmailRunnerAttachment>();
+        [...current, ...result.files].forEach((item) => files.set(item.path || item.url || item.name, item));
+        return [...files.values()];
+      });
+    }
+  };
+
+  const selectStoredFiles = () => {
+    setAttachmentMenuOpen(false);
+    setActivePanel('documents');
+    toast({
+      title: 'Selectează documentele din dosar',
+      description: storedAttachmentOptions.length
+        ? 'Bifează documentele pe care vrei să le atașezi emailului.'
+        : 'Încarcă mai întâi un document în dosar, apoi bifează-l pentru atașare.',
+    });
+  };
+
+  const clearAttachments = () => {
+    setLocalFiles([]);
+    setSelectedDocumentIds([]);
   };
 
   const prepareInGmail = async () => {
@@ -746,16 +785,61 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                 </div>
               ) : null}
 
-              <div className="flex flex-col gap-3 rounded-[24px] border border-dashed border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4 sm:flex-row sm:items-center">
-                <Button variant="outline" className="rounded-xl border-[var(--app-surface-border)]" onClick={selectLocalFiles}><Paperclip className="mr-2 h-4 w-4" /> Atașează fișiere</Button>
-                <div className="min-w-0 flex-1 text-sm text-[var(--app-muted-foreground)]">{localFiles.length ? `${localFiles.length} fișier(e) local(e) selectat(e)` : isDesktop ? 'Fișierele vor fi atașate automat în Gmail.' : 'În browser, fișierele se atașează manual în Gmail.'}</div>
-                {localFiles.length ? <Button variant="ghost" size="sm" onClick={() => setLocalFiles([])}>Elimină toate</Button> : null}
+              <div className="space-y-3 rounded-[24px] border border-dashed border-[var(--app-surface-border)] bg-[var(--app-surface)] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Popover open={attachmentMenuOpen} onOpenChange={setAttachmentMenuOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="rounded-xl border-[var(--app-surface-border)] bg-white shadow-sm">
+                        <Paperclip className="mr-2 h-4 w-4" /> Atașează fișiere
+                        {attachmentCount ? <span className="ml-1 grid h-5 min-w-5 place-items-center rounded-full bg-emerald-100 px-1.5 text-[10px] font-bold text-emerald-700">{attachmentCount}</span> : null}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" side="top" className="w-[340px] rounded-[22px] border-slate-200 bg-white/95 p-2 shadow-[0_24px_70px_-30px_rgba(15,23,42,.5)] backdrop-blur-xl">
+                      <div className="px-3 pb-2 pt-1">
+                        <p className="font-bold text-slate-900">Alege sursa fișierelor</p>
+                        <p className="mt-0.5 text-xs text-slate-500">Poți combina documente din dosar cu fișiere de pe dispozitiv.</p>
+                      </div>
+                      <button type="button" className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-emerald-50" onClick={selectStoredFiles}>
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700"><FileCheck2 className="h-4 w-4" /></span>
+                        <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-900">Din dosarul proprietății</span><span className="block text-xs text-slate-500">{storedAttachmentOptions.length ? `${storedAttachmentOptions.length} fișiere disponibile` : 'Niciun fișier salvat încă'}</span></span>
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      </button>
+                      <button type="button" className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-sky-50" onClick={() => void selectLocalFiles()}>
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-sky-200 bg-sky-50 text-sky-700"><Paperclip className="h-4 w-4" /></span>
+                        <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-slate-900">De pe dispozitiv</span><span className="block text-xs text-slate-500">Selectează unul sau mai multe fișiere locale</span></span>
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      </button>
+                    </PopoverContent>
+                  </Popover>
+                  <div className="min-w-0 flex-1 text-sm text-[var(--app-muted-foreground)]">
+                    {attachmentCount
+                      ? `${attachmentCount} fișier(e) selectat(e): ${selectedStoredAttachments.length} din dosar, ${localFiles.length} de pe dispozitiv.`
+                      : isDesktop
+                        ? 'Alege documente din dosar sau fișiere de pe dispozitiv.'
+                        : 'Documentele din dosar se selectează aici; fișierele locale se atașează manual în Gmail.'}
+                  </div>
+                  {attachmentCount ? <Button variant="ghost" size="sm" className="shrink-0" onClick={clearAttachments}>Elimină toate</Button> : null}
+                </div>
+                {attachmentCount ? (
+                  <div className="flex flex-wrap gap-2 border-t border-slate-200/70 pt-3">
+                    {selectedStoredAttachments.map((item) => (
+                      <button key={item.id} type="button" className="inline-flex max-w-[260px] items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800" onClick={() => setSelectedDocumentIds((current) => current.filter((id) => id !== item.id))} title="Elimină atașamentul">
+                        <FileCheck2 className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{item.fileName || item.label}</span><X className="h-3 w-3 shrink-0" />
+                      </button>
+                    ))}
+                    {localFiles.map((item, index) => (
+                      <button key={`${item.path || item.url || item.name}-${index}`} type="button" className="inline-flex max-w-[260px] items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-800" onClick={() => setLocalFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} title="Elimină atașamentul">
+                        <Paperclip className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{item.name}</span><X className="h-3 w-3 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           </ScrollArea>
 
           <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_100%_0%,rgba(254,243,199,.35),transparent_26%),linear-gradient(160deg,rgba(240,253,250,.72),rgba(248,250,252,.94)_46%,rgba(240,249,255,.72))]">
-            <Tabs key={`${sale.id}-${initialPanel}`} defaultValue={initialPanel} className="flex min-h-0 flex-1 flex-col">
+            <Tabs key={`${sale.id}-${initialPanel}`} value={activePanel} onValueChange={(value) => setActivePanel(value as SalesEmailPanel)} className="flex min-h-0 flex-1 flex-col">
               <TabsList className="m-3 grid h-auto grid-cols-3 gap-1.5 rounded-[20px] border border-white/90 bg-white/[.78] p-1.5 shadow-[0_16px_36px_-30px_rgba(13,148,136,.5)] ring-1 ring-slate-900/[.04] backdrop-blur-xl sm:grid-cols-6">
                 <TabsTrigger value="context" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><UserRound className="mr-1 h-3.5 w-3.5" /> Date</TabsTrigger>
                 <TabsTrigger value="templates" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><Sparkles className="mr-1 h-3.5 w-3.5" /> Template</TabsTrigger>

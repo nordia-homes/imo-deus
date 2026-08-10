@@ -198,3 +198,18 @@ env:
     secret: SALES_DOCUMENT_SCAN_TOKEN
     availability:
       - RUNTIME
+
+  - variable: SALES_DOCUMENT_SCAN_ATTEMPTS
+    value: "2"
+    availability:
+      - RUNTIME
+
+  - variable: SALES_DOCUMENT_SCAN_TIMEOUT_MS
+    value: "55000"
+    availability:
+      - RUNTIME
+
+  - variable: SALES_DOCUMENT_SCAN_RETRY_DELAY_MS
+    value: "350"
+    availability:
+      - RUNTIME

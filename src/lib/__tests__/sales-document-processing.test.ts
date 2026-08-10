@@ -15,8 +15,12 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
+  vi.unstubAllGlobals();
   delete process.env.SALES_DOCUMENT_SCAN_URL;
   delete process.env.SALES_DOCUMENT_SCAN_TOKEN;
+  delete process.env.SALES_DOCUMENT_SCAN_ATTEMPTS;
+  delete process.env.SALES_DOCUMENT_SCAN_TIMEOUT_MS;
+  delete process.env.SALES_DOCUMENT_SCAN_RETRY_DELAY_MS;
   delete process.env.SALES_DOCUMENT_OCR_ENABLED;
 });
 
@@ -34,6 +38,54 @@ describe('sales document processing', () => {
   it('blocks acceptance when agency policy requires an unavailable scanner', async () => {
     const result = await processor.processSalesDocument({ bytes: Buffer.from('%PDF-1.7 test'), fileName: 'certificat.pdf', contentType: 'application/pdf', requireMalwareScanner: true });
     expect(result).toMatchObject({ allowed: false, scanStatus: 'error' });
+  });
+
+  it('retries one transient scanner failure without exposing it to the agent', async () => {
+    process.env.SALES_DOCUMENT_SCAN_URL = 'https://scanner.example/scan';
+    process.env.SALES_DOCUMENT_SCAN_RETRY_DELAY_MS = '0';
+    const scannerFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ safe: false, infected: false, message: 'Motorul se reconectează.' }), { status: 503 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ safe: true, infected: false, provider: 'clamav-private', message: 'Fișier verificat.' }), { status: 200 }));
+    vi.stubGlobal('fetch', scannerFetch);
+
+    const result = await processor.processSalesDocument({
+      bytes: Buffer.from('%PDF-1.7 test'),
+      fileName: 'certificat.pdf',
+      contentType: 'application/pdf',
+      requireMalwareScanner: true,
+    });
+
+    expect(scannerFetch).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({ allowed: true, scanStatus: 'safe', scanProvider: 'clamav-private' });
+  });
+
+  it('returns the scanner message after the retry is exhausted', async () => {
+    process.env.SALES_DOCUMENT_SCAN_URL = 'https://scanner.example/scan';
+    process.env.SALES_DOCUMENT_SCAN_RETRY_DELAY_MS = '0';
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response(JSON.stringify({ message: 'Motorul antivirus nu este pregătit.' }), { status: 503 })));
+
+    const result = await processor.processSalesDocument({
+      bytes: Buffer.from('%PDF-1.7 test'),
+      fileName: 'certificat.pdf',
+      contentType: 'application/pdf',
+      requireMalwareScanner: true,
+    });
+
+    expect(result).toMatchObject({ allowed: false, scanStatus: 'error', scanMessage: 'Motorul antivirus nu este pregătit.' });
+  });
+
+  it('never treats an ambiguous scanner response as safe', async () => {
+    process.env.SALES_DOCUMENT_SCAN_URL = 'https://scanner.example/scan';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ provider: 'unexpected' }), { status: 200 })));
+
+    const result = await processor.processSalesDocument({
+      bytes: Buffer.from('%PDF-1.7 test'),
+      fileName: 'certificat.pdf',
+      contentType: 'application/pdf',
+      requireMalwareScanner: true,
+    });
+
+    expect(result).toMatchObject({ allowed: false, scanStatus: 'error', scanMessage: 'Scannerul nu a furnizat un verdict valid.' });
   });
 
   it('classifies OCR content and extracts a probable expiry date', async () => {

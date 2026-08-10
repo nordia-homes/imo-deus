@@ -42,21 +42,78 @@ async function scanWithProvider(bytes: Buffer, fileName: string, contentType: st
   if (!endpoint) return required
     ? { status: 'error' as SaleDocumentScanStatus, provider: 'local-policy', message: 'Politica agenției cere un scanner antivirus extern, dar acesta nu este configurat.' }
     : { status: 'safe_by_policy' as SaleDocumentScanStatus, provider: 'local-policy', message: 'Tip permis; antivirus extern neconfigurat.' };
-  const form = new FormData();
-  form.set('file', new Blob([Uint8Array.from(bytes).buffer], { type: contentType }), fileName);
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: process.env.SALES_DOCUMENT_SCAN_TOKEN ? { Authorization: `Bearer ${process.env.SALES_DOCUMENT_SCAN_TOKEN}` } : undefined,
-    body: form,
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) return { status: 'error' as SaleDocumentScanStatus, provider: 'external', message: `Scanner HTTP ${response.status}` };
-  const payload = await response.json() as { safe?: boolean; infected?: boolean; message?: string; provider?: string };
-  return {
-    status: payload.infected || payload.safe === false ? 'infected' as const : 'safe' as const,
-    provider: payload.provider || 'external',
-    message: payload.message || null,
-  };
+  const configuredAttempts = Number(process.env.SALES_DOCUMENT_SCAN_ATTEMPTS || 2);
+  const attempts = Math.max(1, Math.min(3, Number.isFinite(configuredAttempts) ? configuredAttempts : 2));
+  const configuredTimeout = Number(process.env.SALES_DOCUMENT_SCAN_TIMEOUT_MS || 55_000);
+  const timeoutMs = Math.max(5_000, Math.min(110_000, Number.isFinite(configuredTimeout) ? configuredTimeout : 55_000));
+  const configuredDelay = Number(process.env.SALES_DOCUMENT_SCAN_RETRY_DELAY_MS ?? 350);
+  const retryDelayMs = Math.max(0, Math.min(2_000, Number.isFinite(configuredDelay) ? configuredDelay : 350));
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const form = new FormData();
+      form.set('file', new Blob([Uint8Array.from(bytes).buffer], { type: contentType }), fileName);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: process.env.SALES_DOCUMENT_SCAN_TOKEN ? { Authorization: `Bearer ${process.env.SALES_DOCUMENT_SCAN_TOKEN}` } : undefined,
+        body: form,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      const payload = await response.json().catch(() => ({})) as { safe?: boolean; infected?: boolean; message?: string; provider?: string; error?: string };
+      if (response.ok) {
+        if (payload.infected === true || payload.safe === false) {
+          return { status: 'infected' as const, provider: payload.provider || 'external', message: payload.message || 'Scannerul antivirus a detectat conținut periculos.' };
+        }
+        if (payload.safe === true) {
+          return { status: 'safe' as const, provider: payload.provider || 'external', message: payload.message || null };
+        }
+        return { status: 'error' as SaleDocumentScanStatus, provider: payload.provider || 'external', message: 'Scannerul nu a furnizat un verdict valid.' };
+      }
+      const transient = [429, 502, 503, 504].includes(response.status);
+      if (transient && attempt < attempts) {
+        if (retryDelayMs) await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        continue;
+      }
+      return {
+        status: 'error' as SaleDocumentScanStatus,
+        provider: payload.provider || 'external',
+        message: payload.message || payload.error || `Scanner HTTP ${response.status}`,
+      };
+    } catch (error) {
+      if (attempt < attempts) {
+        if (retryDelayMs) await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        continue;
+      }
+      const timedOut = error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+      return {
+        status: 'error' as SaleDocumentScanStatus,
+        provider: 'external',
+        message: timedOut
+          ? 'Scannerul antivirus nu a răspuns în timpul permis.'
+          : 'Scannerul antivirus este temporar indisponibil. Încearcă din nou.',
+      };
+    }
+  }
+  return { status: 'error' as SaleDocumentScanStatus, provider: 'external', message: 'Scannerul antivirus este temporar indisponibil.' };
+}
+
+export async function getSalesDocumentScannerHealth() {
+  const endpoint = process.env.SALES_DOCUMENT_SCAN_URL;
+  if (!endpoint) return { configured: false, ready: false, provider: null, mode: null };
+  try {
+    const url = new URL(endpoint);
+    url.pathname = url.pathname.replace(/\/scan\/?$/, '/health');
+    const response = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5_000), cache: 'no-store' });
+    const payload = await response.json().catch(() => ({})) as { ok?: boolean; ready?: boolean; provider?: string; mode?: string };
+    return {
+      configured: true,
+      ready: response.ok && payload.ok === true && payload.ready !== false,
+      provider: payload.provider || 'external',
+      mode: payload.mode || null,
+    };
+  } catch {
+    return { configured: true, ready: false, provider: 'external', mode: null };
+  }
 }
 
 export async function processSalesDocument(input: { bytes: Buffer; fileName: string; contentType?: string | null; forceOcr?: boolean; requireMalwareScanner?: boolean }) {

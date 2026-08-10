@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
+import { getSalesDocumentScannerHealth } from '@/lib/sales-document-processing';
 
 export const runtime = 'nodejs';
 
@@ -7,9 +8,10 @@ export async function GET(request: NextRequest) {
   try {
     const { agencyId, uid, adminDb } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const connectionRef = adminDb.collection('agencies').doc(agencyId).collection('salesEmailConnections').doc(uid);
-    const [connectionSnapshot, eventsSnapshot] = await Promise.all([
+    const [connectionSnapshot, eventsSnapshot, scanner] = await Promise.all([
       connectionRef.get(),
       adminDb.collection('emailInboundEvents').where('connectionPath', '==', connectionRef.path).limit(20).get(),
+      getSalesDocumentScannerHealth(),
     ]);
     const connection = connectionSnapshot.data() || null;
     const events: Array<Record<string, any> & { id: string }> = eventsSnapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }))
@@ -20,7 +22,9 @@ export async function GET(request: NextRequest) {
       capabilities: {
         webhookSecretConfigured: Boolean(process.env.EMAIL_INBOUND_WEBHOOK_SECRET),
         inboundDomainConfigured: Boolean(process.env.EMAIL_INBOUND_DOMAIN),
-        externalMalwareScannerConfigured: Boolean(process.env.SALES_DOCUMENT_SCAN_URL),
+        externalMalwareScannerConfigured: scanner.configured,
+        externalMalwareScannerReady: scanner.ready,
+        externalMalwareScannerMode: scanner.mode,
         ocrEnabled: process.env.SALES_DOCUMENT_OCR_ENABLED === 'true',
       },
       connection: connection ? { status: connection.status, lastForwardedAt: connection.lastForwardedAt || null, updatedAt: connection.updatedAt || null } : null,
