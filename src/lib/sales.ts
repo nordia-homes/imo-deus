@@ -281,6 +281,9 @@ export function createSaleFromProperty(
     collaboratorIds: [],
     stage: completed ? 'completed' : isReservedProperty(property) ? 'preparing' : 'preparing',
     agreedPrice: property.soldPrice || property.price || null,
+    reservationAmount: null,
+    precontractAmount: null,
+    contractBalanceAmount: null,
     financingType: 'unknown',
     participants: property.ownerName
       ? [{
@@ -313,6 +316,16 @@ export function createSaleFromProperty(
     reminderPolicy: { enabled: true, digestMode: 'daily', remindBeforeHours: 24 },
     retentionPolicy: { attachmentRetentionDays: 365, completedSaleRetentionDays: 1825 },
   };
+}
+
+export function calculateContractBalance(
+  agreedPrice: number | null | undefined,
+  reservationAmount: number | null | undefined,
+  precontractAmount: number | null | undefined,
+) {
+  if (agreedPrice == null || !Number.isFinite(agreedPrice)) return null;
+  const balance = agreedPrice - (reservationAmount ?? 0) - (precontractAmount ?? 0);
+  return Number(balance.toFixed(2));
 }
 
 export function participantRoleLabel(role: SaleParticipantRole) {

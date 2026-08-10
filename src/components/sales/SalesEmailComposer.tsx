@@ -23,11 +23,14 @@ import {
   FileCheck2,
   FilePlus2,
   Inbox,
+  Landmark,
   Loader2,
   Mail,
   MailCheck,
+  MapPin,
   MessageSquareReply,
   Paperclip,
+  Phone,
   Plus,
   RefreshCw,
   ShieldCheck,
@@ -93,8 +96,8 @@ type Props = {
   onOpenSetup?: (sale: SaleTransaction) => void;
 };
 
-const panelClass = 'rounded-[24px] border border-[var(--app-surface-border)] bg-[var(--app-surface)] shadow-[0_18px_60px_-44px_rgba(15,23,42,.7)]';
-const inputClass = 'border-[var(--app-surface-border)] bg-muted/40 text-[var(--app-page-foreground)] placeholder:text-[var(--app-muted-foreground)]';
+const panelClass = 'relative overflow-hidden rounded-[24px] border border-white/[.85] bg-[radial-gradient(circle_at_100%_0%,rgba(254,243,199,.5),transparent_30%),radial-gradient(circle_at_0%_100%,rgba(204,251,241,.44),transparent_34%),rgba(255,255,255,.94)] shadow-[0_20px_46px_-36px_rgba(13,148,136,.46)] ring-1 ring-slate-900/[.035]';
+const inputClass = 'border-white/90 bg-white/[.78] text-[var(--app-page-foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_10px_26px_-22px_rgba(15,23,42,.55)] transition placeholder:text-[var(--app-muted-foreground)] hover:bg-white focus-visible:border-emerald-300 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-emerald-200';
 
 function newParticipant(role: SaleParticipantRole): SaleParticipant {
   return {
@@ -661,15 +664,29 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent data-testid="sales-email-composer" className="flex h-[96dvh] w-[98vw] max-w-none flex-col gap-0 overflow-hidden rounded-[30px] border border-[var(--app-surface-border)] bg-[var(--app-page-background)] p-0 text-[var(--app-page-foreground)] shadow-[0_40px_140px_-35px_rgba(2,6,23,.72)] sm:max-w-none [&>button]:hidden">
-        <DialogHeader className="relative shrink-0 border-b border-[var(--app-surface-border)] bg-[radial-gradient(circle_at_15%_0%,rgba(16,185,129,.16),transparent_32%),var(--app-surface)] px-5 py-4 md:px-7">
+        <DialogHeader className="relative shrink-0 border-b border-emerald-100 bg-[radial-gradient(circle_at_10%_0%,rgba(167,243,208,.48),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(254,243,199,.52),transparent_26%),rgba(255,255,255,.96)] px-5 py-4 md:px-7">
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-emerald-500 text-white shadow-[0_12px_28px_-12px_rgba(16,185,129,.8)]"><Mail className="h-5 w-5" /></div>
-              <div className="min-w-0"><DialogTitle className="truncate text-lg">Email · {sale.propertyTitle}</DialogTitle><DialogDescription className="truncate text-[var(--app-muted-foreground)]">{sale.propertyAddress} · {sale.trackingCode}</DialogDescription></div>
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-emerald-200 bg-[linear-gradient(145deg,#ecfdf5,#ffffff)] text-emerald-600 shadow-[0_12px_28px_-18px_rgba(16,185,129,.65)]">{initialPanel === 'documents' ? <FileCheck2 className="h-5 w-5" /> : <Mail className="h-5 w-5" />}</div>
+              <div className="min-w-0"><DialogTitle className="truncate text-lg">{initialPanel === 'documents' ? 'Dosar' : 'Email'} · {sale.propertyTitle}</DialogTitle><DialogDescription className="truncate text-[var(--app-muted-foreground)]">{sale.propertyAddress} · {sale.trackingCode}</DialogDescription></div>
             </div>
             <div className="flex items-center gap-2">
-              {onOpenSetup ? <Button variant="outline" size="sm" className="hidden rounded-xl border-emerald-500/25 bg-emerald-500/10 text-emerald-700 md:flex" onClick={() => onOpenSetup({ ...sale, participants, checklist, notary })}><Sparkles className="mr-1.5 h-3.5 w-3.5" /> Completează ghidat</Button> : null}
-              <Badge variant="outline" className="hidden rounded-full border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-emerald-600 md:flex"><ShieldCheck className="mr-1.5 h-3.5 w-3.5" /> Agentul confirmă trimiterea</Badge>
+              {onOpenSetup ? (
+                <Button
+                  variant="outline"
+                  className="group/setup-cta hidden h-14 rounded-[20px] border border-amber-200 bg-[linear-gradient(135deg,#fff7ed,#ffffff_48%,#ecfdf5)] px-3 pr-4 text-slate-800 shadow-[0_18px_38px_-24px_rgba(217,119,6,.55)] transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-300 hover:bg-[linear-gradient(135deg,#fff7ed,#ffffff_42%,#d1fae5)] hover:text-emerald-800 hover:shadow-[0_22px_44px_-24px_rgba(16,185,129,.5)] md:inline-flex"
+                  onClick={() => onOpenSetup({ ...sale, participants, checklist, notary })}
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl border border-amber-200 bg-white text-amber-600 shadow-sm">
+                    <Sparkles className="h-4 w-4" />
+                  </span>
+                  <span className="mx-2 flex flex-col items-start leading-none">
+                    <span className="text-[8px] font-extrabold uppercase tracking-[0.14em] text-amber-600">Recomandat</span>
+                    <span className="mt-1 text-sm font-extrabold text-slate-800">Completare ghidată</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-emerald-600 transition-transform group-hover/setup-cta:translate-x-0.5" />
+                </Button>
+              ) : null}
               <Button variant="ghost" size="icon" className="rounded-full" onClick={() => onOpenChange(false)}><X className="h-5 w-5" /></Button>
             </div>
           </div>
@@ -687,53 +704,53 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                 </div>
               ) : null}
 
-              <div className={cn(panelClass, 'overflow-hidden')}>
-                <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
-                  <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Către</div>
-                  <div className="p-3">
-                    <div className="flex items-center gap-2">
-                      <Select value={recipientId} onValueChange={(value) => { setRecipientId(value); setTemplateId(''); }}>
-                        <SelectTrigger className={cn(inputClass, 'h-11 rounded-xl')}><SelectValue placeholder="Alege cumpărătorul, proprietarul sau notarul" /></SelectTrigger>
-                        <SelectContent>{participants.map((item) => <SelectItem key={item.id} value={item.id}>{participantRoleLabel(item.role)} · {item.name || 'Nume necompletat'} {item.email ? `— ${item.email}` : ''}</SelectItem>)}</SelectContent>
-                      </Select>
-                      <Button type="button" variant="ghost" size="sm" className="rounded-lg text-xs" onClick={() => setShowCc((value) => !value)}>Cc</Button>
-                    </div>
+              <div className="group/email-composer relative overflow-hidden rounded-[28px] bg-[linear-gradient(145deg,#bae6fd,#ffffff_44%,#a7f3d0)] p-px shadow-[0_24px_54px_-38px_rgba(14,165,233,.46)]">
+                <div className="relative overflow-hidden rounded-[27px] bg-white/95">
+                  <span className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full border-[26px] border-sky-50 opacity-70" />
+                  <div className="relative flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm"><Mail className="h-5 w-5" /></span>
+                    <div className="min-w-0 flex-1"><p className="font-bold text-slate-900">Mesaj email</p><p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.12em] text-slate-400">Comunicare tranzacție</p></div>
+                    <span className={cn('rounded-full border px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-[.1em]', recipient && subject.trim() ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700')}>{recipient && subject.trim() ? 'Pregătit' : 'Draft'}</span>
                   </div>
-                </div>
-                {showCc ? (
-                  <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
-                    <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Cc</div>
-                    <div className="flex flex-wrap items-center gap-1.5 p-3">
-                      {ccRecipients.map((email) => <span key={email} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs', isEmailAddress(email) ? 'bg-sky-500/10 text-sky-700' : 'bg-red-500/10 text-red-700')}>{email}<button type="button" onClick={() => setCcRecipients((current) => current.filter((item) => item !== email))}><X className="h-3 w-3" /></button></span>)}
-                      <Input value={ccInput} onChange={(event) => setCcInput(event.target.value)} onBlur={() => { const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } }} onKeyDown={(event) => { if (['Enter', ',', ';'].includes(event.key)) { event.preventDefault(); const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } } }} className={cn(inputClass, 'h-9 min-w-[220px] flex-1 rounded-xl border-0 bg-transparent shadow-none focus-visible:ring-0')} placeholder="Adaugă una sau mai multe adrese CC" />
+
+                  <div className="relative space-y-4 p-5">
+                    <div>
+                      <Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Către</Label>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <div className="relative min-w-0 flex-1"><UserRound className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-sky-500" /><Select value={recipientId} onValueChange={(value) => { setRecipientId(value); setTemplateId(''); }}><SelectTrigger className={cn(inputClass, 'h-12 rounded-2xl pl-10')}><SelectValue placeholder="Alege cumpărătorul, proprietarul sau notarul" /></SelectTrigger><SelectContent>{participants.map((item) => <SelectItem key={item.id} value={item.id}>{participantRoleLabel(item.role)} · {item.name || 'Nume necompletat'} {item.email ? `— ${item.email}` : ''}</SelectItem>)}</SelectContent></Select></div>
+                        <Button type="button" variant="outline" className={cn('h-12 shrink-0 rounded-2xl border-white/90 bg-white/[.85] px-4 text-xs font-bold shadow-sm', showCc && 'border-sky-200 bg-sky-50 text-sky-700')} onClick={() => setShowCc((value) => !value)}>Cc</Button>
+                      </div>
                     </div>
-                  </div>
-                ) : null}
-                <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
-                  <div className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Template</div>
-                  <div className="p-3">
-                    <Select value={templateId} onValueChange={applyTemplate} disabled={!recipient || recipientTemplates.length === 0}>
-                      <SelectTrigger className={cn(inputClass, 'h-11 rounded-xl')}><SelectValue placeholder={recipientTemplates.length ? 'Alege un mesaj prestabilit' : 'Niciun template activ'} /></SelectTrigger>
-                      <SelectContent>{recipientTemplates.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                    {recipient && recipientTemplates.length === 0 ? (
-                      <div className="mt-2 flex flex-col gap-2 rounded-xl border border-dashed border-blue-500/25 bg-blue-500/5 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-xs leading-5 text-[var(--app-muted-foreground)]">
-                          Nu ai activat niciun template pentru {participantRoleLabel(recipient.role).toLocaleLowerCase('ro')}. Poți scrie manual sau poți alege template-urile vizibile.
-                        </p>
-                        <Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl border-blue-500/20">
-                          <a href="/gmail"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> Gestionează</a>
-                        </Button>
+
+                    {showCc ? (
+                      <div>
+                        <Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Cc</Label>
+                        <div className="mt-1.5 flex min-h-12 flex-wrap items-center gap-1.5 rounded-2xl border border-white/90 bg-slate-50/85 px-3 py-2 shadow-sm focus-within:border-sky-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-sky-200">
+                          <Mail className="mr-1 h-4 w-4 shrink-0 text-sky-500" />
+                          {ccRecipients.map((email) => <span key={email} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs', isEmailAddress(email) ? 'bg-sky-500/10 text-sky-700' : 'bg-red-500/10 text-red-700')}>{email}<button type="button" onClick={() => setCcRecipients((current) => current.filter((item) => item !== email))}><X className="h-3 w-3" /></button></span>)}
+                          <Input value={ccInput} onChange={(event) => setCcInput(event.target.value)} onBlur={() => { const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } }} onKeyDown={(event) => { if (['Enter', ',', ';'].includes(event.key)) { event.preventDefault(); const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } } }} className="h-8 min-w-[220px] flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0" placeholder="Adaugă una sau mai multe adrese CC" />
+                        </div>
                       </div>
                     ) : null}
+
+                    <div>
+                      <Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Template</Label>
+                      <div className="relative mt-1.5"><Sparkles className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-amber-500" /><Select value={templateId} onValueChange={applyTemplate} disabled={!recipient || recipientTemplates.length === 0}><SelectTrigger className={cn(inputClass, 'h-12 rounded-2xl pl-10')}><SelectValue placeholder={recipientTemplates.length ? 'Alege un mesaj prestabilit' : 'Niciun template activ'} /></SelectTrigger><SelectContent>{recipientTemplates.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></div>
+                      {recipient && recipientTemplates.length === 0 ? <div className="mt-2 flex flex-col gap-2 rounded-2xl border border-dashed border-sky-200 bg-sky-50/60 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-slate-500">Nu ai activat niciun template pentru {participantRoleLabel(recipient.role).toLocaleLowerCase('ro')}. Poți scrie manual sau poți alege template-urile vizibile.</p><Button asChild variant="outline" size="sm" className="shrink-0 rounded-xl border-sky-200 bg-white"><a href="/gmail"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> Gestionează</a></Button></div> : null}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="sales-email-subject" className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Subiect</Label>
+                      <div className="relative mt-1.5"><MessageSquareReply className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" /><Input id="sales-email-subject" value={subject} onChange={(event) => setSubject(event.target.value)} className={cn(inputClass, 'h-12 rounded-2xl pl-10')} placeholder="Subiect clar și specific" /></div>
+                    </div>
+
+                    <div>
+                      <Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Conținut mesaj</Label>
+                      <div className="mt-1.5 overflow-hidden rounded-[24px] border border-sky-100 bg-[linear-gradient(145deg,#f8fafc,#ffffff)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_16px_36px_-32px_rgba(14,165,233,.4)]">
+                        <GmailRichTextEditor value={bodyHtml} onChange={(value) => { setBodyHtml(value.html); setBody(value.text); }} minHeight={330} variables={['{{recipient.name}}', '{{property.title}}', '{{property.address}}', '{{documents.list}}', '{{notary.summary}}', '{{agent.name}}']} />
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="grid border-b border-[var(--app-surface-border)] md:grid-cols-[150px_1fr]">
-                  <Label htmlFor="sales-email-subject" className="px-5 py-4 text-sm font-medium text-[var(--app-muted-foreground)]">Subiect</Label>
-                  <div className="p-3"><Input id="sales-email-subject" value={subject} onChange={(event) => setSubject(event.target.value)} className={cn(inputClass, 'h-11 rounded-xl border-0 bg-transparent shadow-none focus-visible:ring-0')} placeholder="Subiect clar și specific" /></div>
-                </div>
-                <div className="bg-[#f6f8fc] p-3 md:p-5">
-                  <GmailRichTextEditor value={bodyHtml} onChange={(value) => { setBodyHtml(value.html); setBody(value.text); }} minHeight={330} variables={['{{recipient.name}}', '{{property.title}}', '{{property.address}}', '{{documents.list}}', '{{notary.summary}}', '{{agent.name}}']} />
                 </div>
               </div>
 
@@ -752,31 +769,64 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
             </div>
           </ScrollArea>
 
-          <div className="flex min-h-0 flex-col bg-muted/30">
+          <div className="flex min-h-0 flex-col bg-[radial-gradient(circle_at_100%_0%,rgba(254,243,199,.35),transparent_26%),linear-gradient(160deg,rgba(240,253,250,.72),rgba(248,250,252,.94)_46%,rgba(240,249,255,.72))]">
             <Tabs key={`${sale.id}-${initialPanel}`} defaultValue={initialPanel} className="flex min-h-0 flex-1 flex-col">
-              <TabsList className="m-3 grid h-auto grid-cols-3 gap-1 rounded-2xl border border-[var(--app-surface-border)] bg-[var(--app-surface)] p-1 sm:grid-cols-6">
-                <TabsTrigger value="context" className="rounded-xl px-2 py-2.5 text-xs"><UserRound className="mr-1 h-3.5 w-3.5" /> Date</TabsTrigger>
-                <TabsTrigger value="templates" className="rounded-xl px-2 py-2.5 text-xs"><Sparkles className="mr-1 h-3.5 w-3.5" /> Template</TabsTrigger>
-                <TabsTrigger value="documents" className="rounded-xl px-2 py-2.5 text-xs"><FileCheck2 className="mr-1 h-3.5 w-3.5" /> Acte</TabsTrigger>
-                <TabsTrigger value="questions" className="rounded-xl px-2 py-2.5 text-xs"><CircleHelp className="mr-1 h-3.5 w-3.5" /> Întrebări</TabsTrigger>
-                <TabsTrigger value="replies" className="rounded-xl px-2 py-2.5 text-xs"><Inbox className="mr-1 h-3.5 w-3.5" /> Răspunsuri</TabsTrigger>
-                <TabsTrigger value="history" className="rounded-xl px-2 py-2.5 text-xs"><Archive className="mr-1 h-3.5 w-3.5" /> Istoric</TabsTrigger>
+              <TabsList className="m-3 grid h-auto grid-cols-3 gap-1.5 rounded-[20px] border border-white/90 bg-white/[.78] p-1.5 shadow-[0_16px_36px_-30px_rgba(13,148,136,.5)] ring-1 ring-slate-900/[.04] backdrop-blur-xl sm:grid-cols-6">
+                <TabsTrigger value="context" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><UserRound className="mr-1 h-3.5 w-3.5" /> Date</TabsTrigger>
+                <TabsTrigger value="templates" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><Sparkles className="mr-1 h-3.5 w-3.5" /> Template</TabsTrigger>
+                <TabsTrigger value="documents" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><FileCheck2 className="mr-1 h-3.5 w-3.5" /> Acte</TabsTrigger>
+                <TabsTrigger value="questions" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><CircleHelp className="mr-1 h-3.5 w-3.5" /> Întrebări</TabsTrigger>
+                <TabsTrigger value="replies" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><Inbox className="mr-1 h-3.5 w-3.5" /> Răspunsuri</TabsTrigger>
+                <TabsTrigger value="history" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><Archive className="mr-1 h-3.5 w-3.5" /> Istoric</TabsTrigger>
               </TabsList>
               <ScrollArea className="min-h-0 flex-1">
                 <TabsContent value="context" className="m-0 space-y-4 p-4">
-                  <div className="flex items-center justify-between"><div><p className="font-semibold">Participanții tranzacției</p><p className="text-sm text-[var(--app-muted-foreground)]">Datele se completează o singură dată.</p></div><Button variant="outline" size="sm" className="rounded-xl" onClick={() => setParticipants((current) => [...current, newParticipant('buyer')])}><Plus className="mr-1 h-4 w-4" /> Persoană</Button></div>
+                  <div className="flex items-center justify-between rounded-[22px] border border-sky-200/80 bg-[linear-gradient(135deg,#f0f9ff,#ffffff_54%,#ecfdf5)] p-3.5 shadow-[0_16px_34px_-30px_rgba(14,165,233,.5)]"><div className="flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl border border-sky-200 bg-white text-sky-600"><UserRound className="h-4 w-4" /></span><div><p className="font-semibold">Participanții tranzacției</p><p className="text-xs text-[var(--app-muted-foreground)]">Datele se completează o singură dată.</p></div></div><Button variant="outline" size="sm" className="rounded-xl" onClick={() => setParticipants((current) => [...current, newParticipant('buyer')])}><Plus className="mr-1 h-4 w-4" /> Persoană</Button></div>
                   {participants.map((item) => (
-                    <div key={item.id} className={cn(panelClass, 'space-y-3 p-4')}>
-                      <div className="flex items-center gap-2"><Select value={item.role} onValueChange={(role: SaleParticipantRole) => updateParticipant(item.id, { role })}><SelectTrigger className={cn(inputClass, 'h-9 flex-1 rounded-xl')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="buyer">Cumpărător</SelectItem><SelectItem value="owner">Proprietar</SelectItem><SelectItem value="notary">Notar</SelectItem><SelectItem value="collaborator">Colaborator</SelectItem></SelectContent></Select><Button variant="ghost" size="icon" onClick={() => setParticipants((current) => current.filter((participant) => participant.id !== item.id))}><Trash2 className="h-4 w-4" /></Button></div>
-                      <Input value={item.name} onChange={(event) => updateParticipant(item.id, { name: event.target.value })} className={cn(inputClass, 'rounded-xl')} placeholder="Nume complet" />
-                      <Input type="email" value={item.email} onChange={(event) => updateParticipant(item.id, { email: event.target.value })} className={cn(inputClass, 'rounded-xl')} placeholder="email@gmail.com" />
-                      <Input value={item.phone || ''} onChange={(event) => updateParticipant(item.id, { phone: event.target.value })} className={cn(inputClass, 'rounded-xl')} placeholder="Telefon" />
+                    <div key={item.id} className={cn('group/dossier-participant relative overflow-hidden rounded-[25px] p-px shadow-[0_20px_44px_-34px_rgba(15,118,110,.42)]', item.role === 'buyer' ? 'bg-[linear-gradient(145deg,#bae6fd,#ffffff_46%,#99f6e4)]' : item.role === 'owner' ? 'bg-[linear-gradient(145deg,#fde68a,#ffffff_46%,#a7f3d0)]' : 'bg-[linear-gradient(145deg,#c4b5fd,#ffffff_46%,#bae6fd)]')}>
+                      <div className="relative overflow-hidden rounded-[24px] bg-white/95 p-4">
+                        <span className={cn('pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full border-[20px] opacity-70', item.role === 'buyer' ? 'border-sky-50' : item.role === 'owner' ? 'border-amber-50' : 'border-violet-50')} />
+                        <div className="relative flex items-center gap-3">
+                          <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-2xl border shadow-sm', item.role === 'buyer' ? 'border-sky-200 bg-sky-50 text-sky-700' : item.role === 'owner' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-violet-200 bg-violet-50 text-violet-700')}><UserRound className="h-5 w-5" /></span>
+                          <div className="min-w-0 flex-1">
+                            <Select value={item.role} onValueChange={(role: SaleParticipantRole) => updateParticipant(item.id, { role })}><SelectTrigger className="h-auto w-auto min-w-[130px] border-0 bg-transparent p-0 text-base font-bold text-slate-900 shadow-none focus:ring-0"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="buyer">Cumpărător</SelectItem><SelectItem value="owner">Proprietar</SelectItem><SelectItem value="notary">Notar</SelectItem><SelectItem value="collaborator">Colaborator</SelectItem></SelectContent></Select>
+                            <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[.12em] text-slate-400">Parte în tranzacție</p>
+                          </div>
+                          <span className={cn('shrink-0 rounded-full border px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.08em]', item.name.trim() && item.email.trim() ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700')}>{item.name.trim() && item.email.trim() ? 'Complet' : 'De completat'}</span>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600" onClick={() => setParticipants((current) => current.filter((participant) => participant.id !== item.id))}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                        <div className="relative mt-4 space-y-3">
+                          <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Nume complet</Label><div className="relative mt-1"><UserRound className={cn('pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2', item.role === 'owner' ? 'text-amber-500' : 'text-sky-500')} /><Input value={item.name} onChange={(event) => updateParticipant(item.id, { name: event.target.value })} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} placeholder="Nume complet" /></div></div>
+                          <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Email</Label><div className="relative mt-1"><Mail className={cn('pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2', item.role === 'owner' ? 'text-amber-500' : 'text-sky-500')} /><Input type="email" value={item.email} onChange={(event) => updateParticipant(item.id, { email: event.target.value })} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} placeholder="nume@email.ro" /></div></div>
+                          <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Telefon</Label><div className="relative mt-1"><Phone className={cn('pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2', item.role === 'owner' ? 'text-amber-500' : 'text-sky-500')} /><Input type="tel" value={item.phone || ''} onChange={(event) => updateParticipant(item.id, { phone: event.target.value })} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} placeholder="07xx xxx xxx" /></div></div>
+                        </div>
+                      </div>
                     </div>
                   ))}
-                  <Separator />
-                  <div className="space-y-3"><p className="font-semibold">Programare notar</p><Input value={notary.name || ''} onChange={(event) => setNotary((current) => ({ ...current, name: event.target.value }))} className={cn(inputClass, 'rounded-xl')} placeholder="Nume birou/notar" /><Input value={notary.address || ''} onChange={(event) => setNotary((current) => ({ ...current, address: event.target.value }))} className={cn(inputClass, 'rounded-xl')} placeholder="Adresă" /><Input type="datetime-local" value={notary.appointmentAt?.slice(0, 16) || ''} onChange={(event) => setNotary((current) => ({ ...current, appointmentAt: event.target.value ? new Date(event.target.value).toISOString() : null }))} className={cn(inputClass, 'rounded-xl')} /></div>
-                  <Separator />
-                  <div className="space-y-3"><p className="font-semibold">Următoarea acțiune</p><Input value={nextAction} onChange={(event) => setNextAction(event.target.value)} className={cn(inputClass, 'rounded-xl')} placeholder="Ex: Verifică extrasul CF" /><Input type="datetime-local" value={nextActionAt} onChange={(event) => setNextActionAt(event.target.value)} className={cn(inputClass, 'rounded-xl')} /><p className="text-xs text-[var(--app-muted-foreground)]">Este un reminder intern. Nu trimite automat email clientului.</p></div>
+
+                  <div className="group/dossier-notary relative overflow-hidden rounded-[25px] bg-[linear-gradient(145deg,#bae6fd,#ffffff_46%,#a7f3d0)] p-px shadow-[0_20px_44px_-34px_rgba(14,165,233,.42)]">
+                    <div className="relative overflow-hidden rounded-[24px] bg-white/95 p-4">
+                      <span className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full border-[20px] border-sky-50 opacity-70" />
+                      <div className="relative flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700 shadow-sm"><Landmark className="h-5 w-5" /></span><div className="min-w-0 flex-1"><p className="font-bold text-slate-900">Programare notar</p><p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[.12em] text-slate-400">Coordonare semnare</p></div><span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.08em] text-sky-700">Opțional</span></div>
+                      <div className="relative mt-4 space-y-3">
+                        <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Notar / birou notarial</Label><div className="relative mt-1"><UserRound className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-sky-500" /><Input value={notary.name || ''} onChange={(event) => setNotary((current) => ({ ...current, name: event.target.value }))} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} placeholder="Nume birou/notar" /></div></div>
+                        <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Adresă</Label><div className="relative mt-1"><MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-sky-500" /><Input value={notary.address || ''} onChange={(event) => setNotary((current) => ({ ...current, address: event.target.value }))} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} placeholder="Adresă birou" /></div></div>
+                        <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Data programării</Label><div className="relative mt-1"><Clock3 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-sky-500" /><Input type="datetime-local" value={notary.appointmentAt?.slice(0, 16) || ''} onChange={(event) => setNotary((current) => ({ ...current, appointmentAt: event.target.value ? new Date(event.target.value).toISOString() : null }))} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} /></div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="group/dossier-action relative overflow-hidden rounded-[25px] bg-[linear-gradient(145deg,#a7f3d0,#ffffff_46%,#fde68a)] p-px shadow-[0_20px_44px_-34px_rgba(5,150,105,.42)]">
+                    <div className="relative overflow-hidden rounded-[24px] bg-white/95 p-4">
+                      <span className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full border-[20px] border-emerald-50 opacity-70" />
+                      <div className="relative flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"><ClipboardCheck className="h-5 w-5" /></span><div className="min-w-0 flex-1"><p className="font-bold text-slate-900">Următoarea acțiune</p><p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[.12em] text-slate-400">Reminder operațional</p></div><span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.08em] text-emerald-700">Intern</span></div>
+                      <div className="relative mt-4 space-y-3">
+                        <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Acțiune</Label><div className="relative mt-1"><ClipboardCheck className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" /><Input value={nextAction} onChange={(event) => setNextAction(event.target.value)} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} placeholder="Ex: Verifică extrasul CF" /></div></div>
+                        <div><Label className="text-[10px] font-bold uppercase tracking-[.08em] text-slate-600">Termen</Label><div className="relative mt-1"><Clock3 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" /><Input type="datetime-local" value={nextActionAt} onChange={(event) => setNextActionAt(event.target.value)} className={cn(inputClass, 'h-11 rounded-2xl pl-10')} /></div></div>
+                        <p className="text-[10px] text-slate-500">Reminder intern — nu trimite automat email clientului.</p>
+                      </div>
+                    </div>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="templates" className="m-0 space-y-4 p-4">
@@ -807,17 +857,17 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                 </TabsContent>
 
                 <TabsContent value="documents" className="m-0 space-y-4 p-4">
-                  <div><p className="font-semibold">Checklist documente</p><p className="text-sm text-[var(--app-muted-foreground)]">Selectează documentele existente pe care vrei să le atașezi.</p></div>
+                  <div className="rounded-[22px] border border-emerald-200/80 bg-[linear-gradient(135deg,#ecfdf5,#ffffff_55%,#f0f9ff)] p-4 shadow-[0_16px_34px_-30px_rgba(5,150,105,.48)]"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl border border-emerald-200 bg-white text-emerald-600"><FileCheck2 className="h-5 w-5" /></span><div><p className="font-semibold">Checklist documente</p><p className="text-xs text-[var(--app-muted-foreground)]">Selectează documentele existente pe care vrei să le atașezi.</p></div></div></div>
                   <div className="flex gap-2"><Input value={newDocument} onChange={(event) => setNewDocument(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addDocument(); }} className={cn(inputClass, 'rounded-xl')} placeholder="Ex: Certificat fiscal" /><Select value={newDocumentRole} onValueChange={(value: 'buyer' | 'owner') => setNewDocumentRole(value)}><SelectTrigger className={cn(inputClass, 'w-32 rounded-xl')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="owner">Proprietar</SelectItem><SelectItem value="buyer">Cumpărător</SelectItem></SelectContent></Select><Button size="icon" className="shrink-0 rounded-xl" onClick={addDocument}><Plus className="h-4 w-4" /></Button></div>
                   {checklist.length ? checklist.map((item) => (
-                    <div key={item.id} className={cn(panelClass, 'p-4')}>
-                      <div className="flex items-start gap-3">
+                    <div key={item.id} className={cn('overflow-hidden rounded-[25px] p-px shadow-[0_18px_42px_-34px_rgba(15,118,110,.42)]', item.participantRole === 'buyer' ? 'bg-[linear-gradient(145deg,#bae6fd,#ffffff_48%,#99f6e4)]' : 'bg-[linear-gradient(145deg,#fde68a,#ffffff_48%,#a7f3d0)]')}><div className="rounded-[24px] bg-white/95 p-4">
+                      <div className="flex items-start gap-3"><span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl border', item.status === 'verified' ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-sky-200 bg-sky-50 text-sky-600')}><FileCheck2 className="h-4 w-4" /></span>
                         <Checkbox disabled={!item.downloadUrl} checked={selectedDocumentIds.includes(item.id)} onCheckedChange={(checked) => setSelectedDocumentIds((current) => checked ? [...current, item.id] : current.filter((id) => id !== item.id))} className="mt-1" />
                         <div className="min-w-0 flex-1"><p className="font-medium">{item.label}</p><p className="mt-1 truncate text-xs text-[var(--app-muted-foreground)]">{item.stage ? `${SALE_STAGE_META[item.stage].shortLabel} · ` : ''}{participantRoleLabel(item.participantRole)} · {item.fileName || 'Fișier neprimit'}</p></div>
                         <Select value={item.status} onValueChange={(status: SaleChecklistItem['status']) => setChecklist((current) => current.map((document) => document.id === item.id ? { ...document, status } : document))}><SelectTrigger className={cn(inputClass, 'h-8 w-32 rounded-xl text-xs')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="required">Necesar</SelectItem><SelectItem value="requested">Solicitat</SelectItem><SelectItem value="received_needs_review">De verificat</SelectItem><SelectItem value="verified">Verificat</SelectItem><SelectItem value="rejected">Respins</SelectItem><SelectItem value="expired">Expirat</SelectItem></SelectContent></Select>
                       </div>
                       {item.fileName ? <div className="mt-3 space-y-2 border-t border-[var(--app-surface-border)] pt-3"><div className="flex flex-wrap gap-1.5"><Badge variant="outline" className="rounded-full text-[10px]">Scanare: {item.scanStatus || 'neefectuată'}</Badge><Badge variant="outline" className="rounded-full text-[10px]">OCR: {item.ocrStatus || 'neefectuat'}</Badge>{typeof item.qualityScore === 'number' ? <Badge variant="outline" className="rounded-full text-[10px]">Calitate {item.qualityScore}%</Badge> : null}{item.reviewStatus ? <Badge variant="outline" className="rounded-full text-[10px]">{item.reviewStatus}</Badge> : null}{item.duplicateOfDocumentId ? <Badge className="rounded-full bg-amber-500/15 text-amber-700">Posibil duplicat</Badge> : null}{item.expiresAt ? <Badge className="rounded-full bg-violet-500/15 text-violet-700">Expiră {new Date(item.expiresAt).toLocaleDateString('ro-RO')}</Badge> : null}</div>{item.extractedTextPreview ? <p className="line-clamp-3 text-xs text-[var(--app-muted-foreground)]">{item.extractedTextPreview}</p> : null}<div className="flex flex-wrap gap-1"><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'analyze')}>Analizează</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'approve')}>Aprobă</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'reject')}>Respinge</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'rotate_link')}>Rotește linkul</Button><Button variant="ghost" size="sm" className="text-red-600" onClick={() => void documentAction(item, 'delete')}>Șterge fișierul</Button></div></div> : null}
-                    </div>
+                    </div></div>
                   )) : <div className="rounded-2xl border border-dashed border-[var(--app-surface-border)] p-8 text-center text-sm text-[var(--app-muted-foreground)]"><FilePlus2 className="mx-auto mb-2 h-6 w-6" />Adaugă documentele necesare pentru tranzacție.</div>}
                 </TabsContent>
 

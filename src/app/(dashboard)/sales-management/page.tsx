@@ -86,9 +86,14 @@ function PropertyThumbnail({ property }: { property: Property }) {
     </div>
   );
 }
-function formatCurrency(value?: number | null) {
-  if (!value) return 'Preț necompletat';
+function formatCurrency(value?: number | null, emptyLabel = 'Preț necompletat') {
+  if (value == null) return emptyLabel;
   return new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
+}
+
+function formatPriceAmount(value?: number | null) {
+  if (value == null) return null;
+  return new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(value);
 }
 
 function normalize(value: string) {
@@ -144,31 +149,59 @@ function SaleCard({ sale, imageUrl, onEmail, onDossier, onSetup, onStageChange }
       </header>
 
       <div className="grid lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[350px_minmax(0,1fr)]">
-        <div className="sales-management-property-media relative min-h-[300px] overflow-hidden bg-[linear-gradient(145deg,#ecfdf5,#f0fdfa)] lg:min-h-full">
-          {effectiveImageUrl ? (
-            <img
-              src={effectiveImageUrl}
-              alt={sale.propertyTitle}
-              loading="lazy"
-              decoding="async"
-              className="sales-management-property-image absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
-              style={{ filter: 'none', opacity: 1 }}
-              onError={(event) => {
-                if (!event.currentTarget.dataset.fallbackApplied && sale.propertyImageUrl && sale.propertyImageUrl !== effectiveImageUrl) {
-                  event.currentTarget.dataset.fallbackApplied = 'true';
-                  event.currentTarget.src = sale.propertyImageUrl;
-                  return;
-                }
-                event.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="absolute inset-0 grid place-items-center text-emerald-700/35"><Building2 className="h-12 w-12" /></div>
-          )}
-          <div className="sales-management-property-image-overlay pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,.02)_44%,rgba(15,118,110,.18)_100%)]" />
-          <div className="absolute bottom-5 left-5 rounded-[20px] border border-white/90 bg-white/[.9] px-5 py-3.5 text-slate-950 shadow-[0_20px_42px_-22px_rgba(15,23,42,.42)] backdrop-blur-xl">
-            <p className="text-[9px] font-bold uppercase tracking-[.2em] text-teal-700/65">Valoare tranzacție</p>
-            <p className="mt-1 text-2xl font-semibold tracking-[-.035em]">{formatCurrency(sale.agreedPrice)}</p>
+        <div className="flex min-h-0 flex-col overflow-hidden bg-[linear-gradient(165deg,#ecfdf5,#f0fdfa_52%,#f8fafc)]">
+          <div className="sales-management-property-media relative aspect-square w-full shrink-0 overflow-hidden bg-[linear-gradient(145deg,#ecfdf5,#f0fdfa)]">
+            {effectiveImageUrl ? (
+              <img
+                src={effectiveImageUrl}
+                alt={sale.propertyTitle}
+                loading="lazy"
+                decoding="async"
+                className="sales-management-property-image absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
+                style={{ filter: 'none', opacity: 1 }}
+                onError={(event) => {
+                  if (!event.currentTarget.dataset.fallbackApplied && sale.propertyImageUrl && sale.propertyImageUrl !== effectiveImageUrl) {
+                    event.currentTarget.dataset.fallbackApplied = 'true';
+                    event.currentTarget.src = sale.propertyImageUrl;
+                    return;
+                  }
+                  event.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 grid place-items-center text-emerald-700/35"><Building2 className="h-12 w-12" /></div>
+            )}
+            <div className="sales-management-property-image-overlay pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,.02)_44%,rgba(15,118,110,.18)_100%)]" />
+          </div>
+
+          <div data-testid={`sale-financial-summary-${sale.id}`} className="flex min-h-0 flex-1 flex-col justify-center border-t border-white/80 p-3">
+            <div className="relative h-[78px] overflow-hidden rounded-[22px] border border-amber-200/80 bg-[linear-gradient(105deg,#fffdf7_0%,#fff7ed_46%,#ecfdf5_100%)] shadow-[0_16px_34px_-28px_rgba(217,119,6,.55)]">
+              <div className="absolute inset-y-0 left-0 w-1 bg-[linear-gradient(180deg,#fbbf24,#fb923c_48%,#2dd4bf)]" />
+              <span className="pointer-events-none absolute -right-7 -top-9 h-24 w-24 rounded-full border-[15px] border-white/55" />
+              <div className="relative flex h-full items-center gap-3 px-3.5 pl-4">
+                <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-amber-200 bg-white/85 text-amber-600 shadow-sm"><Sparkles className="h-[18px] w-[18px]" /><span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-teal-400" /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="whitespace-nowrap text-[9px] font-black uppercase tracking-[.16em] text-amber-700">Preț de vânzare</p>
+                  {sale.agreedPrice == null ? <p className="mt-1 truncate text-lg font-extrabold tracking-[-.03em] text-slate-700">Necompletat</p> : <p className="mt-1 flex items-baseline gap-1.5 whitespace-nowrap"><span className="bg-[linear-gradient(100deg,#b45309,#d97706_38%,#0f766e_85%)] bg-clip-text text-[27px] font-black leading-none tracking-[-.05em] text-transparent">{formatPriceAmount(sale.agreedPrice)}</span><span className="text-[10px] font-extrabold tracking-[.1em] text-teal-700">EUR</span></p>}
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-white/80 px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.1em] text-emerald-700"><BadgeCheck className="h-3 w-3" />{sale.agreedPrice == null ? 'De completat' : 'Agreat'}</span>
+              </div>
+            </div>
+
+            <dl className="mt-2 grid grid-cols-3 gap-2">
+              <div className="min-w-0 rounded-2xl border border-sky-200/70 bg-white/90 px-2 py-2.5 text-center shadow-sm">
+                <dt className="min-h-7 text-[9px] font-bold uppercase leading-3 tracking-[.08em] text-sky-700/65">Valoare rezervare</dt>
+                <dd className="mt-0.5 whitespace-nowrap text-[11px] font-bold text-slate-800">{formatCurrency(sale.reservationAmount, '—')}</dd>
+              </div>
+              <div className="min-w-0 rounded-2xl border border-amber-200/70 bg-white/90 px-2 py-2.5 text-center shadow-sm">
+                <dt className="min-h-7 text-[9px] font-bold uppercase leading-3 tracking-[.08em] text-amber-700/70">Valoare antecontract</dt>
+                <dd className="mt-0.5 whitespace-nowrap text-[11px] font-bold text-slate-800">{formatCurrency(sale.precontractAmount, '—')}</dd>
+              </div>
+              <div className="min-w-0 rounded-2xl border border-emerald-200/70 bg-white/90 px-2 py-2.5 text-center shadow-sm">
+                <dt className="min-h-7 text-[9px] font-bold uppercase leading-3 tracking-[.08em] text-emerald-700/70">Valoare restantă contract</dt>
+                <dd className="mt-0.5 whitespace-nowrap text-[11px] font-bold text-slate-800">{formatCurrency(sale.contractBalanceAmount, '—')}</dd>
+              </div>
+            </dl>
           </div>
         </div>
 

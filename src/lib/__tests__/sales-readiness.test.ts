@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SALE_DOCUMENTS, getSaleReadiness, getSaleSetupState } from '@/lib/sales';
-import type { SaleTransaction } from '@/lib/types';
+import { calculateContractBalance, createSaleFromProperty, DEFAULT_SALE_DOCUMENTS, getSaleReadiness, getSaleSetupState } from '@/lib/sales';
+import type { Property, SaleTransaction } from '@/lib/types';
 
 function fixture(): SaleTransaction {
   return {
@@ -12,6 +12,26 @@ function fixture(): SaleTransaction {
 }
 
 describe('sales dossier readiness', () => {
+  it('calculează automat restul de plată pentru contract', () => {
+    expect(calculateContractBalance(72_500, 5_000, 10_000)).toBe(57_500);
+    expect(calculateContractBalance(72_500, null, null)).toBe(72_500);
+    expect(calculateContractBalance(null, 5_000, 10_000)).toBeNull();
+  });
+  it('inițializează structura opțională a plăților fără valori inventate', () => {
+    const sale = createSaleFromProperty(
+      { id: 'property-1', title: 'Apartament', address: 'Strada 1', status: 'Rezervat', price: 120000 } as Property,
+      'agency-1',
+      { id: 'agent-1', name: 'Agent' }
+    );
+
+    expect(sale).toMatchObject({
+      agreedPrice: 120000,
+      reservationAmount: null,
+      precontractAmount: null,
+      contractBalanceAmount: null,
+    });
+  });
+
   it('accepts a complete dossier before Gmail preparation', () => {
     expect(getSaleReadiness(fixture())).toMatchObject({ ready: true, progress: 100 });
   });

@@ -23,6 +23,10 @@ try {
   }
   const saleCard = page.locator('[data-testid^="sale-card-"]').first();
   if (!(await saleCard.count())) throw new Error('Datasetul E2E trebuie să conțină cel puțin un dosar vizibil agentului.');
+  await saleCard.locator('[data-testid^="sale-financial-summary-"]').waitFor({ state: 'visible', timeout: 10_000 });
+  await saleCard.getByText('Preț de vânzare', { exact: true }).waitFor({ state: 'visible', timeout: 10_000 });
+  const imageBox = await saleCard.locator('.sales-management-property-media').boundingBox();
+  if (!imageBox || Math.abs(imageBox.width - imageBox.height) > 2) throw new Error('Fotografia proprietății trebuie să păstreze raportul 1:1.');
 
   const setupCta = saleCard.locator('[data-testid^="sale-setup-cta-"]');
   if (!(await setupCta.count())) throw new Error('Dosarul aflat în Pregătire trebuie să afișeze butonul de completare ghidată.');
@@ -31,6 +35,16 @@ try {
   await setupCta.click();
   const setupWizard = page.getByText('Pregătește dosarul de vânzare').first();
   await setupWizard.waitFor({ state: 'visible', timeout: 10_000 });
+  await page.getByRole('button', { name: 'Tranzacție', exact: true }).click();
+  for (const testId of ['sale-agreed-price', 'sale-reservation-amount', 'sale-precontract-amount', 'sale-contract-balance-amount']) {
+    await page.getByTestId(testId).waitFor({ state: 'visible', timeout: 10_000 });
+  }
+  await page.getByTestId('sale-agreed-price').fill('72500');
+  await page.getByTestId('sale-reservation-amount').fill('5000');
+  await page.getByTestId('sale-precontract-amount').fill('10000');
+  const contractBalance = page.getByTestId('sale-contract-balance-amount');
+  if (Number(await contractBalance.inputValue()) !== 57_500) throw new Error('Restul de plată trebuie calculat automat: preț − rezervare − antecontract.');
+  if (await contractBalance.isEditable()) throw new Error('Restul de plată calculat automat nu trebuie să poată fi editat manual.');
   await page.keyboard.press('Escape');
   await setupWizard.waitFor({ state: 'hidden', timeout: 10_000 });
 

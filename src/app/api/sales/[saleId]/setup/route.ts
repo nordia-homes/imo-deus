@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getSaleReadiness } from '@/lib/sales';
+import { calculateContractBalance, getSaleReadiness } from '@/lib/sales';
 import { appendSalesAudit, requireSaleAccess, salesApiErrorResponse } from '@/lib/sales-server';
 import type { SaleChecklistItem, SaleParticipant, SaleTransaction } from '@/lib/types';
 
@@ -28,6 +28,8 @@ const checklistSchema = z.object({
 const setupSchema = z.object({
   participants: z.array(participantSchema).min(2).max(20),
   agreedPrice: z.number().positive().max(1_000_000_000).nullable(),
+  reservationAmount: z.number().nonnegative().max(1_000_000_000).nullable().optional().default(null),
+  precontractAmount: z.number().nonnegative().max(1_000_000_000).nullable().optional().default(null),
   financingType: z.enum(['cash', 'credit', 'unknown']),
   checklist: z.array(checklistSchema).max(100),
   notary: z.object({
@@ -37,6 +39,10 @@ const setupSchema = z.object({
     address: z.string().trim().max(400).nullable().optional(),
     appointmentAt: z.string().datetime().nullable().optional(),
   }).nullable(),
+}).superRefine((value, context) => {
+  if (value.agreedPrice != null && (value.reservationAmount ?? 0) + (value.precontractAmount ?? 0) > value.agreedPrice) {
+    context.addIssue({ code: 'custom', path: ['precontractAmount'], message: 'Rezervarea și antecontractul nu pot depăși prețul de vânzare.' });
+  }
 });
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ saleId: string }> }) {
@@ -44,10 +50,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
     const { saleId } = await context.params;
     const access = await requireSaleAccess(request, saleId);
     const input = setupSchema.parse(await request.json());
+    const contractBalanceAmount = calculateContractBalance(input.agreedPrice, input.reservationAmount, input.precontractAmount);
     const candidate = {
       ...access.sale,
       participants: input.participants as SaleParticipant[],
       agreedPrice: input.agreedPrice,
+      reservationAmount: input.reservationAmount,
+      precontractAmount: input.precontractAmount,
+      contractBalanceAmount,
       financingType: input.financingType,
       checklist: input.checklist as SaleChecklistItem[],
       notary: input.notary,
@@ -69,6 +79,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
     const update = {
       participants: input.participants,
       agreedPrice: input.agreedPrice,
+      reservationAmount: input.reservationAmount,
+      precontractAmount: input.precontractAmount,
+      contractBalanceAmount,
       financingType: input.financingType,
       checklist: input.checklist,
       notary: input.notary,

@@ -1195,6 +1195,9 @@ export type SaleTransaction = {
   collaboratorIds?: string[];
   stage: SaleStage;
   agreedPrice?: number | null;
+  reservationAmount?: number | null;
+  precontractAmount?: number | null;
+  contractBalanceAmount?: number | null;
   financingType?: 'cash' | 'credit' | 'unknown';
   participants: SaleParticipant[];
   checklist?: SaleChecklistItem[];
