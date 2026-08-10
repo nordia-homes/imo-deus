@@ -310,6 +310,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     [templateLibrary, userProfile?.enabledSalesEmailTemplateIds]
   );
   const recipient = participants.find((item) => item.id === recipientId) || null;
+  const notaryCcEmail = (notary.email || participants.find((item) => item.role === 'notary')?.email || '').trim();
   const recipientTemplates = useMemo(
     () => templates.filter((item) => !recipient || item.recipientRole === recipient.role),
     [recipient?.role, templates]
@@ -381,8 +382,9 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     setSubject(rendered.subject);
     setBody(rendered.body);
     setBodyHtml(rendered.bodyHtml || plainTextToEmailHtml(rendered.body));
-    setCcRecipients(template.defaultCc || []);
-    setShowCc(Boolean(template.defaultCc?.length));
+    setCcRecipients([]);
+    setCcInput('');
+    setShowCc(false);
     setQuestions((template.defaultQuestions || []).map(makeQuestion));
   };
 
@@ -730,6 +732,17 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                           {ccRecipients.map((email) => <span key={email} className={cn('inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs', isEmailAddress(email) ? 'bg-sky-500/10 text-sky-700' : 'bg-red-500/10 text-red-700')}>{email}<button type="button" onClick={() => setCcRecipients((current) => current.filter((item) => item !== email))}><X className="h-3 w-3" /></button></span>)}
                           <Input value={ccInput} onChange={(event) => setCcInput(event.target.value)} onBlur={() => { const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } }} onKeyDown={(event) => { if (['Enter', ',', ';'].includes(event.key)) { event.preventDefault(); const values = parseEmailList(ccInput); if (values.length) { setCcRecipients((current) => [...new Set([...current, ...values])]); setCcInput(''); } } }} className="h-8 min-w-[220px] flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0" placeholder="Adaugă una sau mai multe adrese CC" />
                         </div>
+                        {isEmailAddress(notaryCcEmail) && !ccRecipients.includes(notaryCcEmail) ? (
+                          <button
+                            type="button"
+                            className="mt-2 inline-flex max-w-full items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-left text-xs text-slate-700 transition-colors hover:border-amber-300 hover:bg-amber-50"
+                            onClick={() => setCcRecipients((current) => [...new Set([...current, notaryCcEmail])])}
+                          >
+                            <Landmark className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+                            <span className="font-bold text-amber-700">Adaugă notariatul</span>
+                            <span className="truncate text-slate-500">{notary.name ? notary.name + ' · ' : ''}{notaryCcEmail}</span>
+                          </button>
+                        ) : null}
                       </div>
                     ) : null}
 
