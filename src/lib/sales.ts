@@ -1,3 +1,4 @@
+import { getSaleDocumentStages, inferSaleDocumentScope } from '@/lib/sales-documents';
 import type {
   LegacySaleStage,
   Property,
@@ -416,6 +417,7 @@ export type DefaultSaleDocument = {
   label: string;
   role: 'buyer' | 'owner';
   stage: SaleChecklistStage;
+  scope?: import('@/lib/types').SaleDocumentScope;
 };
 
 export const DEFAULT_PRECONTRACT_OWNER_DOCUMENTS: DefaultSaleDocument[] = [
@@ -457,12 +459,15 @@ export function createDefaultSaleChecklistItems(
     label: item.label,
     participantRole: item.role,
     stage: item.stage,
+    appliesToStages: [item.stage],
+    scope: item.scope || inferSaleDocumentScope({ label: item.label }),
     status: 'required',
     required: true,
     reviewStatus: 'unreviewed',
     scanStatus: 'pending',
     ocrStatus: 'not_requested',
-    version: 1,
+    fileState: 'missing',
+    version: 0,
   }));
 }
 
@@ -473,7 +478,7 @@ export function withDefaultSaleDocumentsForStage(
 ) {
   const current = checklist || [];
   const stage = documents[0]?.stage;
-  if (!stage || current.some((item) => item.stage === stage)) return current;
+  if (!stage || current.some((item) => getSaleDocumentStages(item).includes(stage))) return current;
   return [...current, ...createDefaultSaleChecklistItems(documents, createId)];
 }
 
@@ -483,8 +488,8 @@ export const DEFAULT_SALE_DOCUMENTS = DEFAULT_PRECONTRACT_OWNER_DOCUMENTS;
 function documentsForRole(sale: SaleTransaction, role: SaleParticipantRole, stage: SalesEmailTemplate['stage']) {
   const checklistStage = ['reservation', 'precontract', 'contract'].includes(stage) ? stage : null;
   return (sale.checklist || [])
-    .filter((item) => item.participantRole === role && item.status !== 'verified')
-    .filter((item) => !checklistStage || !item.stage || item.stage === checklistStage)
+    .filter((item) => item.participantRole === role && !['verified', 'not_required'].includes(item.status))
+    .filter((item) => !checklistStage || !getSaleDocumentStages(item).length || getSaleDocumentStages(item).includes(checklistStage as SaleChecklistStage))
     .map((item) => `• ${item.label}`)
     .join('\n');
 }

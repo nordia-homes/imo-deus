@@ -20,7 +20,8 @@ export async function requireSaleAccess(request: NextRequest, saleId: string, op
   const sale = normalizeSaleForWorkspace({ id: saleSnapshot.id, ...saleSnapshot.data() } as SaleTransaction);
   const isAdmin = auth.role === 'admin';
   if (options?.adminOnly && !isAdmin) throw new SalesApiError('Operațiunea necesită rol de administrator.', 403);
-  if (!isAdmin && sale.agentId !== auth.uid) throw new SalesApiError('Nu ai acces la această tranzacție.', 403);
+  const isCollaborator = sale.collaboratorIds?.includes(auth.uid) === true;
+  if (!isAdmin && sale.agentId !== auth.uid && !isCollaborator) throw new SalesApiError('Nu ai acces la această tranzacție.', 403);
   return { ...auth, saleRef, saleSnapshot, sale, isAdmin };
 }
 

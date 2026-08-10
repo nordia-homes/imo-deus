@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { collection, doc, query, setDoc, updateDoc, where } from 'firebase/firestore';
 import {
   AlertTriangle,
@@ -37,6 +38,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { getSaleDocumentSummary } from '@/lib/sales-documents';
 import {
   createSaleFromProperty,
   DEFAULT_CONTRACT_OWNER_DOCUMENTS,
@@ -47,7 +49,7 @@ import {
   withDefaultSaleDocumentsForStage,
 } from '@/lib/sales';
 import { normalizeSaleForWorkspace } from '@/lib/sales-workspace';
-import type { Property, SaleStage, SaleTransaction } from '@/lib/types';
+import type { Property, SaleChecklistStage, SaleStage, SaleTransaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const STAGE_ORDER: SaleStage[] = ['preparing', 'reservation', 'precontract', 'contract', 'completed'];
@@ -101,10 +103,11 @@ function normalize(value: string) {
 }
 
 function documentProgress(sale: SaleTransaction) {
-  const required = (sale.checklist || []).filter((item) => item.required);
-  if (!required.length) return 0;
-  const complete = required.filter((item) => item.status === 'verified').length;
-  return Math.round((complete / required.length) * 100);
+  return getSaleDocumentSummary(sale.checklist || []).progress;
+}
+
+function checklistStageForSaleStage(stage: SaleStage): SaleChecklistStage | undefined {
+  return stage === 'reservation' || stage === 'precontract' || stage === 'contract' ? stage : undefined;
 }
 
 function nextStage(stage: SaleStage): SaleStage | null {
@@ -118,8 +121,9 @@ function SaleCard({ sale, imageUrl, onEmail, onDossier, onSetup, onStageChange }
   const buyer = sale.participants?.find((item) => item.role === 'buyer');
   const owner = sale.participants?.find((item) => item.role === 'owner');
   const followingStage = nextStage(sale.stage);
-  const requiredDocuments = (sale.checklist || []).filter((item) => item.required).length;
-  const verifiedDocuments = (sale.checklist || []).filter((item) => item.required && item.status === 'verified').length;
+  const documentSummary = getSaleDocumentSummary(sale.checklist || []);
+  const requiredDocuments = documentSummary.required;
+  const verifiedDocuments = documentSummary.verified;
   const effectiveImageUrl = imageUrl || sale.propertyImageUrl;
   const setupReadiness = getSaleSetupState(sale);
   const setupComplete = setupReadiness.complete;
@@ -322,6 +326,7 @@ function SaleCard({ sale, imageUrl, onEmail, onDossier, onSetup, onStageChange }
   );
 }
 export default function SalesManagementPage() {
+  const router = useRouter();
   const { agencyId, user, userProfile } = useAgency();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -415,18 +420,26 @@ export default function SalesManagementPage() {
   const changeStage = async (sale: SaleTransaction, stage: SaleStage) => {
     if (!agencyId) return;
     try {
-      const now = new Date().toISOString();
       const checklist = stage === 'contract'
         ? withDefaultSaleDocumentsForStage(sale.checklist, DEFAULT_CONTRACT_OWNER_DOCUMENTS, () => crypto.randomUUID())
         : sale.checklist || [];
-      await updateDoc(doc(firestore, 'agencies', agencyId, 'sales', sale.id), {
-        stage,
-        checklist,
-        requiredDocumentCount: checklist.filter((item) => item.required).length,
-        nextAction: SALE_STAGE_META[stage].description,
-        updatedAt: now,
-        completedAt: stage === 'completed' ? now : sale.completedAt || null,
+      const checklistStage = checklistStageForSaleStage(stage);
+      const stageSummary = checklistStage ? getSaleDocumentSummary(checklist, checklistStage) : null;
+      if (stageSummary && (stageSummary.missing || stageSummary.review)) {
+        const accepted = window.confirm(
+          `Etapa „${SALE_STAGE_META[stage].label}” are ${stageSummary.missing} documente lipsă și ${stageSummary.review} de verificat. Proprietatea poate avansa, iar dosarul va rămâne marcat ca incomplet. Continui?`
+        );
+        if (!accepted) return;
+      }
+      if (!user) throw new Error('Sesiunea a expirat. Autentifică-te din nou.');
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/sales/${sale.id}/stage`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage }),
       });
+      const payload = await response.json().catch(() => ({})) as { message?: string };
+      if (!response.ok) throw new Error(payload.message || 'Etapa nu a putut fi actualizată.');
       toast({ title: `Etapa a fost schimbată în „${SALE_STAGE_META[stage].label}”` });
     } catch (error) {
       toast({ title: 'Etapa nu a putut fi schimbată', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' });
@@ -506,7 +519,7 @@ export default function SalesManagementPage() {
           <div className="relative min-w-0 flex-1 xl:max-w-xl"><Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Caută proprietate, client, agent sau cod de tranzacție…" className="h-12 rounded-[18px] border-slate-200/80 bg-white/90 pl-11 pr-11 shadow-[inset_0_1px_2px_rgba(15,23,42,.03)] transition focus-visible:border-teal-300 focus-visible:ring-teal-200/50" />{search ? <Button size="icon" variant="ghost" className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full" onClick={() => setSearch('')}><X className="h-4 w-4" /></Button> : null}</div>
           <div className="sales-management-stage-tabs flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 xl:justify-end xl:pb-0">{([...STAGE_ORDER.map((stage) => ({ id: stage, label: SALE_STAGE_META[stage].shortLabel })), { id: 'blocked' as const, label: SALE_STAGE_META.blocked.shortLabel }] as { id: SaleStage; label: string }[]).map((item) => <Button key={item.id} size="sm" variant={stageFilter === item.id ? 'default' : 'outline'} className={cn('sales-management-stage-tab shrink-0 rounded-full border-slate-200/80 bg-white/75 px-4 text-slate-600 shadow-sm hover:border-teal-200 hover:bg-teal-50 hover:text-teal-800', stageFilter === item.id && 'sales-management-stage-tab--active bg-[linear-gradient(135deg,#10b981,#0d9488)] text-white shadow-[0_10px_22px_-14px_rgba(13,148,136,.72)] hover:brightness-105')} onClick={() => setStageFilter(item.id)}>{item.label}</Button>)}</div>
         </div>
-        {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[32px] bg-[linear-gradient(110deg,#f8fafc,#ecfdf5,#f8fafc)]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} imageUrl={propertyImageForSale(sale)} onEmail={() => openSale(sale, 'context')} onDossier={() => openSale(sale, 'documents')} onSetup={() => openSetup(sale)} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
+        {salesLoading || propertiesLoading ? <div className="space-y-4">{[0, 1, 2].map((item) => <Skeleton key={item} className="h-[270px] rounded-[32px] bg-[linear-gradient(110deg,#f8fafc,#ecfdf5,#f8fafc)]" />)}</div> : visibleSales.length ? <div className="space-y-4">{visibleSales.map((sale) => <SaleCard key={sale.id} sale={sale} imageUrl={propertyImageForSale(sale)} onEmail={() => openSale(sale, 'context')} onDossier={() => router.push('/sales-management/' + sale.id)} onSetup={() => openSetup(sale)} onStageChange={(stage) => void changeStage(sale, stage)} />)}</div> : (
           <div className="rounded-[32px] border border-dashed border-teal-200 bg-[radial-gradient(circle_at_top,rgba(204,251,241,.68),transparent_45%),rgba(255,255,255,.9)] px-6 py-16 text-center shadow-[0_24px_60px_-42px_rgba(13,148,136,.32)]"><div className="mx-auto grid h-16 w-16 place-items-center rounded-[22px] bg-emerald-500/10 text-emerald-600"><ShieldCheck className="h-7 w-7" /></div><h2 className="mt-5 text-xl font-semibold">{search ? 'Nu am găsit tranzacții' : 'Nicio vânzare în acest filtru'}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Dosarele apar aici când o proprietate este rezervată sau marcată ca vândută. Fiecare agent vede tranzacțiile sale, iar administratorul vede întreaga agenție.</p></div>
         )}
       </section>

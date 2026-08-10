@@ -21,7 +21,7 @@ const checklistSchema = z.object({
   label: z.string().trim().min(1).max(240),
   participantRole: z.enum(['buyer', 'owner']),
   stage: z.enum(['reservation', 'precontract', 'contract']).optional(),
-  status: z.enum(['required', 'requested', 'received_needs_review', 'verified', 'rejected', 'expired']),
+  status: z.enum(['required', 'requested', 'received_needs_review', 'verified', 'rejected', 'expired', 'not_required']),
   required: z.boolean(),
 }).passthrough();
 

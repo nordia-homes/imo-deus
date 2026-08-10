@@ -21,7 +21,6 @@ import {
   Copy,
   Download,
   FileCheck2,
-  FilePlus2,
   Inbox,
   Landmark,
   Loader2,
@@ -52,7 +51,6 @@ import {
   filterEnabledSalesEmailTemplates,
   participantRoleLabel,
   renderSalesTemplate,
-  SALE_STAGE_META,
   withDefaultSaleDocumentsForStage,
 } from '@/lib/sales';
 import type {
@@ -80,6 +78,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GmailRichTextEditor } from '@/components/sales/GmailRichTextEditor';
 import { isEmailAddress, parseEmailList, plainTextToEmailHtml } from '@/lib/email-compose';
 import { SalesOperationsPanel } from '@/components/sales/SalesOperationsPanel';
+import { SalesDocumentWorkspace } from '@/components/sales/SalesDocumentWorkspace';
 
 type Connection = {
   inboundAddress: string;
@@ -253,8 +252,6 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
   const [saving, setSaving] = useState(false);
   const [runnerStatus, setRunnerStatus] = useState<DesktopGmailRunnerStatus | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [newDocument, setNewDocument] = useState('');
-  const [newDocumentRole, setNewDocumentRole] = useState<'buyer' | 'owner'>('owner');
   const activeMessageRef = useRef<{ saleId: string; messageId: string } | null>(null);
 
   const apiRequest = useCallback(async (url: string, init?: RequestInit) => {
@@ -501,21 +498,6 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     }
   };
 
-  const documentAction = async (item: SaleChecklistItem, action: 'analyze' | 'approve' | 'reject' | 'rotate_link' | 'delete') => {
-    if (!sale) return;
-    if (action === 'delete' && !window.confirm(`Ștergi definitiv fișierul „${item.fileName || item.label}”?`)) return;
-    setSaving(true);
-    try {
-      const { payload } = await apiRequest(`/api/sales/${sale.id}/documents/${item.id}`, { method: action === 'delete' ? 'DELETE' : 'POST', body: action === 'delete' ? undefined : JSON.stringify({ action }) });
-      setChecklist((current) => current.map((entry) => entry.id === item.id ? payload.document : entry));
-      toast({ title: action === 'analyze' ? 'Analiza documentului s-a încheiat' : 'Documentul a fost actualizat' });
-    } catch (error) {
-      toast({ title: 'Documentul nu a putut fi procesat', description: error instanceof Error ? error.message : undefined, variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const reviewReply = async (message: SaleEmailMessage, status: 'confirmed' | 'corrected' | 'needs_clarification') => {
     if (!sale) return;
     try {
@@ -560,16 +542,6 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     }
     const result = await window.imodeusDesktop.selectGmailRunnerFiles();
     if (!result.canceled) setLocalFiles((current) => [...current, ...result.files]);
-  };
-
-  const addDocument = () => {
-    const label = newDocument.trim();
-    if (!label) return;
-    const stage = sale?.stage === 'reservation' || sale?.stage === 'precontract' || sale?.stage === 'contract'
-      ? sale.stage
-      : 'precontract';
-    setChecklist((current) => [...current, { id: crypto.randomUUID(), label, participantRole: newDocumentRole, stage, status: 'required', required: true }]);
-    setNewDocument('');
   };
 
   const prepareInGmail = async () => {
@@ -694,9 +666,9 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
           </div>
         </DialogHeader>
 
-        <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(390px,.65fr)]">
-          <ScrollArea className="min-h-0 border-b border-[var(--app-surface-border)] lg:border-b-0 lg:border-r">
-            <div className="space-y-5 p-4 md:p-7">
+        <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,.85fr)]">
+          <ScrollArea className="min-h-0 min-w-0 border-b border-[var(--app-surface-border)] lg:border-b-0 lg:border-r [&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 [&_[data-radix-scroll-area-viewport]>div]:!w-full">
+            <div className="w-full min-w-0 max-w-full space-y-5 overflow-hidden p-4 md:p-7">
               {runnerStatus && !['idle', 'stopped'].includes(runnerStatus.state) ? (
                 <div className={cn(panelClass, 'flex items-center gap-4 overflow-hidden p-4', runnerStatus.state === 'error' ? 'border-red-500/35 bg-red-500/8' : runnerStatus.state === 'sent_ui_confirmed' ? 'border-emerald-500/35 bg-emerald-500/8' : 'border-sky-500/35 bg-sky-500/8')}>
                   <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-muted">{['starting', 'preparing'].includes(runnerStatus.state) ? <Loader2 className="h-5 w-5 animate-spin text-sky-500" /> : runnerStatus.state === 'sent_ui_confirmed' ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <MailCheck className="h-5 w-5 text-red-500" />}</div>
@@ -706,7 +678,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                 </div>
               ) : null}
 
-              <div className="group/email-composer relative overflow-hidden rounded-[28px] bg-[linear-gradient(145deg,#bae6fd,#ffffff_44%,#a7f3d0)] p-px shadow-[0_24px_54px_-38px_rgba(14,165,233,.46)]">
+              <div className="group/email-composer relative w-full min-w-0 max-w-full overflow-hidden rounded-[28px] bg-[linear-gradient(145deg,#bae6fd,#ffffff_44%,#a7f3d0)] p-px shadow-[0_24px_54px_-38px_rgba(14,165,233,.46)]">
                 <div className="relative overflow-hidden rounded-[27px] bg-white/95">
                   <span className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full border-[26px] border-sky-50 opacity-70" />
                   <div className="relative flex items-center gap-3 border-b border-slate-100 px-5 py-4">
@@ -782,7 +754,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
             </div>
           </ScrollArea>
 
-          <div className="flex min-h-0 flex-col bg-[radial-gradient(circle_at_100%_0%,rgba(254,243,199,.35),transparent_26%),linear-gradient(160deg,rgba(240,253,250,.72),rgba(248,250,252,.94)_46%,rgba(240,249,255,.72))]">
+          <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_100%_0%,rgba(254,243,199,.35),transparent_26%),linear-gradient(160deg,rgba(240,253,250,.72),rgba(248,250,252,.94)_46%,rgba(240,249,255,.72))]">
             <Tabs key={`${sale.id}-${initialPanel}`} defaultValue={initialPanel} className="flex min-h-0 flex-1 flex-col">
               <TabsList className="m-3 grid h-auto grid-cols-3 gap-1.5 rounded-[20px] border border-white/90 bg-white/[.78] p-1.5 shadow-[0_16px_36px_-30px_rgba(13,148,136,.5)] ring-1 ring-slate-900/[.04] backdrop-blur-xl sm:grid-cols-6">
                 <TabsTrigger value="context" className="rounded-[14px] border border-transparent px-2 py-2.5 text-xs font-semibold text-slate-500 transition data-[state=active]:border-emerald-200 data-[state=active]:bg-[linear-gradient(135deg,#ecfdf5,#ffffff)] data-[state=active]:text-emerald-700 data-[state=active]:shadow-sm"><UserRound className="mr-1 h-3.5 w-3.5" /> Date</TabsTrigger>
@@ -869,19 +841,16 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
                   <div className={cn(panelClass, 'space-y-3 p-4')}><div><p className="font-medium">{editingTemplateId ? 'Editează versiunea template-ului' : 'Salvează mesajul curent'}</p><p className="mt-1 text-xs text-[var(--app-muted-foreground)]">{editingTemplateId ? 'Modificările se salvează numai pentru tine, pe același template.' : 'Draftul rămâne privat autorului până la aprobare.'}</p></div><Input value={customTemplateName} onChange={(event) => setCustomTemplateName(event.target.value)} className={cn(inputClass, 'rounded-xl')} placeholder="Numele template-ului" /><div className="flex gap-2">{editingTemplateId ? <Button variant="ghost" className="rounded-xl" onClick={() => { setEditingTemplateId(null); setCustomTemplateName(''); }}>Renunță</Button> : null}<Button variant="outline" className="flex-1 rounded-xl" onClick={saveAsTemplate} disabled={saving}><Sparkles className="mr-2 h-4 w-4" /> {editingTemplateId ? 'Salvează pentru mine' : 'Salvează ca template'}</Button></div></div>
                 </TabsContent>
 
-                <TabsContent value="documents" className="m-0 space-y-4 p-4">
-                  <div className="rounded-[22px] border border-emerald-200/80 bg-[linear-gradient(135deg,#ecfdf5,#ffffff_55%,#f0f9ff)] p-4 shadow-[0_16px_34px_-30px_rgba(5,150,105,.48)]"><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-2xl border border-emerald-200 bg-white text-emerald-600"><FileCheck2 className="h-5 w-5" /></span><div><p className="font-semibold">Checklist documente</p><p className="text-xs text-[var(--app-muted-foreground)]">Selectează documentele existente pe care vrei să le atașezi.</p></div></div></div>
-                  <div className="flex gap-2"><Input value={newDocument} onChange={(event) => setNewDocument(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addDocument(); }} className={cn(inputClass, 'rounded-xl')} placeholder="Ex: Certificat fiscal" /><Select value={newDocumentRole} onValueChange={(value: 'buyer' | 'owner') => setNewDocumentRole(value)}><SelectTrigger className={cn(inputClass, 'w-32 rounded-xl')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="owner">Proprietar</SelectItem><SelectItem value="buyer">Cumpărător</SelectItem></SelectContent></Select><Button size="icon" className="shrink-0 rounded-xl" onClick={addDocument}><Plus className="h-4 w-4" /></Button></div>
-                  {checklist.length ? checklist.map((item) => (
-                    <div key={item.id} className={cn('overflow-hidden rounded-[25px] p-px shadow-[0_18px_42px_-34px_rgba(15,118,110,.42)]', item.participantRole === 'buyer' ? 'bg-[linear-gradient(145deg,#bae6fd,#ffffff_48%,#99f6e4)]' : 'bg-[linear-gradient(145deg,#fde68a,#ffffff_48%,#a7f3d0)]')}><div className="rounded-[24px] bg-white/95 p-4">
-                      <div className="flex items-start gap-3"><span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl border', item.status === 'verified' ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-sky-200 bg-sky-50 text-sky-600')}><FileCheck2 className="h-4 w-4" /></span>
-                        <Checkbox disabled={!item.downloadUrl} checked={selectedDocumentIds.includes(item.id)} onCheckedChange={(checked) => setSelectedDocumentIds((current) => checked ? [...current, item.id] : current.filter((id) => id !== item.id))} className="mt-1" />
-                        <div className="min-w-0 flex-1"><p className="font-medium">{item.label}</p><p className="mt-1 truncate text-xs text-[var(--app-muted-foreground)]">{item.stage ? `${SALE_STAGE_META[item.stage].shortLabel} · ` : ''}{participantRoleLabel(item.participantRole)} · {item.fileName || 'Fișier neprimit'}</p></div>
-                        <Select value={item.status} onValueChange={(status: SaleChecklistItem['status']) => setChecklist((current) => current.map((document) => document.id === item.id ? { ...document, status } : document))}><SelectTrigger className={cn(inputClass, 'h-8 w-32 rounded-xl text-xs')}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="required">Necesar</SelectItem><SelectItem value="requested">Solicitat</SelectItem><SelectItem value="received_needs_review">De verificat</SelectItem><SelectItem value="verified">Verificat</SelectItem><SelectItem value="rejected">Respins</SelectItem><SelectItem value="expired">Expirat</SelectItem></SelectContent></Select>
-                      </div>
-                      {item.fileName ? <div className="mt-3 space-y-2 border-t border-[var(--app-surface-border)] pt-3"><div className="flex flex-wrap gap-1.5"><Badge variant="outline" className="rounded-full text-[10px]">Scanare: {item.scanStatus || 'neefectuată'}</Badge><Badge variant="outline" className="rounded-full text-[10px]">OCR: {item.ocrStatus || 'neefectuat'}</Badge>{typeof item.qualityScore === 'number' ? <Badge variant="outline" className="rounded-full text-[10px]">Calitate {item.qualityScore}%</Badge> : null}{item.reviewStatus ? <Badge variant="outline" className="rounded-full text-[10px]">{item.reviewStatus}</Badge> : null}{item.duplicateOfDocumentId ? <Badge className="rounded-full bg-amber-500/15 text-amber-700">Posibil duplicat</Badge> : null}{item.expiresAt ? <Badge className="rounded-full bg-violet-500/15 text-violet-700">Expiră {new Date(item.expiresAt).toLocaleDateString('ro-RO')}</Badge> : null}</div>{item.extractedTextPreview ? <p className="line-clamp-3 text-xs text-[var(--app-muted-foreground)]">{item.extractedTextPreview}</p> : null}<div className="flex flex-wrap gap-1"><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'analyze')}>Analizează</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'approve')}>Aprobă</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'reject')}>Respinge</Button><Button variant="ghost" size="sm" onClick={() => void documentAction(item, 'rotate_link')}>Rotește linkul</Button><Button variant="ghost" size="sm" className="text-red-600" onClick={() => void documentAction(item, 'delete')}>Șterge fișierul</Button></div></div> : null}
-                    </div></div>
-                  )) : <div className="rounded-2xl border border-dashed border-[var(--app-surface-border)] p-8 text-center text-sm text-[var(--app-muted-foreground)]"><FilePlus2 className="mx-auto mb-2 h-6 w-6" />Adaugă documentele necesare pentru tranzacție.</div>}
+                <TabsContent value="documents" className="m-0 p-4">
+                  <SalesDocumentWorkspace
+                    sale={sale}
+                    checklist={checklist}
+                    participants={participants}
+                    onChecklistChange={setChecklist}
+                    selectedDocumentIds={selectedDocumentIds}
+                    onSelectedDocumentIdsChange={setSelectedDocumentIds}
+                    compact
+                  />
                 </TabsContent>
 
                 <TabsContent value="questions" className="m-0 space-y-4 p-4">

@@ -1058,7 +1058,8 @@ export type SaleChecklistStatus =
   | 'received_needs_review'
   | 'verified'
   | 'rejected'
-    | 'expired';
+  | 'expired'
+  | 'not_required';
 
 export type SaleDocumentScanStatus =
   | 'pending'
@@ -1074,11 +1075,35 @@ export type SaleDocumentReviewStatus = 'unreviewed' | 'needs_attention' | 'appro
 
 export type SaleChecklistStage = Extract<SaleStage, 'reservation' | 'precontract' | 'contract'>;
 
-  export type SaleChecklistItem = {
+export type SaleDocumentScope = 'property' | 'participant' | 'transaction';
+
+export type SaleDocumentFileState = 'missing' | 'active' | 'archived';
+
+export type SaleDocumentVersion = {
+  id: string;
+  version: number;
+  fileName: string;
+  storagePath: string;
+  downloadUrl?: string | null;
+  contentType?: string | null;
+  sizeBytes?: number | null;
+  checksumSha256?: string | null;
+  uploadedAt: string;
+  uploadedByUid?: string | null;
+  archivedAt?: string | null;
+  scanStatus?: SaleDocumentScanStatus;
+  ocrStatus?: SaleDocumentOcrStatus;
+  qualityScore?: number | null;
+};
+
+export type SaleChecklistItem = {
   id: string;
   label: string;
   participantRole: 'buyer' | 'owner';
+  participantId?: string | null;
+  scope?: SaleDocumentScope;
   stage?: SaleChecklistStage;
+  appliesToStages?: SaleChecklistStage[];
   status: SaleChecklistStatus;
   required: boolean;
   requestedAt?: string | null;
@@ -1086,26 +1111,34 @@ export type SaleChecklistStage = Extract<SaleStage, 'reservation' | 'precontract
   verifiedAt?: string | null;
   fileName?: string | null;
   downloadUrl?: string | null;
-    notes?: string | null;
-    storagePath?: string | null;
-    contentType?: string | null;
-    sizeBytes?: number | null;
-    checksumSha256?: string | null;
-    scanStatus?: SaleDocumentScanStatus;
-    scanProvider?: string | null;
-    scanMessage?: string | null;
-    ocrStatus?: SaleDocumentOcrStatus;
-    extractedTextPreview?: string | null;
-    classificationConfidence?: number | null;
-    qualityScore?: number | null;
-    reviewStatus?: SaleDocumentReviewStatus;
-    reviewedByUid?: string | null;
-    reviewedAt?: string | null;
-    expiresAt?: string | null;
-    revokedAt?: string | null;
-    version?: number;
-    duplicateOfDocumentId?: string | null;
-  };
+  notes?: string | null;
+  storagePath?: string | null;
+  contentType?: string | null;
+  sizeBytes?: number | null;
+  checksumSha256?: string | null;
+  scanStatus?: SaleDocumentScanStatus;
+  scanProvider?: string | null;
+  scanMessage?: string | null;
+  ocrStatus?: SaleDocumentOcrStatus;
+  extractedTextPreview?: string | null;
+  classification?: string | null;
+  classificationConfidence?: number | null;
+  qualityScore?: number | null;
+  reviewStatus?: SaleDocumentReviewStatus;
+  reviewedByUid?: string | null;
+  reviewedAt?: string | null;
+  uploadedByUid?: string | null;
+  uploadedAt?: string | null;
+  expiresAt?: string | null;
+  revokedAt?: string | null;
+  archivedAt?: string | null;
+  fileState?: SaleDocumentFileState;
+  version?: number;
+  activeVersionId?: string | null;
+  versions?: SaleDocumentVersion[];
+  duplicateOfDocumentId?: string | null;
+  notRequiredReason?: string | null;
+};
 
 export type SaleQuestionStatus = 'pending' | 'answered' | 'partial' | 'unclear' | 'confirmed';
 

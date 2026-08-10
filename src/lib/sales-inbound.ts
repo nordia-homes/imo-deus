@@ -1,7 +1,8 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
-import type { SaleEmailQuestion, SaleTransaction } from '@/lib/types';
+import { inferSaleDocumentScope, mergeSaleDocumentVersionHistory } from '@/lib/sales-documents';
+import type { SaleDocumentVersion, SaleEmailQuestion, SaleTransaction } from '@/lib/types';
 
 export function createInboundToken() {
   return crypto.randomBytes(18).toString('base64url');
@@ -116,54 +117,70 @@ export function mergeReceivedDocuments(
       !['verified', 'received_needs_review'].includes(item.status) &&
       (normalize(item.label).includes(normalize(classification).trim()) || normalize(classification).includes(normalize(item.label).trim()))
     );
-    if (matchingIndex >= 0) {
+    const current = matchingIndex >= 0 ? checklist[matchingIndex] : null;
+    const version = (current?.version || 0) + 1;
+    const versionId = crypto.randomUUID();
+    const versionRecord: SaleDocumentVersion | null = file.storagePath ? {
+      id: versionId,
+      version,
+      fileName: file.fileName,
+      storagePath: file.storagePath,
+      downloadUrl: file.downloadUrl,
+      contentType: file.contentType || null,
+      sizeBytes: file.sizeBytes || null,
+      checksumSha256: file.checksumSha256 || null,
+      uploadedAt: file.receivedAt,
+      uploadedByUid: null,
+      scanStatus: file.scanStatus || 'pending',
+      ocrStatus: file.ocrStatus || 'not_requested',
+      qualityScore: file.qualityScore ?? null,
+    } : null;
+    const shared = {
+      status: 'received_needs_review' as const,
+      receivedAt: file.receivedAt,
+      uploadedAt: file.receivedAt,
+      uploadedByUid: null,
+      fileName: file.fileName,
+      downloadUrl: file.downloadUrl,
+      storagePath: file.storagePath || null,
+      contentType: file.contentType || null,
+      sizeBytes: file.sizeBytes || null,
+      checksumSha256: file.checksumSha256 || null,
+      scanStatus: file.scanStatus || 'pending' as const,
+      scanProvider: file.scanProvider || null,
+      scanMessage: file.scanMessage || null,
+      ocrStatus: file.ocrStatus || 'not_requested' as const,
+      extractedTextPreview: file.extractedTextPreview || null,
+      classification,
+      classificationConfidence: file.classificationConfidence ?? null,
+      qualityScore: file.qualityScore ?? null,
+      expiresAt: file.expiresAt || null,
+      duplicateOfDocumentId: file.duplicateOfDocumentId || null,
+      reviewStatus: file.scanStatus === 'infected' ? 'rejected' as const : file.duplicateOfDocumentId || file.scanStatus === 'error' || (file.expiresAt && new Date(file.expiresAt).getTime() < Date.now()) ? 'needs_attention' as const : 'unreviewed' as const,
+      version,
+      activeVersionId: versionRecord?.id || null,
+      fileState: 'active' as const,
+      archivedAt: null,
+      revokedAt: null,
+    };
+    if (current && matchingIndex >= 0) {
       checklist[matchingIndex] = {
-        ...checklist[matchingIndex],
-        status: 'received_needs_review',
-        receivedAt: file.receivedAt,
-        fileName: file.fileName,
-        downloadUrl: file.downloadUrl,
-        storagePath: file.storagePath || null,
-        contentType: file.contentType || null,
-        sizeBytes: file.sizeBytes || null,
-        checksumSha256: file.checksumSha256 || null,
-        scanStatus: file.scanStatus || 'pending',
-        scanProvider: file.scanProvider || null,
-        scanMessage: file.scanMessage || null,
-        ocrStatus: file.ocrStatus || 'not_requested',
-        extractedTextPreview: file.extractedTextPreview || null,
-        classificationConfidence: file.classificationConfidence ?? null,
-        qualityScore: file.qualityScore ?? null,
-        expiresAt: file.expiresAt || null,
-        duplicateOfDocumentId: file.duplicateOfDocumentId || null,
-        reviewStatus: file.scanStatus === 'infected' ? 'rejected' : file.duplicateOfDocumentId || file.scanStatus === 'error' || (file.expiresAt && new Date(file.expiresAt).getTime() < Date.now()) ? 'needs_attention' : 'unreviewed',
-        version: (checklist[matchingIndex].version || 0) + 1,
+        ...current,
+        ...shared,
+        versions: versionRecord ? mergeSaleDocumentVersionHistory(current, versionRecord) : current.versions || [],
       };
     } else {
+      const newId = crypto.randomUUID();
       checklist.push({
-        id: crypto.randomUUID(),
+        id: newId,
         label: classification,
         participantRole,
-        status: 'received_needs_review',
+        scope: inferSaleDocumentScope({ label: classification }),
+        stage: ['reservation', 'precontract', 'contract'].includes(sale.stage) ? sale.stage as import('@/lib/types').SaleChecklistStage : undefined,
+        appliesToStages: ['reservation', 'precontract', 'contract'].includes(sale.stage) ? [sale.stage as import('@/lib/types').SaleChecklistStage] : undefined,
         required: false,
-        receivedAt: file.receivedAt,
-        fileName: file.fileName,
-        downloadUrl: file.downloadUrl,
-        storagePath: file.storagePath || null,
-        contentType: file.contentType || null,
-        sizeBytes: file.sizeBytes || null,
-        checksumSha256: file.checksumSha256 || null,
-        scanStatus: file.scanStatus || 'pending',
-        scanProvider: file.scanProvider || null,
-        scanMessage: file.scanMessage || null,
-        ocrStatus: file.ocrStatus || 'not_requested',
-        extractedTextPreview: file.extractedTextPreview || null,
-        classificationConfidence: file.classificationConfidence ?? null,
-        qualityScore: file.qualityScore ?? null,
-        expiresAt: file.expiresAt || null,
-        duplicateOfDocumentId: file.duplicateOfDocumentId || null,
-        reviewStatus: file.scanStatus === 'infected' ? 'rejected' : file.duplicateOfDocumentId || file.scanStatus === 'error' || (file.expiresAt && new Date(file.expiresAt).getTime() < Date.now()) ? 'needs_attention' : 'unreviewed',
-        version: 1,
+        ...shared,
+        versions: versionRecord ? [versionRecord] : [],
       });
     }
   }

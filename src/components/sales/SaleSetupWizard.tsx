@@ -12,6 +12,7 @@ import {
   getSaleReadiness,
   withDefaultSaleDocumentsForStage,
 } from '@/lib/sales';
+import { getSaleDocumentStages, hasActiveSaleDocumentFile, SALE_DOCUMENT_STATUS_LABELS } from '@/lib/sales-documents';
 import type { SaleChecklistItem, SaleParticipant, SaleTransaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -69,11 +70,12 @@ function isPristineLegacyChecklist(checklist: SaleChecklistItem[]) {
 }
 
 
-function checklistStageLabel(stage: SaleChecklistItem['stage']) {
-  if (stage === 'reservation') return 'Rezervare';
-  if (stage === 'precontract') return 'Antecontract';
-  if (stage === 'contract') return 'Contract';
-  return null;
+function checklistStageLabel(item: SaleChecklistItem) {
+  return getSaleDocumentStages(item).map((stage) => {
+    if (stage === 'reservation') return 'Rezervare';
+    if (stage === 'precontract') return 'Antecontract';
+    return 'Contract';
+  }).join(', ');
 }
 
 export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
@@ -93,6 +95,16 @@ export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
   const paymentAmountsExceedPrice = contractBalanceAmount != null && contractBalanceAmount < 0;
   const [saving, setSaving] = useState(false);
 
+  const toggleChecklistRequirement = (documentId: string, enabled: boolean) => {
+    setChecklist((current) => current.map((entry) => {
+      if (entry.id !== documentId) return entry;
+      if (!enabled) return { ...entry, required: false, status: 'not_required', notRequiredReason: 'Marcat opțional în completarea ghidată' };
+      const status = entry.status === 'not_required'
+        ? (hasActiveSaleDocumentFile(entry) ? 'received_needs_review' : 'required')
+        : entry.status;
+      return { ...entry, required: true, status };
+    }));
+  };
   useEffect(() => {
     if (!sale || !open) return;
     const buyer = sale.participants?.find((item) => item.role === 'buyer');
@@ -280,9 +292,9 @@ export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
                     <label key={item.id} className={cn('group/document block cursor-pointer overflow-hidden rounded-[23px] p-px shadow-[0_16px_38px_-32px_rgba(15,118,110,.38)] transition hover:-translate-y-0.5', item.participantRole === 'buyer' ? 'bg-[linear-gradient(145deg,#bae6fd,#ffffff_48%,#99f6e4)]' : 'bg-[linear-gradient(145deg,#fde68a,#ffffff_48%,#a7f3d0)]')}>
                       <div className="flex items-center gap-3 rounded-[22px] bg-white/95 p-3.5">
                         <span className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-2xl border', item.required ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-slate-200 bg-slate-50 text-slate-400')}>{item.required ? <Check className="h-4 w-4" /> : <FileCheck2 className="h-4 w-4" />}</span>
-                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-800">{item.label}</p><p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[.1em] text-slate-400">{checklistStageLabel(item.stage) ? `${checklistStageLabel(item.stage)} · ` : ''}{item.participantRole === 'buyer' ? 'Cumpărător' : 'Proprietar'}</p></div>
-                        <span className={cn('rounded-full border px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.08em]', item.required ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500')}>{item.required ? 'Inclus' : 'Opțional'}</span>
-                        <Checkbox checked={item.required} onCheckedChange={(checked) => setChecklist((current) => current.map((entry) => entry.id === item.id ? { ...entry, required: Boolean(checked), status: checked ? 'required' : entry.status } : entry))} className="h-5 w-5 shrink-0 rounded-md border-slate-300 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500" />
+                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-800">{item.label}</p><p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[.1em] text-slate-400">{checklistStageLabel(item) ? `${checklistStageLabel(item)} · ` : ''}{item.participantRole === 'buyer' ? 'Cumpărător' : 'Proprietar'}</p></div>
+                        <span className={cn('rounded-full border px-2 py-1 text-[8px] font-extrabold uppercase tracking-[.08em]', item.required ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500')}>{SALE_DOCUMENT_STATUS_LABELS[item.status]}</span>
+                        <Checkbox checked={item.required} onCheckedChange={(checked) => toggleChecklistRequirement(item.id, checked === true)} className="h-5 w-5 shrink-0 rounded-md border-slate-300 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500" />
                       </div>
                     </label>
                   ))}
