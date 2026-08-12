@@ -2001,30 +2001,33 @@ async function persistIncomingAdIdMapping(mapping: StoriaAdvertMapping | null, a
     remoteAdId: adId,
     updatedAt: nowIso(),
   };
-  const batch = adminDb.batch();
-  batch.set(
-    adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('ad', adId)),
-    nextMapping,
-    { merge: true }
-  );
-  if (mapping.remoteUuid) {
-    batch.set(
-      adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('uuid', mapping.remoteUuid)),
-      nextMapping,
-      { merge: true }
-    );
-  }
-  if (mapping.agencyId && mapping.propertyId) {
-    batch.set(
-      adminDb.collection('agencies').doc(mapping.agencyId).collection('properties').doc(mapping.propertyId),
-      {
-        promotions: { storia: { remoteAdId: adId } },
-        portalProfiles: { storia: { remoteAdId: adId } },
-      },
-      { merge: true }
-    );
-  }
-  await batch.commit();
+  const adMappingRef = adminDb
+    .collection(STORIA_ADVERT_MAPPINGS_COLLECTION)
+    .doc(getStoriaAdvertMappingId('ad', adId));
+  const uuidMappingRef = mapping.remoteUuid
+    ? adminDb.collection(STORIA_ADVERT_MAPPINGS_COLLECTION).doc(getStoriaAdvertMappingId('uuid', mapping.remoteUuid))
+    : null;
+  const propertyRef = mapping.agencyId && mapping.propertyId
+    ? adminDb.collection('agencies').doc(mapping.agencyId).collection('properties').doc(mapping.propertyId)
+    : null;
+
+  await adminDb.runTransaction(async (transaction) => {
+    const propertySnapshot = propertyRef ? await transaction.get(propertyRef) : null;
+
+    transaction.set(adMappingRef, nextMapping, { merge: true });
+    if (uuidMappingRef) {
+      transaction.set(uuidMappingRef, nextMapping, { merge: true });
+    }
+
+    // update() is deliberately conditional: set(..., { merge: true }) recreates a
+    // deleted property as an incomplete document when an old Storia advert receives a message.
+    if (propertyRef && propertySnapshot?.exists) {
+      transaction.update(propertyRef, {
+        'promotions.storia.remoteAdId': adId,
+        'portalProfiles.storia.remoteAdId': adId,
+      });
+    }
+  });
 }
 
 function getAgencyIdFromPropertyPath(path: string) {
@@ -2223,7 +2226,8 @@ async function persistStoriaIncomingMessage(notification: StoriaWebhookNotificat
         conversationId,
         remoteAdId: propertyRemoteAdId,
         remoteAdvertUuid,
-        propertyId: mapping?.propertyId || current?.propertyId || null,
+        propertyId: property ? mapping?.propertyId || current?.propertyId || null : null,
+        propertyArchived: Boolean(mapping?.propertyId && !property),
         propertyTitle: property?.title || mapping?.propertyTitle || current?.propertyTitle || null,
         propertyUrl:
           property?.portalProfiles?.storia?.remoteUrl ||

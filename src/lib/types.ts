@@ -240,6 +240,7 @@ export type StoriaInboxLead = {
   remoteAdId?: string | number | null;
   remoteAdvertUuid?: string | null;
   propertyId?: string | null;
+  propertyArchived?: boolean;
   propertyTitle?: string | null;
   propertyUrl?: string | null;
   propertyImageUrl?: string | null;

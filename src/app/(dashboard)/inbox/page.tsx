@@ -386,6 +386,11 @@ function MobileLeadCard({ lead, onOpen }: { lead: StoriaInboxLead; onOpen: () =>
           <p className={cn('mt-1 truncate text-[15px] font-semibold leading-5', lead.unread ? 'text-slate-950' : 'text-slate-950')}>
             {lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}
           </p>
+          {lead.propertyArchived && (
+            <span className="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+              Proprietate arhivată
+            </span>
+          )}
           <div className="mt-1 flex items-center gap-2">
             <p className={cn('min-w-0 flex-1 truncate text-sm leading-5', lead.unread ? 'font-semibold text-slate-800' : 'text-slate-500')}>{lead.latestMessage}</p>
           </div>
@@ -435,6 +440,11 @@ function MobileLeadModal({
           <div className="rounded-[22px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(239,247,243,0.92)_100%)] px-4 py-4 shadow-[0_22px_55px_-38px_rgba(15,23,42,0.9)] ring-1 ring-slate-900/[0.03]">
             <h2 className="text-3xl font-semibold leading-tight text-slate-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.85)]">{lead.senderName}</h2>
             <p className="mt-2 line-clamp-2 text-base leading-6 text-slate-600">{lead.propertyTitle || `Anunt Storia ${lead.remoteAdId || ''}`}</p>
+            {lead.propertyArchived && (
+              <Badge variant="secondary" className="mt-3 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                Proprietate arhivată
+              </Badge>
+            )}
           </div>
         </div>
       </div>
@@ -569,6 +579,11 @@ function StoriaLeadDetailCard({
                   </div>
                   <p className="mt-1 truncate text-base font-semibold">{lead.propertyTitle || 'Anunt Storia neasociat local'}</p>
                   <p className="mt-0.5 text-sm text-slate-500">Remote ad: {lead.remoteAdId || lead.remoteAdvertUuid || 'necunoscut'}</p>
+                  {lead.propertyArchived && (
+                    <Badge variant="secondary" className="mt-2 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                      Proprietate arhivată
+                    </Badge>
+                  )}
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">

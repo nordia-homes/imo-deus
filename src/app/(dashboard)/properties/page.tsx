@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DeletePropertyAlert, type DeletePropertyPayload } from "@/components/properties/DeletePropertyAlert";
 import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
 import { getAgencyThemePreset } from '@/lib/theme';
+import { isCompletePropertyRecord } from '@/lib/property-record';
 
 const REPORT_PRESET_LABELS: Record<string, string> = {
   'active-no-traction': 'Filtru din Rapoarte: Proprietati active fara tractiune',
@@ -68,7 +69,8 @@ export default function PropertiesPage() {
   const filteredProperties = useMemo(() => {
     if (!properties) return [];
     const agentIdFilter = searchParams?.get('agentId');
-    const dialogFiltered = !filters ? properties : properties.filter(prop => {
+    const completeProperties = properties.filter(isCompletePropertyRecord);
+    const dialogFiltered = !filters ? completeProperties : completeProperties.filter(prop => {
       if (filters.transactionType && filters.transactionType !== 'all' && prop.transactionType !== filters.transactionType) return false;
       if (filters.rooms && filters.rooms !== 4 && prop.rooms !== filters.rooms) return false;
       if (filters.rooms && filters.rooms === 4 && prop.rooms < 4) return false;

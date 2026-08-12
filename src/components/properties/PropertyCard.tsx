@@ -52,6 +52,10 @@ export function PropertyCard({
   const [copied, setCopied] = useState(false);
   const isPublicCard = Boolean(agencyId);
   const isAgentfinderTheme = isPublicCard && getAgencyThemePreset(publicAgency) === 'agentfinder';
+  const formattedPrice =
+    typeof property.price === 'number' && Number.isFinite(property.price)
+      ? '\u20ac' + property.price.toLocaleString()
+      : 'Preț indisponibil';
   const normalizedPublicBasePath =
     publicBasePath && publicBasePath !== '/'
       ? publicBasePath.endsWith('/')
@@ -251,7 +255,7 @@ export function PropertyCard({
 
             <div className="flex justify-between items-center pt-2">
               <p className={cn("text-xl font-bold", isPublicCard ? "text-[#4ade80]" : "text-white")}>
-                €{property.price.toLocaleString()}
+                {formattedPrice}
               </p>
               {!agencyId ? (
                 <div className="flex items-center gap-1">
