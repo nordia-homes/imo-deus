@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useSidebar } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
@@ -29,6 +30,8 @@ import {
 } from '@/components/properties/PropertyStatusChangeDialog';
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
+    const { state: sidebarState } = useSidebar();
+    const isSidebarExpanded = sidebarState === 'expanded';
     const { agencyId, agency } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
@@ -199,6 +202,10 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
     const ageInDays = differenceInDays(new Date(), creationDate);
     const displaySurface = property.totalSurface ?? property.squareFootage;
     const displayAddress = property.address || property.location || 'Adresă indisponibilă';
+    const desktopLeftCardStyle = {
+        width: isSidebarExpanded ? 'calc(100% - 10rem)' : 'calc(100% - 2.5rem)',
+        maxWidth: isSidebarExpanded ? 'calc(100% - 10rem)' : 'calc(100% - 2.5rem)',
+    };
     const desktopMetaItems = [
         { icon: <Calendar className="h-4 w-4 text-emerald-300" />, value: creationDate.toLocaleDateString('ro-RO') },
         { icon: <Clock className="h-4 w-4 text-emerald-300" />, value: `Vechime: ${ageInDays} ${ageInDays === 1 ? 'zi' : 'zile'}` },
@@ -218,6 +225,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                     <div className="mb-2 flex flex-col flex-wrap gap-4 md:flex-row md:items-center lg:mb-0 lg:h-16">
                         <div
                             className={`agentfinder-property-header-left-card inline-flex h-auto w-full items-center truncate rounded-lg border bg-[#f8f8f9] p-3 text-xl font-bold text-card-foreground shadow-lg md:max-w-lg lg:h-16 lg:max-w-none lg:rounded-[1.6rem] lg:border-0 lg:px-5 lg:py-0 lg:text-[1.65rem] lg:tracking-tight lg:text-emerald-50 lg:shadow-none ${ACTION_CARD_CLASSNAME}`}
+                            style={desktopLeftCardStyle}
                             title={property.title}
                         >
                             <span className="truncate">{property.title}</span>
@@ -249,16 +257,19 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                             </Badge>
                         )}
                     </div>
-                    <div className={`${ACTION_CARD_CLASSNAME} agentfinder-property-header-left-card agentfinder-property-header-details-card mt-4 hidden rounded-[1.45rem] p-2 lg:flex lg:h-14 lg:items-center lg:mt-0`}>
-                        <div className="flex min-w-0 items-center gap-4 overflow-hidden px-2">
+                    <div
+                        className={`${ACTION_CARD_CLASSNAME} agentfinder-property-header-left-card agentfinder-property-header-details-card mt-4 hidden rounded-[1.45rem] p-2 lg:flex lg:h-14 lg:items-center lg:mt-0`}
+                        style={desktopLeftCardStyle}
+                    >
+                        <div className={`flex min-w-0 items-center overflow-hidden px-2 ${isSidebarExpanded ? 'gap-2' : 'gap-4'}`}>
                             {desktopMetaItems.map((item, index) => (
-                                <div key={`${item.value}-${index}`} className="flex min-w-0 shrink-0 items-center gap-2">
+                                <div key={`${item.value}-${index}`} className={`flex min-w-0 shrink-0 items-center ${isSidebarExpanded ? 'gap-1.5' : 'gap-2'}`}>
                                     {item.icon ? <span className="shrink-0">{item.icon}</span> : null}
                                     <p className="truncate whitespace-nowrap text-sm font-semibold text-white">
                                         {item.value}
                                     </p>
                                     {index < desktopMetaItems.length - 1 ? (
-                                        <span className="ml-2 h-5 w-px shrink-0 bg-white/10" />
+                                        <span className={`${isSidebarExpanded ? 'ml-0.5' : 'ml-2'} h-5 w-px shrink-0 bg-white/10`} />
                                     ) : null}
                                 </div>
                             ))}
