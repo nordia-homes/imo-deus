@@ -43604,3 +43604,66 @@ button.agentfinder-reservation-dialog__confirm:focus-visible .agentfinder-reserv
   -webkit-text-fill-color: #ffffff !important;
   opacity: 1 !important;
 }
+
+.agentfinder-property-search input {
+  background: linear-gradient(135deg, #fff1f5 0%, #fff7fa 55%, #fce7f3 100%) !important;
+  background-image: linear-gradient(135deg, #fff1f5 0%, #fff7fa 55%, #fce7f3 100%) !important;
+  border-color: #f9a8c4 !important;
+  color: #172033 !important;
+  box-shadow:
+    0 12px 28px -22px rgba(219, 39, 119, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92) !important;
+}
+
+.agentfinder-property-search input::placeholder {
+  color: #be6687 !important;
+  opacity: 0.82 !important;
+}
+
+.agentfinder-property-search input:focus {
+  border-color: #ec4899 !important;
+  box-shadow:
+    0 0 0 3px rgba(244, 114, 182, 0.2),
+    0 14px 30px -22px rgba(219, 39, 119, 0.72) !important;
+}
+
+.agentfinder-transaction-quick-filter {
+  background: linear-gradient(145deg, #ffffff 0%, #fff1f5 100%) !important;
+  background-image: linear-gradient(145deg, #ffffff 0%, #fff1f5 100%) !important;
+  border-color: #f9a8c4 !important;
+  color: #be185d !important;
+  box-shadow: 0 10px 24px -18px rgba(219, 39, 119, 0.75) !important;
+}
+
+.agentfinder-transaction-quick-filter:hover {
+  background: #fce7f3 !important;
+  background-image: none !important;
+  border-color: #f472b6 !important;
+  color: #9d174d !important;
+}
+
+.agentfinder-transaction-quick-filter--active,
+.agentfinder-transaction-quick-filter--active:hover {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;
+  background-image: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;
+  border-color: #be185d !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 26px -15px rgba(190, 24, 93, 0.9) !important;
+}
+
+html body button.agentfinder-transaction-quick-filter[aria-pressed='true'],
+html body button.agentfinder-transaction-quick-filter[aria-pressed='true']:hover,
+[data-app-theme='agentfinder'] button.agentfinder-transaction-quick-filter[aria-pressed='true'],
+[data-app-theme='agentfinder'] button.agentfinder-transaction-quick-filter[aria-pressed='true']:hover {
+  background-color: #db2777 !important;
+  background-image: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;
+  border-color: #be185d !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 26px -15px rgba(190, 24, 93, 0.9) !important;
+}
+
+html body button.agentfinder-transaction-quick-filter[aria-pressed='true'] svg,
+.agentfinder-transaction-quick-filter--active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}

@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
-import { PlusCircle, Filter, Search, X, Loader2, LockKeyhole, ArrowRight } from "lucide-react";
+import { PlusCircle, Filter, Search, X, Loader2, LockKeyhole, ArrowRight, BadgeEuro, KeyRound } from "lucide-react";
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const REPORT_PRESET_LABELS: Record<string, string> = {
   'active-no-traction': 'Filtru din Rapoarte: Proprietati active fara tractiune',
@@ -57,6 +58,7 @@ export default function PropertiesPage() {
   const { toast } = useToast();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
   const [portalQuickFilter, setPortalQuickFilter] = useState<'imobiliare' | 'storia-olx' | null>(null);
+  const [transactionQuickFilter, setTransactionQuickFilter] = useState<'rent' | 'sale' | null>(null);
   const [propertySearch, setPropertySearch] = useState('');
   const reportPreset = searchParams?.get('reportPreset');
 
@@ -106,7 +108,19 @@ export default function PropertiesPage() {
       return true;
     });
 
-    const searchedProperties = !normalizedPropertySearch ? dialogFiltered : dialogFiltered.filter((prop) => {
+    const transactionFiltered = !transactionQuickFilter
+      ? dialogFiltered
+      : dialogFiltered.filter((prop) => {
+          const normalizedTransactionType = prop.transactionType
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+          return transactionQuickFilter === 'rent'
+            ? normalizedTransactionType.includes('inchiriere')
+            : normalizedTransactionType.includes('vanzare');
+        });
+
+    const searchedProperties = !normalizedPropertySearch ? transactionFiltered : transactionFiltered.filter((prop) => {
       const displaySurface = prop.totalSurface ?? prop.squareFootage;
       const searchableParts = [
         prop.title,
@@ -204,7 +218,7 @@ export default function PropertiesPage() {
 
       return prop.status !== 'Vândut';
     });
-  }, [properties, filters, normalizedPropertySearch, portalQuickFilter, searchParams, viewings]);
+  }, [properties, filters, normalizedPropertySearch, portalQuickFilter, searchParams, transactionQuickFilter, viewings]);
 
   const handleDelete = async ({ reason, soldDisposition, soldPrice, agentMessage }: DeletePropertyPayload) => {
     if (!agencyId || !deletingProperty || isDeletingProperty) return;
@@ -382,13 +396,13 @@ export default function PropertiesPage() {
   const deleteModalThemeVariant = getAgencyThemePreset(agency) === 'agentfinder' ? 'light' : 'dark';
   const searchPlaceholder = isMobile ? 'Cauta dupa adresa, pret, cuvinte...' : 'Cauta proprietati dupa titlu, adresa, zona, pret, camere, agent...';
   const searchInput = (
-    <div className="relative">
-      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" />
+    <div className="agentfinder-property-search relative min-w-0">
+      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-rose-500" />
       <Input
         value={propertySearch}
         onChange={(event) => setPropertySearch(event.target.value)}
         placeholder={searchPlaceholder}
-        className="h-12 rounded-2xl border-white/12 bg-[#152A47] pl-11 pr-12 text-white placeholder:text-white/42 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-visible:ring-emerald-300/35"
+        className="h-12 rounded-2xl border-rose-200 bg-rose-50/90 pl-11 pr-12 text-slate-900 placeholder:text-rose-400/80 focus-visible:ring-rose-300/50"
       />
       {propertySearch ? (
         <Button
@@ -396,7 +410,7 @@ export default function PropertiesPage() {
           size="icon"
           variant="ghost"
           onClick={() => setPropertySearch('')}
-          className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full text-white/60 hover:bg-white/10 hover:text-white"
+          className="absolute right-2 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full text-rose-500 hover:bg-rose-100 hover:text-rose-700"
           aria-label="Sterge cautarea"
           title="Sterge cautarea"
         >
@@ -405,6 +419,66 @@ export default function PropertiesPage() {
       ) : null}
     </div>
   );
+
+  const transactionQuickFilterControls = (
+      <div className="flex shrink-0 items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label="Închiriere"
+              aria-pressed={transactionQuickFilter === 'rent'}
+              onClick={() => setTransactionQuickFilter((current) => current === 'rent' ? null : 'rent')}
+              className={cn(
+                'agentfinder-transaction-quick-filter h-12 w-12 rounded-2xl',
+                transactionQuickFilter === 'rent' && 'agentfinder-transaction-quick-filter--active'
+              )}
+            >
+              <KeyRound className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Închiriere</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label="Vânzare"
+              aria-pressed={transactionQuickFilter === 'sale'}
+              onClick={() => setTransactionQuickFilter((current) => current === 'sale' ? null : 'sale')}
+              className={cn(
+                'agentfinder-transaction-quick-filter h-12 w-12 rounded-2xl',
+                transactionQuickFilter === 'sale' && 'agentfinder-transaction-quick-filter--active'
+              )}
+            >
+              <BadgeEuro className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Vânzare</TooltipContent>
+        </Tooltip>
+      </div>
+  );
+
+  const searchControls = (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <div className="min-w-0 flex-1">{searchInput}</div>
+      {transactionQuickFilterControls}
+    </div>
+  );
+
+  const openDeleteDialog = (property: Property) => {
+    setDeletionInitialReason('not_interesting');
+    setDeletingProperty(property);
+  };
+
+  const openSoldDialog = (property: Property) => {
+    setDeletionInitialReason('sold');
+    setDeletingProperty(property);
+  };
 
   return (
     <div className={cn("agentfinder-properties-page space-y-6", isMobile && "p-0")}>
@@ -437,10 +511,12 @@ export default function PropertiesPage() {
                 </div>
             ) : null}
             <Card className="agentfinder-properties-header-card bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="text-white text-xl">Proprietăți ({filteredProperties?.length || 0})</CardTitle>
-                         <div className="flex items-center gap-2">
+                <CardHeader className="px-4 sm:px-6">
+                    <div className="flex items-center justify-between gap-3">
+                        <CardTitle className="text-left text-xl text-white">
+                          Proprietăți ({filteredProperties?.length || 0})
+                        </CardTitle>
+                         <div className="flex shrink-0 items-center gap-2">
                            <Button size="sm" className="agentfinder-properties-primary-button bg-white/20 hover:bg-white/30 text-white" onClick={() => setIsAddOpen(true)}>
                              <PlusCircle className="mr-2 h-4 w-4" /> Adaugă
                            </Button>
@@ -451,15 +527,25 @@ export default function PropertiesPage() {
              <div className="px-2">
                 {searchInput}
             </div>
-             <div className="px-2">
-                <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                    <Button variant="outline" className="agentfinder-properties-soft-button w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
-                        <Filter className="mr-2 h-4 w-4" /> Filtrează
-                    </Button>
-                </PropertyFilters>
+             <div className="flex items-center gap-2 px-2">
+                <div className="min-w-0 flex-1">
+                  <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+                      <Button variant="outline" className="agentfinder-properties-soft-button h-12 w-full bg-[#152A47] text-white border-white/20 hover:bg-white/10 button-glow">
+                          <Filter className="mr-2 h-4 w-4" /> Filtrează
+                      </Button>
+                  </PropertyFilters>
+                </div>
+                {transactionQuickFilterControls}
             </div>
             <div className="px-2">
-              <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} enableFacebookPublishing={isMobile} />
+              <PropertyList
+                properties={filteredProperties}
+                isLoading={isPageLoading}
+                onDeleteRequest={openDeleteDialog}
+                onReserveRequest={setReservationProperty}
+                onSoldRequest={openSoldDialog}
+                enableFacebookPublishing={isMobile}
+              />
             </div>
         </div>
 
@@ -492,19 +578,13 @@ export default function PropertiesPage() {
                             <div className="agentfinder-properties-eyebrow inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85">
                                 Portofoliu activ
                             </div>
-                            <div className="mt-4 flex items-end gap-4">
-                                <div className="min-w-0">
-                                    <h1 className="text-4xl font-semibold tracking-tight text-white">
-                                        Portofoliu Proprietăți
-                                    </h1>
-                                    <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">
-                                        Vezi rapid tot stocul disponibil, filtrează oportunitățile bune și intră direct în proprietățile care au nevoie de atenție.
-                                    </p>
-                                </div>
-                                <div className="agentfinder-properties-count-card shrink-0 rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Total</p>
-                                    <p className="mt-1 text-3xl font-semibold text-white">{filteredProperties?.length || 0}</p>
-                                </div>
+                            <div className="mt-4 min-w-0">
+                                <h1 className="text-4xl font-semibold tracking-tight text-white">
+                                    Portofoliu Proprietăți ({filteredProperties?.length || 0})
+                                </h1>
+                                <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">
+                                    Vezi rapid tot stocul disponibil, filtrează oportunitățile bune și intră direct în proprietățile care au nevoie de atenție.
+                                </p>
                             </div>
                         </div>
 
@@ -559,7 +639,7 @@ export default function PropertiesPage() {
                 </CardHeader>
             </Card>
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-                {searchInput}
+                {searchControls}
                 {propertySearch ? (
                     <div className="rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm text-white/65">
                         {filteredProperties.length} rezultate
@@ -570,15 +650,9 @@ export default function PropertiesPage() {
             <PropertyList
               properties={filteredProperties}
               isLoading={isPageLoading}
-              onDeleteRequest={(property) => {
-                setDeletionInitialReason('not_interesting');
-                setDeletingProperty(property);
-              }}
+              onDeleteRequest={openDeleteDialog}
               onReserveRequest={setReservationProperty}
-              onSoldRequest={(property) => {
-                setDeletionInitialReason('sold');
-                setDeletingProperty(property);
-              }}
+              onSoldRequest={openSoldDialog}
               enableFacebookPublishing={!isMobile}
               compactDetailsAction={sidebarState === 'expanded'}
             />
