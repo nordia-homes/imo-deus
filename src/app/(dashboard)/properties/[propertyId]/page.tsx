@@ -50,7 +50,6 @@ import { PublishCard } from '@/components/properties/detail/actions/PublishCard'
 import { FacebookPromotionCard } from '@/components/properties/detail/actions/FacebookPromotionCard';
 import { FacebookGroupPromotionLauncherCard } from '@/components/properties/detail/actions/FacebookGroupPromotionLauncherCard';
 import { MetaAdsCard } from '@/components/properties/detail/actions/MetaAdsCard';
-import { VideoTourCard } from '@/components/properties/detail/actions/VideoTourCard';
 import { FacebookCloudPublishingCard } from '@/components/properties/detail/actions/FacebookCloudPublishingCard';
 import { SocialMediaCard } from '@/components/properties/detail/actions/SocialMediaCard';
 import { WebsiteToggleCard } from '@/components/properties/detail/actions/WebsiteToggleCard';
@@ -325,7 +324,6 @@ export default function PropertyDetailPage() {
                             <CmaCard property={property} allProperties={[]} />
                             <PublishCard property={property} />
                             <MetaAdsCard property={property} />
-                            <VideoTourCard property={property} isMobile={true} />
                             <FacebookCloudPublishingCard property={property} />
                             <FacebookGroupPromotionLauncherCard property={property} />
                             <FacebookPromotionCard />
@@ -368,7 +366,7 @@ export default function PropertyDetailPage() {
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                 />
 
-                <main className="grid grid-cols-1 items-start gap-8 pt-3 pb-8 lg:grid-cols-12">
+                <main className="grid grid-cols-1 items-start gap-8 overflow-hidden rounded-tl-lg rounded-tr-[1.85rem] pb-8 lg:grid-cols-12">
                     <div className="col-span-12 lg:col-span-8 space-y-4">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
                         <InfoColumn

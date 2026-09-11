@@ -15,6 +15,16 @@ interface RlvTabProps {
   property: Property;
 }
 
+const getDecodedFilePath = (url?: string) => {
+  const path = url?.split(/[?#]/, 1)[0] || '';
+
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+};
+
 export function RlvTab({ property }: RlvTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -22,7 +32,11 @@ export function RlvTab({ property }: RlvTabProps) {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const isImage = property.rlvUrl && /\.(jpg|jpeg|png|webp|gif)$/i.test(property.rlvUrl);
+  const decodedRlvUrl = getDecodedFilePath(property.rlvUrl);
+  const isImage = Boolean(
+    property.rlvFileType?.startsWith('image/') ||
+    /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(decodedRlvUrl)
+  );
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -75,6 +89,7 @@ export function RlvTab({ property }: RlvTabProps) {
       const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
       await updateDoc(propertyRef, {
         rlvUrl: downloadUrl,
+        rlvFileType: file.type,
       });
 
       toast({
@@ -106,22 +121,32 @@ export function RlvTab({ property }: RlvTabProps) {
 
       {property.rlvUrl ? (
         <div className="space-y-4">
-           <div className="p-4 border rounded-lg bg-muted dark:bg-white/5 dark:border-white/10 flex flex-col items-center justify-center">
+           <div className="flex flex-col items-center justify-center overflow-hidden rounded-2xl border bg-muted p-3 dark:border-white/10 dark:bg-white/5">
               {isImage ? (
-                   <div className="relative w-full aspect-video">
-                      <Image src={property.rlvUrl} alt="Releveu" fill sizes="(max-width: 768px) 100vw, 768px" className="rounded-md object-contain" />
+                   <div className="relative min-h-[320px] w-full sm:min-h-[460px] lg:min-h-[560px]">
+                      <Image
+                        src={property.rlvUrl}
+                        alt={`Releveu pentru ${property.title}`}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 768px"
+                        className="rounded-xl object-contain"
+                      />
                    </div>
               ) : (
-                  <FileText className="h-16 w-16 text-primary mb-4" />
+                  <>
+                    <FileText className="mb-4 h-16 w-16 text-primary" />
+                    <h3 className="font-semibold">Releveul PDF este disponibil.</h3>
+                  </>
               )}
-              <h3 className="font-semibold mt-4">Releveul este disponibil.</h3>
            </div>
-           <Button asChild>
-              <a href={property.rlvUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Descarcă / Vizualizează
-              </a>
-          </Button>
+           {!isImage && (
+             <Button asChild>
+                <a href={property.rlvUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Descarcă / Vizualizează
+                </a>
+             </Button>
+           )}
           <Button type="button" variant="outline" onClick={handleUploadClick} disabled={isUploading}>
             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
             Înlocuiește fișierul

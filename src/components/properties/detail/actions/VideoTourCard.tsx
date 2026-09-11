@@ -43,6 +43,28 @@ import {
 
 type VideoFormat = PropertyVideoTour['format'];
 type VideoStyle = PropertyVideoTour['style'];
+
+function AiVideoSparkleIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="agentfinder-ai-video-trigger__icon mr-2 h-5 w-5"
+      viewBox="0 0 32 32"
+      fill="none"
+    >
+      <defs>
+        <linearGradient id="ai-video-sparkle-gradient" x1="3" y1="3" x2="29" y2="29" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#e31bd2" />
+          <stop offset="0.5" stopColor="#8b68e8" />
+          <stop offset="1" stopColor="#20c7df" />
+        </linearGradient>
+      </defs>
+      <path d="M18 2.5c.8 6.4 4.1 9.7 10.5 10.5C22.1 13.8 18.8 17.1 18 23.5 17.2 17.1 13.9 13.8 7.5 13 13.9 12.2 17.2 8.9 18 2.5Z" fill="url(#ai-video-sparkle-gradient)" stroke="none" />
+      <path d="M7 17.5c.38 3.02 1.98 4.62 5 5-3.02.38-4.62 1.98-5 5-.38-3.02-1.98-4.62-5-5 3.02-.38 4.62-1.98 5-5Z" fill="url(#ai-video-sparkle-gradient)" stroke="none" />
+      <path d="M25.5 21.5c.27 2.11 1.39 3.23 3.5 3.5-2.11.27-3.23 1.39-3.5 3.5-.27-2.11-1.39-3.23-3.5-3.5 2.11-.27 3.23-1.39 3.5-3.5Z" fill="url(#ai-video-sparkle-gradient)" stroke="none" />
+    </svg>
+  );
+}
 type VideoQuality = NonNullable<PropertyVideoTour['quality']>;
 type AiPresenterAvatar = NonNullable<PropertyVideoTour['aiPresenterAvatar']>;
 type AiPresenterVoice = NonNullable<PropertyVideoTour['aiPresenterVoice']>;
@@ -963,10 +985,10 @@ export function VideoTourCard({
           <Button
             type="button"
             variant="secondary"
-            className="rounded-full border border-emerald-300/35 bg-emerald-400/18 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-emerald-400/24 hover:text-white"
+            className="agentfinder-ai-video-trigger rounded-full border backdrop-blur-xl"
           >
-            <Film className="mr-2 h-4 w-4" />
-            Video tur
+            <AiVideoSparkleIcon />
+            <span className="agentfinder-ai-video-trigger__label">AI Video</span>
           </Button>
         ) : (
           <Card className={cn(`${ACTION_CARD_INTERACTIVE_CLASSNAME} p-0 cursor-pointer`, isMobile && 'rounded-[1.6rem]')}>
@@ -998,7 +1020,7 @@ export function VideoTourCard({
         <DialogHeader className="border-b border-white/10 px-5 py-4 text-left">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold tracking-tight">
             <Film className="h-5 w-5 text-emerald-200" />
-            Video tur proprietate
+            AI Video proprietate
           </DialogTitle>
           <DialogDescription className="text-sm text-white/58">
             Creeaza un clip cu zoom, pan, miscare cinematica si text de vanzare, salvat direct pe proprietate.

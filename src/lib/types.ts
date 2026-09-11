@@ -913,6 +913,7 @@ export type Property = {
   ownerName?: string;
   ownerPhone?: string;
   rlvUrl?: string;
+  rlvFileType?: string;
   portalProfiles?: {
     imobiliare?: ImobiliarePortalProfile;
     storia?: StoriaPortalProfile;

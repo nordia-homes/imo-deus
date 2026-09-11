@@ -10,7 +10,6 @@ import { FacebookGroupPromotionLauncherCard } from "./actions/FacebookGroupPromo
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
 import { MetaAdsCard } from "./actions/MetaAdsCard";
-import { VideoTourCard } from "./actions/VideoTourCard";
 import { FacebookCloudPublishingCard } from "./actions/FacebookCloudPublishingCard";
 
 export function ActionsColumn({ property, allProperties, viewings, agentProfile, matchedBuyers }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, matchedBuyers: MatchedBuyer[] }) {
@@ -30,7 +29,6 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <PublishCard property={property} />
             <FacebookCloudPublishingCard property={property} />
             <MetaAdsCard property={property} />
-            <VideoTourCard property={property} />
             <FacebookGroupPromotionLauncherCard property={property} />
             <FacebookPromotionCard />
             <SocialMediaCard property={property} />
