@@ -909,6 +909,12 @@ export type Property = {
   featured?: boolean;
   statusUpdatedAt?: string;
   notes?: string;
+  advertisingCosts?: {
+    facebook?: number;
+    google?: number;
+    tiktok?: number;
+    currency?: 'RON' | 'EUR' | 'USD';
+  };
   salesScore?: 'Scăzut' | 'Mediu' | 'Ridicată';
   ownerName?: string;
   ownerPhone?: string;

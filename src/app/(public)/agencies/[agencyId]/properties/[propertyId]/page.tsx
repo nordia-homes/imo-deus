@@ -32,6 +32,7 @@ import { SimilarProperties } from '@/components/public/SimilarProperties';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { getAgencyThemePreset } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import { trackPublicPropertyEvent } from '@/lib/public-property-analytics';
 
 
 // ----------- START OF INLINED/NEW COMPONENTS -----------
@@ -224,6 +225,16 @@ export default function PublicPropertyDetailPage() {
       );
     }, [firestore, agencyId]);
     const { data: allProperties, isLoading: areAllPropertiesLoading } = useCollection<Property>(allPropertiesQuery);
+
+    useEffect(() => {
+        if (!property || property.status !== 'Activ' || !agencyId || !propertyId) return;
+
+        void trackPublicPropertyEvent({
+            agencyId,
+            propertyId,
+            event: 'view',
+        }).catch((trackingError) => console.error('Public property view tracking failed:', trackingError));
+    }, [agencyId, property, propertyId]);
     
     // Filter for similar properties
     const similarProperties = useMemo(() => {

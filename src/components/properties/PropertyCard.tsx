@@ -7,7 +7,7 @@ import type { FacebookCloudPublishingJob, Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
 import { Button } from "../ui/button";
-import { useCallback, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState, type MouseEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -24,6 +24,7 @@ import { getAgencyThemePreset } from "@/lib/theme";
 import { formatBucharestDateTime } from "@/lib/bucharest-time";
 import { FacebookCloudPublishDialog } from "./FacebookCloudPublishDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { isPublicPropertyFavorite, setPublicPropertyFavorite, trackPublicPropertyEvent } from "@/lib/public-property-analytics";
 
 export function PropertyCard({
   property,
@@ -79,6 +80,27 @@ export function PropertyCard({
     ? `/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}`
     : undefined;
   const isReserved = property.status === 'Rezervat';
+
+  useEffect(() => {
+    if (!agencyId) return;
+    setIsFavorite(isPublicPropertyFavorite(agencyId, property.id));
+  }, [agencyId, property.id]);
+
+  const handleFavorite = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const nextFavorite = !isFavorite;
+    setIsFavorite(nextFavorite);
+
+    if (!agencyId) return;
+    setPublicPropertyFavorite(agencyId, property.id, nextFavorite);
+    void trackPublicPropertyEvent({
+      agencyId,
+      propertyId: property.id,
+      event: nextFavorite ? 'favorite' : 'unfavorite',
+    }).catch((error) => console.error('Public property favorite tracking failed:', error));
+  };
     
   const primaryImageUrl = property.images?.[0]?.url || 'https://via.placeholder.com/800x500.png?text=Imagine+lipsa';
 
@@ -263,11 +285,7 @@ export function PropertyCard({
                 variant="secondary"
                 aria-label={isFavorite ? "Elimină de la favorite" : "Adaugă la favorite"}
                 className={cn("h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? (isAgentfinderTheme ? "border border-white bg-white text-slate-700 hover:bg-white hover:text-slate-900" : "bg-black/45 text-stone-100 hover:bg-black/70") : "bg-black/30 text-white hover:bg-black/50")}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setIsFavorite(!isFavorite);
-                }}
+                onClick={handleFavorite}
               >
                 <Heart className={cn("h-4 w-4", isFavorite && "fill-red-500 text-red-500")} />
               </Button>

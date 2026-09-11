@@ -4,13 +4,12 @@ import type { MatchedBuyer, Property, Viewing, UserProfile } from "@/lib/types";
 import { PriceStatusCard } from "./actions/PriceStatusCard";
 import { AgentCard } from "./actions/AgentCard";
 import { PublishCard } from "./actions/PublishCard";
-import { WebsiteToggleCard } from "./actions/WebsiteToggleCard";
 import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
-import { FacebookGroupPromotionLauncherCard } from "./actions/FacebookGroupPromotionLauncherCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
 import { MetaAdsCard } from "./actions/MetaAdsCard";
 import { FacebookCloudPublishingCard } from "./actions/FacebookCloudPublishingCard";
+import { TikTokAdsCard } from "./actions/TikTokAdsCard";
 
 export function ActionsColumn({ property, allProperties, viewings, agentProfile, matchedBuyers }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, matchedBuyers: MatchedBuyer[] }) {
     
@@ -29,10 +28,9 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <PublishCard property={property} />
             <FacebookCloudPublishingCard property={property} />
             <MetaAdsCard property={property} />
-            <FacebookGroupPromotionLauncherCard property={property} />
-            <FacebookPromotionCard />
             <SocialMediaCard property={property} />
-            <WebsiteToggleCard property={property} />
+            <TikTokAdsCard property={property} />
+            <FacebookPromotionCard />
         </div>
     );
 }

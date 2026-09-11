@@ -202,6 +202,9 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
     const ageInDays = differenceInDays(new Date(), creationDate);
     const displaySurface = property.totalSurface ?? property.squareFootage;
     const displayAddress = property.address || property.location || 'Adresă indisponibilă';
+    const displayFloor = property.floor
+        ? `Et. ${property.floor}${property.totalFloors && !property.floor.includes('/') ? `/${property.totalFloors}` : ''}`
+        : null;
     const desktopLeftCardStyle = {
         width: isSidebarExpanded ? 'calc(100% - 10rem)' : 'calc(100% - 2.5rem)',
         maxWidth: isSidebarExpanded ? 'calc(100% - 10rem)' : 'calc(100% - 2.5rem)',
@@ -214,7 +217,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
         { icon: null, value: `${property.bathrooms} ${property.bathrooms === 1 ? 'baie' : 'băi'}` },
         { icon: null, value: `${displaySurface} mp` },
         ...(property.constructionYear ? [{ icon: null, value: String(property.constructionYear) }] : []),
-        ...(property.floor ? [{ icon: null, value: `Et. ${property.floor}` }] : []),
+        ...(displayFloor ? [{ icon: null, value: displayFloor }] : []),
     ];
 
   return (
@@ -251,9 +254,9 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                                 {property.constructionYear}
                             </Badge>
                         )}
-                        {property.floor && (
+                        {displayFloor && (
                             <Badge variant="secondary" className="hidden sm:inline-flex lg:rounded-full lg:border lg:border-emerald-300/16 lg:bg-emerald-400/10 lg:px-3.5 lg:py-1.5 lg:text-sm lg:text-emerald-100">
-                                Et. {property.floor}
+                                {displayFloor}
                             </Badge>
                         )}
                     </div>

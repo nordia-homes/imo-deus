@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { PropertyNotesCard } from "./actions/PropertyNotesCard";
+import { PropertyAdCostsCard } from "./actions/PropertyAdCostsCard";
+import { PropertyPublicStatsCard } from "./actions/PropertyPublicStatsCard";
 import { AdminPropertyDetailsMap } from "@/components/map/AdminPropertyDetailsMap";
 
 export function InfoColumn({
@@ -145,6 +147,12 @@ export function InfoColumn({
                     </div>
                     <div className="hidden lg:block">
                         <PropertyNotesCard property={property} />
+                    </div>
+                    <div className="hidden lg:block">
+                        <PropertyAdCostsCard property={property} />
+                    </div>
+                    <div className="hidden lg:block">
+                        <PropertyPublicStatsCard property={property} />
                     </div>
                 </TabsContent>
                 <TabsContent value="leads" className="mt-5">
