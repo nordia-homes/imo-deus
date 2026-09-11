@@ -1,8 +1,9 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
-import { PlusCircle, Filter, Search, X } from "lucide-react";
+import { PlusCircle, Filter, Search, X, Loader2, LockKeyhole, ArrowRight } from "lucide-react";
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
-import type { Property, PropertyDeletionEvent, PropertyStatusEvent, Viewing } from '@/lib/types';
+import type { Property, PropertyDeletionEvent, PropertyDeletionReason, PropertyStatusEvent, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,6 +21,17 @@ import { DeletePropertyAlert, type DeletePropertyPayload } from "@/components/pr
 import { PropertyFilters, type PropertyFiltersType } from "@/components/properties/PropertyFilters";
 import { getAgencyThemePreset } from '@/lib/theme';
 import { isCompletePropertyRecord } from '@/lib/property-record';
+import { useSidebar } from '@/components/ui/sidebar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const REPORT_PRESET_LABELS: Record<string, string> = {
   'active-no-traction': 'Filtru din Rapoarte: Proprietati active fara tractiune',
@@ -36,8 +48,12 @@ export default function PropertiesPage() {
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
+  const { state: sidebarState } = useSidebar();
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+  const [deletionInitialReason, setDeletionInitialReason] = useState<PropertyDeletionReason>('not_interesting');
   const [isDeletingProperty, setIsDeletingProperty] = useState(false);
+  const [reservationProperty, setReservationProperty] = useState<Property | null>(null);
+  const [isUpdatingReservation, setIsUpdatingReservation] = useState(false);
   const { toast } = useToast();
   const [filters, setFilters] = useState<PropertyFiltersType | null>(null);
   const [portalQuickFilter, setPortalQuickFilter] = useState<'imobiliare' | 'storia-olx' | null>(null);
@@ -296,6 +312,68 @@ export default function PropertiesPage() {
     }
   };
 
+  const handleReservationConfirm = async () => {
+    if (!agencyId || !reservationProperty || isUpdatingReservation) return;
+
+    setIsUpdatingReservation(true);
+    try {
+      const changedAt = new Date().toISOString();
+      const isReactivating = reservationProperty.status === 'Rezervat';
+      const nextStatus: Property['status'] = isReactivating ? 'Activ' : 'Rezervat';
+      const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', reservationProperty.id);
+      const batch = writeBatch(firestore);
+      batch.update(propertyRef, {
+        status: nextStatus,
+        statusUpdatedAt: changedAt,
+        soldPrice: null,
+      });
+
+      if (!isReactivating) {
+        const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
+        const reservedPropertySnapshot: Property = {
+          ...reservationProperty,
+          status: 'Rezervat',
+          statusUpdatedAt: changedAt,
+          soldPrice: null,
+        };
+        const statusEvent: PropertyStatusEvent = {
+          id: statusEventRef.id,
+          agencyId,
+          propertyId: reservationProperty.id,
+          changedAt,
+          previousStatus: reservationProperty.status ?? null,
+          nextStatus: 'Rezervat',
+          reason: 'reservation_offer_accepted',
+          reasonLabel: 'Oferta de rezervare acceptata',
+          agentMessage: `Marchez "${reservationProperty.title}" ca rezervata in portofoliul agentiei.`,
+          soldPrice: null,
+          marketAnalysisEligible: false,
+          propertySnapshot: reservedPropertySnapshot,
+        };
+        batch.set(statusEventRef, statusEvent);
+      }
+
+      await batch.commit();
+
+      toast({
+        title: isReactivating ? 'Proprietate reactivata' : 'Proprietate rezervata',
+        description: isReactivating
+          ? `Proprietatea "${reservationProperty.title}" este din nou activa.`
+          : `Statusul proprietatii "${reservationProperty.title}" a fost actualizat.`,
+      });
+      setReservationProperty(null);
+    } catch (error) {
+      console.error('Property reservation failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Actualizarea a esuat',
+        description: 'Nu am reusit sa actualizam statusul proprietatii. Incearca din nou.',
+      });
+    } finally {
+      setIsUpdatingReservation(false);
+    }
+  };
+
   const isPageLoading = isLoading;
   const reportPresetLabel = reportPreset ? REPORT_PRESET_LABELS[reportPreset] : null;
   const agentNameFilter = searchParams?.get('agentName');
@@ -489,7 +567,21 @@ export default function PropertiesPage() {
                 ) : null}
             </div>
             
-            <PropertyList properties={filteredProperties} isLoading={isPageLoading} onDeleteRequest={setDeletingProperty} enableFacebookPublishing={!isMobile} />
+            <PropertyList
+              properties={filteredProperties}
+              isLoading={isPageLoading}
+              onDeleteRequest={(property) => {
+                setDeletionInitialReason('not_interesting');
+                setDeletingProperty(property);
+              }}
+              onReserveRequest={setReservationProperty}
+              onSoldRequest={(property) => {
+                setDeletionInitialReason('sold');
+                setDeletingProperty(property);
+              }}
+              enableFacebookPublishing={!isMobile}
+              compactDetailsAction={sidebarState === 'expanded'}
+            />
         </div>
         <DeletePropertyAlert
             isOpen={!!deletingProperty}
@@ -497,8 +589,176 @@ export default function PropertiesPage() {
             property={deletingProperty}
             isDeleting={isDeletingProperty}
             themeVariant={deleteModalThemeVariant}
+            initialReason={deletionInitialReason}
             onDelete={handleDelete}
         />
+        <AlertDialog
+          open={!!reservationProperty}
+          onOpenChange={(open) => {
+            if (!open && !isUpdatingReservation) setReservationProperty(null);
+          }}
+        >
+          <AlertDialogContent
+            className={cn(
+              'agentfinder-reservation-dialog min-w-0 w-[calc(100vw-1.5rem)] max-w-[460px] overflow-hidden rounded-[28px] p-0 shadow-[0_32px_90px_-32px_rgba(15,23,42,0.55)]',
+              deleteModalThemeVariant === 'light'
+                ? 'border-slate-200 bg-white text-slate-950'
+                : 'border-white/10 bg-[#152A47] text-white'
+            )}
+          >
+            <div
+              className={cn(
+                'relative overflow-hidden px-6 pb-5 pt-6 sm:px-7 sm:pt-7',
+                reservationProperty?.status === 'Rezervat'
+                  ? deleteModalThemeVariant === 'light'
+                    ? 'bg-[radial-gradient(circle_at_top_right,rgba(219,234,254,0.75),transparent_45%)]'
+                    : 'bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.2),transparent_45%)]'
+                  : deleteModalThemeVariant === 'light'
+                    ? 'bg-[radial-gradient(circle_at_top_right,rgba(254,226,226,0.85),transparent_45%)]'
+                    : 'bg-[radial-gradient(circle_at_top_right,rgba(239,68,68,0.2),transparent_45%)]'
+              )}
+            >
+              <AlertDialogHeader className="relative min-w-0 gap-0 text-left">
+                <div className="flex min-w-0 items-start gap-4">
+                  <div
+                    className={cn(
+                      'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm',
+                      reservationProperty?.status === 'Rezervat'
+                        ? 'border-blue-200 bg-blue-50 text-[#566f9f]'
+                        : 'border-red-200 bg-red-50 text-red-600'
+                    )}
+                  >
+                    <LockKeyhole className="h-5 w-5" strokeWidth={2.2} />
+                  </div>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <p
+                      className={cn(
+                        'text-[11px] font-bold uppercase tracking-[0.18em]',
+                        reservationProperty?.status === 'Rezervat'
+                          ? deleteModalThemeVariant === 'light' ? 'text-[#566f9f]' : 'text-blue-200'
+                          : deleteModalThemeVariant === 'light' ? 'text-red-600' : 'text-red-200'
+                      )}
+                    >
+                      Confirmare status
+                    </p>
+                    <AlertDialogTitle className="agentfinder-reservation-dialog__text mt-1.5 text-xl font-bold tracking-tight sm:text-[22px]">
+                      {reservationProperty?.status === 'Rezervat'
+                        ? 'Reactivezi proprietatea?'
+                        : 'Rezervi proprietatea?'}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription
+                      className={cn(
+                        'agentfinder-reservation-dialog__text mt-2 min-w-0 text-sm leading-5',
+                        deleteModalThemeVariant === 'light' ? 'text-slate-600' : 'text-white/65'
+                      )}
+                    >
+                      {reservationProperty?.status === 'Rezervat'
+                        ? 'Proprietatea va reveni în portofoliul activ.'
+                        : 'Proprietatea va fi marcată temporar ca rezervată.'}
+                    </AlertDialogDescription>
+                  </div>
+                </div>
+              </AlertDialogHeader>
+            </div>
+
+            <div className="px-6 pb-6 sm:px-7">
+              <div
+                className={cn(
+                  'flex min-w-0 items-center gap-3 overflow-hidden rounded-[20px] border p-3',
+                  deleteModalThemeVariant === 'light'
+                    ? 'border-slate-200 bg-slate-50'
+                    : 'border-white/10 bg-white/[0.05]'
+                )}
+              >
+                <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-200">
+                  <Image
+                    src={reservationProperty?.images?.[0]?.url || 'https://via.placeholder.com/300x220.png?text=Imagine+lipsa'}
+                    alt={reservationProperty?.title || 'Proprietate'}
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="agentfinder-reservation-dialog__property-title line-clamp-2 text-sm font-semibold leading-5" title={reservationProperty?.title}>
+                    {reservationProperty?.title}
+                  </p>
+                  <p
+                    className={cn(
+                      'mt-1 truncate text-xs',
+                      deleteModalThemeVariant === 'light' ? 'text-slate-500' : 'text-white/50'
+                    )}
+                    title={reservationProperty?.address}
+                  >
+                    {reservationProperty?.address}
+                  </p>
+                  <div className="mt-2.5 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.08em]">
+                    <span
+                      className={cn(
+                        'rounded-full px-2.5 py-1',
+                        reservationProperty?.status === 'Rezervat'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      )}
+                    >
+                      {reservationProperty?.status === 'Rezervat' ? 'Rezervat' : 'Activ'}
+                    </span>
+                    <ArrowRight className={cn('h-3.5 w-3.5', deleteModalThemeVariant === 'light' ? 'text-slate-400' : 'text-white/35')} />
+                    <span
+                      className={cn(
+                        'rounded-full px-2.5 py-1',
+                        reservationProperty?.status === 'Rezervat'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-red-100 text-red-700'
+                      )}
+                    >
+                      {reservationProperty?.status === 'Rezervat' ? 'Activ' : 'Rezervat'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <AlertDialogFooter
+              className={cn(
+                'grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 border-t px-6 py-4 sm:grid sm:space-x-0 sm:px-7',
+                deleteModalThemeVariant === 'light'
+                  ? 'border-slate-200 bg-slate-50/80'
+                  : 'border-white/10 bg-black/10'
+              )}
+            >
+              <AlertDialogCancel
+                disabled={isUpdatingReservation}
+                className={cn(
+                  'mt-0 h-11 min-w-0 w-full whitespace-normal rounded-xl px-3 text-center text-sm',
+                  deleteModalThemeVariant === 'light'
+                    ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                    : 'border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white'
+                )}
+              >
+                Anulează
+              </AlertDialogCancel>
+              <AlertDialogAction
+                aria-disabled={isUpdatingReservation}
+                className={cn(
+                  'agentfinder-reservation-dialog__confirm h-11 min-w-0 w-full whitespace-normal rounded-xl px-3 text-center text-sm shadow-sm',
+                  reservationProperty?.status === 'Rezervat'
+                    ? 'bg-[#566f9f] text-white hover:bg-[#486188]'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleReservationConfirm();
+                }}
+              >
+                {isUpdatingReservation ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                <span className="agentfinder-reservation-dialog__confirm-label">
+                  {reservationProperty?.status === 'Rezervat' ? 'Reactivează' : 'Rezervă'}
+                </span>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

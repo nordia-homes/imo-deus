@@ -2,12 +2,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share2, ArrowRight, Facebook, CalendarClock } from "lucide-react";
+import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share2, ArrowRight, Facebook, CalendarClock, Eye, FolderCheck, LockKeyhole } from "lucide-react";
 import type { FacebookCloudPublishingJob, Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
 import { Button } from "../ui/button";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type MouseEvent } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
@@ -23,13 +23,17 @@ import { usePublicAgency } from "@/context/PublicAgencyContext";
 import { getAgencyThemePreset } from "@/lib/theme";
 import { formatBucharestDateTime } from "@/lib/bucharest-time";
 import { FacebookCloudPublishDialog } from "./FacebookCloudPublishDialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function PropertyCard({
   property,
   agencyId,
   publicBasePath,
   onDeleteRequest,
+  onReserveRequest,
+  onSoldRequest,
   enableFacebookPublishing = false,
+  compactDetailsAction = false,
   facebookJob,
   onFacebookJobChange,
 }: {
@@ -37,7 +41,10 @@ export function PropertyCard({
   agencyId?: string;
   publicBasePath?: string;
   onDeleteRequest?: () => void;
+  onReserveRequest?: () => Promise<void> | void;
+  onSoldRequest?: () => void;
   enableFacebookPublishing?: boolean;
+  compactDetailsAction?: boolean;
   facebookJob?: FacebookCloudPublishingJob | null;
   onFacebookJobChange?: (job: FacebookCloudPublishingJob) => void;
 }) {
@@ -92,6 +99,12 @@ export function PropertyCard({
     setCopied(true);
     toast({ title: "Link copiat!" });
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleReserve = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onReserveRequest?.();
   };
 
   const handleShare = useCallback(async () => {
@@ -165,21 +178,14 @@ export function PropertyCard({
             </Link>
             <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
                <Badge variant="outline" className={cn("font-semibold", isPublicCard ? (isAgentfinderTheme ? "border-white bg-white text-slate-900" : "border-[#22c55e]/25 bg-black/55 text-[#86efac]") : "bg-white/90 text-black")}>{property.transactionType}</Badge>
-               {isReserved ? (
-                <Badge
-                  className={cn(
-                    "font-semibold",
-                    isPublicCard
-                      ? isAgentfinderTheme
-                        ? "border border-white bg-white text-slate-900"
-                        : "border border-amber-300/25 bg-amber-500/85 text-white"
-                      : "bg-amber-500 text-white"
-                  )}
-                >
-                  Rezervat
-                </Badge>
-               ) : null}
             </div>
+            {isReserved ? (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                <span className="-rotate-6 rounded-lg border-4 border-red-600/85 bg-white/80 px-5 py-2 text-lg font-black uppercase tracking-[0.2em] text-red-700 shadow-[0_8px_30px_rgba(0,0,0,0.3)] backdrop-blur-[2px] sm:text-xl">
+                  Rezervat
+                </span>
+              </div>
+            ) : null}
             {facebookJob?.status === 'scheduled' && facebookJob.scheduledAt ? (
               <Badge className="absolute bottom-3 left-3 border-0 bg-slate-950/75 text-white backdrop-blur-sm">
                 <CalendarClock className="mr-1 h-3.5 w-3.5" />
@@ -208,10 +214,54 @@ export function PropertyCard({
                 </Button>
               </div>
             ) : null}
-            <div className="absolute right-3 top-3">
+            <div className="absolute right-3 top-3 flex items-center gap-1.5">
+              {!isPublicCard && onReserveRequest ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      aria-label="Rezervat"
+                      aria-pressed={isReserved}
+                      className={cn(
+                        "agentfinder-property-reservation-action h-8 w-8 rounded-full border border-white/25 bg-black/35 text-white shadow-md backdrop-blur-sm hover:bg-red-500 hover:text-white",
+                        isReserved && "agentfinder-property-reservation-action--active"
+                      )}
+                      onClick={handleReserve}
+                    >
+                      <LockKeyhole className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Rezervat</TooltipContent>
+                </Tooltip>
+              ) : null}
+              {!isPublicCard && onSoldRequest ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      aria-label="Vândut"
+                      className="h-8 w-8 rounded-full border border-white/25 bg-black/35 text-white shadow-md backdrop-blur-sm hover:bg-[#566f9f] hover:text-white"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onSoldRequest();
+                      }}
+                    >
+                      <FolderCheck className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Vândut</TooltipContent>
+                </Tooltip>
+              ) : null}
               <Button
+                type="button"
                 size="icon"
                 variant="secondary"
+                aria-label={isFavorite ? "Elimină de la favorite" : "Adaugă la favorite"}
                 className={cn("h-8 w-8 rounded-full backdrop-blur-sm", isPublicCard ? (isAgentfinderTheme ? "border border-white bg-white text-slate-700 hover:bg-white hover:text-slate-900" : "bg-black/45 text-stone-100 hover:bg-black/70") : "bg-black/30 text-white hover:bg-black/50")}
                 onClick={(event) => {
                   event.preventDefault();
@@ -270,8 +320,22 @@ export function PropertyCard({
                           <Trash2 className="h-4 w-4" />
                       </Button>
                     ) : null}
-                    <Button asChild size="sm" variant="outline" className="bg-white/10 border-primary/50 text-white hover:bg-primary/10 button-glow">
-                        <Link href={href}>Vezi Detalii</Link>
+                    <Button
+                      asChild
+                      size={compactDetailsAction ? "icon" : "sm"}
+                      variant="outline"
+                      className={cn(
+                        "shrink-0 bg-white/10 border-primary/50 text-white hover:bg-primary/10 button-glow",
+                        compactDetailsAction && "h-9 w-9 rounded-full"
+                      )}
+                    >
+                        <Link
+                          href={href}
+                          aria-label={compactDetailsAction ? `Vezi detaliile proprietății ${property.title}` : undefined}
+                          title={compactDetailsAction ? "Vezi detalii" : undefined}
+                        >
+                          {compactDetailsAction ? <Eye className="h-4 w-4" /> : "Vezi Detalii"}
+                        </Link>
                     </Button>
                 </div>
               ) : (

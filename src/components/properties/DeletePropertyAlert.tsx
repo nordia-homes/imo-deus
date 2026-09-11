@@ -31,6 +31,7 @@ type DeletePropertyAlertProps = {
   isOpen: boolean;
   isDeleting?: boolean;
   themeVariant?: 'light' | 'dark';
+  initialReason?: PropertyDeletionReason;
   onOpenChange: (open: boolean) => void;
   onDelete: (payload: DeletePropertyPayload) => Promise<void> | void;
 };
@@ -122,20 +123,21 @@ export function DeletePropertyAlert({
   isOpen,
   isDeleting = false,
   themeVariant = 'dark',
+  initialReason = 'not_interesting',
   onOpenChange,
   onDelete,
 }: DeletePropertyAlertProps) {
-  const [reason, setReason] = useState<PropertyDeletionReason>('not_interesting');
+  const [reason, setReason] = useState<PropertyDeletionReason>(initialReason);
   const [soldDisposition, setSoldDisposition] = useState<SoldDisposition>('agency');
   const [soldPriceInput, setSoldPriceInput] = useState('');
 
   useEffect(() => {
+    setReason(initialReason);
     if (!isOpen) {
-      setReason('not_interesting');
       setSoldDisposition('agency');
       setSoldPriceInput('');
     }
-  }, [isOpen]);
+  }, [initialReason, isOpen]);
 
   const soldPrice = useMemo(() => {
     const normalized = soldPriceInput.replace(/[^\d]/g, '');

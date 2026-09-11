@@ -12,9 +12,12 @@ interface PropertyListProps {
   properties: Property[] | null;
   isLoading: boolean;
   onDeleteRequest?: (property: Property) => void;
+  onReserveRequest?: (property: Property) => Promise<void> | void;
+  onSoldRequest?: (property: Property) => void;
   agencyId?: string;
   publicBasePath?: string;
   enableFacebookPublishing?: boolean;
+  compactDetailsAction?: boolean;
 }
 
 const ACTIVE_JOB_STATUSES: FacebookCloudPublishingJob['status'][] = [
@@ -28,9 +31,12 @@ export function PropertyList({
   properties,
   isLoading,
   onDeleteRequest,
+  onReserveRequest,
+  onSoldRequest,
   agencyId,
   publicBasePath,
   enableFacebookPublishing = false,
+  compactDetailsAction = false,
 }: PropertyListProps) {
   const { user } = useUser();
   const [facebookJobs, setFacebookJobs] = useState<FacebookCloudPublishingJob[]>([]);
@@ -115,9 +121,12 @@ export function PropertyList({
             key={property.id}
             property={property}
             onDeleteRequest={onDeleteRequest ? () => onDeleteRequest(property) : undefined}
+            onReserveRequest={onReserveRequest ? () => onReserveRequest(property) : undefined}
+            onSoldRequest={onSoldRequest ? () => onSoldRequest(property) : undefined}
             agencyId={agencyId}
             publicBasePath={publicBasePath}
             enableFacebookPublishing={enableFacebookPublishing}
+            compactDetailsAction={compactDetailsAction}
             facebookJob={jobByProperty.get(property.id) || null}
             onFacebookJobChange={handleJobChange}
           />

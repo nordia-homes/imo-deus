@@ -43544,3 +43544,63 @@
   border-color: #5ee0c8 !important;
   color: #0b6b64 !important;
 }
+
+.agentfinder-property-reservation-action--active,
+[data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card .agentfinder-property-reservation-action--active {
+  background: #fff1f2 !important;
+  background-image: none !important;
+  border-color: #fca5a5 !important;
+  color: #dc2626 !important;
+  box-shadow: 0 8px 20px -10px rgba(220, 38, 38, 0.8) !important;
+}
+
+.agentfinder-property-reservation-action--active:hover,
+[data-app-theme='agentfinder'] .agentfinder-properties-page .agentfinder-property-list-card .agentfinder-property-reservation-action--active:hover {
+  background: #fee2e2 !important;
+  border-color: #f87171 !important;
+  color: #b91c1c !important;
+}
+
+.agentfinder-property-reservation-action--active svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.agentfinder-reservation-dialog {
+  width: calc(100vw - 1.5rem) !important;
+  max-width: 460px !important;
+  min-width: 0 !important;
+}
+
+.agentfinder-reservation-dialog > *,
+.agentfinder-reservation-dialog [class*='min-w-0'] {
+  min-width: 0;
+}
+
+.agentfinder-reservation-dialog__text {
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.agentfinder-reservation-dialog__property-title {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+
+.agentfinder-reservation-dialog__confirm,
+.agentfinder-reservation-dialog__confirm:hover,
+.agentfinder-reservation-dialog__confirm:focus-visible {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+button.agentfinder-reservation-dialog__confirm .agentfinder-reservation-dialog__confirm-label,
+button.agentfinder-reservation-dialog__confirm:hover .agentfinder-reservation-dialog__confirm-label,
+button.agentfinder-reservation-dialog__confirm:focus-visible .agentfinder-reservation-dialog__confirm-label {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
