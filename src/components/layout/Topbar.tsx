@@ -8,18 +8,44 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Contact, Property, Task } from '@/lib/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getStoredRuntimeMode } from '@/lib/runtime-mode';
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { unregisterPushNotifications } from '@/lib/push-notifications';
-import { useFirebaseApp } from '@/firebase';
+import { useFirebaseApp, useFirestore } from '@/firebase';
+import { collection, getDocs } from 'firebase/firestore';
+import { useAgency } from '@/context/AgencyContext';
+
+function normalizeSearchText(value?: string | null) {
+    return (value ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('ro')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function matchesSearch(parts: Array<string | number | null | undefined>, query: string) {
+    const searchableText = normalizeSearchText(parts.filter((part) => part !== null && part !== undefined).join(' '));
+    return query.split(/\s+/).every((token) => searchableText.includes(token));
+}
+
+type SearchSourceCache = {
+    agencyId: string;
+    loadedAt: number;
+    contacts: Contact[];
+    properties: Property[];
+    tasks: Task[];
+};
 
 export function Topbar() {
     const auth = useAuth();
     const firebaseApp = useFirebaseApp();
+    const firestore = useFirestore();
+    const { agencyId } = useAgency();
     const router = useRouter();
     const { user } = useUser();
 
@@ -33,22 +59,25 @@ export function Topbar() {
     const [isSearching, setIsSearching] = useState(false);
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
     const [isDemoMode, setIsDemoMode] = useState(false);
+    const latestQueryRef = useRef('');
+    const searchSourceCacheRef = useRef<SearchSourceCache | null>(null);
 
     useEffect(() => {
         setIsDemoMode(getStoredRuntimeMode() === 'demo');
     }, []);
 
-    // Debounce search query
+    // Keep typing fluid and only update remote results after the user pauses.
     useEffect(() => {
-        if (query.length > 0) {
-            setIsPopoverOpen(true);
-        } else {
+        const normalizedQuery = normalizeSearchText(query);
+        if (normalizedQuery.length < 2) {
             setIsPopoverOpen(false);
             setIsSearching(false);
+            setResults({ contacts: [], properties: [], tasks: [] });
         }
+
         const handler = setTimeout(() => {
-            setDebouncedQuery(query);
-        }, 300);
+            setDebouncedQuery(normalizedQuery);
+        }, 600);
 
         return () => {
             clearTimeout(handler);
@@ -63,42 +92,83 @@ export function Topbar() {
             return;
         }
 
-        if (!user) {
+        if (!user || !agencyId) {
             setResults({ contacts: [], properties: [], tasks: [] });
             setIsSearching(false);
             return;
         }
 
-        const activeUser = user;
-        const controller = new AbortController();
+        let isCancelled = false;
         setIsSearching(true);
 
         async function search() {
             try {
-                const token = await activeUser.getIdToken();
-                const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                    signal: controller.signal,
-                });
-                const payload = await response.json().catch(() => ({}));
+                let source = searchSourceCacheRef.current;
+                const cacheIsFresh = source
+                    && source.agencyId === agencyId
+                    && Date.now() - source.loadedAt < 60_000;
 
-                if (!response.ok) {
-                    throw new Error(payload?.message || 'Nu am putut cauta.');
+                if (!cacheIsFresh) {
+                    const agencyPath = ['agencies', agencyId] as const;
+                    const [contactsSnapshot, propertiesSnapshot, tasksSnapshot] = await Promise.all([
+                        getDocs(collection(firestore, ...agencyPath, 'contacts')),
+                        getDocs(collection(firestore, ...agencyPath, 'properties')),
+                        getDocs(collection(firestore, ...agencyPath, 'tasks')),
+                    ]);
+
+                    source = {
+                        agencyId,
+                        loadedAt: Date.now(),
+                        contacts: contactsSnapshot.docs.map((snapshot) => ({ ...(snapshot.data() as Contact), id: snapshot.id })),
+                        properties: propertiesSnapshot.docs.map((snapshot) => ({ ...(snapshot.data() as Property), id: snapshot.id })),
+                        tasks: tasksSnapshot.docs.map((snapshot) => ({ ...(snapshot.data() as Task), id: snapshot.id })),
+                    };
+                    searchSourceCacheRef.current = source;
                 }
 
+                if (isCancelled || normalizeSearchText(latestQueryRef.current) !== debouncedQuery || !source) return;
+
                 setResults({
-                    contacts: Array.isArray(payload.contacts) ? payload.contacts : [],
-                    properties: Array.isArray(payload.properties) ? payload.properties : [],
-                    tasks: Array.isArray(payload.tasks) ? payload.tasks : [],
+                    contacts: source.contacts
+                        .filter((contact) => matchesSearch([
+                            contact.name,
+                            contact.email,
+                            contact.phone,
+                            contact.status,
+                            contact.source,
+                        ], debouncedQuery))
+                        .slice(0, 6)
+                        .map(({ id, name }) => ({ id, name })),
+                    properties: source.properties
+                        .filter((property) => matchesSearch([
+                            property.title,
+                            property.address,
+                            property.location,
+                            property.city,
+                            property.zone,
+                            property.propertyType,
+                            property.transactionType,
+                            property.ownerName,
+                            property.agentName,
+                        ], debouncedQuery))
+                        .slice(0, 6)
+                        .map(({ id, title }) => ({ id, title })),
+                    tasks: source.tasks
+                        .filter((task) => matchesSearch([
+                            task.description,
+                            task.contactName,
+                            task.propertyTitle,
+                            task.agentName,
+                        ], debouncedQuery))
+                        .slice(0, 6)
+                        .map(({ id, description }) => ({ id, description })),
                 });
             } catch (error) {
-                if (controller.signal.aborted) return;
+                if (isCancelled || normalizeSearchText(latestQueryRef.current) !== debouncedQuery) return;
                 console.error('Global search failed:', error);
                 setResults({ contacts: [], properties: [], tasks: [] });
             } finally {
-                if (!controller.signal.aborted) {
+                if (!isCancelled && normalizeSearchText(latestQueryRef.current) === debouncedQuery) {
                     setIsSearching(false);
                 }
             }
@@ -106,8 +176,10 @@ export function Topbar() {
 
         void search();
 
-        return () => controller.abort();
-    }, [debouncedQuery, user]);
+        return () => {
+            isCancelled = true;
+        };
+    }, [agencyId, debouncedQuery, firestore, user]);
 
     const getInitials = (name?: string | null) => {
         if (!name) return 'U';
@@ -121,6 +193,7 @@ export function Topbar() {
     const handleSelect = () => {
         setIsPopoverOpen(false);
         setQuery('');
+        latestQueryRef.current = '';
     }
     
     const handleLogout = async () => {
@@ -145,7 +218,10 @@ export function Topbar() {
 
 
             <div className="min-w-0 flex-1">
-                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <Popover
+                    open={isPopoverOpen}
+                    onOpenChange={(open) => setIsPopoverOpen(open && query.trim().length >= 2)}
+                >
                     <PopoverTrigger asChild>
                         <div className="relative min-w-0 w-full">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-[var(--app-page-muted)]" />
@@ -154,11 +230,26 @@ export function Topbar() {
                                 placeholder="Caută lead-uri, proprietăți..."
                                 className="w-full min-w-0 rounded-lg border-none bg-[var(--app-surface-input)] pl-8 text-[var(--app-page-foreground)] placeholder:text-[var(--app-page-muted)] md:w-[280px] lg:w-[320px]"
                                 value={query}
-                                onChange={(e) => setQuery(e.target.value)}
+                                onChange={(event) => {
+                                    const nextQuery = event.target.value;
+                                    const canSearch = nextQuery.trim().length >= 2;
+                                    latestQueryRef.current = nextQuery;
+                                    setQuery(nextQuery);
+                                    setIsSearching(canSearch);
+                                    setIsPopoverOpen(canSearch);
+                                }}
+                                onFocus={() => {
+                                    if (query.trim().length >= 2) setIsPopoverOpen(true);
+                                }}
+                                aria-label="Caută în lead-uri, proprietăți și task-uri"
                             />
                         </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[320px] p-0" align="start">
+                    <PopoverContent
+                        className="w-[min(320px,calc(100vw-1.5rem))] p-0"
+                        align="start"
+                        onOpenAutoFocus={(event) => event.preventDefault()}
+                    >
                         <div className="p-2 max-h-[400px] overflow-y-auto">
                             {isSearching && (
                                 <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">

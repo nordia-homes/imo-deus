@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Task, Contact, Viewing, Property, ActiveBuyersEvolutionData } from '@/lib/types';
 import { AddTaskDialog } from '../tasks/AddTaskDialog';
-import { Clock, Plus, Calendar } from 'lucide-react';
+import { Building2, Clock, Plus, Calendar } from 'lucide-react';
 import { parseISO, format, isToday } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import Link from 'next/link';
@@ -173,23 +173,46 @@ export function QuickActionsCard({ onAddLead, onAddProperty, onAddViewing, onAdd
                         Vizionări Programate
                     </div>
                     {viewings.length === 0 ? (
-                        <p className="text-white/70 text-center py-4 text-sm">Nicio viziune programată.</p>
+                        <p className="text-white/70 text-center py-4 text-sm">Nicio vizionare programată.</p>
                     ) : (
                         <div className="space-y-2">
                             {viewings.slice(0, 3).map((viewing) => {
                                 const viewingDate = parseISO(viewing.viewingDate);
                                 const isViewingToday = isToday(viewingDate);
+                                const property = properties.find((item) => item.id === viewing.propertyId);
+                                const thumbnail = property?.images?.find((image) => Boolean(image?.url));
                                 return (
-                                    <div key={viewing.id} className="agentfinder-dashboard-list-item p-3 rounded-lg border border-white/10 bg-white/5">
-                                        <div className="flex justify-between items-start gap-2">
-                                            <Link href={`/properties/${viewing.propertyId}`} className="font-semibold text-sm truncate pr-2 flex-1 text-white hover:underline min-w-0">{viewing.propertyTitle}</Link>
-                                            <div className="font-bold text-sm flex items-center gap-1 shrink-0 text-white/90">
-                                                {isViewingToday ? (
-                                                    <Clock className="h-3 w-3" />
+                                    <div key={viewing.id} className="agentfinder-dashboard-list-item rounded-xl border border-white/10 bg-white/5 p-2">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <Link
+                                                href={`/properties/${viewing.propertyId}`}
+                                                className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-200"
+                                                aria-label={`Deschide proprietatea ${viewing.propertyTitle}`}
+                                            >
+                                                {thumbnail ? (
+                                                    <img
+                                                        src={thumbnail.url}
+                                                        alt={thumbnail.alt || viewing.propertyTitle}
+                                                        className="h-full w-full object-cover transition-transform duration-200 hover:scale-105"
+                                                    />
                                                 ) : (
-                                                    <Calendar className="h-3 w-3" />
+                                                    <span className="flex h-full w-full items-center justify-center text-slate-500">
+                                                        <Building2 className="h-5 w-5" />
+                                                    </span>
                                                 )}
-                                                {isViewingToday ? format(viewingDate, 'HH:mm') : format(viewingDate, 'd MMM', { locale: ro })}
+                                            </Link>
+                                            <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                                <Link href={`/properties/${viewing.propertyId}`} className="min-w-0 flex-1 truncate pr-1 text-sm font-semibold text-white hover:underline">
+                                                    {viewing.propertyTitle}
+                                                </Link>
+                                                <div className="flex shrink-0 items-center gap-1 text-xs font-bold text-white/90 sm:text-sm">
+                                                    {isViewingToday ? (
+                                                        <Clock className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                        <Calendar className="h-3.5 w-3.5" />
+                                                    )}
+                                                    {isViewingToday ? format(viewingDate, 'HH:mm') : format(viewingDate, 'd MMM', { locale: ro })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

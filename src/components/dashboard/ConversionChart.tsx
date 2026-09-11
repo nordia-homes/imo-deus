@@ -36,9 +36,10 @@ export function ConversionChart({ data }: { data: ConversionData[] }) {
                     tickLine={false}
                     tickMargin={10}
                     axisLine={false}
+                    minTickGap={28}
                     tickFormatter={(value) => value}
                     stroke="rgba(255, 255, 255, 0.5)"
-                    fontSize={12}
+                    fontSize={10}
                 />
                 <YAxis
                   yAxisId="left"
@@ -56,7 +57,7 @@ export function ConversionChart({ data }: { data: ConversionData[] }) {
                 />
                 <Legend iconType="circle" />
                 <Bar dataKey="tranzactii" yAxisId="left" fill="var(--color-tranzactii)" radius={2} name="Tranzacții" barSize={8}/>
-                <Line type="monotone" yAxisId="left" dataKey="vizionari" stroke="var(--color-vizionari)" strokeWidth={2} name="Vizionări" dot={{ r: 4, fill: '#37e6a5', strokeWidth: 0 }} />
+                <Line type="monotone" yAxisId="left" dataKey="vizionari" stroke="var(--color-vizionari)" strokeWidth={2} name="Vizionări" dot={false} activeDot={{ r: 4, fill: '#37e6a5', strokeWidth: 0 }} />
             </ComposedChart>
         </ResponsiveContainer>
     </ChartContainer>

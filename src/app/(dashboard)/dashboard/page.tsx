@@ -6,23 +6,22 @@ import { collection, query, orderBy, where } from 'firebase/firestore';
 import type { Property, Viewing, Task, Contact, LeadSourceData, SalesData, ConversionData, ActiveBuyersEvolutionData } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
-import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval } from 'date-fns';
+import { isThisMonth, parseISO, format, isPast, isToday, addDays, isWithinInterval, subDays, eachDayOfInterval, startOfDay, endOfDay, startOfMonth, eachMonthOfInterval } from 'date-fns';
 import { ro } from "date-fns/locale";
 import { useToast } from '@/hooks/use-toast';
 import { addDocumentNonBlocking } from '@/firebase';
 import { useUser } from '@/firebase';
+import { TrendingUp } from 'lucide-react';
 
 // Components
 import { SalesChart } from '@/components/dashboard/sales-chart';
-import { ConversionChart } from '@/components/dashboard/ConversionChart';
+import { AccountPerformanceCharts } from '@/components/dashboard/AccountPerformanceCharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { AddPropertyDialog } from '@/components/properties/add-property-dialog';
-import { Button } from '@/components/ui/button';
 import { AddViewingDialog } from '@/components/viewings/AddViewingDialog';
 import { QuickActionsCard } from '@/components/dashboard/QuickActionsCard';
 import { AddTaskDialog } from '@/components/tasks/AddTaskDialog';
-import { Separator } from '@/components/ui/separator';
 
 
 export default function DashboardPage() {
@@ -170,27 +169,31 @@ export default function DashboardPage() {
             monthlyCommissions[monthKey].sales += calculateCommission(prop);
         });
 
-        const monthlyCommissionDataResult: SalesData[] = Object.values(monthlyCommissions)
-            .sort((a,b) => a.date.getTime() - b.date.getTime())
-            .map(data => ({
-                month: data.date.toLocaleString('ro-RO', { month: 'short' }),
-                sales: data.sales,
-            }));
+        const commissionMonths = Object.values(monthlyCommissions).sort((a,b) => a.date.getTime() - b.date.getTime());
+        const monthlyCommissionDataResult: SalesData[] = commissionMonths.length > 0
+            ? eachMonthOfInterval({
+                start: startOfMonth(commissionMonths[0].date),
+                end: startOfMonth(new Date()),
+            }).map((date) => ({
+                month: format(date, 'MMM yyyy', { locale: ro }),
+                sales: monthlyCommissions[format(date, 'yyyy-MM')]?.sales || 0,
+            }))
+            : [];
             
-        const thirtyDaysAgo = subDays(new Date(), 30);
-        const today = new Date();
+        const today = endOfDay(new Date());
+        const thirtyDaysAgo = startOfDay(subDays(today, 29));
         const dateArray = eachDayOfInterval({ start: thirtyDaysAgo, end: today });
 
         const conversionMap: Map<string, { vizionari: number; tranzactii: number }> = new Map();
         dateArray.forEach(date => {
-            const dayKey = format(date, 'd');
+            const dayKey = format(date, 'yyyy-MM-dd');
             conversionMap.set(dayKey, { vizionari: 0, tranzactii: 0 });
         });
 
         viewings?.forEach(viewing => {
             const viewingDate = parseISO(viewing.viewingDate);
             if (isWithinInterval(viewingDate, { start: thirtyDaysAgo, end: today })) {
-                const dayKey = format(viewingDate, 'd');
+                const dayKey = format(viewingDate, 'yyyy-MM-dd');
                 const dayData = conversionMap.get(dayKey);
                 if (dayData) {
                     dayData.vizionari++;
@@ -202,7 +205,7 @@ export default function DashboardPage() {
             if ((property.status === 'Vândut' || property.status === 'Rezervat') && property.statusUpdatedAt) {
                 const updatedDate = parseISO(property.statusUpdatedAt);
                 if (isWithinInterval(updatedDate, { start: thirtyDaysAgo, end: today })) {
-                    const dayKey = format(updatedDate, 'd');
+                    const dayKey = format(updatedDate, 'yyyy-MM-dd');
                     const dayData = conversionMap.get(dayKey);
                     if (dayData) {
                         dayData.tranzactii++;
@@ -212,13 +215,13 @@ export default function DashboardPage() {
         });
 
         const conversionDataResult: ConversionData[] = Array.from(conversionMap.entries()).map(([date, data]) => ({
-          date,
+          date: format(parseISO(date), 'd'),
           ...data,
         }));
 
         const dailyNewContactsMap: Map<string, number> = new Map();
         dateArray.forEach(date => {
-            const dayKey = format(date, 'd');
+            const dayKey = format(date, 'yyyy-MM-dd');
             dailyNewContactsMap.set(dayKey, 0);
         });
 
@@ -227,7 +230,7 @@ export default function DashboardPage() {
                 try {
                     const creationDate = parseISO(contact.createdAt);
                     if (isWithinInterval(creationDate, { start: thirtyDaysAgo, end: today })) {
-                        const dayKey = format(creationDate, 'd');
+                        const dayKey = format(creationDate, 'yyyy-MM-dd');
                         dailyNewContactsMap.set(dayKey, (dailyNewContactsMap.get(dayKey) || 0) + 1);
                     }
                 } catch (e) {
@@ -237,7 +240,7 @@ export default function DashboardPage() {
         });
 
         const activeBuyersEvolutionDataResult: ActiveBuyersEvolutionData[] = Array.from(dailyNewContactsMap.entries()).map(([date, count]) => ({
-          date,
+          date: format(parseISO(date), 'd'),
           count,
         }));
 
@@ -271,12 +274,12 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="agentfinder-dashboard-page space-y-6 p-4">
+        <div className="agentfinder-dashboard-page space-y-6 p-3 sm:p-4">
             <AddPropertyDialog isOpen={isAddPropertyOpen} onOpenChange={setIsAddPropertyOpen} property={null} />
             <AddLeadDialog properties={properties || []} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} />
             <AddViewingDialog isOpen={isAddViewingOpen} onOpenChange={setIsAddViewingOpen} onAddViewing={handleAddViewing} contacts={contacts || []} properties={properties || []} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <QuickActionsCard
                     onAddLead={() => setIsAddLeadOpen(true)}
                     onAddProperty={() => setIsAddPropertyOpen(true)}
@@ -291,58 +294,60 @@ export default function DashboardPage() {
                     activeBuyersEvolutionData={activeBuyersEvolutionData}
                 />
                 
-                <Card className="agentfinder-dashboard-card shadow-2xl rounded-2xl bg-[#152a47] text-white border-none">
-                    <CardHeader className="pt-4 pb-2 text-center">
-                        <CardTitle className="text-white text-lg">Performanța Contului Tău</CardTitle>
+                <Card className="agentfinder-dashboard-card overflow-hidden rounded-2xl border-none bg-[#152a47] text-white shadow-2xl">
+                    <CardHeader className="px-4 pb-3 pt-5 text-center sm:px-5">
+                        <CardTitle className="text-lg text-white">Performanța Contului Tău</CardTitle>
+                        <CardDescription className="text-xs text-white/55">
+                            O privire rapidă asupra portofoliului și activității agenției
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="p-4 pt-2 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
-                                <p className="font-bold text-3xl">{activePropertiesCount}</p>
+                    <CardContent className="space-y-3 px-3 pb-4 pt-0 sm:px-4 sm:pb-5">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                            <div className="agentfinder-dashboard-stat agentfinder-dashboard-stat--active rounded-xl p-3 text-center sm:p-4">
+                                <p className="text-2xl font-bold tabular-nums text-[#62ebba] sm:text-3xl">{activePropertiesCount}</p>
                                 <p className="text-xs text-white/70">Proprietăți Active</p>
                             </div>
-                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
-                                <p className="font-bold text-3xl">{activeBuyersCount}</p>
+                            <div className="agentfinder-dashboard-stat agentfinder-dashboard-stat--buyers rounded-xl p-3 text-center sm:p-4">
+                                <p className="text-2xl font-bold tabular-nums text-[#9bbcff] sm:text-3xl">{activeBuyersCount}</p>
                                 <p className="text-xs text-white/70">Cumpărători Activi</p>
                             </div>
-                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
-                                <p className="font-bold text-3xl">{totalReservedCount}</p>
+                            <div className="agentfinder-dashboard-stat agentfinder-dashboard-stat--reserved rounded-xl p-3 text-center sm:p-4">
+                                <p className="text-2xl font-bold tabular-nums text-[#d7b4ff] sm:text-3xl">{totalReservedCount}</p>
                                 <p className="text-xs text-white/70">Prop. Rezervate</p>
                             </div>
-                            <div className="agentfinder-dashboard-stat text-center p-3 rounded-lg bg-white/5">
-                                <p className="font-bold text-3xl">{totalSoldCount}</p>
+                            <div className="agentfinder-dashboard-stat agentfinder-dashboard-stat--sold rounded-xl p-3 text-center sm:p-4">
+                                <p className="text-2xl font-bold tabular-nums text-white sm:text-3xl">{totalSoldCount}</p>
                                 <p className="text-xs text-white/70">Prop. Vândute</p>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                             <Button className="agentfinder-dashboard-soft-button w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold rounded-lg h-12 text-sm">
-                               <span>Proprietăți Rezervate Luna Curentă</span>
-                               <span>{reservedThisMonth.length}</span>
-                            </Button>
-                             <Button className="agentfinder-dashboard-soft-button w-full justify-between bg-white/10 text-white hover:bg-white/20 font-semibold rounded-lg h-12 text-sm">
-                               <span>Proprietăți Vândute Luna Curentă</span>
-                               <span>{soldThisMonth.length}</span>
-                            </Button>
-                        </div>
-                        <Separator className="bg-white/10" />
-                        <div className="pt-2">
-                          <CardTitle className="text-base font-semibold text-white text-center">Conversie Vizionări vs. Tranzacții</CardTitle>
-                          <CardDescription className="text-white/80 text-center">Ultimele 30 de zile</CardDescription>
-                          <div className="px-0 pt-2">
-                              <ConversionChart data={conversionData} />
-                          </div>
-                        </div>
+                        <AccountPerformanceCharts
+                            activeProperties={activePropertiesCount}
+                            activeBuyers={activeBuyersCount}
+                            reservedProperties={totalReservedCount}
+                            soldProperties={totalSoldCount}
+                            reservedThisMonth={reservedThisMonth.length}
+                            soldThisMonth={soldThisMonth.length}
+                            buyersEvolution={activeBuyersEvolutionData}
+                            conversionData={conversionData}
+                        />
                     </CardContent>
                 </Card>
             </div>
             
             <div className="grid grid-cols-1 gap-6">
-                 <Card className="agentfinder-dashboard-card shadow-2xl rounded-2xl border-none bg-[#152a47]">
-                    <CardHeader className="text-white p-4">
-                        <CardTitle className="text-base font-semibold text-white">Evoluție Comision Lunar</CardTitle>
-                        <CardDescription className="text-white/80">Comision realizat în ultimele luni</CardDescription>
+                 <Card className="agentfinder-dashboard-card rounded-2xl border-none bg-[#152a47] shadow-2xl">
+                    <CardHeader className="p-4 pb-3 sm:p-5 sm:pb-3">
+                        <div className="flex items-start gap-3">
+                            <div className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 p-2.5 text-emerald-600">
+                                <TrendingUp className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-base font-semibold text-white sm:text-lg">Evoluție Comision Lunar</CardTitle>
+                                <CardDescription className="mt-1 text-white/80">Comisioane realizate și evoluția lor în timp</CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent className="px-2 pt-4">
+                    <CardContent className="px-3 pb-4 pt-1 sm:px-5 sm:pb-5">
                         <SalesChart data={monthlyCommissionData} />
                     </CardContent>
                 </Card>

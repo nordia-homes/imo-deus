@@ -2906,6 +2906,50 @@
     color: #173b2c !important;
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--active {
+    border-color: rgba(134, 239, 172, 0.58) !important;
+    background:
+      radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 38%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(240, 253, 244, 0.78)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--active p:first-child {
+    color: #166534 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--buyers {
+    border-color: rgba(191, 206, 230, 0.76) !important;
+    background:
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 42%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.8)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--buyers p:first-child {
+    color: #445b84 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--reserved {
+    border-color: rgba(191, 206, 230, 0.76) !important;
+    background:
+      radial-gradient(circle at top right, rgba(139, 92, 246, 0.11), transparent 42%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 243, 255, 0.78)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--reserved p:first-child {
+    color: #6d5ca8 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--sold {
+    border-color: rgba(191, 206, 230, 0.76) !important;
+    background:
+      radial-gradient(circle at top right, hsl(220 28% 44% / 0.14), transparent 42%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), hsl(220 45% 92% / 0.84)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-dashboard-stat.agentfinder-dashboard-stat--sold p:first-child {
+    color: var(--app-sidebar-active-bg) !important;
+  }
+
   [data-app-theme='agentfinder'] .agentfinder-dashboard-section-label {
     background:
       linear-gradient(135deg, rgba(220, 252, 231, 0.78), rgba(239, 246, 255, 0.76)) !important;
@@ -3015,6 +3059,44 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.92),
       0 12px 26px rgba(37, 55, 88, 0.07) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-toolbar {
+    border-color: rgba(191, 206, 230, 0.72) !important;
+    background:
+      linear-gradient(135deg, rgba(248, 250, 252, 0.9), rgba(239, 246, 255, 0.78)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--current {
+    background:
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 42%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.8)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--total {
+    background:
+      radial-gradient(circle at top right, rgba(139, 92, 246, 0.11), transparent 42%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 243, 255, 0.78)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-period-filter {
+    border-color: rgba(191, 206, 230, 0.82) !important;
+    background: rgba(239, 246, 255, 0.78) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-period-filter button {
+    color: #64748b !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-period-filter button:hover {
+    background: rgba(255, 255, 255, 0.82) !important;
+    color: #273b5b !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-period-filter .agentfinder-sales-period-option--active {
+    background: #ffffff !important;
+    color: #14532d !important;
+    box-shadow: 0 5px 14px rgba(37, 55, 88, 0.1) !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--max {
