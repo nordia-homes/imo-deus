@@ -919,6 +919,7 @@ export type Property = {
   salesScore?: 'Scăzut' | 'Mediu' | 'Ridicată';
   ownerName?: string;
   ownerPhone?: string;
+  ownerListingUrl?: string | null;
   rlvUrl?: string;
   rlvFileType?: string;
   portalProfiles?: {

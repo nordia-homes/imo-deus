@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Property, PropertyStatusEvent } from '@/lib/types';
-import { Edit, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, CalendarCheck, MapPin } from 'lucide-react';
+import { Edit, ExternalLink, FileText, Rocket, Globe, MoreVertical, Calendar, Clock, CalendarCheck, MapPin } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +40,16 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
     const [pendingStatus, setPendingStatus] = useState<'Rezervat' | 'Vândut' | null>(null);
     const [isStatusUpdating, setIsStatusUpdating] = useState(false);
     const [isGeneratingPresentation, setIsGeneratingPresentation] = useState(false);
+    const ownerListingHref = (() => {
+        const value = property.ownerListingUrl?.trim();
+        if (!value) return null;
+        try {
+            const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+            return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+        } catch {
+            return null;
+        }
+    })();
 
     const persistSimpleStatusChange = (newStatus: Property['status']) => {
         if (!agencyId || !property) return;
@@ -309,12 +319,20 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                                         <Edit className="mr-2 h-4 w-4"/> 
                                         Editează
                                     </DropdownMenuItem>
-                                     <DropdownMenuItem asChild>
+                                    <DropdownMenuItem asChild>
                                         <Link href={buildAgencyPublicUrl(agency ?? (agencyId ? { id: agencyId } : null), `/properties/${property.id}`)} target="_blank" rel="noopener noreferrer">
                                             <Globe className="mr-2 h-4 w-4"/> 
                                             Vezi pe Website
                                         </Link>
                                     </DropdownMenuItem>
+                                    {ownerListingHref ? (
+                                        <DropdownMenuItem asChild>
+                                            <a href={ownerListingHref} target="_blank" rel="noopener noreferrer">
+                                                <ExternalLink className="mr-2 h-4 w-4" />
+                                                Link Proprietar
+                                            </a>
+                                        </DropdownMenuItem>
+                                    ) : null}
                                     <DropdownMenuItem onSelect={handleGeneratePresentation} disabled={isGeneratingPresentation}>
                                         <FileText className="mr-2 h-4 w-4"/>
                                         {isGeneratingPresentation ? 'Se generează...' : 'Generează PDF'}

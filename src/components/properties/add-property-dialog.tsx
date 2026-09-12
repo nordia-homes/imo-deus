@@ -388,6 +388,7 @@ const propertySchema = z.object({
   
   ownerName: z.string().optional(),
   ownerPhone: z.string().optional(),
+  ownerListingUrl: z.string().optional(),
   salesScore: z.string().optional(),
   agentId: z.string().optional(),
   defaultFacebookConnectionId: z.string().optional(),
@@ -434,6 +435,7 @@ const getEmptyPropertyFormValues = (userId?: string): PropertyFormValues => ({
   featured: false,
   ownerName: '',
   ownerPhone: '',
+  ownerListingUrl: '',
   salesScore: 'Mediu',
   agentId: userId || 'unassigned',
   defaultFacebookConnectionId: 'none',
@@ -506,6 +508,7 @@ const getPropertyFormValues = (propertyData: Property | null, userId?: string): 
     featured: propertyData.featured || false,
     ownerName: propertyData.ownerName || '',
     ownerPhone: propertyData.ownerPhone || '',
+    ownerListingUrl: propertyData.ownerListingUrl || '',
     salesScore:
       pickAllowedOrOriginalValue(propertyData.salesScore, SALES_SCORE_OPTIONS, {
         scazut: 'Scăzut',
@@ -989,6 +992,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 featured: propertyData.featured || false,
                 ownerName: propertyData.ownerName || '',
                 ownerPhone: propertyData.ownerPhone || '',
+                ownerListingUrl: propertyData.ownerListingUrl || '',
                 salesScore: pickAllowedOrOriginalValue(propertyData.salesScore, SALES_SCORE_OPTIONS, {
                     scazut: 'Scăzut',
                     ridicat: 'Ridicată',
@@ -1043,7 +1047,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
                 floor: '', totalFloors: '', orientation: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', salesScore: 'Mediu',
+                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', ownerListingUrl: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
                 defaultFacebookConnectionId: 'none',
                 buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '', nearMetro: false,
@@ -1492,6 +1496,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               featured: values.featured,
               ownerName: values.ownerName,
               ownerPhone: values.ownerPhone,
+              ownerListingUrl: values.ownerListingUrl?.trim() || null,
               salesScore: values.salesScore as Property['salesScore'],
               agentId: values.agentId === 'unassigned' ? null : values.agentId,
               defaultFacebookConnectionId:
@@ -1995,6 +2000,25 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         <FormField control={form.control} name="salesScore" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Potențial Vânzare</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-white/10 border-white/20 text-white"><SelectValue /></SelectTrigger></FormControl><SelectContent>{needsLegacyOption(field.value, SALES_SCORE_OPTIONS) && <SelectItem value={field.value}>{field.value}</SelectItem>}<SelectItem value="Scăzut">Scăzut</SelectItem><SelectItem value="Mediu">Mediu</SelectItem><SelectItem value="Ridicată">Ridicată</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="ownerName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                         <FormField control={form.control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon Proprietar</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField
+                                          control={form.control}
+                                          name="ownerListingUrl"
+                                          render={({ field }) => (
+                                            <FormItem className="md:col-span-2">
+                                              <FormLabel className="text-white/80">Link anunț proprietar</FormLabel>
+                                              <FormControl>
+                                                <Input
+                                                  type="url"
+                                                  inputMode="url"
+                                                  placeholder="https://www..."
+                                                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                                                  {...field}
+                                                />
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
                                     </div>
                                     <FormField control={form.control} name="featured" render={({ field }) => ( <FormItem className="flex flex-row items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/></FormControl><FormLabel className="!mt-0 text-white/80">Proprietate Recomandată</FormLabel></FormItem> )}/>
                                 </CardContent>
