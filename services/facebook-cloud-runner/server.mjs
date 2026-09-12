@@ -542,26 +542,46 @@ async function fillComposer(page, description) {
   await humanPause(page, 350, 850);
 }
 
+async function findPhotoFileInput(scope, requireMultiple = false) {
+  const selectors = requireMultiple
+    ? [
+        'input[type="file"][multiple][accept*="image"]',
+        'input[type="file"][multiple]',
+      ]
+    : [
+        'input[type="file"][multiple][accept*="image"]',
+        'input[type="file"][multiple]',
+        'input[type="file"][accept*="image"]',
+      ];
+
+  for (const selector of selectors) {
+    const candidates = scope.locator(selector);
+    if (await candidates.count().catch(() => 0)) return candidates.last();
+  }
+  return null;
+}
+
 async function attachImages(page, files) {
   if (!files.length) return;
   const dialog = await getVisibleComposerDialog(page);
   const scope = dialog || page;
-  let input = scope.locator('input[type="file"]').last();
-  if (!await input.count().catch(() => 0)) {
+  let input = await findPhotoFileInput(scope, files.length > 1);
+  if (!input) {
     const photoButton = scope.getByRole('button', { name: /Foto|Photo|fotograf/i }).last();
     if (await photoButton.count().catch(() => 0)) {
       await humanClick(photoButton, 8_000).catch(() => undefined);
       await humanPause(page, 400, 750);
-      input = scope.locator('input[type="file"]').last();
+      input = await findPhotoFileInput(scope, files.length > 1);
     }
   }
-  if (!await input.count().catch(() => 0)) {
-    input = page.locator('input[type="file"]').last();
-  }
-  if (!await input.count().catch(() => 0)) {
+  if (!input) input = await findPhotoFileInput(page, files.length > 1);
+  if (!input) input = await findPhotoFileInput(scope);
+  if (!input) input = await findPhotoFileInput(page);
+  if (!input) {
     throw new Error('Controlul de încărcare a fotografiilor nu a fost găsit.');
   }
-  await input.setInputFiles(files);
+  const acceptsMultiple = await input.getAttribute('multiple').then((value) => value !== null).catch(() => false);
+  await input.setInputFiles(acceptsMultiple ? files : files.slice(0, 1));
   await humanPause(page, 1_800, 3_200);
 }
 
@@ -708,7 +728,7 @@ async function processJob(job) {
       }
       const group = job.groups[index];
       job.currentGroupIndex = index;
-      if (['submitted', 'pending_approval', 'skipped'].includes(group.status)) continue;
+      if (['submitted', 'pending_approval', 'skipped', 'uncertain', 'error'].includes(group.status)) continue;
 
       if (job.nextRunAt) {
         const waitMs = new Date(job.nextRunAt).getTime() - Date.now();
@@ -767,12 +787,21 @@ async function processJob(job) {
         group.status = error?.code === 'NEEDS_REAUTHENTICATION' ? 'needs_reauthentication' : 'error';
         group.errorMessage = error instanceof Error ? error.message : String(error);
         group.failedAt = nowIso();
-        job.errorMessage = group.errorMessage;
-        job.status = group.status === 'needs_reauthentication' ? 'needs_reauthentication' : 'error';
+        if (group.status === 'needs_reauthentication') {
+          job.errorMessage = group.errorMessage;
+          job.status = 'needs_reauthentication';
+          job.updatedAt = nowIso();
+          await persistState();
+          await reportJob(job);
+          return;
+        }
+        job.errorMessage = null;
+        job.status = 'running';
+        job.nextRunAt = index < job.groups.length - 1 ? new Date(Date.now() + cooldownMs()).toISOString() : null;
         job.updatedAt = nowIso();
         await persistState();
         await reportJob(job);
-        return;
+        continue;
       }
 
       job.nextRunAt = index < job.groups.length - 1 ? new Date(Date.now() + cooldownMs()).toISOString() : null;

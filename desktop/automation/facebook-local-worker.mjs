@@ -169,26 +169,48 @@ async function fillComposer(page, description) {
   await pause(page, 350, 800);
 }
 
+async function findPhotoFileInput(scope, requireMultiple = false) {
+  const selectors = requireMultiple
+    ? [
+        'input[type="file"][multiple][accept*="image"]',
+        'input[type="file"][multiple]',
+      ]
+    : [
+        'input[type="file"][multiple][accept*="image"]',
+        'input[type="file"][multiple]',
+        'input[type="file"][accept*="image"]',
+      ];
+
+  for (const selector of selectors) {
+    const candidates = scope.locator(selector);
+    if (await candidates.count().catch(() => 0)) return candidates.last();
+  }
+  return null;
+}
+
 async function attachImages(page, files) {
   if (!files.length) return;
   const dialog = await visibleDialog(page);
   const scope = dialog || page;
-  let input = scope.locator('input[type="file"]').last();
-  if (!await input.count().catch(() => 0)) {
+  let input = await findPhotoFileInput(scope, files.length > 1);
+  if (!input) {
     const photoButton = scope.getByRole('button', { name: /Foto|Photo|fotograf/i }).last();
     if (await photoButton.count().catch(() => 0)) {
       await humanClick(photoButton, 8_000).catch(() => undefined);
       await pause(page, 400, 750);
-      input = scope.locator('input[type="file"]').last();
+      input = await findPhotoFileInput(scope, files.length > 1);
     }
   }
-  if (!await input.count().catch(() => 0)) input = page.locator('input[type="file"]').last();
-  if (!await input.count().catch(() => 0)) {
+  if (!input) input = await findPhotoFileInput(page, files.length > 1);
+  if (!input) input = await findPhotoFileInput(scope);
+  if (!input) input = await findPhotoFileInput(page);
+  if (!input) {
     const error = new Error('Controlul de incarcare a fotografiilor nu a fost gasit.');
     error.code = 'PHOTO_INPUT_NOT_FOUND';
     throw error;
   }
-  await input.setInputFiles(files);
+  const acceptsMultiple = await input.getAttribute('multiple').then((value) => value !== null).catch(() => false);
+  await input.setInputFiles(acceptsMultiple ? files : files.slice(0, 1));
   await pause(page, 1_800, 3_200);
 }
 

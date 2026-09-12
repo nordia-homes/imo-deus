@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-const TERMINAL_GROUP_STATUSES = new Set(['submitted', 'pending_approval', 'skipped', 'uncertain']);
+const TERMINAL_GROUP_STATUSES = new Set(['submitted', 'pending_approval', 'skipped', 'uncertain', 'error']);
 
 export async function POST(request: NextRequest) {
   try {
@@ -82,32 +82,38 @@ export async function POST(request: NextRequest) {
           errorCode: body.code || null,
           errorMessage: body.message || 'Facebook nu a confirmat publicarea; grupul nu este repetat.',
         };
-      } else {
+      } else if (body.action === 'needs_reauthentication') {
         groups[index] = {
           ...groups[index],
-          status: body.action === 'needs_reauthentication' ? 'needs_reauthentication' : 'error',
+          status: 'needs_reauthentication',
           failedAt: timestamp,
           submissionPhase: null,
           errorCode: body.code || null,
           errorMessage: body.message || 'Publicarea a esuat.',
         };
-        const jobStatus = body.action === 'needs_reauthentication' ? 'needs_reauthentication' : 'error';
         transaction.set(ref, {
           groups,
-          status: jobStatus,
+          status: 'needs_reauthentication',
           errorMessage: groups[index].errorMessage,
           leaseToken: null,
           leaseExpiresAt: null,
           updatedAt: timestamp,
         }, { merge: true });
-        if (body.action === 'needs_reauthentication') {
-          transaction.set(connectionRef, {
-            status: 'needs_reauthentication',
-            lastError: groups[index].errorMessage,
-            updatedAt: timestamp,
-          }, { merge: true });
-        }
-        return { status: 200, job: { ...job, groups, status: jobStatus } };
+        transaction.set(connectionRef, {
+          status: 'needs_reauthentication',
+          lastError: groups[index].errorMessage,
+          updatedAt: timestamp,
+        }, { merge: true });
+        return { status: 200, job: { ...job, groups, status: 'needs_reauthentication' } };
+      } else {
+        groups[index] = {
+          ...groups[index],
+          status: 'error',
+          failedAt: timestamp,
+          submissionPhase: null,
+          errorCode: body.code || null,
+          errorMessage: body.message || 'Publicarea a esuat.',
+        };
       }
 
       let nextIndex = index + 1;

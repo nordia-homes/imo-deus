@@ -3,7 +3,20 @@ import crypto from 'node:crypto';
 
 export const runtime = 'nodejs';
 
-const TERMINAL_GROUP_STATUSES = new Set(['submitted', 'pending_approval', 'skipped', 'uncertain']);
+const TERMINAL_GROUP_STATUSES = new Set(['submitted', 'pending_approval', 'skipped', 'uncertain', 'error']);
+
+function isClaimableJob(job: Record<string, any>) {
+  const status = String(job.status);
+  if (['scheduled', 'queued', 'running', 'cooldown'].includes(status)) return true;
+  if (status !== 'error' || !Array.isArray(job.groups)) return false;
+
+  const startIndex = Math.max(0, Number(job.currentGroupIndex || 0));
+  const currentGroupFailed = String(job.groups[startIndex]?.status) === 'error';
+  const hasRemainingGroup = job.groups
+    .slice(startIndex + 1)
+    .some((group: Record<string, unknown>) => !TERMINAL_GROUP_STATUSES.has(String(group?.status)));
+  return currentGroupFailed && hasRemainingGroup;
+}
 
 function normalizePropertyImageUrl(value: unknown) {
   const objectUrl = value && typeof value === 'object'
@@ -34,7 +47,7 @@ export async function POST(request: NextRequest) {
       .map((doc): { ref: typeof doc.ref; id: string } & Record<string, any> => ({ ref: doc.ref, id: doc.id, ...doc.data() }))
       .filter((job) => job.ownerUid === context.ownerUid
         && job.runnerMode === 'local'
-        && ['scheduled', 'queued', 'running', 'cooldown'].includes(String(job.status))
+        && isClaimableJob(job)
         && local.localJobReadyAt(job) <= Date.now())
       .sort((a, b) => {
         const byReady = local.localJobReadyAt(a) - local.localJobReadyAt(b);
@@ -54,7 +67,7 @@ export async function POST(request: NextRequest) {
           return null;
         }
         if (job.ownerUid !== context.ownerUid || job.deviceId !== context.deviceId || job.runnerMode !== 'local') return null;
-        if (!['scheduled', 'queued', 'running', 'cooldown'].includes(String(job.status))) return null;
+        if (!isClaimableJob(job)) return null;
         if (local.localJobReadyAt(job) > Date.now()) return null;
 
         const leaseActive = job.leaseToken
