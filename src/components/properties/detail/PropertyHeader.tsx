@@ -19,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { useSidebar } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
@@ -30,8 +29,6 @@ import {
 } from '@/components/properties/PropertyStatusChangeDialog';
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
-    const { state: sidebarState } = useSidebar();
-    const isSidebarExpanded = sidebarState === 'expanded';
     const { agencyId, agency } = useAgency();
     const { user } = useUser();
     const firestore = useFirestore();
@@ -215,33 +212,28 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
     const displayFloor = property.floor
         ? `Et. ${property.floor}${property.totalFloors && !property.floor.includes('/') ? `/${property.totalFloors}` : ''}`
         : null;
-    const desktopLeftCardStyle = {
-        width: isSidebarExpanded ? 'calc(100% - 10rem)' : 'calc(100% - 2.5rem)',
-        maxWidth: isSidebarExpanded ? 'calc(100% - 10rem)' : 'calc(100% - 2.5rem)',
-    };
     const desktopMetaItems = [
-        { icon: <Calendar className="h-4 w-4 text-emerald-300" />, value: creationDate.toLocaleDateString('ro-RO') },
-        { icon: <Clock className="h-4 w-4 text-emerald-300" />, value: `Vechime: ${ageInDays} ${ageInDays === 1 ? 'zi' : 'zile'}` },
-        { icon: null, value: property.location },
-        { icon: null, value: `${property.rooms} camere` },
-        { icon: null, value: `${property.bathrooms} ${property.bathrooms === 1 ? 'baie' : 'băi'}` },
-        { icon: null, value: `${displaySurface} mp` },
-        ...(property.constructionYear ? [{ icon: null, value: String(property.constructionYear) }] : []),
-        ...(displayFloor ? [{ icon: null, value: displayFloor }] : []),
+        { icon: <Calendar className="h-4 w-4 text-emerald-300" />, value: creationDate.toLocaleDateString('ro-RO'), flexible: false },
+        { icon: <Clock className="h-4 w-4 text-emerald-300" />, value: `Vechime: ${ageInDays} ${ageInDays === 1 ? 'zi' : 'zile'}`, flexible: false },
+        { icon: null, value: property.location, flexible: true },
+        { icon: null, value: `${property.rooms} camere`, flexible: false },
+        { icon: null, value: `${property.bathrooms} ${property.bathrooms === 1 ? 'baie' : 'băi'}`, flexible: false },
+        { icon: null, value: `${displaySurface} mp`, flexible: false },
+        ...(property.constructionYear ? [{ icon: null, value: String(property.constructionYear), flexible: false }] : []),
+        ...(displayFloor ? [{ icon: null, value: displayFloor, flexible: false }] : []),
     ];
 
   return (
     <>
         <header className="px-4 md:px-6 lg:px-0 py-4 border-b bg-background/95 backdrop-blur-sm lg:bg-transparent lg:border-white/10 lg:mb-2">
-            <div className="flex h-full flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
-                <div className="min-w-0 lg:col-span-8 lg:grid lg:grid-rows-[4rem_3.5rem] lg:gap-3">
-                    <div className="mb-2 flex flex-col flex-wrap gap-4 md:flex-row md:items-center lg:mb-0 lg:h-16">
+            <div className="flex h-full min-w-0 flex-col gap-4 lg:grid lg:grid-cols-12 lg:items-start lg:gap-8">
+                <div className="min-w-0 lg:col-span-8 lg:grid lg:w-full lg:grid-rows-[4rem_3.5rem] lg:gap-3">
+                    <div className="mb-2 flex min-w-0 flex-col flex-wrap gap-4 md:flex-row md:items-center lg:mb-0 lg:h-16 lg:w-full">
                         <div
-                            className={`agentfinder-property-header-left-card inline-flex h-auto w-full items-center truncate rounded-lg border bg-[#f8f8f9] p-3 text-xl font-bold text-card-foreground shadow-lg md:max-w-lg lg:h-16 lg:max-w-none lg:rounded-[1.6rem] lg:border-0 lg:px-5 lg:py-0 lg:text-[1.65rem] lg:tracking-tight lg:text-emerald-50 lg:shadow-none ${ACTION_CARD_CLASSNAME}`}
-                            style={desktopLeftCardStyle}
+                            className={`agentfinder-property-header-left-card inline-flex h-auto min-w-0 w-full max-w-full items-center overflow-hidden rounded-lg border bg-[#f8f8f9] p-3 text-xl font-bold text-card-foreground shadow-lg md:max-w-lg lg:h-16 lg:max-w-full lg:rounded-[1.6rem] lg:border-0 lg:px-5 lg:py-0 lg:text-[1.65rem] lg:tracking-tight lg:text-emerald-50 lg:shadow-none ${ACTION_CARD_CLASSNAME}`}
                             title={property.title}
                         >
-                            <span className="truncate">{property.title}</span>
+                            <span className="block min-w-0 flex-1 truncate">{property.title}</span>
                         </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground lg:hidden lg:text-white/70">
@@ -271,25 +263,27 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
                         )}
                     </div>
                     <div
-                        className={`${ACTION_CARD_CLASSNAME} agentfinder-property-header-left-card agentfinder-property-header-details-card mt-4 hidden rounded-[1.45rem] p-2 lg:flex lg:h-14 lg:items-center lg:mt-0`}
-                        style={desktopLeftCardStyle}
+                        className={`${ACTION_CARD_CLASSNAME} agentfinder-property-header-left-card agentfinder-property-header-details-card mt-4 hidden min-w-0 w-full max-w-full overflow-hidden rounded-[1.45rem] p-2 lg:flex lg:h-14 lg:items-center lg:mt-0`}
                     >
-                        <div className={`flex min-w-0 items-center overflow-hidden px-2 ${isSidebarExpanded ? 'gap-2' : 'gap-4'}`}>
+                        <div className="flex min-w-0 w-full items-center justify-between gap-2 overflow-hidden px-2">
                             {desktopMetaItems.map((item, index) => (
-                                <div key={`${item.value}-${index}`} className={`flex min-w-0 shrink-0 items-center ${isSidebarExpanded ? 'gap-1.5' : 'gap-2'}`}>
+                                <div
+                                    key={`${item.value}-${index}`}
+                                    className={`flex min-w-0 items-center gap-1.5 ${item.flexible ? 'shrink' : 'shrink-0'}`}
+                                >
                                     {item.icon ? <span className="shrink-0">{item.icon}</span> : null}
-                                    <p className="truncate whitespace-nowrap text-sm font-semibold text-white">
+                                    <p className="min-w-0 truncate whitespace-nowrap text-sm font-semibold text-white">
                                         {item.value}
                                     </p>
                                     {index < desktopMetaItems.length - 1 ? (
-                                        <span className={`${isSidebarExpanded ? 'ml-0.5' : 'ml-2'} h-5 w-px shrink-0 bg-white/10`} />
+                                        <span className="ml-1 h-5 w-px shrink-0 bg-white/10" />
                                     ) : null}
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 lg:col-span-4 lg:grid lg:grid-rows-[4rem_3.5rem] lg:gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 lg:col-span-4 lg:grid lg:w-full lg:grid-rows-[4rem_3.5rem] lg:gap-3">
                     <div className={`${ACTION_CARD_CLASSNAME} w-full rounded-[1.7rem] p-4 lg:flex lg:h-16 lg:items-center lg:p-2`}>
                         <div className="flex w-full items-center gap-3">
                             <Select onValueChange={(value) => handleStatusChange(value as Property['status'])} defaultValue={property.status}>
