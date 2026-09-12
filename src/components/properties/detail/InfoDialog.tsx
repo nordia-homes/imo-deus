@@ -22,6 +22,11 @@ interface InfoDialogProps {
 
 export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) {
     const isMobile = useIsMobile();
+    const agencyCommission = property.commissionValue != null
+      ? property.commissionType === 'fixed'
+        ? `${property.commissionValue.toLocaleString('ro-RO')} €`
+        : `${property.commissionValue.toLocaleString('ro-RO')}%`
+      : undefined;
 
     const InfoItem = ({ icon, label, value, tone = 'blue' }: {
         icon: React.ReactNode,
@@ -104,6 +109,9 @@ export function InfoDialog({ property, isOpen, onOpenChange }: InfoDialogProps) 
             </div>
              <div>
                 <InfoItem tone="cyan" icon={<MapPin className="h-5 w-5" />} label="Adresă" value={property.address} />
+            </div>
+            <div>
+                <InfoItem tone="emerald" icon={<Handshake className="h-5 w-5" />} label="Comision proprietar" value={agencyCommission} />
             </div>
 
         </div>

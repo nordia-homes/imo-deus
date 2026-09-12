@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Facebook, Link2, Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { ExternalLink, Facebook, Link2, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +30,17 @@ const purposeLabels: Record<FacebookGroupPurpose, string> = {
 
 function prepareGroups(groups: FacebookGroup[]): GroupDraft[] {
   return groups.map((group) => ({ ...group, purpose: getFacebookGroupPurpose(group) }));
+}
+
+function getGroupHref(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 export default function FacebookGroupsPage() {
@@ -148,7 +159,9 @@ export default function FacebookGroupsPage() {
                 </div>
               ) : visibleGroups.length ? (
                 <div className="grid gap-4 lg:grid-cols-2">
-                  {visibleGroups.map(({ group, index }) => (
+                  {visibleGroups.map(({ group, index }) => {
+                    const groupHref = getGroupHref(group.url);
+                    return (
                     <Card key={`${index}-${group.url}`} className="rounded-3xl border-[var(--app-card-border)] bg-[var(--app-surface)] shadow-[var(--app-card-shadow)]">
                       <CardContent className="space-y-4 p-5">
                         <div className="flex items-center justify-between gap-3">
@@ -172,15 +185,28 @@ export default function FacebookGroupsPage() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor={`group-url-${index}`}>Link grup</Label>
-                          <div className="relative">
-                            <Link2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                              id={`group-url-${index}`}
-                              value={group.url}
-                              onChange={(event) => updateGroup(index, { url: event.target.value })}
-                              placeholder="https://www.facebook.com/groups/..."
-                              className="h-11 rounded-xl pl-9"
-                            />
+                          <div className="flex gap-2">
+                            <div className="relative min-w-0 flex-1">
+                              <Link2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                              <Input
+                                id={`group-url-${index}`}
+                                value={group.url}
+                                onChange={(event) => updateGroup(index, { url: event.target.value })}
+                                placeholder="https://www.facebook.com/groups/..."
+                                className="h-11 rounded-xl pl-9"
+                              />
+                            </div>
+                            {groupHref ? (
+                              <Button asChild type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0 rounded-xl">
+                                <a href={groupHref} target="_blank" rel="noopener noreferrer" aria-label={`Deschide ${group.name || 'grupul Facebook'}`}>
+                                  <ExternalLink className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            ) : (
+                              <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0 rounded-xl" disabled aria-label="Link indisponibil">
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-end gap-3">
@@ -213,7 +239,8 @@ export default function FacebookGroupsPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <Card className="rounded-3xl border-dashed border-[var(--app-card-border)] bg-[var(--app-surface-soft)]">
