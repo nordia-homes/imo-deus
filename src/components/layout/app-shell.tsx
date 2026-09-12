@@ -141,6 +141,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/facebook-groups')}>
+                      <Link href="/marketing/facebook-groups">
+                        <Users />
+                        <span>Grupuri Facebook</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
                     <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/tiktok-studio')}>
                       <Link href="/marketing/tiktok-studio">
                         <Video />

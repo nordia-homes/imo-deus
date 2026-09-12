@@ -4,7 +4,6 @@ import type { MatchedBuyer, Property, Viewing, UserProfile } from "@/lib/types";
 import { PriceStatusCard } from "./actions/PriceStatusCard";
 import { AgentCard } from "./actions/AgentCard";
 import { PublishCard } from "./actions/PublishCard";
-import { FacebookPromotionCard } from "./actions/FacebookPromotionCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
 import { OwnerCard } from "./actions/OwnerCard";
 import { MetaAdsCard } from "./actions/MetaAdsCard";
@@ -30,7 +29,6 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <MetaAdsCard property={property} />
             <SocialMediaCard property={property} />
             <TikTokAdsCard property={property} />
-            <FacebookPromotionCard />
         </div>
     );
 }

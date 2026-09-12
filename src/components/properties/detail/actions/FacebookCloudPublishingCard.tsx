@@ -20,7 +20,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { FacebookCloudPublishDialog } from '@/components/properties/FacebookCloudPublishDialog';
 import { facebookCloudFetch } from '@/lib/facebook-cloud-client';
-import { getAgencyFacebookGroups } from '@/lib/facebook-groups';
+import { getAgencyFacebookGroupsForProperty } from '@/lib/facebook-groups';
 import type {
   FacebookCloudConnection,
   FacebookCloudPublishingJob,
@@ -60,7 +60,10 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   const { agency, agencyId } = useAgency();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const groups = useMemo(() => getAgencyFacebookGroups(agency), [agency]);
+  const groups = useMemo(
+    () => getAgencyFacebookGroupsForProperty(agency, property.transactionType),
+    [agency, property.transactionType]
+  );
   const [connections, setConnections] = useState<FacebookCloudConnection[]>([]);
   const [globalDefaultId, setGlobalDefaultId] = useState<string | null>(null);
   const [propertyDefaultId, setPropertyDefaultId] = useState(property.defaultFacebookConnectionId || null);
@@ -71,6 +74,11 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   const [loading, setLoading] = useState(true);
   const [savingDefault, setSavingDefault] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const availableUrls = new Set(groups.map((group) => group.url));
+    setSelectedUrls((current) => current.filter((url) => availableUrls.has(url)));
+  }, [groups]);
 
   const load = useCallback(async (quiet = false) => {
     if (!user) return;
@@ -261,7 +269,14 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
                       </label>
                     );
                   })}
-                  {!groups.length ? <p className="text-xs text-white/50">Configurează grupurile în cardul „Grupurile tale Facebook”.</p> : null}
+                  {!groups.length ? (
+                    <p className="text-xs text-white/50">
+                      Configurează grupurile potrivite în pagina{' '}
+                      <Link href="/marketing/facebook-groups" className="underline underline-offset-2">
+                        Grupuri Facebook
+                      </Link>.
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
             </div>

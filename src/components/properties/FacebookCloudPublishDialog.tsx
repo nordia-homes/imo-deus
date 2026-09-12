@@ -12,7 +12,7 @@ import {
   formatBucharestDateTime,
 } from '@/lib/bucharest-time';
 import { facebookCloudFetch } from '@/lib/facebook-cloud-client';
-import { getAgencyFacebookGroups } from '@/lib/facebook-groups';
+import { filterFacebookGroupsForProperty, getAgencyFacebookGroupsForProperty } from '@/lib/facebook-groups';
 import type {
   FacebookCloudConnection,
   FacebookCloudPublishingJob,
@@ -62,8 +62,16 @@ export function FacebookCloudPublishDialog({
   const { user } = useUser();
   const { agency } = useAgency();
   const { toast } = useToast();
-  const agencyGroups = useMemo(() => getAgencyFacebookGroups(agency), [agency]);
-  const groups = providedGroups || agencyGroups;
+  const agencyGroups = useMemo(
+    () => getAgencyFacebookGroupsForProperty(agency, property.transactionType),
+    [agency, property.transactionType]
+  );
+  const groups = useMemo(
+    () => providedGroups
+      ? filterFacebookGroupsForProperty(providedGroups, property.transactionType)
+      : agencyGroups,
+    [agencyGroups, property.transactionType, providedGroups]
+  );
   const [connections, setConnections] = useState<FacebookCloudConnection[]>(providedConnections || []);
   const [selectedConnectionId, setSelectedConnectionId] = useState('');
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
@@ -73,6 +81,11 @@ export function FacebookCloudPublishDialog({
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+
+  useEffect(() => {
+    const availableUrls = new Set(groups.map((group) => group.url));
+    setSelectedUrls((current) => current.filter((url) => availableUrls.has(url)));
+  }, [groups]);
 
   const isEditing = existingJob?.status === 'scheduled';
   const isInProgress = Boolean(existingJob && ['queued', 'running', 'cooldown'].includes(existingJob.status));

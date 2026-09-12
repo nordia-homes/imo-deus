@@ -304,6 +304,7 @@ export type StoriaActivePromotion = {
 export type FacebookGroup = {
   name: string;
   url: string;
+  purpose?: 'sale' | 'rent' | 'both';
 };
 
 export type FacebookPromotionJob = {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { FacebookCloudPublishingJob, FacebookGroup, Property } from '@/lib/types';
+import { defaultFacebookGroups, filterFacebookGroupsForProperty } from '@/lib/facebook-groups';
 
 export const runtime = 'nodejs';
 
@@ -95,7 +96,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Proprietatea nu a fost găsită.' }, { status: 404 });
     }
     const property = { id: propertySnapshot.id, ...propertySnapshot.data() } as Property;
-    const agencyGroups = (agencySnapshot.data()?.facebookGroups || []) as FacebookGroup[];
+    const storedAgencyGroups = (agencySnapshot.data()?.facebookGroups || []) as FacebookGroup[];
+    const agencyGroups = filterFacebookGroupsForProperty(
+      storedAgencyGroups.length ? storedAgencyGroups : defaultFacebookGroups,
+      property.transactionType
+    );
     const groups = groupUrls.map((url) => agencyGroups.find((group) => group.url === url)).filter(Boolean) as FacebookGroup[];
     if (groups.length !== groupUrls.length) {
       return NextResponse.json({ message: 'Unul dintre grupurile selectate nu mai este configurat în agenție.' }, { status: 400 });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { FacebookCloudPublishingJob, FacebookGroup } from '@/lib/types';
+import type { FacebookCloudPublishingJob, FacebookGroup, Property } from '@/lib/types';
+import { defaultFacebookGroups, filterFacebookGroupsForProperty } from '@/lib/facebook-groups';
 
 export const runtime = 'nodejs';
 type Context = { params: Promise<{ jobId: string }> };
@@ -56,8 +57,19 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (connectionMode !== existingMode) {
       return NextResponse.json({ message: 'Schimbarea tipului de runner pentru o programare existenta nu este permisa.' }, { status: 409 });
     }
-    const agencySnapshot = await adminDb.collection('agencies').doc(agencyId).get();
-    const agencyGroups = (agencySnapshot.data()?.facebookGroups || []) as FacebookGroup[];
+    const [agencySnapshot, propertySnapshot] = await Promise.all([
+      adminDb.collection('agencies').doc(agencyId).get(),
+      adminDb.collection('agencies').doc(agencyId).collection('properties').doc(existing.propertyId).get(),
+    ]);
+    if (!propertySnapshot.exists) {
+      return NextResponse.json({ message: 'Proprietatea nu a fost găsită.' }, { status: 404 });
+    }
+    const property = { id: propertySnapshot.id, ...propertySnapshot.data() } as Property;
+    const storedAgencyGroups = (agencySnapshot.data()?.facebookGroups || []) as FacebookGroup[];
+    const agencyGroups = filterFacebookGroupsForProperty(
+      storedAgencyGroups.length ? storedAgencyGroups : defaultFacebookGroups,
+      property.transactionType
+    );
     const groups = groupUrls.map((url) => agencyGroups.find((group) => group.url === url)).filter(Boolean) as FacebookGroup[];
     if (groups.length !== groupUrls.length) {
       return NextResponse.json({ message: 'Unul dintre grupurile selectate nu mai este configurat în agenție.' }, { status: 400 });

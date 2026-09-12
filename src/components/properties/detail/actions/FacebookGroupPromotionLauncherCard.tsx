@@ -19,7 +19,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { useFirestore, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { getAgencyFacebookGroups } from '@/lib/facebook-groups';
+import { getAgencyFacebookGroupsForProperty } from '@/lib/facebook-groups';
 import type { FacebookPromotionSession, Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_ICON_CLASSNAME, ACTION_ICON_WRAPPER_CLASSNAME } from './cardStyles';
@@ -34,7 +34,10 @@ export function FacebookGroupPromotionLauncherCard({ property }: { property: Pro
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const availableGroups = useMemo(() => getAgencyFacebookGroups(agency), [agency]);
+  const availableGroups = useMemo(
+    () => getAgencyFacebookGroupsForProperty(agency, property.transactionType),
+    [agency, property.transactionType]
+  );
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
 
   const selectedGroups = useMemo(
