@@ -1906,7 +1906,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                 {selectedCoordinates ? 'Locatia selectata va fi salvata exact asa.' : 'Selecteaza o adresa din lista pentru a vedea locatia exacta.'}
                                             </p>
                                         </div>
-                                        <div className="h-72 overflow-hidden rounded-[1.5rem] border border-white/10">
+                                        <div className="h-72 overflow-hidden rounded-[1.5rem] border border-white/10 md:h-[22rem]">
                                             {mapPreviewProperty ? (
                                                 <PropertiesMap properties={[mapPreviewProperty]} />
                                             ) : (
@@ -2099,7 +2099,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                         alt={watchedTitle || 'Previzualizare proprietate'}
                                                         fill
                                                         sizes="(max-width: 768px) 100vw, 420px"
-                                                        className="object-contain"
+                                                        className="object-cover"
                                                     />
                                                 </>
                                             ) : (
@@ -2107,7 +2107,6 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                                     Prima fotografie incarcata va aparea aici.
                                                 </div>
                                             )}
-                                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
                                         </div>
 
                                         <div className="space-y-4 p-4">
