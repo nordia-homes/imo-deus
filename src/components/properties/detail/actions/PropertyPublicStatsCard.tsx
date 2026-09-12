@@ -6,18 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { ACTION_CARD_CLASSNAME } from './cardStyles';
-
-type PublicStats = {
-  views: number;
-  favorites: number;
-  favoriteAdds: number;
-};
+import type { PropertyPublicPerformance } from '@/lib/property-sales-recommendations';
 
 const numberFormatter = new Intl.NumberFormat('ro-RO');
 
 export function PropertyPublicStatsCard({ property }: { property: Property }) {
   const { user, isUserLoading } = useUser();
-  const [stats, setStats] = useState<PublicStats | null>(null);
+  const [stats, setStats] = useState<PropertyPublicPerformance | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -48,7 +43,7 @@ export function PropertyPublicStatsCard({ property }: { property: Property }) {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload?.message || 'Statisticile nu au putut fi incarcate.');
-        if (!cancelled) setStats(payload as PublicStats);
+        if (!cancelled) setStats(payload as PropertyPublicPerformance);
       } catch {
         if (!cancelled) setHasError(true);
       }

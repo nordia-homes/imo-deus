@@ -91,14 +91,25 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
       const connectionsPayload = await connectionsResponse.json().catch(() => ({}));
       const jobsPayload = await jobsResponse.json().catch(() => ({}));
       if (!connectionsResponse.ok) throw new Error(connectionsPayload.message || 'Conturile nu au putut fi încărcate.');
-      setConnections(connectionsPayload.connections || []);
+      const loadedConnections = (connectionsPayload.connections || []) as FacebookCloudConnection[];
+      const loadedJobs = (jobsResponse.ok ? jobsPayload.jobs || [] : []) as FacebookCloudPublishingJob[];
+      setConnections(loadedConnections);
       setGlobalDefaultId(connectionsPayload.defaultConnectionId || null);
-      setJobs(jobsResponse.ok ? jobsPayload.jobs || [] : []);
+      setJobs(loadedJobs);
       setSelectedConnectionId((current) => {
-        if (current && connectionsPayload.connections?.some((item: FacebookCloudConnection) => item.id === current)) return current;
-        const preferred = propertyDefaultId || connectionsPayload.defaultConnectionId;
-        if (preferred && connectionsPayload.connections?.some((item: FacebookCloudConnection) => item.id === preferred)) return preferred;
-        return connectionsPayload.connections?.find((item: FacebookCloudConnection) => item.status === 'connected')?.id || '';
+        if (current && loadedConnections.some((item) => item.id === current)) return current;
+
+        const latestPublishingConnectionId = loadedJobs[0]?.connectionId || null;
+        const preferredIds = [
+          propertyDefaultId,
+          connectionsPayload.defaultConnectionId,
+          latestPublishingConnectionId,
+        ];
+        const preferred = preferredIds.find((connectionId) => (
+          connectionId && loadedConnections.some((item) => item.id === connectionId)
+        ));
+        const firstConnectedInList = loadedConnections.find((item) => item.status === 'connected');
+        return preferred || firstConnectedInList?.id || loadedConnections[0]?.id || '';
       });
     } catch (error) {
       if (!quiet) {
@@ -179,7 +190,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
               'border-0',
               latestJob.status === 'completed' ? 'bg-emerald-500/15 text-emerald-100' :
               latestJob.status === 'error' || latestJob.status === 'needs_reauthentication' ? 'bg-rose-500/15 text-rose-100' :
-              'bg-sky-500/15 text-sky-100'
+              'bg-sky-100 text-sky-800'
             )}>{jobLabel(latestJob)}</Badge>
           ) : null}
         </div>
