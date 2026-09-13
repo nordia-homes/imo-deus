@@ -2,9 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import {
+  Baby,
+  BusFront,
   Loader2,
+  MapPin,
   RefreshCw,
+  School,
+  ShoppingBasket,
+  TrainFront,
+  TramFront,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useUser } from '@/firebase';
 import type { Property } from '@/lib/types';
 import type { NearbyObjective } from '@/lib/property-presentations/nearby-google';
@@ -12,6 +20,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ACTION_CARD_CLASSNAME } from './cardStyles';
+
+const objectiveIcons: Record<NearbyObjective['kind'], LucideIcon> = {
+  metro: TrainFront,
+  bus: BusFront,
+  tram: TramFront,
+  kindergarten: Baby,
+  school: School,
+  grocery: ShoppingBasket,
+};
 
 export function NearbyObjectivesCard({ property }: { property: Property }) {
   const { user } = useUser();
@@ -62,7 +79,7 @@ export function NearbyObjectivesCard({ property }: { property: Property }) {
       <CardHeader className="p-4 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-200/85">Facilități apropiate</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#27624f]">Facilități apropiate</p>
             <CardTitle className="mt-1 text-xl font-semibold text-white">Obiective importante în apropiere</CardTitle>
           </div>
           {!isLoading && error ? (
@@ -89,12 +106,18 @@ export function NearbyObjectivesCard({ property }: { property: Property }) {
           <div className="rounded-2xl border border-rose-300/15 bg-rose-400/5 px-4 py-5 text-sm text-rose-100/85">{error}</div>
         ) : objectives.length ? (
           objectives.map((objective) => {
+            const Icon = objectiveIcons[objective.kind] || MapPin;
             const content = (
               <>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-bold uppercase tracking-[0.1em] text-cyan-200/85">{objective.label}</span>
-                  <span className="mt-0.5 block truncate text-sm font-semibold text-white">{objective.name}</span>
-                  {objective.address ? <span className="mt-0.5 block truncate text-xs text-white/55">{objective.address}</span> : null}
+                <span className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-700/15 bg-emerald-50 text-[#27624f] shadow-sm">
+                    <Icon className="h-5 w-5" strokeWidth={2} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] font-extrabold uppercase tracking-[0.1em] text-[#27624f]">{objective.label}</span>
+                    <span className="mt-0.5 block truncate text-sm font-semibold text-white">{objective.name}</span>
+                    {objective.address ? <span className="mt-0.5 block truncate text-xs text-white/55">{objective.address}</span> : null}
+                  </span>
                 </span>
                 <span className="ml-3 shrink-0 rounded-full bg-emerald-300/16 px-3 py-2 text-xs font-semibold text-emerald-100">
                   {objective.walkingText}
