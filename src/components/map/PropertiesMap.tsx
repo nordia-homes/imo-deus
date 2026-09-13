@@ -260,11 +260,13 @@ export function PropertiesMap({
   zoomMode = 'default',
   layoutMode = 'split',
   appearance = 'admin-property-detail',
+  fillHeight = false,
 }: {
   properties: Property[];
   zoomMode?: 'default' | 'close';
   layoutMode?: 'split' | 'map-only';
   appearance?: 'admin-property-detail' | 'dashboard-map-page' | 'public-property-detail';
+  fillHeight?: boolean;
 }) {
   const { isLoaded, error } = useGoogleMapsApi();
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -1030,9 +1032,12 @@ export function PropertiesMap({
 
   if (appearance === 'admin-property-detail') {
     return (
-      <Card className="overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">
-        <CardContent className="p-0">
-          <div className="relative h-[360px] overflow-hidden bg-[#10233b] md:h-[420px] lg:h-[448px]">
+      <Card className={`${fillHeight ? 'h-full ' : ''}overflow-hidden rounded-2xl border-none bg-[#152A47] text-white shadow-2xl`}>
+        <CardContent className={`${fillHeight ? 'h-full ' : ''}p-0`}>
+          <div className={fillHeight
+            ? "relative h-full min-h-[22rem] overflow-hidden bg-[#10233b]"
+            : "relative h-[360px] overflow-hidden bg-[#10233b] md:h-[420px] lg:h-[448px]"
+          }>
             <div ref={mapRef} className={`absolute inset-0 h-full w-full ${isStreetViewOpen ? 'opacity-0' : 'opacity-100'}`} />
             <div
               className={`absolute inset-0 h-full w-full ${isStreetViewOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}

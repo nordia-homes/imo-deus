@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BadgeDollarSign, Loader2, Megaphone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { MetaIcon } from '@/components/icons/MetaIcon';
 import { TikTokIcon } from '@/components/icons/TikTokIcon';
 import { useUser } from '@/firebase';
@@ -12,7 +11,6 @@ import { ACTION_CARD_CLASSNAME } from './cardStyles';
 
 const PLATFORMS = [
   { key: 'facebook', label: 'Meta', Icon: MetaIcon },
-  { key: 'google', label: 'Google', Icon: GoogleIcon },
   { key: 'tiktok', label: 'TikTok', Icon: TikTokIcon },
 ] as const;
 
@@ -102,10 +100,9 @@ export function PropertyAdCostsCard({ property }: { property: Property }) {
   const costs = useMemo(
     () => ({
       facebook: facebookSpend,
-      google: property.advertisingCosts?.google ?? null,
       tiktok: property.advertisingCosts?.tiktok ?? null,
     }),
-    [facebookSpend, property.advertisingCosts?.google, property.advertisingCosts?.tiktok]
+    [facebookSpend, property.advertisingCosts?.tiktok]
   );
 
   const knownCosts = Object.values(costs).filter((cost): cost is number => typeof cost === 'number');
@@ -128,7 +125,7 @@ export function PropertyAdCostsCard({ property }: { property: Property }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-3 p-4 pt-0 sm:grid-cols-3">
+      <CardContent className="grid grid-cols-1 gap-3 p-4 pt-0 sm:grid-cols-2">
         {PLATFORMS.map(({ key, label, Icon }) => {
           const value = costs[key];
           const isFacebookLoading = key === 'facebook' && facebookState === 'loading';

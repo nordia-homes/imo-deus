@@ -2024,7 +2024,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         </div>
                                         <div className="h-72 overflow-hidden rounded-[1.5rem] border border-white/10 md:h-auto md:min-h-[22rem] md:flex-1">
                                             {mapPreviewProperty ? (
-                                                <PropertiesMap properties={[mapPreviewProperty]} />
+                                                <PropertiesMap properties={[mapPreviewProperty]} fillHeight />
                                             ) : (
                                                 <div className="flex h-full items-center justify-center bg-[#0f1e33] px-6 text-center text-sm text-white/60">
                                                     Harta va afisa locatia exacta dupa ce selectezi o adresa din lista de sugestii.
