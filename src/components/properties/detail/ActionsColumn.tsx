@@ -24,7 +24,7 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
     };
     
     return (
-        <div className="space-y-4 sticky top-28">
+        <div className="sticky top-28 flex h-full flex-col gap-4">
             <PriceStatusCard property={property} variant="admin" />
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
@@ -36,7 +36,9 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <TikTokOrganicPublishingCard property={property} />
             <PropertyAdCostsCard property={property} />
             <PropertyPublicStatsCard property={property} />
-            <PropertyNotesCard property={property} />
+            <div className="min-h-[220px] flex-1">
+                <PropertyNotesCard property={property} fillAvailableHeight />
+            </div>
         </div>
     );
 }

@@ -65,6 +65,155 @@ function AiVideoSparkleIcon() {
     </svg>
   );
 }
+
+function AiVideoIdlePreview() {
+  const neonStars = [
+    { x: 108, y: 105, scale: 0.38, color: '#ff42d0', duration: 4.8, delay: -1.2, rotation: -12 },
+    { x: 215, y: 72, scale: 0.2, color: '#47e7ff', duration: 3.9, delay: -2.4, rotation: 18 },
+    { x: 332, y: 132, scale: 0.29, color: '#9f6cff', duration: 5.2, delay: -0.7, rotation: -22 },
+    { x: 472, y: 62, scale: 0.17, color: '#ffe55f', duration: 4.2, delay: -3.1, rotation: 12 },
+    { x: 610, y: 122, scale: 0.32, color: '#ff6b45', duration: 5.5, delay: -1.8, rotation: 24 },
+    { x: 754, y: 72, scale: 0.21, color: '#5effb2', duration: 4.1, delay: -0.4, rotation: -18 },
+    { x: 865, y: 150, scale: 0.36, color: '#ff49f4', duration: 5, delay: -2.8, rotation: 16 },
+    { x: 75, y: 268, scale: 0.22, color: '#55aaff', duration: 4.4, delay: -3.5, rotation: 20 },
+    { x: 248, y: 245, scale: 0.44, color: '#ffcf4a', duration: 5.8, delay: -0.9, rotation: -14 },
+    { x: 480, y: 270, scale: 0.72, color: '#c55cff', duration: 6.4, delay: -2.2, rotation: 8 },
+    { x: 712, y: 257, scale: 0.43, color: '#31e9ff', duration: 5.6, delay: -4.1, rotation: 18 },
+    { x: 890, y: 300, scale: 0.2, color: '#ff764f', duration: 4, delay: -1.5, rotation: -20 },
+    { x: 128, y: 420, scale: 0.35, color: '#5dffcf', duration: 5.1, delay: -3.7, rotation: 14 },
+    { x: 290, y: 452, scale: 0.19, color: '#f65dff', duration: 4.3, delay: -0.2, rotation: -18 },
+    { x: 410, y: 405, scale: 0.3, color: '#ff874b', duration: 5.3, delay: -2.6, rotation: 10 },
+    { x: 565, y: 445, scale: 0.18, color: '#71ddff', duration: 3.8, delay: -1, rotation: -24 },
+    { x: 704, y: 410, scale: 0.33, color: '#ffe24d', duration: 5.4, delay: -3.3, rotation: 22 },
+    { x: 842, y: 445, scale: 0.25, color: '#ab69ff', duration: 4.6, delay: -1.9, rotation: -12 },
+  ];
+
+  return (
+    <div
+      className="relative aspect-video w-full overflow-hidden bg-[#05020d]"
+      role="img"
+      aria-label="Fundal animat de previzualizare pentru generarea video AI"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 960 540"
+        className="absolute inset-0 h-full w-full"
+        preserveAspectRatio="xMidYMid slice"
+      >
+        <defs>
+          <radialGradient id="ai-video-idle-background" cx="50%" cy="48%" r="72%">
+            <stop offset="0" stopColor="#35105f" />
+            <stop offset="0.42" stopColor="#13062c" />
+            <stop offset="1" stopColor="#030108" />
+          </radialGradient>
+          <linearGradient id="ai-video-idle-neon" x1="190" y1="80" x2="770" y2="470" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#f643f2" />
+            <stop offset="0.48" stopColor="#9b65ff" />
+            <stop offset="1" stopColor="#23e4ff" />
+          </linearGradient>
+          <filter id="ai-video-idle-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id="ai-video-idle-soft-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="22" />
+          </filter>
+        </defs>
+
+        <rect width="960" height="540" fill="url(#ai-video-idle-background)" />
+        <ellipse cx="480" cy="270" rx="390" ry="215" fill="#8d35e8" opacity="0.13" filter="url(#ai-video-idle-soft-glow)">
+          <animate attributeName="rx" values="320;420;320" dur="7s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.08;0.2;0.08" dur="7s" repeatCount="indefinite" />
+        </ellipse>
+
+        <g fill="none" strokeLinejoin="round">
+          {neonStars.map((star, index) => (
+            <g key={`${star.x}-${star.y}`} transform={`translate(${star.x} ${star.y})`}>
+              <g>
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  values={`${star.rotation};${star.rotation + (index % 2 === 0 ? 16 : -16)};${star.rotation}`}
+                  dur={`${star.duration + 2}s`}
+                  begin={`${star.delay}s`}
+                  repeatCount="indefinite"
+                />
+                <path
+                  d="M0 -92 L21 -29 L87 -28 L35 11 L54 75 L0 38 L-54 75 L-35 11 L-87 -28 L-21 -29 Z"
+                  stroke={star.color}
+                  strokeWidth={index === 9 ? 5 : 3.2}
+                  strokeDasharray={index % 3 === 0 ? '18 7' : undefined}
+                  opacity="0.88"
+                  filter="url(#ai-video-idle-glow)"
+                  transform={`scale(${star.scale})`}
+                >
+                  <animate
+                    attributeName="stroke-dashoffset"
+                    values="0;-50"
+                    dur={`${star.duration * 0.75}s`}
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0.35;1;0.5;0.35"
+                    dur={`${star.duration}s`}
+                    begin={`${star.delay}s`}
+                    repeatCount="indefinite"
+                  />
+                  <animateTransform
+                    attributeName="transform"
+                    type="scale"
+                    values={`${star.scale * 0.72};${star.scale * 1.16};${star.scale * 0.72}`}
+                    dur={`${star.duration}s`}
+                    begin={`${star.delay}s`}
+                    repeatCount="indefinite"
+                  />
+                </path>
+              </g>
+            </g>
+          ))}
+        </g>
+
+        <g fill="none" stroke="url(#ai-video-idle-neon)" strokeLinejoin="round" transform="translate(480 270)" opacity="0.2">
+          {[1.2, 1.6, 2].map((scale, index) => (
+            <path
+              key={scale}
+              d="M0 -92 L21 -29 L87 -28 L35 11 L54 75 L0 38 L-54 75 L-35 11 L-87 -28 L-21 -29 Z"
+              strokeWidth="1.5"
+              transform={`scale(${scale})`}
+            >
+              <animate
+                attributeName="opacity"
+                values="0;0.32;0"
+                dur="4.8s"
+                begin={`${index * -1.6}s`}
+                repeatCount="indefinite"
+              />
+              <animateTransform
+                attributeName="transform"
+                type="scale"
+                values={`${scale * 0.78};${scale * 1.32}`}
+                dur="4.8s"
+                begin={`${index * -1.6}s`}
+                repeatCount="indefinite"
+              />
+            </path>
+          ))}
+        </g>
+      </svg>
+
+      <div className="absolute inset-x-0 bottom-5 flex justify-center">
+        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 backdrop-blur-md">
+          <Sparkles className="h-3.5 w-3.5 text-fuchsia-200" />
+          Previzualizare AI
+        </div>
+      </div>
+    </div>
+  );
+}
 type VideoQuality = NonNullable<PropertyVideoTour['quality']>;
 type AiPresenterAvatar = NonNullable<PropertyVideoTour['aiPresenterAvatar']>;
 type AiPresenterVoice = NonNullable<PropertyVideoTour['aiPresenterVoice']>;
@@ -490,9 +639,9 @@ export function VideoTourCard({
   const [style, setStyle] = useState<VideoStyle>('cinematic');
   const [quality, setQuality] = useState<VideoQuality>('standard');
   const [targetDuration, setTargetDuration] = useState('auto');
-  const [includeText, setIncludeText] = useState(true);
-  const [includeBranding, setIncludeBranding] = useState(true);
-  const [includeMusic, setIncludeMusic] = useState(true);
+  const [includeText, setIncludeText] = useState(false);
+  const [includeBranding, setIncludeBranding] = useState(false);
+  const [includeMusic, setIncludeMusic] = useState(false);
   const [includeAiPresenter, setIncludeAiPresenter] = useState(false);
   const [aiPresenterAvatar, setAiPresenterAvatar] = useState<AiPresenterAvatar>('business');
   const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('eleven-rachel');
@@ -1033,13 +1182,13 @@ export function VideoTourCard({
               {previewUrl ? (
                 <video src={previewUrl} controls playsInline className="aspect-video h-full w-full bg-black object-contain" />
               ) : (
-                <canvas ref={canvasRef} className="aspect-video h-full w-full bg-black object-contain" />
+                <AiVideoIdlePreview />
               )}
-              {previewUrl ? <canvas ref={canvasRef} className="hidden" /> : null}
+              <canvas ref={canvasRef} className="hidden" />
             </div>
 
             <div className="mt-4 grid grid-cols-3 gap-2">
-              {images.slice(0, 6).map((url, index) => (
+              {images.map((url, index) => (
                 <div key={`${url}-${index}`} className="relative aspect-video overflow-hidden rounded-md border border-white/10 bg-white/5">
                   <Image src={url} alt={`${property.title} ${index + 1}`} fill className="object-cover" sizes="180px" />
                 </div>
@@ -1268,7 +1417,7 @@ export function VideoTourCard({
                 disabled={!canGenerate || isGenerating || isCloudRendering}
               >
                 {isCloudRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Randare cloud MP4
+                Generează Video AI
               </Button>
               <Button
                 type="button"

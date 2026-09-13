@@ -15,9 +15,10 @@ import { ACTION_CARD_CLASSNAME, ACTION_INPUT_CLASSNAME } from "./cardStyles";
 
 type PropertyNotesCardProps = {
     property: Property;
+    fillAvailableHeight?: boolean;
 }
 
-export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
+export function PropertyNotesCard({ property, fillAvailableHeight = false }: PropertyNotesCardProps) {
     const [notes, setNotes] = useState(property.notes || '');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { agencyId } = useAgency();
@@ -42,28 +43,36 @@ export function PropertyNotesCard({ property }: PropertyNotesCardProps) {
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
+            if (fillAvailableHeight) {
+                textarea.style.height = '100%';
+                return;
+            }
             textarea.style.height = 'auto'; // Temporarily shrink to get the correct scrollHeight
             textarea.style.height = `${textarea.scrollHeight}px`;
         }
-    }, [notes]);
+    }, [fillAvailableHeight, notes]);
 
 
     return (
-        <Card className={ACTION_CARD_CLASSNAME}>
+        <Card className={cn(ACTION_CARD_CLASSNAME, fillAvailableHeight && "flex h-full min-h-[220px] flex-col")}>
             <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
                     <StickyNote className="h-4 w-4" />
                     Notițe Interne
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-3 pt-0">
+            <CardContent className={cn("p-3 pt-0", fillAvailableHeight && "flex min-h-0 flex-1")}>
                 <Textarea
                     ref={textareaRef}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     onBlur={handleBlur}
                     placeholder="Adaugă notițe despre proprietar, vizite tehnice, etc."
-                    className={cn("text-sm resize-none overflow-hidden min-h-[112px]", ACTION_INPUT_CLASSNAME)}
+                    className={cn(
+                        "min-h-[112px] resize-none overflow-hidden text-sm",
+                        fillAvailableHeight && "h-full flex-1",
+                        ACTION_INPUT_CLASSNAME
+                    )}
                     rows={4}
                 />
             </CardContent>

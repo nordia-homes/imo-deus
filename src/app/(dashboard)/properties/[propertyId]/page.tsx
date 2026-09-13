@@ -368,7 +368,7 @@ export default function PropertyDetailPage() {
                     onTriggerAddViewing={() => setIsAddViewingOpen(true)}
                 />
 
-                <main className="grid grid-cols-1 items-start gap-8 overflow-hidden rounded-tl-lg rounded-tr-[1.85rem] pb-8 lg:grid-cols-12">
+                <main className="grid grid-cols-1 items-stretch gap-8 overflow-hidden rounded-tl-lg rounded-tr-[1.85rem] pb-8 lg:grid-cols-12">
                     <div className="col-span-12 lg:col-span-8 space-y-4">
                         <MediaColumn property={property} shareUrl={publicPropertyUrl} />
                         <InfoColumn
@@ -379,7 +379,7 @@ export default function PropertyDetailPage() {
                         />
                     </div>
 
-                    <div className="col-span-12 lg:col-span-4">
+                    <div className="col-span-12 h-full lg:col-span-4">
                          <ActionsColumn property={property} allProperties={[]} viewings={viewings || []} agentProfile={agentProfile} matchedBuyers={matchedBuyers} />
                     </div>
                 </main>

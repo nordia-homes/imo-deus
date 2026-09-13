@@ -403,6 +403,8 @@ const propertySchema = z.object({
 
   commissionType: z.string().optional(),
   commissionValue: z.coerce.number().optional(),
+  buyerCommissionType: z.string().optional(),
+  buyerCommissionValue: z.coerce.number().optional(),
 });
 
 type PropertyFormValues = z.infer<typeof propertySchema>;
@@ -448,6 +450,8 @@ const getEmptyPropertyFormValues = (userId?: string): PropertyFormValues => ({
   nearMetro: false,
   commissionType: 'percentage',
   commissionValue: undefined,
+  buyerCommissionType: 'percentage',
+  buyerCommissionValue: undefined,
 });
 
 const getPropertyFormValues = (propertyData: Property | null, userId?: string): PropertyFormValues => {
@@ -553,6 +557,8 @@ const getPropertyFormValues = (propertyData: Property | null, userId?: string): 
     nearMetro: propertyData.nearMetro || false,
     commissionType: pickAllowedValue(propertyData.commissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
     commissionValue: propertyData.commissionValue,
+    buyerCommissionType: pickAllowedValue(propertyData.buyerCommissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
+    buyerCommissionValue: propertyData.buyerCommissionValue,
   };
 };
 
@@ -871,6 +877,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const watchedZone = form.watch('zone');
     const watchedAddress = form.watch('address');
     const watchedCommissionType = form.watch('commissionType', propertyData?.commissionType || 'percentage');
+    const watchedBuyerCommissionType = form.watch('buyerCommissionType', propertyData?.buyerCommissionType || 'percentage');
     const watchedTitle = form.watch('title');
     const watchedPropertyType = form.watch('propertyType');
     const watchedTransactionType = form.watch('transactionType');
@@ -1095,6 +1102,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 nearMetro: propertyData.nearMetro || false,
                 commissionType: pickAllowedValue(propertyData.commissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
                 commissionValue: propertyData.commissionValue ?? 2,
+                buyerCommissionType: pickAllowedValue(propertyData.buyerCommissionType, COMMISSION_TYPE_OPTIONS) || 'percentage',
+                buyerCommissionValue: propertyData.buyerCommissionValue ?? 0,
             });
             setImageSources((propertyData.images || []).map(sanitizeImageSource).filter((item): item is ImageSource => Boolean(item)));
             setVideoSource(propertyData.uploadedVideo || null);
@@ -1117,6 +1126,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '', nearMetro: false,
                 commissionType: 'percentage',
                 commissionValue: 2,
+                buyerCommissionType: 'percentage',
+                buyerCommissionValue: 0,
             });
             setImageSources([]);
             setVideoSource(null);
@@ -1635,6 +1646,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               nearMetro: values.nearMetro,
               commissionType: values.commissionType,
               commissionValue: values.commissionValue,
+              buyerCommissionType: values.buyerCommissionType,
+              buyerCommissionValue: values.buyerCommissionValue,
               soldPrice: resolvedStatus === 'Vândut' ? statusPayload?.soldPrice ?? propertyData?.soldPrice ?? null : null,
               portalProfiles: {
                 ...(propertyData?.portalProfiles || {}),
@@ -2142,51 +2155,81 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                                 <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                     <h3 className="text-lg font-semibold text-primary">Comision</h3>
-                                    <FormField
-                                        control={form.control}
-                                        name="commissionType"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-3">
-                                            <FormLabel className="text-white/80">Tip Comision</FormLabel>
-                                            <FormControl>
-                                                <RadioGroup
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                                className="flex items-center gap-6"
-                                                >
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                    <RadioGroupItem value="percentage" className="border-white/50 text-white" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal text-white/80">Procentual (%)</FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                    <RadioGroupItem value="fixed" className="border-white/50 text-white" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal text-white/80">Sumă Fixă (€)</FormLabel>
-                                                </FormItem>
-                                                </RadioGroup>
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="commissionValue"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel className="text-white/80">
-                                                Valoare Comision {watchedCommissionType === 'percentage' ? '(%)' : '(€)'}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input type="number" step="any" {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                        <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                            <h4 className="font-semibold text-white">Comision proprietar</h4>
+                                            <FormField
+                                                control={form.control}
+                                                name="commissionType"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-3">
+                                                        <FormLabel className="text-white/80">Tip comision</FormLabel>
+                                                        <FormControl>
+                                                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                    <FormControl><RadioGroupItem value="percentage" className="border-white/50 text-white" /></FormControl>
+                                                                    <FormLabel className="font-normal text-white/80">Procentual (%)</FormLabel>
+                                                                </FormItem>
+                                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                    <FormControl><RadioGroupItem value="fixed" className="border-white/50 text-white" /></FormControl>
+                                                                    <FormLabel className="font-normal text-white/80">Sumă fixă (€)</FormLabel>
+                                                                </FormItem>
+                                                            </RadioGroup>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="commissionValue"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-white/80">Valoare {watchedCommissionType === 'percentage' ? '(%)' : '(€)'}</FormLabel>
+                                                        <FormControl><Input type="number" min="0" step="any" {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                            <h4 className="font-semibold text-white">Comision cumpărător</h4>
+                                            <FormField
+                                                control={form.control}
+                                                name="buyerCommissionType"
+                                                render={({ field }) => (
+                                                    <FormItem className="space-y-3">
+                                                        <FormLabel className="text-white/80">Tip comision</FormLabel>
+                                                        <FormControl>
+                                                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                    <FormControl><RadioGroupItem value="percentage" className="border-white/50 text-white" /></FormControl>
+                                                                    <FormLabel className="font-normal text-white/80">Procentual (%)</FormLabel>
+                                                                </FormItem>
+                                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                    <FormControl><RadioGroupItem value="fixed" className="border-white/50 text-white" /></FormControl>
+                                                                    <FormLabel className="font-normal text-white/80">Sumă fixă (€)</FormLabel>
+                                                                </FormItem>
+                                                            </RadioGroup>
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="buyerCommissionValue"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-white/80">Valoare {watchedBuyerCommissionType === 'percentage' ? '(%)' : '(€)'}</FormLabel>
+                                                        <FormControl><Input type="number" min="0" step="any" {...field} className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                             <Card className={cn("shadow-xl rounded-2xl overflow-hidden", "bg-[#152A47] border-none text-white", !isMobile && "md:mt-auto md:h-full")}>
