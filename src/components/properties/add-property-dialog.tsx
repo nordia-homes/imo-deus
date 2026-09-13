@@ -1878,18 +1878,6 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white")}>
                            <CardContent className={cn("space-y-4", "p-4 pt-6")}>
                                <h3 className="text-lg font-semibold text-primary">Descriere</h3>
-                               <FormField
-                                    control={form.control}
-                                    name="keyFeatures"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-white/80">Caracteristici Cheie pentru AI</FormLabel>
-                                        <FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="ex: piscină, renovat modern, centrală proprie" /></FormControl>
-                                        <FormDescription className="text-white/70">Acestea sunt cele mai importante informații pentru generarea descrierii.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
                                 <FormField
                                     control={form.control}
                                     name="description"
@@ -1912,8 +1900,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                             </CardContent>
                          </Card>
 
-                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white", !isMobile && "md:mt-auto")}>
-                                <CardContent className={cn("space-y-4", "p-4 pt-6")}>
+                             <Card className={cn("shadow-xl rounded-2xl", "bg-[#152A47] border-none text-white", !isMobile && "md:mt-auto md:flex-1")}>
+                                <CardContent className={cn("space-y-4", "p-4 pt-6", !isMobile && "md:flex md:h-full md:flex-col")}>
                                     <h3 className="text-lg font-semibold text-primary">Locație</h3>
                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                          <FormField
@@ -2027,14 +2015,14 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                             </FormItem>
                                          )} />
                                      </div>
-                                     <div className="space-y-3 pt-2">
+                                     <div className={cn("space-y-3 pt-2", !isMobile && "md:flex md:flex-1 md:flex-col")}>
                                         <div className="flex items-center justify-between gap-3">
                                             <p className="text-sm font-medium text-white/80">Previzualizare pe harta</p>
                                             <p className="text-xs text-white/55">
                                                 {selectedCoordinates ? 'Locatia selectata va fi salvata exact asa.' : 'Selecteaza o adresa din lista pentru a vedea locatia exacta.'}
                                             </p>
                                         </div>
-                                        <div className="h-72 overflow-hidden rounded-[1.5rem] border border-white/10 md:h-[22rem]">
+                                        <div className="h-72 overflow-hidden rounded-[1.5rem] border border-white/10 md:h-auto md:min-h-[22rem] md:flex-1">
                                             {mapPreviewProperty ? (
                                                 <PropertiesMap properties={[mapPreviewProperty]} />
                                             ) : (
