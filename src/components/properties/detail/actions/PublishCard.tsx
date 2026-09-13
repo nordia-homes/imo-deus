@@ -58,25 +58,69 @@ const ImobiliareLogo = () => (
 );
 
 const StoriaLogo = () => (
-  <img
-    src="/storia-official-logo.svg"
-    alt="storia.ro"
-    className="h-[20px] w-auto max-w-[86px] object-contain"
-  />
+  <span className="inline-flex min-w-0 flex-col items-start leading-none">
+    <img
+      src="/storia-official-logo.svg"
+      alt="Storia.ro"
+      className="h-[20px] w-auto max-w-[86px] object-contain"
+    />
+    <span className="mt-1 text-[10px] font-semibold tracking-normal text-slate-500">și pe OLX</span>
+  </span>
 );
 
 const Publi24Logo = () => (
-  <img
-    src="/publi24-logo.svg"
-    alt="Publi24.ro"
-    className="h-5 w-auto max-w-[86px] object-contain"
-  />
+  <span className="inline-flex min-w-0 flex-col items-start leading-none">
+    <img
+      src="/publi24-logo.svg"
+      alt="Publi24.ro"
+      className="h-5 w-auto max-w-[86px] object-contain"
+    />
+    <span className="mt-1 text-[10px] font-semibold tracking-normal text-slate-500">și pe Romimo</span>
+  </span>
+);
+
+const HomezzLajumateLogo = () => (
+  <span
+    className="inline-flex min-w-0 flex-col items-start whitespace-nowrap leading-none"
+    aria-label="HomeZZ.ro și Lajumate.ro"
+  >
+    <span className="text-[17px] font-extrabold tracking-[-0.04em] text-[#155f55]">
+      Home<span className="text-[#27b991]">ZZ</span>
+    </span>
+    <span className="mt-1 text-[10px] font-semibold tracking-normal text-slate-500">și pe Lajumate.ro</span>
+  </span>
+);
+
+const TrimbitasuLogo = () => (
+  <span
+    className="inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-[10px] bg-[#171717] px-3 py-2 shadow-[0_5px_12px_rgba(23,23,23,0.14)]"
+    aria-label="TRÎMBIȚAȘU.RO"
+  >
+    <img
+      src="/trimbitasu-logo.png"
+      alt=""
+      aria-hidden="true"
+      className="h-5 w-auto shrink-0 object-contain"
+    />
+    <span
+      className="font-serif text-[11px] font-semibold leading-none tracking-[0.025em] text-transparent"
+      style={{
+        backgroundImage: 'linear-gradient(90deg, #f59e0b, #facc15)',
+        WebkitBackgroundClip: 'text',
+        backgroundClip: 'text',
+      }}
+    >
+      TRÎMBIȚAȘU.RO
+    </span>
+  </span>
 );
 
 const PORTALS = [
   { id: 'imobiliare', name: 'Imobiliare.ro', logo: <ImobiliareLogo /> },
   { id: 'storia', name: 'Storia.ro', logo: <StoriaLogo /> },
   { id: 'publi24', name: 'Publi24.ro', logo: <Publi24Logo /> },
+  { id: 'homezz', name: 'HomeZZ.ro + Lajumate.ro', logo: <HomezzLajumateLogo /> },
+  { id: 'trimbitasu', name: 'Trîmbițașu.ro', logo: <TrimbitasuLogo /> },
 ];
 
 type ImobiliareUiStatus = 'unpublished' | 'pending' | 'published' | 'error';
@@ -1626,6 +1670,13 @@ export function PublishCard({ property }: { property: Property }) {
         {PORTALS.map((portal) => {
           const isImobiliare = portal.id === 'imobiliare';
           const isStoria = portal.id === 'storia';
+          const isHomezz = portal.id === 'homezz';
+          const isTrimbitasu = portal.id === 'trimbitasu';
+          const portalRowGridClassName = isTrimbitasu
+            ? isMobile
+              ? "grid-cols-[minmax(126px,1fr)_auto_auto] gap-1"
+              : "grid-cols-[minmax(154px,1fr)_92px_128px] gap-1.5"
+            : portalGridClassName;
           const published = isImobiliare && isPublished;
           const pending = isImobiliare && isPending;
           const errored = isImobiliare && isErrored;
@@ -1640,15 +1691,27 @@ export function PublishCard({ property }: { property: Property }) {
               key={portal.id}
               className={cn(
                 "grid items-center overflow-hidden rounded-xl text-sm hover:bg-white/[0.06]",
-                portalGridClassName,
+                portalRowGridClassName,
                 portalRowPaddingClassName,
                 ACTION_CARD_INNER_CLASSNAME
               )}
             >
-              <Label className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden font-medium [&_img]:max-w-full">
+              <Label
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-2 overflow-hidden font-medium [&_img]:max-w-full"
+                )}
+              >
                 {portal.logo}
               </Label>
               <div className="flex min-w-0 items-center justify-center">
+                {isHomezz || isTrimbitasu ? (
+                  <span className={cn(
+                    "rounded-full border border-slate-300/70 bg-slate-100/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600",
+                    isTrimbitasu && "px-2 text-[9px] tracking-[0.1em]"
+                  )}>
+                    Neconectat
+                  </span>
+                ) : null}
                 {published || storiaPublished ? (
                   isMobile ? (
                     <span
@@ -1683,7 +1746,7 @@ export function PublishCard({ property }: { property: Property }) {
                     Eroare
                   </span>
                 ) : null}
-                {!published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored && !storiaLinkSyncing ? (
+                {!isHomezz && !isTrimbitasu && !published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored && !storiaLinkSyncing ? (
                   isMobile ? (
                     <span
                       className={cn(
@@ -1793,6 +1856,34 @@ export function PublishCard({ property }: { property: Property }) {
                       Publica
                     </Button>
                   )
+                ) : isHomezz ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "rounded-full border border-slate-300/70 bg-slate-100/80 font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-500",
+                      isMobile ? "h-8 px-2 text-[11px]" : "h-9 px-3 text-xs"
+                    )}
+                    disabled
+                    title="Integrarea va putea fi activată după primirea accesului API HomeZZ"
+                  >
+                    Necesită API
+                  </Button>
+                ) : isTrimbitasu ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "rounded-full border border-slate-300/70 bg-slate-100/80 font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-500",
+                      "h-8 px-2 text-[10px]"
+                    )}
+                    disabled
+                    title="Integrarea va putea fi activată dacă Trîmbițașu.ro oferă acces de partener"
+                  >
+                    Necesită parteneriat
+                  </Button>
                 ) : (
                   <Button
                     type="button"
