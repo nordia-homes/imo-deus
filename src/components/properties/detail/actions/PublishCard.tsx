@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -45,15 +45,17 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { AlertCircle, CheckCircle2, EyeOff, Loader2, RefreshCcw, Rocket, Sparkles, Trash2, Zap } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock3, ExternalLink, EyeOff, Handshake, Loader2, RefreshCcw, Rocket, Sparkles, Trash2, Unplug, Zap } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 import { useAgency } from "@/context/AgencyContext";
+import { useSidebar } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ImobiliareLogo = () => (
   <img
     src="/imobiliare-logo.svg"
     alt="imobiliare.ro"
-    className="h-4 w-auto max-w-[112px] object-contain"
+    className="h-[18px] w-auto max-w-[126px] object-contain"
   />
 );
 
@@ -62,9 +64,9 @@ const StoriaLogo = () => (
     <img
       src="/storia-official-logo.svg"
       alt="Storia.ro"
-      className="h-[20px] w-auto max-w-[86px] object-contain"
+      className="h-[22.5px] w-auto max-w-[97px] object-contain"
     />
-    <span className="mt-1 text-[10px] font-semibold tracking-normal text-slate-500">și pe OLX</span>
+    <span className="mt-1 text-[9px] font-semibold tracking-normal text-slate-500">și pe OLX</span>
   </span>
 );
 
@@ -73,9 +75,9 @@ const Publi24Logo = () => (
     <img
       src="/publi24-logo.svg"
       alt="Publi24.ro"
-      className="h-5 w-auto max-w-[86px] object-contain"
+      className="h-[21.5px] w-auto max-w-[97px] object-contain"
     />
-    <span className="mt-1 text-[10px] font-semibold tracking-normal text-slate-500">și pe Romimo</span>
+    <span className="mt-1 text-[9px] font-semibold tracking-normal text-slate-500">și pe Romimo</span>
   </span>
 );
 
@@ -84,26 +86,26 @@ const HomezzLajumateLogo = () => (
     className="inline-flex min-w-0 flex-col items-start whitespace-nowrap leading-none"
     aria-label="HomeZZ.ro și Lajumate.ro"
   >
-    <span className="text-[17px] font-extrabold tracking-[-0.04em] text-[#155f55]">
+    <span className="text-[18px] font-extrabold tracking-[-0.04em] text-[#155f55]">
       Home<span className="text-[#27b991]">ZZ</span>
     </span>
-    <span className="mt-1 text-[10px] font-semibold tracking-normal text-slate-500">și pe Lajumate.ro</span>
+    <span className="mt-1 text-[9px] font-semibold tracking-normal text-slate-500">și pe Lajumate.ro</span>
   </span>
 );
 
 const TrimbitasuLogo = () => (
   <span
-    className="inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-[10px] bg-[#171717] px-3 py-2 shadow-[0_5px_12px_rgba(23,23,23,0.14)]"
+    className="inline-flex w-fit max-w-full items-center gap-[7px] whitespace-nowrap rounded-[9px] bg-[#171717] px-[9px] py-[7px] shadow-[0_5px_12px_rgba(23,23,23,0.14)]"
     aria-label="TRÎMBIȚAȘU.RO"
   >
     <img
       src="/trimbitasu-logo.png"
       alt=""
       aria-hidden="true"
-      className="h-5 w-auto shrink-0 object-contain"
+      className="h-[21.5px] w-auto shrink-0 object-contain"
     />
     <span
-      className="font-serif text-[11px] font-semibold leading-none tracking-[0.025em] text-transparent"
+      className="font-serif text-[10px] font-semibold leading-none tracking-[0.015em] text-transparent"
       style={{
         backgroundImage: 'linear-gradient(90deg, #f59e0b, #facc15)',
         WebkitBackgroundClip: 'text',
@@ -122,6 +124,34 @@ const PORTALS = [
   { id: 'homezz', name: 'HomeZZ.ro + Lajumate.ro', logo: <HomezzLajumateLogo /> },
   { id: 'trimbitasu', name: 'Trîmbițașu.ro', logo: <TrimbitasuLogo /> },
 ];
+
+function CompactPortalStatus({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className: string;
+  children: ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
+            className
+          )}
+          aria-label={label}
+          tabIndex={0}
+        >
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="left">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 type ImobiliareUiStatus = 'unpublished' | 'pending' | 'published' | 'error';
 type ImobiliareSyncTarget = 'published' | 'unpublished' | null;
@@ -713,6 +743,8 @@ export function PublishCard({ property }: { property: Property }) {
   const auth = useAuth();
   const firestore = useFirestore();
   const isMobile = useIsMobile();
+  const { state: sidebarState } = useSidebar();
+  const isSidebarExpanded = !isMobile && sidebarState === 'expanded';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingPromotionSettings, setIsSavingPromotionSettings] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<ImobiliareUiStatus | null>(null);
@@ -1644,12 +1676,11 @@ export function PublishCard({ property }: { property: Property }) {
   }
 
   const portalGridClassName = isMobile
-    ? "grid-cols-[minmax(76px,1fr)_auto_auto] gap-2"
-    : "grid-cols-[minmax(0,1fr)_140px_150px] gap-4";
+    ? "grid-cols-[minmax(104px,1fr)_40px_42px] gap-2"
+    : isSidebarExpanded
+      ? "grid-cols-[minmax(180px,1fr)_42px_54px] gap-2"
+      : "grid-cols-[minmax(210px,1fr)_44px_56px] gap-3";
   const portalRowPaddingClassName = isMobile ? "p-2" : "p-3";
-  const portalActionButtonClassName = isMobile
-    ? "h-8 rounded-full px-3 text-xs"
-    : "h-9 rounded-full px-4 text-sm";
   const portalIconButtonClassName = isMobile ? "h-8 w-8" : "h-9 w-9";
 
   return (
@@ -1663,8 +1694,8 @@ export function PublishCard({ property }: { property: Property }) {
       <CardContent className={cn("space-y-2 pt-0", isMobile ? "p-4" : "p-4")}>
         <div className={cn("grid items-center border-b border-white/8 px-1 pb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-white/45", portalGridClassName)}>
           <span>Portal</span>
-          <span className={cn("justify-self-center", !isMobile && "justify-self-start pl-4")}>Status</span>
-          <span className="text-right">Actiuni</span>
+          <span className="justify-self-center">Status</span>
+          <span className="justify-self-center">Actiuni</span>
         </div>
 
         {PORTALS.map((portal) => {
@@ -1672,11 +1703,6 @@ export function PublishCard({ property }: { property: Property }) {
           const isStoria = portal.id === 'storia';
           const isHomezz = portal.id === 'homezz';
           const isTrimbitasu = portal.id === 'trimbitasu';
-          const portalRowGridClassName = isTrimbitasu
-            ? isMobile
-              ? "grid-cols-[minmax(126px,1fr)_auto_auto] gap-1"
-              : "grid-cols-[minmax(154px,1fr)_92px_128px] gap-1.5"
-            : portalGridClassName;
           const published = isImobiliare && isPublished;
           const pending = isImobiliare && isPending;
           const errored = isImobiliare && isErrored;
@@ -1685,6 +1711,13 @@ export function PublishCard({ property }: { property: Property }) {
           const storiaErrored = isStoria && storiaStatus === 'error';
           const hasStoriaDirectLink = Boolean(property.portalProfiles?.storia?.remoteUrl || property.promotions?.storia?.link);
           const storiaLinkSyncing = isStoria && storiaPublished && !hasStoriaDirectLink && isRefreshingStoriaLink;
+          const portalRowGridClassName = storiaPublished
+            ? isMobile
+              ? "grid-cols-[minmax(96px,1fr)_40px_108px] gap-1"
+              : isSidebarExpanded
+                ? "grid-cols-[minmax(154px,1fr)_42px_126px] gap-2"
+                : "grid-cols-[minmax(196px,1fr)_44px_126px] gap-3"
+            : portalGridClassName;
 
           return (
             <div
@@ -1705,101 +1738,69 @@ export function PublishCard({ property }: { property: Property }) {
               </Label>
               <div className="flex min-w-0 items-center justify-center">
                 {isHomezz || isTrimbitasu ? (
-                  <span className={cn(
-                    "rounded-full border border-slate-300/70 bg-slate-100/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-600",
-                    isTrimbitasu && "px-2 text-[9px] tracking-[0.1em]"
-                  )}>
-                    Neconectat
-                  </span>
-                ) : null}
-                {published || storiaPublished ? (
-                  isMobile ? (
-                    <span
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/16 bg-emerald-400/10 text-emerald-200"
-                      title="Publicat"
-                      aria-label="Publicat"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                    </span>
-                  ) : (
-                    <span className="rounded-full border border-emerald-300/16 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200">
-                      Publicat
-                    </span>
-                  )
-                ) : null}
-                {isStoria && storiaHasUnsyncedChanges ? (
-                  <span
-                    className="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-300/18 bg-amber-400/10 text-amber-200"
-                    title="Exista modificari locale nesincronizate. Apasa Actualizeaza."
-                    aria-label="Exista modificari locale nesincronizate. Apasa Actualizeaza."
+                  <CompactPortalStatus label="Neconectat" className="border-slate-300/80 bg-slate-100 text-slate-600">
+                    <Unplug className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
+                ) : errored || storiaErrored ? (
+                  <CompactPortalStatus label="Eroare" className="border-red-300/80 bg-red-50 text-red-700">
+                    <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
+                ) : pending || storiaPending || storiaLinkSyncing ? (
+                  <CompactPortalStatus
+                    label={storiaLinkSyncing ? 'Link in curs de sincronizare' : 'Publicare in curs'}
+                    className="border-amber-300/80 bg-amber-50 text-amber-700"
                   >
-                    <AlertCircle className="h-4 w-4" />
-                  </span>
-                ) : null}
-                {pending || storiaPending || storiaLinkSyncing ? (
-                  <span className="rounded-full border border-yellow-300/18 bg-yellow-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-yellow-200">
-                    {storiaLinkSyncing ? 'Link...' : 'In curs...'}
-                  </span>
-                ) : null}
-                {errored || storiaErrored ? (
-                  <span className="rounded-full border border-red-300/18 bg-red-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-red-200">
-                    Eroare
-                  </span>
-                ) : null}
-                {!isHomezz && !isTrimbitasu && !published && !pending && !errored && !storiaPublished && !storiaPending && !storiaErrored && !storiaLinkSyncing ? (
-                  isMobile ? (
-                    <span
-                      className={cn(
-                        "rounded-full border border-white/10 bg-white/[0.04] text-white/55",
-                        isImobiliare
-                          ? "inline-flex h-8 w-10 items-center justify-center px-0"
-                          : "inline-flex h-8 w-8 items-center justify-center"
-                      )}
-                      aria-label="Nepublicat"
-                      title="Nepublicat"
-                    >
-                      <EyeOff className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                  ) : (
-                    <span
-                      className={cn(
-                        "rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55"
-                      )}
-                      aria-label="Nepublicat"
-                      title="Nepublicat"
-                    >
-                      Nepublicat
-                    </span>
-                  )
-                ) : null}
+                    <Clock3 className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
+                ) : isStoria && storiaHasUnsyncedChanges ? (
+                  <CompactPortalStatus
+                    label="Publicat, dar exista modificari locale nesincronizate. Apasa Actualizeaza."
+                    className="border-amber-300/80 bg-amber-50 text-amber-700"
+                  >
+                    <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
+                ) : published || storiaPublished ? (
+                  <CompactPortalStatus label="Publicat" className="border-emerald-300/70 bg-emerald-50 text-emerald-700">
+                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
+                ) : (
+                  <CompactPortalStatus label="Nepublicat" className="border-slate-300/80 bg-slate-100 text-slate-500">
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
+                )}
               </div>
-              <div className={cn("flex min-w-0 shrink-0 items-center justify-end", isMobile ? "gap-1" : "gap-2")}>
+              <div className="flex min-w-0 shrink-0 items-center justify-center gap-1">
                 {isImobiliare ? (
                   isSyncing ? (
-                    <div className={cn("flex items-center justify-center rounded-full border border-yellow-300/18 bg-yellow-400/10 text-yellow-200", isMobile ? "h-8 w-8 px-0" : "h-9 px-3")}>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
+                    <CompactPortalStatus
+                      label="Sincronizare cu imobiliare.ro in curs"
+                      className="border-amber-300/80 bg-amber-50 text-amber-700"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    </CompactPortalStatus>
                   ) : published ? (
-                    <span
-                      className={cn(
-                        "inline-flex items-center justify-center rounded-full border border-emerald-300/18 bg-emerald-400/12 font-semibold text-emerald-100",
-                        isMobile ? "h-8 w-8 px-0" : "h-9 px-3 text-sm"
-                      )}
-                      title="Publicat"
-                      aria-label="Publicat"
+                    <CompactPortalStatus
+                      label="Publicat pe imobiliare.ro"
+                      className="border-emerald-300/70 bg-emerald-50 text-emerald-700"
                     >
-                      {isMobile ? <CheckCircle2 className="h-4 w-4" /> : 'Publicat'}
-                    </span>
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                    </CompactPortalStatus>
                   ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className={cn("border border-emerald-300/24 bg-emerald-400/16 font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalActionButtonClassName)}
-                      disabled={isSubmitting || pending}
-                      onClick={() => handlePublishToggle(portal.id, true)}
-                    >
-                      Publica
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          size="icon"
+                          className={cn("rounded-full border border-emerald-300/24 bg-emerald-400/16 text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalIconButtonClassName)}
+                          disabled={isSubmitting || pending}
+                          onClick={() => handlePublishToggle(portal.id, true)}
+                          aria-label="Publica pe imobiliare.ro"
+                        >
+                          <Rocket className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">Publica pe imobiliare.ro</TooltipContent>
+                    </Tooltip>
                   )
                 ) : isStoria ? (
                   storiaPublished ? (
@@ -1837,63 +1838,54 @@ export function PublishCard({ property }: { property: Property }) {
                       </Button>
                       <Button
                         type="button"
-                        size="sm"
-                        className={cn("border border-emerald-300/24 bg-emerald-400/16 font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalActionButtonClassName)}
+                        size="icon"
+                        className={cn("rounded-full border border-emerald-300/24 bg-emerald-400/16 text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalIconButtonClassName)}
                         disabled={!hasStoriaDirectLink || isUpdatingStoria}
                         onClick={handleOpenStoriaListing}
+                        title={hasStoriaDirectLink ? 'Deschide anuntul pe Storia' : 'Linkul Storia se sincronizeaza'}
+                        aria-label={hasStoriaDirectLink ? 'Deschide anuntul pe Storia' : 'Linkul Storia se sincronizeaza'}
                       >
-                        {hasStoriaDirectLink ? 'Deschide' : 'Link...'}
+                        {hasStoriaDirectLink ? <ExternalLink className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className={cn("border border-emerald-300/24 bg-emerald-400/16 font-semibold text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalActionButtonClassName)}
-                      disabled={isSubmitting || storiaPending}
-                      onClick={() => handlePublishToggle(portal.id, true)}
-                    >
-                      Publica
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          size="icon"
+                          className={cn("rounded-full border border-emerald-300/24 bg-emerald-400/16 text-emerald-50 shadow-[0_12px_26px_-16px_rgba(34,197,94,0.7)] hover:bg-emerald-400/22", portalIconButtonClassName)}
+                          disabled={isSubmitting || storiaPending}
+                          onClick={() => handlePublishToggle(portal.id, true)}
+                          aria-label="Publica pe Storia si OLX"
+                        >
+                          <Rocket className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">Publica pe Storia si OLX</TooltipContent>
+                    </Tooltip>
                   )
                 ) : isHomezz ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "rounded-full border border-slate-300/70 bg-slate-100/80 font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-500",
-                      isMobile ? "h-8 px-2 text-[11px]" : "h-9 px-3 text-xs"
-                    )}
-                    disabled
-                    title="Integrarea va putea fi activată după primirea accesului API HomeZZ"
+                  <CompactPortalStatus
+                    label="Necesita acces API HomeZZ"
+                    className="border-slate-300/80 bg-slate-100 text-slate-600"
                   >
-                    Necesită API
-                  </Button>
+                    <Unplug className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
                 ) : isTrimbitasu ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "rounded-full border border-slate-300/70 bg-slate-100/80 font-medium text-slate-500 hover:bg-slate-100/80 hover:text-slate-500",
-                      "h-8 px-2 text-[10px]"
-                    )}
-                    disabled
-                    title="Integrarea va putea fi activată dacă Trîmbițașu.ro oferă acces de partener"
+                  <CompactPortalStatus
+                    label="Necesita parteneriat cu Trîmbițașu.ro"
+                    className="border-amber-300/80 bg-amber-50 text-amber-700"
                   >
-                    Necesită parteneriat
-                  </Button>
+                    <Handshake className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
                 ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn("rounded-full border border-white/10 bg-white/[0.04] text-white/55 hover:bg-white/[0.04] hover:text-white/55", isMobile ? "h-8 px-2 text-xs" : "h-9 px-3")}
-                    disabled
+                  <CompactPortalStatus
+                    label="Integrare disponibila in curand"
+                    className="border-slate-300/80 bg-slate-100 text-slate-500"
                   >
-                    Curand
-                  </Button>
+                    <Clock3 className="h-4 w-4" aria-hidden="true" />
+                  </CompactPortalStatus>
                 )}
               </div>
             </div>

@@ -10,6 +10,9 @@ import { MetaAdsCard } from "./actions/MetaAdsCard";
 import { FacebookCloudPublishingCard } from "./actions/FacebookCloudPublishingCard";
 import { TikTokAdsCard } from "./actions/TikTokAdsCard";
 import { TikTokOrganicPublishingCard } from "./actions/TikTokOrganicPublishingCard";
+import { PropertyAdCostsCard } from "./actions/PropertyAdCostsCard";
+import { PropertyPublicStatsCard } from "./actions/PropertyPublicStatsCard";
+import { PropertyNotesCard } from "./actions/PropertyNotesCard";
 
 export function ActionsColumn({ property, allProperties, viewings, agentProfile, matchedBuyers }: { property: Property, allProperties: Property[], viewings: Viewing[], agentProfile: UserProfile | null, matchedBuyers: MatchedBuyer[] }) {
     
@@ -31,6 +34,9 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
             <SocialMediaCard property={property} />
             <TikTokAdsCard property={property} />
             <TikTokOrganicPublishingCard property={property} />
+            <PropertyAdCostsCard property={property} />
+            <PropertyPublicStatsCard property={property} />
+            <PropertyNotesCard property={property} />
         </div>
     );
 }

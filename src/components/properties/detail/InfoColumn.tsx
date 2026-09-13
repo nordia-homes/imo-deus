@@ -17,9 +17,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { PropertyNotesCard } from "./actions/PropertyNotesCard";
-import { PropertyAdCostsCard } from "./actions/PropertyAdCostsCard";
-import { PropertyPublicStatsCard } from "./actions/PropertyPublicStatsCard";
 import { PropertySalesRecommendationsCard } from "./actions/PropertySalesRecommendationsCard";
 import { AdminPropertyDetailsMap } from "@/components/map/AdminPropertyDetailsMap";
 import { NearbyObjectivesCard } from "./actions/NearbyObjectivesCard";
@@ -149,15 +146,6 @@ export function InfoColumn({
                     </div>
                     <div className="hidden lg:block">
                         <NearbyObjectivesCard property={property} />
-                    </div>
-                    <div className="hidden lg:block">
-                        <PropertyNotesCard property={property} />
-                    </div>
-                    <div className="hidden lg:block">
-                        <PropertyAdCostsCard property={property} />
-                    </div>
-                    <div className="hidden lg:block">
-                        <PropertyPublicStatsCard property={property} />
                     </div>
                     <div className="hidden lg:block">
                         <PropertySalesRecommendationsCard property={property} />
