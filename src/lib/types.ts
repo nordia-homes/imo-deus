@@ -852,6 +852,15 @@ export type PropertyVideoTourJob = {
   requestedByUid?: string | null;
 };
 
+export type PropertyUploadedVideo = {
+  url: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes?: number | null;
+  uploadedAt: string;
+  uploadedByUid?: string | null;
+};
+
 export type Property = {
   id: string;
   title: string;
@@ -927,6 +936,7 @@ export type Property = {
     storia?: StoriaPortalProfile;
   };
   metaFacebookPost?: MetaFacebookPagePost | null;
+  uploadedVideo?: PropertyUploadedVideo | null;
   videoTour?: PropertyVideoTour | null;
   locationProfile?: PropertyLocationProfile | null;
   defaultFacebookConnectionId?: string | null;

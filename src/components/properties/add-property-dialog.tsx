@@ -26,7 +26,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, MapPin, Sparkles, Upload, Wand2, X } from 'lucide-react';
+import { Film, Loader2, MapPin, PlayCircle, Sparkles, Upload, Wand2, X } from 'lucide-react';
 import { generatePropertyDescription } from '@/ai/flows/property-description-generator';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -35,7 +35,7 @@ import { useUser, useFirestore, useStorage } from '@/firebase';
 import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
-import type { FacebookCloudConnection, Property, PropertyStatusEvent } from '@/lib/types';
+import type { FacebookCloudConnection, Property, PropertyStatusEvent, PropertyUploadedVideo } from '@/lib/types';
 import { facebookCloudFetch } from '@/lib/facebook-cloud-client';
 import { locations, type City } from '@/lib/locations';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
@@ -604,6 +604,7 @@ const resizeAndGetBlob = (file: File): Promise<Blob> => {
 };
 
 type ImageSource = File | { url: string; alt: string };
+type VideoSource = File | PropertyUploadedVideo;
 
 function base64ToFile(base64: string, filename: string, mimeType: string) {
   const binary = atob(base64);
@@ -738,6 +739,67 @@ function ImageSlotPlaceholder({ slotNumber }: { slotNumber: number }) {
   );
 }
 
+function VideoUploadCard({
+  source,
+  previewUrl,
+  onChange,
+  onRemove,
+}: {
+  source: VideoSource | null;
+  previewUrl: string | null;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemove: () => void;
+}) {
+  const fileName = source instanceof File ? source.name : source?.fileName;
+  const fileSize = source instanceof File ? source.size : source?.sizeBytes;
+  const sizeLabel = fileSize
+    ? `${(fileSize / (1024 * 1024)).toLocaleString('ro-RO', { maximumFractionDigits: 1 })} MB`
+    : null;
+
+  return (
+    <div className="agentfinder-add-property-video-upload mt-4 overflow-hidden rounded-2xl border border-white/15 bg-white/[0.055] p-3 shadow-sm">
+      {source && previewUrl ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-black/70 sm:w-40">
+            <video src={previewUrl} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/10">
+              <PlayCircle className="h-9 w-9 text-white drop-shadow-lg" />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Film className="h-4 w-4 shrink-0 text-emerald-200" />
+              <p className="truncate text-sm font-semibold text-white">{fileName || 'Video proprietate'}</p>
+            </div>
+            <p className="mt-1 text-xs text-white/60">{sizeLabel ? `${sizeLabel} · ` : ''}Video pregătit pentru galerie</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <label className="inline-flex h-9 cursor-pointer items-center rounded-full border border-white/20 bg-white/10 px-4 text-xs font-semibold text-white transition hover:bg-white/15">
+                <input type="file" className="hidden" accept="video/mp4,video/webm,video/quicktime" onChange={onChange} />
+                Înlocuiește
+              </label>
+              <Button type="button" variant="ghost" size="sm" className="h-9 rounded-full text-white/70 hover:bg-white/10 hover:text-white" onClick={onRemove}>
+                Elimină
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-white/20 px-4 py-3 transition hover:border-emerald-300/40 hover:bg-white/[0.04]">
+          <input type="file" className="hidden" accept="video/mp4,video/webm,video/quicktime" onChange={onChange} />
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/10">
+            <Film className="h-5 w-5 text-emerald-200" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-white">Adaugă video proprietate</span>
+            <span className="mt-0.5 block text-xs text-white/60">MP4, WebM sau MOV · maximum 250 MB</span>
+          </span>
+          <Upload className="h-5 w-5 shrink-0 text-white/55" />
+        </label>
+      )}
+    </div>
+  );
+}
+
 function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Property | null; onClose: () => void; isMobile: boolean }) {
     const { toast } = useToast();
     const { user } = useUser();
@@ -752,6 +814,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const [pendingStatusDialogTarget, setPendingStatusDialogTarget] = useState<'Rezervat' | 'Vândut' | null>(null);
     const [pendingSubmitValues, setPendingSubmitValues] = useState<z.infer<typeof propertySchema> | null>(null);
     const [imageSources, setImageSources] = useState<ImageSource[]>([]);
+    const [videoSource, setVideoSource] = useState<VideoSource | null>(null);
     const [enhancingImageIds, setEnhancingImageIds] = useState<string[]>([]);
     const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
     const [isLoadingAddressSuggestions, setIsLoadingAddressSuggestions] = useState(false);
@@ -1034,6 +1097,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 commissionValue: propertyData.commissionValue ?? 2,
             });
             setImageSources((propertyData.images || []).map(sanitizeImageSource).filter((item): item is ImageSource => Boolean(item)));
+            setVideoSource(propertyData.uploadedVideo || null);
             setSelectedCoordinates(
               typeof propertyData.latitude === 'number' && typeof propertyData.longitude === 'number'
                 ? { latitude: propertyData.latitude, longitude: propertyData.longitude }
@@ -1055,6 +1119,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 commissionValue: 2,
             });
             setImageSources([]);
+            setVideoSource(null);
             setSelectedCoordinates(null);
             setSelectedAddressLabel('');
             setLocationSearch('');
@@ -1072,6 +1137,10 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     );
 
     const previewImageUrl = imageItems[0]?.url || null;
+    const videoPreviewUrl = useMemo(
+        () => videoSource instanceof File ? URL.createObjectURL(videoSource) : videoSource?.url || null,
+        [videoSource]
+    );
     const previewLocation = selectedImobiliareLocation?.display || [watchedZone, watchedCity].filter(Boolean).join(', ');
     const formattedPreviewPrice =
         typeof watchedPrice === 'number' && Number.isFinite(watchedPrice)
@@ -1089,6 +1158,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             });
         };
     }, [imageItems]);
+
+    useEffect(() => {
+        return () => {
+            if (videoPreviewUrl?.startsWith('blob:')) URL.revokeObjectURL(videoPreviewUrl);
+        };
+    }, [videoPreviewUrl]);
 
     useEffect(() => {
         if (!agentsError) return;
@@ -1240,6 +1315,31 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
 
     const removeImage = (index: number) => {
         setImageSources((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleVideoChange = (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+
+        const allowedTypes = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
+        if (!allowedTypes.has(file.type)) {
+            toast({
+                variant: 'destructive',
+                title: 'Format video neacceptat',
+                description: 'Încarcă un fișier MP4, WebM sau MOV.',
+            });
+            return;
+        }
+        if (file.size > 250 * 1024 * 1024) {
+            toast({
+                variant: 'destructive',
+                title: 'Videoclip prea mare',
+                description: 'Dimensiunea maximă acceptată este 250 MB.',
+            });
+            return;
+        }
+        setVideoSource(file);
     };
 
     const handleEnhanceImage = async (index: number) => {
@@ -1420,6 +1520,21 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
           }
 
           const finalImages = [...existingImages, ...uploadedImageUrls];
+          let uploadedVideo: PropertyUploadedVideo | null = videoSource && !(videoSource instanceof File) ? videoSource : null;
+          if (videoSource instanceof File) {
+              toast({ title: 'Încărcare video...', description: 'Videoclipul proprietății este încărcat în siguranță.' });
+              const extension = videoSource.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'mp4';
+              const videoRef = ref(storage, `agencies/${agencyId}/properties/${propertyId}/videos/${crypto.randomUUID()}.${extension}`);
+              await uploadBytes(videoRef, videoSource, { contentType: videoSource.type });
+              uploadedVideo = {
+                  url: await getDownloadURL(videoRef),
+                  fileName: videoSource.name,
+                  mimeType: videoSource.type,
+                  sizeBytes: videoSource.size,
+                  uploadedAt: new Date().toISOString(),
+                  uploadedByUid: user.uid,
+              };
+          }
           const selectedAgent = agents.find(agent => agent.id === values.agentId);
 
           let latitude: number | null = selectedCoordinates?.latitude ?? null;
@@ -1490,6 +1605,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               keyFeatures: values.keyFeatures,
               description: values.description || '',
               images: finalImages,
+              uploadedVideo,
               tagline: `${values.rooms} camere | ${values.bathrooms} băi | ${values.squareFootage}mp`,
               amenities: (values.keyFeatures || '').split(',').map((f) => f.trim()).filter(Boolean),
               status: resolvedStatus,
@@ -1561,7 +1677,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               }
               toast({ title: 'Proprietate actualizată!', description: `${values.title} a fost actualizată cu succes.` });
           } else {
-              const newPropertyRef = doc(collection(firestore, 'agencies', agencyId, 'properties'));
+              const newPropertyRef = doc(firestore, 'agencies', agencyId, 'properties', propertyId);
               const createdAt = new Date().toISOString();
               if (statusPayload && (statusPayload.nextStatus === 'Rezervat' || statusPayload.nextStatus === 'Vândut')) {
                   const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
@@ -1682,7 +1798,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         ))}
                                     </div>
                                     <ScrollBar orientation="horizontal" className="agentfinder-add-property-photo-scrollbar" />
-                                </ScrollArea>
+                                    </ScrollArea>
+                                    <VideoUploadCard
+                                        source={videoSource}
+                                        previewUrl={videoPreviewUrl}
+                                        onChange={handleVideoChange}
+                                        onRemove={() => setVideoSource(null)}
+                                    />
                             </CardContent>
                         </Card>
                     )}
@@ -1724,7 +1846,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                         ))}
                                     </div>
                                     <ScrollBar orientation="horizontal" className="agentfinder-add-property-photo-scrollbar" />
-                                </ScrollArea>
+                                    </ScrollArea>
+                                    <VideoUploadCard
+                                        source={videoSource}
+                                        previewUrl={videoPreviewUrl}
+                                        onChange={handleVideoChange}
+                                        onRemove={() => setVideoSource(null)}
+                                    />
                             </CardContent>
                         </Card>
                     )}

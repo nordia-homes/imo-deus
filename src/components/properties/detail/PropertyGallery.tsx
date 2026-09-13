@@ -17,7 +17,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid, Heart, Share2, X } from "lucide-react"
+import { Grid, Heart, Play, Share2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -29,6 +29,8 @@ export function PropertyGallery({
   shareUrl,
   shareImageUrl,
   videoAction,
+  uploadedVideoUrl,
+  uploadedVideoName,
 }: {
   images: string[];
   title: string;
@@ -37,6 +39,8 @@ export function PropertyGallery({
   shareUrl?: string;
   shareImageUrl?: string;
   videoAction?: React.ReactNode;
+  uploadedVideoUrl?: string | null;
+  uploadedVideoName?: string | null;
 }) {
   const [api, setApi] = React.useState<CarouselApi>()
   const [open, setOpen] = React.useState(false)
@@ -44,6 +48,7 @@ export function PropertyGallery({
   const [isMobileGalleryOpen, setIsMobileGalleryOpen] = React.useState(false);
   const [isLoved, setIsLoved] = React.useState(false);
   const [isCopied, setIsCopied] = React.useState(false);
+  const [isVideoOpen, setIsVideoOpen] = React.useState(false);
   const isMobile = useIsMobile();
   const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
@@ -110,7 +115,7 @@ export function PropertyGallery({
     }
   }, [open, api, activeIndex])
 
-  if (!images || images.length === 0) {
+  if ((!images || images.length === 0) && !uploadedVideoUrl) {
     return (
       <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
         <p className="text-muted-foreground">No images available</p>
@@ -147,6 +152,30 @@ export function PropertyGallery({
         <div className="agentfinder-gallery-overlay absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
       </div>
     )
+  }
+
+  if ((!images || images.length === 0) && uploadedVideoUrl) {
+    return (
+      <>
+        <button
+          type="button"
+          className="group relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg bg-slate-950"
+          onClick={() => setIsVideoOpen(true)}
+          aria-label="Redă videoclipul proprietății"
+        >
+          <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/40 bg-black/45 text-white shadow-xl backdrop-blur-md transition group-hover:scale-105 group-hover:bg-black/60">
+            <Play className="ml-1 h-7 w-7 fill-current" />
+          </span>
+        </button>
+        <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
+          <DialogContent className="w-[min(94vw,1100px)] max-w-none border-white/10 bg-black p-2 text-white sm:rounded-3xl">
+            <DialogTitle className="sr-only">{uploadedVideoName || `Video ${title}`}</DialogTitle>
+            <DialogDescription className="sr-only">Videoclip încărcat pentru proprietatea {title}.</DialogDescription>
+            <video src={uploadedVideoUrl} className="max-h-[84vh] w-full rounded-2xl bg-black object-contain" controls autoPlay playsInline />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
   }
 
   // Mobile Gallery View
@@ -191,8 +220,23 @@ export function PropertyGallery({
                 <ImageItem index={2} className="w-full h-full" />
             </div>
         </div>
+        {uploadedVideoUrl ? (
+          <Button
+            type="button"
+            size="icon"
+            variant="secondary"
+            aria-label="Redă videoclipul proprietății"
+            className="absolute left-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-black/38 text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.75)] backdrop-blur-xl hover:scale-105 hover:bg-black/55 hover:text-white"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsVideoOpen(true);
+            }}
+          >
+            <Play className="ml-0.5 h-5 w-5 fill-current" />
+          </Button>
+        ) : null}
         {showMatchPrompt ? (
-          <div className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-full border border-white/20 bg-black/24 px-4 py-2 text-white shadow-[0_16px_38px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl">
+          <div className={cn("absolute top-4 z-10 flex items-center gap-3 rounded-full border border-white/20 bg-black/24 px-4 py-2 text-white shadow-[0_16px_38px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl", uploadedVideoUrl ? "left-16" : "left-4")}>
             <span className="whitespace-nowrap text-sm font-medium leading-none text-white/92">Aceasta proprietate ti se potriveste?</span>
             <Button
               type="button"
@@ -260,6 +304,16 @@ export function PropertyGallery({
             </Carousel>
         </DialogContent>
       </Dialog>
+
+      {uploadedVideoUrl ? (
+        <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
+          <DialogContent className="w-[min(94vw,1100px)] max-w-none border-white/10 bg-black p-2 text-white sm:rounded-3xl">
+            <DialogTitle className="sr-only">{uploadedVideoName || `Video ${title}`}</DialogTitle>
+            <DialogDescription className="sr-only">Videoclip încărcat pentru proprietatea {title}.</DialogDescription>
+            <video src={uploadedVideoUrl} className="max-h-[84vh] w-full rounded-2xl bg-black object-contain" controls autoPlay playsInline />
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </>
   )
 }

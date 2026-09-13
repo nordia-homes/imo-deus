@@ -197,7 +197,13 @@ export function buildPropertySalesAnalysis({
     });
   }
 
-  if (ageDays !== null && ageDays >= 14 && property.videoTour?.status !== 'ready' && imagesCount >= 8) {
+  if (
+    ageDays !== null &&
+    ageDays >= 14 &&
+    property.videoTour?.status !== 'ready' &&
+    !property.uploadedVideo?.url &&
+    imagesCount >= 8
+  ) {
     add({
       id: 'video-tour',
       category: 'Conținut',

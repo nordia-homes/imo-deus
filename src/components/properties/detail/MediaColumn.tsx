@@ -28,6 +28,8 @@ export function MediaColumn({
                 shareUrl={shareUrl}
                 shareImageUrl={shareImageUrl}
                 videoAction={showVideoTour ? <VideoTourCard property={property} triggerVariant="gallery-button" /> : null}
+                uploadedVideoUrl={property.uploadedVideo?.url}
+                uploadedVideoName={property.uploadedVideo?.fileName}
              />
         </div>
     );

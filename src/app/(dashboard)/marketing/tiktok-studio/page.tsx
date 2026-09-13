@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
@@ -709,6 +709,7 @@ export default function TikTokStudioPage() {
     disableStitch: false,
     aiGeneratedContent: true,
   });
+  const autoOpenedPropertyIdRef = useRef<string | null>(null);
 
   const connected = Boolean(dashboard?.status.connected);
   const studioAssets = dashboard?.studioAssets || [];
@@ -925,6 +926,17 @@ export default function TikTokStudioPage() {
       setIsUploadingMedia(false);
     }
   }
+
+  useEffect(() => {
+    const propertyId = searchParams?.get('propertyId');
+    if (!propertyId || !dashboard || autoOpenedPropertyIdRef.current === propertyId) return;
+
+    const readyVideo = dashboard.readyVideoTours.find((video) => video.propertyId === propertyId);
+    if (!readyVideo) return;
+
+    autoOpenedPropertyIdRef.current = propertyId;
+    void openPublishModal(readyVideo);
+  }, [dashboard, searchParams]);
 
   async function handleSelectPortfolioProperty(propertyId: string) {
     setSelectedPortfolioPropertyId(propertyId);
