@@ -54,6 +54,7 @@ import { FacebookCloudPublishingCard } from '@/components/properties/detail/acti
 import { SocialMediaCard } from '@/components/properties/detail/actions/SocialMediaCard';
 import { WebsiteToggleCard } from '@/components/properties/detail/actions/WebsiteToggleCard';
 import { PropertyNotesCard } from '@/components/properties/detail/actions/PropertyNotesCard';
+import { NearbyObjectivesCard } from '@/components/properties/detail/actions/NearbyObjectivesCard';
 import { MatchedLeadsTab } from '@/components/properties/detail/MatchedLeadsTab';
 import { RlvTab } from '@/components/properties/detail/RlvTab';
 import { InfoDialog } from '@/components/properties/detail/InfoDialog';
@@ -318,6 +319,7 @@ export default function PropertyDetailPage() {
                                     </div>
                                 </CardContent>
                             </Card>
+                            <NearbyObjectivesCard property={property} />
                         </Accordion>
                         
                         <div className="pt-4 space-y-4">

@@ -22,6 +22,7 @@ import { PropertyAdCostsCard } from "./actions/PropertyAdCostsCard";
 import { PropertyPublicStatsCard } from "./actions/PropertyPublicStatsCard";
 import { PropertySalesRecommendationsCard } from "./actions/PropertySalesRecommendationsCard";
 import { AdminPropertyDetailsMap } from "@/components/map/AdminPropertyDetailsMap";
+import { NearbyObjectivesCard } from "./actions/NearbyObjectivesCard";
 
 export function InfoColumn({
     property,
@@ -145,6 +146,9 @@ export function InfoColumn({
                     </Card>
                     <div className="hidden lg:block h-[448px]">
                         <AdminPropertyDetailsMap properties={[property]} />
+                    </div>
+                    <div className="hidden lg:block">
+                        <NearbyObjectivesCard property={property} />
                     </div>
                     <div className="hidden lg:block">
                         <PropertyNotesCard property={property} />
