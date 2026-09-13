@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const propertyId = typeof body.propertyId === 'string' ? body.propertyId : '';
+    const mediaType = body.mediaType === 'video' ? 'video' : 'gallery';
     if (!propertyId) {
       return NextResponse.json({ message: 'propertyId lipseste.' }, { status: 400 });
     }
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
       agencyId,
       propertyId,
       requestedByUid: uid,
+      mediaType,
     });
 
     return NextResponse.json({ post }, { status: 200 });

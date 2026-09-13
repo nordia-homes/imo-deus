@@ -660,6 +660,7 @@ export async function publishPropertyToFacebookPage(params: {
   agencyId: string;
   propertyId: string;
   requestedByUid?: string | null;
+  mediaType?: 'gallery' | 'video';
 }) {
   const propertySnapshot = await adminDb
     .collection('agencies')
@@ -687,6 +688,14 @@ export async function publishPropertyToFacebookPage(params: {
   const destinationUrl = await buildPropertyDestinationUrl(params.agencyId, params.propertyId);
   const message = buildOrganicFacebookPostMessage(property, destinationUrl);
   const images = getHttpsPropertyImages(property);
+  const publishVideo = params.mediaType === 'video';
+  const videoUrl = property.videoTour?.status === 'ready' && /^https:\/\//i.test(property.videoTour.url || '')
+    ? property.videoTour.url
+    : null;
+  if (publishVideo && !videoUrl) {
+    throw new Error('Genereaza mai intai videoclipul proprietatii in AI Video.');
+  }
+  const publishedImageCount = publishVideo ? 0 : images.length;
   const now = nowIso();
 
   await propertySnapshot.ref.set(
@@ -699,7 +708,7 @@ export async function publishPropertyToFacebookPage(params: {
         permalinkUrl: null,
         photoIds: [],
         message,
-        imageCount: images.length,
+        imageCount: publishedImageCount,
         createdByUid: params.requestedByUid || null,
         updatedAt: now,
         errorMessage: null,
@@ -710,27 +719,34 @@ export async function publishPropertyToFacebookPage(params: {
 
   try {
     const { pageAccessToken, pageName } = await getSelectedPageAccessToken(selectedPage.id, accessToken);
-    const uploadedPhotos = images.length
-      ? await Promise.all(images.map((image) => metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/photos`, pageAccessToken, {
-          url: image.url,
-          published: false,
-          caption: image.alt,
-        })))
-      : [];
-    const photoIds = uploadedPhotos.map((photo) => photo.id).filter((id): id is string => Boolean(id));
-    const feedParams: Record<string, string | number | boolean | null | undefined> = {
-      message,
-    };
-
-    if (photoIds.length) {
-      photoIds.forEach((id, index) => {
-        feedParams[`attached_media[${index}]`] = JSON.stringify({ media_fbid: id });
+    let photoIds: string[] = [];
+    let postResponse: MetaCreateResponse;
+    if (publishVideo && videoUrl) {
+      postResponse = await metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/videos`, pageAccessToken, {
+        file_url: videoUrl,
+        description: message,
+        title: property.title || 'Video proprietate',
       });
     } else {
-      feedParams.link = destinationUrl;
-    }
+      const uploadedPhotos = images.length
+        ? await Promise.all(images.map((image) => metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/photos`, pageAccessToken, {
+            url: image.url,
+            published: false,
+            caption: image.alt,
+          })))
+        : [];
+      photoIds = uploadedPhotos.map((photo) => photo.id).filter((id): id is string => Boolean(id));
+      const feedParams: Record<string, string | number | boolean | null | undefined> = { message };
 
-    const postResponse = await metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/feed`, pageAccessToken, feedParams);
+      if (photoIds.length) {
+        photoIds.forEach((id, index) => {
+          feedParams[`attached_media[${index}]`] = JSON.stringify({ media_fbid: id });
+        });
+      } else {
+        feedParams.link = destinationUrl;
+      }
+      postResponse = await metaFormRequest<MetaCreateResponse>(`/${selectedPage.id}/feed`, pageAccessToken, feedParams);
+    }
     const postId = postResponse.id || postResponse.post_id || null;
     const permalink = postId
       ? await metaRequest<MetaPermalinkResponse>(`/${postId}?fields=permalink_url`, pageAccessToken).catch(() => null)
@@ -743,7 +759,7 @@ export async function publishPropertyToFacebookPage(params: {
       permalinkUrl: permalink?.permalink_url || null,
       photoIds,
       message,
-      imageCount: images.length,
+      imageCount: publishedImageCount,
       createdByUid: params.requestedByUid || null,
       publishedAt: nowIso(),
       updatedAt: nowIso(),
@@ -762,7 +778,7 @@ export async function publishPropertyToFacebookPage(params: {
       permalinkUrl: null,
       photoIds: [],
       message,
-      imageCount: images.length,
+      imageCount: publishedImageCount,
       createdByUid: params.requestedByUid || null,
       updatedAt: nowIso(),
       errorMessage: messageError,

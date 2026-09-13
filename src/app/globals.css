@@ -43826,3 +43826,420 @@ html body button.agentfinder-ai-video-trigger:focus-visible,
     0 16px 34px -29px rgba(5, 150, 105, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
 }
+
+/* AI Video Studio: bright, high-contrast surface aligned with the application UI. */
+html body .agentfinder-ai-video-dialog.agentfinder-ai-video-dialog {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 14%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 14%;
+  --secondary: 214 40% 95%;
+  --secondary-foreground: 222 40% 20%;
+  --muted: 215 35% 95%;
+  --muted-foreground: 215 18% 43%;
+  --border: 214 32% 86%;
+  --input: 214 32% 86%;
+  --ring: 173 70% 38%;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background:
+    radial-gradient(circle at 8% -8%, rgba(45, 212, 191, 0.14), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(139, 92, 246, 0.12), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f5f9fd 100%) !important;
+  color: #10213a !important;
+  box-shadow: 0 34px 90px -28px rgba(30, 64, 175, 0.3) !important;
+}
+
+html body .agentfinder-ai-video-dialog > button {
+  right: 1.1rem !important;
+  top: 1.1rem !important;
+  height: 2.75rem !important;
+  width: 2.75rem !important;
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #475569 !important;
+  box-shadow: 0 10px 28px -18px rgba(15, 23, 42, 0.35) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__header {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  background:
+    radial-gradient(circle at 9% 0%, rgba(45, 212, 191, 0.15), transparent 30%),
+    radial-gradient(circle at 88% 0%, rgba(167, 139, 250, 0.13), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(247, 250, 253, 0.98)) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__header [data-radix-dialog-title] {
+  color: #10213a !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__header [data-radix-dialog-description] {
+  color: #64748b !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__logo {
+  border: 1px solid rgba(255, 255, 255, 0.82) !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #38bdf8 48%, #8b5cf6 100%) !important;
+  box-shadow: 0 15px 32px -16px rgba(14, 165, 233, 0.62) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__header-summary {
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 12px 30px -25px rgba(15, 23, 42, 0.3) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__summary-divider {
+  background: rgba(148, 163, 184, 0.38) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__section-kicker {
+  color: #087d83 !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__canvas {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  background:
+    radial-gradient(circle at 18% 4%, rgba(45, 212, 191, 0.1), transparent 30%),
+    linear-gradient(160deg, #fbfdff 0%, #f2f7fc 56%, #f7f5ff 100%) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__preview-stage {
+  border-color: rgba(125, 154, 190, 0.24) !important;
+  background:
+    linear-gradient(rgba(100, 116, 139, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 139, 0.055) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(224, 242, 254, 0.8), rgba(241, 245, 249, 0.94) 70%) !important;
+  background-size: 34px 34px, 34px 34px, auto !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 24px 58px -42px rgba(37, 99, 235, 0.45) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__preview {
+  background: transparent !important;
+  box-shadow: 0 28px 64px -30px rgba(51, 65, 85, 0.48) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__iphone {
+  overflow: visible !important;
+  border: 2px solid #aeb8c5 !important;
+  border-radius: 48px !important;
+  background: linear-gradient(145deg, #f8fafc 0%, #cbd5e1 48%, #ffffff 100%) !important;
+  padding: 8px !important;
+  box-shadow:
+    0 30px 70px -28px rgba(30, 41, 59, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.94),
+    inset 0 0 0 3px rgba(71, 85, 105, 0.14) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__screen {
+  border-radius: 39px;
+  background: #f8fbff !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__preview:not(.ai-video-studio__iphone) .ai-video-studio__screen {
+  border-radius: inherit;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__dynamic-island {
+  position: absolute;
+  left: 50%;
+  top: 11px;
+  z-index: 20;
+  display: flex;
+  height: 20px;
+  width: 66px;
+  transform: translateX(-50%);
+  align-items: center;
+  justify-content: flex-end;
+  border-radius: 999px;
+  background: #111827;
+  padding-right: 7px;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__dynamic-island > span {
+  height: 5px;
+  width: 5px;
+  border-radius: 999px;
+  background: #334155;
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.38);
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__iphone-button {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  width: 4px;
+  border-radius: 3px;
+  background: #94a3b8;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.62);
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__iphone-button--action {
+  left: -5px;
+  top: 82px;
+  height: 24px;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__iphone-button--volume-up {
+  left: -5px;
+  top: 124px;
+  height: 42px;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__iphone-button--volume-down {
+  left: -5px;
+  top: 174px;
+  height: 42px;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__iphone-button--power {
+  right: -5px;
+  top: 132px;
+  height: 66px;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__meta-pill {
+  border: 1px solid rgba(14, 165, 233, 0.2) !important;
+  border-radius: 999px;
+  background: rgba(224, 242, 254, 0.76) !important;
+  padding: 0.4rem 0.7rem;
+  color: #075985 !important;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__frame {
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 26px -18px rgba(15, 23, 42, 0.32) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__frame:hover {
+  border-color: rgba(20, 184, 166, 0.58) !important;
+  box-shadow: 0 14px 34px -18px rgba(20, 184, 166, 0.4) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__settings {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, #f9fbfe 0%, #f2f7fb 100%) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__control-card {
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98), 0 16px 38px -32px rgba(30, 64, 175, 0.3) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__presenter-card {
+  border-color: rgba(139, 92, 246, 0.22) !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(45, 212, 191, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(245, 243, 255, 0.96), rgba(255, 255, 255, 0.92)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98), 0 18px 45px -34px rgba(99, 102, 241, 0.38) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__ready-card {
+  border-color: rgba(16, 185, 129, 0.28) !important;
+  background: rgba(236, 253, 245, 0.9) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__select,
+html body .agentfinder-ai-video-dialog .ai-video-studio__textarea {
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #172033 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1), 0 8px 24px -22px rgba(15, 23, 42, 0.35) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__textarea {
+  min-height: 260px !important;
+  max-height: none !important;
+  field-sizing: content;
+  overflow-y: hidden !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__select:focus,
+html body .agentfinder-ai-video-dialog .ai-video-studio__textarea:focus {
+  border-color: rgba(20, 184, 166, 0.62) !important;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__voice-action {
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #334155 !important;
+  box-shadow: 0 8px 22px -20px rgba(15, 23, 42, 0.4) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__voice-action:hover {
+  border-color: rgba(20, 184, 166, 0.4) !important;
+  background: #f0fdfa !important;
+  color: #0f766e !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__script-action {
+  border-color: rgba(139, 92, 246, 0.24) !important;
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__script-action:hover {
+  border-color: rgba(124, 58, 237, 0.4) !important;
+  background: #ede9fe !important;
+  color: #5b21b6 !important;
+}
+
+html body .ai-video-studio__select-content.ai-video-studio__select-content {
+  border-color: rgba(148, 163, 184, 0.3) !important;
+  background: #ffffff !important;
+  color: #172033 !important;
+  box-shadow: 0 24px 60px -24px rgba(15, 23, 42, 0.3) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__actions {
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 -18px 46px -36px rgba(15, 23, 42, 0.38) !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__primary-action,
+[data-app-theme='agentfinder'] .agentfinder-ai-video-dialog button.ai-video-studio__primary-action {
+  border: 1px solid #db2777 !important;
+  background-color: #ec4899 !important;
+  background-image: linear-gradient(135deg, #f472b6 0%, #ec4899 46%, #db2777 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  box-shadow: 0 16px 35px -15px rgba(236, 72, 153, 0.72) !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__primary-action:hover,
+[data-app-theme='agentfinder'] .agentfinder-ai-video-dialog button.ai-video-studio__primary-action:hover {
+  border-color: #be185d !important;
+  background-color: #db2777 !important;
+  background-image: linear-gradient(135deg, #ec4899 0%, #db2777 58%, #be185d 100%) !important;
+  filter: none;
+  transform: translateY(-1px);
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__secondary-action {
+  border-color: rgba(148, 163, 184, 0.32) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #26354d !important;
+  box-shadow: 0 10px 24px -22px rgba(15, 23, 42, 0.4) !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__secondary-action:hover {
+  border-color: rgba(20, 184, 166, 0.42) !important;
+  background: rgba(240, 253, 250, 0.98) !important;
+  color: #0f766e !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__tiktok-action,
+[data-app-theme='agentfinder'] .agentfinder-ai-video-dialog button.ai-video-studio__tiktok-action {
+  border-color: rgba(236, 72, 153, 0.38) !important;
+  background-color: #ffffff !important;
+  background-image: linear-gradient(135deg, #ffffff 0%, #fff1f7 100%) !important;
+  color: #172033 !important;
+  -webkit-text-fill-color: #172033 !important;
+  box-shadow: 0 10px 24px -22px rgba(236, 72, 153, 0.7) !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__tiktok-action:hover,
+[data-app-theme='agentfinder'] .agentfinder-ai-video-dialog button.ai-video-studio__tiktok-action:hover {
+  border-color: #ec4899 !important;
+  background-image: linear-gradient(135deg, #fff7fb 0%, #fce7f3 100%) !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__facebook-action,
+[data-app-theme='agentfinder'] .agentfinder-ai-video-dialog button.ai-video-studio__facebook-action {
+  border-color: rgba(24, 119, 242, 0.3) !important;
+  background-color: #ffffff !important;
+  background-image: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%) !important;
+  color: #1877f2 !important;
+  -webkit-text-fill-color: #1877f2 !important;
+  box-shadow: 0 10px 24px -22px rgba(24, 119, 242, 0.65) !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__facebook-action:hover,
+[data-app-theme='agentfinder'] .agentfinder-ai-video-dialog button.ai-video-studio__facebook-action:hover {
+  border-color: #1877f2 !important;
+  background-image: linear-gradient(135deg, #f8fbff 0%, #dbeafe 100%) !important;
+}
+
+html body .agentfinder-ai-video-dialog button.ai-video-studio__tiktok-action:disabled,
+html body .agentfinder-ai-video-dialog button.ai-video-studio__facebook-action:disabled {
+  border-color: rgba(148, 163, 184, 0.24) !important;
+  background: #f8fafc !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+html body .agentfinder-ai-video-dialog label,
+html body .agentfinder-ai-video-dialog h3,
+html body .agentfinder-ai-video-dialog h4 {
+  color: #172033 !important;
+}
+
+html body .agentfinder-ai-video-dialog [class*='text-white/'] {
+  color: #64748b !important;
+}
+
+html body .agentfinder-ai-video-dialog .ai-video-studio__ready-card p {
+  color: #047857 !important;
+}
+
+html body .agentfinder-ai-video-dialog button[role='switch'] {
+  border: 1px solid rgba(148, 163, 184, 0.4) !important;
+  background: #dbe4ef !important;
+}
+
+html body .agentfinder-ai-video-dialog button[role='switch'][data-state='checked'] {
+  border-color: #db2777 !important;
+  background: #ec4899 !important;
+  box-shadow: 0 7px 16px -10px rgba(236, 72, 153, 0.85) !important;
+}
+
+html body .agentfinder-ai-video-dialog button[role='switch'] > span {
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3) !important;
+}
+
+.agentfinder-ai-video-dialog .ai-video-studio__filmstrip,
+.agentfinder-ai-video-dialog .ai-video-studio__settings-scroll,
+.agentfinder-ai-video-dialog .ai-video-studio__canvas {
+  scrollbar-color: rgba(14, 165, 233, 0.36) rgba(203, 213, 225, 0.24);
+  scrollbar-width: thin;
+}
+
+@media (max-width: 1023px) {
+  html body .agentfinder-ai-video-dialog.agentfinder-ai-video-dialog {
+    height: min(96dvh, 980px) !important;
+    width: min(96vw, 760px) !important;
+    border-radius: 26px !important;
+  }
+
+  .agentfinder-ai-video-dialog .ai-video-studio__body {
+    display: block;
+    overflow-y: auto;
+  }
+
+  .agentfinder-ai-video-dialog .ai-video-studio__canvas,
+  .agentfinder-ai-video-dialog .ai-video-studio__settings,
+  .agentfinder-ai-video-dialog .ai-video-studio__settings-scroll {
+    overflow: visible;
+  }
+
+  .agentfinder-ai-video-dialog .ai-video-studio__preview-stage {
+    min-height: 340px;
+  }
+
+  .agentfinder-ai-video-dialog .ai-video-studio__actions {
+    position: sticky;
+    bottom: 0;
+  }
+}

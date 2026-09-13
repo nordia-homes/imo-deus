@@ -2,18 +2,21 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import {
   CheckCircle2,
   Download,
+  Facebook,
   Film,
+  Images,
   Loader2,
   Music2,
   PlayCircle,
+  SlidersHorizontal,
   Sparkles,
   UserRound,
-  Wand2,
 } from 'lucide-react';
 import type { Property, PropertyVideoTour } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
@@ -35,6 +38,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { TikTokIcon } from '@/components/icons/TikTokIcon';
 import {
   ACTION_CARD_INTERACTIVE_CLASSNAME,
   ACTION_ICON_CLASSNAME,
@@ -90,7 +94,7 @@ function AiVideoIdlePreview() {
 
   return (
     <div
-      className="relative aspect-video w-full overflow-hidden bg-[#05020d]"
+      className="relative h-full w-full overflow-hidden bg-[#f8fbff]"
       role="img"
       aria-label="Fundal animat de previzualizare pentru generarea video AI"
     >
@@ -102,9 +106,10 @@ function AiVideoIdlePreview() {
       >
         <defs>
           <radialGradient id="ai-video-idle-background" cx="50%" cy="48%" r="72%">
-            <stop offset="0" stopColor="#35105f" />
-            <stop offset="0.42" stopColor="#13062c" />
-            <stop offset="1" stopColor="#030108" />
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset="0.42" stopColor="#f3efff" />
+            <stop offset="0.72" stopColor="#eaf9ff" />
+            <stop offset="1" stopColor="#f8fbff" />
           </radialGradient>
           <linearGradient id="ai-video-idle-neon" x1="190" y1="80" x2="770" y2="470" gradientUnits="userSpaceOnUse">
             <stop stopColor="#f643f2" />
@@ -124,9 +129,9 @@ function AiVideoIdlePreview() {
         </defs>
 
         <rect width="960" height="540" fill="url(#ai-video-idle-background)" />
-        <ellipse cx="480" cy="270" rx="390" ry="215" fill="#8d35e8" opacity="0.13" filter="url(#ai-video-idle-soft-glow)">
+        <ellipse cx="480" cy="270" rx="390" ry="215" fill="#79dff0" opacity="0.18" filter="url(#ai-video-idle-soft-glow)">
           <animate attributeName="rx" values="320;420;320" dur="7s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.08;0.2;0.08" dur="7s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.1;0.24;0.1" dur="7s" repeatCount="indefinite" />
         </ellipse>
 
         <g fill="none" strokeLinejoin="round">
@@ -146,7 +151,7 @@ function AiVideoIdlePreview() {
                   stroke={star.color}
                   strokeWidth={index === 9 ? 5 : 3.2}
                   strokeDasharray={index % 3 === 0 ? '18 7' : undefined}
-                  opacity="0.88"
+                  opacity="0.72"
                   filter="url(#ai-video-idle-glow)"
                   transform={`scale(${star.scale})`}
                 >
@@ -158,7 +163,7 @@ function AiVideoIdlePreview() {
                   />
                   <animate
                     attributeName="opacity"
-                    values="0.35;1;0.5;0.35"
+                    values="0.42;0.9;0.55;0.42"
                     dur={`${star.duration}s`}
                     begin={`${star.delay}s`}
                     repeatCount="indefinite"
@@ -177,7 +182,7 @@ function AiVideoIdlePreview() {
           ))}
         </g>
 
-        <g fill="none" stroke="url(#ai-video-idle-neon)" strokeLinejoin="round" transform="translate(480 270)" opacity="0.2">
+        <g fill="none" stroke="url(#ai-video-idle-neon)" strokeLinejoin="round" transform="translate(480 270)" opacity="0.3">
           {[1.2, 1.6, 2].map((scale, index) => (
             <path
               key={scale}
@@ -206,7 +211,7 @@ function AiVideoIdlePreview() {
       </svg>
 
       <div className="absolute inset-x-0 bottom-5 flex justify-center">
-        <div className="flex items-center gap-2 rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70 backdrop-blur-md">
+        <div className="flex items-center gap-2 rounded-full border border-violet-200/80 bg-white/85 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm backdrop-blur-md">
           <Sparkles className="h-3.5 w-3.5 text-fuchsia-200" />
           Previzualizare AI
         </div>
@@ -232,6 +237,12 @@ type VoicePreset = {
   description: string;
   provider?: 'elevenlabs' | 'fallback';
 };
+
+function resizeScriptTextarea(textarea: HTMLTextAreaElement | null) {
+  if (!textarea) return;
+  textarea.style.height = '0px';
+  textarea.style.height = `${Math.max(260, textarea.scrollHeight + 2)}px`;
+}
 
 const STANDARD_FORMAT_PRESETS: Record<VideoFormat, RenderPreset> = {
   landscape: { width: 1280, height: 720, label: 'Website / YouTube' },
@@ -628,44 +639,72 @@ export function VideoTourCard({
   triggerVariant?: 'card' | 'gallery-button';
 }) {
   const { agencyId, agency } = useAgency();
+  const router = useRouter();
   const { user } = useUser();
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const scriptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const hasLoadedVoicePresetsRef = useRef(false);
+  const scriptPropertyIdRef = useRef(property.id);
+  const scriptWasEditedRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [format, setFormat] = useState<VideoFormat>('portrait');
   const [style, setStyle] = useState<VideoStyle>('cinematic');
   const [quality, setQuality] = useState<VideoQuality>('standard');
   const [targetDuration, setTargetDuration] = useState('auto');
-  const [includeText, setIncludeText] = useState(false);
+  const [includeText, setIncludeText] = useState(true);
   const [includeBranding, setIncludeBranding] = useState(false);
   const [includeMusic, setIncludeMusic] = useState(false);
-  const [includeAiPresenter, setIncludeAiPresenter] = useState(false);
+  const [includeAiPresenter, setIncludeAiPresenter] = useState(true);
   const [aiPresenterAvatar, setAiPresenterAvatar] = useState<AiPresenterAvatar>('business');
   const [aiPresenterVoice, setAiPresenterVoice] = useState<AiPresenterVoice>('eleven-rachel');
-  const [aiPresenterPosition, setAiPresenterPosition] = useState<AiPresenterPosition>('bottom-right');
-  const [aiPresenterSize, setAiPresenterSize] = useState<AiPresenterSize>('medium');
-  const [aiPresenterScript, setAiPresenterScript] = useState('');
+  const aiPresenterPosition: AiPresenterPosition = 'bottom-right';
+  const aiPresenterSize: AiPresenterSize = 'medium';
+  const [aiPresenterScript, setAiPresenterScript] = useState(() => property.description || '');
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [previewingVoice, setPreviewingVoice] = useState<AiPresenterVoice | null>(null);
   const [voicePresets, setVoicePresets] = useState<VoicePreset[]>(FALLBACK_VOICE_PRESETS);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCloudRendering, setIsCloudRendering] = useState(false);
+  const [isPublishingFacebook, setIsPublishingFacebook] = useState(false);
   const [cloudStatus, setCloudStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(property.videoTour?.url || null);
 
   const images = useMemo(
     () => (property.images || []).map((image) => image.url).filter(Boolean).slice(0, 18),
     [property.images],
   );
-  const existingVideoUrl = property.videoTour?.url || null;
-  const previewUrl = localPreviewUrl || existingVideoUrl;
+  const previewUrl = localPreviewUrl || generatedVideoUrl;
   const canGenerate = images.length >= 2 && Boolean(user && agencyId);
   const selectedPreset = getPreset(format, quality);
+
+  useEffect(() => {
+    if (property.videoTour?.url) setGeneratedVideoUrl(property.videoTour.url);
+  }, [property.videoTour?.url]);
+
+  useEffect(() => {
+    const propertyDescription = property.description || '';
+    if (scriptPropertyIdRef.current !== property.id) {
+      scriptPropertyIdRef.current = property.id;
+      scriptWasEditedRef.current = false;
+      setAiPresenterScript(propertyDescription);
+      return;
+    }
+    if (!scriptWasEditedRef.current) setAiPresenterScript(propertyDescription);
+  }, [property.id, property.description]);
+
+  useEffect(() => {
+    const textarea = scriptTextareaRef.current;
+    if (!textarea || !isOpen || !includeAiPresenter) return;
+
+    const animationFrame = window.requestAnimationFrame(() => resizeScriptTextarea(textarea));
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [aiPresenterScript, includeAiPresenter, isOpen]);
 
   useEffect(() => {
     return () => {
@@ -760,6 +799,7 @@ export function VideoTourCard({
       if (!response.ok) throw new Error(getApiErrorMessage(payload, 'Nu am putut genera scriptul AI.'));
       const script = typeof payload?.script === 'string' ? payload.script.trim() : '';
       if (!script) throw new Error('Generatorul AI nu a returnat un script valid.');
+      scriptWasEditedRef.current = true;
       setAiPresenterScript(script);
       toast({
         title: 'Script AI generat',
@@ -954,6 +994,7 @@ export function VideoTourCard({
 
       if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       setLocalPreviewUrl(URL.createObjectURL(blob));
+      setGeneratedVideoUrl(downloadUrl);
       persistVideoTour({
         status: 'ready',
         url: downloadUrl,
@@ -1107,6 +1148,9 @@ export function VideoTourCard({
 
       setProgress(100);
       setCloudStatus('Video MP4 randat in cloud.');
+      if (typeof completedJob.videoUrl === 'string' && completedJob.videoUrl) {
+        setGeneratedVideoUrl(completedJob.videoUrl);
+      }
       toast({
         title: 'Video MP4 generat in cloud',
         description: 'Turul video H.264 a fost salvat pe proprietate si poate fi folosit in Meta Ads.',
@@ -1124,6 +1168,37 @@ export function VideoTourCard({
       });
     } finally {
       setIsCloudRendering(false);
+    }
+  };
+
+  const handleOpenTikTokPublishing = () => {
+    if (!generatedVideoUrl || isGenerating || isCloudRendering) return;
+    setIsOpen(false);
+    router.push(`/marketing/tiktok-studio?propertyId=${encodeURIComponent(property.id)}`);
+  };
+
+  const handlePublishFacebookVideo = async () => {
+    if (!generatedVideoUrl || !user || isPublishingFacebook || isGenerating || isCloudRendering) return;
+    setIsPublishingFacebook(true);
+    try {
+      const response = await authorizedFetch('/api/marketing/meta/property-posts', {
+        method: 'POST',
+        body: JSON.stringify({ propertyId: property.id, mediaType: 'video' }),
+      });
+      const payload = await readApiPayload(response);
+      if (!response.ok) throw new Error(getApiErrorMessage(payload, 'Nu am putut publica videoclipul pe Facebook.'));
+      toast({
+        title: 'Videoclip publicat pe Facebook',
+        description: 'Videoclipul proprietatii a fost trimis catre pagina Facebook conectata.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Publicare Facebook esuata',
+        description: error instanceof Error ? error.message : 'Nu am putut publica videoclipul pe Facebook.',
+      });
+    } finally {
+      setIsPublishingFacebook(false);
     }
   };
 
@@ -1165,46 +1240,119 @@ export function VideoTourCard({
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-h-[92vh] overflow-y-auto border-white/10 bg-[#07111f] p-0 text-white shadow-2xl sm:max-w-[920px]">
-        <DialogHeader className="border-b border-white/10 px-5 py-4 text-left">
-          <DialogTitle className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-            <Film className="h-5 w-5 text-emerald-200" />
-            AI Video proprietate
-          </DialogTitle>
-          <DialogDescription className="text-sm text-white/58">
-            Creeaza un clip cu zoom, pan, miscare cinematica si text de vanzare, salvat direct pe proprietate.
-          </DialogDescription>
+      <DialogContent className="agentfinder-ai-video-dialog flex h-[min(94dvh,900px)] w-[min(96vw,1240px)] max-w-none flex-col gap-0 overflow-hidden rounded-[32px] border p-0 shadow-[0_40px_140px_-35px_rgba(2,6,23,0.92)]">
+        <DialogHeader className="ai-video-studio__header relative shrink-0 overflow-hidden border-b py-5 pl-6 pr-20 text-left lg:pl-8 lg:pr-24">
+          <div className="pointer-events-none absolute -right-14 -top-20 h-44 w-44 rounded-full bg-fuchsia-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute left-1/3 top-0 h-28 w-48 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="relative flex items-center gap-4">
+            <div className="ai-video-studio__logo flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white">
+              <Film className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <DialogTitle className="text-xl font-semibold tracking-tight">AI Video proprietate</DialogTitle>
+                <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                  Studio AI
+                </span>
+              </div>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Creeaza un clip cinematic complet, pregatit pentru website, Reels si TikTok.
+              </DialogDescription>
+            </div>
+            <div className="ai-video-studio__header-summary ml-auto hidden items-center gap-4 rounded-2xl px-4 py-2.5 lg:flex">
+              <span className="flex items-center gap-2 text-xs font-semibold text-white/75">
+                <Images className="h-3.5 w-3.5 text-fuchsia-300" />
+                {images.length} cadre
+              </span>
+              <span className="ai-video-studio__summary-divider h-4 w-px bg-white/15" />
+              <span className="text-xs font-semibold text-white/75">
+                {format === 'portrait' ? 'Vertical' : format === 'landscape' ? 'Landscape' : 'Pătrat'}
+              </span>
+              <span className="ai-video-studio__summary-divider h-4 w-px bg-white/15" />
+              <span className="text-xs font-semibold text-white/75">
+                {targetDuration === 'auto' ? 'Durată auto' : `${targetDuration} sec`}
+              </span>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_340px]">
-          <div className="border-b border-white/10 bg-black/28 p-4 lg:border-b-0 lg:border-r">
-            <div className="overflow-hidden rounded-lg border border-white/10 bg-black">
-              {previewUrl ? (
-                <video src={previewUrl} controls playsInline className="aspect-video h-full w-full bg-black object-contain" />
-              ) : (
-                <AiVideoIdlePreview />
-              )}
-              <canvas ref={canvasRef} className="hidden" />
+        <div className="ai-video-studio__body grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1fr)_410px]">
+          <div className="ai-video-studio__canvas min-h-0 overflow-y-auto border-b p-5 lg:border-b-0 lg:border-r lg:p-7">
+            <div className="ai-video-studio__preview-stage flex min-h-[430px] items-center justify-center overflow-hidden rounded-[26px] border p-3 lg:min-h-[550px]">
+              <div
+                className={cn(
+                  'ai-video-studio__preview relative max-w-full',
+                  format === 'portrait' && 'ai-video-studio__iphone',
+                  format === 'portrait' && 'h-[min(66vh,630px)] max-h-[630px]',
+                  format === 'square' && 'h-[min(54vh,520px)] max-h-[520px] overflow-hidden rounded-[20px] border',
+                  format === 'landscape' && 'w-full overflow-hidden rounded-[20px] border',
+                )}
+                style={{ aspectRatio: `${selectedPreset.width} / ${selectedPreset.height}` }}
+              >
+                {format === 'portrait' ? (
+                  <>
+                    <span className="ai-video-studio__iphone-button ai-video-studio__iphone-button--action" aria-hidden="true" />
+                    <span className="ai-video-studio__iphone-button ai-video-studio__iphone-button--volume-up" aria-hidden="true" />
+                    <span className="ai-video-studio__iphone-button ai-video-studio__iphone-button--volume-down" aria-hidden="true" />
+                    <span className="ai-video-studio__iphone-button ai-video-studio__iphone-button--power" aria-hidden="true" />
+                  </>
+                ) : null}
+                <div className="ai-video-studio__screen relative h-full w-full overflow-hidden">
+                  {format === 'portrait' ? (
+                    <span className="ai-video-studio__dynamic-island" aria-hidden="true">
+                      <span />
+                    </span>
+                  ) : null}
+                  {previewUrl ? (
+                    <video src={previewUrl} controls playsInline className="h-full w-full bg-black object-contain" />
+                  ) : (
+                    <AiVideoIdlePreview />
+                  )}
+                  <canvas ref={canvasRef} className="hidden" />
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mb-3 mt-6 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Images className="h-4 w-4 text-fuchsia-300" />
+                <p className="text-sm font-semibold text-white">Cadre incluse</p>
+              </div>
+              <span className="text-xs text-white/45">{images.length} fotografii</span>
+            </div>
+            <div className="ai-video-studio__filmstrip flex gap-2.5 overflow-x-auto pb-2">
               {images.map((url, index) => (
-                <div key={`${url}-${index}`} className="relative aspect-video overflow-hidden rounded-md border border-white/10 bg-white/5">
-                  <Image src={url} alt={`${property.title} ${index + 1}`} fill className="object-cover" sizes="180px" />
+                <div key={`${url}-${index}`} className="ai-video-studio__frame group/thumb relative aspect-video w-[150px] shrink-0 overflow-hidden rounded-xl border shadow-sm">
+                  <Image src={url} alt={`${property.title} ${index + 1}`} fill className="object-cover transition duration-300 group-hover/thumb:scale-105" sizes="180px" />
+                  <span className="absolute left-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-black/55 px-1 text-[10px] font-semibold text-white backdrop-blur">
+                    {index + 1}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="space-y-5 p-5">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="ai-video-studio__settings flex min-h-0 flex-col overflow-hidden">
+            <div className="ai-video-studio__settings-scroll min-h-0 flex-1 space-y-5 overflow-y-auto p-5 lg:p-6">
+            <div className="mb-1">
+              <div className="ai-video-studio__section-kicker mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300/75">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Configurare
+              </div>
+              <h3 className="text-lg font-semibold text-white">Construiește videoclipul</h3>
+              <p className="mt-1 text-xs leading-5 text-white/48">Alege formatul, stilul și elementele generate de AI.</p>
+            </div>
+
+            <div className="ai-video-studio__control-card space-y-3 rounded-2xl border p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/42">Format și direcție vizuală</p>
+              <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Format</Label>
                 <Select value={format} onValueChange={(value) => setFormat(value as VideoFormat)}>
-                  <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                  <SelectTrigger className="ai-video-studio__select rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="ai-video-studio__select-content">
                     <SelectItem value="portrait">Reels / TikTok</SelectItem>
                     <SelectItem value="landscape">Website / YouTube</SelectItem>
                     <SelectItem value="square">Feed patrat</SelectItem>
@@ -1215,10 +1363,10 @@ export function VideoTourCard({
               <div className="space-y-2">
                 <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Stil</Label>
                 <Select value={style} onValueChange={(value) => setStyle(value as VideoStyle)}>
-                  <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                  <SelectTrigger className="ai-video-studio__select rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="ai-video-studio__select-content">
                     <SelectItem value="cinematic">{STYLE_LABELS.cinematic}</SelectItem>
                     <SelectItem value="luxury">{STYLE_LABELS.luxury}</SelectItem>
                     <SelectItem value="social">{STYLE_LABELS.social}</SelectItem>
@@ -1226,8 +1374,10 @@ export function VideoTourCard({
                 </Select>
               </div>
             </div>
+            </div>
 
-            <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="ai-video-studio__control-card space-y-3 rounded-2xl border p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/42">Straturi creative</p>
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="video-tour-text" className="text-sm font-medium text-white/82">Text proprietate</Label>
                 <Switch id="video-tour-text" checked={includeText} onCheckedChange={setIncludeText} />
@@ -1245,7 +1395,7 @@ export function VideoTourCard({
               </div>
             </div>
 
-            <div className="space-y-3 rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="ai-video-studio__presenter-card space-y-3 rounded-2xl border p-4">
               <div className="flex items-center justify-between gap-3">
                 <Label htmlFor="video-tour-ai-presenter" className="flex items-center gap-2 text-sm font-medium text-white/82">
                   <UserRound className="h-4 w-4 text-emerald-200" />
@@ -1260,10 +1410,10 @@ export function VideoTourCard({
                     <div className="space-y-2">
                       <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Voce</Label>
                       <Select value={aiPresenterVoice} onValueChange={(value) => setAiPresenterVoice(value as AiPresenterVoice)}>
-                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                        <SelectTrigger className="ai-video-studio__select rounded-xl">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="ai-video-studio__select-content">
                           {voicePresets.map((voice) => (
                             <SelectItem key={voice.id} value={voice.id}>
                               {voice.label} - {voice.description}
@@ -1274,7 +1424,7 @@ export function VideoTourCard({
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-9 w-full rounded-full border-white/12 bg-white/[0.05] text-xs text-white/86 hover:bg-white/[0.1] hover:text-white"
+                        className="ai-video-studio__voice-action h-9 w-full rounded-full border-white/12 bg-white/[0.05] text-xs text-white/86 hover:bg-white/[0.1] hover:text-white"
                         onClick={() => void handlePreviewVoice(aiPresenterVoice)}
                         disabled={!canGenerate || Boolean(previewingVoice) || isCloudRendering}
                       >
@@ -1287,35 +1437,6 @@ export function VideoTourCard({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Pozitie</Label>
-                      <Select value={aiPresenterPosition} onValueChange={(value) => setAiPresenterPosition(value as AiPresenterPosition)}>
-                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bottom-right">Dreapta jos</SelectItem>
-                          <SelectItem value="bottom-left">Stanga jos</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Marime</Label>
-                      <Select value={aiPresenterSize} onValueChange={(value) => setAiPresenterSize(value as AiPresenterSize)}>
-                        <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="small">Mic</SelectItem>
-                          <SelectItem value="medium">Mediu</SelectItem>
-                          <SelectItem value="large">Mare</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
                       <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Script</Label>
@@ -1323,7 +1444,7 @@ export function VideoTourCard({
                         type="button"
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-full border-fuchsia-300/30 bg-fuchsia-400/10 px-3 text-xs text-fuchsia-50 hover:bg-fuchsia-400/18 hover:text-white"
+                        className="ai-video-studio__script-action h-8 rounded-full border-fuchsia-300/30 bg-fuchsia-400/10 px-3 text-xs text-fuchsia-50 hover:bg-fuchsia-400/18 hover:text-white"
                         onClick={() => void handleGenerateScript()}
                         disabled={!canGenerate || isGeneratingScript || isCloudRendering}
                       >
@@ -1332,10 +1453,16 @@ export function VideoTourCard({
                       </Button>
                     </div>
                     <Textarea
+                      ref={scriptTextareaRef}
                       value={aiPresenterScript}
-                      onChange={(event) => setAiPresenterScript(event.target.value)}
+                      onChange={(event) => {
+                        scriptWasEditedRef.current = true;
+                        resizeScriptTextarea(event.currentTarget);
+                        setAiPresenterScript(event.target.value);
+                      }}
+                      rows={1}
                       placeholder="Genereaza cu AI sau scrie manual scriptul care va fi citit in voiceover."
-                      className="min-h-[92px] resize-none border-white/10 bg-white/[0.06] text-sm text-white placeholder:text-white/34"
+                      className="ai-video-studio__textarea min-h-[260px] resize-none overflow-hidden rounded-xl text-sm leading-6"
                     />
                     <p className="text-xs leading-5 text-white/50">
                       Foloseste poza agentului proprietatii, voiceover si subtitrare animata pe cuvinte. Nu foloseste avatar extern.
@@ -1345,7 +1472,7 @@ export function VideoTourCard({
               ) : null}
             </div>
 
-            <div className="rounded-lg border border-emerald-300/16 bg-emerald-400/[0.06] p-4">
+            <div className="ai-video-studio__ready-card rounded-2xl border p-4">
               <p className="text-sm font-semibold text-emerald-100">
                 {images.length} fotografii pregatite
               </p>
@@ -1354,14 +1481,16 @@ export function VideoTourCard({
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="ai-video-studio__control-card space-y-3 rounded-2xl border p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/42">Calitate și durată</p>
+              <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Calitate</Label>
                 <Select value={quality} onValueChange={(value) => setQuality(value as VideoQuality)}>
-                  <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                  <SelectTrigger className="ai-video-studio__select rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="ai-video-studio__select-content">
                     <SelectItem value="standard">Standard rapid</SelectItem>
                     <SelectItem value="premium">Premium HD</SelectItem>
                   </SelectContent>
@@ -1371,16 +1500,17 @@ export function VideoTourCard({
               <div className="space-y-2">
                 <Label className="text-xs font-semibold uppercase tracking-[0.16em] text-white/52">Durata</Label>
                 <Select value={targetDuration} onValueChange={setTargetDuration}>
-                  <SelectTrigger className="border-white/10 bg-white/[0.06] text-white">
+                  <SelectTrigger className="ai-video-studio__select rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="ai-video-studio__select-content">
                     {TARGET_DURATION_OPTIONS.map((option) => (
                       <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
             </div>
 
             {isGenerating ? (
@@ -1409,43 +1539,58 @@ export function VideoTourCard({
               </p>
             ) : null}
 
-            <div className="flex flex-col gap-2">
+            {!canGenerate ? (
+              <p className="text-xs leading-5 text-red-200/80">
+                Ai nevoie de cel putin doua fotografii si de o sesiune activa pentru a genera video-ul.
+              </p>
+            ) : null}
+            </div>
+
+            <div className="ai-video-studio__actions z-10 shrink-0 border-t p-3.5 backdrop-blur-xl">
               <Button
                 type="button"
-                className="h-11 rounded-full bg-emerald-400 text-slate-950 hover:bg-emerald-300"
+                className="ai-video-studio__primary-action h-12 w-full rounded-2xl font-semibold text-white"
                 onClick={() => void handleCloudRender()}
                 disabled={!canGenerate || isGenerating || isCloudRendering}
               >
                 {isCloudRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generează Video AI
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-full border-white/12 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white"
-                onClick={() => void handleGenerate()}
-                disabled={!canGenerate || isGenerating || isCloudRendering}
-              >
-                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                {previewUrl ? 'Preview browser din nou' : 'Preview browser'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-full border-white/12 bg-white/[0.04] text-white hover:bg-white/[0.08] hover:text-white"
-                onClick={handleDownload}
-                disabled={!previewUrl || isGenerating || isCloudRendering}
-              >
-                {previewUrl ? <Download className="mr-2 h-4 w-4" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                Descarca video
-              </Button>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="ai-video-studio__tiktok-action h-10 rounded-xl"
+                  onClick={handleOpenTikTokPublishing}
+                  disabled={!generatedVideoUrl || isGenerating || isCloudRendering}
+                  title="Pregateste publicarea videoclipului pe TikTok"
+                >
+                  <TikTokIcon className="mr-2 h-4 w-4" />
+                  TikTok
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="ai-video-studio__facebook-action h-10 rounded-xl"
+                  onClick={() => void handlePublishFacebookVideo()}
+                  disabled={!generatedVideoUrl || !user || isPublishingFacebook || isGenerating || isCloudRendering}
+                  title="Publica videoclipul pe pagina Facebook conectata"
+                >
+                  {isPublishingFacebook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Facebook className="mr-2 h-4 w-4 fill-current" />}
+                  Facebook
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="ai-video-studio__secondary-action h-10 rounded-xl"
+                  onClick={handleDownload}
+                  disabled={!previewUrl || isGenerating || isCloudRendering}
+                >
+                  {previewUrl ? <Download className="mr-2 h-4 w-4" /> : <PlayCircle className="mr-2 h-4 w-4" />}
+                  Descarcă
+                </Button>
+              </div>
             </div>
-
-            {!canGenerate ? (
-              <p className="text-xs leading-5 text-red-200/80">
-                Ai nevoie de cel putin doua fotografii si de o sesiune activa pentru a genera video-ul.
-              </p>
-            ) : null}
           </div>
         </div>
       </DialogContent>
