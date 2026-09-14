@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSidebar } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
@@ -36,6 +37,7 @@ type DesktopOlxBridgeWindow = Window & {
 };
 
 export default function OwnerListingsPage() {
+  const { state: sidebarState, isMobile } = useSidebar();
   const [searchQuery, setSearchQuery] = useState('');
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
   const [roomsFilter, setRoomsFilter] = useState<string>('all');
@@ -76,6 +78,7 @@ export default function OwnerListingsPage() {
   const { user } = useUser();
   const { agency, agencyId, userProfile } = useAgency();
   const isClassicTheme = getAgencyThemePreset(agency) === 'classic';
+  const isSidebarExpanded = !isMobile && sidebarState === 'expanded';
   const agencyDefaultScope = useMemo(() => resolveAgencyOwnerListingScope(agency), [agency]);
   const scopeOptions = useMemo(() => listOwnerListingScopes(), []);
   const currentScope = useMemo(
@@ -1041,7 +1044,14 @@ export default function OwnerListingsPage() {
               : "border border-white/50 bg-white/82 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)]",
           )}
         >
-          <div className="grid grid-cols-[minmax(220px,1fr)_160px_136px_164px_148px_124px_144px_96px_96px_44px] items-center gap-2">
+          <div
+            className={cn(
+              "grid items-center gap-2",
+              isSidebarExpanded
+                ? "grid-cols-[minmax(190px,1.45fr)_minmax(120px,1fr)_minmax(108px,.85fr)_minmax(132px,1fr)_minmax(126px,.95fr)_minmax(104px,.8fr)_minmax(122px,.95fr)_86px_86px_44px]"
+                : "grid-cols-[minmax(220px,1fr)_160px_136px_164px_148px_124px_144px_96px_96px_44px]",
+            )}
+          >
             <Input
               placeholder="Cauta dupa titlu, zona, telefon sau pret"
               value={searchQuery}
@@ -1260,6 +1270,7 @@ export default function OwnerListingsPage() {
                 key={listing.id || index}
                 listing={listingWithAi}
                 adminClassic={isClassicTheme}
+                compactImportAction={isSidebarExpanded}
                 favoriteMeta={favorite ?? null}
                 currentAgentId={user?.uid ?? null}
                 currentTimestamp={currentTimestamp}

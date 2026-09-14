@@ -3,7 +3,6 @@ import { LogOut, Search, Users, Building2, CheckSquare, Loader2, ShieldCheck } f
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '../ui/input';
-import { SidebarTrigger } from '../ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -210,13 +209,6 @@ export function Topbar() {
 
     return (
         <header className="agentfinder-topbar sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-[var(--app-page-foreground)] backdrop-blur-xl md:px-6">
-            
-            <div className="flex shrink-0 items-center gap-3">
-                {/* Sidebar trigger for all screen sizes */}
-                <SidebarTrigger />
-            </div>
-
-
             <div className="min-w-0 flex-1">
                 <Popover
                     open={isPopoverOpen}

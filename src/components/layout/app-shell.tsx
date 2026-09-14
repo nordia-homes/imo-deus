@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   BarChart3,
@@ -41,10 +42,10 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarTrigger,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Topbar } from './Topbar'; 
 import { useAgency } from '@/context/AgencyContext';
@@ -54,33 +55,87 @@ import { PushNotificationsBanner } from '@/components/notifications/PushNotifica
 import { DemoConversionModal } from '@/components/demo/DemoConversionModal';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 
+function InteractiveSidebar({ children }: { children: React.ReactNode }) {
+  const { isMobile, setOpen } = useSidebar();
+  const closeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelScheduledClose = React.useCallback(() => {
+    if (!closeTimerRef.current) return;
+    clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  }, []);
+
+  React.useEffect(() => cancelScheduledClose, [cancelScheduledClose]);
+
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    cancelScheduledClose();
+    setOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    cancelScheduledClose();
+    closeTimerRef.current = setTimeout(() => {
+      setOpen(false);
+      closeTimerRef.current = null;
+    }, 140);
+  };
+
+  return (
+    <Sidebar collapsible="icon" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      {children}
+    </Sidebar>
+  );
+}
+
+function SidebarBrand() {
+  const { state } = useSidebar();
+
+  if (state === 'collapsed') {
+    return (
+      <Link
+        href="/dashboard"
+        aria-label="ImoDeus.ai — pagina principală"
+        className="absolute left-1/2 top-2 flex h-12 w-12 -translate-x-1/2 items-center justify-center overflow-hidden rounded-2xl"
+      >
+        <Image
+          src="/imodeus-sidebar-icon.png"
+          alt=""
+          width={44}
+          height={44}
+          priority
+          unoptimized
+          className="block h-11 w-11 object-contain"
+        />
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      href="/dashboard"
+      aria-label="ImoDeus.ai — pagina principală"
+      className="flex h-14 min-w-0 animate-in items-center justify-center p-2 fade-in-0 slide-in-from-left-2 duration-300 motion-reduce:duration-0"
+    >
+      <ImoDeusTextLogo className="w-44" />
+    </Link>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { agencyId, agency } = useAgency();
   const pathname = usePathname();
   const currentPath = pathname ?? '';
-  const showSidebarHeaderTrigger =
-    currentPath.startsWith('/leads') ||
-    currentPath.startsWith('/properties') ||
-    currentPath.startsWith('/sold-properties') ||
-    currentPath.startsWith('/sales-management') ||
-    currentPath.startsWith('/gmail') ||
-    currentPath.startsWith('/inbox');
   const publicWebsiteHref = agencyId
     ? buildAgencyPublicUrl(agency ?? { id: agencyId })
     : null;
   
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
+    <SidebarProvider defaultOpen={false}>
+      <InteractiveSidebar>
         <SidebarHeader className="relative h-16 shrink-0">
-          <Link href="/dashboard" className="flex h-14 min-w-0 items-center justify-center p-2 group-data-[collapsible=icon]:hidden">
-            <div className="group-data-[collapsible=icon]:hidden">
-                <ImoDeusTextLogo className="w-44" />
-            </div>
-          </Link>
-          {showSidebarHeaderTrigger ? (
-            <SidebarTrigger className="absolute right-2 top-4 h-8 w-8 rounded-xl border border-[var(--app-sidebar-border)] bg-[var(--app-surface-soft)] text-[var(--app-nav-foreground)] hover:bg-[var(--app-nav-hover-bg)] hover:text-[var(--app-nav-hover-foreground)] group-data-[collapsible=icon]:left-1/2 group-data-[collapsible=icon]:right-auto group-data-[collapsible=icon]:-translate-x-1/2" />
-          ) : null}
+          <SidebarBrand />
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -308,7 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             &copy; {new Date().getFullYear()} ImoDeus.ai
           </p>
         </SidebarFooter>
-      </Sidebar>
+      </InteractiveSidebar>
       <SidebarInset>
         <Topbar />
         <main className="flex-1 [background:var(--app-shell-bg-gradient)] pb-20 lg:pb-0">

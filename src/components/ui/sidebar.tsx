@@ -241,7 +241,7 @@ const Sidebar = React.forwardRef<
         {/* This is what handles the sidebar gap on desktop */}
         <div
           className={cn(
-            "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
+            "relative h-svh w-[--sidebar-width] bg-transparent transition-[width] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] motion-reduce:duration-0",
             "group-data-[collapsible=offcanvas]:w-0",
             "group-data-[side=right]:rotate-180",
             variant === "floating" || variant === "inset"
@@ -251,7 +251,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] ease-linear md:flex",
+            "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width,box-shadow] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] group-data-[state=expanded]:shadow-[18px_0_48px_-34px_rgba(15,23,42,0.55)] motion-reduce:duration-0 md:flex",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -265,7 +265,7 @@ const Sidebar = React.forwardRef<
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-[var(--app-sidebar-bg)] group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-[var(--app-sidebar-border)] group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col bg-[var(--app-sidebar-bg)] transition-[background-color,box-shadow] duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-[var(--app-sidebar-border)] group-data-[variant=floating]:shadow motion-reduce:duration-0"
           >
             {children}
           </div>
@@ -529,7 +529,7 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-primary transition-[width,height,padding] text-[var(--app-nav-foreground)] hover:bg-[var(--app-nav-hover-bg)] hover:text-[var(--app-nav-hover-foreground)] focus-visible:ring-2 active:bg-[var(--app-nav-hover-bg)] active:text-[var(--app-nav-hover-foreground)] disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:[background:var(--app-sidebar-active-bg)] data-[active=true]:font-medium data-[active=true]:text-[var(--app-sidebar-active-foreground)] data-[state=open]:hover:bg-[var(--app-nav-hover-bg)] data-[state=open]:hover:text-[var(--app-nav-hover-foreground)] group-data-[collapsible=icon]:!size-10 group-data-[collapsible=icon]:justify-center [&>span:last-child]:truncate group-data-[collapsible=icon]:[&>span:last-child]:hidden [&>svg]:size-5 [&>svg]:shrink-0",
+  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-primary transition-[width,height,padding,background-color,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] text-[var(--app-nav-foreground)] hover:bg-[var(--app-nav-hover-bg)] hover:text-[var(--app-nav-hover-foreground)] focus-visible:ring-2 active:bg-[var(--app-nav-hover-bg)] active:text-[var(--app-nav-hover-foreground)] disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:[background:var(--app-sidebar-active-bg)] data-[active=true]:font-medium data-[active=true]:text-[var(--app-sidebar-active-foreground)] data-[state=open]:hover:bg-[var(--app-nav-hover-bg)] data-[state=open]:hover:text-[var(--app-nav-hover-foreground)] group-data-[collapsible=icon]:!size-10 group-data-[collapsible=icon]:justify-center [&>span:last-child]:truncate group-data-[state=expanded]:[&>span:last-child]:animate-in group-data-[state=expanded]:[&>span:last-child]:fade-in-0 group-data-[state=expanded]:[&>span:last-child]:slide-in-from-left-1 group-data-[state=expanded]:[&>span:last-child]:duration-300 group-data-[collapsible=icon]:[&>span:last-child]:hidden [&>svg]:size-5 [&>svg]:shrink-0 motion-reduce:duration-0",
   {
     variants: {
       variant: {
