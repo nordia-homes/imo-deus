@@ -17,6 +17,7 @@ import { unregisterPushNotifications } from '@/lib/push-notifications';
 import { useFirebaseApp, useFirestore } from '@/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 function normalizeSearchText(value?: string | null) {
     return (value ?? '')
@@ -209,6 +210,10 @@ export function Topbar() {
 
     return (
         <header className="agentfinder-topbar sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-[var(--app-page-foreground)] backdrop-blur-xl md:px-6">
+            <SidebarTrigger
+                aria-label="Deschide meniul"
+                className="h-10 w-10 shrink-0 rounded-xl border border-[var(--app-sidebar-border)] bg-[var(--app-surface-input)] text-[var(--app-page-foreground)] shadow-sm hover:bg-[var(--app-nav-hover-bg)] md:hidden"
+            />
             <div className="min-w-0 flex-1">
                 <Popover
                     open={isPopoverOpen}
