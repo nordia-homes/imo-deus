@@ -4,11 +4,8 @@ import type { ActiveBuyersEvolutionData, ConversionData } from '@/lib/types';
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
   Cell,
-  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -28,7 +25,7 @@ type AccountPerformanceChartsProps = {
   conversionData: ConversionData[];
 };
 
-const portfolioColors = ['#38e1a6', '#8b5cf6', '#f43f5e'];
+const portfolioColors = ['#38e1a6', '#8b5cf6', '#ec4899'];
 
 function ChartPanel({
   title,
@@ -74,10 +71,9 @@ export function AccountPerformanceCharts({
     ? portfolioData
     : [{ name: 'Fără date', value: 1 }];
   const newBuyers = buyersEvolution.reduce((total, item) => total + item.count, 0);
-  const monthlyActivity = [
-    { name: 'Rezervate', value: reservedThisMonth, color: '#8b5cf6' },
-    { name: 'Vândute', value: soldThisMonth, color: '#f43f5e' },
-  ];
+  const monthlyTotal = reservedThisMonth + soldThisMonth;
+  const reservedShare = monthlyTotal > 0 ? (reservedThisMonth / monthlyTotal) * 100 : 0;
+  const soldShare = monthlyTotal > 0 ? (soldThisMonth / monthlyTotal) * 100 : 0;
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -167,33 +163,51 @@ export function AccountPerformanceCharts({
       </ChartPanel>
 
       <ChartPanel title="Rezultatele lunii" description="Proprietăți finalizate în luna curentă">
-        <div className="h-[174px] w-full min-w-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={monthlyActivity}
-              layout="vertical"
-              margin={{ top: 10, right: 30, bottom: 0, left: 4 }}
+        <div className="flex h-[174px] min-w-0 flex-col gap-3">
+          <div className="grid flex-1 grid-cols-2 gap-3">
+            <div className="agentfinder-month-result agentfinder-month-result--reserved flex min-w-0 flex-col justify-between rounded-xl border border-violet-400/20 bg-violet-400/[0.08] p-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/60">
+                <span className="h-2.5 w-2.5 rounded-full bg-violet-500 shadow-[0_0_12px_rgba(139,92,246,0.65)]" />
+                Rezervate
+              </div>
+              <strong className="agentfinder-month-result-value text-[2rem] leading-none tabular-nums text-violet-200">
+                {reservedThisMonth}
+              </strong>
+            </div>
+
+            <div className="agentfinder-month-result agentfinder-month-result--sold flex min-w-0 flex-col justify-between rounded-xl border border-pink-400/20 bg-pink-400/[0.08] p-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-white/60">
+                <span className="h-2.5 w-2.5 rounded-full bg-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.65)]" />
+                Vândute
+              </div>
+              <strong className="agentfinder-month-result-value text-[2rem] leading-none tabular-nums text-pink-200">
+                {soldThisMonth}
+              </strong>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="text-xs text-white/55">Total luna aceasta</span>
+              <span className="text-sm font-bold tabular-nums text-white">
+                {monthlyTotal} {monthlyTotal === 1 ? 'proprietate' : 'proprietăți'}
+              </span>
+            </div>
+            <div
+              className="agentfinder-month-progress flex h-2.5 overflow-hidden rounded-full bg-white/10"
+              role="img"
+              aria-label={`${reservedThisMonth} proprietăți rezervate și ${soldThisMonth} proprietăți vândute`}
             >
-              <XAxis type="number" hide allowDecimals={false} domain={[0, (dataMax: number) => Math.max(1, dataMax)]} />
-              <YAxis
-                type="category"
-                dataKey="name"
-                axisLine={false}
-                tickLine={false}
-                width={70}
-                tick={{ fill: 'rgba(255,255,255,0.65)', fontSize: 11 }}
-              />
-              <Bar
-                dataKey="value"
-                barSize={18}
-                radius={[0, 9, 9, 0]}
-                background={{ fill: 'rgba(255,255,255,0.07)', radius: 9 }}
-              >
-                {monthlyActivity.map((item) => <Cell key={item.name} fill={item.color} />)}
-                <LabelList dataKey="value" position="right" fill="#ffffff" fontSize={12} fontWeight={700} />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+              {monthlyTotal > 0 ? (
+                <>
+                  <span className="bg-violet-500 transition-[width] duration-500" style={{ width: `${reservedShare}%` }} />
+                  <span className="bg-pink-500 transition-[width] duration-500" style={{ width: `${soldShare}%` }} />
+                </>
+              ) : (
+                <span className="w-full bg-white/5" />
+              )}
+            </div>
+          </div>
         </div>
       </ChartPanel>
 

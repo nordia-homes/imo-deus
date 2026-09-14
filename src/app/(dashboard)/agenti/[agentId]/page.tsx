@@ -245,7 +245,7 @@ export default function AgentStatsPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[42%]">
-              <QuickStat label="Valoare portofoliu activ" value={formatCurrency(metrics.activePortfolioValue)} />
+              <QuickStat label="Portofoliu activ" value={formatCurrency(metrics.activePortfolioValue)} />
               <QuickStat label="Rată de conversie" value={`${metrics.conversionRate.toFixed(1)}%`} />
               <QuickStat label="Comision total realizat" value={formatCurrency(metrics.realizedCommission)} />
             </div>
@@ -324,7 +324,7 @@ export default function AgentStatsPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <Card className="agentfinder-agent-detail-card flex h-full flex-col border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card h-full border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -338,7 +338,7 @@ export default function AgentStatsPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="grid flex-1 auto-rows-fr gap-3">
+          <CardContent className="space-y-3">
             {isLoading ? (
               <Skeleton className="h-[260px] w-full bg-white/10" />
             ) : metrics.agentProperties.length ? (
@@ -368,12 +368,12 @@ export default function AgentStatsPage() {
           </CardContent>
         </Card>
 
-        <Card className="agentfinder-agent-detail-card flex h-full flex-col border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card h-full border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-emerald-200" /> Activitate recentă</CardTitle>
             <CardDescription className="text-white/70">Vizionări și task-uri programate sau finalizate recent.</CardDescription>
           </CardHeader>
-          <CardContent className="grid flex-1 auto-rows-fr gap-3">
+          <CardContent className="space-y-3">
             {isLoading ? (
               <Skeleton className="h-[260px] w-full bg-white/10" />
             ) : (

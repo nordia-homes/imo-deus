@@ -3052,6 +3052,37 @@
     color: #0f172a !important;
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-month-result {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-month-result--reserved {
+    border-color: rgba(139, 92, 246, 0.24) !important;
+    background:
+      radial-gradient(circle at top right, rgba(139, 92, 246, 0.16), transparent 52%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 243, 255, 0.9)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-month-result--reserved .agentfinder-month-result-value {
+    color: #6d28d9 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-month-result--sold {
+    border-color: rgba(236, 72, 153, 0.28) !important;
+    background:
+      radial-gradient(circle at top right, rgba(236, 72, 153, 0.16), transparent 52%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(253, 242, 248, 0.92)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-month-result--sold .agentfinder-month-result-value {
+    color: #db2777 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-month-progress {
+    background: rgba(191, 206, 230, 0.42) !important;
+    box-shadow: inset 0 1px 2px rgba(37, 55, 88, 0.1);
+  }
+
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(245, 249, 255, 0.76)) !important;
@@ -3069,14 +3100,50 @@
 
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--current {
     background:
-      radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 42%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(239, 246, 255, 0.8)) !important;
+      radial-gradient(circle at 92% 8%, rgba(236, 72, 153, 0.1), transparent 40%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(253, 247, 250, 0.94)) !important;
+    border-color: rgba(219, 39, 119, 0.22) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.96),
+      0 10px 24px rgba(37, 55, 88, 0.075) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--current .agentfinder-sales-chart-kpi-label {
+    color: #9f3a67 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--current .agentfinder-sales-chart-kpi-value {
+    color: #831843 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-current-icon {
+    background: rgba(252, 231, 243, 0.82) !important;
+    color: #be185d !important;
+    box-shadow: none;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--total {
     background:
-      radial-gradient(circle at top right, rgba(139, 92, 246, 0.11), transparent 42%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 243, 255, 0.78)) !important;
+      radial-gradient(circle at 92% 8%, rgba(139, 92, 246, 0.09), transparent 40%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 247, 252, 0.94)) !important;
+    border-color: rgba(124, 92, 180, 0.2) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.96),
+      0 10px 24px rgba(37, 55, 88, 0.075) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--total .agentfinder-sales-chart-kpi-label {
+    color: #6d5ca8 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--total .agentfinder-sales-chart-kpi-value {
+    color: #4c376f !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-total-icon {
+    background: rgba(237, 233, 254, 0.76) !important;
+    color: #6d5ca8 !important;
+    box-shadow: none;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-sales-period-filter {
@@ -3101,9 +3168,12 @@
 
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--max {
     background:
-      radial-gradient(circle at top right, rgba(34, 197, 94, 0.14), transparent 38%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(240, 253, 244, 0.78)) !important;
-    border-color: rgba(134, 239, 172, 0.58) !important;
+      radial-gradient(circle at 92% 8%, rgba(34, 197, 94, 0.09), transparent 40%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 251, 248, 0.94)) !important;
+    border-color: rgba(52, 168, 103, 0.2) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.96),
+      0 10px 24px rgba(37, 55, 88, 0.075) !important;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi-label {
@@ -3117,7 +3187,17 @@
   }
 
   [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--max .agentfinder-sales-chart-kpi-value {
-    color: #14532d !important;
+    color: #24573d !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-kpi--max .agentfinder-sales-chart-kpi-label {
+    color: #3f7158 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-sales-chart-max-icon {
+    background: rgba(220, 252, 231, 0.72) !important;
+    color: #3f7158 !important;
+    box-shadow: none;
   }
 
   [data-app-theme='agentfinder'] main:has(.agentfinder-properties-page),
@@ -4960,6 +5040,55 @@
   [data-app-theme='agentfinder'] .agentfinder-integration-card .agentfinder-portal-logo--publi24 {
     height: 25px;
     max-width: 148px;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-portal-logo-wordmark--homezz {
+    display: inline-flex;
+    align-items: baseline;
+    color: #155f55 !important;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-portal-logo-wordmark--homezz > span {
+    color: #27b991 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-portal-logo-wordmark--homezz small {
+    margin-left: 0.12rem;
+    color: #5b6b84 !important;
+    font-size: 0.72rem;
+    letter-spacing: 0;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-portal-logo-wordmark--trimbitasu {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+    gap: 0.55rem;
+    border-radius: 10px;
+    background: #171717 !important;
+    padding: 0.45rem 0.65rem;
+    box-shadow: 0 7px 16px rgba(23, 23, 23, 0.16);
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-portal-logo-wordmark--trimbitasu img {
+    width: auto;
+    height: 24px;
+    flex-shrink: 0;
+    object-fit: contain;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-portal-logo-wordmark--trimbitasu > span {
+    color: #f5b914 !important;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.015em;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   [data-app-theme='agentfinder'] .agentfinder-integration-card .bg-\[\#0F1E33\],

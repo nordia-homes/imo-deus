@@ -14,6 +14,8 @@ const PORTALS = [
     { id: 'imobiliare', name: 'Imobiliare.ro' },
     { id: 'storia', name: 'Storia.ro' },
     { id: 'publi24', name: 'Publi24.ro' },
+    { id: 'homezz', name: 'HomeZZ.ro' },
+    { id: 'trimbitasu', name: 'Trîmbițașu.ro' },
 ];
 
 export default function PortalSyncPage() {
@@ -107,7 +109,7 @@ export default function PortalSyncPage() {
 
         <div className="agentfinder-integrations-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-                [...Array(3)].map((_, i) => (
+                [...Array(PORTALS.length)].map((_, i) => (
                     <Skeleton key={i} className="h-[250px] w-full bg-white/10" />
                 ))
             ) : (
