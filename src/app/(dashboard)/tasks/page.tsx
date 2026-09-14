@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, LayoutGrid, ListTodo, CalendarDays, AlertTriangle, CheckCircle2, Clock3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
+import { startOfDay, subDays } from "date-fns";
 
 export default function TasksPage() {
     const { toast } = useToast();
@@ -41,16 +42,20 @@ export default function TasksPage() {
         const allTasks = tasks || [];
         const openTasks = allTasks.filter((task) => task.status === 'open');
         const completedTasks = allTasks.filter((task) => task.status === 'completed');
+        const today = startOfDay(new Date());
+        const thirtyDaysAgo = subDays(today, 30);
         const overdueTasks = openTasks.filter((task) => {
             const dueDate = new Date(task.dueDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            return !Number.isNaN(dueDate.getTime()) && dueDate < today;
+            return !Number.isNaN(dueDate.getTime()) && dueDate >= thirtyDaysAgo && dueDate < today;
+        });
+        const toDoTasks = openTasks.filter((task) => {
+            const dueDate = new Date(task.dueDate);
+            return Number.isNaN(dueDate.getTime()) || dueDate >= today;
         });
 
         return {
-            total: allTasks.length,
-            open: openTasks.length,
+            visibleTotal: toDoTasks.length + overdueTasks.length + completedTasks.length,
+            toDo: toDoTasks.length,
             completed: completedTasks.length,
             overdue: overdueTasks.length,
         };
@@ -70,7 +75,6 @@ export default function TasksPage() {
     return (
         <div className="agentfinder-tasks-page flex h-full flex-col gap-5 overflow-hidden bg-[#0B1730] p-2 text-white lg:gap-6 lg:p-4">
             <section className="agentfinder-tasks-hero relative overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.28),_transparent_35%),linear-gradient(135deg,_rgba(14,31,56,0.98),_rgba(11,23,48,0.94)_55%,_rgba(17,57,100,0.88))] px-5 py-5 shadow-[0_24px_80px_rgba(0,0,0,0.28)] lg:px-7 lg:py-7">
-                <div className="absolute inset-y-0 right-0 hidden w-1/3 bg-[radial-gradient(circle_at_center,_rgba(96,165,250,0.22),_transparent_65%)] lg:block" />
                 <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div className="max-w-2xl">
                         <span className="agentfinder-tasks-eyebrow inline-flex rounded-full border border-sky-300/20 bg-sky-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-100/80">
@@ -92,10 +96,10 @@ export default function TasksPage() {
                 </div>
                 <div className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                     {[
-                        { label: 'Deschise', value: stats.open, icon: Clock3, tone: 'text-sky-200' },
-                        { label: 'Întârziate', value: stats.overdue, icon: AlertTriangle, tone: 'text-amber-200' },
+                        { label: 'De făcut', value: stats.toDo, icon: Clock3, tone: 'text-sky-200' },
+                        { label: 'În trecut', value: stats.overdue, icon: AlertTriangle, tone: 'text-amber-200' },
                         { label: 'Finalizate', value: stats.completed, icon: CheckCircle2, tone: 'text-emerald-200' },
-                        { label: 'Total', value: stats.total, icon: ListTodo, tone: 'text-white' },
+                        { label: 'Total în panou', value: stats.visibleTotal, icon: ListTodo, tone: 'text-white' },
                     ].map((item) => (
                         <div
                             key={item.label}
@@ -114,7 +118,7 @@ export default function TasksPage() {
             <Tabs defaultValue="board" className="flex flex-1 flex-col overflow-hidden">
                 <div className="agentfinder-tasks-tabs-shell rounded-[28px] border border-white/10 bg-[#12213E]/90 p-3 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
                     <TabsList className={cn(
-                        "agentfinder-tasks-tabs-list grid h-auto w-full grid-cols-3 rounded-[20px] bg-white/5 p-1 text-white/60"
+                        "agentfinder-tasks-tabs-list grid h-auto w-full grid-cols-3 gap-2 rounded-[20px] bg-white/5 p-1 text-white/60 sm:gap-3"
                     )}>
                         <TabsTrigger value="board" className="agentfinder-tasks-tab flex items-center gap-2 rounded-2xl py-3 text-sm data-[state=active]:bg-white data-[state=active]:text-slate-950">
                             <LayoutGrid className="h-4 w-4" />

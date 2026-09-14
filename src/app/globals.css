@@ -3900,6 +3900,64 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;
   }
 
+  [data-app-theme='agentfinder'] .agentfinder-tasks-column-icon[data-task-tone='today'] {
+    border-color: rgba(14, 116, 144, 0.34) !important;
+    background: linear-gradient(135deg, rgba(224, 247, 255, 0.98), rgba(219, 234, 254, 0.94)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-column-icon[data-task-tone='today'] svg {
+    color: #0369a1 !important;
+    stroke-width: 2.25;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-column-icon[data-task-tone='this_week'] {
+    border-color: rgba(99, 102, 241, 0.32) !important;
+    background: linear-gradient(135deg, rgba(238, 242, 255, 0.98), rgba(224, 231, 255, 0.94)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-column-icon[data-task-tone='this_week'] svg {
+    color: #4f46e5 !important;
+    stroke-width: 2.25;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-column-icon[data-task-tone='future'] {
+    border-color: rgba(8, 145, 178, 0.34) !important;
+    background: linear-gradient(135deg, rgba(236, 254, 255, 0.98), rgba(207, 250, 254, 0.94)) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-column-icon[data-task-tone='future'] svg {
+    color: #0e7490 !important;
+    stroke-width: 2.25;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-task-time {
+    border-color: rgba(56, 132, 178, 0.34) !important;
+    background:
+      linear-gradient(135deg, rgba(224, 244, 255, 0.98), rgba(232, 240, 255, 0.94)) !important;
+    color: #164e72 !important;
+    -webkit-text-fill-color: #164e72 !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.96),
+      0 4px 12px rgba(37, 99, 145, 0.08) !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-task-time svg {
+    color: #0369a1 !important;
+    stroke-width: 2.25;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-overdue-badge,
+  [data-app-theme='agentfinder'] .agentfinder-tasks-overdue-count {
+    border-color: rgba(225, 29, 72, 0.32) !important;
+    background: linear-gradient(135deg, rgba(255, 241, 242, 0.98), rgba(255, 228, 230, 0.9)) !important;
+    color: #9f1239 !important;
+    -webkit-text-fill-color: #9f1239 !important;
+  }
+
+  [data-app-theme='agentfinder'] .agentfinder-tasks-overdue-badge svg {
+    color: #be123c !important;
+  }
+
   [data-app-theme='agentfinder'] .agentfinder-task-card,
   [data-app-theme='agentfinder'] .agentfinder-tasks-list-card {
     border: 1px solid rgba(191, 206, 230, 0.82) !important;

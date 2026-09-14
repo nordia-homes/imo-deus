@@ -6,14 +6,14 @@ import { collection, doc } from "firebase/firestore";
 import type { Task, Contact } from "@/lib/types";
 import { Skeleton } from "../ui/skeleton";
 import { TaskCard } from './TaskCard';
-import { isToday, isPast, isThisWeek } from 'date-fns';
+import { isToday, isPast, isThisWeek, startOfDay, subDays } from 'date-fns';
 import { useAgency } from '@/context/AgencyContext';
 import { AlertTriangle, CalendarClock, CalendarRange, Rocket, CheckCircle2 } from 'lucide-react';
 import { EditTaskDialog } from './EditTaskDialog';
 import { useToast } from "@/hooks/use-toast";
 
 const columns = [
-    { id: 'overdue', title: 'Întârziate', description: 'Ce trebuia rezolvat deja', icon: AlertTriangle, accent: 'from-rose-400/20 to-transparent', badge: 'text-rose-100' },
+    { id: 'overdue', title: 'În trecut', description: 'Task-uri din ultimele 30 de zile', icon: AlertTriangle, accent: 'from-rose-400/20 to-transparent', badge: 'text-rose-100' },
     { id: 'today', title: 'Astăzi', description: 'Focus pentru ziua curentă', icon: CalendarClock, accent: 'from-sky-400/20 to-transparent', badge: 'text-sky-100' },
     { id: 'this_week', title: 'Săptămâna asta', description: 'Lucruri planificate curând', icon: CalendarRange, accent: 'from-indigo-400/20 to-transparent', badge: 'text-indigo-100' },
     { id: 'future', title: 'Mai încolo', description: 'Planifică perioada următoare', icon: Rocket, accent: 'from-cyan-400/20 to-transparent', badge: 'text-cyan-100' },
@@ -29,6 +29,7 @@ function TaskColumn({
     icon: Icon,
     accent,
     badge,
+    tone,
     onEdit,
     onToggleComplete,
 }: {
@@ -38,6 +39,7 @@ function TaskColumn({
     icon: typeof AlertTriangle;
     accent: string;
     badge: string;
+    tone: ColumnId;
     onEdit: (task: Task) => void;
     onToggleComplete: (task: Task) => void;
 }) {
@@ -50,8 +52,11 @@ function TaskColumn({
                         <h3 className="mt-1 text-lg font-semibold text-white">{tasks.length} task-uri</h3>
                         <p className="mt-1 whitespace-nowrap text-sm text-white/60">{description}</p>
                     </div>
-                    <div className="agentfinder-tasks-column-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08]">
-                        <Icon className={`h-4 w-4 ${badge}`} />
+                    <div
+                        className="agentfinder-tasks-column-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08]"
+                        data-task-tone={tone}
+                    >
+                        <Icon className={`h-5 w-5 ${badge}`} />
                     </div>
                 </div>
             </div>
@@ -107,6 +112,8 @@ export function TasksBoard() {
     const categorizedTasks = useMemo(() => {
         const initial: Record<ColumnId, Task[]> = { overdue: [], today: [], this_week: [], future: [], completed: [] };
         if (!tasks) return initial;
+        const today = startOfDay(new Date());
+        const thirtyDaysAgo = subDays(today, 30);
 
         return tasks.reduce((acc, task) => {
             if (task.status === 'completed') {
@@ -118,7 +125,9 @@ export function TasksBoard() {
                 const dueDate = new Date(task.dueDate);
                 
                 if (isPast(dueDate) && !isToday(dueDate)) {
-                    acc.overdue.push(task);
+                    if (dueDate >= thirtyDaysAgo) {
+                        acc.overdue.push(task);
+                    }
                 } else if (isToday(dueDate)) {
                     acc.today.push(task);
                 } else if (isThisWeek(dueDate, { weekStartsOn: 1 })) {
@@ -179,6 +188,7 @@ export function TasksBoard() {
                         icon={col.icon}
                         accent={col.accent}
                         badge={col.badge}
+                        tone={col.id}
                         onEdit={setEditingTask}
                         onToggleComplete={handleToggleTask}
                     />

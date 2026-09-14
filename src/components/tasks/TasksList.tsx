@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from "date-fns";
+import { format, startOfDay, subDays } from "date-fns";
 import { ro } from "date-fns/locale";
 import Link from 'next/link';
 
@@ -75,14 +75,28 @@ export function TasksList() {
         setDeletingTask(null);
     };
 
-    const { upcomingTasks, completedTasks } = useMemo(() => {
-        if (!tasks) return { upcomingTasks: [], completedTasks: [] };
-        const upcoming = tasks.filter(task => task.status === 'open').sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    const { upcomingTasks, overdueTasks, completedTasks } = useMemo(() => {
+        if (!tasks) return { upcomingTasks: [], overdueTasks: [], completedTasks: [] };
+        const today = startOfDay(new Date());
+        const thirtyDaysAgo = subDays(today, 30);
+        const openTasks = tasks.filter(task => task.status === 'open');
+        const upcoming = openTasks
+            .filter((task) => {
+                const dueDate = new Date(task.dueDate);
+                return Number.isNaN(dueDate.getTime()) || dueDate >= today;
+            })
+            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        const overdue = openTasks
+            .filter((task) => {
+                const dueDate = new Date(task.dueDate);
+                return !Number.isNaN(dueDate.getTime()) && dueDate >= thirtyDaysAgo && dueDate < today;
+            })
+            .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
         const completed = tasks.filter(task => task.status === 'completed');
-        return { upcomingTasks: upcoming, completedTasks: completed };
+        return { upcomingTasks: upcoming, overdueTasks: overdue, completedTasks: completed };
     }, [tasks]);
 
-    const renderTaskList = (taskList: Task[], isCompletedList = false) => {
+    const renderTaskList = (taskList: Task[], isCompletedList = false, isOverdueList = false) => {
       if (areTasksLoading) {
         return (
           <>
@@ -93,33 +107,36 @@ export function TasksList() {
         )
       }
       if (taskList.length === 0) {
-        return <p className="text-white/70 text-center">{isCompletedList ? 'Niciun task completat.' : 'Niciun task. Ești la zi!'}</p>;
+        return <p className="text-white/70 text-center">{isCompletedList ? 'Niciun task completat.' : isOverdueList ? 'Niciun task depășit în ultimele 30 de zile.' : 'Niciun task. Ești la zi!'}</p>;
       }
       return taskList.map(task => (
         <Card key={task.id} className={cn(
             "agentfinder-tasks-list-card rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] text-white shadow-[0_16px_40px_rgba(0,0,0,0.16)]",
             isCompletedList && "opacity-65"
         )}>
-            <CardContent className="flex items-center justify-between gap-4 p-4">
-                <div className='flex min-w-0 flex-1 items-center gap-4'>
+            <CardContent className="p-4">
+                <div className='flex min-w-0 items-start gap-3'>
                     <Checkbox 
                         id={`task-list-${task.id}`} 
                         checked={task.status === 'completed'}
                         onCheckedChange={() => handleToggleTask(task)}
-                        className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                        className="mt-1 shrink-0 border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                     />
                     <div className="flex-1 min-w-0">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white/[0.65]">
+                            <span className={cn(
+                                "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-white/[0.65]",
+                                isOverdueList && "agentfinder-tasks-overdue-badge border-rose-300/25 bg-rose-400/10 text-rose-100"
+                            )}>
                                 {isCompletedList ? <CheckCircle2 className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
-                                {isCompletedList ? 'Finalizat' : 'Activ'}
+                                {isCompletedList ? 'Finalizat' : isOverdueList ? 'Depășit · nefinalizat' : 'Activ'}
                             </span>
-                            <span className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-medium text-white/[0.65]">
+                            <span className="shrink-0 whitespace-nowrap rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-medium text-white/[0.65]">
                                 {format(new Date(task.dueDate), "d MMMM yyyy", { locale: ro })}
                             </span>
                         </div>
-                        <label htmlFor={`task-list-${task.id}`} className={cn("block cursor-pointer truncate text-sm font-semibold sm:text-base", isCompletedList && "text-white/50 line-through")}>{task.description}</label>
-                        <p className={cn("mt-1 text-sm truncate", isCompletedList ? "text-white/50 line-through" : "text-white/70")}>
+                        <label htmlFor={`task-list-${task.id}`} className={cn("block cursor-pointer break-words text-sm font-semibold leading-6 sm:text-base", isCompletedList && "text-white/50 line-through")}>{task.description}</label>
+                        <p className={cn("mt-1 break-words text-sm leading-5", isCompletedList ? "text-white/50 line-through" : "text-white/70")}>
                             Scadent:
                             {' '}
                             {new Date(task.dueDate).toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -133,16 +150,25 @@ export function TasksList() {
                                 </>
                             )}
                         </p>
+                        {!isCompletedList && (
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleToggleTask(task)}
+                                    className="agentfinder-tasks-primary-button rounded-full px-3"
+                                >
+                                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                                    Finalizează
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)} className="text-white/80 hover:bg-white/20 hover:text-white">
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20 focus:text-destructive" onClick={() => setDeletingTask(task)}><Trash2 className="h-4 w-4"/></Button>
+                            </div>
+                        )}
                     </div>
                 </div>
-                {!isCompletedList && (
-                    <div className="flex gap-2">
-                         <Button variant="ghost" size="icon" onClick={() => setEditingTask(task)} className="text-white/80 hover:bg-white/20 hover:text-white">
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20 focus:text-destructive" onClick={() => setDeletingTask(task)}><Trash2 className="h-4 w-4"/></Button>
-                    </div>
-                )}
             </CardContent>
         </Card>
       ));
@@ -151,7 +177,7 @@ export function TasksList() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section className="agentfinder-tasks-list-section rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
             <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
@@ -162,6 +188,18 @@ export function TasksList() {
             </div>
             <div className="space-y-4">
                 {renderTaskList(upcomingTasks)}
+            </div>
+        </section>
+        <section className="agentfinder-tasks-list-section rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Necesită verificare</p>
+                    <h2 className="text-2xl font-semibold text-white">Depășite, nefinalizate</h2>
+                </div>
+                <span className="agentfinder-tasks-overdue-count rounded-full border border-rose-300/20 bg-rose-400/10 px-3 py-1 text-sm font-medium text-rose-100">{overdueTasks.length}</span>
+            </div>
+            <div className="space-y-4">
+                {renderTaskList(overdueTasks, false, true)}
             </div>
         </section>
         <section className="agentfinder-tasks-list-section rounded-[28px] border border-white/10 bg-[#12213E]/85 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.18)]">

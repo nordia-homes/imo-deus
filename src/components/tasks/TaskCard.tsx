@@ -4,7 +4,7 @@ import type { Task } from "@/lib/types";
 import { CalendarDays, CheckCircle2, Clock3, Pencil, Phone, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Button } from "../ui/button";
 
@@ -16,8 +16,11 @@ type TaskCardProps = {
 };
 
 export function TaskCard({ task, onEdit, onToggleComplete, className }: TaskCardProps) {
-    const formattedDueDate = !Number.isNaN(new Date(task.dueDate).getTime())
-        ? format(new Date(task.dueDate), "d MMM", { locale: ro })
+    const dueDate = new Date(task.dueDate);
+    const hasValidDueDate = !Number.isNaN(dueDate.getTime());
+    const isOverdue = task.status !== 'completed' && hasValidDueDate && dueDate < startOfDay(new Date());
+    const formattedDueDate = hasValidDueDate
+        ? format(dueDate, "d MMM", { locale: ro })
         : task.dueDate;
 
     return (
@@ -38,9 +41,14 @@ export function TaskCard({ task, onEdit, onToggleComplete, className }: TaskCard
                                 {formattedDueDate}
                             </span>
                             {task.startTime && (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-sky-300/10 bg-sky-300/10 px-2.5 py-1 text-[11px] font-medium text-sky-100">
+                                <span className="agentfinder-task-time inline-flex items-center gap-1 rounded-full border border-sky-300/25 bg-sky-300/15 px-2.5 py-1 text-[11px] font-semibold text-sky-100">
                                     <Clock3 className="h-3 w-3" />
                                     {task.startTime}
+                                </span>
+                            )}
+                            {isOverdue && (
+                                <span className="agentfinder-tasks-overdue-badge inline-flex items-center gap-1 rounded-full border border-rose-300/25 bg-rose-400/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-rose-100">
+                                    Depășit · nefinalizat
                                 </span>
                             )}
                         </div>
