@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksList } from "@/components/tasks/TasksList";
 import { AddTaskDialog } from "@/components/tasks/AddTaskDialog";
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Task, Contact, Property } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import { startOfDay, subDays } from "date-fns";
 export default function TasksPage() {
     const { toast } = useToast();
     const { agencyId } = useAgency();
+    const { user } = useUser();
     const firestore = useFirestore();
 
     const contactsQuery = useMemoFirebase(() => {
@@ -64,7 +65,12 @@ export default function TasksPage() {
     const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
         if (!agencyId) return;
         const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
-        const taskToAdd = { ...newTask, status: 'open' };
+        const taskToAdd = {
+            ...newTask,
+            status: 'open',
+            ...(user?.uid ? { agentId: user.uid } : {}),
+            ...(user?.displayName || user?.email ? { agentName: user.displayName || user.email } : {}),
+        };
         addDocumentNonBlocking(tasksCollection, taskToAdd);
          toast({
             title: "Task adăugat!",

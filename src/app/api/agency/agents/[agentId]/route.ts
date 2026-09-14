@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { requireAgencyAdminFromBearerToken, requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
+import type { Contact, Property, Task, Viewing } from '@/lib/types';
 
 export const runtime = 'nodejs';
 
@@ -35,16 +36,23 @@ function formatError(error: unknown) {
 
 function calculateCommission(property: {
   price?: number;
+  soldPrice?: number | null;
   commissionType?: 'percentage' | 'fixed';
   commissionValue?: number;
+  buyerCommissionType?: 'percentage' | 'fixed';
+  buyerCommissionValue?: number;
 }) {
-  const price = property.price || 0;
-  if (!price) return 0;
-  if (property.commissionType === 'fixed') {
-    return property.commissionValue || 0;
-  }
-  const percentage = property.commissionValue !== undefined ? property.commissionValue : 2;
-  return price * (percentage / 100);
+  const transactionValue = Number(property.soldPrice ?? property.price) || 0;
+  const calculateSide = (
+    type: 'percentage' | 'fixed' | undefined,
+    value: number | undefined
+  ) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+    return type === 'fixed' ? value : transactionValue * (value / 100);
+  };
+
+  return calculateSide(property.commissionType, property.commissionValue)
+    + calculateSide(property.buyerCommissionType, property.buyerCommissionValue);
 }
 
 function sortByDateDesc<T>(items: T[], selector: (item: T) => string | undefined | null) {
@@ -104,7 +112,7 @@ export async function GET(
 
     const agentProperties = sortByDateDesc(
       propertiesSnapshot.docs
-        .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+        .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as Property))
         .filter((property) => property.agentId === agentId),
       (property) => (property as { createdAt?: string; statusUpdatedAt?: string }).createdAt || (property as { statusUpdatedAt?: string }).statusUpdatedAt
     );
@@ -116,15 +124,17 @@ export async function GET(
     const inactiveProperties = agentProperties.filter((property) => property.status === 'Inactiv');
 
     const assignedContacts = contactsSnapshot.docs
-      .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+      .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as Contact))
       .filter((contact) => contact.agentId === agentId);
-    const activeContacts = assignedContacts.filter((contact) => !['Câștigat', 'Pierdut'].includes(String(contact.status || '')));
+    const activeContacts = assignedContacts.filter((contact) => (
+      !contact.archivedAt && !['Câștigat', 'Pierdut'].includes(String(contact.status || ''))
+    ));
     const wonContacts = assignedContacts.filter((contact) => contact.status === 'Câștigat');
     const lostContacts = assignedContacts.filter((contact) => contact.status === 'Pierdut');
 
     const assignedViewings = sortByDateDesc(
       viewingsSnapshot.docs
-        .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+        .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as Viewing))
         .filter((viewing) => viewing.agentId === agentId),
       (viewing) => viewing.viewingDate as string | undefined
     );
@@ -134,17 +144,32 @@ export async function GET(
 
     const assignedTasks = sortByDateDesc(
       tasksSnapshot.docs
-        .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() }))
+        .map((docSnapshot) => ({ id: docSnapshot.id, ...docSnapshot.data() } as Task))
         .filter((task) => task.agentId === agentId),
       (task) => task.dueDate as string | undefined
     );
-    const openTasks = assignedTasks.filter((task) => task.status === 'open');
+    const taskToday = new Date();
+    taskToday.setHours(0, 0, 0, 0);
+    const taskCutoff = new Date(taskToday);
+    taskCutoff.setDate(taskCutoff.getDate() - 30);
+    const openTasks = assignedTasks.filter((task) => {
+      if (task.status !== 'open') return false;
+      const dueDate = new Date(String(task.dueDate || ''));
+      return Number.isNaN(dueDate.getTime()) || dueDate >= taskCutoff;
+    });
     const completedTasks = assignedTasks.filter((task) => task.status === 'completed');
+    const visibleOpenTaskIds = new Set(openTasks.map((task) => task.id));
+    const visibleAssignedTasks = assignedTasks.filter(
+      (task) => task.status === 'completed' || visibleOpenTaskIds.has(task.id)
+    );
 
     const activePortfolioValue = activeProperties.reduce((sum, property) => sum + (Number(property.price) || 0), 0);
-    const realizedSalesVolume = [...soldProperties, ...rentedProperties].reduce((sum, property) => sum + (Number(property.price) || 0), 0);
+    const realizedSalesVolume = [...soldProperties, ...rentedProperties].reduce(
+      (sum, property) => sum + (Number(property.soldPrice ?? property.price) || 0),
+      0
+    );
     const realizedCommission = [...soldProperties, ...rentedProperties].reduce(
-      (sum, property) => sum + calculateCommission(property as { price?: number; commissionType?: 'percentage' | 'fixed'; commissionValue?: number }),
+      (sum, property) => sum + calculateCommission(property),
       0
     );
     const conversionRate = assignedContacts.length ? (wonContacts.length / assignedContacts.length) * 100 : 0;
@@ -155,8 +180,11 @@ export async function GET(
         agentId?: string | null;
         status?: string;
         price?: number;
+        soldPrice?: number | null;
         commissionType?: 'percentage' | 'fixed';
         commissionValue?: number;
+        buyerCommissionType?: 'percentage' | 'fixed';
+        buyerCommissionValue?: number;
       };
       if (!property.agentId) return;
       if (property.status !== 'Vândut' && property.status !== 'Închiriat') return;
@@ -176,6 +204,7 @@ export async function GET(
           realizedCommission: realizedCommissionByAgent.get(docSnapshot.id) || 0,
         };
       })
+      .filter((item) => item.role === 'agent')
       .sort((left, right) => {
         if (right.realizedCommission !== left.realizedCommission) {
           return right.realizedCommission - left.realizedCommission;
@@ -183,19 +212,22 @@ export async function GET(
         return left.name.localeCompare(right.name, 'ro');
       });
 
-    const commissionRank = Math.max(
-      1,
-      commissionLeaderboard.findIndex((item) => item.id === agentId) + 1
-    );
+    const isRankedAgent = commissionLeaderboard.some((item) => item.id === agentId);
+    const commissionRank = 1 + commissionLeaderboard.filter(
+      (item) => item.realizedCommission > realizedCommission
+    ).length;
+    const ranking = isRankedAgent
+      ? {
+          commissionRank,
+          totalAgents: commissionLeaderboard.length,
+          realizedCommission,
+        }
+      : null;
 
     return NextResponse.json(
       {
         agentProfile,
-        ranking: {
-          commissionRank,
-          totalAgents: commissionLeaderboard.length,
-          realizedCommission,
-        },
+        ranking,
         metrics: {
           agentProperties: agentProperties.slice(0, 5),
           activePropertiesCount: activeProperties.length,
@@ -212,8 +244,8 @@ export async function GET(
           completedViewingsCount: completedViewings.length,
           scheduledViewingsCount: scheduledViewings.length,
           cancelledViewingsCount: cancelledViewings.length,
-          assignedTasks: assignedTasks.slice(0, 3),
-          assignedTasksCount: assignedTasks.length,
+          assignedTasks: visibleAssignedTasks.slice(0, 3),
+          assignedTasksCount: visibleAssignedTasks.length,
           openTasksCount: openTasks.length,
           completedTasksCount: completedTasks.length,
           activePortfolioValue,

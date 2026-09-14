@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, BadgeCheck, BarChart3, Building2, CalendarCheck, CheckSquare, Mail, Phone, Target, TrendingUp, Users } from 'lucide-react';
+import { BadgeCheck, BarChart3, Building2, CalendarCheck, CheckSquare, Mail, Phone, Target, TrendingUp, Users } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useUser } from '@/firebase';
 import type { Property, Task, UserProfile, Viewing } from '@/lib/types';
@@ -47,7 +47,7 @@ type AgentStatsPayload = {
     commissionRank: number;
     totalAgents: number;
     realizedCommission: number;
-  };
+  } | null;
   metrics: {
     agentProperties: Property[];
     activePropertiesCount: number;
@@ -168,15 +168,6 @@ export default function AgentStatsPage() {
 
   return (
     <div className="agentfinder-agent-detail-page space-y-8 p-4 text-white">
-      <div className="flex items-center gap-3">
-        <Button asChild variant="outline" className="agentfinder-agent-detail-back-button border-white/15 bg-white/8 text-white hover:bg-white/14">
-          <Link href="/agenti">
-            <ArrowLeft className="h-4 w-4" />
-            Înapoi la agenți
-          </Link>
-        </Button>
-      </div>
-
       <section className="agentfinder-agent-detail-hero overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.22),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(14,29,49,1)_55%,_rgba(10,18,33,1)_100%)] p-4 shadow-2xl sm:p-6">
         {isLoading ? (
           <div className="space-y-4">
@@ -254,9 +245,9 @@ export default function AgentStatsPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:min-w-[42%]">
-              <QuickStat label="Anunțuri active" value={String(metrics.activePropertiesCount)} />
-              <QuickStat label="Lead-uri active" value={String(metrics.activeContactsCount)} />
-              <QuickStat label="Comision realizat" value={formatCurrency(metrics.realizedCommission)} />
+              <QuickStat label="Valoare portofoliu activ" value={formatCurrency(metrics.activePortfolioValue)} />
+              <QuickStat label="Rată de conversie" value={`${metrics.conversionRate.toFixed(1)}%`} />
+              <QuickStat label="Comision total realizat" value={formatCurrency(metrics.realizedCommission)} />
             </div>
           </div>
         )}
@@ -326,7 +317,6 @@ export default function AgentStatsPage() {
               <>
                 <MiniPanel title="Volum tranzacții finalizate" value={formatCurrency(metrics.realizedSalesVolume)} subtitle={`${metrics.soldPropertiesCount + metrics.rentedPropertiesCount} proprietăți finalizate`} />
                 <MiniPanel title="Comision realizat" value={formatCurrency(metrics.realizedCommission)} subtitle="calculat din comisioanele setate pe proprietăți" />
-                <MiniPanel title="Task-uri deschise" value={String(metrics.openTasksCount)} subtitle="acțiuni care au nevoie de follow-up" />
               </>
             )}
           </CardContent>
@@ -334,7 +324,7 @@ export default function AgentStatsPage() {
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
-        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card flex h-full flex-col border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -348,7 +338,7 @@ export default function AgentStatsPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="grid flex-1 auto-rows-fr gap-3">
             {isLoading ? (
               <Skeleton className="h-[260px] w-full bg-white/10" />
             ) : metrics.agentProperties.length ? (
@@ -378,12 +368,12 @@ export default function AgentStatsPage() {
           </CardContent>
         </Card>
 
-        <Card className="agentfinder-agent-detail-card border-none bg-[#152A47] text-white shadow-2xl">
+        <Card className="agentfinder-agent-detail-card flex h-full flex-col border-none bg-[#152A47] text-white shadow-2xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-emerald-200" /> Activitate recentă</CardTitle>
             <CardDescription className="text-white/70">Vizionări și task-uri programate sau finalizate recent.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="grid flex-1 auto-rows-fr gap-3">
             {isLoading ? (
               <Skeleton className="h-[260px] w-full bg-white/10" />
             ) : (
