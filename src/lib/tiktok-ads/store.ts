@@ -6,6 +6,7 @@ import { decryptTikTokSecret, encryptTikTokSecret, sha256Hex } from './crypto';
 import { hashOperationIntent } from './policy';
 import type {
   TikTokAdvertiserRecord,
+  TikTokAccountPermissionRecord,
   TikTokCapability,
   TikTokCapabilityResolution,
   TikTokMcpTool,
@@ -407,6 +408,28 @@ export async function getTikTokAccountPermission(organizationId: string, adverti
 
 export async function upsertTikTokAccountPermission(record: import('./types').TikTokAccountPermissionRecord) {
   await agencyRef(record.organizationId).collection('tiktokAccountPermissions').doc(`${record.advertiserId}__${record.tiktokAccountId}`).set(record, { merge: true });
+}
+
+export async function listTikTokAccountPermissions(organizationId: string, advertiserId: string) {
+  const snapshot = await agencyRef(organizationId).collection('tiktokAccountPermissions')
+    .where('advertiserId', '==', advertiserId)
+    .limit(200)
+    .get();
+  return snapshot.docs
+    .map((doc) => doc.data() as TikTokAccountPermissionRecord)
+    .filter((record) => record.organizationId === organizationId && record.advertiserId === advertiserId)
+    .sort((left, right) => (left.username || left.tiktokAccountId).localeCompare(right.username || right.tiktokAccountId));
+}
+
+export async function listRecentTikTokOperations(organizationId: string, propertyId?: string | null) {
+  const snapshot = await agencyRef(organizationId).collection('tiktokOperationLedger')
+    .orderBy('updatedAt', 'desc')
+    .limit(100)
+    .get();
+  return snapshot.docs
+    .map((doc) => doc.data() as OperationLedgerRecord)
+    .filter((record) => record.organizationId === organizationId && (!propertyId || record.propertyId === propertyId))
+    .slice(0, 25);
 }
 
 export async function getOwnedStudioVideoAsset(organizationId: string, assetId: string) {

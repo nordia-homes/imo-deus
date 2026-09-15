@@ -16,8 +16,12 @@ import {
   deleteLead,
   getAdvertiser,
   getLeadForExport,
+  getOperation,
   listAdvertisers,
+  listRecentTikTokOperations,
+  listTikTokAccountPermissions,
   listPropertyReporting,
+  loadToolCache,
   selectAdvertiser,
 } from './tiktok-ads/store';
 import type { TikTokActor, TikTokCapability, TikTokOperationRequest } from './tiktok-ads/types';
@@ -106,7 +110,109 @@ export async function getTikTokAdsStatus(agencyId: string) {
     advertiserCount: advertisers.length,
     capabilityDiscoveryStatus: data.capabilityDiscoveryStatus || 'pending',
     availableCapabilityCount: Number(data.availableCapabilityCount || 0),
+    readsEnabled: String(process.env.TIKTOK_READS_ENABLED || 'true').toLowerCase() !== 'false',
+    writesEnabled: String(process.env.TIKTOK_WRITES_ENABLED || 'true').toLowerCase() !== 'false',
+    spendMutationsEnabled: String(process.env.TIKTOK_SPEND_MUTATIONS_ENABLED || 'false').toLowerCase() === 'true',
     updatedAt: data.updatedAt || null,
+  };
+}
+
+export async function getTikTokAdsWorkspace(agencyId: string, options?: { advertiserId?: string | null; propertyId?: string | null }) {
+  const [status, advertisers, assetsSnapshot, propertiesSnapshot, recentOperations] = await Promise.all([
+    getTikTokAdsStatus(agencyId),
+    listAdvertisers(agencyId),
+    adminDb.collection('agencies').doc(agencyId).collection('tiktokStudioAssets').orderBy('updatedAt', 'desc').limit(120).get(),
+    adminDb.collection('agencies').doc(agencyId).collection('properties').limit(500).get(),
+    listRecentTikTokOperations(agencyId, options?.propertyId),
+  ]);
+  const advertiserId = options?.advertiserId
+    || advertisers.find((advertiser) => advertiser.selected)?.advertiserId
+    || (advertisers.length === 1 ? advertisers[0].advertiserId : null);
+  if (options?.advertiserId && !advertisers.some((advertiser) => advertiser.advertiserId === options.advertiserId)) {
+    throw new TikTokAdsError('RESOURCE_NOT_OWNED', 'Advertiser-ul solicitat nu aparține organizației curente.');
+  }
+
+  let capabilities: Awaited<ReturnType<TikTokMcpAdapter['discoverCapabilities']>> = [];
+  let schemas: Record<string, unknown> = {};
+  let permissions: Awaited<ReturnType<typeof listTikTokAccountPermissions>> = [];
+  if (status.connected) {
+    permissions = advertiserId ? await listTikTokAccountPermissions(agencyId, advertiserId) : [];
+    try {
+      capabilities = await adapter.discoverCapabilities(agencyId, false);
+      const tools = await loadToolCache(agencyId);
+      schemas = Object.fromEntries(capabilities.flatMap((resolution) => {
+        if (!resolution.toolName) return [];
+        const tool = tools.find((candidate) => candidate.name === resolution.toolName);
+        return tool ? [[resolution.capability, tool.inputSchema] as const] : [];
+      }));
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: 'tiktok_workspace_discovery_unavailable',
+        organizationId: agencyId,
+        errorCode: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'PROVIDER_UNAVAILABLE',
+      }));
+    }
+  }
+
+  type StudioAssetDocument = { id: string } & Record<string, unknown>;
+  const assets = assetsSnapshot.docs
+    .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }) as StudioAssetDocument)
+    .filter((asset) => asset.agencyId === agencyId && asset.type === 'video' && asset.status === 'ready' && typeof asset.url === 'string')
+    .map((asset) => ({
+      id: asset.id,
+      name: typeof asset.name === 'string' && asset.name ? asset.name : 'Video TikTok',
+      url: typeof asset.url === 'string' ? asset.url : '',
+      thumbnailUrl: typeof asset.thumbnailUrl === 'string' ? asset.thumbnailUrl : null,
+      mimeType: typeof asset.mimeType === 'string' ? asset.mimeType : null,
+      sizeBytes: typeof asset.sizeBytes === 'number' ? asset.sizeBytes : null,
+      durationSeconds: typeof asset.durationSeconds === 'number' ? asset.durationSeconds : null,
+      updatedAt: typeof asset.updatedAt === 'string' ? asset.updatedAt : null,
+    }));
+  const properties = propertiesSnapshot.docs.map((doc) => {
+    const property = doc.data();
+    return {
+      id: doc.id,
+      title: typeof property.title === 'string' && property.title ? property.title : `Proprietate ${doc.id}`,
+      location: typeof property.location === 'string' ? property.location : typeof property.address === 'string' ? property.address : null,
+      price: typeof property.price === 'number' ? property.price : null,
+    };
+  }).sort((left, right) => left.title.localeCompare(right.title));
+  const operations = recentOperations.map((operation) => ({
+    operationId: operation.operationId,
+    capability: operation.capability,
+    advertiserId: operation.advertiserId,
+    propertyId: operation.propertyId,
+    currentStep: operation.currentStep,
+    status: operation.status,
+    createdResourceIds: operation.createdResourceIds,
+    createdAt: operation.createdAt,
+    updatedAt: operation.updatedAt,
+    retryCount: operation.retryCount,
+    recoverable: operation.recoverable,
+    lastErrorCode: operation.lastErrorCode,
+    remoteOutcomeUnknown: operation.remoteOutcomeUnknown,
+  }));
+
+  return { status, advertisers, advertiserId, permissions, capabilities, schemas, assets, properties, operations };
+}
+
+export async function getTikTokAdsOperationStatus(agencyId: string, operationId: string) {
+  const operation = await getOperation(agencyId, operationId);
+  if (!operation) throw new TikTokAdsError('RESOURCE_NOT_OWNED', 'Operația TikTok Ads nu aparține organizației curente.');
+  return {
+    operationId: operation.operationId,
+    capability: operation.capability,
+    advertiserId: operation.advertiserId,
+    propertyId: operation.propertyId,
+    currentStep: operation.currentStep,
+    status: operation.status,
+    createdResourceIds: operation.createdResourceIds,
+    createdAt: operation.createdAt,
+    updatedAt: operation.updatedAt,
+    retryCount: operation.retryCount,
+    recoverable: operation.recoverable,
+    lastErrorCode: operation.lastErrorCode,
+    remoteOutcomeUnknown: operation.remoteOutcomeUnknown,
   };
 }
 

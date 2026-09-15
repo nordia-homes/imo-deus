@@ -40,8 +40,8 @@ Matricea statică este numai clasificarea de bază. Pentru fiecare organizație,
 | TikTok permission discovery | `MCP_NATIVE` | READ_ONLY | contract explicit, fără inferență optimistă |
 | Permission reconciliation | `MCP_NATIVE` | READ_ONLY | workflow compus și freshness de 15 minute pentru operații sensibile |
 | Asset/post discovery | `MCP_NATIVE` | READ_ONLY | înregistrează ownership local |
-| Spark Ad — existing post | `MCP_NATIVE` | SPEND_AFFECTING | cere Deliver ads + Existing posts |
-| New video — Only show as ads | `MCP_NATIVE` | SPEND_AFFECTING | cere Deliver ads + Publish/manage new videos + Only show as ads |
+| Spark Ad — existing post | `MCP_NATIVE` | NON_FINANCIAL_WRITE | draft forțat DISABLE; activarea separată cere Deliver ads + Existing posts și autorizare de spend |
+| New video — Only show as ads | `MCP_NATIVE` | NON_FINANCIAL_WRITE | draft forțat DISABLE; activarea separată cere Deliver ads + Publish/manage new videos + Only show as ads și autorizare de spend |
 | Creative/video upload | `MCP_NATIVE` | NON_FINANCIAL_WRITE | mapping/deduplicare + validare media |
 | Campaign read/create/update | `MCP_NATIVE` | READ_ONLY / NON_FINANCIAL_WRITE | create forțat `DISABLE` |
 | Campaign activate/pause/resume | `MCP_NATIVE` | SPEND_AFFECTING / NON_FINANCIAL_WRITE | status impus server-side |
@@ -75,6 +75,8 @@ Nu a fost identificată în scope o operație necesară care să ceară `BUSINES
 ## Architecture
 
 `TikTokAdsPort` este contractul application/domain. `TikTokMcpAdapter` este singurul adapter de transport pentru capabilities executabile. Fațada `src/lib/tiktok-ads.ts` ascunde tokenurile și transportul față de rute și UI.
+
+Workspace-ul `/marketing/tiktok-ads` oferă fluxul complet de produs: OAuth, advertiser/property/video/identity selection, status/billing/permission reconciliation, formulare generate din schemele MCP runtime pentru campaign/ad group/upload/ad, creare idempotentă în `DISABLE`, ledger și recovery visibility, plus activare explicită și oprire pe toate cele trei niveluri. Activarea emite și consumă autorizații single-use distincte pentru campaign, ad group și ad; butonul final este indisponibil cât timp kill switch-ul de spend este oprit.
 
 Module:
 
@@ -116,7 +118,7 @@ Discovery-ul suportă zero, unul sau mai multe advertiser accounts; selectarea a
 
 ## Existing Posts
 
-Asset discovery înregistrează identity/post ownership. `SPARK_EXISTING_POST` cere un `tiktok_item_id` descoperit, identitatea server-bound și permisiunile fresh Deliver ads + Existing posts. Crearea este ledgered, idempotentă și spend-gated.
+Asset discovery înregistrează identity/post ownership. `SPARK_EXISTING_POST` cere un `tiktok_item_id` descoperit, identitatea server-bound și permisiunile fresh Deliver ads + Existing posts. Crearea este ledgered, idempotentă și forțată `DISABLE`; numai activarea/resume ulterioară este spend-gated.
 
 ## New Video Ads Only
 
@@ -190,7 +192,7 @@ Rezultatele deterministe ale ultimei rulări:
 - `npm run lint:tiktok-ads`: **PASS, zero warnings**;
 - `npm run lint`: **PASS, zero errors**; raportează separat 258 warnings legacy ale aplicației;
 - `npm run test:tiktok-ads:rules`: **4/4 teste Firestore Rules în emulator, PASS**;
-- `npx next build --webpack` cu `NODE_ENV=production`: **PASS**, inclusiv TypeScript și 187/187 pagini generate;
+- `npx next build --webpack` cu `NODE_ENV=production`: **PASS**, inclusiv TypeScript și 189/189 pagini generate;
 - Firebase App Hosting rollout pentru commitul verificat: **PASS**;
 - `git diff --check`: **PASS**;
 - JSON parse pentru `firestore.indexes.json`: **PASS**.

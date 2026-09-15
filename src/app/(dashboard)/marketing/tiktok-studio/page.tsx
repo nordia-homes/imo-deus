@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
@@ -21,6 +22,7 @@ import {
   PlayCircle,
   PlugZap,
   RefreshCw,
+  Rocket,
   Scissors,
   Send,
   Sparkles,
@@ -2171,6 +2173,15 @@ export default function TikTokStudioPage() {
         </TabsContent>
 
         <TabsContent value="publishing" className="mt-0">
+          <div className="mb-4 flex flex-col gap-3 rounded-[22px] border border-pink-200 bg-pink-50 p-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="font-black text-slate-950">Promovare plătită, fără publicare organică</p>
+              <p className="mt-1 text-sm text-slate-600">Folosește fluxul TikTok Ads „Only show as ads”, separat de publicarea organică de mai jos.</p>
+            </div>
+            <Button asChild className={STUDIO_PRIMARY_BUTTON}>
+              <Link href="/marketing/tiktok-ads"><Rocket className="mr-2 h-4 w-4" />Deschide TikTok Ads</Link>
+            </Button>
+          </div>
           <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
             <div className={`${STUDIO_PANEL} p-5`}>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#FF0050]">Publishing hub</p>

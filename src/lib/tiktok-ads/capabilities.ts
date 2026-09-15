@@ -68,8 +68,10 @@ export const OPERATION_CLASS: Record<TikTokCapability, TikTokOperationClass> = {
   TIKTOK_PERMISSION_READ: 'READ_ONLY',
   TIKTOK_PERMISSION_RECONCILE: 'READ_ONLY',
   ASSET_DISCOVERY: 'READ_ONLY',
-  SPARK_EXISTING_POST: 'SPEND_AFFECTING',
-  SPARK_NEW_VIDEO_AD_ONLY: 'SPEND_AFFECTING',
+  // Both workflows force campaign/ad group/ad creation to DISABLE. They become
+  // spend-affecting only when the separately authorized resume/activate calls run.
+  SPARK_EXISTING_POST: 'NON_FINANCIAL_WRITE',
+  SPARK_NEW_VIDEO_AD_ONLY: 'NON_FINANCIAL_WRITE',
   CREATIVE_UPLOAD: 'NON_FINANCIAL_WRITE',
   CAMPAIGN_READ: 'READ_ONLY',
   CAMPAIGN_CREATE: 'NON_FINANCIAL_WRITE',

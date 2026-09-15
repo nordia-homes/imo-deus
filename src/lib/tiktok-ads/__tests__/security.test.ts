@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { validateJsonSchema } from '../mcp-client';
+import { OPERATION_CLASS } from '../capabilities';
 import { decryptTikTokSecret, encryptTikTokSecret } from '../crypto';
 import { forceDisabledCreatePayload } from '../mcp-adapter';
 import { assertActorPolicy, assertAdsOnlyPayload, assertAdvertiserWriteEligibility, assertCapabilityPayloadBoundaries, assertFreshTikTokAccountPermissions, assertKillSwitches, assertSignificantChangeSafeguard, issueSpendAuthorization, validateMoneyPayload } from '../policy';
@@ -44,6 +45,9 @@ describe('TikTok Ads safety policy', () => {
 
   it('keeps spend mutations disabled by default and supports independent kill switches', () => {
     expect(() => assertKillSwitches('CAMPAIGN_READ')).not.toThrow();
+    expect(OPERATION_CLASS.SPARK_NEW_VIDEO_AD_ONLY).toBe('NON_FINANCIAL_WRITE');
+    expect(OPERATION_CLASS.SPARK_EXISTING_POST).toBe('NON_FINANCIAL_WRITE');
+    expect(() => assertKillSwitches('SPARK_NEW_VIDEO_AD_ONLY')).not.toThrow();
     expect(() => assertKillSwitches('CAMPAIGN_ACTIVATE')).toThrow(/oprite/);
     process.env.TIKTOK_SPEND_MUTATIONS_ENABLED = 'true';
     expect(() => assertKillSwitches('CAMPAIGN_ACTIVATE')).not.toThrow();
