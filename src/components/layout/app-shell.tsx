@@ -51,6 +51,7 @@ import { Topbar } from './Topbar';
 import { useAgency } from '@/context/AgencyContext';
 import { BottomNavbar } from './BottomNavbar';
 import { ImoDeusTextLogo } from '../icons/ImoDeusTextLogo';
+import { TikTokIcon } from '../icons/TikTokIcon';
 import { PushNotificationsBanner } from '@/components/notifications/PushNotificationsBanner';
 import { DemoConversionModal } from '@/components/demo/DemoConversionModal';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
@@ -200,6 +201,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <Link href="/marketing/facebook-groups">
                         <Users />
                         <span>Grupuri Facebook</span>
+                      </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/tiktok-ads')}>
+                      <Link href="/marketing/tiktok-ads">
+                        <TikTokIcon />
+                        <span>TikTok Ads</span>
                       </Link>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
