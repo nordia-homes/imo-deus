@@ -240,11 +240,65 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "leaseUntil", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "tiktokAdvertisers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "authorized", "order": "ASCENDING" },
+        { "fieldPath": "selected", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokOperationLedger",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokReportingState",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "nextSyncAt", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokReportSnapshots",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokAdsJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokAdsJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "leaseUntil", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
     {
       "collectionGroup": "notificationEvents",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokAdsJobs",
       "fieldPath": "expiresAt",
       "ttl": true,
       "indexes": []
@@ -269,6 +323,42 @@
     },
     {
       "collectionGroup": "portalFeedbackRateLimits",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokSpendAuthorizations",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokAuditEvents",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokMcpToolSchemas",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokLeadReferences",
+      "fieldPath": "expiresAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokAdsOauthStates",
+      "fieldPath": "expiresAtTimestamp",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "tiktokOperationLedger",
       "fieldPath": "expiresAt",
       "ttl": true,
       "indexes": []

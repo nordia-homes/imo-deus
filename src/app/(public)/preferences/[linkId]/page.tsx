@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { preferencesChat } from '@/ai/flows/preferences-chat';
-import type { Message } from 'genkit';
 import Markdown from 'react-markdown';
 
 interface ChatMessage {
@@ -29,8 +28,8 @@ const UserBubble = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function PreferencesChatPage() {
-  const params = useParams();
-  const linkId = params.linkId as string;
+  const params = useParams<{ linkId: string }>();
+  const linkId = typeof params?.linkId === 'string' ? params.linkId : '';
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +45,6 @@ export default function PreferencesChatPage() {
         setIsLoading(true);
         try {
             const result = await preferencesChat({
-                history: [],
                 prompt: "Salut! Mă poți ajuta, te rog?", // A friendly starting prompt
                 linkId,
             });
@@ -74,14 +72,8 @@ export default function PreferencesChatPage() {
     setInput('');
     setIsLoading(true);
 
-    const historyForAi: Message[] = messages.map(msg => ({
-        role: msg.role,
-        content: [{ text: msg.content }]
-    }));
-
     try {
         const result = await preferencesChat({
-            history: historyForAi,
             prompt: userMessage.content,
             linkId: linkId,
         });

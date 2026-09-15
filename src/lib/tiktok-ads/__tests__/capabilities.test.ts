@@ -1,0 +1,81 @@
+import { describe, expect, it } from 'vitest';
+import {
+  CAPABILITY_CLASSIFICATION,
+  OPERATION_CLASS,
+  hashToolSchema,
+  resolveTikTokCapabilities,
+} from '../capabilities';
+import { TIKTOK_CAPABILITIES, type TikTokMcpTool } from '../types';
+
+function tool(name: string, description: string, properties: Record<string, { type: string }> = {}, required: string[] = []): TikTokMcpTool {
+  return { name, description, inputSchema: { type: 'object', properties, required } };
+}
+
+const officialShapeTools: TikTokMcpTool[] = [
+  tool('advertiser_get', 'Get authorized advertiser ad accounts'),
+  tool('advertiser_info', 'Get advertiser ad account details status', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
+  tool('bc_ad_account_create', 'Create an ad account', { bc_id: { type: 'string' } }, ['bc_id']),
+  tool('bc_balance_get', 'Get balance and billing status', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
+  tool('tt_account_delivery_authorize', 'Obtain TikTok account ad delivery authorization link', { advertiser_id: { type: 'string' } }),
+  tool('tt_account_permission_get', 'Get TikTok account delivery permission and authorization status', { advertiser_id: { type: 'string' } }),
+  tool('identity_video_get', 'Get posts and video assets under identity', { advertiser_id: { type: 'string' } }),
+  tool('video_upload', 'Upload a video', { advertiser_id: { type: 'string' }, video_url: { type: 'string' } }, ['advertiser_id', 'video_url']),
+  tool('campaign_get', 'Get campaigns', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
+  tool('campaign_create', 'Create a campaign', { advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, operation_status: { type: 'string' } }, ['advertiser_id', 'campaign_name']),
+  tool('campaign_update', 'Update a campaign', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' } }, ['advertiser_id', 'campaign_id']),
+  tool('campaign_status_update', 'Update campaign operation status enable disable pause resume', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('adgroup_get', 'Get ad groups', { advertiser_id: { type: 'string' } }),
+  tool('adgroup_create', 'Create an ad group', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('adgroup_update', 'Update an ad group', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' } }),
+  tool('adgroup_status_update', 'Update ad group operation status pause resume enable disable', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('ad_get', 'Get ads', { advertiser_id: { type: 'string' } }),
+  tool('ad_create', 'Create ads', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('ad_update', 'Update ads', { advertiser_id: { type: 'string' }, ad_id: { type: 'string' } }),
+  tool('ad_status_update', 'Update ad operation status pause resume enable disable', { advertiser_id: { type: 'string' }, ad_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('ad_review_info', 'Get ad review info', { advertiser_id: { type: 'string' }, ad_id: { type: 'string' } }),
+  tool('targeting_search', 'Search targeting interests and locations', { advertiser_id: { type: 'string' } }),
+  tool('report_integrated_get', 'Run a synchronous report', { advertiser_id: { type: 'string' } }),
+  tool('page_library_get', 'Get Instant Form page library and fields', { advertiser_id: { type: 'string' } }),
+  tool('lead_get', 'Get and retrieve leads', { advertiser_id: { type: 'string' } }),
+  tool('subscription_subscribe', 'Create a webhook subscription', { app_id: { type: 'string' } }),
+  tool('account_verification_status', 'Get account verification status', { advertiser_id: { type: 'string' } }),
+];
+
+describe('TikTok capability registry', () => {
+  it('classifies every registry capability exactly once', () => {
+    expect(Object.keys(CAPABILITY_CLASSIFICATION).sort()).toEqual([...TIKTOK_CAPABILITIES].sort());
+    expect(Object.keys(OPERATION_CLASS).sort()).toEqual([...TIKTOK_CAPABILITIES].sort());
+    expect(CAPABILITY_CLASSIFICATION.ADVERTISER_PROVISION).toBe('EXTERNAL_APPROVAL_REQUIRED');
+    expect(CAPABILITY_CLASSIFICATION.LEAD_FORM_CREATE).toBe('CURRENTLY_UNSUPPORTED');
+  });
+
+  it('derives the ads-only workflow from discovered official tool schemas', () => {
+    const matrix = resolveTikTokCapabilities(officialShapeTools);
+    const byCapability = new Map(matrix.map((item) => [item.capability, item]));
+    expect(byCapability.get('CAMPAIGN_CREATE')?.available).toBe(true);
+    expect(byCapability.get('SPARK_NEW_VIDEO_AD_ONLY')?.available).toBe(true);
+    expect(byCapability.get('SPARK_EXISTING_POST')?.available).toBe(true);
+    expect(byCapability.get('LEAD_FORM_CREATE')?.schemaStatus).toBe('unsupported');
+    expect(byCapability.get('ADVERTISER_PROVISION')?.executionAllowed).toBe(false);
+    expect(byCapability.get('EVENT_SUBSCRIBE')).toMatchObject({ available: true, executionAllowed: false });
+    expect(byCapability.get('EVENT_SUBSCRIBE')?.reason).toMatch(/polling/i);
+  });
+
+  it('fails closed when a write schema changes', () => {
+    const first = resolveTikTokCapabilities(officialShapeTools);
+    const previous = new Map(first.map((item) => [item.capability, item]));
+    const changed = officialShapeTools.map((candidate) => candidate.name === 'campaign_create'
+      ? { ...candidate, inputSchema: { ...candidate.inputSchema, properties: { ...candidate.inputSchema.properties, new_required_field: { type: 'string' } }, required: [...(candidate.inputSchema.required || []), 'new_required_field'] } }
+      : candidate);
+    const next = resolveTikTokCapabilities(changed, previous);
+    expect(next.find((item) => item.capability === 'CAMPAIGN_CREATE')).toMatchObject({ available: false, executionAllowed: false, schemaStatus: 'changed' });
+    const stillBlocked = resolveTikTokCapabilities(changed, new Map(next.map((item) => [item.capability, item])));
+    expect(stillBlocked.find((item) => item.capability === 'CAMPAIGN_CREATE')).toMatchObject({ available: false, executionAllowed: false, schemaStatus: 'changed' });
+  });
+
+  it('hashes schemas deterministically', () => {
+    const left = tool('x', 'x', { b: { type: 'string' }, a: { type: 'number' } });
+    const right = tool('x', 'x', { a: { type: 'number' }, b: { type: 'string' } });
+    expect(hashToolSchema(left)).toBe(hashToolSchema(right));
+  });
+});

@@ -78,12 +78,13 @@ export default function AgentsPage() {
       return;
     }
 
+    const activeUser = user;
     let isMounted = true;
 
     async function loadAgents() {
       setIsLoading(true);
       try {
-        const token = await user.getIdToken(true);
+        const token = await activeUser.getIdToken(true);
         const response = await fetch('/api/agency/agents', {
           method: 'GET',
           headers: {

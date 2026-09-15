@@ -114,6 +114,56 @@ env:
     availability:
       - RUNTIME
 
+  - variable: TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY
+    secret: TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_ADS_MCP_URL
+    value: "https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_READS_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_WRITES_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_SPEND_MUTATIONS_ENABLED
+    value: "false"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_ADS_MEDIA_ALLOWED_HOSTS
+    value: "firebasestorage.googleapis.com,storage.googleapis.com"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_ADS_WORKER_SECRET
+    secret: TIKTOK_ADS_WORKER_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_ADS_TENANT_MAX_CONCURRENT_CALLS
+    value: "4"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_MCP_MAX_RESPONSE_BYTES
+    value: "10485760"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_ADS_SIGNIFICANT_CHANGE_BPS
+    value: "2500"
+    availability:
+      - RUNTIME
+
   - variable: OWNER_LISTINGS_CRON_SECRET
     secret: OWNER_LISTINGS_CRON_SECRET
     availability:

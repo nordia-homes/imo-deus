@@ -44,14 +44,14 @@ export function LeadFiltersDialog({ isOpen, onOpenChange, onApplyFilters }: Lead
     },
   });
 
-  const watchedCity = form.watch('city') as City;
+  const watchedCity = form.watch('city') as City | 'all' | undefined;
 
-  const zoneOptions = useMemo(() => {
-    if (watchedCity && locations[watchedCity]) {
-      return locations[watchedCity].sort();
+  const zoneOptions = useMemo<string[]>(() => {
+    if (watchedCity && watchedCity !== 'all') {
+      return [...locations[watchedCity]].sort();
     }
     const allZones = Object.values(locations).flat();
-    return [...new Set(allZones)].sort();
+    return [...new Set<string>(allZones)].sort();
   }, [watchedCity]);
   
   useEffect(() => {

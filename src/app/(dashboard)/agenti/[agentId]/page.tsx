@@ -93,13 +93,14 @@ export default function AgentStatsPage() {
       return;
     }
 
+    const activeUser = user;
     let isMounted = true;
 
     async function loadStats() {
       setIsLoading(true);
       setErrorMessage(null);
       try {
-        const token = await user.getIdToken(true);
+        const token = await activeUser.getIdToken(true);
         const response = await fetch(`/api/agency/agents/${agentId}`, {
           method: 'GET',
           headers: {
@@ -162,6 +163,15 @@ export default function AgentStatsPage() {
             </CardDescription>
           </CardHeader>
         </Card>
+      </div>
+    );
+  }
+
+  if (!metrics) {
+    return (
+      <div className="agentfinder-agent-detail-page space-y-6 p-4 text-white">
+        <Skeleton className="h-48 w-full rounded-3xl bg-white/10" />
+        <Skeleton className="h-64 w-full rounded-3xl bg-white/10" />
       </div>
     );
   }

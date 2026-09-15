@@ -11,8 +11,8 @@ import { applyAgencyThemeToRoot, resetAgencyThemeOnRoot } from '@/lib/theme';
 
 // This layout gets the portalId from params, fetches the portal, then fetches the agency to style the header/footer.
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-    const params = useParams();
-    const portalId = params.portalId as string;
+    const params = useParams<{ portalId: string }>();
+    const portalId = typeof params?.portalId === 'string' ? params.portalId : '';
     const firestore = useFirestore();
 
     // 1. Fetch portal data to get agencyId

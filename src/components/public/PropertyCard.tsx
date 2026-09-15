@@ -31,7 +31,7 @@ export function PublicPropertyCard({ property, agencyId }: { property: Property,
             <div className="flex justify-start gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                     <BedDouble className="h-4 w-4" />
-                    <span>{property.bedrooms} dorm.</span>
+                    <span>{property.rooms} camere</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Bath className="h-4 w-4" />

@@ -297,7 +297,7 @@ export function PropertiesMap({
       ? isAgentfinderTheme
         ? PUBLIC_PROPERTY_MAP_STYLES_LIGHT
         : PUBLIC_PROPERTY_MAP_STYLES
-      : appearance !== 'public-property-detail' && isAgentfinderTheme
+      : isAgentfinderTheme
         ? undefined
         : MAP_STYLES;
 

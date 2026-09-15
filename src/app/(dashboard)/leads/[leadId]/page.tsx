@@ -119,8 +119,8 @@ const CircularProgress = ({ score, className }: { score: number, className?: str
 
 // Main Component
 export default function LeadDetailPage() {
-    const params = useParams();
-    const cumparatorId = params.leadId as string;
+    const params = useParams<{ leadId: string }>();
+    const cumparatorId = typeof params?.leadId === 'string' ? params.leadId : '';
     
     const { agency, userProfile, isAgencyLoading: isContextLoading } = useAgency();
     const { user } = useUser();

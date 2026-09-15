@@ -53,7 +53,7 @@ export default function DashboardPage() {
         });
     };
 
-    const handleAddViewing = (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
+    const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
         if (!agencyId || !user) return;
 
         const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);

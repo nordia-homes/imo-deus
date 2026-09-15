@@ -196,7 +196,7 @@ function buildFallback(input: SummarizeReportInput): SummarizeReportOutput {
     additionalMetrics.dataQualityScore >= 75
       ? `Calitatea datelor este ${dataConfidenceLabel.toLowerCase()} (${additionalMetrics.dataQualityScore.toFixed(0)}%), ceea ce face raportarea mai credibilă.`
       : null,
-  ].filter(Boolean);
+  ].filter((value): value is string => Boolean(value));
 
   const risks = [
     additionalMetrics.leadsWithoutFollowUp > 0
@@ -211,7 +211,7 @@ function buildFallback(input: SummarizeReportInput): SummarizeReportOutput {
     additionalMetrics.avgHoursToFirstContact > 24
       ? `Timpul mediu până la primul contact este de ${additionalMetrics.avgHoursToFirstContact.toFixed(1)} ore, prea lent pentru lead-uri noi.`
       : null,
-  ].filter(Boolean);
+  ].filter((value): value is string => Boolean(value));
 
   const opportunities = [
     additionalMetrics.contactedWithoutViewing > 0
@@ -229,7 +229,7 @@ function buildFallback(input: SummarizeReportInput): SummarizeReportOutput {
     additionalMetrics.dataQualityScore < 75
       ? `Îmbunătățirea calității datelor ar crește semnificativ încrederea în deciziile comerciale și în analiza AI.`
       : null,
-  ].filter(Boolean);
+  ].filter((value): value is string => Boolean(value));
 
   return {
     summary:

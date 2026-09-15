@@ -493,7 +493,9 @@ function FillContractDialog({
 
   const visibleManualPlaceholders = useMemo(() => {
     const order = PLACEHOLDER_ORDER_BY_CATEGORY[template?.category || 'reservation'] || [];
-    const lookup = new Map(CONTRACT_PLACEHOLDERS.filter((item) => item.key !== 'manual').map((item) => [item.key, item]));
+    const lookup = new Map<string, (typeof CONTRACT_PLACEHOLDERS)[number]>(
+      CONTRACT_PLACEHOLDERS.filter((item) => item.key !== 'manual').map((item) => [item.key, item])
+    );
     const ownerIndividualKeys = new Set([
       'owner.name',
       'owner.address',

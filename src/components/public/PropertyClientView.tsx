@@ -73,7 +73,7 @@ export function PropertyClientView({ property }: { property: Property }) {
                          <FeatureItem icon={<HandCoins />} label="Tip tranzacție" value={property.transactionType} />
                          <FeatureItem icon={<Building />} label="Tip proprietate" value={property.propertyType} />
                          <FeatureItem icon={<Ruler />} label="Suprafață" value={displaySurface ? `${displaySurface} mp` : undefined} />
-                         <FeatureItem icon={<BedDouble />} label="Dormitoare" value={property.bedrooms} />
+                          <FeatureItem icon={<BedDouble />} label="Camere" value={property.rooms} />
                          <FeatureItem icon={<Bath />} label="Băi" value={property.bathrooms} />
                          <FeatureItem icon={<CalendarDays />} label="An construcție" value={property.constructionYear} />
                          <FeatureItem icon={<Layers />} label="Etaj" value={property.floor} />

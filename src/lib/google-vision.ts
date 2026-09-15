@@ -6,7 +6,7 @@ const GOOGLE_VISION_FILES_API_URL = 'https://vision.googleapis.com/v1/files:anno
 
 function getGoogleVisionAuthOptions() {
   const normalizePrivateKey = (value: string) => {
-    const trimmed = value.trim().replace(/^"(.*)"$/s, '$1').replace(/^'(.*)'$/s, '$1');
+    const trimmed = value.trim().replace(/^"([\s\S]*)"$/, '$1').replace(/^'([\s\S]*)'$/, '$1');
     const withNewlines = trimmed.replace(/\\n/g, '\n');
     return withNewlines
       .replace(/-----BEGIN PRIVATE KEY-----\s*/g, '-----BEGIN PRIVATE KEY-----\n')

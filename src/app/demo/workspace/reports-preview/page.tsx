@@ -9,7 +9,7 @@ export default function DemoReportsPreviewPage() {
   if (!state) return null;
 
   const soldVolume = state.properties
-    .filter((item) => item.status === "VÃ¢ndut")
+    .filter((item) => item.status === "Vândut")
     .reduce((sum, item) => sum + item.price, 0);
   const activeLeads = state.contacts.filter((item) => !["CÃ¢È™tigat", "Pierdut"].includes(item.status)).length;
   const upcomingViewings = state.viewings.filter((item) => item.status === "scheduled").length;

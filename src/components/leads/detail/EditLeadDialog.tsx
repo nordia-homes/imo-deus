@@ -128,6 +128,8 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
     
     const updatedData: Partial<Contact> = {
         ...values,
+        status: values.status as Contact['status'],
+        priority: values.priority as Contact['priority'],
         agentId: finalAgentId,
         zones: selectedZones,
         agentName: selectedAgent?.name || null,

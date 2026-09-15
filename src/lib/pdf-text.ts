@@ -10,7 +10,6 @@ export async function extractTextFromPdfBuffer(buffer: Buffer): Promise<string> 
   }
   const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(buffer),
-    disableWorker: true,
     useSystemFonts: true,
     isEvalSupported: false,
   });

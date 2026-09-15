@@ -51,18 +51,18 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
     },
   });
 
-  const watchedCity = form.watch('city') as City;
+  const watchedCity = form.watch('city') as City | 'all' | undefined;
 
-  const availableZones = useMemo(() => {
-    if (watchedCity && locations[watchedCity]) {
-      return locations[watchedCity].sort();
+  const availableZones = useMemo<string[]>(() => {
+    if (watchedCity && watchedCity !== 'all') {
+      return [...locations[watchedCity]].sort();
     }
     return [];
   }, [watchedCity]);
   
   const filteredZones = useMemo(() => {
     if (!zoneSearch) return availableZones;
-    return availableZones.filter(zone => zone.toLowerCase().includes(zoneSearch.toLowerCase()));
+    return availableZones.filter((zone) => zone.toLowerCase().includes(zoneSearch.toLowerCase()));
   }, [availableZones, zoneSearch]);
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
+const OAUTH_BINDING_COOKIE = process.env.NODE_ENV === 'production' ? '__Host-imodeus_tiktok_ads_oauth' : 'imodeus_tiktok_ads_oauth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,9 +14,19 @@ export async function GET(request: NextRequest) {
     if (isDemoAgencyId(agencyId)) return createDemoBlockedResponse('Conectarea TikTok Ads este blocată în demo.');
 
     const returnTo = request.nextUrl.searchParams.get('returnTo') || undefined;
-    return NextResponse.json(await createTikTokAdsAuthorization({ agencyId, requestedByUid: uid, returnTo }));
+    const authorization = await createTikTokAdsAuthorization({ agencyId, requestedByUid: uid, returnTo });
+    const response = NextResponse.json({ authorizationUrl: authorization.authorizationUrl });
+    response.cookies.set(OAUTH_BINDING_COOKIE, authorization.callbackBinding, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 10 * 60,
+    });
+    return response;
   } catch (error) {
-    const status = error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : 500;
-    return NextResponse.json({ message: error instanceof Error ? error.message : 'Nu am putut conecta TikTok Ads.' }, { status });
+    const { formatTikTokAdsError } = await import('@/lib/tiktok-ads');
+    const formatted = formatTikTokAdsError(error);
+    return NextResponse.json(formatted.body, { status: formatted.status });
   }
 }

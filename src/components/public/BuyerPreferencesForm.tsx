@@ -70,6 +70,7 @@ export function BuyerPreferencesForm({ linkId }: { linkId: string }) {
     try {
       const result = await updateContactPreferences({
         ...values,
+        generalZone: values.generalZone ?? undefined,
         linkId,
       });
 

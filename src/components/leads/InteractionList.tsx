@@ -18,6 +18,8 @@ const interactionIcons = {
   'Întâlnire': <Users className="h-5 w-5" />,
   'Vizionare': <Eye className="h-5 w-5" />,
   'Ofertă': <FileText className="h-5 w-5" />,
+  'WhatsApp': <Phone className="h-5 w-5" />,
+  'Notiță': <FileText className="h-5 w-5" />,
 };
 
 export function InteractionList({ interactions }: { interactions: Interaction[] }) {

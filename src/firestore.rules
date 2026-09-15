@@ -52,6 +52,40 @@ service cloud.firestore {
              resource.data.status == 'Activ';
     }
 
+    function isServerManagedAgencyCollection(collectionId) {
+      return collectionId == 'tiktokAdvertisers' ||
+             collectionId == 'tiktokAccountPermissions' ||
+             collectionId == 'tiktokResourceReferences' ||
+             collectionId == 'tiktokCapabilityStates' ||
+             collectionId == 'tiktokMcpToolSchemas' ||
+             collectionId == 'tiktokSpendAuthorizations' ||
+             collectionId == 'tiktokOperationLedger' ||
+             collectionId == 'tiktokMutationLocks' ||
+             collectionId == 'tiktokAuditEvents' ||
+             collectionId == 'tiktokLeadReferences' ||
+             collectionId == 'tiktokMediaMappings' ||
+             collectionId == 'tiktokReportSnapshots' ||
+             collectionId == 'tiktokReportingState' ||
+             collectionId == 'tiktokRateLimitState' ||
+             collectionId == 'tiktokSyncState';
+    }
+
+    match /agencyPrivateIntegrations/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /tiktokAdsOauthStates/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /tiktokMcpOAuthClients/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /tiktokAdsJobs/{documentId} {
+      allow read, write: if false;
+    }
+
     function isPublicPreferencesUpdate(agencyId, contactId) {
       return request.auth == null &&
              'validationLinkId' in request.resource.data &&
@@ -150,6 +184,7 @@ service cloud.firestore {
                             collectionId != 'salesEmailTemplates' &&
                             collectionId != 'salesSettings' &&
                             collectionId != 'salesTemplateAudit' &&
+                            !isServerManagedAgencyCollection(collectionId) &&
                             isUserInAgency(agencyId);
     }
 

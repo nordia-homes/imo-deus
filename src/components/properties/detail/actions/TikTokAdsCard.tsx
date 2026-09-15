@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, ShieldCheck, Target } from 'lucide-react';
 import type { Property } from '@/lib/types';
@@ -22,6 +22,7 @@ type TikTokAdsStatus = {
   advertiserId: string | null;
   advertiserName: string | null;
   advertiserCount: number;
+  requiresReconnect?: boolean;
   role?: 'admin' | 'agent' | 'platform_admin';
 };
 
@@ -29,23 +30,24 @@ export function TikTokAdsCard({ property }: { property: Property }) {
   const { user } = useUser();
   const { toast } = useToast();
   const [status, setStatus] = useState<TikTokAdsStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  async function authorizedFetch(url: string) {
+  const authorizedFetch = useCallback(async (url: string) => {
     if (!user) throw new Error('Autentifică-te din nou pentru a continua.');
     const token = await user.getIdToken(true);
     return fetch(url, { headers: { Accept: 'application/json', Authorization: `Bearer ${token}` } });
-  }
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
+    if (!user) return;
 
     async function loadStatus() {
+      await Promise.resolve();
+      if (cancelled) return;
+      setIsLoading(true);
+      setStatus(null);
       try {
         const response = await authorizedFetch('/api/marketing/tiktok-ads/status');
         const payload = await response.json().catch(() => ({}));
@@ -60,7 +62,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
 
     void loadStatus();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [authorizedFetch, user]);
 
   async function connect() {
     setIsConnecting(true);
@@ -80,7 +82,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
     }
   }
 
-  const connected = status?.connected === true;
+  const connected = Boolean(user) && status?.connected === true;
   const configured = status?.configured !== false;
   const canConnect = status?.role === 'admin';
 
@@ -94,7 +96,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
             </div>
             <div className="min-w-0">
               <p className="text-base font-semibold text-white">Promovare TikTok</p>
-              <p className="text-xs text-white/60">Campanii plătite prin TikTok Marketing API.</p>
+              <p className="text-xs text-white/60">Campanii plătite prin TikTok for Business MCP.</p>
             </div>
           </div>
           <Badge
@@ -111,7 +113,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.16em] text-white/45">Status</p>
               <p className="mt-1 truncate text-sm font-semibold text-white">
-                {isLoading ? 'Se verifică...' : connected ? status?.advertiserName || 'Cont publicitar conectat' : configured ? 'Neconectată' : 'Necesită configurare API'}
+                {isLoading ? 'Se verifică...' : connected ? status?.advertiserName || 'Cont publicitar conectat' : status?.requiresReconnect ? 'Reconectare MCP necesară' : configured ? 'Neconectată' : 'Necesită configurare MCP'}
               </p>
             </div>
             {isLoading ? <Loader2 className="h-5 w-5 animate-spin text-white/45" /> : <Target className="h-5 w-5 text-cyan-200" />}
@@ -133,7 +135,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
         ) : (
           <Button type="button" className="w-full rounded-full bg-cyan-300 text-slate-950 hover:bg-cyan-200" disabled={isLoading || isConnecting || !configured || !canConnect} onClick={() => void connect()}>
             {isConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TikTokIcon className="mr-2 h-4 w-4" />}
-            {!configured ? 'Configurează TikTok Ads API' : canConnect ? 'Conectează TikTok Ads' : 'Conectare disponibilă administratorului'}
+            {!configured ? 'Configurează TikTok Ads MCP' : canConnect ? status?.requiresReconnect ? 'Reconectează TikTok Ads' : 'Conectează TikTok Ads' : 'Conectare disponibilă administratorului'}
           </Button>
         )}
       </CardContent>

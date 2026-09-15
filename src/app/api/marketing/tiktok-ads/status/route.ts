@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     const { agencyId, role } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     return NextResponse.json({ ...(await getTikTokAdsStatus(agencyId)), role });
   } catch (error) {
-    const status = error && typeof error === 'object' && 'status' in error && typeof error.status === 'number' ? error.status : 500;
-    return NextResponse.json({ message: error instanceof Error ? error.message : 'Nu am putut verifica TikTok Ads.' }, { status });
+    const { formatTikTokAdsError } = await import('@/lib/tiktok-ads');
+    const formatted = formatTikTokAdsError(error);
+    return NextResponse.json(formatted.body, { status: formatted.status });
   }
 }

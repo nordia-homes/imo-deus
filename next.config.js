@@ -1,18 +1,13 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@napi-rs/canvas', '@sparticuz/chromium'],
+  distDir: process.env.NEXT_DIST_DIR || '.next',
+  serverExternalPackages: ['@napi-rs/canvas', '@sparticuz/chromium', 'ffmpeg-static'],
   outputFileTracingIncludes: {
-    '/*': ['node_modules/@sparticuz/chromium/bin/**/*'],
+    '/*': ['node_modules/@sparticuz/chromium/bin/**/*', 'node_modules/ffmpeg-static/**/*'],
   },
   turbopack: {
     root: __dirname,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [

@@ -678,7 +678,10 @@ export async function POST(
     );
     const renderedBodyHtml = stripRomanianDiacritics(renderContractContent(rawContent, normalizedValues));
     const headerParagraphs = extractParagraphsFromHtml(renderedHeaderHtml);
-    const headerBlocks = buildStructuredHeaderBlocks(template.category || 'reservation', normalizedValues, {
+    const normalizedHeaderValues = Object.fromEntries(
+      Object.entries(normalizedValues).map(([key, value]) => [key, value == null ? '' : String(value)])
+    );
+    const headerBlocks = buildStructuredHeaderBlocks(template.category || 'reservation', normalizedHeaderValues, {
       emptyFallback: '.'.repeat(35),
     });
     const bodyBlocks = extractRichBlocksFromHtml(renderedBodyHtml);

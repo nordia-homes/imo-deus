@@ -21,8 +21,8 @@ function formatRouteError(error: unknown) {
 
     if (apiMessage) {
       return {
-        status: 'status' in (error as Record<string, unknown>) && typeof (error as { status?: unknown }).status === 'number'
-          ? (error as { status: number }).status
+        status: 'status' in (error as Record<string, unknown>) && typeof (error as Record<string, unknown>).status === 'number'
+          ? (error as Record<string, unknown>).status as number
           : 500,
         message: apiMessage,
       };

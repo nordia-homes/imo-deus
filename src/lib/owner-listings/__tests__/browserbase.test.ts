@@ -220,7 +220,7 @@ describe('Browserbase OLX profiles', () => {
         const message = JSON.parse(value) as { id: number; method: string };
         sentMessages.push(message);
         queueMicrotask(() => {
-          const resultById = {
+          const resultById: Record<number, object> = {
             1: {
               id: 1,
               result: {
@@ -239,7 +239,7 @@ describe('Browserbase OLX profiles', () => {
             },
             3: { id: 3, result: { frameId: 'frame-test' } },
             4: { id: 4, result: {} },
-          } as const;
+          };
           this.emit('message', {
             data: JSON.stringify(resultById[message.id]),
           });

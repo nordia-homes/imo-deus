@@ -141,7 +141,7 @@ export function PublicPropertyCard({
           <div className="mt-5 grid grid-cols-3 gap-2 text-xs text-stone-200/88">
             <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">
               <BedDouble className="mx-auto h-4 w-4 text-[var(--public-accent)]" />
-              <p className="mt-2 font-medium text-white">{property.rooms || property.bedrooms || '-'}</p>
+              <p className="mt-2 font-medium text-white">{property.rooms || '-'}</p>
               <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-stone-400">Camere</p>
             </div>
             <div className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3 text-center">

@@ -38,6 +38,9 @@ export default function DemoEntryPage() {
 
       const { auth } = initializeFirebase('demo');
       const activeUser = auth.currentUser ?? (await signInAnonymously(auth).then((credential) => credential.user));
+      if (!activeUser) {
+        throw new Error('Autentificarea anonimă pentru demo nu a returnat un utilizator.');
+      }
       await activeUser.getIdToken(true);
 
       const response = await fetch('/api/demo/provision-fallback', {

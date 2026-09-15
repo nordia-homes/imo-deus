@@ -21,7 +21,7 @@ export function AiPropertyInsights({ property }: { property: Property }) {
                 propertyType: property.propertyType,
                 location: property.location,
                 price: property.price,
-                bedrooms: property.bedrooms,
+                rooms: property.rooms,
                 squareFootage: property.squareFootage,
                 constructionYear: property.constructionYear,
                 keyFeatures: property.keyFeatures || '',

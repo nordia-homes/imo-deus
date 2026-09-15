@@ -137,6 +137,23 @@ const ChartTooltipContent = React.forwardRef<
       nameKey?: string
       colorKey?: string
       itemSorter?: (a: any, b: any) => number
+      animationDuration?: number
+      animationEasing?: string
+      contentStyle?: React.CSSProperties
+      cursor?: unknown
+      allowEscapeViewBox?: unknown
+      accessibilityLayer?: boolean
+      coordinate?: unknown
+      itemStyle?: React.CSSProperties
+      labelStyle?: React.CSSProperties
+      offset?: number
+      position?: unknown
+      reverseDirection?: unknown
+      separator?: React.ReactNode
+      shared?: boolean
+      trigger?: unknown
+      viewBox?: unknown
+      wrapperStyle?: React.CSSProperties
     }
 >(
   (
@@ -289,8 +306,8 @@ const ChartLegend = React.Component
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<(typeof PieChart)["defaultProps"], "verticalAlign"> & {
+  React.ComponentProps<"div"> & {
+      verticalAlign?: "top" | "middle" | "bottom"
       payload?: any[]
       nameKey?: string
     }

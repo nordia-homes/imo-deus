@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "plugins": []
+  },
+  "include": [
+    "src/lib/tiktok-ads.ts",
+    "src/lib/tiktok-ads/**/*.ts",
+    "src/app/auth/tiktok-ads/callback/route.ts",
+    "src/app/api/marketing/tiktok-ads/**/*.ts",
+    "src/app/api/marketing/tiktok/studio-projects/[projectId]/render/route.ts",
+    "src/components/properties/detail/actions/TikTokAdsCard.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".tmp",
+    "tmp"
+  ]
+}

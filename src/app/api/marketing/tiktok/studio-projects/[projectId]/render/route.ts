@@ -16,7 +16,7 @@ function formatError(error: unknown) {
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ projectId: string }> | { projectId: string } }
+  context: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const [{ requireAgencyUserFromBearerToken }, { renderTikTokStudioProject }] = await Promise.all([

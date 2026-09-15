@@ -38,6 +38,40 @@ service cloud.firestore {
              resource.data.status == 'Activ';
     }
 
+    function isServerManagedAgencyCollection(collectionId) {
+      return collectionId == 'tiktokAdvertisers' ||
+             collectionId == 'tiktokAccountPermissions' ||
+             collectionId == 'tiktokResourceReferences' ||
+             collectionId == 'tiktokCapabilityStates' ||
+             collectionId == 'tiktokMcpToolSchemas' ||
+             collectionId == 'tiktokSpendAuthorizations' ||
+             collectionId == 'tiktokOperationLedger' ||
+             collectionId == 'tiktokMutationLocks' ||
+             collectionId == 'tiktokAuditEvents' ||
+             collectionId == 'tiktokLeadReferences' ||
+             collectionId == 'tiktokMediaMappings' ||
+             collectionId == 'tiktokReportSnapshots' ||
+             collectionId == 'tiktokReportingState' ||
+             collectionId == 'tiktokRateLimitState' ||
+             collectionId == 'tiktokSyncState';
+    }
+
+    match /agencyPrivateIntegrations/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /tiktokAdsOauthStates/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /tiktokMcpOAuthClients/{documentId} {
+      allow read, write: if false;
+    }
+
+    match /tiktokAdsJobs/{documentId} {
+      allow read, write: if false;
+    }
+
     // --- User Profiles ---
     match /users/{userId} {
       // A user can always read and write their own profile.
@@ -63,8 +97,9 @@ service cloud.firestore {
     // --- Agency Subcollections (Generic Rule) ---
     // Public updates are now handled by the Admin SDK, so we only need to
     // allow authenticated agency members to perform actions.
-    match /agencies/{agencyId}/{document=**} {
-      allow read, write: if isUserInAgency(agencyId);
+    match /agencies/{agencyId}/{collectionId}/{document=**} {
+      allow read, write: if isUserInAgency(agencyId) &&
+                            !isServerManagedAgencyCollection(collectionId);
     }
 
     // --- Agency Top-Level Document ---

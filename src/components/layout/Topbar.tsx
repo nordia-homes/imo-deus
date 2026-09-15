@@ -98,6 +98,7 @@ export function Topbar() {
             return;
         }
 
+        const activeAgencyId = agencyId;
         let isCancelled = false;
         setIsSearching(true);
 
@@ -109,7 +110,7 @@ export function Topbar() {
                     && Date.now() - source.loadedAt < 60_000;
 
                 if (!cacheIsFresh) {
-                    const agencyPath = ['agencies', agencyId] as const;
+                    const agencyPath = ['agencies', activeAgencyId] as const;
                     const [contactsSnapshot, propertiesSnapshot, tasksSnapshot] = await Promise.all([
                         getDocs(collection(firestore, ...agencyPath, 'contacts')),
                         getDocs(collection(firestore, ...agencyPath, 'properties')),
@@ -117,7 +118,7 @@ export function Topbar() {
                     ]);
 
                     source = {
-                        agencyId,
+                        agencyId: activeAgencyId,
                         loadedAt: Date.now(),
                         contacts: contactsSnapshot.docs.map((snapshot) => ({ ...(snapshot.data() as Contact), id: snapshot.id })),
                         properties: propertiesSnapshot.docs.map((snapshot) => ({ ...(snapshot.data() as Property), id: snapshot.id })),

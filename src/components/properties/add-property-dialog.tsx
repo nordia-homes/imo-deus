@@ -151,7 +151,10 @@ const pickAllowedOrOriginalValue = (
   return typeof value === 'string' ? value.trim() : '';
 };
 
-const needsLegacyOption = (value: string | null | undefined, allowedValues: readonly string[]) => {
+const needsLegacyOption = (
+  value: string | null | undefined,
+  allowedValues: readonly string[]
+): value is string => {
   if (!value) {
     return false;
   }
