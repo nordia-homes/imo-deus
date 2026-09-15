@@ -111,6 +111,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@emnapi/core": "^1.11.3",
+    "@emnapi/runtime": "^1.11.3",
     "@firebase/rules-unit-testing": "^4.0.1",
     "@types/node": "^20",
     "@types/react": "^18.3.3",
