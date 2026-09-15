@@ -11,7 +11,7 @@ Integrarea TikTok Ads a fost înlocuită cu un boundary MCP oficial, multi-tenan
 
 Acest traseu nu importă integrarea organică, nu apelează Content Posting API și nu conține `video.publish`. Toate creările de campaign/ad group/ad, inclusiv pașii interni ai workflow-urilor Spark, sunt forțate inițial în starea `DISABLE`; activarea, resume, schimbarea de buget/bid și extinderea programului cer o autorizație umană exactă, single-use, și sunt blocate global implicit prin `TIKTOK_SPEND_MUTATIONS_ENABLED=false`.
 
-Codul este pregătit pentru rollout, dar verdictul operațional rămâne **NO-GO pentru trafic real** până la închiderea checklist-ului de deployment de la final: rollout-ul App Hosting cu configurația actuală, scheduler-ul shared, discovery MCP cu OAuth real și validarea manuală Nordia fără spend. Secretele, regulile/indexurile/TTL și testele Firestore Rules în emulator sunt închise. Nicio mutație TikTok live și niciun spend nu au fost executate în această implementare.
+Codul și infrastructura Imodeus sunt pregătite pentru validarea tenantului real, dar verdictul operațional rămâne **NO-GO pentru trafic real** până la discovery MCP cu OAuth real și validarea manuală Nordia fără spend. Secretele, regulile/indexurile/TTL, testele Firestore Rules, rollout-ul App Hosting și scheduler-ul shared sunt închise. Nicio mutație TikTok live și niciun spend nu au fost executate în această implementare.
 
 ## Existing implementation
 
@@ -162,7 +162,7 @@ Fiecare write are intent hash, actor, advertiser/property, idempotency key, curr
 
 Există o singură coadă `tiktokAdsJobs`, nu worker/cron per tenant. Joburile automate sunt strict read-only, deduplicate per org/capability/advertiser/property, au leases, maximum cinci încercări, backoff/jitter și limită de 100 per drain. Selecția face o primă trecere tenant-fair. Concurența TikTok este limitată distribuit per tenant (implicit patru).
 
-La conectare se programează advertiser discovery și capability discovery recurente; adminul poate programa permission/status/report/lead reads. Scriptul `scripts/configure-tiktok-ads-scheduler.ps1` configurează un singur Cloud Scheduler shared.
+La conectare se programează advertiser discovery și capability discovery recurente; adminul poate programa permission/status/report/lead reads. Scriptul `scripts/configure-tiktok-ads-scheduler.ps1` configurează un singur Cloud Scheduler shared. Jobul `tiktok-ads-shared-worker` este deployat în `us-central1`, activ, rulează o dată pe minut, are zero retry automat și a trecut validarea production: endpoint 200, coadă goală și primul attempt programat fără eroare.
 
 ## Database
 
@@ -191,6 +191,7 @@ Rezultatele deterministe ale ultimei rulări:
 - `npm run lint`: **PASS, zero errors**; raportează separat 258 warnings legacy ale aplicației;
 - `npm run test:tiktok-ads:rules`: **4/4 teste Firestore Rules în emulator, PASS**;
 - `npx next build --webpack` cu `NODE_ENV=production`: **PASS**, inclusiv TypeScript și 187/187 pagini generate;
+- Firebase App Hosting rollout pentru commitul verificat: **PASS**;
 - `git diff --check`: **PASS**;
 - JSON parse pentru `firestore.indexes.json`: **PASS**.
 
@@ -221,13 +222,13 @@ Build-ul webpack de producție este verde, fără `ignoreBuildErrors`: compilare
 Înainte de GO live:
 
 1. **Închis:** Secret Manager conține valori independente, aleatorii, de 48 de octeți pentru `TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY` și `TIKTOK_ADS_WORKER_SECRET`; backend-ul App Hosting are acces IAM;
-2. **Parțial închis:** Firestore Rules, indexes și TTL configuration sunt deployate; rollout-ul App Hosting cu configurația actuală trebuie să treacă;
-3. repetați în CI `npx tsc --noEmit --incremental false` și `next build --webpack`, ambele verzi local;
+2. **Închis:** Firestore Rules, indexes și TTL configuration sunt deployate, iar rollout-ul App Hosting cu configurația actuală a trecut;
+3. **Închis local și în Cloud Build:** typecheck-ul și build-ul de producție sunt verzi; workflow-ul dedicat trebuie păstrat obligatoriu după merge;
 4. păstrați workflow-ul TikTok Ads obligatoriu în branch protection; el configurează Java 21 și rulează `npm run test:tiktok-ads:rules`;
-5. configurați shared scheduler cu `scripts/configure-tiktok-ads-scheduler.ps1`;
+5. **Închis:** shared scheduler este activ și validat end-to-end cu workerul production;
 6. conectați manual un admin Imodeus la MCP și validați matricea/schema runtime pentru tenantul Nordia;
 7. validați fără spend: advertiser/status/billing, identity permissions, asset discovery, campaign/ad group/ad drafts disabled, review, reports/leads și audit/reconciliation;
 8. validați manual un video nou cu `Only show as ads`, păstrând campaign/ad group/ad disabled și confirmând că nu apare organic;
 9. activați `TIKTOK_SPEND_MUTATIONS_ENABLED=true` numai prin change control separat, după aprobarea explicită a business ownerului.
 
-Până la acești pași verdictul este **NO-GO pentru trafic/spend real**, nu fake production success. După checklist și un build de producție verde în CI, arhitectura poate primi GO fără schimbarea boundary-ului sau a modelului multi-tenant.
+Până la pașii manuali 6–8 verdictul este **NO-GO pentru trafic/spend real**, nu fake production success. După OAuth/discovery și validarea Nordia fără spend, arhitectura poate primi GO fără schimbarea boundary-ului sau a modelului multi-tenant; pasul 9 rămâne change control separat.
