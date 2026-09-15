@@ -21,15 +21,15 @@ const officialShapeTools: TikTokMcpTool[] = [
   tool('identity_video_get', 'Get posts and video assets under identity', { advertiser_id: { type: 'string' } }),
   tool('video_upload', 'Upload a video', { advertiser_id: { type: 'string' }, video_url: { type: 'string' } }, ['advertiser_id', 'video_url']),
   tool('campaign_get', 'Get campaigns', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
-  tool('campaign_create', 'Create a campaign', { advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, operation_status: { type: 'string' } }, ['advertiser_id', 'campaign_name']),
+  tool('campaign_create', 'Create a campaign', { advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, objective_type: { type: 'string' }, operation_status: { type: 'string' } }, ['advertiser_id', 'campaign_name', 'objective_type']),
   tool('campaign_update', 'Update a campaign', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' } }, ['advertiser_id', 'campaign_id']),
   tool('campaign_status_update', 'Update campaign operation status enable disable pause resume', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' }, operation_status: { type: 'string' } }),
   tool('adgroup_get', 'Get ad groups', { advertiser_id: { type: 'string' } }),
-  tool('adgroup_create', 'Create an ad group', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('adgroup_create', 'Create an ad group', { advertiser_id: { type: 'string' }, campaign_id: { type: 'string' }, adgroup_name: { type: 'string' }, operation_status: { type: 'string' } }),
   tool('adgroup_update', 'Update an ad group', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' } }),
   tool('adgroup_status_update', 'Update ad group operation status pause resume enable disable', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' }, operation_status: { type: 'string' } }),
   tool('ad_get', 'Get ads', { advertiser_id: { type: 'string' } }),
-  tool('ad_create', 'Create ads', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' }, operation_status: { type: 'string' } }),
+  tool('ad_create', 'Create ads', { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' }, ad_name: { type: 'string' }, operation_status: { type: 'string' } }),
   tool('ad_update', 'Update ads', { advertiser_id: { type: 'string' }, ad_id: { type: 'string' } }),
   tool('ad_status_update', 'Update ad operation status pause resume enable disable', { advertiser_id: { type: 'string' }, ad_id: { type: 'string' }, operation_status: { type: 'string' } }),
   tool('ad_review_info', 'Get ad review info', { advertiser_id: { type: 'string' }, ad_id: { type: 'string' } }),
@@ -77,5 +77,33 @@ describe('TikTok capability registry', () => {
     const left = tool('x', 'x', { b: { type: 'string' }, a: { type: 'number' } });
     const right = tool('x', 'x', { a: { type: 'number' }, b: { type: 'string' } });
     expect(hashToolSchema(left)).toBe(hashToolSchema(right));
+  });
+
+  it('rejects semantically wrong schemas even when their descriptions contain matching words', () => {
+    const wrongTools = [
+      tool('music_search', 'Search music to upload with a video', {
+        filtering: { type: 'object' },
+        music_scene: { type: 'string' },
+        search_type: { type: 'string' },
+      }),
+      tool('campaign_copy_task_create', 'Create a campaign copy task', {
+        advertiser_id: { type: 'string' },
+        campaign_ids: { type: 'array' },
+      }, ['advertiser_id', 'campaign_ids']),
+    ];
+    const matrix = resolveTikTokCapabilities(wrongTools);
+    expect(matrix.find((item) => item.capability === 'CREATIVE_UPLOAD')).toMatchObject({ available: false, toolName: null });
+    expect(matrix.find((item) => item.capability === 'CAMPAIGN_CREATE')).toMatchObject({ available: false, toolName: null });
+  });
+
+  it('prefers exact manual endpoint names over specialized create tools', () => {
+    const manual = tool('/campaign/create/', 'Create a Manual Campaign', {
+      advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, objective_type: { type: 'string' },
+    });
+    const specialized = tool('/smart_plus/campaign/create/', 'Create an Upgraded Smart+ Campaign', {
+      advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, objective_type: { type: 'string' },
+    });
+    const matrix = resolveTikTokCapabilities([specialized, manual]);
+    expect(matrix.find((item) => item.capability === 'CAMPAIGN_CREATE')?.toolName).toBe('/campaign/create/');
   });
 });

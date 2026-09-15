@@ -78,6 +78,7 @@ type Workspace = {
     connected: boolean;
     requiresReconnect?: boolean;
     capabilityDiscoveryStatus?: string;
+    lastErrorCode?: string | null;
     readsEnabled: boolean;
     writesEnabled: boolean;
     spendMutationsEnabled: boolean;
@@ -302,8 +303,11 @@ export default function TikTokAdsCampaignPage() {
     if (!user) return;
     await runAction('discovery', async () => {
       await responsePayload(await authorizedFetch(user, '/api/marketing/tiktok-ads/capabilities', { method: 'POST', body: '{}' }));
-      await responsePayload(await authorizedFetch(user, '/api/marketing/tiktok-ads/advertisers', { method: 'POST', body: JSON.stringify({ action: 'sync' }) }));
+      const synchronized = await responsePayload(await authorizedFetch(user, '/api/marketing/tiktok-ads/advertisers', { method: 'POST', body: JSON.stringify({ action: 'sync' }) })) as { advertisers?: TikTokAdvertiserRecord[] };
       await loadWorkspace(advertiserId, propertyId);
+      if (!synchronized.advertisers?.length) {
+        throw new Error('TikTok nu a returnat niciun advertiser autorizat. Reconectează contul și acordă acces la cel puțin un cont Ads Manager.');
+      }
       toast({ title: 'TikTok sincronizat', description: 'Advertiserii și schemele MCP au fost actualizate.' });
     });
   }
@@ -541,6 +545,7 @@ export default function TikTokAdsCampaignPage() {
 
       {!canAdmin ? <Alert><ShieldCheck className="h-4 w-4" /><AlertTitle>Mod consultare</AlertTitle><AlertDescription>Doar administratorii pot crea, activa sau opri reclame TikTok.</AlertDescription></Alert> : null}
       {!workspace.status.spendMutationsEnabled ? <Alert className="border-emerald-200 bg-emerald-50"><ShieldCheck className="h-4 w-4 text-emerald-700" /><AlertTitle className="text-emerald-900">Spend blocat operațional</AlertTitle><AlertDescription className="text-emerald-800">Poți crea și valida draftul în DISABLE. Activarea rămâne indisponibilă până la change control.</AlertDescription></Alert> : null}
+      {!workspace.advertisers.length ? <Alert className="border-amber-200 bg-amber-50"><AlertTriangle className="h-4 w-4 text-amber-700" /><AlertTitle className="text-amber-950">Niciun advertiser TikTok autorizat</AlertTitle><AlertDescription className="text-amber-900">Apasă „Sincronizează TikTok”. Dacă lista rămâne goală, reconectează TikTok și acordă acces la un cont Ads Manager; fără advertiser, verificarea de billing și identitățile nu pot porni.</AlertDescription></Alert> : null}
 
       <Card className="rounded-3xl">
         <CardHeader><CardTitle>1. Resurse și eligibilitate</CardTitle><CardDescription>Selectează tenant-owned resources; backendul reverifică toate ID-urile.</CardDescription></CardHeader>

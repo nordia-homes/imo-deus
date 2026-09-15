@@ -110,6 +110,23 @@ function assertOfficialResource(url: string) {
   }
 }
 
+function normalizedToolResult(result: McpResult) {
+  if (result.structuredContent != null) return result.structuredContent;
+  const parsed = (result.content || []).flatMap((item) => {
+    if (item.type !== 'text' || typeof item.text !== 'string') return [];
+    const candidate = item.text.trim();
+    if (!candidate || candidate.length > 2 * 1024 * 1024 || !candidate.startsWith('{') && !candidate.startsWith('[')) return [];
+    try {
+      return [JSON.parse(candidate) as unknown];
+    } catch {
+      return [];
+    }
+  });
+  if (parsed.length === 1) return parsed[0];
+  if (parsed.length > 1) return { content: parsed };
+  return result;
+}
+
 export class TikTokMcpClient {
   private session: McpSession | null = null;
   private pendingSessionId: string | null = null;
@@ -251,18 +268,37 @@ export class TikTokMcpClient {
     };
   }
 
-  private extractTools(value: unknown, output: TikTokMcpTool[] = []): TikTokMcpTool[] {
+  private extractTools(value: unknown, output: TikTokMcpTool[] = [], depth = 0): TikTokMcpTool[] {
+    if (depth > 30) return output;
     if (Array.isArray(value)) {
-      value.forEach((item) => this.extractTools(item, output));
+      value.forEach((item) => this.extractTools(item, output, depth + 1));
+      return output;
+    }
+    if (typeof value === 'string') {
+      const candidate = value.trim();
+      if (candidate.length <= 2 * 1024 * 1024 && (candidate.startsWith('{') || candidate.startsWith('['))) {
+        try {
+          this.extractTools(JSON.parse(candidate), output, depth + 1);
+        } catch {
+          // Progressive discovery tools may also return ordinary explanatory text.
+        }
+      }
       return output;
     }
     if (!value || typeof value !== 'object') return output;
     const record = value as Record<string, unknown>;
-    if (typeof record.name === 'string' && record.inputSchema && typeof record.inputSchema === 'object') {
-      output.push(record as unknown as TikTokMcpTool);
+    const inputSchema = record.inputSchema ?? record.input_schema;
+    const outputSchema = record.outputSchema ?? record.output_schema;
+    if (typeof record.name === 'string' && inputSchema && typeof inputSchema === 'object') {
+      output.push({
+        ...(record as unknown as TikTokMcpTool),
+        name: record.name,
+        inputSchema: inputSchema as JsonSchema,
+        ...(outputSchema && typeof outputSchema === 'object' ? { outputSchema: outputSchema as JsonSchema } : {}),
+      });
       return output;
     }
-    Object.values(record).forEach((item) => this.extractTools(item, output));
+    Object.values(record).forEach((item) => this.extractTools(item, output, depth + 1));
     return output;
   }
 
@@ -272,11 +308,16 @@ export class TikTokMcpClient {
     if (!discoveryTool) return initial;
     const discovered: TikTokMcpTool[] = [];
     const queries = [
-      'advertiser ad account business center billing verification',
+      '/oauth2/advertiser/get/ Get authorized advertiser accounts',
+      '/file/video/ad/upload/ Upload a video for advertising',
+      '/campaign/create/ Create a Manual Campaign',
+      '/adgroup/create/ Create a Manual Campaign ad group',
+      '/ad/create/ Create a Manual Campaign ad',
+      'advertiser ad account detail business center billing verification',
       'TikTok account identity authorization permission Spark posts',
-      'campaign create update status budget schedule',
-      'ad group create update status targeting bidding placement audience',
-      'ad creative video upload review status',
+      'campaign get update operation status budget schedule',
+      'ad group get update operation status targeting bidding placement audience',
+      'ad get update operation status creative review',
       'reporting analytics metrics',
       'lead generation instant form leads download',
       'event webhook subscription',
@@ -302,9 +343,9 @@ export class TikTokMcpClient {
       correlationId,
     });
     if (result.isError) throw new TikTokAdsError('PROVIDER_UNAVAILABLE', 'Tool-ul TikTok MCP a raportat o eroare.', { correlationId });
+    const normalized = normalizedToolResult(result);
     if (tool.outputSchema) {
-      const candidate = result.structuredContent ?? result;
-      const outputValidation = validateJsonSchema(candidate, tool.outputSchema);
+      const outputValidation = validateJsonSchema(normalized, tool.outputSchema);
       if (!outputValidation.ok) {
         throw new TikTokAdsError('SCHEMA_INCOMPATIBLE', 'Output-ul TikTok MCP nu mai respectă schema descoperită.', {
           correlationId,
@@ -312,7 +353,7 @@ export class TikTokMcpClient {
         });
       }
     }
-    return result.structuredContent ?? result;
+    return normalized;
   }
 
   async callToolPaginated(tool: TikTokMcpTool, args: Record<string, unknown>, correlationId: string) {

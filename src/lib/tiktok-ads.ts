@@ -109,6 +109,7 @@ export async function getTikTokAdsStatus(agencyId: string) {
     advertiserName: advertisers.find((item) => item.selected)?.name || null,
     advertiserCount: advertisers.length,
     capabilityDiscoveryStatus: data.capabilityDiscoveryStatus || 'pending',
+    lastErrorCode: typeof data.lastErrorCode === 'string' ? data.lastErrorCode : null,
     availableCapabilityCount: Number(data.availableCapabilityCount || 0),
     readsEnabled: String(process.env.TIKTOK_READS_ENABLED || 'true').toLowerCase() !== 'false',
     writesEnabled: String(process.env.TIKTOK_WRITES_ENABLED || 'true').toLowerCase() !== 'false',

@@ -15,6 +15,22 @@ type Matcher = {
   exclude?: string[];
 };
 
+const EXACT_TOOL_NAMES: Partial<Record<TikTokCapability, RegExp[]>> = {
+  ADVERTISER_DISCOVERY: [/(?:^|\/)oauth2\/advertiser\/get$/, /(?:^|\/)advertiser\/get$/],
+  CREATIVE_UPLOAD: [/(?:^|\/)file\/video\/ad\/upload$/, /(?:^|\/)video\/upload$/],
+  CAMPAIGN_READ: [/(?:^|\/)campaign\/get$/],
+  CAMPAIGN_CREATE: [/(?:^|\/)campaign\/create$/],
+  CAMPAIGN_UPDATE: [/(?:^|\/)campaign\/update$/],
+  ADGROUP_READ: [/(?:^|\/)adgroup\/get$/, /(?:^|\/)ad\/group\/get$/],
+  ADGROUP_CREATE: [/(?:^|\/)adgroup\/create$/, /(?:^|\/)ad\/group\/create$/],
+  ADGROUP_UPDATE: [/(?:^|\/)adgroup\/update$/, /(?:^|\/)ad\/group\/update$/],
+  AD_READ: [/(?:^|\/)ad\/get$/],
+  AD_CREATE: [/(?:^|\/)ad\/create$/],
+  AD_UPDATE: [/(?:^|\/)ad\/update$/],
+};
+
+const SPECIALIZED_CREATE_NAMESPACE = /(?:^|\/)(?:smart\/plus|gmv\/max|business\/spark\/ad|tto|split\/test)(?:\/|$)/;
+
 export const CAPABILITY_CLASSIFICATION: Record<TikTokCapability, TikTokCapabilityClassification> = {
   ADVERTISER_DISCOVERY: 'MCP_NATIVE',
   ADVERTISER_PROVISION: 'EXTERNAL_APPROVAL_REQUIRED',
@@ -113,18 +129,18 @@ const MATCHERS: Partial<Record<TikTokCapability, Matcher>> = {
   ASSET_DISCOVERY: { include: [['identity', 'video', 'asset', 'post'], ['get', 'list', 'search']], exclude: ['upload', 'create', 'delete'] },
   CREATIVE_UPLOAD: { include: [['video'], ['upload']], exclude: ['catalog', 'message'] },
   CAMPAIGN_READ: { include: [['campaign'], ['get', 'list']], exclude: ['report', 'create', 'update', 'copy'] },
-  CAMPAIGN_CREATE: { include: [['campaign'], ['create']], exclude: ['report', 'spark ad in one step'] },
+  CAMPAIGN_CREATE: { include: [['campaign'], ['create']], exclude: ['report', 'copy task', 'smart+', 'smart plus', 'gmv max', 'spark ad in one step'] },
   CAMPAIGN_UPDATE: { include: [['campaign'], ['update']], exclude: ['status', 'budget', 'report'] },
   CAMPAIGN_ACTIVATE: { include: [['campaign'], ['status', 'enable', 'activate']] },
   CAMPAIGN_PAUSE: { include: [['campaign'], ['status', 'disable', 'pause']] },
   CAMPAIGN_RESUME: { include: [['campaign'], ['status', 'enable', 'resume']] },
   ADGROUP_READ: { include: [['ad group', 'adgroup'], ['get', 'list']], exclude: ['report', 'review', 'diagnos'] },
-  ADGROUP_CREATE: { include: [['ad group', 'adgroup'], ['create']], exclude: ['report'] },
+  ADGROUP_CREATE: { include: [['ad group', 'adgroup'], ['create']], exclude: ['report', 'smart+', 'smart plus', 'gmv max'] },
   ADGROUP_UPDATE: { include: [['ad group', 'adgroup'], ['update']], exclude: ['status', 'budget'] },
   ADGROUP_PAUSE: { include: [['ad group', 'adgroup'], ['status', 'pause', 'disable']] },
   ADGROUP_RESUME: { include: [['ad group', 'adgroup'], ['status', 'resume', 'enable']] },
   AD_READ: { include: [[' ad ', ' ads ', '/ad/', 'ad_get', 'get ads'], ['get', 'list']], exclude: ['group', 'report', 'review', 'account'] },
-  AD_CREATE: { include: [[' ad ', ' ads ', '/ad/', 'ad_create', 'create ads'], ['create']], exclude: ['group', 'account', 'report'] },
+  AD_CREATE: { include: [[' ad ', ' ads ', '/ad/', 'ad_create', 'create ads'], ['create']], exclude: ['group', 'account', 'report', 'smart+', 'smart plus', 'gmv max', 'aco'] },
   AD_UPDATE: { include: [[' ad ', ' ads ', '/ad/', 'ad_update', 'update ads'], ['update']], exclude: ['group', 'account', 'status', 'report'] },
   AD_PAUSE: { include: [[' ad ', ' ads ', '/ad/'], ['status', 'pause', 'disable']], exclude: ['group', 'account'] },
   AD_RESUME: { include: [[' ad ', ' ads ', '/ad/'], ['status', 'resume', 'enable']], exclude: ['group', 'account'] },
@@ -155,7 +171,62 @@ function searchable(tool: TikTokMcpTool) {
   return ` ${tool.name} ${tool.title || ''} ${tool.description || ''} `.toLowerCase().replace(/[_-]+/g, ' ');
 }
 
-function scoreTool(tool: TikTokMcpTool, matcher: Matcher) {
+function normalizedToolName(tool: TikTokMcpTool) {
+  return tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '/').replace(/^\/+|\/+$/g, '');
+}
+
+function exactToolNameMatch(capability: TikTokCapability, tool: TikTokMcpTool) {
+  const name = normalizedToolName(tool);
+  if (['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE'].includes(capability) && SPECIALIZED_CREATE_NAMESPACE.test(name)) return false;
+  return EXACT_TOOL_NAMES[capability]?.some((pattern) => pattern.test(name)) || false;
+}
+
+function schemaFieldNames(schema: JsonSchema, fields = new Set<string>(), required = new Set<string>()) {
+  for (const [key, child] of Object.entries(schema.properties || {})) {
+    fields.add(key.replace(/[^a-z0-9]/gi, '').toLowerCase());
+    schemaFieldNames(child, fields, required);
+  }
+  for (const key of schema.required || []) required.add(key.replace(/[^a-z0-9]/gi, '').toLowerCase());
+  if (schema.items) schemaFieldNames(schema.items, fields, required);
+  for (const variant of [...(schema.anyOf || []), ...(schema.oneOf || []), ...(schema.allOf || [])]) {
+    schemaFieldNames(variant, fields, required);
+  }
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    schemaFieldNames(schema.additionalProperties, fields, required);
+  }
+  return { fields, required };
+}
+
+function schemaContractScore(capability: TikTokCapability, tool: TikTokMcpTool) {
+  const toolName = normalizedToolName(tool);
+  if (['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE'].includes(capability) && SPECIALIZED_CREATE_NAMESPACE.test(toolName)) return -1;
+  const { fields, required } = schemaFieldNames(tool.inputSchema);
+  const has = (...names: string[]) => names.some((name) => fields.has(name));
+  const requires = (...names: string[]) => names.some((name) => required.has(name));
+
+  if (capability === 'ADVERTISER_DISCOVERY') {
+    return requires('advertiserid', 'advertiserids', 'adaccountid', 'adaccountids') ? -1 : 5;
+  }
+  if (capability === 'CREATIVE_UPLOAD') {
+    if (has('musicscene', 'searchtype', 'filtering', 'carouselimageindex', 'catalogauthorizedbcid')) return -1;
+    return has('uploadtype', 'videofile', 'videourl', 'sourceurl', 'fileurl', 'filename', 'videosignature') ? 15 : -1;
+  }
+  if (capability === 'CAMPAIGN_CREATE') {
+    if (requires('campaignid', 'campaignids')) return -1;
+    return has('campaignname') && has('objectivetype', 'objective', 'advertisingobjective') ? 15 : -1;
+  }
+  if (capability === 'ADGROUP_CREATE') {
+    if (requires('adgroupid', 'adgroupids')) return -1;
+    return has('campaignid') && has('adgroupname') ? 15 : -1;
+  }
+  if (capability === 'AD_CREATE') {
+    if (requires('adid', 'adids')) return -1;
+    return has('adgroupid') && has('adname', 'creatives', 'creative', 'creativeinfo', 'videoinfo', 'videoid', 'adtext', 'adtextlist') ? 15 : -1;
+  }
+  return 0;
+}
+
+function scoreTool(tool: TikTokMcpTool, matcher: Matcher, capability: TikTokCapability) {
   const text = searchable(tool);
   if (matcher.exclude?.some((token) => text.includes(token))) return -1;
   let score = 0;
@@ -164,6 +235,10 @@ function scoreTool(tool: TikTokMcpTool, matcher: Matcher) {
     if (!matches.length) return -1;
     score += 10 + matches.length;
   }
+  const contractScore = schemaContractScore(capability, tool);
+  if (contractScore < 0) return -1;
+  score += contractScore;
+  if (exactToolNameMatch(capability, tool)) score += 100;
   if (tool.annotations?.readOnlyHint) score += 1;
   return score;
 }
@@ -187,7 +262,7 @@ function resolveDirect(capability: TikTokCapability, tools: TikTokMcpTool[], now
     return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Capabilitate compusă; se rezolvă numai după validarea dependențelor runtime.', toolName: null, schemaHash: null, schemaStatus: 'not_discovered', discoveredAt: now };
   }
   const candidates = tools
-    .map((tool) => ({ tool, score: scoreTool(tool, matcher) }))
+    .map((tool) => ({ tool, score: scoreTool(tool, matcher, capability) }))
     .filter((item) => item.score >= 0)
     .sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name));
   const best = candidates[0];
@@ -261,10 +336,11 @@ export function resolveTikTokCapabilities(tools: TikTokMcpTool[], previous?: Map
 
   for (const [capability, resolution] of result) {
     const old = previous?.get(capability);
-    const approvedSchemaHash = old?.approvedSchemaHash
-      || (old?.schemaStatus === 'compatible' ? old.schemaHash : null)
-      || resolution.schemaHash;
-    if (approvedSchemaHash && resolution.schemaHash && approvedSchemaHash !== resolution.schemaHash && OPERATION_CLASS[capability] !== 'READ_ONLY') {
+    const sameTool = Boolean(old?.toolName && resolution.toolName && old.toolName === resolution.toolName);
+    const approvedSchemaHash = sameTool
+      ? old?.approvedSchemaHash || (old?.schemaStatus === 'compatible' ? old.schemaHash : null) || resolution.schemaHash
+      : resolution.schemaHash;
+    if (sameTool && approvedSchemaHash && resolution.schemaHash && approvedSchemaHash !== resolution.schemaHash && OPERATION_CLASS[capability] !== 'READ_ONLY') {
       result.set(capability, {
         ...resolution,
         approvedSchemaHash,

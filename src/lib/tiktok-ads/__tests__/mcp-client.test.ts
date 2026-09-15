@@ -88,6 +88,45 @@ describe('TikTok MCP transport boundary', () => {
     await expect(new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').callTool(tool, {}, 'READ_ONLY', 'corr')).resolves.toEqual({ rows: [] });
   });
 
+  it('normalizes JSON returned in standard MCP text content', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => responseFor(request, init, {
+      content: [{ type: 'text', text: JSON.stringify({ data: { list: [{ advertiser_id: 'adv-1' }] } }) }],
+    })));
+    await expect(new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').callTool(tool, {}, 'READ_ONLY', 'corr'))
+      .resolves.toEqual({ data: { list: [{ advertiser_id: 'adv-1' }] } });
+  });
+
+  it('discovers exact publishing endpoints from progressive text results', async () => {
+    const queries: string[] = [];
+    const searchTool = {
+      name: 'search_tools',
+      description: 'Search and discover tools',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+    };
+    vi.stubGlobal('fetch', vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body || '{}')) as { method?: string; params?: { arguments?: { query?: string } } };
+      if (body.method === 'initialize') return responseFor(request, init, { protocolVersion: '2025-06-18' });
+      if (body.method === 'tools/list') return responseFor(request, init, { tools: [searchTool] });
+      if (body.method === 'tools/call') {
+        queries.push(String(body.params?.arguments?.query || ''));
+        return responseFor(request, init, {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({ tools: [{
+              name: '/ad/create/',
+              description: 'Create a Manual Campaign ad',
+              input_schema: { type: 'object', properties: { advertiser_id: { type: 'string' }, adgroup_id: { type: 'string' }, ad_name: { type: 'string' } } },
+            }] }),
+          }],
+        });
+      }
+      return responseFor(request, init, {});
+    }));
+    const tools = await new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').discoverTools();
+    expect(queries).toContain('/ad/create/ Create a Manual Campaign ad');
+    expect(tools.some((candidate) => candidate.name === '/ad/create/' && candidate.inputSchema.properties?.adgroup_id)).toBe(true);
+  });
+
   it('rejects oversized responses and non-official resource URL variants', async () => {
     process.env.TIKTOK_MCP_MAX_RESPONSE_BYTES = '1024';
     vi.stubGlobal('fetch', vi.fn(async () => new Response('x'.repeat(1_025), { status: 200, headers: { 'content-type': 'application/json' } })));
