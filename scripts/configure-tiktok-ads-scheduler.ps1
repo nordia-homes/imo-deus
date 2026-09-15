@@ -23,6 +23,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+if (-not (Get-Command gcloud -ErrorAction SilentlyContinue)) {
+  throw "Google Cloud CLI (gcloud) is required to configure the shared scheduler."
+}
+
 if ([System.Text.Encoding]::UTF8.GetByteCount($WorkerSecret) -lt 32) {
   throw "WorkerSecret must contain at least 32 UTF-8 bytes."
 }
@@ -44,17 +48,12 @@ Write-Host "Target: $targetUri"
 Write-Host "Schedule: $Schedule"
 Write-Host "Time zone: $TimeZone"
 
-gcloud config set project $ProjectId | Out-Null
-
-$jobExists = $true
-try {
-  gcloud scheduler jobs describe $JobName --location=$Location | Out-Null
-} catch {
-  $jobExists = $false
-}
+& gcloud scheduler jobs describe $JobName "--project=$ProjectId" "--location=$Location" "--format=value(name)" --quiet *> $null
+$jobExists = $LASTEXITCODE -eq 0
 
 $commonArguments = @(
   "--location=$Location",
+  "--project=$ProjectId",
   "--schedule=$Schedule",
   "--time-zone=$TimeZone",
   "--uri=$targetUri",
@@ -62,13 +61,19 @@ $commonArguments = @(
   "--headers=$headers",
   "--message-body=$body",
   "--attempt-deadline=60s",
-  "--max-retry-attempts=0"
+  "--max-retry-attempts=0",
+  "--format=none",
+  "--quiet"
 )
 
 if ($jobExists) {
   & gcloud scheduler jobs update http $JobName @commonArguments
 } else {
   & gcloud scheduler jobs create http $JobName @commonArguments
+}
+
+if ($LASTEXITCODE -ne 0) {
+  throw "Cloud Scheduler configuration failed with exit code $LASTEXITCODE."
 }
 
 Write-Host "Cloud Scheduler job configured successfully."

@@ -11,7 +11,7 @@ Integrarea TikTok Ads a fost înlocuită cu un boundary MCP oficial, multi-tenan
 
 Acest traseu nu importă integrarea organică, nu apelează Content Posting API și nu conține `video.publish`. Toate creările de campaign/ad group/ad, inclusiv pașii interni ai workflow-urilor Spark, sunt forțate inițial în starea `DISABLE`; activarea, resume, schimbarea de buget/bid și extinderea programului cer o autorizație umană exactă, single-use, și sunt blocate global implicit prin `TIKTOK_SPEND_MUTATIONS_ENABLED=false`.
 
-Codul este pregătit pentru rollout, dar verdictul operațional rămâne **NO-GO pentru trafic real** până la închiderea checklist-ului de deployment de la final: secret-ele reale, deploy-ul regulilor/indexurilor/TTL, scheduler-ul shared, discovery MCP cu OAuth real, testele Firestore Rules în emulator și validarea manuală Nordia fără spend. Nicio mutație TikTok live și niciun spend nu au fost executate în această implementare.
+Codul este pregătit pentru rollout, dar verdictul operațional rămâne **NO-GO pentru trafic real** până la închiderea checklist-ului de deployment de la final: rollout-ul App Hosting cu configurația actuală, scheduler-ul shared, discovery MCP cu OAuth real și validarea manuală Nordia fără spend. Secretele, regulile/indexurile/TTL și testele Firestore Rules în emulator sunt închise. Nicio mutație TikTok live și niciun spend nu au fost executate în această implementare.
 
 ## Existing implementation
 
@@ -168,7 +168,7 @@ La conectare se programează advertiser discovery și capability discovery recur
 
 Schimbările sunt additive și fără destructive migration. Datele provider sunt subcolecții server-managed ale agenției; OAuth states, MCP client registration și job queue sunt colecții private globale. Au fost adăugate indexuri pentru advertisers, operation recovery, reports și queue, plus TTL pentru OAuth state, authorization, audit, tool schemas, leads, ledger și jobs.
 
-În Firestore nu există foreign keys/RLS SQL; echivalentul este compus din paths tenant-scoped, server-only rules, referințe validate în domain/provider layer și verificări de ownership. Deploy-ul regulilor/indexurilor și rularea suitei Firestore Rules în emulator rămân gate de rollout; mediul local folosit nu are Java, deci emulatorul nu a putut porni.
+În Firestore nu există foreign keys/RLS SQL; echivalentul este compus din paths tenant-scoped, server-only rules, referințe validate în domain/provider layer și verificări de ownership. Regulile au fost validate și într-un emulator Firestore real, pe un proiect local `demo-*`, folosind un JRE temporar: accesul cross-tenant și accesul client la toate colecțiile TikTok server-managed au fost respinse. Regulile, indexurile compuse și TTL-urile TikTok au fost apoi deployate cu succes în proiectul Firebase configurat.
 
 ## Security review
 
@@ -189,6 +189,7 @@ Rezultatele deterministe ale ultimei rulări:
 - `npx tsc --noEmit --incremental false --pretty false`: **PASS pentru întregul repository**;
 - `npm run lint:tiktok-ads`: **PASS, zero warnings**;
 - `npm run lint`: **PASS, zero errors**; raportează separat 258 warnings legacy ale aplicației;
+- `npm run test:tiktok-ads:rules`: **4/4 teste Firestore Rules în emulator, PASS**;
 - `npx next build --webpack` cu `NODE_ENV=production`: **PASS**, inclusiv TypeScript și 187/187 pagini generate;
 - `git diff --check`: **PASS**;
 - JSON parse pentru `firestore.indexes.json`: **PASS**.
@@ -198,7 +199,7 @@ Suitele acoperă OAuth valid/invalid/expired/replay/exchange/refresh/concurrent 
 Separarea este explicită:
 
 - deterministic automated: rulate local;
-- Firestore Rules integration: de rulat în emulator cu Java;
+- Firestore Rules integration: rulat local în emulator, 4/4 PASS; de păstrat ca gate în CI;
 - external MCP sandbox/real OAuth: de rulat după configurarea secretelor;
 - Nordia production validation: manual-gated și cu spend switch off.
 
@@ -206,7 +207,7 @@ Build-ul webpack de producție este verde, fără `ignoreBuildErrors`: compilare
 
 ## Repository rollout blockers
 
-- Firestore Rules integration test are nevoie de Java/emulator în CI. Verificarea statică este verde, dar nu înlocuiește testul runtime cerut pentru cross-tenant denial.
+- Testul Firestore Rules este implementat și verde local. Workflow-ul `.github/workflows/tiktok-ads-production.yml` furnizează Java 21 și rulează testele deterministe, emulatorul, lint-ul strict, typecheck-ul global și build-ul de producție la schimbările relevante.
 - Warning-ul webpack pentru peer-ul opțional `@opentelemetry/exporter-jaeger` și cele două warnings Tailwind existente nu blochează build-ul, dar trebuie evaluate de ownerii modulelor respective.
 
 ## External blockers TikTok
@@ -219,10 +220,10 @@ Build-ul webpack de producție este verde, fără `ignoreBuildErrors`: compilare
 
 Înainte de GO live:
 
-1. creați în Secret Manager valori independente, aleatorii și de minimum 32 de octeți pentru `TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY` și `TIKTOK_ADS_WORKER_SECRET`;
-2. deploy `apphosting.yaml`, Firestore Rules, indexes și TTL configuration;
+1. **Închis:** Secret Manager conține valori independente, aleatorii, de 48 de octeți pentru `TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY` și `TIKTOK_ADS_WORKER_SECRET`; backend-ul App Hosting are acces IAM;
+2. **Parțial închis:** Firestore Rules, indexes și TTL configuration sunt deployate; rollout-ul App Hosting cu configurația actuală trebuie să treacă;
 3. repetați în CI `npx tsc --noEmit --incremental false` și `next build --webpack`, ambele verzi local;
-4. instalați Java în CI și rulați testele Firestore Rules/emulator pentru cross-org denial;
+4. păstrați workflow-ul TikTok Ads obligatoriu în branch protection; el configurează Java 21 și rulează `npm run test:tiktok-ads:rules`;
 5. configurați shared scheduler cu `scripts/configure-tiktok-ads-scheduler.ps1`;
 6. conectați manual un admin Imodeus la MCP și validați matricea/schema runtime pentru tenantul Nordia;
 7. validați fără spend: advertiser/status/billing, identity permissions, asset discovery, campaign/ad group/ad drafts disabled, review, reports/leads și audit/reconciliation;
