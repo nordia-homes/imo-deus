@@ -420,11 +420,16 @@ export default function TikTokAdsCampaignPage() {
   async function reconcileAccount() {
     if (!advertiserId) return;
     await runAction('readiness', async () => {
-      await callOperation('ADVERTISER_STATUS', {});
-      await callOperation('BILLING_READINESS', {});
-      await callOperation('TIKTOK_PERMISSION_RECONCILE', {});
+      for (const capability of readinessCapabilities) await callOperation(capability, {});
       await loadWorkspace(advertiserId, propertyId);
-      toast({ title: 'Eligibilitate verificată', description: 'Statusul, billing-ul și permisiunile TikTok au fost reconciliate.' });
+      const unavailable = ['ADVERTISER_STATUS', 'BILLING_READINESS', 'TIKTOK_PERMISSION_RECONCILE']
+        .filter((capability) => !readinessCapabilities.includes(capability as TikTokCapability));
+      toast({
+        title: 'Verificările TikTok disponibile au fost rulate',
+        description: unavailable.length
+          ? `Catalogul contului nu expune încă: ${unavailable.join(', ')}.`
+          : 'Statusul, billing-ul și permisiunile TikTok au fost reconciliate.',
+      });
     });
   }
 
@@ -442,6 +447,9 @@ export default function TikTokAdsCampaignPage() {
   }
 
   const capabilityMap = useMemo(() => new Map(workspace?.capabilities.map((capability) => [capability.capability, capability]) || []), [workspace?.capabilities]);
+  const readinessCapabilities = (['ADVERTISER_STATUS', 'BILLING_READINESS', 'TIKTOK_PERMISSION_RECONCILE'] as TikTokCapability[])
+    .filter((capability) => capabilityMap.get(capability)?.executionAllowed);
+  const identityAuthorizationAvailable = Boolean(capabilityMap.get('TIKTOK_ACCOUNT_AUTHORIZE')?.executionAllowed);
   const managementAction = MANAGEMENT_ACTIONS.find((action) => action.id === managementActionId) || MANAGEMENT_ACTIONS[0];
   const managementSchema = workspace?.schemas[managementAction.schemaCapability];
   const managementResolution = capabilityMap.get(managementAction.capability);
@@ -712,8 +720,9 @@ export default function TikTokAdsCampaignPage() {
           <div className="space-y-2"><p className="text-sm font-bold">Video Imodeus</p><Select value={assetId} onValueChange={(value) => { setAssetId(value); setDraftKey(requestKey('tiktok_draft')); setLastDraft(null); }}><SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Selectează video ready" /></SelectTrigger><SelectContent>{workspace.assets.map((asset) => <SelectItem key={asset.id} value={asset.id}>{asset.name}</SelectItem>)}</SelectContent></Select></div>
           <div className="space-y-2"><p className="text-sm font-bold">Identitate TikTok</p><Select value={identityId} onValueChange={(value) => { setIdentityId(value); setDraftKey(requestKey('tiktok_draft')); setLastDraft(null); }}><SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Reconciliază permisiunile" /></SelectTrigger><SelectContent>{workspace.permissions.map((permission) => <SelectItem key={permission.tiktokAccountId} value={permission.tiktokAccountId}>{permission.username || permission.tiktokAccountId}</SelectItem>)}</SelectContent></Select></div>
           <div className="md:col-span-2 xl:col-span-4 flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 p-4">
-            <Button variant="outline" disabled={!advertiserId || activeAction === 'readiness'} onClick={() => void reconcileAccount()} className="rounded-full">{activeAction === 'readiness' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserRoundCheck className="mr-2 h-4 w-4" />}Verifică status, billing și permisiuni</Button>
-            <Button variant="outline" disabled={!canAdmin || !advertiserId || activeAction === 'identity-authorize' || !capabilityMap.get('TIKTOK_ACCOUNT_AUTHORIZE')?.executionAllowed} onClick={() => void authorizeTikTokIdentity()} className="rounded-full">{activeAction === 'identity-authorize' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Autorizează cont TikTok</Button>
+            <Button variant="outline" disabled={!advertiserId || activeAction === 'readiness' || readinessCapabilities.length === 0} onClick={() => void reconcileAccount()} className="rounded-full">{activeAction === 'readiness' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserRoundCheck className="mr-2 h-4 w-4" />}Verifică status, billing și permisiuni</Button>
+            <Button variant="outline" disabled={!canAdmin || !advertiserId || activeAction === 'identity-authorize' || !identityAuthorizationAvailable} onClick={() => void authorizeTikTokIdentity()} className="rounded-full">{activeAction === 'identity-authorize' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Autorizează cont TikTok</Button>
+            {!identityAuthorizationAvailable ? <span className="text-xs text-amber-700">Catalogul TikTok nu expune autorizarea identității pentru acest cont; gestioneaz-o în Business Center, apoi sincronizează.</span> : null}
             {selectedIdentity ? <><Badge variant="outline">Deliver ads: {selectedIdentity.deliverAds ? 'Da' : 'Nu'}</Badge><Badge variant="outline">Publish new: {selectedIdentity.publishAndManageNewVideos ? 'Da' : 'Nu'}</Badge><Badge variant="outline">Only show as ads: {selectedIdentity.onlyShowAsAds ? 'Da' : 'Nu'}</Badge><span className="text-xs text-slate-500">Verificat {formatDate(selectedIdentity.lastVerifiedAt)}</span></> : <span className="text-sm text-slate-500">Rulează verificarea pentru a încărca identitățile autorizate.</span>}
           </div>
         </CardContent>

@@ -10,7 +10,8 @@
     "src/app/auth/tiktok-ads/callback/route.ts",
     "src/app/api/marketing/tiktok-ads/**/*.ts",
     "src/app/api/marketing/tiktok/studio-projects/[projectId]/render/route.ts",
-    "src/components/properties/detail/actions/TikTokAdsCard.tsx"
+    "src/components/properties/detail/actions/TikTokAdsCard.tsx",
+    "src/types/electron.d.ts"
   ],
   "exclude": [
     "node_modules",

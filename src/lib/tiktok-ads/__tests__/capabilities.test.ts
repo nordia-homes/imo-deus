@@ -16,8 +16,8 @@ const officialShapeTools: TikTokMcpTool[] = [
   tool('advertiser_info', 'Get advertiser ad account details status', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
   tool('bc_ad_account_create', 'Create an ad account', { bc_id: { type: 'string' } }, ['bc_id']),
   tool('bc_balance_get', 'Get balance and billing status', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
-  tool('tt_account_delivery_authorize', 'Obtain TikTok account ad delivery authorization link', { advertiser_id: { type: 'string' } }),
-  tool('tt_account_permission_get', 'Get TikTok account delivery permission and authorization status', { advertiser_id: { type: 'string' } }),
+  tool('/bc/asset/account/authorization/', 'Obtain TikTok account ad delivery authorization link', { advertiser_id: { type: 'string' } }),
+  tool('/identity/get/', 'Get TikTok account delivery permission and authorization status', { advertiser_id: { type: 'string' } }),
   tool('identity_video_get', 'Get posts and video assets under identity', { advertiser_id: { type: 'string' } }),
   tool('video_upload', 'Upload a video', { advertiser_id: { type: 'string' }, video_url: { type: 'string' } }, ['advertiser_id', 'video_url']),
   tool('campaign_get', 'Get campaigns', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
@@ -94,6 +94,23 @@ describe('TikTok capability registry', () => {
     const matrix = resolveTikTokCapabilities(wrongTools);
     expect(matrix.find((item) => item.capability === 'CREATIVE_UPLOAD')).toMatchObject({ available: false, toolName: null });
     expect(matrix.find((item) => item.capability === 'CAMPAIGN_CREATE')).toMatchObject({ available: false, toolName: null });
+  });
+
+  it('never maps unrelated full-catalog tools from description keywords', () => {
+    const wrongTools = [
+      tool('asset_bind_quota_get', 'Get quota for an ad asset'),
+      tool('smart_plus_ad_get', 'Get TikTok account ad authorization details'),
+    ];
+    const matrix = new Map(resolveTikTokCapabilities(wrongTools).map((item) => [item.capability, item]));
+    expect(matrix.get('AD_READ')).toMatchObject({ available: false, toolName: null });
+    expect(matrix.get('TIKTOK_ACCOUNT_AUTHORIZE')).toMatchObject({ available: false, toolName: null });
+  });
+
+  it('prefers OAuth advertiser discovery over other advertiser endpoints', () => {
+    const oauth = tool('/oauth2/advertiser/get/', 'Get authorized advertisers');
+    const generic = tool('/advertiser/get/', 'Get advertisers');
+    const matrix = new Map(resolveTikTokCapabilities([generic, oauth]).map((item) => [item.capability, item]));
+    expect(matrix.get('ADVERTISER_DISCOVERY')).toMatchObject({ available: true, toolName: '/oauth2/advertiser/get/' });
   });
 
   it('prefers exact manual endpoint names over specialized create tools', () => {

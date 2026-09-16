@@ -3,8 +3,24 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 const OAUTH_BINDING_COOKIE = process.env.NODE_ENV === 'production' ? '__Host-imodeus_tiktok_ads_oauth' : 'imodeus_tiktok_ads_oauth';
 
+function publicBaseUrl(request: NextRequest) {
+  const configured = (
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_BASE_URL ||
+    (process.env.NODE_ENV === 'production' ? 'https://imodeus.ro' : '')
+  ).trim();
+  if (configured) {
+    const url = new URL(configured);
+    if (url.username || url.password || (process.env.NODE_ENV === 'production' && url.protocol !== 'https:')) {
+      throw new Error('URL-ul public Imodeus configurat pentru callback este invalid.');
+    }
+    return `${url.origin}/`;
+  }
+  return request.nextUrl.origin;
+}
+
 function redirect(request: NextRequest, path: string, params: Record<string, string>) {
-  const url = new URL(path, request.url);
+  const url = new URL(path, publicBaseUrl(request));
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   const response = NextResponse.redirect(url);
   response.cookies.set(OAUTH_BINDING_COOKIE, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', expires: new Date(0) });

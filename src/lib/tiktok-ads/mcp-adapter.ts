@@ -834,8 +834,48 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
 
   async synchronizeAdvertisers(organizationId: string, actorUid: string) {
     const tools = await this.tools(organizationId);
+    const existing = await listAdvertisers(organizationId);
     const tool = findToolForCapability('ADVERTISER_DISCOVERY', tools);
-    if (!tool) throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', 'TikTok MCP nu a expus advertiser discovery.');
+    if (!tool) {
+      // Some official Full MCP grants omit /oauth2/advertiser/get even though
+      // advertiser-scoped endpoints are available. In that case revalidate the
+      // tenant-owned advertiser records individually instead of failing sync or
+      // guessing an unrelated catalog tool from its description.
+      const statusTool = findToolForCapability('ADVERTISER_STATUS', tools);
+      if (!statusTool || !existing.length) {
+        throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', 'TikTok nu a expus lista advertiserilor pentru această autorizare. Reconectează și selectează cel puțin un cont Ads Manager în ecranul TikTok.');
+      }
+      const { accessToken, connection } = await getValidTikTokMcpAccessToken(organizationId);
+      const client = new TikTokMcpClient(connection.resourceUrl, accessToken);
+      for (const advertiser of existing) {
+        const payload = bindAdvertiser({}, statusTool.inputSchema, advertiser.advertiserId);
+        const release = await acquireTenantProviderSlot(organizationId);
+        let result: unknown;
+        try {
+          result = await client.callToolPaginated(statusTool, payload, `advertiser-status-${organizationId}`);
+        } finally {
+          await release();
+        }
+        assertRemoteAdvertiserBoundary(result, advertiser.advertiserId);
+        const record = extractObjects(result).find((candidate) => {
+          const id = providerId(candidate, ['advertiser_id', 'account_id', 'advertiserId']);
+          return id === advertiser.advertiserId;
+        }) || extractObjects(result).find((candidate) => text(candidate, ['advertiser_name', 'account_name', 'name', 'status', 'operation_status']));
+        await upsertAdvertiser({
+          ...advertiser,
+          name: record ? text(record, ['advertiser_name', 'account_name', 'name']) || advertiser.name : advertiser.name,
+          currency: record ? text(record, ['currency']) || advertiser.currency : advertiser.currency,
+          timezone: record ? text(record, ['timezone', 'timezone_name']) || advertiser.timezone : advertiser.timezone,
+          status: record ? text(record, ['status', 'operation_status']) || advertiser.status : advertiser.status,
+          reviewStatus: record ? text(record, ['review_status', 'audit_status']) || advertiser.reviewStatus : advertiser.reviewStatus,
+          authorized: true,
+          lastReconciledAt: new Date().toISOString(),
+          version: advertiser.version + 1,
+        });
+      }
+      await appendAudit({ organizationId, actorUid, operation: 'ADVERTISER_DISCOVERY', outcome: 'succeeded', correlationId: `advertisers-${organizationId}`, safeMetadata: { count: existing.length, mode: 'scoped_revalidation' } });
+      return listAdvertisers(organizationId);
+    }
     const { accessToken, connection } = await getValidTikTokMcpAccessToken(organizationId);
     const release = await acquireTenantProviderSlot(organizationId);
     let result: unknown;
@@ -844,7 +884,6 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     } finally {
       await release();
     }
-    const existing = await listAdvertisers(organizationId);
     const selectedId = existing.find((item) => item.selected)?.advertiserId || null;
     const seen = new Set<string>();
     const discovered = extractObjects(result).flatMap((record) => {

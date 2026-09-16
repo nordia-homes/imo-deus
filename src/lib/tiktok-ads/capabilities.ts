@@ -20,7 +20,7 @@ const EXACT_TOOL_NAMES: Partial<Record<TikTokCapability, RegExp[]>> = {
   ADVERTISER_STATUS: [/(?:^|\/)advertiser\/info(?:\/get)?$/],
   BILLING_READINESS: [/(?:^|\/)(?:advertiser|bc)\/balance\/get$/],
   TIKTOK_ACCOUNT_AUTHORIZE: [/(?:^|\/)bc\/asset\/account\/authorization$/],
-  TIKTOK_PERMISSION_READ: [/(?:^|\/)identity\/get$/],
+  TIKTOK_PERMISSION_READ: [/(?:^|\/)identity\/get$/, /(?:^|\/)identity\/video\/get$/],
   ASSET_DISCOVERY: [/(?:^|\/)identity\/video\/get$/],
   CREATIVE_UPLOAD: [/(?:^|\/)file\/video\/ad\/upload$/, /(?:^|\/)video\/upload$/],
   CAMPAIGN_READ: [/(?:^|\/)campaign\/get$/],
@@ -192,10 +192,11 @@ function normalizedToolName(tool: TikTokMcpTool) {
   return tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '/').replace(/^\/+|\/+$/g, '');
 }
 
-function exactToolNameMatch(capability: TikTokCapability, tool: TikTokMcpTool) {
+function exactToolNameScore(capability: TikTokCapability, tool: TikTokMcpTool) {
   const name = normalizedToolName(tool);
-  if (['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE'].includes(capability) && SPECIALIZED_CREATE_NAMESPACE.test(name)) return false;
-  return EXACT_TOOL_NAMES[capability]?.some((pattern) => pattern.test(name)) || false;
+  if (['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE'].includes(capability) && SPECIALIZED_CREATE_NAMESPACE.test(name)) return null;
+  const index = EXACT_TOOL_NAMES[capability]?.findIndex((pattern) => pattern.test(name)) ?? -1;
+  return index < 0 ? null : 200 - index;
 }
 
 function schemaFieldNames(schema: JsonSchema, fields = new Set<string>(), required = new Set<string>()) {
@@ -246,9 +247,13 @@ function schemaContractScore(capability: TikTokCapability, tool: TikTokMcpTool) 
 function scoreTool(tool: TikTokMcpTool, matcher: Matcher, capability: TikTokCapability) {
   const text = searchable(tool);
   if (matcher.exclude?.some((token) => text.includes(token))) return -1;
-  const exactMatch = exactToolNameMatch(capability, tool);
-  let score = exactMatch ? 100 : 0;
-  if (!exactMatch) {
+  const exactScore = exactToolNameScore(capability, tool);
+  // The full-disclosure server exposes stable API endpoint names. When such a
+  // contract is known, never let prose keywords bind an unrelated one of the
+  // roughly 400 tools (for example asset_bind_quota_get as AD_READ).
+  if (EXACT_TOOL_NAMES[capability]?.length && exactScore == null) return -1;
+  let score = exactScore ?? 0;
+  if (exactScore == null) {
     for (const group of matcher.include) {
       const matches = group.filter((token) => text.includes(token));
       if (!matches.length) return -1;
