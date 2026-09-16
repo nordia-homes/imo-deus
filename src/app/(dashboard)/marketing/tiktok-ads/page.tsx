@@ -53,6 +53,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -77,6 +78,7 @@ type Workspace = {
     configured: boolean;
     connected: boolean;
     requiresReconnect?: boolean;
+    mcpDisclosure?: 'full' | 'progressive';
     capabilityDiscoveryStatus?: string;
     lastErrorCode?: string | null;
     readsEnabled: boolean;
@@ -106,7 +108,7 @@ type Workspace = {
 const CAMPAIGN_HIDDEN = ['advertiser_id', 'advertiserId', 'operation_status', 'status'];
 const ADGROUP_HIDDEN = [...CAMPAIGN_HIDDEN, 'campaign_id', 'campaignId'];
 const VIDEO_HIDDEN = ['advertiser_id', 'advertiserId', 'video_url', 'source_url', 'file_url', 'url'];
-const AD_HIDDEN = [...CAMPAIGN_HIDDEN, 'adgroup_id', 'ad_group_id', 'adgroupId', 'video_id', 'videoId', 'identity_id', 'identityId', 'tiktok_account_id'];
+const AD_HIDDEN = [...CAMPAIGN_HIDDEN, 'adgroup_id', 'ad_group_id', 'adgroupId', 'video_id', 'videoId', 'identity_id', 'identityId', 'tiktok_account_id', 'dark_post_status', 'only_show_as_ads', 'ads_only_mode', 'is_ads_only', 'only_show_in_ads'];
 const REQUIRED_DRAFT_CAPABILITIES: TikTokCapability[] = [
   'SPARK_NEW_VIDEO_AD_ONLY',
   'TIKTOK_PERMISSION_READ',
@@ -115,6 +117,55 @@ const REQUIRED_DRAFT_CAPABILITIES: TikTokCapability[] = [
   'ADGROUP_CREATE',
   'AD_CREATE',
 ];
+
+type ManagementAction = {
+  id: string;
+  label: string;
+  description: string;
+  capability: TikTokCapability;
+  schemaCapability: TikTokCapability;
+  group: 'Cont' | 'Campanii' | 'Ad groups' | 'Reclame' | 'Date';
+  sparkExistingPost?: boolean;
+};
+
+const MANAGEMENT_ACTIONS: ManagementAction[] = [
+  { id: 'advertiser-status', label: 'Status advertiser', description: 'Status, monedă, timezone și eligibilitate.', capability: 'ADVERTISER_STATUS', schemaCapability: 'ADVERTISER_STATUS', group: 'Cont' },
+  { id: 'billing', label: 'Billing și sold', description: 'Verifică pregătirea pentru cheltuieli.', capability: 'BILLING_READINESS', schemaCapability: 'BILLING_READINESS', group: 'Cont' },
+  { id: 'account-review', label: 'Review cont', description: 'Starea verificării contului publicitar.', capability: 'ACCOUNT_REVIEW_READ', schemaCapability: 'ACCOUNT_REVIEW_READ', group: 'Cont' },
+  { id: 'identities', label: 'Identități TikTok', description: 'Reconciliază identitățile autorizate.', capability: 'TIKTOK_PERMISSION_RECONCILE', schemaCapability: 'TIKTOK_PERMISSION_READ', group: 'Cont' },
+  { id: 'assets', label: 'Postări și asset-uri', description: 'Descoperă video-uri și postări Spark autorizate.', capability: 'ASSET_DISCOVERY', schemaCapability: 'ASSET_DISCOVERY', group: 'Cont' },
+  { id: 'campaign-list', label: 'Listează campanii', description: 'Filtrare și paginare prin schema oficială.', capability: 'CAMPAIGN_READ', schemaCapability: 'CAMPAIGN_READ', group: 'Campanii' },
+  { id: 'campaign-create', label: 'Creează campanie dezactivată', description: 'Crearea este forțată în DISABLE.', capability: 'CAMPAIGN_CREATE', schemaCapability: 'CAMPAIGN_CREATE', group: 'Campanii' },
+  { id: 'campaign-update', label: 'Editează campanie', description: 'Editează câmpurile non-financiare.', capability: 'CAMPAIGN_UPDATE', schemaCapability: 'CAMPAIGN_UPDATE', group: 'Campanii' },
+  { id: 'campaign-activate', label: 'Activează campanie', description: 'Poate porni spend și cere confirmare.', capability: 'CAMPAIGN_ACTIVATE', schemaCapability: 'CAMPAIGN_ACTIVATE', group: 'Campanii' },
+  { id: 'campaign-pause', label: 'Oprește campanie', description: 'Setează statusul DISABLE.', capability: 'CAMPAIGN_PAUSE', schemaCapability: 'CAMPAIGN_PAUSE', group: 'Campanii' },
+  { id: 'campaign-resume', label: 'Repornește campanie', description: 'Poate porni spend și cere confirmare.', capability: 'CAMPAIGN_RESUME', schemaCapability: 'CAMPAIGN_RESUME', group: 'Campanii' },
+  { id: 'campaign-budget', label: 'Buget campanie', description: 'Schimbare financiară cu baseline și confirmare.', capability: 'BUDGET_UPDATE', schemaCapability: 'CAMPAIGN_UPDATE', group: 'Campanii' },
+  { id: 'campaign-schedule', label: 'Program campanie', description: 'Actualizare program cu timezone verificat.', capability: 'SCHEDULE_UPDATE', schemaCapability: 'CAMPAIGN_UPDATE', group: 'Campanii' },
+  { id: 'adgroup-list', label: 'Listează ad groups', description: 'Filtrare și paginare oficială.', capability: 'ADGROUP_READ', schemaCapability: 'ADGROUP_READ', group: 'Ad groups' },
+  { id: 'adgroup-create', label: 'Creează ad group dezactivat', description: 'Include targeting și este forțat în DISABLE.', capability: 'ADGROUP_CREATE', schemaCapability: 'ADGROUP_CREATE', group: 'Ad groups' },
+  { id: 'adgroup-update', label: 'Editează ad group', description: 'Actualizare non-financiară.', capability: 'ADGROUP_UPDATE', schemaCapability: 'ADGROUP_UPDATE', group: 'Ad groups' },
+  { id: 'adgroup-targeting', label: 'Actualizează targeting', description: 'Targeting audiență, locații și interese.', capability: 'TARGETING_UPDATE', schemaCapability: 'ADGROUP_UPDATE', group: 'Ad groups' },
+  { id: 'targeting-search', label: 'Caută opțiuni targeting', description: 'Interese, locații și audiențe disponibile.', capability: 'TARGETING_READ', schemaCapability: 'TARGETING_READ', group: 'Ad groups' },
+  { id: 'adgroup-budget', label: 'Buget ad group', description: 'Schimbare financiară cu baseline.', capability: 'BUDGET_UPDATE', schemaCapability: 'ADGROUP_UPDATE', group: 'Ad groups' },
+  { id: 'adgroup-bid', label: 'Bid ad group', description: 'Schimbare bid cu confirmare.', capability: 'BID_UPDATE', schemaCapability: 'ADGROUP_UPDATE', group: 'Ad groups' },
+  { id: 'adgroup-schedule', label: 'Program ad group', description: 'Actualizare program cu timezone verificat.', capability: 'SCHEDULE_UPDATE', schemaCapability: 'ADGROUP_UPDATE', group: 'Ad groups' },
+  { id: 'adgroup-pause', label: 'Oprește ad group', description: 'Setează statusul DISABLE.', capability: 'ADGROUP_PAUSE', schemaCapability: 'ADGROUP_PAUSE', group: 'Ad groups' },
+  { id: 'adgroup-resume', label: 'Repornește ad group', description: 'Poate porni spend și cere confirmare.', capability: 'ADGROUP_RESUME', schemaCapability: 'ADGROUP_RESUME', group: 'Ad groups' },
+  { id: 'ad-list', label: 'Listează reclame', description: 'Citește reclame și creative.', capability: 'AD_READ', schemaCapability: 'AD_READ', group: 'Reclame' },
+  { id: 'ad-create', label: 'Creează reclamă dezactivată', description: 'Creează o reclamă folosind schema oficială.', capability: 'AD_CREATE', schemaCapability: 'AD_CREATE', group: 'Reclame' },
+  { id: 'spark-existing', label: 'Spark din postare existentă', description: 'Folosește o postare autorizată, fără republicare.', capability: 'SPARK_EXISTING_POST', schemaCapability: 'AD_CREATE', group: 'Reclame', sparkExistingPost: true },
+  { id: 'ad-update', label: 'Editează reclamă', description: 'Actualizare non-financiară.', capability: 'AD_UPDATE', schemaCapability: 'AD_UPDATE', group: 'Reclame' },
+  { id: 'ad-review', label: 'Status review reclamă', description: 'Citește aprobarea și motivele de respingere.', capability: 'AD_REVIEW_READ', schemaCapability: 'AD_REVIEW_READ', group: 'Reclame' },
+  { id: 'ad-pause', label: 'Oprește reclamă', description: 'Setează statusul DISABLE.', capability: 'AD_PAUSE', schemaCapability: 'AD_PAUSE', group: 'Reclame' },
+  { id: 'ad-resume', label: 'Repornește reclamă', description: 'Poate porni spend și cere confirmare.', capability: 'AD_RESUME', schemaCapability: 'AD_RESUME', group: 'Reclame' },
+  { id: 'report', label: 'Raportare integrată', description: 'Spend, reach, click-uri, conversii și lead-uri.', capability: 'REPORT_READ', schemaCapability: 'REPORT_READ', group: 'Date' },
+  { id: 'lead-forms', label: 'Formulare lead', description: 'Listează formularele Instant Form disponibile.', capability: 'LEAD_FORM_READ', schemaCapability: 'LEAD_FORM_READ', group: 'Date' },
+  { id: 'leads', label: 'Importă lead-uri', description: 'Import tenant-isolated, minimizat și auditat.', capability: 'LEAD_READ', schemaCapability: 'LEAD_READ', group: 'Date' },
+];
+
+const MANAGEMENT_BASE_HIDDEN = ['advertiser_id', 'advertiserId'];
+const SERVER_STATUS_CAPABILITIES: TikTokCapability[] = ['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE', 'CAMPAIGN_ACTIVATE', 'CAMPAIGN_PAUSE', 'CAMPAIGN_RESUME', 'ADGROUP_PAUSE', 'ADGROUP_RESUME', 'AD_PAUSE', 'AD_RESUME'];
 
 function requestKey(prefix: string) {
   return `${prefix}_${globalThis.crypto.randomUUID()}`;
@@ -214,6 +265,12 @@ export default function TikTokAdsCampaignPage() {
   const [draftKey, setDraftKey] = useState(() => requestKey('tiktok_draft'));
   const [lastDraft, setLastDraft] = useState<WorkspaceOperation | null>(null);
   const [activationProgress, setActivationProgress] = useState<string | null>(null);
+  const [managementActionId, setManagementActionId] = useState(MANAGEMENT_ACTIONS[0].id);
+  const [managementInput, setManagementInput] = useState<Record<string, unknown>>({});
+  const [managementResult, setManagementResult] = useState<TikTokOperationResult | null>(null);
+  const [managementPreviousAmount, setManagementPreviousAmount] = useState('');
+  const [managementPreviousEndAt, setManagementPreviousEndAt] = useState('');
+  const [managementSignificantApproved, setManagementSignificantApproved] = useState(false);
 
   const loadWorkspace = useCallback(async (preferredAdvertiserId?: string, preferredPropertyId?: string) => {
     if (!user) return;
@@ -266,7 +323,8 @@ export default function TikTokAdsCampaignPage() {
     setVideoInput((current) => seedInput(workspace.schemas.CREATIVE_UPLOAD, current, ['video_name', 'file_name', 'name'], assetName));
     setAdInput((current) => {
       let next = seedInput(workspace.schemas.AD_CREATE, current, ['ad_name', 'adName', 'name'], `Reclamă · ${propertyName}`);
-      next = setSchemaFieldByCandidates(next, workspace.schemas.AD_CREATE, ['only_show_as_ads', 'ads_only_mode', 'is_ads_only'], true);
+      next = setSchemaFieldByCandidates(next, workspace.schemas.AD_CREATE, ['only_show_as_ads', 'ads_only_mode', 'is_ads_only', 'only_show_in_ads'], true);
+      next = setSchemaFieldByCandidates(next, workspace.schemas.AD_CREATE, ['dark_post_status'], 'ON');
       return next;
     });
   }, [selectedAsset?.id, selectedAsset?.name, selectedProperty?.id, selectedProperty?.title, workspace]);
@@ -375,6 +433,45 @@ export default function TikTokAdsCampaignPage() {
   }
 
   const capabilityMap = useMemo(() => new Map(workspace?.capabilities.map((capability) => [capability.capability, capability]) || []), [workspace?.capabilities]);
+  const managementAction = MANAGEMENT_ACTIONS.find((action) => action.id === managementActionId) || MANAGEMENT_ACTIONS[0];
+  const managementSchema = workspace?.schemas[managementAction.schemaCapability];
+  const managementResolution = capabilityMap.get(managementAction.capability);
+  const managementHidden = useMemo(() => {
+    const hidden = [...MANAGEMENT_BASE_HIDDEN];
+    if (SERVER_STATUS_CAPABILITIES.includes(managementAction.capability)) hidden.push('operation_status', 'status');
+    if (managementAction.sparkExistingPost) hidden.push('identity_id', 'identityId', 'tiktok_account_id');
+    return hidden;
+  }, [managementAction]);
+  const managementMissingFields = missingRequiredFields(
+    managementSchema,
+    managementInput,
+    new Set(managementHidden.map((key) => key.replace(/[^a-z0-9]/gi, '').toLowerCase()))
+  );
+  const managementSpend = managementResolution?.operationClass === 'SPEND_AFFECTING';
+  const managementNeedsAmountBaseline = ['BUDGET_UPDATE', 'BID_UPDATE'].includes(managementAction.capability);
+  const managementNeedsScheduleBaseline = managementAction.capability === 'SCHEDULE_UPDATE';
+  const managementSafetyReady = (!managementNeedsAmountBaseline || Boolean(managementPreviousAmount))
+    && (!managementNeedsScheduleBaseline || Boolean(managementPreviousEndAt && selectedAdvertiser?.timezone));
+  const canExecuteManagement = Boolean(
+    canAdmin
+    && advertiserId
+    && !workspace?.status.requiresReconnect
+    && managementResolution?.executionAllowed
+    && managementSchema
+    && managementMissingFields.length === 0
+    && managementSafetyReady
+    && (!managementAction.sparkExistingPost || identityId)
+    && (!managementSpend || workspace?.status.spendMutationsEnabled && selectedAdvertiser?.billingReadiness === 'ready')
+  );
+
+  useEffect(() => {
+    // Switching operations intentionally starts from the defaults of that provider schema.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setManagementInput(schemaDefaults(managementSchema));
+    setManagementResult(null);
+    // schemaHash is the stable contract identity; object identity changes on workspace refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [managementActionId, managementResolution?.schemaHash]);
   const unavailableCapabilities = REQUIRED_DRAFT_CAPABILITIES.filter((capability) => !capabilityMap.get(capability)?.executionAllowed);
   const missingFields = [
     ...missingRequiredFields(workspace?.schemas.CAMPAIGN_CREATE, campaignInput, new Set(CAMPAIGN_HIDDEN.map((key) => key.replace(/[^a-z0-9]/gi, '').toLowerCase())), 'Campanie · '),
@@ -385,6 +482,7 @@ export default function TikTokAdsCampaignPage() {
   const canCreateDraft = Boolean(
     canAdmin
     && workspace?.status.writesEnabled
+    && !workspace?.status.requiresReconnect
     && advertiserId
     && propertyId
     && assetId
@@ -432,8 +530,12 @@ export default function TikTokAdsCampaignPage() {
   const adId = draftResources.find((resource) => resource.resourceType === 'ad')?.resourceId || '';
   function resourcePayload(capability: TikTokCapability, candidates: string[], resourceId: string) {
     const schema = workspace?.schemas[capability];
-    const payload = setSchemaFieldByCandidates({}, schema, candidates, resourceId);
-    return Object.keys(payload).length ? payload : { [candidates[0]]: resourceId };
+    const plural = candidates.filter((candidate) => /ids$/i.test(candidate));
+    const singular = candidates.filter((candidate) => !/ids$/i.test(candidate));
+    const pluralPayload = setSchemaFieldByCandidates({}, schema, plural, [resourceId]);
+    if (Object.keys(pluralPayload).length) return pluralPayload;
+    const payload = setSchemaFieldByCandidates({}, schema, singular, resourceId);
+    return Object.keys(payload).length ? payload : { [singular[0] || candidates[0]]: resourceId };
   }
   const activationReady = Boolean(
     canAdmin
@@ -459,9 +561,9 @@ export default function TikTokAdsCampaignPage() {
     if (!activationReady || !lastDraft) return;
     await runAction('activate', async () => {
       const steps: Array<{ label: string; capability: TikTokCapability; payload: Record<string, unknown> }> = [
-        { label: 'campania', capability: 'CAMPAIGN_ACTIVATE', payload: resourcePayload('CAMPAIGN_ACTIVATE', ['campaign_id', 'campaignId'], campaignId) },
-        { label: 'ad group-ul', capability: 'ADGROUP_RESUME', payload: resourcePayload('ADGROUP_RESUME', ['adgroup_id', 'ad_group_id', 'adgroupId'], adgroupId) },
-        { label: 'reclama', capability: 'AD_RESUME', payload: resourcePayload('AD_RESUME', ['ad_id', 'adId'], adId) },
+        { label: 'campania', capability: 'CAMPAIGN_ACTIVATE', payload: resourcePayload('CAMPAIGN_ACTIVATE', ['campaign_ids', 'campaign_id', 'campaignId'], campaignId) },
+        { label: 'ad group-ul', capability: 'ADGROUP_RESUME', payload: resourcePayload('ADGROUP_RESUME', ['adgroup_ids', 'ad_group_ids', 'adgroup_id', 'ad_group_id', 'adgroupId'], adgroupId) },
+        { label: 'reclama', capability: 'AD_RESUME', payload: resourcePayload('AD_RESUME', ['ad_ids', 'ad_id', 'adId'], adId) },
       ];
       for (const step of steps) {
         setActivationProgress(`Se activează ${step.label}…`);
@@ -478,15 +580,57 @@ export default function TikTokAdsCampaignPage() {
     if (!lastDraft) return;
     await runAction('pause', async () => {
       const steps: Array<{ capability: TikTokCapability; payload: Record<string, unknown> }> = [
-        { capability: 'AD_PAUSE', payload: resourcePayload('AD_PAUSE', ['ad_id', 'adId'], adId) },
-        { capability: 'ADGROUP_PAUSE', payload: resourcePayload('ADGROUP_PAUSE', ['adgroup_id', 'ad_group_id', 'adgroupId'], adgroupId) },
-        { capability: 'CAMPAIGN_PAUSE', payload: resourcePayload('CAMPAIGN_PAUSE', ['campaign_id', 'campaignId'], campaignId) },
+        { capability: 'AD_PAUSE', payload: resourcePayload('AD_PAUSE', ['ad_ids', 'ad_id', 'adId'], adId) },
+        { capability: 'ADGROUP_PAUSE', payload: resourcePayload('ADGROUP_PAUSE', ['adgroup_ids', 'ad_group_ids', 'adgroup_id', 'ad_group_id', 'adgroupId'], adgroupId) },
+        { capability: 'CAMPAIGN_PAUSE', payload: resourcePayload('CAMPAIGN_PAUSE', ['campaign_ids', 'campaign_id', 'campaignId'], campaignId) },
       ];
       for (const step of steps) {
         await callOperation(step.capability, step.payload, `pause:${lastDraft.operationId}:${step.capability}`);
       }
       await loadWorkspace(advertiserId, propertyId);
       toast({ title: 'Livrare oprită', description: 'Reclama, ad group-ul și campania au fost trecute în DISABLE.' });
+    });
+  }
+
+  async function executeManagementAction() {
+    if (!canExecuteManagement) return;
+    await runAction('management', async () => {
+      let payload: Record<string, unknown> = { ...managementInput };
+      if (managementNeedsAmountBaseline) {
+        payload._imodeus = {
+          previousAmount: managementPreviousAmount,
+          significantChangeApproved: managementSignificantApproved,
+        };
+      } else if (managementNeedsScheduleBaseline) {
+        payload._imodeus = {
+          previousEndAt: managementPreviousEndAt,
+          advertiserTimezone: selectedAdvertiser?.timezone,
+          significantChangeApproved: managementSignificantApproved,
+        };
+      }
+      if (managementAction.sparkExistingPost) {
+        payload = {
+          tiktokAccountId: identityId,
+          permissionToolInput: {},
+          ad: payload,
+        };
+      }
+      const idempotencyKey = requestKey(`tiktok_${managementAction.id}`);
+      const result = managementSpend
+        ? await authorizeAndExecute(managementAction.capability, payload, idempotencyKey)
+        : await callOperation(
+          managementAction.capability,
+          payload,
+          managementResolution?.operationClass === 'READ_ONLY' ? undefined : idempotencyKey
+        );
+      if (['ADVERTISER_STATUS', 'BILLING_READINESS', 'TIKTOK_PERMISSION_RECONCILE'].includes(managementAction.capability)) {
+        await loadWorkspace(advertiserId, propertyId);
+      }
+      setManagementResult(result);
+      toast({
+        title: `${managementAction.label} · finalizat`,
+        description: managementSpend ? 'Operația confirmată a fost trimisă către TikTok.' : 'Răspunsul TikTok este disponibil mai jos.',
+      });
     });
   }
 
@@ -527,14 +671,17 @@ export default function TikTokAdsCampaignPage() {
           <Button asChild variant="ghost" className="mb-2 -ml-3 text-white/70 hover:bg-white/10 hover:text-white"><Link href={propertyId ? `/properties/${propertyId}` : '/marketing'}><ArrowLeft className="mr-2 h-4 w-4" />Înapoi</Link></Button>
           <div className="flex items-center gap-3"><TikTokIcon className="h-9 w-9" /><div><h1 className="text-2xl font-black md:text-3xl">TikTok Ads · Only show as ads</h1><p className="mt-1 text-sm text-white/55">Paid traffic fără publicare organică.</p></div></div>
         </div>
-        <Button variant="outline" disabled={!canAdmin || activeAction === 'discovery'} onClick={() => void refreshDiscovery()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
-          {activeAction === 'discovery' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}Sincronizează TikTok
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {workspace.status.requiresReconnect ? <Button disabled={!canAdmin || activeAction === 'connect'} onClick={() => void connect()} className="rounded-full bg-[#FF0050] text-white hover:bg-[#dc0045]">{activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TikTokIcon className="mr-2 h-4 w-4" />}Reconectează Full MCP</Button> : null}
+          <Button variant="outline" disabled={!canAdmin || activeAction === 'discovery' || workspace.status.requiresReconnect} onClick={() => void refreshDiscovery()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+            {activeAction === 'discovery' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}Sincronizează TikTok
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          { icon: ShieldCheck, label: 'MCP', value: 'Conectat', ok: true },
+          { icon: ShieldCheck, label: 'MCP', value: workspace.status.requiresReconnect ? 'Reconectare necesară' : workspace.status.mcpDisclosure === 'full' ? 'Full conectat' : 'Conectat', ok: !workspace.status.requiresReconnect },
           { icon: BadgeCheck, label: 'Advertiser', value: selectedAdvertiser?.status || selectedAdvertiser?.reviewStatus || 'Necunoscut', ok: Boolean(selectedAdvertiser?.authorized) },
           { icon: CircleDollarSign, label: 'Billing', value: selectedAdvertiser?.billingReadiness || 'unknown', ok: selectedAdvertiser?.billingReadiness === 'ready' },
           { icon: Rocket, label: 'Spend switch', value: workspace.status.spendMutationsEnabled ? 'Activ' : 'Oprit sigur', ok: workspace.status.spendMutationsEnabled },
@@ -544,6 +691,7 @@ export default function TikTokAdsCampaignPage() {
       </div>
 
       {!canAdmin ? <Alert><ShieldCheck className="h-4 w-4" /><AlertTitle>Mod consultare</AlertTitle><AlertDescription>Doar administratorii pot crea, activa sau opri reclame TikTok.</AlertDescription></Alert> : null}
+      {workspace.status.requiresReconnect ? <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Reconectare obligatorie la catalogul MCP complet</AlertTitle><AlertDescription>Conexiunea curentă este legată de endpointul progressive, care nu a furnizat schemele de creare. Apasă „Reconectează Full MCP”, aprobă din nou accesul TikTok și apoi rulează sincronizarea.</AlertDescription></Alert> : null}
       {!workspace.status.spendMutationsEnabled ? <Alert className="border-emerald-200 bg-emerald-50"><ShieldCheck className="h-4 w-4 text-emerald-700" /><AlertTitle className="text-emerald-900">Spend blocat operațional</AlertTitle><AlertDescription className="text-emerald-800">Poți crea și valida draftul în DISABLE. Activarea rămâne indisponibilă până la change control.</AlertDescription></Alert> : null}
       {!workspace.advertisers.length ? <Alert className="border-amber-200 bg-amber-50"><AlertTriangle className="h-4 w-4 text-amber-700" /><AlertTitle className="text-amber-950">Niciun advertiser TikTok autorizat</AlertTitle><AlertDescription className="text-amber-900">Apasă „Sincronizează TikTok”. Dacă lista rămâne goală, reconectează TikTok și acordă acces la un cont Ads Manager; fără advertiser, verificarea de billing și identitățile nu pot porni.</AlertDescription></Alert> : null}
 
@@ -597,6 +745,59 @@ export default function TikTokAdsCampaignPage() {
           </div>
           {activationProgress ? <p className="flex items-center gap-2 text-sm font-semibold text-slate-700"><Loader2 className="h-4 w-4 animate-spin" />{activationProgress}</p> : null}
           {lastDraft ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" /><p className="font-bold text-emerald-900">Draft disponibil · {lastDraft.operationId}</p></div><div className="mt-3 flex flex-wrap gap-2">{lastDraft.createdResourceIds.map((resource) => <Badge key={`${resource.resourceType}:${resource.resourceId}`} variant="outline" className="border-emerald-300 bg-white text-emerald-800">{resource.resourceType}: {resource.resourceId}</Badge>)}</div>{!workspace.status.spendMutationsEnabled ? <p className="mt-3 text-sm text-emerald-800">Pentru lansare, setează TIKTOK_SPEND_MUTATIONS_ENABLED=true prin change control și redeploy.</p> : selectedAdvertiser?.billingReadiness !== 'ready' ? <p className="mt-3 text-sm text-amber-800">Billing-ul trebuie reconciliat ca ready înainte de activare.</p> : null}</div> : null}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl">
+        <CardHeader><CardTitle>4. Administrare completă TikTok Ads</CardTitle><CardDescription>Campanii, ad groups, reclame, Spark Ads, targeting, rapoarte și lead-uri prin tool-urile oficiale descoperite. Operațiile cu spend cer confirmare single-use.</CardDescription></CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
+            <div className="space-y-2">
+              <p className="text-sm font-bold">Operație</p>
+              <Select value={managementActionId} onValueChange={setManagementActionId}>
+                <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>{MANAGEMENT_ACTIONS.map((action) => <SelectItem key={action.id} value={action.id}>{action.group} · {action.label}</SelectItem>)}</SelectContent>
+              </Select>
+              <p className="text-sm text-slate-500">{managementAction.description}</p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Badge variant="outline">{managementAction.capability}</Badge>
+                <Badge variant="outline" className={managementResolution?.executionAllowed ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}>{managementResolution?.executionAllowed ? 'Disponibil' : 'Indisponibil'}</Badge>
+                {managementSpend ? <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-800">Poate genera spend</Badge> : null}
+              </div>
+            </div>
+            <div className="rounded-2xl border bg-slate-50/50 p-4">
+              <TikTokSchemaForm schema={managementSchema} value={managementInput} hiddenKeys={managementHidden} onChange={(value) => { setManagementInput(value); setManagementResult(null); }} />
+            </div>
+          </div>
+
+          {managementNeedsAmountBaseline ? <div className="grid gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 md:grid-cols-2">
+            <div className="space-y-2"><p className="text-sm font-bold text-amber-950">Valoarea anterioară exactă</p><Input value={managementPreviousAmount} onChange={(event) => setManagementPreviousAmount(event.target.value)} placeholder="ex. 100.00" className="bg-white" /><p className="text-xs text-amber-800">Folosită pentru protecția împotriva creșterilor accidentale.</p></div>
+            <label className="flex items-center gap-3 self-center text-sm font-semibold text-amber-950"><input type="checkbox" checked={managementSignificantApproved} onChange={(event) => setManagementSignificantApproved(event.target.checked)} className="h-4 w-4" />Confirm explicit o eventuală creștere semnificativă</label>
+          </div> : null}
+          {managementNeedsScheduleBaseline ? <div className="grid gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 md:grid-cols-2">
+            <div className="space-y-2"><p className="text-sm font-bold text-amber-950">Sfârșitul programului anterior</p><Input type="datetime-local" value={managementPreviousEndAt} onChange={(event) => setManagementPreviousEndAt(event.target.value)} className="bg-white" /><p className="text-xs text-amber-800">Timezone advertiser: {selectedAdvertiser?.timezone || 'nesincronizat'}</p></div>
+            <label className="flex items-center gap-3 self-center text-sm font-semibold text-amber-950"><input type="checkbox" checked={managementSignificantApproved} onChange={(event) => setManagementSignificantApproved(event.target.checked)} className="h-4 w-4" />Confirm explicit extinderea programului</label>
+          </div> : null}
+
+          {!managementResolution?.executionAllowed ? <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Operație indisponibilă în catalogul curent</AlertTitle><AlertDescription>{managementResolution?.reason || 'Reconectează Full MCP și sincronizează capabilitățile.'}</AlertDescription></Alert> : null}
+          {managementAction.sparkExistingPost && !identityId ? <Alert><AlertTriangle className="h-4 w-4" /><AlertTitle>Selectează identitatea TikTok</AlertTitle><AlertDescription>Postarea existentă trebuie să aparțină identității autorizate și să fi fost descoperită anterior.</AlertDescription></Alert> : null}
+          {managementMissingFields.length ? <p className="text-sm text-slate-600">Câmpuri obligatorii: {managementMissingFields.slice(0, 10).join(', ')}.</p> : null}
+
+          <div className="flex flex-wrap gap-3">
+            {managementSpend ? <AlertDialog>
+              <AlertDialogTrigger asChild><Button disabled={!canExecuteManagement || activeAction === 'management'} className="rounded-full bg-[#FF0050] text-white hover:bg-[#dc0045]">{activeAction === 'management' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}Confirmă și execută</Button></AlertDialogTrigger>
+              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Confirmi operația care poate genera spend?</AlertDialogTitle><AlertDialogDescription>{managementAction.label} va fi executată pentru {selectedAdvertiser?.name || advertiserId}, folosind exact valorile completate. Autorizația expiră și poate fi folosită o singură dată.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Anulează</AlertDialogCancel><AlertDialogAction onClick={() => void executeManagementAction()} className="bg-[#FF0050] hover:bg-[#dc0045]">Confirm și execută</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+            </AlertDialog> : <Button disabled={!canExecuteManagement || activeAction === 'management'} onClick={() => void executeManagementAction()} className="rounded-full bg-slate-950 text-white hover:bg-slate-800">{activeAction === 'management' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Execută operația</Button>}
+          </div>
+
+          {managementResult ? <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4"><div className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" /><p className="font-bold text-emerald-950">Operație reușită · {managementResult.operationId}</p></div><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{JSON.stringify(managementResult.remoteResult ?? managementResult, null, 2).slice(0, 50000)}</pre></div> : null}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl">
+        <CardHeader><CardTitle>Matrice capabilități runtime</CardTitle><CardDescription>Sursa de adevăr este catalogul Full MCP al conexiunii curente; operațiile ambigue sau cu schema schimbată rămân blocate.</CardDescription></CardHeader>
+        <CardContent className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {workspace.capabilities.map((capability) => <div key={capability.capability} className="flex items-start justify-between gap-3 rounded-xl border p-3"><div className="min-w-0"><p className="truncate text-sm font-bold">{capability.capability}</p><p className="mt-1 line-clamp-2 text-xs text-slate-500">{capability.toolName || capability.reason}</p></div><Badge variant="outline" className={capability.executionAllowed ? 'shrink-0 border-emerald-200 text-emerald-700' : 'shrink-0 border-slate-200 text-slate-500'}>{capability.executionAllowed ? 'activ' : capability.schemaStatus}</Badge></div>)}
         </CardContent>
       </Card>
 

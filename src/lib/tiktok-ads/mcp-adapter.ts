@@ -172,7 +172,7 @@ function payloadValuesForKeys(value: unknown, candidates: string[], output: unkn
   return output;
 }
 
-function writeAtSchemaPath(target: unknown, path: SchemaPath, value: string, label: string): unknown {
+function writeAtSchemaPath(target: unknown, path: SchemaPath, value: unknown, label: string): unknown {
   if (!path.length) return value;
   const [segment, ...rest] = path;
   if (segment === '*') {
@@ -187,13 +187,13 @@ function bindTrustedId(
   payload: Record<string, unknown>,
   schema: JsonSchema,
   candidates: string[],
-  value: string,
+  value: unknown,
   label: string,
   required = true,
   mismatchCode: 'RESOURCE_NOT_OWNED' | 'SPEND_NOT_AUTHORIZED' = 'RESOURCE_NOT_OWNED'
 ) {
   const supplied = payloadValuesForKeys(payload, candidates);
-  if (supplied.some((candidate) => candidate != null && String(candidate) !== value)) {
+  if (supplied.some((candidate) => candidate != null && JSON.stringify(candidate) !== JSON.stringify(value))) {
     throw new TikTokAdsError(mismatchCode, `${label} din payload nu corespunde valorii impuse de server.`);
   }
   const uniquePaths = Array.from(new Map(schemaPropertyPaths(schema, candidates).map((path) => [JSON.stringify(path), path])).values());
@@ -232,6 +232,25 @@ export function forceDisabledCreatePayload(capability: TikTokCapability, payload
     true,
     'SPEND_NOT_AUTHORIZED'
   );
+}
+
+export function forceAdsOnlyCreatePayload(payload: Record<string, unknown>, schema: JsonSchema) {
+  const darkPostFields = ['dark_post_status'];
+  const booleanFields = ['only_show_as_ads', 'ads_only_mode', 'is_ads_only', 'only_show_in_ads'];
+  let next = { ...payload };
+  let enforced = false;
+  if (schemaPropertyPaths(schema, darkPostFields).length) {
+    next = bindTrustedId(next, schema, darkPostFields, 'ON', 'dark_post_status', true, 'SPEND_NOT_AUTHORIZED');
+    enforced = true;
+  }
+  if (schemaPropertyPaths(schema, booleanFields).length) {
+    next = bindTrustedId(next, schema, booleanFields, true, 'Only show as ads', true, 'SPEND_NOT_AUTHORIZED');
+    enforced = true;
+  }
+  if (!enforced) {
+    throw new TikTokAdsError('SCHEMA_INCOMPATIBLE', 'Schema TikTok pentru creare reclamă nu permite impunerea server-side a modului Only show as ads.');
+  }
+  return next;
 }
 
 function assertRemoteAdvertiserBoundary(result: unknown, advertiserId?: string | null) {
@@ -422,20 +441,30 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
       const publishNew = booleanField(record, ['publish_and_manage_new_videos', 'can_publish_new_video'], ['Publish and manage new videos']);
       const adsOnly = booleanField(record, ['only_show_as_ads', 'ads_only_mode', 'is_ads_only'], ['Only show as ads']);
       const revoked = booleanField(record, ['revoked', 'is_revoked']);
+      const identityType = text(record, ['identity_type']);
+      const identityAuthorizedBcId = text(record, ['identity_authorized_bc_id']);
+      const advertiserIdentity = Boolean(
+        identityType === 'TT_USER'
+        || identityType === 'AUTH_CODE'
+        || identityType === 'BC_AUTH_TT' && identityAuthorizedBcId
+      );
       const completeContract = deliverAds.found && existingPosts.found && publishNew.found && adsOnly.found;
       await upsertTikTokAccountPermission({
         organizationId: request.organizationId,
         advertiserId: request.advertiserId,
         tiktokAccountId: accountId,
         username: text(record, ['username', 'display_name', 'identity_name']),
-        deliverAds: deliverAds.value,
+        identityType,
+        identityAuthorizedBcId,
+        permissionEvidence: completeContract ? 'explicit_scopes' : advertiserIdentity ? 'advertiser_identity' : null,
+        deliverAds: deliverAds.found ? deliverAds.value : advertiserIdentity,
         existingPosts: existingPosts.value,
         publishAndManageNewVideos: publishNew.value,
         onlyShowAsAds: adsOnly.value,
         grantedAt: text(record, ['granted_at', 'authorized_at']),
         revokedAt: revoked.value ? new Date().toISOString() : null,
         lastVerifiedAt: new Date().toISOString(),
-        verificationStatus: revoked.value ? 'revoked' : completeContract ? 'verified' : 'unknown',
+        verificationStatus: revoked.value ? 'revoked' : completeContract || advertiserIdentity ? 'verified' : 'unknown',
       });
       await registerResource({
         organizationId: request.organizationId,
@@ -562,6 +591,13 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     if (adgroupId) adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['adgroup_id', 'ad_group_id', 'adgroupId'], adgroupId, 'adgroup_id');
     adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['video_id', 'videoId'], videoId, 'video_id');
     adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['identity_id', 'identityId', 'tiktok_account_id'], tiktokAccountId, 'TikTok account identity');
+    if (permission.identityType) {
+      adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['identity_type'], permission.identityType, 'identity_type', false);
+    }
+    if (permission.identityType === 'BC_AUTH_TT' && permission.identityAuthorizedBcId) {
+      adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['identity_authorized_bc_id'], permission.identityAuthorizedBcId, 'identity_authorized_bc_id', true);
+    }
+    adPayload = forceAdsOnlyCreatePayload(adPayload, adTool.inputSchema);
     const adStep = await this.invokeSingle({ request, capability: 'AD_CREATE', payload: adPayload, tools, operationClassOverride: 'SPEND_AFFECTING', operationId });
     if (adStep.created) created.push(adStep.created);
     await updateOperation(request.organizationId, operationId, { currentStep: 'ad_created', createdResourceIds: created });
@@ -583,7 +619,13 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     if (!collectIds(ad, [], 'request').some((item) => item.type === 'tiktok_post')) throw new TikTokAdsError('INVALID_REQUEST', 'Spark Existing Post necesită un tiktok_item_id descoperit și autorizat.');
     const adTool = findToolForCapability('AD_CREATE', tools);
     if (!adTool) throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', 'Tool-ul de creare ad lipsește.');
-    const adPayload = bindTrustedId(ad as Record<string, unknown>, adTool.inputSchema, ['identity_id', 'identityId', 'tiktok_account_id'], tiktokAccountId, 'TikTok account identity');
+    let adPayload = bindTrustedId(ad as Record<string, unknown>, adTool.inputSchema, ['identity_id', 'identityId', 'tiktok_account_id'], tiktokAccountId, 'TikTok account identity');
+    if (permission.identityType) {
+      adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['identity_type'], permission.identityType, 'identity_type', false);
+    }
+    if (permission.identityType === 'BC_AUTH_TT' && permission.identityAuthorizedBcId) {
+      adPayload = bindTrustedId(adPayload, adTool.inputSchema, ['identity_authorized_bc_id'], permission.identityAuthorizedBcId, 'identity_authorized_bc_id', true);
+    }
     const invoked = await this.invokeSingle({ request, capability: 'AD_CREATE', payload: adPayload, tools, operationClassOverride: 'SPEND_AFFECTING', operationId });
     return { result: invoked.result, created: invoked.created ? [invoked.created] : [] };
   }

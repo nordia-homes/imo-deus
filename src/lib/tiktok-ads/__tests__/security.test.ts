@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { validateJsonSchema } from '../mcp-client';
 import { OPERATION_CLASS } from '../capabilities';
 import { decryptTikTokSecret, encryptTikTokSecret } from '../crypto';
-import { forceDisabledCreatePayload } from '../mcp-adapter';
+import { forceAdsOnlyCreatePayload, forceDisabledCreatePayload } from '../mcp-adapter';
 import { assertActorPolicy, assertAdsOnlyPayload, assertAdvertiserWriteEligibility, assertCapabilityPayloadBoundaries, assertFreshTikTokAccountPermissions, assertKillSwitches, assertSignificantChangeSafeguard, issueSpendAuthorization, validateMoneyPayload } from '../policy';
 import { assertTikTokVideoMetadata, parseFfmpegVideoMetadata, validateRemoteVideo } from '../media-security';
 import { parseOperationBody } from '../request-validation';
@@ -93,6 +93,14 @@ describe('TikTok Ads safety policy', () => {
     expect(() => assertFreshTikTokAccountPermissions(permission, 'new_video_ads_only')).not.toThrow();
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, existingPosts: false }, 'existing_post')).toThrow(/Existing posts/);
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, onlyShowAsAds: false }, 'new_video_ads_only')).toThrow(/Only show as ads/);
+    expect(() => assertFreshTikTokAccountPermissions({
+      ...permission,
+      publishAndManageNewVideos: false,
+      onlyShowAsAds: false,
+      identityType: 'BC_AUTH_TT',
+      identityAuthorizedBcId: 'bc-1',
+      permissionEvidence: 'advertiser_identity',
+    }, 'new_video_ads_only')).not.toThrow();
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, lastVerifiedAt: 'invalid' }, 'existing_post')).toThrow(/timestamp invalid/);
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, lastVerifiedAt: new Date(Date.now() - 16 * 60_000).toISOString() }, 'existing_post')).toThrow(/stale/);
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, lastVerifiedAt: new Date(Date.now() + 6 * 60_000).toISOString() }, 'existing_post')).toThrow(/timestamp invalid/);
@@ -105,6 +113,20 @@ describe('TikTok Ads safety policy', () => {
       expect(() => forceDisabledCreatePayload(capability, { operation_status: 'ENABLE' }, schema)).toThrow(/server/);
     }
     expect(forceDisabledCreatePayload('CREATIVE_UPLOAD', { name: 'video' }, schema)).toEqual({ name: 'video' });
+  });
+
+  it('forces ads-only delivery using the provider dark-post contract', () => {
+    const schema: JsonSchema = {
+      type: 'object',
+      properties: {
+        ad_configuration: {
+          type: 'object',
+          properties: { dark_post_status: { type: 'string' } },
+        },
+      },
+    };
+    expect(forceAdsOnlyCreatePayload({}, schema)).toEqual({ ad_configuration: { dark_post_status: 'ON' } });
+    expect(() => forceAdsOnlyCreatePayload({ ad_configuration: { dark_post_status: 'OFF' } }, schema)).toThrow(/server/);
   });
 
   it('uses purpose-bound AES-GCM encryption and supports controlled key rotation', () => {

@@ -6,6 +6,7 @@ import {
   createTikTokMcpAuthorization,
   disconnectTikTokMcp,
   finalizeTikTokMcpAuthorization,
+  getTikTokMcpConnection,
   getTikTokMcpResourceUrl,
 } from './tiktok-ads/oauth';
 import { issueSpendAuthorization } from './tiktok-ads/policy';
@@ -91,11 +92,18 @@ export async function disconnectTikTokAds(agencyId: string, actorUid?: string) {
 }
 
 export async function getTikTokAdsStatus(agencyId: string) {
-  const [snapshot, advertisers] = await Promise.all([
+  const [snapshot, advertisers, connection] = await Promise.all([
     adminDb.collection('agencies').doc(agencyId).collection('integrations').doc(PROVIDER).get(),
     listAdvertisers(agencyId),
+    getTikTokMcpConnection(agencyId).catch(() => null),
   ]);
   const data = snapshot.data() || {};
+  const configuredResourceUrl = getTikTokMcpResourceUrl();
+  const connected = Boolean(data.connected && data.transport === 'mcp');
+  const requiresReconnect = Boolean(
+    data.connected
+    && (data.transport !== 'mcp' || !connection || connection.resourceUrl !== configuredResourceUrl)
+  );
   return {
     configured: Boolean(
       process.env.TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY
@@ -103,8 +111,9 @@ export async function getTikTokAdsStatus(agencyId: string) {
     ),
     provider: PROVIDER,
     transport: 'mcp',
-    connected: Boolean(data.connected && data.transport === 'mcp'),
-    requiresReconnect: Boolean(data.connected && data.transport !== 'mcp'),
+    connected,
+    requiresReconnect,
+    mcpDisclosure: configuredResourceUrl.endsWith('/tt-ads-mcp-flat') ? 'full' : 'progressive',
     advertiserId: typeof data.advertiserId === 'string' ? data.advertiserId : advertisers.find((item) => item.selected)?.advertiserId || null,
     advertiserName: advertisers.find((item) => item.selected)?.name || null,
     advertiserCount: advertisers.length,
@@ -136,7 +145,7 @@ export async function getTikTokAdsWorkspace(agencyId: string, options?: { advert
   let capabilities: Awaited<ReturnType<TikTokMcpAdapter['discoverCapabilities']>> = [];
   let schemas: Record<string, unknown> = {};
   let permissions: Awaited<ReturnType<typeof listTikTokAccountPermissions>> = [];
-  if (status.connected) {
+  if (status.connected && !status.requiresReconnect) {
     permissions = advertiserId ? await listTikTokAccountPermissions(agencyId, advertiserId) : [];
     try {
       capabilities = await adapter.discoverCapabilities(agencyId, false);

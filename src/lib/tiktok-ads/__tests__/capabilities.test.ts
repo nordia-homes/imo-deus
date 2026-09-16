@@ -106,4 +106,18 @@ describe('TikTok capability registry', () => {
     const matrix = resolveTikTokCapabilities([specialized, manual]);
     expect(matrix.find((item) => item.capability === 'CAMPAIGN_CREATE')?.toolName).toBe('/campaign/create/');
   });
+
+  it('recognizes full-disclosure endpoint names even when descriptions are generic', () => {
+    const flatTools = [
+      tool('/identity/get/', 'Get identity list', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
+      tool('/file/video/ad/upload/', 'Upload file', { advertiser_id: { type: 'string' }, upload_type: { type: 'string' }, video_url: { type: 'string' } }, ['advertiser_id', 'upload_type']),
+      tool('/campaign/status/update/', 'Update status', { advertiser_id: { type: 'string' }, campaign_ids: { type: 'array' }, operation_status: { type: 'string' } }),
+      tool('/report/integrated/get/', 'Integrated data', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
+    ];
+    const matrix = new Map(resolveTikTokCapabilities(flatTools).map((item) => [item.capability, item]));
+    expect(matrix.get('TIKTOK_PERMISSION_READ')?.toolName).toBe('/identity/get/');
+    expect(matrix.get('CREATIVE_UPLOAD')?.toolName).toBe('/file/video/ad/upload/');
+    expect(matrix.get('CAMPAIGN_ACTIVATE')?.toolName).toBe('/campaign/status/update/');
+    expect(matrix.get('REPORT_READ')?.toolName).toBe('/report/integrated/get/');
+  });
 });

@@ -68,7 +68,7 @@ import {
   getValidTikTokMcpAccessToken,
 } from '../oauth';
 
-const resourceUrl = 'https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer';
+const resourceUrl = 'https://business-api.tiktok.com/open_mcp/tt-ads-mcp-flat';
 const issuer = `${resourceUrl}/oauth`;
 
 function json(value: unknown, status = 200) {

@@ -174,6 +174,9 @@ export type TikTokAccountPermissionRecord = {
   advertiserId: string;
   tiktokAccountId: string;
   username?: string | null;
+  identityType?: 'AUTH_CODE' | 'TT_USER' | 'BC_AUTH_TT' | 'TTS_TT' | string | null;
+  identityAuthorizedBcId?: string | null;
+  permissionEvidence?: 'explicit_scopes' | 'advertiser_identity' | null;
   deliverAds: boolean;
   existingPosts: boolean;
   publishAndManageNewVideos: boolean;

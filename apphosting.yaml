@@ -120,7 +120,7 @@ env:
       - RUNTIME
 
   - variable: TIKTOK_ADS_MCP_URL
-    value: "https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer"
+    value: "https://business-api.tiktok.com/open_mcp/tt-ads-mcp-flat"
     availability:
       - RUNTIME
 
@@ -135,7 +135,7 @@ env:
       - RUNTIME
 
   - variable: TIKTOK_SPEND_MUTATIONS_ENABLED
-    value: "false"
+    value: "true"
     availability:
       - RUNTIME
 

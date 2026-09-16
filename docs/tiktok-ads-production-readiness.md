@@ -1,6 +1,6 @@
 # TikTok Ads — raport tehnic de implementare și production readiness
 
-Data evaluării: 14–15 septembrie 2026  
+Data evaluării: 14–16 septembrie 2026
 Scope: integrarea plătită TikTok for Business pentru Imodeus; publicarea organică TikTok rămâne în afara acestui scope.
 
 ## Verdict executiv
@@ -9,9 +9,9 @@ Integrarea TikTok Ads a fost înlocuită cu un boundary MCP oficial, multi-tenan
 
 `asset video Imodeus deținut de tenant → advertiser autorizat → identitate TikTok verificată → upload advertising → Spark Ad cu Only show as ads`
 
-Acest traseu nu importă integrarea organică, nu apelează Content Posting API și nu conține `video.publish`. Toate creările de campaign/ad group/ad, inclusiv pașii interni ai workflow-urilor Spark, sunt forțate inițial în starea `DISABLE`; activarea, resume, schimbarea de buget/bid și extinderea programului cer o autorizație umană exactă, single-use, și sunt blocate global implicit prin `TIKTOK_SPEND_MUTATIONS_ENABLED=false`.
+Acest traseu nu importă integrarea organică, nu apelează Content Posting API și nu conține `video.publish`. Toate creările de campaign/ad group/ad, inclusiv pașii interni ai workflow-urilor Spark, sunt forțate inițial în starea `DISABLE`; modul ads-only este impus server-side prin `dark_post_status=ON`. Activarea, resume, schimbarea de buget/bid și extinderea programului cer o autorizație umană exactă, single-use. La cererea explicită a business ownerului din 16 septembrie 2026, comutatorul global `TIKTOK_SPEND_MUTATIONS_ENABLED` este activ; acesta nu elimină confirmarea per-operație, verificarea billing sau auditul.
 
-Codul și infrastructura Imodeus sunt pregătite pentru validarea tenantului real, dar verdictul operațional rămâne **NO-GO pentru trafic real** până la discovery MCP cu OAuth real și validarea manuală Nordia fără spend. Secretele, regulile/indexurile/TTL, testele Firestore Rules, rollout-ul App Hosting și scheduler-ul shared sunt închise. Nicio mutație TikTok live și niciun spend nu au fost executate în această implementare.
+Codul și infrastructura Imodeus sunt pregătite pentru validarea tenantului real, dar conexiunea existentă trebuie reautorizată o dată după migrarea la catalogul Full MCP. OAuth leagă tokenul de resource URL, deci o conexiune emisă pentru endpointul progressive nu este reutilizată pentru endpointul full. Nicio mutație TikTok live și niciun spend nu au fost executate în această implementare.
 
 ## Existing implementation
 
@@ -37,7 +37,7 @@ Matricea statică este numai clasificarea de bază. Pentru fiecare organizație,
 | Advertiser status | `MCP_NATIVE` | READ_ONLY | approved/review/rejected/suspended/disabled |
 | Billing readiness | `MCP_NATIVE` | READ_ONLY | numai stare explicită; fără date PCI |
 | TikTok account authorization | `MCP_NATIVE` | NON_FINANCIAL_WRITE | authorization/link boundary |
-| TikTok permission discovery | `MCP_NATIVE` | READ_ONLY | contract explicit, fără inferență optimistă |
+| TikTok permission discovery | `MCP_NATIVE` | READ_ONLY | scope-uri explicite când sunt furnizate; altfel dovadă `BC_AUTH_TT` + `identity_authorized_bc_id`, iar providerul rămâne fail-closed la creare |
 | Permission reconciliation | `MCP_NATIVE` | READ_ONLY | workflow compus și freshness de 15 minute pentru operații sensibile |
 | Asset/post discovery | `MCP_NATIVE` | READ_ONLY | înregistrează ownership local |
 | Spark Ad — existing post | `MCP_NATIVE` | NON_FINANCIAL_WRITE | draft forțat DISABLE; activarea separată cere Deliver ads + Existing posts și autorizare de spend |
@@ -65,8 +65,8 @@ Nu a fost identificată în scope o operație necesară care să ceară `BUSINES
 
 ## Official TikTok findings
 
-- TikTok publică serverul oficial TikTok for Business MCP și recomandă varianta progressive disclosure pentru setul mare de tool-uri: [MCP overview](https://ads.tiktok.com/resources/help/article/about-tiktok-for-business-mcp-server?lang=en-GB), [MCP documentation](https://business-api.tiktok.com/portal/docs/tiktok-ads-mcp-server/v1.3).
-- Metadata live a resource server-ului declară OAuth authorization-code + refresh, PKCE `S256`, dynamic client registration și scope-ul `mcp:tt4b` pentru `https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer`.
+- TikTok publică două servere oficiale TikTok for Business MCP: progressive disclosure (`tt-ads-mcp-layer`) și full disclosure (`tt-ads-mcp-flat`): [MCP overview](https://ads.tiktok.com/resources/help/article/about-tiktok-for-business-mcp-server?lang=en-GB), [MCP documentation](https://business-api.tiktok.com/portal/docs/tiktok-ads-mcp-server/v1.3). Imodeus folosește full disclosure pentru ca backendul să poată valida determinist întregul catalog de creare și administrare, fără a depinde de starea conversațională a unui tool de căutare.
+- Metadata resource server declară OAuth authorization-code + refresh, PKCE `S256`, dynamic client registration și scope-ul `mcp:tt4b` pentru `https://business-api.tiktok.com/open_mcp/tt-ads-mcp-flat`.
 - Catalogul oficial curent expune tool-uri pentru advertisers, Business Center assets, campaigns, ad groups, ads, identities, videos, reports, form libraries/fields, leads și subscriptions: [official tool catalog](https://business-api.tiktok.com/portal/docs/available-tools-in-tiktok-for-business-mcp-server/v1.3), [API endpoint catalog](https://business-api.tiktok.com/gateway/docs/index?doc_id=1735713875563521&identify_key=c0138ffadd90a955c1f0670a56fe348d1d40680b3c89461e09f78ed26785164b&language=ENGLISH).
 - TikTok descrie `Only show as ads` ca paid traffic fără apariție organică și separă permisiunile Existing posts de Publish and manage new videos: [account permission documentation](https://ads.tiktok.com/resources/help/article/how-to-edit-tiktok-account-permissions-as-ad-delivery-assets-in-bc?lang=lv-LV).
 - Specificațiile creative curente pentru Non-Spark sunt MP4/MOV/MPEG/3GP/AVI, maximum 500 MB, maximum 10 minute, minimum 516 kbps și dimensiunile/aspectele documentate: [TikTok Auction In-Feed Ads](https://ads.tiktok.com/resources/help/article/tiktok-auction-in-feed-ads?Tag=Page%2520Titles&redirected=2).
@@ -76,7 +76,7 @@ Nu a fost identificată în scope o operație necesară care să ceară `BUSINES
 
 `TikTokAdsPort` este contractul application/domain. `TikTokMcpAdapter` este singurul adapter de transport pentru capabilities executabile. Fațada `src/lib/tiktok-ads.ts` ascunde tokenurile și transportul față de rute și UI.
 
-Workspace-ul `/marketing/tiktok-ads` oferă fluxul complet de produs: OAuth, advertiser/property/video/identity selection, status/billing/permission reconciliation, formulare generate din schemele MCP runtime pentru campaign/ad group/upload/ad, creare idempotentă în `DISABLE`, ledger și recovery visibility, plus activare explicită și oprire pe toate cele trei niveluri. Activarea emite și consumă autorizații single-use distincte pentru campaign, ad group și ad; butonul final este indisponibil cât timp kill switch-ul de spend este oprit.
+Workspace-ul `/marketing/tiktok-ads` oferă fluxul complet de produs: OAuth, advertiser/property/video/identity selection, status/billing/permission reconciliation, formulare generate din schemele MCP runtime pentru campaign/ad group/upload/ad, creare idempotentă în `DISABLE`, ledger și recovery visibility, plus activare explicită și oprire pe toate cele trei niveluri. Consola „Administrare completă” expune schema-driven campanii, ad groups, reclame, Spark existing post, targeting, buget, bid, program, review, reporting, lead forms și lead import. Activarea emite și consumă autorizații single-use distincte pentru campaign, ad group și ad.
 
 Module:
 
@@ -228,9 +228,9 @@ Build-ul webpack de producție este verde, fără `ignoreBuildErrors`: compilare
 3. **Închis local și în Cloud Build:** typecheck-ul și build-ul de producție sunt verzi; workflow-ul dedicat trebuie păstrat obligatoriu după merge;
 4. păstrați workflow-ul TikTok Ads obligatoriu în branch protection; el configurează Java 21 și rulează `npm run test:tiktok-ads:rules`;
 5. **Închis:** shared scheduler este activ și validat end-to-end cu workerul production;
-6. conectați manual un admin Imodeus la MCP și validați matricea/schema runtime pentru tenantul Nordia;
+6. reconectați manual un admin Imodeus la endpointul Full MCP și validați matricea/schema runtime pentru tenantul Nordia;
 7. validați fără spend: advertiser/status/billing, identity permissions, asset discovery, campaign/ad group/ad drafts disabled, review, reports/leads și audit/reconciliation;
 8. validați manual un video nou cu `Only show as ads`, păstrând campaign/ad group/ad disabled și confirmând că nu apare organic;
-9. activați `TIKTOK_SPEND_MUTATIONS_ENABLED=true` numai prin change control separat, după aprobarea explicită a business ownerului.
+9. **Închis prin cererea explicită a business ownerului:** `TIKTOK_SPEND_MUTATIONS_ENABLED=true`; confirmați că dialogurile single-use, billing readiness și rolul admin rămân obligatorii înainte de prima activare.
 
-Până la pașii manuali 6–8 verdictul este **NO-GO pentru trafic/spend real**, nu fake production success. După OAuth/discovery și validarea Nordia fără spend, arhitectura poate primi GO fără schimbarea boundary-ului sau a modelului multi-tenant; pasul 9 rămâne change control separat.
+Până la pașii manuali 6–8 verdictul este **NO-GO pentru trafic/spend real**, nu fake production success. După OAuth Full MCP, discovery și validarea Nordia fără spend, arhitectura poate primi GO fără schimbarea boundary-ului sau a modelului multi-tenant.

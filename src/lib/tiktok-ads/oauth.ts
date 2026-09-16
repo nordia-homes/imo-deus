@@ -9,7 +9,7 @@ const PRIVATE_COLLECTION = 'agencyPrivateIntegrations';
 const STATE_COLLECTION = 'tiktokAdsOauthStates';
 const CLIENT_COLLECTION = 'tiktokMcpOAuthClients';
 const PROVIDER = 'tiktok_ads';
-const DEFAULT_MCP_URL = 'https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer';
+const DEFAULT_MCP_URL = 'https://business-api.tiktok.com/open_mcp/tt-ads-mcp-flat';
 const DEFAULT_SCOPE = 'mcp:tt4b';
 const HTTP_TIMEOUT_MS = 20_000;
 

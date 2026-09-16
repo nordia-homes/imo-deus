@@ -113,7 +113,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.16em] text-white/45">Status</p>
               <p className="mt-1 truncate text-sm font-semibold text-white">
-                {isLoading ? 'Se verifică...' : connected ? status?.advertiserName || 'Cont publicitar conectat' : status?.requiresReconnect ? 'Reconectare MCP necesară' : configured ? 'Neconectată' : 'Necesită configurare MCP'}
+                {isLoading ? 'Se verifică...' : status?.requiresReconnect ? 'Reconectare Full MCP necesară' : connected ? status?.advertiserName || 'Cont publicitar conectat' : configured ? 'Neconectată' : 'Necesită configurare MCP'}
               </p>
             </div>
             {isLoading ? <Loader2 className="h-5 w-5 animate-spin text-white/45" /> : <Target className="h-5 w-5 text-cyan-200" />}
@@ -130,7 +130,7 @@ export function TikTokAdsCard({ property }: { property: Property }) {
 
         {connected ? (
           <Button asChild className={`w-full rounded-full ${ACTION_PILL_CLASSNAME}`}>
-            <Link href={`/marketing/tiktok-ads?propertyId=${encodeURIComponent(property.id)}`}>Configurează și publică reclama</Link>
+            <Link href={`/marketing/tiktok-ads?propertyId=${encodeURIComponent(property.id)}`}>{status?.requiresReconnect ? 'Reconectează TikTok Ads' : 'Configurează și publică reclama'}</Link>
           </Button>
         ) : (
           <Button type="button" className="w-full rounded-full bg-cyan-300 text-slate-950 hover:bg-cyan-200" disabled={isLoading || isConnecting || !configured || !canConnect} onClick={() => void connect()}>

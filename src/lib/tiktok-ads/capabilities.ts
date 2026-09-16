@@ -17,16 +17,33 @@ type Matcher = {
 
 const EXACT_TOOL_NAMES: Partial<Record<TikTokCapability, RegExp[]>> = {
   ADVERTISER_DISCOVERY: [/(?:^|\/)oauth2\/advertiser\/get$/, /(?:^|\/)advertiser\/get$/],
+  ADVERTISER_STATUS: [/(?:^|\/)advertiser\/info(?:\/get)?$/],
+  BILLING_READINESS: [/(?:^|\/)(?:advertiser|bc)\/balance\/get$/],
+  TIKTOK_ACCOUNT_AUTHORIZE: [/(?:^|\/)bc\/asset\/account\/authorization$/],
+  TIKTOK_PERMISSION_READ: [/(?:^|\/)identity\/get$/],
+  ASSET_DISCOVERY: [/(?:^|\/)identity\/video\/get$/],
   CREATIVE_UPLOAD: [/(?:^|\/)file\/video\/ad\/upload$/, /(?:^|\/)video\/upload$/],
   CAMPAIGN_READ: [/(?:^|\/)campaign\/get$/],
   CAMPAIGN_CREATE: [/(?:^|\/)campaign\/create$/],
   CAMPAIGN_UPDATE: [/(?:^|\/)campaign\/update$/],
+  CAMPAIGN_ACTIVATE: [/(?:^|\/)campaign\/status\/update$/],
+  CAMPAIGN_PAUSE: [/(?:^|\/)campaign\/status\/update$/],
+  CAMPAIGN_RESUME: [/(?:^|\/)campaign\/status\/update$/],
   ADGROUP_READ: [/(?:^|\/)adgroup\/get$/, /(?:^|\/)ad\/group\/get$/],
   ADGROUP_CREATE: [/(?:^|\/)adgroup\/create$/, /(?:^|\/)ad\/group\/create$/],
   ADGROUP_UPDATE: [/(?:^|\/)adgroup\/update$/, /(?:^|\/)ad\/group\/update$/],
+  ADGROUP_PAUSE: [/(?:^|\/)adgroup\/status\/update$/, /(?:^|\/)ad\/group\/status\/update$/],
+  ADGROUP_RESUME: [/(?:^|\/)adgroup\/status\/update$/, /(?:^|\/)ad\/group\/status\/update$/],
   AD_READ: [/(?:^|\/)ad\/get$/],
   AD_CREATE: [/(?:^|\/)ad\/create$/],
   AD_UPDATE: [/(?:^|\/)ad\/update$/],
+  AD_PAUSE: [/(?:^|\/)ad\/status\/update$/],
+  AD_RESUME: [/(?:^|\/)ad\/status\/update$/],
+  AD_REVIEW_READ: [/(?:^|\/)ad\/review\/(?:info|get)$/],
+  TARGETING_READ: [/(?:^|\/)tool\/targeting\/(?:search|get)$/],
+  REPORT_READ: [/(?:^|\/)report\/integrated\/get$/],
+  LEAD_FORM_READ: [/(?:^|\/)page(?:\/library)?\/get$/],
+  LEAD_READ: [/(?:^|\/)lead\/(?:get|download)$/],
 };
 
 const SPECIALIZED_CREATE_NAMESPACE = /(?:^|\/)(?:smart\/plus|gmv\/max|business\/spark\/ad|tto|split\/test)(?:\/|$)/;
@@ -229,16 +246,18 @@ function schemaContractScore(capability: TikTokCapability, tool: TikTokMcpTool) 
 function scoreTool(tool: TikTokMcpTool, matcher: Matcher, capability: TikTokCapability) {
   const text = searchable(tool);
   if (matcher.exclude?.some((token) => text.includes(token))) return -1;
-  let score = 0;
-  for (const group of matcher.include) {
-    const matches = group.filter((token) => text.includes(token));
-    if (!matches.length) return -1;
-    score += 10 + matches.length;
+  const exactMatch = exactToolNameMatch(capability, tool);
+  let score = exactMatch ? 100 : 0;
+  if (!exactMatch) {
+    for (const group of matcher.include) {
+      const matches = group.filter((token) => text.includes(token));
+      if (!matches.length) return -1;
+      score += 10 + matches.length;
+    }
   }
   const contractScore = schemaContractScore(capability, tool);
   if (contractScore < 0) return -1;
   score += contractScore;
-  if (exactToolNameMatch(capability, tool)) score += 100;
   if (tool.annotations?.readOnlyHint) score += 1;
   return score;
 }
