@@ -317,8 +317,20 @@ export class TikTokMcpClient {
       '/identity/video/get/ Get posts and videos under an advertiser identity',
       '/file/video/ad/upload/ Upload a video for advertising',
       '/campaign/create/ Create a Manual Campaign',
+      '/campaign/get/ Get Manual Campaigns',
+      '/campaign/update/ Update a Manual Campaign',
+      '/campaign/status/update/ Update Manual Campaign status',
       '/adgroup/create/ Create a Manual Campaign ad group',
+      '/adgroup/get/ Get Manual Campaign ad groups',
+      '/adgroup/update/ Update a Manual Campaign ad group',
+      '/adgroup/status/update/ Update Manual Campaign ad group status',
       '/ad/create/ Create a Manual Campaign ad',
+      '/ad/get/ Get Manual Campaign ads',
+      '/ad/update/ Update a Manual Campaign ad',
+      '/ad/status/update/ Update Manual Campaign ad status',
+      '/ad/review/info/ Get ad review information',
+      '/tool/targeting/search/ Search targeting options',
+      '/report/integrated/get/ Get integrated advertising report',
       'advertiser ad account detail business center billing verification',
       'TikTok account identity authorization permission Spark posts',
       'campaign get update operation status budget schedule',
@@ -331,8 +343,13 @@ export class TikTokMcpClient {
     for (const query of queries) {
       const args = this.discoveryArguments(discoveryTool, query);
       if (!args) return initial;
-      const discoveryResult = await this.callTool(discoveryTool, args, 'READ_ONLY', `discovery-${randomUUID()}`);
-      discovered.push(...this.extractTools(discoveryResult));
+      try {
+        const discoveryResult = await this.callTool(discoveryTool, args, 'READ_ONLY', `discovery-${randomUUID()}`);
+        discovered.push(...this.extractTools(discoveryResult));
+      } catch (error) {
+        if (error instanceof TikTokAdsError && ['UNAUTHORIZED', 'CONNECTION_EXPIRED', 'CONNECTION_REVOKED', 'PERMISSION_MISSING'].includes(error.code)) throw error;
+        console.warn(JSON.stringify({ event: 'tiktok_mcp_progressive_discovery_partial_failure', query, errorCode: error instanceof TikTokAdsError ? error.code : 'PROVIDER_UNAVAILABLE' }));
+      }
     }
     const refreshed = await this.listToolsPages();
     const byName = new Map([...initial, ...discovered, ...refreshed].map((tool) => [tool.name, tool]));
@@ -350,12 +367,12 @@ export class TikTokMcpClient {
     });
     if (result.isError) throw new TikTokAdsError('PROVIDER_UNAVAILABLE', 'Tool-ul TikTok MCP a raportat o eroare.', { correlationId });
     const normalized = normalizedToolResult(result);
-    if (tool.outputSchema) {
+    if (tool.outputSchema && isJsonSchemaCompilable(tool.outputSchema)) {
       const outputValidation = validateJsonSchema(normalized, tool.outputSchema);
       if (!outputValidation.ok) {
         throw new TikTokAdsError('SCHEMA_INCOMPATIBLE', 'Output-ul TikTok MCP nu mai respectă schema descoperită.', {
           correlationId,
-          safeDetails: { errors: outputValidation.errors.slice(0, 5) },
+          safeDetails: { providerSchemaDrift: true, errors: outputValidation.errors.slice(0, 5) },
         });
       }
     }

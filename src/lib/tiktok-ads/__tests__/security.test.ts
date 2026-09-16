@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { validateJsonSchema } from '../mcp-client';
 import { OPERATION_CLASS } from '../capabilities';
 import { decryptTikTokSecret, encryptTikTokSecret } from '../crypto';
-import { forceAdsOnlyCreatePayload, forceDisabledCreatePayload } from '../mcp-adapter';
+import { bindAdvertiser, forceAdsOnlyCreatePayload, forceDisabledCreatePayload } from '../mcp-adapter';
 import { assertActorPolicy, assertAdsOnlyPayload, assertAdvertiserWriteEligibility, assertCapabilityPayloadBoundaries, assertFreshTikTokAccountPermissions, assertKillSwitches, assertSignificantChangeSafeguard, issueSpendAuthorization, validateMoneyPayload } from '../policy';
 import { assertTikTokVideoMetadata, parseFfmpegVideoMetadata, validateRemoteVideo } from '../media-security';
 import { parseOperationBody } from '../request-validation';
@@ -19,6 +19,17 @@ afterEach(() => {
 });
 
 describe('TikTok Ads safety policy', () => {
+  it('binds advertiser ownership for singular and plural provider schemas', () => {
+    expect(bindAdvertiser({}, {
+      type: 'object', properties: { advertiser_id: { type: 'string' } }, required: ['advertiser_id'],
+    }, 'adv-1')).toEqual({ advertiser_id: 'adv-1' });
+    expect(bindAdvertiser({}, {
+      type: 'object', properties: { advertiser_ids: { type: 'array', items: { type: 'string' } } }, required: ['advertiser_ids'],
+    }, 'adv-1')).toEqual({ advertiser_ids: ['adv-1'] });
+    expect(() => bindAdvertiser({ advertiser_ids: ['other'] }, {
+      type: 'object', properties: { advertiser_ids: { type: 'array', items: { type: 'string' } } }, required: ['advertiser_ids'],
+    }, 'adv-1')).toThrow(/server/);
+  });
   it('never allows the ads-only workflow to enter organic publishing', () => {
     expect(() => assertAdsOnlyPayload({ adsOnly: true, video: {}, ad: {} })).not.toThrow();
     expect(() => assertAdsOnlyPayload({ adsOnly: true, operation: 'video.publish' })).toThrow(/organic/i);

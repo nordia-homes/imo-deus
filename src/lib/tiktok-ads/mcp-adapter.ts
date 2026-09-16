@@ -218,9 +218,17 @@ function bindTrustedId(
   return writeAtSchemaPath(payload, uniquePaths[0], value, label) as Record<string, unknown>;
 }
 
-function bindAdvertiser(payload: Record<string, unknown>, schema: JsonSchema, advertiserId?: string | null) {
+export function bindAdvertiser(payload: Record<string, unknown>, schema: JsonSchema, advertiserId?: string | null) {
   if (!advertiserId) return { ...payload };
-  return bindTrustedId(payload, schema, ['advertiser_id', 'advertiserId'], advertiserId, 'advertiser_id');
+  const singular = ['advertiser_id', 'advertiserId'];
+  const plural = ['advertiser_ids', 'advertiserIds'];
+  if (schemaPropertyPaths(schema, singular).length) {
+    return bindTrustedId(payload, schema, singular, advertiserId, 'advertiser_id');
+  }
+  if (schemaPropertyPaths(schema, plural).length) {
+    return bindTrustedId(payload, schema, plural, [advertiserId], 'advertiser_ids');
+  }
+  return bindTrustedId(payload, schema, [...singular, ...plural], advertiserId, 'advertiser_id');
 }
 
 function coerceForSchema(value: unknown, schema: JsonSchema): unknown {
@@ -366,7 +374,10 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     const previous = await loadCapabilityResolutions(organizationId);
     if (!force && isFresh(previous)) return previous;
     const tools = await this.tools(organizationId, force);
-    const resolutions = resolveTikTokCapabilities(tools, resolutionMap(previous));
+    // A user-triggered synchronization is the explicit re-validation point for
+    // a provider contract. It must be able to recover from a stale/poisoned
+    // resolution after the currently discovered schema validates successfully.
+    const resolutions = resolveTikTokCapabilities(tools, force ? undefined : resolutionMap(previous));
     await saveCapabilityResolutions(organizationId, resolutions);
     const incompatible = resolutions.filter((item) => item.schemaStatus === 'changed' || item.schemaStatus === 'ambiguous');
     if (incompatible.length) {
@@ -872,7 +883,7 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
       }
       return result;
     } catch (error) {
-      if (error instanceof TikTokAdsError && error.code === 'SCHEMA_INCOMPATIBLE') {
+      if (error instanceof TikTokAdsError && error.code === 'SCHEMA_INCOMPATIBLE' && error.safeDetails?.providerSchemaDrift === true) {
         await markCapabilityIncompatible(request.organizationId, request.capability, 'Contractul MCP runtime nu mai corespunde schemei validate.').catch(() => undefined);
         console.error(JSON.stringify({ event: 'tiktok_mcp_schema_incompatible', organizationId: request.organizationId, capability: request.capability, correlationId: request.correlationId }));
       }

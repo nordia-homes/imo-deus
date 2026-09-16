@@ -192,6 +192,11 @@ function normalizedToolName(tool: TikTokMcpTool) {
   return tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '/').replace(/^\/+|\/+$/g, '');
 }
 
+function schemaRichness(schema: JsonSchema) {
+  const { fields, required } = schemaFieldNames(schema);
+  return fields.size * 2 + required.size;
+}
+
 function exactToolNameScore(capability: TikTokCapability, tool: TikTokMcpTool) {
   const name = normalizedToolName(tool);
   if (['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE'].includes(capability) && SPECIALIZED_CREATE_NAMESPACE.test(name)) return null;
@@ -289,15 +294,25 @@ function resolveDirect(capability: TikTokCapability, tools: TikTokMcpTool[], now
     .map((tool) => ({ tool, score: scoreTool(tool, matcher, capability) }))
     .filter((item) => item.score >= 0)
     .sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name));
-  // Full MCP can expose the same API endpoint through both a slash path and a
-  // generated underscore name. Equal endpoint+schema representations are one
-  // contract, not an ambiguous choice. Different schemas remain fail-closed.
-  const candidates = Array.from(new Map(scoredCandidates.map((item) => [
-    exactToolNameScore(capability, item.tool) == null
+  // Full MCP exposes the same endpoint both as an API path and as a generated
+  // underscore tool. They are aliases even when one representation contains a
+  // richer schema. Select the richest valid contract deterministically; only
+  // distinct endpoint names are allowed to make discovery ambiguous.
+  const aliases = new Map<string, typeof scoredCandidates>();
+  for (const item of scoredCandidates) {
+    const exactScore = exactToolNameScore(capability, item.tool);
+    const key = exactScore == null
       ? `tool:${item.tool.name}`
-      : `endpoint:${item.score}:${hashToolSchema(item.tool)}`,
-    item,
-  ])).values());
+      : `endpoint-priority:${exactScore}`;
+    aliases.set(key, [...(aliases.get(key) || []), item]);
+  }
+  const candidates = Array.from(aliases.values()).map((group) => group.sort((a, b) => {
+    const validDelta = Number(isWellFormedToolSchema(b.tool.inputSchema)) - Number(isWellFormedToolSchema(a.tool.inputSchema));
+    return validDelta
+      || schemaRichness(b.tool.inputSchema) - schemaRichness(a.tool.inputSchema)
+      || Number(!b.tool.name.startsWith('/')) - Number(!a.tool.name.startsWith('/'))
+      || a.tool.name.localeCompare(b.tool.name);
+  })[0]).sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name));
   const best = candidates[0];
   if (!best) {
     return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Niciun tool MCP compatibil nu a fost descoperit.', toolName: null, schemaHash: null, schemaStatus: 'not_discovered', discoveredAt: now };
@@ -305,7 +320,7 @@ function resolveDirect(capability: TikTokCapability, tools: TikTokMcpTool[], now
   if (candidates[1] && candidates[1].score === best.score) {
     return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Discovery-ul MCP este ambiguu; operația este dezactivată fail-closed.', toolName: null, schemaHash: null, schemaStatus: 'ambiguous', discoveredAt: now };
   }
-  if (!isWellFormedToolSchema(best.tool.inputSchema) || best.tool.outputSchema && !isJsonSchemaCompilable(best.tool.outputSchema)) {
+  if (!isWellFormedToolSchema(best.tool.inputSchema)) {
     return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Schema MCP nu este un JSON Schema de input compatibil.', toolName: best.tool.name, schemaHash: hashToolSchema(best.tool), schemaStatus: 'changed', discoveredAt: now };
   }
   if (capability === 'EVENT_SUBSCRIBE') {

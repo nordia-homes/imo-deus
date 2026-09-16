@@ -105,9 +105,9 @@ type Workspace = {
   operations: WorkspaceOperation[];
 };
 
-const CAMPAIGN_HIDDEN = ['advertiser_id', 'advertiserId', 'operation_status', 'status'];
+const CAMPAIGN_HIDDEN = ['advertiser_id', 'advertiserId', 'advertiser_ids', 'advertiserIds', 'operation_status', 'status'];
 const ADGROUP_HIDDEN = [...CAMPAIGN_HIDDEN, 'campaign_id', 'campaignId'];
-const VIDEO_HIDDEN = ['advertiser_id', 'advertiserId', 'video_url', 'source_url', 'file_url', 'url'];
+const VIDEO_HIDDEN = ['advertiser_id', 'advertiserId', 'advertiser_ids', 'advertiserIds', 'video_url', 'source_url', 'file_url', 'url'];
 const AD_HIDDEN = [...CAMPAIGN_HIDDEN, 'adgroup_id', 'ad_group_id', 'adgroupId', 'video_id', 'videoId', 'identity_id', 'identityId', 'tiktok_account_id', 'dark_post_status', 'only_show_as_ads', 'ads_only_mode', 'is_ads_only', 'only_show_in_ads'];
 const REQUIRED_DRAFT_CAPABILITIES: TikTokCapability[] = [
   'SPARK_NEW_VIDEO_AD_ONLY',
@@ -164,7 +164,7 @@ const MANAGEMENT_ACTIONS: ManagementAction[] = [
   { id: 'leads', label: 'Importă lead-uri', description: 'Import tenant-isolated, minimizat și auditat.', capability: 'LEAD_READ', schemaCapability: 'LEAD_READ', group: 'Date' },
 ];
 
-const MANAGEMENT_BASE_HIDDEN = ['advertiser_id', 'advertiserId'];
+const MANAGEMENT_BASE_HIDDEN = ['advertiser_id', 'advertiserId', 'advertiser_ids', 'advertiserIds'];
 const SERVER_STATUS_CAPABILITIES: TikTokCapability[] = ['CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'AD_CREATE', 'CAMPAIGN_ACTIVATE', 'CAMPAIGN_PAUSE', 'CAMPAIGN_RESUME', 'ADGROUP_PAUSE', 'ADGROUP_RESUME', 'AD_PAUSE', 'AD_RESUME'];
 
 function requestKey(prefix: string) {

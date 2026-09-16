@@ -48,6 +48,13 @@ describe('TikTok MCP transport boundary', () => {
     await expect(new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').callTool(outputTool, {}, 'READ_ONLY', 'corr')).rejects.toMatchObject({ code: 'SCHEMA_INCOMPATIBLE' });
   });
 
+  it('ignores an invalid optional provider output schema while enforcing input', async () => {
+    const outputTool = { ...tool, outputSchema: { type: 'not-a-real-json-schema-type' } };
+    vi.stubGlobal('fetch', vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => responseFor(request, init, { structuredContent: { rows: [] } })));
+    await expect(new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').callTool(outputTool, {}, 'READ_ONLY', 'corr'))
+      .resolves.toEqual({ rows: [] });
+  });
+
   it('normalizes auth failures and retries a rate-limited read only', async () => {
     vi.stubGlobal('fetch', vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => responseFor(request, init, {}, 401)));
     await expect(new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').callTool(tool, {}, 'NON_FINANCIAL_WRITE', 'corr')).rejects.toMatchObject({ code: 'CONNECTION_EXPIRED' });
@@ -124,6 +131,8 @@ describe('TikTok MCP transport boundary', () => {
     }));
     const tools = await new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').discoverTools();
     expect(queries).toContain('/ad/create/ Create a Manual Campaign ad');
+    expect(queries).toContain('/ad/get/ Get Manual Campaign ads');
+    expect(queries).toContain('/campaign/status/update/ Update Manual Campaign status');
     expect(queries).toContain('/bc/asset/account/authorization/ Obtain TikTok account ad delivery authorization URL');
     expect(queries).toContain('/identity/get/ Get identities authorized for an advertiser');
     expect(queries).toContain('/advertiser/balance/get/ Get ad account balance and budget by Business Center');

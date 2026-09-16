@@ -129,6 +129,26 @@ describe('TikTok capability registry', () => {
     expect(matrix.get('TIKTOK_PERMISSION_READ')).toMatchObject({ available: true, schemaStatus: 'compatible' });
   });
 
+  it('selects the richer schema when full-catalog aliases differ', () => {
+    const matrix = new Map(resolveTikTokCapabilities([
+      tool('/advertiser/info/', 'Get advertiser information', { advertiser_id: { type: 'string' } }, ['advertiser_id']),
+      tool('advertiser_info_get', 'Get advertiser information', {
+        advertiser_ids: { type: 'array' },
+        fields: { type: 'array' },
+      }, ['advertiser_ids']),
+    ]).map((item) => [item.capability, item]));
+    expect(matrix.get('ADVERTISER_STATUS')).toMatchObject({ available: true, schemaStatus: 'compatible', toolName: 'advertiser_info_get' });
+  });
+
+  it('does not disable valid input for an unusable optional output schema', () => {
+    const candidate = tool('advertiser_info_get', 'Get advertiser information', {
+      advertiser_ids: { type: 'array' },
+    }, ['advertiser_ids']);
+    candidate.outputSchema = { type: 'definitely-not-a-json-schema-type' };
+    const matrix = new Map(resolveTikTokCapabilities([candidate]).map((item) => [item.capability, item]));
+    expect(matrix.get('ADVERTISER_STATUS')).toMatchObject({ available: true, schemaStatus: 'compatible' });
+  });
+
   it('prefers exact manual endpoint names over specialized create tools', () => {
     const manual = tool('/campaign/create/', 'Create a Manual Campaign', {
       advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, objective_type: { type: 'string' },
