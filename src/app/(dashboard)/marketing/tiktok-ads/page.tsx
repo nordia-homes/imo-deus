@@ -353,6 +353,15 @@ export default function TikTokAdsCampaignPage() {
       const response = await authorizedFetch(user, `/api/marketing/tiktok-ads/connect?returnTo=${encodeURIComponent(returnTo)}`);
       const payload = await responsePayload(response);
       if (!payload.authorizationUrl) throw new Error('TikTok nu a returnat URL-ul OAuth.');
+      if (window.imodeusDesktop?.openOAuthWindow) {
+        const result = await window.imodeusDesktop.openOAuthWindow({ authorizationUrl: payload.authorizationUrl });
+        if (result.error) throw new Error(result.error);
+        if (result.completed) {
+          await loadWorkspace(advertiserId, propertyId);
+          toast({ title: 'TikTok Ads conectat', description: 'Catalogul Full MCP este gata pentru sincronizare.' });
+        }
+        return;
+      }
       window.location.assign(payload.authorizationUrl);
     });
   }

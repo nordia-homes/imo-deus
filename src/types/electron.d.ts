@@ -27,6 +27,7 @@ declare global {
   interface Window {
     imodeusDesktop?: {
       isDesktop: () => Promise<boolean>;
+      openOAuthWindow: (input: { authorizationUrl: string }) => Promise<{ completed: boolean; canceled?: boolean; alreadyOpen?: boolean; error?: string | null }>;
       showDesktopNotification: (input: { title: string; body: string; actionUrl?: string }) => Promise<{ shown: boolean }>;
       consumePendingNotificationNavigation: () => Promise<string | null>;
       onDesktopNotificationNavigate: (callback: (path: string) => void) => () => void;

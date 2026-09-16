@@ -11,6 +11,7 @@ const wakeArgument = process.argv.find((value) => value.startsWith('--wake-reaso
 const launchReason = wakeArgument ? wakeArgument.slice('--wake-reason='.length) : backgroundLaunch ? 'background' : 'interactive';
 let appIsQuitting = false;
 let mainWindow = null;
+let oauthWindow = null;
 let localFacebookRunner = null;
 let runnerProcess = null;
 let gmailRunnerProcess = null;
@@ -602,6 +603,97 @@ function createWindow() {
   }
 }
 
+function openOAuthWindow(input) {
+  const authorizationUrl = typeof input?.authorizationUrl === 'string' ? input.authorizationUrl : '';
+  let parsed;
+  try {
+    parsed = new URL(authorizationUrl);
+  } catch {
+    throw new Error('URL-ul OAuth este invalid.');
+  }
+  if (parsed.protocol !== 'https:' || parsed.hostname.toLowerCase() !== 'business-api.tiktok.com' || parsed.username || parsed.password) {
+    throw new Error('Fereastra OAuth acceptă numai endpointul oficial TikTok for Business.');
+  }
+  if (oauthWindow && !oauthWindow.isDestroyed()) {
+    oauthWindow.focus();
+    return Promise.resolve({ completed: false, alreadyOpen: true });
+  }
+
+  const appOrigins = new Set(['https://imodeus.ro']);
+  try {
+    appOrigins.add(new URL(getStartUrl()).origin);
+  } catch {
+    // The start URL is validated elsewhere; production origin remains allowed.
+  }
+  const chromeVersion = process.versions.chrome || '126.0.0.0';
+  const chromeUserAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    oauthWindow = new BrowserWindow({
+      width: 980,
+      height: 900,
+      minWidth: 760,
+      minHeight: 680,
+      parent: mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined,
+      modal: false,
+      show: false,
+      autoHideMenuBar: true,
+      backgroundColor: '#ffffff',
+      title: 'Autorizare TikTok for Business',
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+      },
+    });
+    oauthWindow.webContents.setUserAgent(chromeUserAgent);
+    oauthWindow.webContents.setWindowOpenHandler(({ url }) => {
+      try {
+        const target = new URL(url);
+        return target.protocol === 'https:' && (target.hostname === 'tiktok.com' || target.hostname.endsWith('.tiktok.com'))
+          ? { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true } } }
+          : { action: 'deny' };
+      } catch {
+        return { action: 'deny' };
+      }
+    });
+    oauthWindow.webContents.on('did-create-window', (childWindow) => {
+      childWindow.webContents.setUserAgent(chromeUserAgent);
+    });
+    const inspectNavigation = (_event, targetUrl) => {
+      try {
+        const target = new URL(targetUrl);
+        const outcome = target.searchParams.get('tiktokAds');
+        if (!appOrigins.has(target.origin) || !outcome) return;
+        const result = { completed: outcome === 'connected', error: outcome === 'error' ? target.searchParams.get('message') || 'Autorizarea TikTok a eșuat.' : null };
+        finish(result);
+        setImmediate(() => {
+          if (oauthWindow && !oauthWindow.isDestroyed()) oauthWindow.close();
+        });
+      } catch {
+        // Ignore intermediate OAuth navigations.
+      }
+    };
+    oauthWindow.webContents.on('did-navigate', inspectNavigation);
+    oauthWindow.webContents.on('did-redirect-navigation', inspectNavigation);
+    oauthWindow.once('ready-to-show', () => oauthWindow?.show());
+    oauthWindow.once('closed', () => {
+      oauthWindow = null;
+      finish({ completed: false, canceled: true });
+    });
+    oauthWindow.loadURL(authorizationUrl, { userAgent: chromeUserAgent }).catch((error) => {
+      finish({ completed: false, error: error instanceof Error ? error.message : 'Pagina TikTok nu a putut fi încărcată.' });
+      if (oauthWindow && !oauthWindow.isDestroyed()) oauthWindow.close();
+    });
+  });
+}
+
 function startRunnerProcess(sessionPath) {
   if (runnerProcess) {
     runnerProcess.kill();
@@ -828,6 +920,7 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('desktop:is-desktop', async () => true);
+ipcMain.handle('oauth:open', async (_event, input) => openOAuthWindow(input));
 ipcMain.handle('notifications:consume-pending-navigation', async () => {
   const path = pendingNotificationNavigation;
   pendingNotificationNavigation = null;

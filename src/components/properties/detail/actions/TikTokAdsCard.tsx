@@ -71,6 +71,13 @@ export function TikTokAdsCard({ property }: { property: Property }) {
       const response = await authorizedFetch(`/api/marketing/tiktok-ads/connect?returnTo=${encodeURIComponent(returnTo)}`);
       const payload = await response.json().catch(() => ({}));
       if (!response.ok || !payload.authorizationUrl) throw new Error(payload?.message || 'Conectarea nu a putut fi pornită.');
+      if (window.imodeusDesktop?.openOAuthWindow) {
+        const result = await window.imodeusDesktop.openOAuthWindow({ authorizationUrl: payload.authorizationUrl });
+        if (result.error) throw new Error(result.error);
+        if (result.completed) window.location.reload();
+        else setIsConnecting(false);
+        return;
+      }
       window.location.assign(payload.authorizationUrl);
     } catch (error) {
       toast({

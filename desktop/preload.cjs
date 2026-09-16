@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 const api = {
   isDesktop: () => ipcRenderer.invoke('desktop:is-desktop'),
+  openOAuthWindow: (input) => ipcRenderer.invoke('oauth:open', input),
   showDesktopNotification: (input) => ipcRenderer.invoke('notifications:show', input),
   consumePendingNotificationNavigation: () => ipcRenderer.invoke('notifications:consume-pending-navigation'),
   onDesktopNotificationNavigate: (callback) => {
