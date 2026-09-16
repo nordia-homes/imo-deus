@@ -124,6 +124,19 @@ function providerId(record: Record<string, unknown>, keys: string[]) {
   return null;
 }
 
+function officialTool(tools: TikTokMcpTool[], endpoint: RegExp) {
+  return tools.find((tool) => endpoint.test(tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '/').replace(/^\/+|\/+$/g, ''))) || null;
+}
+
+function isoCurrencyPrecision(currency?: string | null) {
+  if (!currency) return null;
+  try {
+    return new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions().maximumFractionDigits;
+  } catch {
+    return null;
+  }
+}
+
 function collectIds(value: unknown, output: Array<{ key: string; type: TikTokResourceType; id: string }> = [], source: 'provider' | 'request' = 'provider') {
   if (Array.isArray(value)) {
     value.forEach((child) => collectIds(child, output, source));
@@ -427,6 +440,50 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     return { result, created: createdId && createdType ? { resourceType: createdType, resourceId: createdId } : null };
   }
 
+  private async readBillingReadiness(request: TikTokOperationRequest, tools: TikTokMcpTool[]) {
+    if (!request.advertiserId) throw new TikTokAdsError('INVALID_REQUEST', 'advertiserId este obligatoriu pentru billing.');
+    const balanceTool = findToolForCapability('BILLING_READINESS', tools);
+    if (!balanceTool) throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', 'TikTok nu a expus verificarea de billing.');
+
+    const needsBusinessCenter = schemaPropertyPaths(balanceTool.inputSchema, ['bc_id', 'bcId']).length > 0;
+    if (!needsBusinessCenter) {
+      return (await this.invokeSingle({ request, capability: 'BILLING_READINESS', payload: request.payload, tools, operationId: `billing-${request.correlationId}` })).result;
+    }
+
+    const bcTool = officialTool(tools, /(?:^|\/)bc\/get$/);
+    if (!bcTool) throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', 'TikTok MCP nu a expus Business Center discovery necesar pentru billing.');
+    const { accessToken, connection } = await getValidTikTokMcpAccessToken(request.organizationId);
+    const client = new TikTokMcpClient(connection.resourceUrl, accessToken);
+    const call = async (tool: TikTokMcpTool, payload: Record<string, unknown>) => {
+      const release = await acquireTenantProviderSlot(request.organizationId);
+      try {
+        return await client.callToolPaginated(tool, coerceForSchema(payload, tool.inputSchema) as Record<string, unknown>, request.correlationId);
+      } finally {
+        await release();
+      }
+    };
+    const bcResult = await call(bcTool, {});
+    const businessCenterIds = Array.from(new Set(extractObjects(bcResult)
+      .map((record) => providerId(record, ['bc_id', 'business_center_id', 'bcId']))
+      .filter((value): value is string => Boolean(value))));
+    if (!businessCenterIds.length) {
+      throw new TikTokAdsError('PERMISSION_MISSING', 'Conexiunea TikTok nu are acces la niciun Business Center pentru verificarea billing-ului.');
+    }
+
+    for (const bcId of businessCenterIds.slice(0, 100)) {
+      let payload = bindTrustedId(request.payload, balanceTool.inputSchema, ['bc_id', 'bcId'], bcId, 'bc_id');
+      if (schemaPropertyPaths(balanceTool.inputSchema, ['advertiser_ids', 'advertiserIds']).length) {
+        payload = bindTrustedId(payload, balanceTool.inputSchema, ['advertiser_ids', 'advertiserIds'], [request.advertiserId], 'advertiser_ids');
+      } else if (schemaPropertyPaths(balanceTool.inputSchema, ['advertiser_id', 'advertiserId']).length) {
+        payload = bindTrustedId(payload, balanceTool.inputSchema, ['advertiser_id', 'advertiserId'], request.advertiserId, 'advertiser_id');
+      }
+      const result = await call(balanceTool, payload);
+      const matching = extractObjects(result).filter((record) => text(record, ['advertiser_id', 'advertiserId']) === request.advertiserId);
+      if (matching.length) return { advertisers: matching };
+    }
+    throw new TikTokAdsError('PERMISSION_MISSING', 'Advertiser-ul selectat nu este disponibil în Business Center-urile autorizate pentru billing.');
+  }
+
   private async reconcilePermissions(request: TikTokOperationRequest, tools: TikTokMcpTool[], toolInput: Record<string, unknown>, expectedAccountId?: string) {
     if (!request.advertiserId) throw new TikTokAdsError('INVALID_REQUEST', 'advertiserId este obligatoriu pentru reconcilierea permisiunilor.');
     const invoked = await this.invokeSingle({ request, capability: 'TIKTOK_PERMISSION_READ', payload: toolInput, tools, operationId: 'permission-reconcile' });
@@ -458,7 +515,9 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
         identityAuthorizedBcId,
         permissionEvidence: completeContract ? 'explicit_scopes' : advertiserIdentity ? 'advertiser_identity' : null,
         deliverAds: deliverAds.found ? deliverAds.value : advertiserIdentity,
-        existingPosts: existingPosts.value,
+        // An identity returned by /identity/get is authorized for this advertiser.
+        // The actual post inventory is still verified by /identity/video/get before use.
+        existingPosts: existingPosts.found ? existingPosts.value : advertiserIdentity,
         publishAndManageNewVideos: publishNew.value,
         onlyShowAsAds: adsOnly.value,
         grantedAt: text(record, ['granted_at', 'authorized_at']),
@@ -646,22 +705,28 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     if (['ADVERTISER_STATUS', 'BILLING_READINESS', 'ACCOUNT_REVIEW_READ'].includes(request.capability)) {
       const current = await getAdvertiser(request.organizationId, request.advertiserId);
       const records = extractObjects(result);
-      const matching = records.find((record) => providerId(record, ['advertiser_id', 'advertiserId']) === request.advertiserId) || records[0] || {};
+      const advertiserRecord = records.find((record) => providerId(record, ['advertiser_id', 'advertiserId']) === request.advertiserId) || records[0] || {};
+      const billingRecord = records.find((record) => Object.keys(record).some((key) => /^(?:balance_info|balance|available_balance|cash_balance|credit_line|billing_status|payment_status|billing_readiness|is_billing_ready)$/i.test(key))) || {};
+      const matching = { ...advertiserRecord, ...billingRecord };
       const billingStatus = text(matching, ['billing_status', 'payment_status', 'billing_readiness']);
       const explicitBillingReady = typeof matching.is_billing_ready === 'boolean' ? matching.is_billing_ready : null;
+      const billingEvidence = Object.keys(matching).some((key) => /^(?:balance_info|balance|available_balance|cash_balance|credit_line)$/i.test(key));
       let billingReadiness = current.billingReadiness || 'unknown';
       if (request.capability === 'BILLING_READINESS') {
-        if (explicitBillingReady === true || billingStatus && /^(ready|active|valid)$/i.test(billingStatus)) billingReadiness = 'ready';
+        if (explicitBillingReady === true || billingStatus && /^(ready|active|valid)$/i.test(billingStatus) || billingEvidence) billingReadiness = 'ready';
         else if (explicitBillingReady === false || billingStatus && /not.?configured/i.test(billingStatus)) billingReadiness = 'not_configured';
         else if (billingStatus && /action|required|overdue|insufficient/i.test(billingStatus)) billingReadiness = 'action_required';
         else billingReadiness = 'unknown';
       }
+      const currency = text(matching, ['currency']) || current.currency;
       const precisionRaw = matching.currency_precision ?? matching.currencyPrecision;
       await upsertAdvertiser({
         ...current,
         name: text(matching, ['advertiser_name', 'account_name', 'name']) || current.name,
-        currency: text(matching, ['currency']) || current.currency,
-        currencyPrecision: typeof precisionRaw === 'number' && Number.isInteger(precisionRaw) ? precisionRaw : current.currencyPrecision,
+        currency,
+        currencyPrecision: typeof precisionRaw === 'number' && Number.isInteger(precisionRaw)
+          ? precisionRaw
+          : (current.currencyPrecision ?? isoCurrencyPrecision(currency)),
         timezone: text(matching, ['timezone', 'timezone_name']) || current.timezone,
         status: text(matching, ['status', 'operation_status']) || current.status,
         reviewStatus: text(matching, ['review_status', 'audit_status', 'verification_status']) || current.reviewStatus,
@@ -785,6 +850,8 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
         created.push(...workflow.created);
       } else if (request.capability === 'TIKTOK_PERMISSION_RECONCILE' || request.capability === 'TIKTOK_PERMISSION_READ') {
         remoteResult = await this.reconcilePermissions(request, tools, request.payload);
+      } else if (request.capability === 'BILLING_READINESS') {
+        remoteResult = await this.postProcessRead(request, await this.readBillingReadiness(request, tools), operationId);
       } else {
         const createType = CREATE_RESOURCE[request.capability];
         const recovered = createType ? created.find((item) => item.resourceType === createType) : null;
@@ -895,12 +962,15 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     const autoSelectedId = selectedId && seen.has(selectedId) ? selectedId : (discovered.length === 1 ? discovered[0].advertiserId : null);
     for (const { advertiserId, record } of discovered) {
       const precisionRaw = record.currency_precision ?? record.currencyPrecision;
+      const currency = text(record, ['currency']);
       const advertiser: TikTokAdvertiserRecord = {
         organizationId,
         advertiserId,
         name: text(record, ['advertiser_name', 'account_name', 'name']),
-        currency: text(record, ['currency']),
-        currencyPrecision: typeof precisionRaw === 'number' && Number.isInteger(precisionRaw) ? precisionRaw : null,
+        currency,
+        currencyPrecision: typeof precisionRaw === 'number' && Number.isInteger(precisionRaw)
+          ? precisionRaw
+          : isoCurrencyPrecision(currency),
         timezone: text(record, ['timezone', 'timezone_name']),
         status: text(record, ['status', 'operation_status']),
         reviewStatus: text(record, ['review_status', 'audit_status']),

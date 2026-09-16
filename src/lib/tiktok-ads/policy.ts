@@ -99,8 +99,10 @@ export function assertFreshTikTokAccountPermissions(
     throw new TikTokAdsError('PERMISSION_MISSING', 'Contul TikTok nu are permisiunea Existing posts.');
   }
   const providerIdentityCanFailSafely = permission.permissionEvidence === 'advertiser_identity'
-    && permission.identityType === 'BC_AUTH_TT'
-    && Boolean(permission.identityAuthorizedBcId);
+    && (
+      permission.identityType === 'TT_USER'
+      || permission.identityType === 'BC_AUTH_TT' && Boolean(permission.identityAuthorizedBcId)
+    );
   if (workflow === 'new_video_ads_only' && (!permission.publishAndManageNewVideos || !permission.onlyShowAsAds) && !providerIdentityCanFailSafely) {
     throw new TikTokAdsError('PERMISSION_MISSING', 'Contul TikTok nu are Publish and manage new videos + Only show as ads.');
   }

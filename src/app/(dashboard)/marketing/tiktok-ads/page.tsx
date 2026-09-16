@@ -420,14 +420,28 @@ export default function TikTokAdsCampaignPage() {
   async function reconcileAccount() {
     if (!advertiserId) return;
     await runAction('readiness', async () => {
-      for (const capability of readinessCapabilities) await callOperation(capability, {});
+      const results: Array<{ capability: TikTokCapability; ok: boolean; message?: string }> = [];
+      for (const capability of readinessCapabilities) {
+        try {
+          await callOperation(capability, {});
+          results.push({ capability, ok: true });
+        } catch (error) {
+          results.push({ capability, ok: false, message: error instanceof Error ? error.message : 'Eroare TikTok' });
+        }
+      }
       await loadWorkspace(advertiserId, propertyId);
       const unavailable = ['ADVERTISER_STATUS', 'BILLING_READINESS', 'TIKTOK_PERMISSION_RECONCILE']
         .filter((capability) => !readinessCapabilities.includes(capability as TikTokCapability));
+      const failed = results.filter((result) => !result.ok);
+      if (failed.length === results.length && failed.length) {
+        throw new Error(failed.map((result) => `${result.capability}: ${result.message}`).join(' · '));
+      }
       toast({
-        title: 'Verificările TikTok disponibile au fost rulate',
-        description: unavailable.length
-          ? `Catalogul contului nu expune încă: ${unavailable.join(', ')}.`
+        title: failed.length ? 'Verificare TikTok parțială' : 'Verificările TikTok disponibile au fost rulate',
+        description: failed.length
+          ? `Au reușit ${results.filter((result) => result.ok).length} verificări; indisponibile: ${failed.map((result) => result.capability).join(', ')}.`
+          : unavailable.length
+            ? `Catalogul contului nu expune încă: ${unavailable.join(', ')}.`
           : 'Statusul, billing-ul și permisiunile TikTok au fost reconciliate.',
       });
     });

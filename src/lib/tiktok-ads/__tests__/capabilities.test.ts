@@ -113,6 +113,22 @@ describe('TikTok capability registry', () => {
     expect(matrix.get('ADVERTISER_DISCOVERY')).toMatchObject({ available: true, toolName: '/oauth2/advertiser/get/' });
   });
 
+  it('prefers advertiser balance over the Business Center aggregate balance', () => {
+    const advertiserBalance = tool('/advertiser/balance/get/', 'Get advertiser balance', { bc_id: { type: 'string' } }, ['bc_id']);
+    const businessCenterBalance = tool('/bc/balance/get/', 'Get Business Center balance', { bc_id: { type: 'string' } }, ['bc_id']);
+    const matrix = new Map(resolveTikTokCapabilities([businessCenterBalance, advertiserBalance]).map((item) => [item.capability, item]));
+    expect(matrix.get('BILLING_READINESS')).toMatchObject({ available: true, toolName: '/advertiser/balance/get/' });
+  });
+
+  it('deduplicates equivalent full-catalog representations of one endpoint', () => {
+    const schema = { advertiser_id: { type: 'string' } };
+    const matrix = new Map(resolveTikTokCapabilities([
+      tool('/identity/get/', 'Get identities', schema, ['advertiser_id']),
+      tool('identity_get', 'Get identities', schema, ['advertiser_id']),
+    ]).map((item) => [item.capability, item]));
+    expect(matrix.get('TIKTOK_PERMISSION_READ')).toMatchObject({ available: true, schemaStatus: 'compatible' });
+  });
+
   it('prefers exact manual endpoint names over specialized create tools', () => {
     const manual = tool('/campaign/create/', 'Create a Manual Campaign', {
       advertiser_id: { type: 'string' }, campaign_name: { type: 'string' }, objective_type: { type: 'string' },

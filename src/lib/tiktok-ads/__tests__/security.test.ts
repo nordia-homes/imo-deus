@@ -91,6 +91,14 @@ describe('TikTok Ads safety policy', () => {
     };
     expect(() => assertFreshTikTokAccountPermissions(permission, 'existing_post')).not.toThrow();
     expect(() => assertFreshTikTokAccountPermissions(permission, 'new_video_ads_only')).not.toThrow();
+    expect(() => assertFreshTikTokAccountPermissions({
+      ...permission,
+      identityType: 'TT_USER',
+      identityAuthorizedBcId: null,
+      permissionEvidence: 'advertiser_identity',
+      publishAndManageNewVideos: false,
+      onlyShowAsAds: false,
+    }, 'new_video_ads_only')).not.toThrow();
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, existingPosts: false }, 'existing_post')).toThrow(/Existing posts/);
     expect(() => assertFreshTikTokAccountPermissions({ ...permission, onlyShowAsAds: false }, 'new_video_ads_only')).toThrow(/Only show as ads/);
     expect(() => assertFreshTikTokAccountPermissions({

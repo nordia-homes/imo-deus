@@ -18,9 +18,9 @@ type Matcher = {
 const EXACT_TOOL_NAMES: Partial<Record<TikTokCapability, RegExp[]>> = {
   ADVERTISER_DISCOVERY: [/(?:^|\/)oauth2\/advertiser\/get$/, /(?:^|\/)advertiser\/get$/],
   ADVERTISER_STATUS: [/(?:^|\/)advertiser\/info(?:\/get)?$/],
-  BILLING_READINESS: [/(?:^|\/)(?:advertiser|bc)\/balance\/get$/],
+  BILLING_READINESS: [/(?:^|\/)advertiser\/balance\/get$/, /(?:^|\/)bc\/balance\/get$/],
   TIKTOK_ACCOUNT_AUTHORIZE: [/(?:^|\/)bc\/asset\/account\/authorization$/],
-  TIKTOK_PERMISSION_READ: [/(?:^|\/)identity\/get$/, /(?:^|\/)identity\/video\/get$/],
+  TIKTOK_PERMISSION_READ: [/(?:^|\/)identity\/get$/],
   ASSET_DISCOVERY: [/(?:^|\/)identity\/video\/get$/],
   CREATIVE_UPLOAD: [/(?:^|\/)file\/video\/ad\/upload$/, /(?:^|\/)video\/upload$/],
   CAMPAIGN_READ: [/(?:^|\/)campaign\/get$/],
@@ -285,10 +285,19 @@ function resolveDirect(capability: TikTokCapability, tools: TikTokMcpTool[], now
   if (!matcher) {
     return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Capabilitate compusă; se rezolvă numai după validarea dependențelor runtime.', toolName: null, schemaHash: null, schemaStatus: 'not_discovered', discoveredAt: now };
   }
-  const candidates = tools
+  const scoredCandidates = tools
     .map((tool) => ({ tool, score: scoreTool(tool, matcher, capability) }))
     .filter((item) => item.score >= 0)
     .sort((a, b) => b.score - a.score || a.tool.name.localeCompare(b.tool.name));
+  // Full MCP can expose the same API endpoint through both a slash path and a
+  // generated underscore name. Equal endpoint+schema representations are one
+  // contract, not an ambiguous choice. Different schemas remain fail-closed.
+  const candidates = Array.from(new Map(scoredCandidates.map((item) => [
+    exactToolNameScore(capability, item.tool) == null
+      ? `tool:${item.tool.name}`
+      : `endpoint:${item.score}:${hashToolSchema(item.tool)}`,
+    item,
+  ])).values());
   const best = candidates[0];
   if (!best) {
     return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Niciun tool MCP compatibil nu a fost descoperit.', toolName: null, schemaHash: null, schemaStatus: 'not_discovered', discoveredAt: now };
