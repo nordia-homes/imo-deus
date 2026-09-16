@@ -309,6 +309,12 @@ export class TikTokMcpClient {
     const discovered: TikTokMcpTool[] = [];
     const queries = [
       '/oauth2/advertiser/get/ Get authorized advertiser accounts',
+      '/advertiser/info/ Get advertiser account status and details',
+      '/bc/get/ Get authorized Business Centers',
+      '/advertiser/balance/get/ Get ad account balance and budget by Business Center',
+      '/bc/asset/account/authorization/ Obtain TikTok account ad delivery authorization URL',
+      '/identity/get/ Get identities authorized for an advertiser',
+      '/identity/video/get/ Get posts and videos under an advertiser identity',
       '/file/video/ad/upload/ Upload a video for advertising',
       '/campaign/create/ Create a Manual Campaign',
       '/adgroup/create/ Create a Manual Campaign ad group',

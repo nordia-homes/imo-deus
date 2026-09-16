@@ -124,6 +124,9 @@ describe('TikTok MCP transport boundary', () => {
     }));
     const tools = await new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').discoverTools();
     expect(queries).toContain('/ad/create/ Create a Manual Campaign ad');
+    expect(queries).toContain('/bc/asset/account/authorization/ Obtain TikTok account ad delivery authorization URL');
+    expect(queries).toContain('/identity/get/ Get identities authorized for an advertiser');
+    expect(queries).toContain('/advertiser/balance/get/ Get ad account balance and budget by Business Center');
     expect(tools.some((candidate) => candidate.name === '/ad/create/' && candidate.inputSchema.properties?.adgroup_id)).toBe(true);
   });
 
