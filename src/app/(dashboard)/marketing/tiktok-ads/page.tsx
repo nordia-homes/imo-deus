@@ -9,7 +9,9 @@ import {
   BadgeCheck,
   CheckCircle2,
   CircleDollarSign,
+  ExternalLink,
   Film,
+  ListChecks,
   Loader2,
   Megaphone,
   PauseCircle,
@@ -695,6 +697,36 @@ export default function TikTokAdsCampaignPage() {
     );
   }
 
+  if (workspace.status.requiresReconnect) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
+        <Button asChild variant="ghost"><Link href={propertyId ? `/properties/${propertyId}` : '/marketing'}><ArrowLeft className="mr-2 h-4 w-4" />Înapoi</Link></Button>
+        <Card className="overflow-hidden rounded-3xl border-rose-200 shadow-xl">
+          <div className="bg-slate-950 p-8 text-white md:p-10">
+            <div className="flex items-center gap-3"><TikTokIcon className="h-11 w-11" /><Badge className="border-rose-400/30 bg-rose-500/15 text-rose-100">Actualizare conexiune necesară</Badge></div>
+            <h1 className="mt-6 text-3xl font-black md:text-4xl">Finalizează conexiunea TikTok Ads</h1>
+            <p className="mt-3 max-w-3xl text-white/65">Autorizarea salvată folosește vechiul catalog MCP progresiv. Tokenurile TikTok sunt legate de endpoint, deci aplicația nu poate migra conexiunea în fundal fără acordul administratorului.</p>
+          </div>
+          <CardContent className="space-y-6 p-6 md:p-8">
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                ['1', 'Reconectează', 'Aprobă din nou accesul oficial TikTok for Business.'],
+                ['2', 'Selectează advertiserii', 'Bifează conturile Ads Manager administrate de agenție.'],
+                ['3', 'Revino automat', 'Imodeus sincronizează catalogul complet și conturile.'],
+              ].map(([number, title, description]) => <div key={number} className="rounded-2xl border bg-slate-50 p-4"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-white">{number}</div><p className="mt-3 font-bold">{title}</p><p className="mt-1 text-sm text-slate-600">{description}</p></div>)}
+            </div>
+            <Alert className="border-amber-200 bg-amber-50"><AlertTriangle className="h-4 w-4 text-amber-700" /><AlertTitle className="text-amber-950">De ce era pagina blocată</AlertTitle><AlertDescription className="text-amber-900">Catalogul vechi nu expunea în mod stabil schemele pentru creare reclamă, advertiser și identitate. Imodeus blochează intenționat publicarea când contractul providerului este incomplet.</AlertDescription></Alert>
+            <div className="flex flex-wrap gap-3">
+              <Button disabled={!canAdmin || activeAction === 'connect'} onClick={() => void connect()} className="rounded-full bg-[#FF0050] px-6 text-white hover:bg-[#dc0045]">{activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TikTokIcon className="mr-2 h-4 w-4" />}Reconectează la Full MCP</Button>
+              <Button asChild variant="outline" className="rounded-full"><a href="https://business.tiktok.com/" target="_blank" rel="noreferrer">Deschide TikTok Business Center<ExternalLink className="ml-2 h-4 w-4" /></a></Button>
+            </div>
+            {!canAdmin ? <p className="text-sm text-amber-700">Un administrator al agenției trebuie să finalizeze reconectarea.</p> : null}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
       <div className="flex flex-col gap-4 rounded-3xl bg-slate-950 p-6 text-white shadow-xl md:flex-row md:items-center md:justify-between">
@@ -703,8 +735,7 @@ export default function TikTokAdsCampaignPage() {
           <div className="flex items-center gap-3"><TikTokIcon className="h-9 w-9" /><div><h1 className="text-2xl font-black md:text-3xl">TikTok Ads · Only show as ads</h1><p className="mt-1 text-sm text-white/55">Paid traffic fără publicare organică.</p></div></div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {workspace.status.requiresReconnect ? <Button disabled={!canAdmin || activeAction === 'connect'} onClick={() => void connect()} className="rounded-full bg-[#FF0050] text-white hover:bg-[#dc0045]">{activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TikTokIcon className="mr-2 h-4 w-4" />}Reconectează Full MCP</Button> : null}
-          <Button variant="outline" disabled={!canAdmin || activeAction === 'discovery' || workspace.status.requiresReconnect} onClick={() => void refreshDiscovery()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+          <Button variant="outline" disabled={!canAdmin || activeAction === 'discovery'} onClick={() => void refreshDiscovery()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
             {activeAction === 'discovery' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}Sincronizează TikTok
           </Button>
         </div>
@@ -712,7 +743,7 @@ export default function TikTokAdsCampaignPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         {[
-          { icon: ShieldCheck, label: 'MCP', value: workspace.status.requiresReconnect ? 'Reconectare necesară' : workspace.status.mcpDisclosure === 'full' ? 'Full conectat' : 'Conectat', ok: !workspace.status.requiresReconnect },
+          { icon: ShieldCheck, label: 'MCP', value: workspace.status.mcpDisclosure === 'full' ? 'Catalog complet' : 'Conectat', ok: workspace.status.mcpDisclosure === 'full' },
           { icon: BadgeCheck, label: 'Advertiser', value: selectedAdvertiser?.status || selectedAdvertiser?.reviewStatus || 'Necunoscut', ok: Boolean(selectedAdvertiser?.authorized) },
           { icon: CircleDollarSign, label: 'Billing', value: selectedAdvertiser?.billingReadiness || 'unknown', ok: selectedAdvertiser?.billingReadiness === 'ready' },
           { icon: Rocket, label: 'Spend switch', value: workspace.status.spendMutationsEnabled ? 'Activ' : 'Oprit sigur', ok: workspace.status.spendMutationsEnabled },
@@ -722,7 +753,6 @@ export default function TikTokAdsCampaignPage() {
       </div>
 
       {!canAdmin ? <Alert><ShieldCheck className="h-4 w-4" /><AlertTitle>Mod consultare</AlertTitle><AlertDescription>Doar administratorii pot crea, activa sau opri reclame TikTok.</AlertDescription></Alert> : null}
-      {workspace.status.requiresReconnect ? <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Reconectare obligatorie la catalogul MCP complet</AlertTitle><AlertDescription>Conexiunea curentă este legată de endpointul progressive, care nu a furnizat schemele de creare. Apasă „Reconectează Full MCP”, aprobă din nou accesul TikTok și apoi rulează sincronizarea.</AlertDescription></Alert> : null}
       {!workspace.status.spendMutationsEnabled ? <Alert className="border-emerald-200 bg-emerald-50"><ShieldCheck className="h-4 w-4 text-emerald-700" /><AlertTitle className="text-emerald-900">Spend blocat operațional</AlertTitle><AlertDescription className="text-emerald-800">Poți crea și valida draftul în DISABLE. Activarea rămâne indisponibilă până la change control.</AlertDescription></Alert> : null}
       {!workspace.advertisers.length ? <Alert className="border-amber-200 bg-amber-50"><AlertTriangle className="h-4 w-4 text-amber-700" /><AlertTitle className="text-amber-950">Niciun advertiser TikTok autorizat</AlertTitle><AlertDescription className="text-amber-900">Apasă „Sincronizează TikTok”. Dacă lista rămâne goală, reconectează TikTok și acordă acces la un cont Ads Manager; fără advertiser, verificarea de billing și identitățile nu pot porni.</AlertDescription></Alert> : null}
 
@@ -736,8 +766,8 @@ export default function TikTokAdsCampaignPage() {
           <div className="md:col-span-2 xl:col-span-4 flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 p-4">
             <Button variant="outline" disabled={!advertiserId || activeAction === 'readiness' || readinessCapabilities.length === 0} onClick={() => void reconcileAccount()} className="rounded-full">{activeAction === 'readiness' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserRoundCheck className="mr-2 h-4 w-4" />}Verifică status, billing și permisiuni</Button>
             <Button variant="outline" disabled={!canAdmin || !advertiserId || activeAction === 'identity-authorize' || !identityAuthorizationAvailable} onClick={() => void authorizeTikTokIdentity()} className="rounded-full">{activeAction === 'identity-authorize' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Autorizează cont TikTok</Button>
-            {!identityAuthorizationAvailable ? <span className="text-xs text-amber-700">Catalogul TikTok nu expune autorizarea identității pentru acest cont; gestioneaz-o în Business Center, apoi sincronizează.</span> : null}
-            {selectedIdentity ? <><Badge variant="outline">Deliver ads: {selectedIdentity.deliverAds ? 'Da' : 'Nu'}</Badge><Badge variant="outline">Publish new: {selectedIdentity.publishAndManageNewVideos ? 'Da' : 'Nu'}</Badge><Badge variant="outline">Only show as ads: {selectedIdentity.onlyShowAsAds ? 'Da' : 'Nu'}</Badge><span className="text-xs text-slate-500">Verificat {formatDate(selectedIdentity.lastVerifiedAt)}</span></> : <span className="text-sm text-slate-500">Rulează verificarea pentru a încărca identitățile autorizate.</span>}
+            {!identityAuthorizationAvailable ? <Button asChild variant="link" className="h-auto p-0 text-amber-700"><a href="https://business.tiktok.com/" target="_blank" rel="noreferrer">Autorizează identitatea în Business Center<ExternalLink className="ml-1 h-3.5 w-3.5" /></a></Button> : null}
+            {selectedIdentity ? <><Badge variant="outline">Livrare reclame: {selectedIdentity.deliverAds ? 'Autorizată' : 'Neautorizată'}</Badge><Badge variant="outline">Tip: {selectedIdentity.identityType || 'TikTok'}</Badge><Badge variant="outline">Ads-only impus de Imodeus</Badge><span className="text-xs text-slate-500">Verificat {formatDate(selectedIdentity.lastVerifiedAt)}</span></> : <span className="text-sm text-slate-500">Rulează verificarea pentru a încărca identitățile autorizate.</span>}
           </div>
         </CardContent>
       </Card>
@@ -826,12 +856,14 @@ export default function TikTokAdsCampaignPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-3xl">
-        <CardHeader><CardTitle>Matrice capabilități runtime</CardTitle><CardDescription>Sursa de adevăr este catalogul Full MCP al conexiunii curente; operațiile ambigue sau cu schema schimbată rămân blocate.</CardDescription></CardHeader>
-        <CardContent className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {workspace.capabilities.map((capability) => <div key={capability.capability} className="flex items-start justify-between gap-3 rounded-xl border p-3"><div className="min-w-0"><p className="truncate text-sm font-bold">{capability.capability}</p><p className="mt-1 line-clamp-2 text-xs text-slate-500">{capability.toolName || capability.reason}</p></div><Badge variant="outline" className={capability.executionAllowed ? 'shrink-0 border-emerald-200 text-emerald-700' : 'shrink-0 border-slate-200 text-slate-500'}>{capability.executionAllowed ? 'activ' : capability.schemaStatus}</Badge></div>)}
-        </CardContent>
-      </Card>
+      <Accordion type="single" collapsible>
+        <AccordionItem value="diagnostics" className="rounded-3xl border bg-white px-6 shadow-sm">
+          <AccordionTrigger className="hover:no-underline"><span className="flex items-center gap-3 text-left"><ListChecks className="h-5 w-5" /><span><span className="block text-lg font-bold">Diagnostic tehnic MCP</span><span className="block text-sm font-normal text-slate-500">{workspace.capabilities.filter((item) => item.executionAllowed).length} din {workspace.capabilities.length} capabilități validate</span></span></span></AccordionTrigger>
+          <AccordionContent className="grid gap-2 pb-6 md:grid-cols-2 xl:grid-cols-3">
+            {workspace.capabilities.map((capability) => <div key={capability.capability} className="flex items-start justify-between gap-3 rounded-xl border p-3"><div className="min-w-0"><p className="truncate text-sm font-bold">{capability.capability}</p><p className="mt-1 line-clamp-2 text-xs text-slate-500">{capability.toolName || capability.reason}</p></div><Badge variant="outline" className={capability.executionAllowed ? 'shrink-0 border-emerald-200 text-emerald-700' : 'shrink-0 border-slate-200 text-slate-500'}>{capability.executionAllowed ? 'activ' : capability.schemaStatus}</Badge></div>)}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <Card className="rounded-3xl">
         <CardHeader><CardTitle>Istoric operațional</CardTitle><CardDescription>Ledger persistent pentru idempotency, partial failure și recovery.</CardDescription></CardHeader>

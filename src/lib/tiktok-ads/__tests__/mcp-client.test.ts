@@ -139,6 +139,29 @@ describe('TikTok MCP transport boundary', () => {
     expect(tools.some((candidate) => candidate.name === '/ad/create/' && candidate.inputSchema.properties?.adgroup_id)).toBe(true);
   });
 
+  it('uses the paginated flat catalog as the only source of truth', async () => {
+    const adCreate = {
+      name: 'ad_create',
+      inputSchema: { type: 'object', properties: { advertiser_id: { type: 'string' } } },
+    };
+    const searchTool = {
+      name: 'search_tools',
+      description: 'Search and discover tools',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+    };
+    const calls: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (request: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body || '{}')) as { method?: string };
+      calls.push(String(body.method));
+      if (body.method === 'initialize') return responseFor(request, init, { protocolVersion: '2025-06-18' });
+      if (body.method === 'tools/list') return responseFor(request, init, { tools: [searchTool, adCreate] });
+      return responseFor(request, init, { content: [] });
+    }));
+    const tools = await new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-flat', 'secret').discoverTools();
+    expect(tools).toEqual([searchTool, adCreate]);
+    expect(calls).not.toContain('tools/call');
+  });
+
   it('rejects oversized responses and non-official resource URL variants', async () => {
     process.env.TIKTOK_MCP_MAX_RESPONSE_BYTES = '1024';
     vi.stubGlobal('fetch', vi.fn(async () => new Response('x'.repeat(1_025), { status: 200, headers: { 'content-type': 'application/json' } })));

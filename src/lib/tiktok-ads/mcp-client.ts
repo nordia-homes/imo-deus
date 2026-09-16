@@ -310,6 +310,13 @@ export class TikTokMcpClient {
 
   async discoverTools() {
     const initial = await this.listToolsPages();
+    // The flat endpoint is the full-disclosure production catalog. Running its
+    // optional search/discovery tool can return semantically related endpoints
+    // (for example image-ad update for ad update) and poison exact capability
+    // resolution. The fully paginated tools/list response is authoritative.
+    if (new URL(this.resourceUrl).pathname.replace(/\/+$/, '').endsWith('/tt-ads-mcp-flat')) {
+      return initial;
+    }
     const discoveryTool = this.findProgressiveDiscoveryTool(initial);
     if (!discoveryTool) return initial;
     const discovered: TikTokMcpTool[] = [];
