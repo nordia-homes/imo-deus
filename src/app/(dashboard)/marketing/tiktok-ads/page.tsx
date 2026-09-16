@@ -466,6 +466,7 @@ export default function TikTokAdsCampaignPage() {
   const readinessCapabilities = (['ADVERTISER_STATUS', 'BILLING_READINESS', 'TIKTOK_PERMISSION_RECONCILE'] as TikTokCapability[])
     .filter((capability) => capabilityMap.get(capability)?.executionAllowed);
   const identityAuthorizationAvailable = Boolean(capabilityMap.get('TIKTOK_ACCOUNT_AUTHORIZE')?.executionAllowed);
+  const identityReady = Boolean(selectedIdentity?.verificationStatus === 'verified' && selectedIdentity.deliverAds);
   const managementAction = MANAGEMENT_ACTIONS.find((action) => action.id === managementActionId) || MANAGEMENT_ACTIONS[0];
   const managementSchema = workspace?.schemas[managementAction.schemaCapability];
   const managementResolution = capabilityMap.get(managementAction.capability);
@@ -735,6 +736,9 @@ export default function TikTokAdsCampaignPage() {
           <div className="flex items-center gap-3"><TikTokIcon className="h-9 w-9" /><div><h1 className="text-2xl font-black md:text-3xl">TikTok Ads · Only show as ads</h1><p className="mt-1 text-sm text-white/55">Paid traffic fără publicare organică.</p></div></div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" disabled={!canAdmin || activeAction === 'connect'} onClick={() => void connect()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+            {activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TikTokIcon className="mr-2 h-4 w-4" />}Schimbă conturile conectate
+          </Button>
           <Button variant="outline" disabled={!canAdmin || activeAction === 'discovery'} onClick={() => void refreshDiscovery()} className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white">
             {activeAction === 'discovery' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}Sincronizează TikTok
           </Button>
@@ -765,8 +769,7 @@ export default function TikTokAdsCampaignPage() {
           <div className="space-y-2"><p className="text-sm font-bold">Identitate TikTok</p><Select value={identityId} onValueChange={(value) => { setIdentityId(value); setDraftKey(requestKey('tiktok_draft')); setLastDraft(null); }}><SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Reconciliază permisiunile" /></SelectTrigger><SelectContent>{workspace.permissions.map((permission) => <SelectItem key={permission.tiktokAccountId} value={permission.tiktokAccountId}>{permission.username || permission.tiktokAccountId}</SelectItem>)}</SelectContent></Select></div>
           <div className="md:col-span-2 xl:col-span-4 flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 p-4">
             <Button variant="outline" disabled={!advertiserId || activeAction === 'readiness' || readinessCapabilities.length === 0} onClick={() => void reconcileAccount()} className="rounded-full">{activeAction === 'readiness' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserRoundCheck className="mr-2 h-4 w-4" />}Verifică status, billing și permisiuni</Button>
-            <Button variant="outline" disabled={!canAdmin || !advertiserId || activeAction === 'identity-authorize' || !identityAuthorizationAvailable} onClick={() => void authorizeTikTokIdentity()} className="rounded-full">{activeAction === 'identity-authorize' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Autorizează cont TikTok</Button>
-            {!identityAuthorizationAvailable ? <Button asChild variant="link" className="h-auto p-0 text-amber-700"><a href="https://business.tiktok.com/" target="_blank" rel="noreferrer">Autorizează identitatea în Business Center<ExternalLink className="ml-1 h-3.5 w-3.5" /></a></Button> : null}
+            {identityReady ? <Button variant="outline" disabled className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-700 opacity-100"><CheckCircle2 className="mr-2 h-4 w-4" />Identitate autorizată</Button> : identityAuthorizationAvailable ? <Button variant="outline" disabled={!canAdmin || !advertiserId || activeAction === 'identity-authorize'} onClick={() => void authorizeTikTokIdentity()} className="rounded-full">{activeAction === 'identity-authorize' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlayCircle className="mr-2 h-4 w-4" />}Autorizează cont TikTok</Button> : <Button asChild variant="outline" className="rounded-full border-amber-200 text-amber-700"><a href="https://business.tiktok.com/" target="_blank" rel="noreferrer">Autorizează în Business Center<ExternalLink className="ml-2 h-4 w-4" /></a></Button>}
             {selectedIdentity ? <><Badge variant="outline">Livrare reclame: {selectedIdentity.deliverAds ? 'Autorizată' : 'Neautorizată'}</Badge><Badge variant="outline">Tip: {selectedIdentity.identityType || 'TikTok'}</Badge><Badge variant="outline">Ads-only impus de Imodeus</Badge><span className="text-xs text-slate-500">Verificat {formatDate(selectedIdentity.lastVerifiedAt)}</span></> : <span className="text-sm text-slate-500">Rulează verificarea pentru a încărca identitățile autorizate.</span>}
           </div>
         </CardContent>
