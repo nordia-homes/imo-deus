@@ -231,6 +231,13 @@ export function bindAdvertiser(payload: Record<string, unknown>, schema: JsonSch
   return bindTrustedId(payload, schema, [...singular, ...plural], advertiserId, 'advertiser_id');
 }
 
+function bindAdvertiserStatusFields(payload: Record<string, unknown>, schema: JsonSchema) {
+  if (payloadValuesForKeys(payload, ['fields']).length || !schemaPropertyPaths(schema, ['fields']).length) return payload;
+  return bindTrustedId(payload, schema, ['fields'], [
+    'advertiser_id', 'name', 'status', 'currency', 'timezone', 'display_timezone', 'country', 'balance',
+  ], 'fields', false);
+}
+
 function coerceForSchema(value: unknown, schema: JsonSchema): unknown {
   const types = Array.isArray(schema.type) ? schema.type : schema.type ? [schema.type] : [];
   if (typeof value === 'string' && types.includes('number') && /^-?(0|[1-9]\d*)(\.\d+)?$/.test(value)) return Number(value);
@@ -414,6 +421,7 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     if (!tool) throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', `Capability-ul ${input.capability} nu are un tool MCP neambiguu.`, { correlationId: input.request.correlationId });
     const providerPayload = Object.fromEntries(Object.entries(input.payload).filter(([key]) => key !== '_imodeus'));
     let payload = bindAdvertiser(providerPayload, tool.inputSchema, input.request.advertiserId);
+    if (input.capability === 'ADVERTISER_STATUS') payload = bindAdvertiserStatusFields(payload, tool.inputSchema);
     payload = enforceStatusIntent(input.capability, payload, tool.inputSchema);
     payload = forceDisabledCreatePayload(input.capability, payload, tool.inputSchema);
     await this.assertOwnedPayloadIds({ ...input.request, capability: input.capability }, payload);

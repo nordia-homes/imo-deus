@@ -263,9 +263,15 @@ export class TikTokMcpClient {
     const properties = tool.inputSchema.properties || {};
     const key = Object.keys(properties).find((candidate) => /query|keyword|search|description/i.test(candidate) && properties[candidate]?.type === 'string');
     if (!key) return null;
-    return {
-      [key]: query,
-    };
+    const args: Record<string, unknown> = { [key]: query };
+    const limitKey = Object.keys(properties).find((candidate) => /^(limit|page_size|pageSize|max_results|maxResults)$/i.test(candidate)
+      && ['number', 'integer'].includes(String(properties[candidate]?.type)));
+    if (limitKey) {
+      const maximum = typeof properties[limitKey].maximum === 'number' ? properties[limitKey].maximum as number : 100;
+      const minimum = typeof properties[limitKey].minimum === 'number' ? properties[limitKey].minimum as number : 1;
+      args[limitKey] = Math.max(minimum, Math.min(maximum, 100));
+    }
+    return args;
   }
 
   private extractTools(value: unknown, output: TikTokMcpTool[] = [], depth = 0): TikTokMcpTool[] {
@@ -324,7 +330,7 @@ export class TikTokMcpClient {
       '/adgroup/get/ Get Manual Campaign ad groups',
       '/adgroup/update/ Update a Manual Campaign ad group',
       '/adgroup/status/update/ Update Manual Campaign ad group status',
-      '/ad/create/ Create a Manual Campaign ad',
+      '/ad/create/ Create ads under an ad group with video creatives; exact Marketing API endpoint',
       '/ad/get/ Get Manual Campaign ads',
       '/ad/update/ Update a Manual Campaign ad',
       '/ad/status/update/ Update Manual Campaign ad status',
@@ -460,7 +466,10 @@ export function validateJsonSchema(value: unknown, schema: JsonSchema): { ok: bo
     const ok = validate(value);
     const errors = ok ? [] : (validate.errors || []).map((error) => {
       const path = error.instancePath || '$';
-      return `${path} ${error.keyword}`;
+      const missingProperty = error.keyword === 'required' && typeof error.params?.missingProperty === 'string'
+        ? ` ${error.params.missingProperty}`
+        : '';
+      return `${path}${missingProperty} ${error.keyword}`;
     });
     return { ok: Boolean(ok), errors };
   } catch {

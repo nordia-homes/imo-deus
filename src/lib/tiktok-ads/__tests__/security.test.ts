@@ -30,6 +30,12 @@ describe('TikTok Ads safety policy', () => {
       type: 'object', properties: { advertiser_ids: { type: 'array', items: { type: 'string' } } }, required: ['advertiser_ids'],
     }, 'adv-1')).toThrow(/server/);
   });
+
+  it('reports the exact missing provider field during schema validation', () => {
+    expect(validateJsonSchema({}, {
+      type: 'object', properties: { advertiser_ids: { type: 'array' } }, required: ['advertiser_ids'],
+    }).errors).toContain('$ advertiser_ids required');
+  });
   it('never allows the ads-only workflow to enter organic publishing', () => {
     expect(() => assertAdsOnlyPayload({ adsOnly: true, video: {}, ad: {} })).not.toThrow();
     expect(() => assertAdsOnlyPayload({ adsOnly: true, operation: 'video.publish' })).toThrow(/organic/i);

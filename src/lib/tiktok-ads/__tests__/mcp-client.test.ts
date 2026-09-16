@@ -130,7 +130,7 @@ describe('TikTok MCP transport boundary', () => {
       return responseFor(request, init, {});
     }));
     const tools = await new TikTokMcpClient('https://business-api.tiktok.com/open_mcp/tt-ads-mcp-layer', 'secret').discoverTools();
-    expect(queries).toContain('/ad/create/ Create a Manual Campaign ad');
+    expect(queries).toContain('/ad/create/ Create ads under an ad group with video creatives; exact Marketing API endpoint');
     expect(queries).toContain('/ad/get/ Get Manual Campaign ads');
     expect(queries).toContain('/campaign/status/update/ Update Manual Campaign status');
     expect(queries).toContain('/bc/asset/account/authorization/ Obtain TikTok account ad delivery authorization URL');

@@ -106,6 +106,15 @@ describe('TikTok capability registry', () => {
     expect(matrix.get('TIKTOK_ACCOUNT_AUTHORIZE')).toMatchObject({ available: false, toolName: null });
   });
 
+  it('does not treat endpoint-name suffixes as official endpoint matches', () => {
+    const matrix = new Map(resolveTikTokCapabilities([
+      tool('payment_portfolio_advertiser_get', 'Get advertisers from a payment portfolio'),
+      tool('file_image_ad_update', 'Update image files used by ads'),
+    ]).map((item) => [item.capability, item]));
+    expect(matrix.get('ADVERTISER_DISCOVERY')).toMatchObject({ available: false, toolName: null });
+    expect(matrix.get('AD_UPDATE')).toMatchObject({ available: false, toolName: null });
+  });
+
   it('prefers OAuth advertiser discovery over other advertiser endpoints', () => {
     const oauth = tool('/oauth2/advertiser/get/', 'Get authorized advertisers');
     const generic = tool('/advertiser/get/', 'Get advertisers');
