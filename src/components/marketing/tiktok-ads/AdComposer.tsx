@@ -1,9 +1,11 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, PhonePreview, StudioEyebrow } from './StudioPrimitives';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { buildAdInputs, emptyAdDraft, schemaMissing, type AdDraft, type TikTokRow } from '@/lib/tiktok-ads/workspace-model';
 import type { TikTokOperationResult } from '@/lib/tiktok-ads/types';
-import { inputClass, panelClass, type Api, type Workspace } from './workspace-types';
+import { inputClass, type Api, type Workspace } from './workspace-types';
 
 export type SavedAdDraft = { id: string; version: number; data: AdDraft; updatedAt?: string };
 export function AdComposer({ api, workspace, advertiserId, initial, onClose, onCreated }: { api: Api; workspace: Workspace; advertiserId: string; initial: SavedAdDraft; onClose: () => void; onCreated: () => void }) {
@@ -96,12 +98,17 @@ export function AdComposer({ api, workspace, advertiserId, initial, onClose, onC
     } catch (error) { setError(error instanceof Error ? error.message : 'Crearea nu a reușit. Verifică istoricul înainte de a relua.'); }
     finally { setBusy(false); }
   }
-  return <div className="fixed inset-0 z-40 overflow-y-auto bg-slate-950/50 p-3 backdrop-blur-sm md:p-8" role="dialog" aria-modal="true" aria-label="Creează reclamă">
-    <div className="mx-auto max-w-5xl rounded-3xl bg-slate-50 p-5 md:p-8">
-      <div className="flex items-center justify-between"><div><p className="text-sm text-slate-500">{advertiser?.name} · {saving || 'Draft nou'}</p><h2 className="text-2xl font-semibold">Creează reclamă</h2></div><Button variant="outline" disabled={busy} onClick={() => void close()}>Salvează și închide</Button></div>
-      <div className="my-6 grid grid-cols-4 gap-2">{['Proprietate', 'Conținut', 'Audiență și buget', 'Verificare'].map((label, index) => <button key={label} disabled={busy || !!result} onClick={() => setStep(index)} className={`rounded-xl p-3 text-sm ${step === index ? 'bg-slate-950 text-white' : 'bg-white text-slate-500'}`}>{index + 1}. {label}</button>)}</div>
-      <div className="grid gap-6 md:grid-cols-[1fr_260px]">
-        <div className={`${panelClass} space-y-4`}>
+  const stepLabels = ['Proprietate', 'Conținut', 'Audiență și buget', 'Verificare'];
+  const stepHints = ['Alege ce promovezi', 'Construiește povestea', 'Definește distribuția', 'Pregătește lansarea'];
+  const stepTitles = ['Începe cu proprietatea.', 'O reclamă care atrage priviri.', 'Ajungi la publicul potrivit.', 'Totul pregătit?'];
+  const stepDescriptions = ['Alege proprietatea și profilul care va reprezenta agenția.', 'Selectează materialul și scrie mesajul pe care îl vor vedea oamenii.', 'Stabilește locația, bugetul și perioada campaniei.', 'Verifică detaliile. Reclama va fi creată oprită, fără activare automată.'];
+  return <DialogPrimitive.Root open onOpenChange={open => { if (!open && !busy) void close(); }}>
+    <DialogPrimitive.Portal><DialogPrimitive.Overlay className="tt-composer-backdrop" />
+    <DialogPrimitive.Content className="tt-design tt-composer" onInteractOutside={event => event.preventDefault()} onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}>
+      <header className="tt-composer-header"><div><StudioEyebrow>AD STUDIO / TIKTOK</StudioEyebrow><DialogPrimitive.Title>Creează reclamă</DialogPrimitive.Title><DialogPrimitive.Description>{advertiser?.name} · {saving || 'Draft nou'}</DialogPrimitive.Description></div><Button variant="outline" disabled={busy} onClick={() => void close()}>Salvează și închide</Button></header>
+      <div className="tt-composer-layout">
+        <nav className="tt-steps" aria-label="Pașii reclamei">{stepLabels.map((label, index) => <button key={label} aria-label={`${index + 1}. ${label}`} aria-current={step === index ? 'step' : undefined} disabled={busy || !!result} onClick={() => setStep(index)} className="tt-step"><span className="tt-step-number">{index + 1}</span><span><strong>{label}</strong><small>{stepHints[index]}</small></span></button>)}<p className="tt-step-tip"><ShieldCheck />Tu controlezi lansarea.<br />Nicio cheltuială fără activare explicită.</p></nav>
+        <section className="tt-composer-form"><div className="tt-form-heading"><span>PASUL 0{step + 1} / 04</span><h3>{stepTitles[step]}</h3><p>{stepDescriptions[step]}</p></div><div className="tt-fields">
           {step === 0 && <>
             <Field label="Caută proprietatea"><input className={inputClass} value={search} onChange={event => setSearch(event.target.value)} placeholder="Titlu sau localitate" /></Field>
             <Field label="Proprietate"><select className={inputClass} value={draft.propertyId} onChange={event => { const property = workspace.properties.find(item => item.id === event.target.value); change({ propertyId: event.target.value, assetId: '', name: property?.title.replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, '').trim() || '' }); }}><option value="">Selectează</option>{workspace.properties.filter(item => `${item.title} ${item.location}`.toLowerCase().includes(search.toLowerCase()) || item.id === draft.propertyId).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
@@ -125,14 +132,14 @@ export function AdComposer({ api, workspace, advertiserId, initial, onClose, onC
             <p className="text-xs text-slate-500">Programul este exprimat în fusul contului: {advertiser?.timezone || 'nesincronizat'}.</p>
             <Field label="Început"><input type="datetime-local" className={inputClass} value={draft.start} onChange={event => change({ start: event.target.value })} /></Field><Field label="Sfârșit (opțional)"><input type="datetime-local" className={inputClass} value={draft.end} onChange={event => change({ end: event.target.value })} /></Field>
           </>)}
-          {step === 3 && <><h3 className="text-lg font-semibold">Verifică înainte de creare</h3><dl className="space-y-3 text-sm"><dt>Proprietate</dt><dd className="font-semibold">{workspace.properties.find(item => item.id === draft.propertyId)?.title || 'Neselectată'}</dd><dt>Cont publicitar / profil</dt><dd>{advertiser?.name} / {workspace.permissions.find(item => item.tiktokAccountId === draft.identityId)?.username || 'Neselectat'}</dd><dt>Buget</dt><dd>{draft.mode === 'post' ? 'Bugetul grupului existent' : `${draft.budget || '—'} ${advertiser?.currency || ''} / zi`}</dd><dt>Program</dt><dd>{draft.start || '—'} → {draft.end || 'Fără dată de încheiere'} · {advertiser?.timezone}</dd></dl><p className="rounded-xl bg-cyan-50 p-3 text-sm">Reclama se creează oprită. Activarea se confirmă separat din lista de reclame.</p>{unavailable.length > 0 && <p className="text-sm text-amber-700">Crearea nu este disponibilă în configurația actuală a contului. Draftul poate fi păstrat.</p>}{!admin && <p className="text-sm text-slate-600">Draftul este pregătit pentru verificarea administratorului.</p>}<Button disabled={busy || !!result || !admin || !!unavailable.length || !workspace.status.writesEnabled} onClick={() => void create()}>{busy ? 'Se creează…' : 'Creează reclama oprită'}</Button></>}
+          {step === 3 && <><h3 className="text-lg font-semibold">Verifică înainte de creare</h3><dl className="tt-review"><dt>Proprietate</dt><dd className="font-semibold">{workspace.properties.find(item => item.id === draft.propertyId)?.title || 'Neselectată'}</dd><dt>Cont publicitar / profil</dt><dd>{advertiser?.name} / {workspace.permissions.find(item => item.tiktokAccountId === draft.identityId)?.username || 'Neselectat'}</dd><dt>Buget</dt><dd>{draft.mode === 'post' ? 'Bugetul grupului existent' : `${draft.budget || '—'} ${advertiser?.currency || ''} / zi`}</dd><dt>Program</dt><dd>{draft.start || '—'} → {draft.end || 'Fără dată de încheiere'} · {advertiser?.timezone}</dd></dl><p className="rounded-xl bg-cyan-50 p-3 text-sm">Reclama se creează oprită. Activarea se confirmă separat din lista de reclame.</p>{unavailable.length > 0 && <p className="text-sm text-amber-700">Crearea nu este disponibilă în configurația actuală a contului. Draftul poate fi păstrat.</p>}{!admin && <p className="text-sm text-slate-600">Draftul este pregătit pentru verificarea administratorului.</p>}<Button disabled={busy || !!result || !admin || !!unavailable.length || !workspace.status.writesEnabled} onClick={() => void create()}>{busy ? 'Se creează…' : 'Creează reclama oprită'}</Button></>}
           {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
           {result && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm">{result.status === 'succeeded' ? 'Reclama a fost creată oprită. Verifică rezultatul în lista de reclame.' : 'Operația necesită verificare. Deschide istoricul din Conturi.'}</p>}
-          <div className="flex justify-between border-t pt-4"><Button variant="outline" disabled={step === 0 || busy} onClick={() => setStep(step - 1)}>Înapoi</Button>{step < 3 && <Button disabled={busy} onClick={() => { setSearch(''); setStep(step + 1); }}>Continuă</Button>}</div>
-        </div>
-        <aside className="self-start rounded-3xl bg-slate-950 p-3 text-white"><div className="aspect-[9/16] overflow-hidden rounded-2xl bg-slate-800">{asset ? <video controls playsInline src={asset.url} poster={asset.thumbnailUrl || undefined} className="h-full w-full object-contain" /> : <div className="flex h-full items-center justify-center p-5 text-center text-sm text-white/50">Previzualizarea videoclipului</div>}</div><p className="mt-3 text-sm font-semibold">@{workspace.permissions.find(item => item.tiktokAccountId === draft.identityId)?.username || 'profil'}</p><p className="my-2 whitespace-pre-wrap text-sm text-white/70">{draft.text || 'Textul reclamei va apărea aici.'}</p><div className="rounded-lg bg-white/15 p-2 text-center text-sm">{draft.cta === 'CONTACT_US' ? 'Contactează-ne' : draft.cta === 'SIGN_UP' ? 'Înscrie-te' : 'Află mai multe'}</div><p className="mt-3 text-xs text-white/40">Previzualizare orientativă</p></aside>
+          </div><div className="tt-form-footer"><Button variant="outline" disabled={step === 0 || busy} onClick={() => setStep(step - 1)}><ArrowLeft size={15} />Înapoi</Button>{step < 3 && <Button disabled={busy} onClick={() => { setSearch(''); setStep(step + 1); }}>Continuă<ArrowRight size={15} /></Button>}</div>
+        </section>
+        <PhonePreview asset={draft.mode === 'video' ? asset : undefined} username={workspace.permissions.find(item => item.tiktokAccountId === draft.identityId)?.username} text={draft.text} cta={draft.cta === 'CONTACT_US' ? 'Contactează-ne' : draft.cta === 'SIGN_UP' ? 'Înscrie-te' : 'Află mai multe'} />
       </div>
-    </div>
-  </div>;
+    </DialogPrimitive.Content></DialogPrimitive.Portal>
+  </DialogPrimitive.Root>;
 }
-export function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block space-y-2 text-sm font-medium text-slate-700"><span>{label}</span>{children}</label>; }
+export function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="tt-field"><span>{label}</span>{children}</label>; }

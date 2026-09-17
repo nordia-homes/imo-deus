@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { useStorage, useUser } from '@/firebase';
-import { Button } from '@/components/ui/button';
+import { Button } from './StudioPrimitives';
 import Image from 'next/image';
 import type { TikTokStudioAsset, TikTokStudioProject, TikTokStudioRepurposeVariant, TikTokPostDraft, TikTokStudioCreativeBrief } from '@/lib/types';
 import { statusLabel } from '@/lib/tiktok-ads/workspace-model';
@@ -114,7 +114,7 @@ export function VideoLibrary({ api, onAd, initialPropertyId = '' }: { api: Api; 
     setPublishing(null); await load(); setMessage('Cererea a fost înregistrată. Starea publicării apare în istoric.');
   }
   const assets = (dashboard?.studioAssets || []).filter(asset => (!propertyId || asset.propertyId === propertyId) && asset.name.toLowerCase().includes(search.toLowerCase()));
-  return <div className="space-y-5">
+  return <div className="tt-media-library space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">Videoclipurile proprietăților</h2><p className="text-sm text-slate-500">Materiale, proiecte și versiuni gata pentru promovare.</p></div><Button onClick={() => void run(() => openEditor())} disabled={busy}>Creează videoclip</Button></div>
     <div className="grid gap-3 sm:grid-cols-3"><input className={inputClass} aria-label="Caută material" placeholder="Caută materialul…" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} /><select aria-label="Filtrează după proprietate" className={inputClass} value={propertyId} onChange={event => { setPropertyId(event.target.value); setPage(1); }}><option value="">Toate proprietățile</option>{dashboard?.portfolioProperties.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select><label className="cursor-pointer rounded-xl border border-dashed p-2 text-center text-sm"><input type="file" accept="image/*,video/*" multiple disabled={busy || !propertyId} className="sr-only" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void run(() => upload(files)); }} />Importă fotografii sau video</label></div>
     {message && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">{message}</p>}

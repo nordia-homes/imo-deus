@@ -21,7 +21,7 @@ const fixtures = {
 };
 const result = await build({
   stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import Workspace from '@/components/marketing/tiktok-ads/TikTokWorkspace'; createRoot(document.getElementById('root')).render(<Workspace/>);`, loader: 'tsx', resolveDir: root },
-  bundle: true, write: false, platform: 'browser', format: 'iife', jsx: 'automatic', define: { 'process.env.NODE_ENV': '"test"' },
+  bundle: true, write: false, outfile: path.join(root, '.tmp/tiktok-workspace/app.js'), platform: 'browser', format: 'iife', jsx: 'automatic', define: { 'process.env.NODE_ENV': '"test"' },
   alias: { '@': path.join(root, 'src') },
   plugins: [{ name: 'fixture-context', setup(build) {
     build.onResolve({ filter: /^(@\/firebase|next\/navigation|next\/image)$/ }, args => ({ path: args.path, namespace: 'fixture' }));
@@ -32,8 +32,8 @@ const tailwindConfig = loadConfig(path.join(root, 'tailwind.config.ts'));
 tailwindConfig.content = ['./src/components/marketing/tiktok-ads/**/*.tsx', './src/components/ui/**/*.tsx'];
 const css = await postcss([tailwindcss(tailwindConfig)]).process(await readFile(path.join(root, 'src/app/globals.css'), 'utf8'), { from: path.join(root, 'src/app/globals.css') });
 const server = createServer((req, res) => {
-  if (req.url === '/app.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(result.outputFiles[0].text); }
-  else if (req.url === '/style.css') { res.setHeader('Content-Type', 'text/css'); res.end(css.css); }
+  if (req.url === '/app.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(result.outputFiles.find(file => file.path.endsWith('.js')).text); }
+  else if (req.url === '/style.css') { res.setHeader('Content-Type', 'text/css'); res.end(css.css + '\n' + result.outputFiles.find(file => file.path.endsWith('.css')).text); }
   else if (req.url === '/') { res.setHeader('Content-Type', 'text/html'); res.end('<html lang="ro"><head><link rel="stylesheet" href="/style.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>'); }
   else { res.statusCode = 404; res.end(); }
 });
@@ -59,12 +59,22 @@ try {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.evaluate(() => document.documentElement.setAttribute('data-app-theme', 'agentfinder'));
+  await mkdir(path.join(root, '.tmp/tiktok-workspace'), { recursive: true });
+  await page.getByRole('heading', { name: 'Performanța campaniilor' }).waitFor();
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/overview-redesign.png'), fullPage: true });
   await page.getByRole('button', { name: 'Încarcă raportul', exact: true }).click();
   await page.getByText('12,5', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Creează reclamă', exact: true }).click();
   const composer = page.getByRole('dialog', { name: 'Creează reclamă', exact: true });
   await composer.locator('select').nth(0).selectOption('home-1');
   await composer.locator('select').nth(1).selectOption('profile-1');
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/composer-redesign.png'), fullPage: true });
+  assert.equal(await composer.evaluate(element => element.contains(document.activeElement)), true, 'Dialog must trap focus');
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await composer.evaluate(element => element.scrollWidth > element.clientWidth), false, 'Composer must fit mobile viewport');
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/composer-mobile.png'), fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await composer.getByRole('button', { name: 'Salvează și închide', exact: true }).click();
   await composer.waitFor({ state: 'hidden' });
   assert.equal(drafts.size, 1, 'Closing immediately must save the draft');

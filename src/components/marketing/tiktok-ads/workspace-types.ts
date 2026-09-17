@@ -2,5 +2,5 @@ import type { TikTokAccountPermissionRecord, TikTokAdvertiserRecord, TikTokCapab
 export type Api = <T = Record<string, unknown>>(path: string, init?: RequestInit) => Promise<T>;
 export type Operation = { operationId: string; capability: TikTokCapability; advertiserId: string; propertyId: string | null; status: string; currentStep: string; updatedAt: string; createdResourceIds: Array<{ resourceType: string; resourceId: string }>; recoverable: boolean; remoteOutcomeUnknown: boolean; lastErrorCode: string | null };
 export type Workspace = { role: string; status: { configured: boolean; connected: boolean; requiresReconnect: boolean; writesEnabled: boolean; spendMutationsEnabled: boolean }; advertisers: TikTokAdvertiserRecord[]; advertiserId: string | null; permissions: TikTokAccountPermissionRecord[]; capabilities: TikTokCapabilityResolution[]; schemas: Partial<Record<TikTokCapability, JsonSchema>>; properties: Array<{ id: string; title: string; location: string | null; price: number | null }>; assets: Array<{ id: string; propertyId: string | null; name: string; url: string; thumbnailUrl: string | null; durationSeconds: number | null }>; operations: Operation[] };
-export const inputClass = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-50';
-export const panelClass = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm';
+export const inputClass = 'tt-input w-full';
+export const panelClass = 'tt-panel';
