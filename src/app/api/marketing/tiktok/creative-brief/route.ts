@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/firebase/admin';
+import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 import type { TikTokStudioAsset, TikTokStudioBrandKit, TikTokStudioCreativePreset } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -45,8 +46,14 @@ export async function POST(request: NextRequest) {
       import('@/lib/tiktok-video-studio-creative'),
     ]);
     const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    if (isDemoAgencyId(agencyId)) return createDemoBlockedResponse('Generarea AI nu este disponibilă în demo.');
     const body = await request.json().catch(() => ({}));
+    if (body.propertyId) {
+      if (typeof body.propertyId !== 'string' || !/^[A-Za-z0-9._:-]{1,128}$/.test(body.propertyId)) return NextResponse.json({ message: 'Proprietate invalidă.' }, { status: 400 });
+      if (!(await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(body.propertyId).get()).exists) return NextResponse.json({ message: 'Proprietate inaccesibilă.' }, { status: 404 });
+    }
     const sourceAssets = await getStudioAssets(agencyId, Array.isArray(body.sourceAssetIds) ? body.sourceAssetIds : []);
+    if (body.propertyId && sourceAssets.some(asset => asset.propertyId !== body.propertyId)) return NextResponse.json({ message: 'Fotografiile nu aparțin proprietății.' }, { status: 400 });
     if (sourceAssets.length < 2) {
       return NextResponse.json({ message: 'Selecteaza cel putin doua fotografii pentru conceptul AI.' }, { status: 400 });
     }

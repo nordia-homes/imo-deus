@@ -79,6 +79,13 @@ afterEach(() => {
 });
 
 describe('TikTok operation ledger and mutation locks', () => {
+  it('preserves property attribution when a subsequent sync has no property context', async () => {
+    const resource = { organizationId: 'org-1', advertiserId: 'adv-1', resourceType: 'ad' as const, resourceId: 'ad-1', operationId: 'create' };
+    await registerResource({ ...resource, propertyId: 'home-1' });
+    await registerResource({ ...resource, operationId: 'sync', propertyId: null });
+    const record = [...firestore.documents.values()].find(item => item.resourceId === 'ad-1');
+    expect(record?.propertyId).toBe('home-1');
+  });
   it('blocks an active duplicate, allows stale recovery, and rejects idempotency-key reuse', async () => {
     const first = await beginOperation(request({ campaign_id: 'campaign-1', name: 'A' }));
     await expect(beginOperation(request({ campaign_id: 'campaign-1', name: 'A' }))).rejects.toMatchObject({ code: 'CONFLICT' });

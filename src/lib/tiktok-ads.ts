@@ -170,6 +170,7 @@ export async function getTikTokAdsWorkspace(agencyId: string, options?: { advert
     .filter((asset) => asset.agencyId === agencyId && asset.type === 'video' && asset.status === 'ready' && typeof asset.url === 'string')
     .map((asset) => ({
       id: asset.id,
+      propertyId: typeof asset.propertyId === 'string' ? asset.propertyId : null,
       name: typeof asset.name === 'string' && asset.name ? asset.name : 'Video TikTok',
       url: typeof asset.url === 'string' ? asset.url : '',
       thumbnailUrl: typeof asset.thumbnailUrl === 'string' ? asset.thumbnailUrl : null,
@@ -187,7 +188,7 @@ export async function getTikTokAdsWorkspace(agencyId: string, options?: { advert
       price: typeof property.price === 'number' ? property.price : null,
     };
   }).sort((left, right) => left.title.localeCompare(right.title));
-  const operations = recentOperations.map((operation) => ({
+  const operations = recentOperations.filter((operation) => !advertiserId || operation.advertiserId === advertiserId).map((operation) => ({
     operationId: operation.operationId,
     capability: operation.capability,
     advertiserId: operation.advertiserId,

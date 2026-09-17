@@ -40,7 +40,7 @@ const EXACT_TOOL_NAMES: Partial<Record<TikTokCapability, RegExp[]>> = {
   AD_PAUSE: [/^ad\/status\/update$/],
   AD_RESUME: [/^ad\/status\/update$/],
   AD_REVIEW_READ: [/^ad\/review\/(?:info|get)$/],
-  TARGETING_READ: [/^tool\/targeting\/(?:search|get)$/],
+  TARGETING_READ: [/^search\/region$/, /^tool\/targeting\/(?:search|get)$/],
   REPORT_READ: [/^report\/integrated\/get$/],
   LEAD_FORM_READ: [/^page(?:\/library)?\/get$/],
   LEAD_READ: [/^lead\/(?:get|download)$/],
@@ -251,8 +251,10 @@ function schemaContractScore(capability: TikTokCapability, tool: TikTokMcpTool) 
 
 function scoreTool(tool: TikTokMcpTool, matcher: Matcher, capability: TikTokCapability) {
   const text = searchable(tool);
-  if (matcher.exclude?.some((token) => text.includes(token))) return -1;
   const exactScore = exactToolNameScore(capability, tool);
+  // Endpoint identity takes precedence over prose: ad/create legitimately
+  // mentions ad groups, reports and Smart+ restrictions in its documentation.
+  if (exactScore == null && matcher.exclude?.some((token) => text.includes(token))) return -1;
   // The full-disclosure server exposes stable API endpoint names. When such a
   // contract is known, never let prose keywords bind an unrelated one of the
   // roughly 400 tools (for example asset_bind_quota_get as AD_READ).

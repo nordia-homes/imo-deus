@@ -3,6 +3,26 @@ import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
 export const runtime = 'nodejs';
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const { requireAgencyUserFromBearerToken } = await import('@/lib/firebase-app-hosting');
+    const { agencyId, uid, role, adminDb } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    if (isDemoAgencyId(agencyId)) return createDemoBlockedResponse('Asocierea nu este disponibilă în demo.');
+    const body = await request.json();
+    if (![body.assetId, body.propertyId].every(value => typeof value === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(value))) return NextResponse.json({ message: 'Material sau proprietate invalidă.' }, { status: 400 });
+    const agency = adminDb.collection('agencies').doc(agencyId);
+    const ref = agency.collection('tiktokStudioAssets').doc(body.assetId);
+    await adminDb.runTransaction(async tx => {
+      const asset = await tx.get(ref);
+      const property = await tx.get(agency.collection('properties').doc(body.propertyId));
+      if (!asset.exists || !property.exists || asset.data()?.agencyId !== agencyId || (role === 'agent' && asset.data()?.ownerUid !== uid)) throw new Error('Nu ai acces la acest material.');
+      if (asset.data()?.propertyId && asset.data()?.propertyId !== body.propertyId) throw new Error('Materialul aparține deja altei proprietăți.');
+      tx.update(ref, { propertyId: body.propertyId, updatedAt: new Date().toISOString() });
+    });
+    return NextResponse.json({ linked: true });
+  } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : 'Asocierea a eșuat.' }, { status: 400 }); }
+}
+
 function formatError(error: unknown) {
   if (error && typeof error === 'object' && 'status' in error) {
     const status = typeof (error as { status?: unknown }).status === 'number' ? (error as { status: number }).status : 500;
@@ -47,6 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     const asset = await createTikTokStudioAsset({
+      propertyId: typeof body.propertyId === 'string' ? body.propertyId : null,
       agencyId,
       ownerUid: uid,
       type,

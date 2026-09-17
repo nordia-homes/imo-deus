@@ -92,6 +92,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const project = await createTikTokStudioProject({
+      propertyId: typeof body.propertyId === 'string' ? body.propertyId : null,
+      projectId: typeof body.projectId === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(body.projectId) ? body.projectId : undefined,
+      expectedVersion: Number.isSafeInteger(body.expectedVersion) ? body.expectedVersion : undefined,
       agencyId,
       ownerUid: uid,
       title: typeof body.title === 'string' ? body.title : undefined,

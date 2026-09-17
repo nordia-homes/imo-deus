@@ -53,7 +53,11 @@ service cloud.firestore {
     }
 
     function isServerManagedAgencyCollection(collectionId) {
-      return collectionId == 'tiktokAdvertisers' ||
+      return collectionId == 'tiktokWorkspaceDrafts' ||
+             collectionId == 'tiktokStudioProjects' ||
+             collectionId == 'tiktokStudioAssets' ||
+             collectionId == 'tiktokPostDrafts' ||
+             collectionId == 'tiktokAdvertisers' ||
              collectionId == 'tiktokAccountPermissions' ||
              collectionId == 'tiktokResourceReferences' ||
              collectionId == 'tiktokCapabilityStates' ||
@@ -83,6 +87,9 @@ service cloud.firestore {
     }
 
     match /tiktokAdsJobs/{documentId} {
+      allow read, write: if false;
+    }
+    match /tiktokStudioJobs/{documentId} {
       allow read, write: if false;
     }
 

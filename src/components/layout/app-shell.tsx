@@ -28,7 +28,6 @@ import {
   Megaphone,
   Facebook,
   UserRoundCog,
-  Video,
   Handshake,
   MailPlus,
 } from 'lucide-react';
@@ -205,18 +204,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
-                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/tiktok-ads')}>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/tiktok-ads') || currentPath.startsWith('/marketing/tiktok-studio')}>
                       <Link href="/marketing/tiktok-ads">
                         <TikTokIcon />
-                        <span>TikTok Ads</span>
-                      </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/tiktok-studio')}>
-                      <Link href="/marketing/tiktok-studio">
-                        <Video />
-                        <span>TikTok Studio</span>
+                        <span>TikTok</span>
                       </Link>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>

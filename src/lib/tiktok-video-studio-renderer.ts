@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomUUID } from 'crypto';
 import { existsSync } from 'fs';
 import { tmpdir } from 'os';
@@ -6,6 +7,7 @@ import path from 'path';
 import ffmpegPath from 'ffmpeg-static';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises';
 import { adminStorage } from '@/firebase/admin';
+import { assertSafeTikTokMediaUrl } from '@/lib/tiktok-ads/media-security';
 import type { TikTokStudioAsset, TikTokStudioProject, TikTokStudioStoryboardScene } from '@/lib/types';
 
 type StudioRenderInput = {
@@ -43,6 +45,7 @@ const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
 const SUBTITLE_SHADOW = '&H90000000';
 const FRAME_RATE = 30;
 const TRANSITION_SECONDS = 0.45;
+const renderSignal = new AsyncLocalStorage<AbortSignal>();
 
 function getFfmpegBinary() {
   const executable = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
@@ -61,7 +64,7 @@ function getFfmpegBinary() {
 
 function runFfmpeg(args: string[], cwd?: string) {
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(getFfmpegBinary(), args, { cwd, windowsHide: true });
+    const child = spawn(getFfmpegBinary(), args, { cwd, windowsHide: true, signal: renderSignal.getStore() });
     let stderr = '';
     child.stderr.on('data', (chunk) => {
       stderr += chunk.toString();
@@ -85,7 +88,7 @@ function parseDuration(stderr: string) {
 
 function getMediaDuration(filePath: string) {
   return new Promise<number>((resolve, reject) => {
-    const child = spawn(getFfmpegBinary(), ['-i', filePath, '-f', 'null', '-'], { windowsHide: true });
+    const child = spawn(getFfmpegBinary(), ['-i', filePath, '-f', 'null', '-'], { windowsHide: true, signal: renderSignal.getStore() });
     let stderr = '';
     child.stderr.on('data', (chunk) => {
       stderr += chunk.toString();
@@ -150,7 +153,8 @@ function getDownloadUrl(bucketName: string, storagePath: string, token: string) 
 }
 
 async function fetchBytes(url: string) {
-  const response = await fetch(url, { cache: 'no-store' });
+  await assertSafeTikTokMediaUrl(url);
+  const response = await fetch(url, { cache: 'no-store', redirect: 'error', signal: renderSignal.getStore() });
   if (!response.ok) throw new Error(`Nu am putut descarca media Studio (${response.status}).`);
   const contentType = response.headers.get('content-type') || 'application/octet-stream';
   const buffer = Buffer.from(await response.arrayBuffer());
@@ -187,6 +191,7 @@ async function synthesizeVoiceover(input: { text: string; voiceId?: string | nul
 
   const voiceId = input.voiceId || process.env.ELEVENLABS_DEFAULT_VOICE_ID || DEFAULT_VOICE_ID;
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps`, {
+    signal: renderSignal.getStore(),
     method: 'POST',
     headers: {
       'xi-api-key': getElevenLabsApiKey(),
@@ -320,7 +325,9 @@ function getStoryboardScenes(project: TikTokStudioProject, photoAssets: LocalPho
 function fitSceneDurationsToAudio(scenes: Array<LocalPhotoAsset & { durationSeconds: number; motion: TikTokStudioStoryboardScene['motion'] }>, audioDuration: number) {
   const storyboardDuration = scenes.reduce((total, scene) => total + scene.durationSeconds, 0);
   const naturalDuration = Math.max(audioDuration + 0.25, storyboardDuration, scenes.length * 2.6);
-  const targetDuration = naturalDuration <= 105 ? Math.max(90, naturalDuration) : naturalDuration;
+  // Short ads must follow the selected scenes and narration, not an artificial
+  // 90-second minimum that used to pad every property video with silence.
+  const targetDuration = naturalDuration;
   const transitionBudget = Math.max(0, scenes.length - 1) * TRANSITION_SECONDS;
   const scale = (targetDuration + transitionBudget) / Math.max(storyboardDuration, 1);
   return {
@@ -513,6 +520,7 @@ async function writeBrandAss(input: {
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
     `Dialogue: 0,${assTime(0)},${assTime(input.totalDuration)},Brand,,0,0,0,,{\\an2\\pos(${x},${y})\\c&H00FFFFFF&}${text}`,
+    ...(brand?.defaultCallToAction ? [`Dialogue: 1,${assTime(Math.max(0, input.totalDuration - 3))},${assTime(input.totalDuration)},Brand,,0,0,0,,{\\an2\\pos(${x},${Math.round(input.height * 0.78)})}${escapeAssText(brand.defaultCallToAction)}`] : []),
     '',
   ].join('\n');
   await writeFile(input.outputPath, ass, 'utf8');
@@ -601,6 +609,10 @@ async function uploadFile(input: {
 }
 
 export async function renderTikTokStudioPhotoVideo(input: StudioRenderInput) {
+  return renderSignal.run(AbortSignal.timeout(210_000), () => renderPhotoVideo(input));
+}
+
+async function renderPhotoVideo(input: StudioRenderInput) {
   const workspace = await mkdtemp(path.join(tmpdir(), 'imodeus-tiktok-studio-'));
   try {
     await mkdir(workspace, { recursive: true });

@@ -42,6 +42,12 @@ const officialShapeTools: TikTokMcpTool[] = [
 ];
 
 describe('TikTok capability registry', () => {
+  it('recognizes exact ad endpoints even when official descriptions mention ad groups and campaigns', () => {
+    const tools = officialShapeTools.map(candidate => candidate.name.startsWith('ad_') ? { ...candidate, description: `${candidate.description}. Manage ads within an ad group and campaign.` } : candidate);
+    const matrix = new Map(resolveTikTokCapabilities(tools).map(item => [item.capability, item]));
+    for (const capability of ['AD_READ', 'AD_CREATE', 'AD_UPDATE', 'AD_PAUSE', 'AD_RESUME'] as const) expect(matrix.get(capability)?.available).toBe(true);
+    expect(matrix.get('SPARK_NEW_VIDEO_AD_ONLY')?.available).toBe(true);
+  });
   it('classifies every registry capability exactly once', () => {
     expect(Object.keys(CAPABILITY_CLASSIFICATION).sort()).toEqual([...TIKTOK_CAPABILITIES].sort());
     expect(Object.keys(OPERATION_CLASS).sort()).toEqual([...TIKTOK_CAPABILITIES].sort());

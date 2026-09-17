@@ -94,6 +94,10 @@ async function assertPublicHost(url: URL) {
   }
 }
 
+export async function assertSafeTikTokMediaUrl(sourceUrl: string) {
+  await assertPublicHost(new URL(sourceUrl));
+}
+
 function getFfmpegBinary() {
   const executable = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
   const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath || '';

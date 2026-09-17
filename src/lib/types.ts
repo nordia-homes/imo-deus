@@ -612,6 +612,7 @@ export type TikTokPostDraft = {
   coverTimestampMs?: number | null;
   scheduledAt?: string | null;
   scheduleStatus?: 'none' | 'scheduled' | 'sent' | 'error';
+  publishOutcomeUnknown?: boolean;
   repurposeVariant?: TikTokStudioRepurposeVariant | null;
   publishId?: string | null;
   publishedAt?: string | null;
@@ -627,6 +628,8 @@ export type TikTokPostDraft = {
 };
 
 export type TikTokStudioAsset = {
+  propertyId?: string | null;
+  version?: number;
   id: string;
   agencyId: string;
   ownerUid: string;
@@ -756,12 +759,18 @@ export type TikTokStudioCreativeBrief = {
 
 export type TikTokStudioProject = {
   id: string;
+  propertyId?: string | null;
+  version?: number;
+  outputAssetIds?: string[];
+  renderProgress?: string | null;
+  renderLeaseUntil?: string | null;
+  renderLeaseOwner?: string | null;
   agencyId: string;
   ownerUid: string;
   createdAt: string;
   updatedAt: string;
   title: string;
-  status: 'draft' | 'rendering' | 'ready' | 'error';
+  status: 'draft' | 'queued' | 'rendering' | 'ready' | 'error';
   mode: 'photo_to_video' | 'video_editor';
   sourceAssetIds: string[];
   outputAssetId?: string | null;

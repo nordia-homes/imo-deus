@@ -19,24 +19,20 @@ export async function POST(
   context: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const [{ requireAgencyUserFromBearerToken }, { renderTikTokStudioProject }] = await Promise.all([
+    const [{ requireAgencyUserFromBearerToken }, { enqueueStudioRender }] = await Promise.all([
       import('@/lib/firebase-app-hosting'),
-      import('@/lib/tiktok-marketing'),
+      import('@/lib/tiktok-studio-jobs'),
     ]);
     const { agencyId, uid } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     if (isDemoAgencyId(agencyId)) {
       return createDemoBlockedResponse('Randarea TikTok AI Studio este blocata in mediul demo.');
     }
     const params = await context.params;
-    if (!params.projectId) {
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(params.projectId)) {
       return NextResponse.json({ message: 'projectId este obligatoriu.' }, { status: 400 });
     }
-    const result = await renderTikTokStudioProject({
-      agencyId,
-      projectId: params.projectId,
-      requestedByUid: uid,
-    });
-    return NextResponse.json(result, { status: 200 });
+    const result = await enqueueStudioRender(agencyId, uid, params.projectId);
+    return NextResponse.json(result, { status: 202 });
   } catch (error) {
     const formatted = formatError(error);
     return NextResponse.json({ message: formatted.message }, { status: formatted.status });

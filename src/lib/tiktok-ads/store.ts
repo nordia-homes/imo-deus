@@ -102,7 +102,7 @@ export async function registerResource(input: {
     advertiserId: input.advertiserId,
     resourceType: input.resourceType,
     resourceId: input.resourceId,
-    propertyId: input.propertyId || null,
+    ...(input.propertyId ? { propertyId: input.propertyId } : {}),
     operationId: input.operationId,
     active: true,
     remoteSnapshot: input.remoteSnapshot || null,
@@ -122,7 +122,7 @@ export async function registerResources(inputs: Array<{
     const batch = adminDb.batch();
     for (const input of inputs.slice(offset, offset + 400)) {
       batch.set(agencyRef(input.organizationId).collection('tiktokResourceReferences').doc(resourceReferenceId(input.advertiserId, input.resourceType, input.resourceId)), {
-        ...input,
+        ...Object.fromEntries(Object.entries(input).filter(([key, value]) => key !== 'propertyId' || !!value)),
         active: true,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
@@ -435,6 +435,7 @@ export async function listRecentTikTokOperations(organizationId: string, propert
 export async function getOwnedStudioVideoAsset(organizationId: string, assetId: string) {
   const snapshot = await agencyRef(organizationId).collection('tiktokStudioAssets').doc(assetId).get();
   const data = snapshot.data() as {
+    propertyId?: string | null;
     agencyId?: string;
     type?: string;
     status?: string;
@@ -588,6 +589,7 @@ export async function deleteLead(organizationId: string, leadReferenceId: string
 }
 
 const REPORT_METRICS = new Set([
+  'conversion',
   'spend', 'impressions', 'reach', 'clicks', 'ctr', 'cpc', 'cpm', 'conversions',
   'leads', 'cost_per_lead', 'cpl', 'cpa', 'video_views', 'engagement',
 ]);

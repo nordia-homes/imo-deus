@@ -207,6 +207,11 @@ describe('TikTok Ads safety policy', () => {
     for (const file of ['firestore.rules', 'src/firestore.rules']) {
       const rules = readFileSync(resolve(process.cwd(), file), 'utf8');
       expect(rules).toContain("collectionId == 'tiktokAdvertisers'");
+      expect(rules).toContain("collectionId == 'tiktokWorkspaceDrafts'");
+      expect(rules).toContain("collectionId == 'tiktokStudioProjects'");
+      expect(rules).toContain("collectionId == 'tiktokStudioAssets'");
+      expect(rules).toContain("collectionId == 'tiktokPostDrafts'");
+      expect(rules).toContain('match /tiktokStudioJobs/{documentId}');
       expect(rules).toContain("collectionId == 'tiktokLeadReferences'");
       expect(rules).toContain("collectionId == 'tiktokMediaMappings'");
       expect(rules).toContain('match /agencyPrivateIntegrations/{documentId}');

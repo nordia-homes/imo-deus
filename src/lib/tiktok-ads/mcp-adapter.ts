@@ -43,6 +43,7 @@ import {
   validateMoneyPayload,
 } from './policy';
 import { validateRemoteVideo } from './media-security';
+import { reportingRows } from './workspace-model';
 import type {
   JsonSchema,
   TikTokAdsPort,
@@ -596,6 +597,9 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     const mediaAssetId = typeof videoRecord.mediaAssetId === 'string' ? videoRecord.mediaAssetId : '';
     if (!mediaAssetId) throw new TikTokAdsError('INVALID_REQUEST', 'video.mediaAssetId este obligatoriu pentru tenant isolation și deduplicare.');
     const mediaAsset = await getOwnedStudioVideoAsset(request.organizationId, mediaAssetId);
+    if (!request.propertyId || mediaAsset.propertyId !== request.propertyId) {
+      throw new TikTokAdsError('RESOURCE_NOT_OWNED', 'Asociază videoclipul cu proprietatea reclamei înainte de creare.');
+    }
     if (videoRecord.sourceUrl != null && videoRecord.sourceUrl !== mediaAsset.url) {
       throw new TikTokAdsError('RESOURCE_NOT_OWNED', 'URL-ul video nu corespunde asset-ului Imodeus autorizat.');
     }
@@ -732,9 +736,14 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
       const billingEvidence = Object.keys(matching).some((key) => /^(?:balance_info|balance|available_balance|cash_balance|credit_line)$/i.test(key));
       let billingReadiness = current.billingReadiness || 'unknown';
       if (request.capability === 'BILLING_READINESS') {
-        if (explicitBillingReady === true || billingStatus && /^(ready|active|valid)$/i.test(billingStatus) || billingEvidence) billingReadiness = 'ready';
+        if (explicitBillingReady === true || billingStatus && /^(ready|active|valid)$/i.test(billingStatus)) billingReadiness = 'ready';
         else if (explicitBillingReady === false || billingStatus && /not.?configured/i.test(billingStatus)) billingReadiness = 'not_configured';
         else if (billingStatus && /action|required|overdue|insufficient/i.test(billingStatus)) billingReadiness = 'action_required';
+        else if (billingEvidence) {
+          const balances = [matching.available_balance, matching.cash_balance, matching.balance];
+          const positiveBalance = balances.some((value) => (typeof value === 'string' || typeof value === 'number') && Number.isFinite(Number(value)) && Number(value) > 0);
+          billingReadiness = positiveBalance ? 'ready' : 'unknown';
+        }
         else billingReadiness = 'unknown';
       }
       const currency = text(matching, ['currency']) || current.currency;
@@ -764,12 +773,13 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
       return { ingestion };
     }
     if (request.capability === 'REPORT_READ') {
-      const rows = extractObjects(result)
+      const nestedRows = reportingRows(result);
+      const rows = (nestedRows.length ? nestedRows : extractObjects(result))
         .filter((record) => !text(record, ['advertiser_id']) || text(record, ['advertiser_id']) === request.advertiserId)
-        .filter((record) => Object.keys(record).some((key) => ['spend', 'impressions', 'reach', 'clicks', 'conversions', 'leads', 'video_views'].includes(key)));
+        .filter((record) => Object.keys(record).some((key) => ['spend', 'impressions', 'reach', 'clicks', 'conversion', 'conversions', 'leads', 'video_views'].includes(key)));
       const advertiser = await getAdvertiser(request.organizationId, request.advertiserId);
       const reporting = await persistReportingRows({ organizationId: request.organizationId, advertiserId: request.advertiserId, rows, reportingTimezone: advertiser.timezone });
-      return { reporting };
+      return { reporting, rows };
     }
     const syncTypes: Partial<Record<TikTokCapability, TikTokResourceType[]>> = {
       CAMPAIGN_READ: ['campaign'],

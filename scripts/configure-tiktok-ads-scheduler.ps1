@@ -60,7 +60,7 @@ $commonArguments = @(
   "--http-method=POST",
   "--headers=$headers",
   "--message-body=$body",
-  "--attempt-deadline=60s",
+  "--attempt-deadline=300s",
   "--max-retry-attempts=0",
   "--format=none",
   "--quiet"

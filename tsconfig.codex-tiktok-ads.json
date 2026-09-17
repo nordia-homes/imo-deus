@@ -7,6 +7,11 @@
   "include": [
     "src/lib/tiktok-ads.ts",
     "src/lib/tiktok-ads/**/*.ts",
+    "src/lib/tiktok-studio-jobs.ts",
+    "src/components/marketing/tiktok-ads/**/*.tsx",
+    "src/app/(dashboard)/marketing/tiktok-ads/page.tsx",
+    "src/app/(dashboard)/marketing/tiktok-studio/page.tsx",
+    "src/app/api/marketing/tiktok/**/*.ts",
     "src/app/auth/tiktok-ads/callback/route.ts",
     "src/app/api/marketing/tiktok-ads/**/*.ts",
     "src/app/api/marketing/tiktok/studio-projects/[projectId]/render/route.ts",

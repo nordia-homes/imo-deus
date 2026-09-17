@@ -18,6 +18,10 @@ const organizationB = 'org-b';
 const userA = 'user-a';
 
 const serverManagedCollections = [
+  'tiktokWorkspaceDrafts',
+  'tiktokStudioProjects',
+  'tiktokStudioAssets',
+  'tiktokPostDrafts',
   'tiktokAdvertisers',
   'tiktokAccountPermissions',
   'tiktokResourceReferences',
@@ -106,6 +110,7 @@ describeWithEmulator('TikTok Ads Firestore Rules integration', () => {
       ['tiktokAdsOauthStates', 'state-a'],
       ['tiktokMcpOAuthClients', 'client-a'],
       ['tiktokAdsJobs', 'job-a'],
+      ['tiktokStudioJobs', 'job-a'],
     ] as const;
 
     for (const [collectionName, documentId] of privatePaths) {

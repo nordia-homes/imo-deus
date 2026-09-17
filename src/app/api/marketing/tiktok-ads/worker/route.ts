@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,9 @@ export async function POST(request: NextRequest) {
       concurrency: typeof body.concurrency === 'number' ? body.concurrency : undefined,
       maxRuntimeMs: typeof body.maxRuntimeMs === 'number' ? body.maxRuntimeMs : undefined,
     });
-    return NextResponse.json(result);
+    const { drainStudioRenders } = await import('@/lib/tiktok-studio-jobs');
+    const studio = await drainStudioRenders();
+    return NextResponse.json({ ...result, studio });
   } catch {
     return NextResponse.json({ message: 'Drain-ul TikTok Ads a eșuat.' }, { status: 500 });
   }
