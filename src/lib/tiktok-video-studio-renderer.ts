@@ -180,7 +180,7 @@ async function downloadAssets(input: StudioRenderInput, workspace: string) {
 }
 
 function getElevenLabsApiKey() {
-  const apiKey = (process.env.ELEVENLABS_API_KEY || '').trim();
+  const apiKey = (process.env.ELEVENLABS_API_KEY || process.env.XI_API_KEY || '').trim();
   if (!apiKey) throw new Error('Configureaza ELEVENLABS_API_KEY in .env.local pentru randarea vocii.');
   return apiKey;
 }

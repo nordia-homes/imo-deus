@@ -55,7 +55,7 @@ try {
     else if (url.pathname.endsWith('/operations')) data = { operationId: 'fixture-op', status: 'succeeded', createdResourceIds: [{ resourceType: 'ad', resourceId: 'fixture-ad' }] };
     else if (url.pathname.endsWith('/resources')) data = body.confirm ? { verified: true, message: 'Modificare confirmată în TikTok.' } : { current: { id: 'campaign-1', name: 'Campanie test', status: 'DISABLE', budget: '50' } };
     else if (url.pathname.endsWith('/dashboard')) data = { portfolioProperties: [{ ...fixtures.properties[0], images: [] }], studioAssets: [], studioProjects: [], drafts: [], status: { connected: true } };
-    else if (url.pathname.endsWith('/voices')) data = { voices: [] };
+    else if (url.pathname.endsWith('/voices')) data = { voices: [{ id: 'voice-fixture', name: 'Voce test română', previewUrl: null }] };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -109,6 +109,14 @@ try {
   await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: 'Videoclipuri', exact: true }).click();
   await page.getByRole('button', { name: 'Creează videoclip', exact: true }).click();
   await page.getByRole('dialog', { name: 'Editor videoclip', exact: true }).waitFor();
+  const videoEditor = page.getByRole('dialog', { name: 'Editor videoclip', exact: true });
+  await videoEditor.getByLabel('Voce', { exact: true }).selectOption('voice-fixture');
+  assert.equal(await videoEditor.getByLabel('Voce', { exact: true }).inputValue(), 'voice-fixture');
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/video-editor.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await videoEditor.evaluate(element => element.scrollWidth > element.clientWidth), false, 'Video editor must fit mobile width');
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/video-editor-mobile.png'), fullPage: true });
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('button', { name: 'Salvează și închide', exact: true }).click();
   await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: 'Conturi', exact: true }).click();
   await page.getByRole('heading', { name: 'Cont publicitar', exact: true }).waitFor();

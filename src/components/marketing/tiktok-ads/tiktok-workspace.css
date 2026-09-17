@@ -348,4 +348,70 @@ html body .tt-design .tt-step[aria-current="step"] { box-shadow: 0 5px 14px #308
   html body .tt-design .tt-preview { border-left: 0; border-top: 1px solid #e0e8ef; }
   html body .tt-design .tt-preview-label, html body .tt-design .tt-preview-note { max-width: 250px; margin-left: auto; margin-right: auto; }
 }
+/* Video studio lives in a portal, above the desktop shell and theme picker. */
+html body .tt-video-editor { position: fixed; inset: 50% auto auto 50%; transform: translate(-50%,-50%); z-index: 1201; width: min(1320px,calc(100vw - 40px)); max-height: calc(100dvh - 40px); display: flex; flex-direction: column; overflow: hidden; background: #f7fafc !important; border: 1px solid #fff; border-radius: 28px; box-shadow: 0 35px 110px #29445935; }
+html body .tt-design .tt-video-header { display: flex; align-items: center; gap: 18px; flex-shrink: 0; padding: 26px 32px; border-bottom: 1px solid #e0eceb; background: radial-gradient(ellipse at 95% 10%,#f7e5ef,transparent 50%),linear-gradient(120deg,#e6f7f1,#fff 65%); }
+html body .tt-design .tt-video-header h2 { font-size: clamp(22px,2.2vw,31px); letter-spacing: -.045em; font-weight: 650; margin-top: 4px; }
+html body .tt-design .tt-video-header p { font-size: 12px; color: #607a89; margin-top: 5px; }
+html body .tt-design .tt-video-header > .tt-button { margin-left: auto; flex-shrink: 0; }
+html body .tt-design .tt-video-mark { width: 58px; height: 58px; flex-shrink: 0; border: 1px solid #fff; border-radius: 19px; display: grid; place-items: center; background: #ffffffbc; box-shadow: 0 8px 20px #327c6d12; color: #2d907e; transform: rotate(-7deg); }
+html body .tt-design .tt-video-mark svg { width: 28px; height: 28px; }
+html body .tt-design .tt-video-body { overflow-y: auto; min-height: 0; padding: 24px 32px 32px; }
+html body .tt-design .tt-video-workflow { display: flex; align-items: center; gap: 22px; margin: 0 auto 24px; max-width: 720px; }
+html body .tt-design .tt-video-workflow span { display: flex; gap: 8px; align-items: center; color: #547385; font-size: 12px; white-space: nowrap; }
+html body .tt-design .tt-video-workflow svg { width: 16px; color: #2b9580; }
+html body .tt-design .tt-video-workflow i { flex: 1; height: 1px; background: #dbe8e8; }
+html body .tt-design .tt-video-columns { display: grid; grid-template-columns: 1.03fr 1fr; gap: 24px; min-width: 0; align-items: start; }
+html body .tt-design .tt-video-section { display: grid; gap: 20px; padding: 26px; background: white; border: 1px solid #dfe8ed; border-radius: 22px; min-width: 0; box-shadow: 0 10px 25px -20px #507c8d30; }
+html body .tt-design .tt-video-section--media { background: linear-gradient(150deg,#f2faf8,white 35%); }
+html body .tt-design .tt-video-section--voice { background: linear-gradient(160deg,#fcf5fa,white 35%); }
+html body .tt-design .tt-video-section-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 2px; }
+html body .tt-design .tt-video-section-heading > span { display: grid; place-items: center; width: 35px; height: 35px; flex-shrink: 0; border-radius: 11px; background: #e5f3ef; color: #337a69; font-size: 12px; font-weight: 650; }
+html body .tt-design .tt-video-section--voice > .tt-video-section-heading > span { background: #f4e7f0; color: #986385; }
+html body .tt-design .tt-video-section-heading h3 { font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -.035em; }
+html body .tt-design .tt-video-section-heading p { color: #657b8d; font-size: 11px; margin-top: 5px; }
+html body .tt-design .tt-video-section-heading > svg { width: 21px; color: #81b4a9; margin-left: auto; flex-shrink: 0; }
+html body .tt-design .tt-storyboard-heading { display: flex; align-items: center; justify-content: space-between; padding-top: 5px; }
+html body .tt-design .tt-storyboard-heading h4 { font-size: 14px; font-weight: 650; }
+html body .tt-design .tt-storyboard-heading > span { font-size: 10px; color: #50766e; padding: 4px 8px; border-radius: 6px; background: #edf6f2; }
+html body .tt-design .tt-storyboard { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+html body .tt-design .tt-story-frame { overflow: hidden; border: 1px solid #dfebe8; background: #fff; border-radius: 13px; box-shadow: 0 6px 15px -10px #34685550; }
+html body .tt-design .tt-story-frame img { width: 100%; aspect-ratio: 4/5; height: auto; object-fit: cover; }
+html body .tt-design .tt-story-frame > div { align-items: center; background: #f5faf8; padding: 5px; }
+html body .tt-design .tt-story-frame button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: white; color: #436b60; border: 1px solid #e2ede8; }
+html body .tt-design .tt-storyboard-empty { padding: 40px 20px; text-align: center; border: 1px dashed #c9ddd7; border-radius: 16px; background: #f4faf7; color: #557c70; }
+html body .tt-design .tt-storyboard-empty svg { margin: 0 auto 14px; width: 32px; height: 32px; }
+html body .tt-design .tt-storyboard-empty p { font-size: 12px; }
+html body .tt-design .tt-voice-picker { padding: 17px; border: 1px solid #e4ddec; border-radius: 15px; background: linear-gradient(120deg,#f9f2fa,#fcfaff); display: grid; gap: 12px; }
+html body .tt-design .tt-voice-heading { display: flex; align-items: center; gap: 8px; color: #9476a2; }
+html body .tt-design .tt-voice-heading strong { font-size: 12px; }
+html body .tt-design .tt-voice-heading .tt-button { margin-left: auto; padding: 0 7px; height: 30px; font-size: 10px; }
+html body .tt-design .tt-voice-error { padding: 11px 12px; border: 1px solid #f0d6ae; border-radius: 9px; background: #fff7e9; font-size: 12px; color: #805b29 !important; }
+html body .tt-design .tt-export-options { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; border-top: 1px solid #e8e8ed; padding-top: 21px; }
+html body .tt-design .tt-export-options .tt-video-section-heading { grid-column: 1/-1; margin-bottom: 9px; }
+html body .tt-design .tt-export-options h3 { font-size: 18px; }
+html body .tt-design .tt-export-option { display: flex; gap: 9px; align-items: center; min-height: 44px; padding: 10px 12px; font-size: 12px; border: 1px solid #dfe7ee; border-radius: 10px; cursor: pointer; background: #f9fbfd; }
+html body .tt-design .tt-export-option--selected { background: #eaf8f1; border-color: #a6d9c6; }
+html body .tt-design .tt-export-option input { accent-color: #288d77; width: 15px; height: 15px; }
+html body .tt-design .tt-render-button { height: 48px; }
+html body .tt-design .tt-render-note { margin-top: -10px; font-size: 10px; color: #637c8a; text-align: center; }
+@media (max-width: 850px) {
+  html body .tt-design .tt-video-columns { grid-template-columns: 1fr; }
+  html body .tt-design .tt-video-header { padding: 20px; }
+  html body .tt-design .tt-video-mark { display: none; }
+  html body .tt-design .tt-video-body { padding: 18px; }
+}
+@media (max-width: 550px) {
+  html body .tt-video-editor { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 18px; }
+  html body .tt-design .tt-video-header { align-items: start; gap: 10px; padding: 17px; }
+  html body .tt-design .tt-video-header h2 { font-size: 22px; }
+  html body .tt-design .tt-video-header .tt-eyebrow { font-size: 8px; }
+  html body .tt-design .tt-video-header > .tt-button { max-width: 100px; white-space: normal; height: auto; padding: 8px; font-size: 10px; }
+  html body .tt-design .tt-video-workflow { gap: 9px; }
+  html body .tt-design .tt-video-workflow span { flex: 1; flex-direction: column; font-size: 9px; white-space: normal; text-align: center; }
+  html body .tt-design .tt-video-workflow i { flex: 0 0 10px; }
+  html body .tt-design .tt-video-section { padding: 16px; }
+  html body .tt-design .tt-storyboard { gap: 7px; }
+  html body .tt-design .tt-voice-heading { flex-wrap: wrap; }
+}
 @media (prefers-reduced-motion: reduce) { html body .tt-design * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
