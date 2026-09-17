@@ -25,16 +25,16 @@ html body .tt-design button:disabled { opacity: .45 !important; cursor: not-allo
 html body .tt-workspace {
   position: relative;
   isolation: isolate;
-  max-width: 1500px;
+  max-width: 1560px;
   margin: 12px auto 30px;
   padding: 28px;
   min-height: calc(100dvh - 140px);
   border: 1px solid #e0e8ef;
   border-radius: 26px;
-  background: radial-gradient(ellipse at 90% 0%, #e5f5f5 0%, transparent 36%), var(--tt-bg) !important;
+  background: radial-gradient(ellipse at 0% 0%, #eef8f7 0%, transparent 40%), #f7f9fc !important;
   box-shadow: 0 20px 65px -35px #42678020;
 }
-html body .tt-design .tt-panel { background: var(--tt-panel) !important; border: 1px solid var(--tt-line) !important; border-radius: 18px; padding: 24px; box-shadow: 0 8px 25px -20px #42678018 !important; }
+html body .tt-design .tt-panel { background: var(--tt-panel) !important; border: 1px solid var(--tt-line) !important; border-radius: 24px; padding: 26px; box-shadow: 0 12px 35px -22px #42678030 !important; }
 html body .tt-design .tt-input {
   height: 44px;
   min-width: 0;
@@ -56,8 +56,8 @@ html body .tt-design textarea.tt-input { height: auto; min-height: 110px; resize
 html body .tt-design .tt-input option { background: #ffffff; color: #263b51; }
 html body .tt-design .tt-button {
   height: 42px;
-  border-radius: 10px !important;
-  padding: 0 16px;
+  border-radius: 12px !important;
+  padding: 0 19px;
   font-size: 13px;
   font-weight: 650;
   letter-spacing: -.015em;
@@ -68,7 +68,7 @@ html body .tt-design .tt-button {
 }
 html body .tt-design .tt-button--default {
   border: 1px solid #a0e5dc !important;
-  background: linear-gradient(110deg, #7bf4dd, #48ddd6) !important;
+  background: linear-gradient(115deg, #b5f2e1, #78e4db) !important;
   color: #082a2a !important;
   box-shadow: 0 5px 25px -10px #40dfc952 !important;
 }
@@ -77,19 +77,12 @@ html body .tt-design :is(.tt-button--outline,.tt-button--secondary) { border: 1p
 html body .tt-design :is(.tt-button--outline,.tt-button--secondary):hover:not(:disabled) { background: #eef7f8 !important; border-color: #abcbd2 !important; }
 html body .tt-design :is(.tt-button--ghost,.tt-button--link) { color: #526b82 !important; border: 1px solid transparent !important; background: transparent !important; }
 html body .tt-design .tt-button--ghost:hover:not(:disabled) { background: #eaf4f5 !important; color: #24485e !important; }
-html body .tt-design .tt-hero { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 20px; position: relative; padding: 10px 8px 28px; overflow: hidden; }
+html body .tt-design .tt-hero { display: grid; grid-template-columns: minmax(0,1fr) 430px; align-items: center; gap: 24px; position: relative; padding: 32px 38px; overflow: hidden; border: 1px solid #e0ecec; border-radius: 28px; background: radial-gradient(ellipse at 85% 30%,#d9f4ed 0%,transparent 48%),radial-gradient(ellipse at 45% 100%,#fae8f2 0%,transparent 55%),#ffffff; min-height: 340px; }
 html body .tt-design .tt-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #526c81 !important; font-size: 10px; font-weight: 650; letter-spacing: .2em; text-transform: uppercase; }
-html body .tt-design .tt-hero h1 { margin: 10px 0 6px; font-size: clamp(34px, 3.6vw, 53px); line-height: 1.1; letter-spacing: -.06em; font-weight: 750; }
-html body .tt-design .tt-hero h1 em { font-style: normal; font-weight: 450; color: #008985; }
+html body .tt-design .tt-hero h1 { margin: 10px 0 6px; font-size: clamp(42px, 4.4vw, 68px); line-height: 1.1; letter-spacing: -.06em; font-weight: 750; }
+html body .tt-design .tt-hero h1 em { font-style: normal; font-weight: 450; color: #008985; letter-spacing: -.065em; }
 html body .tt-design .tt-hero p { font-size: 13px; color: #5e748b !important; margin-top: 12px; }
 html body .tt-design .tt-hero-actions { position: relative; z-index: 1; display: flex; gap: 10px; margin-top: 22px; }
-html body .tt-design .tt-hero-visual { width: 225px; height: 174px; position: relative; display: grid; place-items: center; }
-html body .tt-design .tt-orbit { position: absolute; width: 166px; height: 166px; border-radius: 50%; border: 1px solid #46bfb84a; transform: rotate(-25deg) scaleX(1.3); }
-html body .tt-design .tt-orbit:nth-child(2) { width: 218px; height: 130px; border-color: #eb98b54a; transform: rotate(32deg); }
-html body .tt-design .tt-brand-emblem { display: grid; place-items: center; width: 100px; height: 100px; transform: rotate(-10deg); border-radius: 26px; border: 1px solid #c2dfdf; background: linear-gradient(135deg,#ffffff,#edf8f8 60%); box-shadow: -15px 8px 45px #30d5ca17, 16px -8px 45px #ff527b15, inset 0 1px 0 #ffffff22; }
-html body .tt-design .tt-brand-emblem svg { width: 54px; height: 54px; }
-html body .tt-design .tt-brand-emblem svg path:last-child { fill: #182b40; }
-html body .tt-design .tt-visual-tag { position: absolute; bottom: 0; padding: 5px 10px; border: 1px solid #dbe8ef; border-radius: 20px; background: #fffffff0; font-size: 9px; letter-spacing: .13em; color: #577285; }
 html body .tt-design .tt-context { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px 18px; background: #ffffff !important; border: 1px solid #dce7ee; border-radius: 14px; }
 html body .tt-design .tt-context-avatar { width: 39px; height: 39px; border-radius: 11px; display: grid; place-items: center; color: #148b83; background: #e7f6f4; border: 1px solid #bee5df; }
 html body .tt-design .tt-context label { min-width: 190px; max-width: 310px; flex: 1; font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: #62758a !important; }
@@ -101,10 +94,9 @@ html body .tt-design .tt-badge { display: inline-flex; align-items: center; gap:
 html body .tt-design .tt-badge > span { width: 5px; height: 5px; border-radius: 50%; background: #72869c; }
 html body .tt-design .tt-badge--active { color: #25745e !important; background: #ebf8f1; border-color: #c7e8d6; }
 html body .tt-design .tt-badge--active > span { background: #359b74; box-shadow: 0 0 9px #75e6bf50; }
-html body .tt-design .tt-nav { display: flex; gap: 6px; border-bottom: 1px solid #dce5ee; margin: 20px 0 24px; padding-bottom: 0; }
-html body .tt-design .tt-nav .tt-button { position: relative; padding: 14px 18px; height: 54px; background: transparent !important; border: none !important; border-radius: 0 !important; color: #60748c !important; box-shadow: none !important; }
-html body .tt-design .tt-nav .tt-button[aria-current="page"] { color: #087e79 !important; }
-html body .tt-design .tt-nav .tt-button[aria-current="page"]::after { content: ''; height: 2px; position: absolute; bottom: -1px; left: 17px; right: 17px; background: #199e94; box-shadow: 0 -3px 14px #68efd414; }
+html body .tt-design .tt-nav { display: flex; gap: 7px; border: 1px solid #e1e8ef; margin: 20px 0 24px; padding: 6px; background: #edf2f6; border-radius: 16px; width: fit-content; max-width: 100%; }
+html body .tt-design .tt-nav .tt-button { position: relative; padding: 11px 23px; height: 44px; background: transparent !important; border: none !important; border-radius: 0 !important; color: #60748c !important; box-shadow: none !important; }
+html body .tt-design .tt-nav .tt-button[aria-current="page"] { color: #087e79 !important; background: white !important; border-radius: 11px !important; box-shadow: 0 3px 10px #435e7512 !important; }
 html body .tt-design .tt-nav svg { width: 15px; height: 15px; }
 html body .tt-design .tt-panel-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 html body .tt-design .tt-panel-heading h2 { font-size: 18px; letter-spacing: -.025em; font-weight: 650; }
@@ -116,22 +108,22 @@ html body .tt-design .tt-report-tools label { font-size: 9px; color: #5f7287 !im
 html body .tt-design .tt-report-tools input { width: 140px; height: 37px; margin-top: 4px; font-size: 11px; }
 html body .tt-design .tt-report-tools .tt-button { height: 37px; }
 html body .tt-design .tt-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
-html body .tt-design .tt-metric { position: relative; overflow: hidden; padding: 18px; border: 1px solid #e0e8ef; border-radius: 13px; background: linear-gradient(140deg,#eff8fa,#ffffff); }
+html body .tt-design .tt-metric { position: relative; overflow: hidden; padding: 21px; border: 1px solid #dceee9; border-radius: 18px; background: linear-gradient(140deg,#edf9f5,#fafffd); transition: transform .2s, box-shadow .2s; }
 html body .tt-design .tt-metric::after { content: ''; position: absolute; width: 100px; height: 100px; border-radius: 50%; right: -60px; top: -55px; box-shadow: 0 0 50px #5ce7d62c; }
 html body .tt-design .tt-metric-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 html body .tt-design .tt-metric-dot { width: 18px; height: 3px; background: #a9bac7; border-radius: 3px; }
 html body .tt-design .tt-metric p { font-size: 11px; color: #5e738a !important; }
-html body .tt-design .tt-metric strong { display: block; font-size: 34px; line-height: 1.25; letter-spacing: -.05em; font-variant-numeric: tabular-nums; margin-top: 3px; }
+html body .tt-design .tt-metric strong { display: block; font-size: 40px; line-height: 1.25; letter-spacing: -.05em; font-variant-numeric: tabular-nums; margin-top: 3px; }
 html body .tt-design .tt-metric-caption { display: block; font-size: 9px; color: #63778b; margin-top: 12px; }
 html body .tt-design .tt-metric--pink .tt-icon-tile { color: #b94f77; background: #fff0f5; border-color: #f1d6e1; }
 html body .tt-design .tt-metric--violet .tt-icon-tile { color: #7b5cae; background: #f4effc; border-color: #e6daf4; }
-html body .tt-design .tt-metric--amber .tt-icon-tile { color: #3c77b7; background: #edf4fd; border-color: #d5e5f9; }
+html body .tt-design .tt-metric--amber .tt-icon-tile { color: #a66b26; background: #fff4df; border-color: #efdfc0; }
 html body .tt-design .tt-footnote { display: flex; gap: 7px; align-items: center; font-size: 10px; color: #5d7289 !important; margin-top: 14px; }
 html body .tt-design .tt-footnote svg { width: 13px; height: 13px; flex-shrink: 0; }
 html body .tt-design .tt-launchpad { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; margin-top: 20px; }
-html body .tt-design .tt-feature { padding: 24px; border: 1px solid #cfe7e2; border-radius: 17px; background: radial-gradient(ellipse at 100% 0,#c9eee755,transparent 65%),#f0faf7; }
+html body .tt-design .tt-feature { position: relative; overflow: hidden; padding: 28px; border: 1px solid #cfe7e2; border-radius: 23px; background: radial-gradient(ellipse at 100% 0,#c9eee755,transparent 65%),#f0faf7; }
 html body .tt-design .tt-feature--video { border-color: #eedee8; background: radial-gradient(ellipse at 100% 0,#f3d7e555,transparent 65%),#fdf5f9; }
-html body .tt-design .tt-feature h2 { font-size: 21px; font-weight: 650; letter-spacing: -.025em; margin: 13px 0 8px; }
+html body .tt-design .tt-feature h2 { font-size: 25px; font-weight: 650; letter-spacing: -.035em; margin: 18px 0 8px; }
 html body .tt-design .tt-feature p { font-size: 12px; line-height: 1.7; color: #5e7488 !important; max-width: 370px; margin-bottom: 18px; }
 html body .tt-design .tt-feature .tt-eyebrow { color: #287c6d !important; }
 html body .tt-design .tt-feature--video .tt-eyebrow { color: #a95d87 !important; }
@@ -175,36 +167,36 @@ html body .tt-composer {
   box-shadow: 0 35px 100px #29445933, 0 0 0 1px #ffffffaa, -25px -10px 100px #3bf2df08;
   display: flex; flex-direction: column;
 }
-html body .tt-design .tt-composer-header { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 22px 28px; border-bottom: 1px solid #dfe8ef; background: linear-gradient(110deg,#effaf7,#f9fbfe 70%); }
-html body .tt-design .tt-composer-title { font-size: 24px; font-weight: 650; letter-spacing: -.04em; margin-top: 5px; }
+html body .tt-design .tt-composer-header { flex-shrink: 0; display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 22px 28px; border-bottom: 1px solid #dfe8ef; background: linear-gradient(110deg,#effaf7,#f9fbfe 70%); }
+html body .tt-design .tt-composer-title { font-size: 29px; font-weight: 650; letter-spacing: -.04em; margin-top: 5px; }
 html body .tt-design .tt-composer-subtitle { color: #62778b !important; font-size: 11px; margin-top: 5px; }
-html body .tt-design .tt-composer-layout { display: grid; grid-template-columns: 190px minmax(0,1fr) 300px; min-height: 0; overflow-y: auto; }
+html body .tt-design .tt-composer-layout { display: grid; grid-template-columns: 190px minmax(0,1fr) 340px; min-height: 0; overflow-y: auto; }
 html body .tt-design .tt-steps { padding: 26px 14px; border-right: 1px solid #e0e8ef; background: #f7fafc; display: flex; flex-direction: column; gap: 7px; }
-html body .tt-design .tt-step { display: flex; align-items: center; gap: 11px; width: 100%; padding: 13px 10px; text-align: left; border: 1px solid transparent; border-radius: 10px; background: transparent !important; color: #5b7187 !important; box-shadow: none !important; }
-html body .tt-design .tt-step-number { display: grid; place-items: center; flex-shrink: 0; height: 28px; width: 28px; border: 1px solid #d2dee7; border-radius: 8px; font-size: 11px; font-weight: 600; }
-html body .tt-design .tt-step strong { display: block; color: inherit !important; font-size: 11px; font-weight: 600; }
+html body .tt-design .tt-step { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; padding: 13px 10px; text-align: left; border: 1px solid transparent; border-radius: 10px; background: transparent !important; color: #5b7187 !important; box-shadow: none !important; }
+html body .tt-design .tt-step-number { display: grid; place-items: center; flex-shrink: 0; height: 32px; width: 32px; border: 1px solid #d2dee7; border-radius: 8px; font-size: 11px; font-weight: 600; }
+html body .tt-design .tt-step strong { display: block; color: inherit !important; font-size: 12px; font-weight: 600; }
 html body .tt-design .tt-step small { display: block; color: #6a7f93; font-size: 9px; margin-top: 3px; }
 html body .tt-design .tt-step[aria-current="step"] { background: #e6f6f1 !important; border-color: #bce6dc; color: #236c5b !important; }
 html body .tt-design .tt-step[aria-current="step"] .tt-step-number { background: #c4ecdf; color: #082c2b !important; border-color: #c4ecdf; }
 html body .tt-design .tt-step[aria-current="step"] small { color: #487769; }
 html body .tt-design .tt-step-tip { margin: auto 10px 0; padding-top: 35px; color: #62798d !important; font-size: 10px; line-height: 1.8; }
 html body .tt-design .tt-step-tip svg { color: #259a85; width: 18px; margin-bottom: 8px; }
-html body .tt-design .tt-composer-form { padding: 28px; min-width: 0; }
+html body .tt-design .tt-composer-form { padding: 32px; min-width: 0; }
 html body .tt-design .tt-form-heading { margin-bottom: 23px; }
 html body .tt-design .tt-form-heading > span { display: block; font-size: 9px; letter-spacing: .17em; color: #257b70; margin-bottom: 8px; }
-html body .tt-design .tt-form-heading h3 { font-size: 21px; font-weight: 600; letter-spacing: -.035em; }
+html body .tt-design .tt-form-heading h3 { font-size: 25px; font-weight: 600; letter-spacing: -.035em; }
 html body .tt-design .tt-form-heading p { color: #61788e !important; font-size: 11px; margin-top: 6px; line-height: 1.7; }
 html body .tt-design .tt-fields { display: grid; grid-template-columns: 1fr; gap: 17px; }
-html body .tt-design .tt-field { display: block; margin: 0; min-width: 0; font-size: 11px; font-weight: 500; }
+html body .tt-design .tt-field { display: block; margin: 0; min-width: 0; font-size: 12px; font-weight: 500; }
 html body .tt-design .tt-field > span:first-child { display: block; color: #4d657d !important; margin-bottom: 8px; }
 html body .tt-design .tt-field > .tt-input { display: block; }
 html body .tt-design .tt-field input[type=checkbox] { accent-color: #229b84; }
 html body .tt-design .tt-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #e0e8ef; }
-html body .tt-design .tt-preview { padding: 25px 24px; background: radial-gradient(ellipse at 50% 42%,#d4eee999,transparent 65%),#f3f8fb; border-left: 1px solid #dfe8ef; }
+html body .tt-design .tt-preview { padding: 25px 30px; background: radial-gradient(ellipse at 75% 35%,#c7eae488,transparent 55%),radial-gradient(ellipse at 10% 70%,#f1dfea88,transparent 55%),#f5f9fa; border-left: 1px solid #dfe8ef; }
 html body .tt-design .tt-preview-label { display: flex; align-items: center; gap: 7px; font-size: 8px; font-weight: 600; letter-spacing: .14em; color: #526e85; margin-bottom: 20px; }
 html body .tt-design .tt-preview-label > span:last-child { margin-left: auto; border: 1px solid #d2e0e9; padding: 2px 5px; border-radius: 4px; font-size: 8px; }
 html body .tt-design .tt-live-dot { width: 5px; height: 5px; border-radius: 50%; background: #309d85; box-shadow: 0 0 10px #74e9d36b; }
-html body .tt-design .tt-phone { position: relative; width: 100%; max-width: 252px; padding: 7px; border: 1px solid #536078; border-radius: 34px; background: #080c13; box-shadow: 0 15px 45px #0008, 0 0 0 3px #202b3933; margin: auto; }
+html body .tt-design .tt-phone { position: relative; width: 100%; max-width: 230px; padding: 7px; border: 1px solid #536078; border-radius: 34px; background: #080c13; box-shadow: 0 15px 45px #0008, 0 0 0 3px #202b3933; margin: auto; }
 html body .tt-design .tt-phone-island { width: 65px; height: 15px; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); border-radius: 20px; z-index: 3; background: #070b12; }
 html body .tt-design .tt-phone-screen { position: relative; aspect-ratio: 9/17.2; border-radius: 27px; overflow: hidden; background: #141c29; }
 html body .tt-design .tt-phone-video { position: absolute; width: 100%; height: 100%; object-fit: cover; }
@@ -239,6 +231,66 @@ html body .tt-design .tt-media-library [role="dialog"] { background-color: #5367
 html body .tt-design .tt-media-library [role="dialog"] > div { background: #ffffff !important; border: 1px solid #dbe6ee; }
 html body .tt-design.tt-confirmation { background: #ffffff !important; border-color: #d4e2eb !important; }
 
+
+/* Light editorial art direction. Illustration is decorative, not account data. */
+html body .tt-design .tt-hero-kicker { display: flex; gap: 12px; align-items: center; }
+html body .tt-design .tt-hero-kicker > svg { width: 27px; height: 27px; }
+html body .tt-design .tt-hero p.tt-hero-lead { color: #314960 !important; font-size: clamp(17px,1.7vw,23px); line-height: 1.45; letter-spacing: -.025em; margin-top: 15px; }
+html body .tt-design .tt-hero-lead strong { font-weight: 550; }
+html body .tt-design .tt-scene { position: relative; height: 310px; width: 430px; }
+html body .tt-design .tt-scene-halo { position: absolute; inset: 15px 10px 0 25px; border: 1px solid #b9e5d780; border-radius: 50%; transform: rotate(-15deg); background: radial-gradient(ellipse,#c6efe480,transparent 65%); }
+html body .tt-design .tt-scene-sheet { position: absolute; border: 6px solid white; border-radius: 22px; box-shadow: 0 22px 45px -15px #345c6440; overflow: hidden; }
+html body .tt-design .tt-scene-sheet--back { width: 174px; height: 234px; left: 52px; top: 38px; transform: rotate(-15deg); background: linear-gradient(160deg,#f5dbdc,#f7eeeb); padding: 20px 12px; color: #865e67; }
+html body .tt-design .tt-scene-sheet--back > span { font-size: 8px; letter-spacing: .13em; }
+html body .tt-design .tt-scene-sheet--back > div { width: 100px; height: 130px; background: linear-gradient(110deg,#bbd6ce,#e8ede5); border: 9px solid #fff8; border-radius: 60px 60px 0 0; margin: 15px auto; }
+html body .tt-design .tt-scene-sheet--front { width: 192px; height: 276px; top: 12px; left: 170px; transform: rotate(10deg); background: #e8e8dc; }
+html body .tt-design .tt-scene-brand { position: absolute; z-index: 2; top: 12px; left: 10px; display: flex; gap: 5px; align-items: center; font-size: 7px; letter-spacing: .08em; color: #506c6b; }
+html body .tt-design .tt-architecture { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(155deg,#d5e8dd,#f2eadb 70%); }
+html body .tt-design .tt-arch-sun { position: absolute; width: 72px; height: 72px; border-radius: 50%; background: #fff7d5; top: 29px; right: -13px; filter: blur(1px); }
+html body .tt-design .tt-arch-wall { position: absolute; width: 130px; height: 180px; top: 55px; left: 0; background: linear-gradient(105deg,#fff9ed,#e1d7c5); transform: skewY(-6deg); box-shadow: 20px 10px 28px #928b7030; }
+html body .tt-design .tt-arch-window { position: absolute; width: 63px; height: 115px; top: 68px; left: 39px; border-radius: 40px 40px 0 0; border: 7px solid #d4c8ae; background: repeating-linear-gradient(90deg,transparent 0 23px,#c5b99c 23px 26px),linear-gradient(135deg,#8eafa6,#d5ddd0); box-shadow: inset 4px 4px 12px #365c6a30; }
+html body .tt-design .tt-arch-podium { position: absolute; width: 130px; height: 30px; top: 183px; left: 0; transform: skewY(-6deg); background: #eee3d0; box-shadow: 0 11px 0 #dfd3bd,0 20px 0 #c8bca5; }
+html body .tt-design .tt-arch-plant { position: absolute; top: 137px; right: 16px; width: 17px; height: 50px; border-bottom: 20px solid #b4b198; }
+html body .tt-design .tt-arch-plant i { position: absolute; width: 18px; height: 40px; border-radius: 90% 0; background: #688d78; top: -18px; left: -10px; transform: rotate(-22deg); }
+html body .tt-design .tt-arch-plant i:nth-child(2) { transform: rotate(35deg); left: 9px; top: -11px; background: #8ba18c; }
+html body .tt-design .tt-arch-plant i:nth-child(3) { transform: rotate(4deg); top: -31px; left: 2px; }
+html body .tt-design .tt-scene-caption { position: absolute; inset: auto 0 0; background: linear-gradient(transparent,#fbf8ef 25%); padding: 30px 12px 14px; display: grid; gap: 3px; }
+html body .tt-design .tt-scene-caption small { font-size: 6px; letter-spacing: .16em; color: #637b79; }
+html body .tt-design .tt-scene-caption strong { font-size: 21px; letter-spacing: -.06em; }
+html body .tt-design .tt-scene-caption > span { font-size: 6px; color: #607875; }
+html body .tt-design .tt-scene-play { position: absolute; top: 112px; left: 72px; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #ffffffc9; color: #32685d; border: 1px solid white; backdrop-filter: blur(5px); }
+html body .tt-design .tt-scene-tag { position: absolute; display: flex; align-items: center; gap: 10px; border: 1px solid #ffffff; border-radius: 14px; background: #ffffffed; box-shadow: 0 10px 25px #507e8214; padding: 12px 15px; color: #48776e; }
+html body .tt-design .tt-scene-tag--video { left: 5px; bottom: 30px; transform: rotate(-3deg); }
+html body .tt-design .tt-scene-tag--video > span { font-size: 10px; line-height: 1.4; color: #657c84; }
+html body .tt-design .tt-scene-tag--video strong { font-size: 14px; }
+html body .tt-design .tt-scene-tag b { font-size: 20px; color: #238b78; font-weight: 500; margin-left: 5px; }
+html body .tt-design .tt-scene-tag--spark { top: 7px; right: 2px; font-size: 9px; padding: 10px 13px; color: #875a79; }
+html body .tt-design .tt-metric--violet { background: linear-gradient(140deg,#f4effc,#fcfaff); border-color: #e9e0f5; }
+html body .tt-design .tt-metric--pink { background: linear-gradient(140deg,#fceef4,#fffbfd); border-color: #f0e0e8; }
+html body .tt-design .tt-metric--amber { background: linear-gradient(140deg,#fff6e8,#fffdf8); border-color: #eee4d1; }
+html body .tt-design .tt-metric:hover { transform: translateY(-3px); box-shadow: 0 12px 22px -14px #58748340; }
+html body .tt-design .tt-feature > .tt-icon-tile { width: 46px; height: 46px; margin-right: 13px; background: #ffffffb0; border-color: #ffffff; border-radius: 14px; }
+html body .tt-design .tt-feature::after { content: ''; pointer-events: none; position: absolute; width: 150px; height: 150px; border: 24px solid #76d6bd13; border-radius: 50%; top: -45px; right: -40px; }
+html body .tt-design .tt-feature--video::after { border-color: #d58daf12; }
+html body .tt-design .tt-composer-progress { height: 3px; background: #edf3f4; flex-shrink: 0; }
+html body .tt-design .tt-composer-progress > span { display: block; height: 100%; background: linear-gradient(90deg,#a3dfd3,#1da99a); transition: width .25s; }
+html body .tt-design .tt-preview-heading { text-align: center; margin: 0 0 22px; }
+html body .tt-design .tt-preview-heading h3 { font-size: 24px; line-height: 1.2; letter-spacing: -.04em; }
+html body .tt-design .tt-preview-heading em { font-style: normal; color: #2f8a7a; font-weight: 450; }
+html body .tt-design .tt-preview-heading p { font-size: 11px; color: #677e8c; margin-top: 8px; }
+html body .tt-design .tt-form-heading > span { display: inline-block; background: #edf7f3; border: 1px solid #dbede6; border-radius: 6px; padding: 4px 8px; margin-bottom: 12px; }
+html body .tt-design .tt-step[aria-current="step"] { box-shadow: 0 5px 14px #30856e09 !important; }
+@media (max-width: 1150px) {
+  html body .tt-design .tt-hero { grid-template-columns: minmax(0,1fr) 330px; padding: 26px; }
+  html body .tt-design .tt-scene { transform: scale(.82); transform-origin: center; width: 330px; margin-left: -25px; }
+}
+@media (max-width: 760px) {
+  html body .tt-design .tt-hero { grid-template-columns: 1fr; padding: 25px; }
+  html body .tt-design .tt-scene { display: none; }
+  html body .tt-design .tt-hero h1 { font-size: 48px; }
+  html body .tt-design .tt-hero-lead { font-size: 19px; }
+}
+
 @media (min-width: 1500px) { html body .tt-workspace { padding: 32px 36px; } }
 @media (max-width: 1150px) {
   html body .tt-design .tt-context-meta { gap: 10px; }
@@ -253,7 +305,6 @@ html body .tt-design.tt-confirmation { background: #ffffff !important; border-co
 }
 @media (max-width: 900px) {
   html body .tt-workspace { padding: 20px; margin: 0; border-radius: 18px; }
-  html body .tt-design .tt-hero-visual { width: 160px; }
   html body .tt-design .tt-context-meta { display: none; }
   html body .tt-design .tt-composer-layout { grid-template-columns: minmax(0,1fr) 255px; }
   html body .tt-design .tt-steps { grid-column: 1/-1; flex-direction: row; padding: 12px; border-right: 0; border-bottom: 1px solid #e0e8ef; }
@@ -263,14 +314,13 @@ html body .tt-design.tt-confirmation { background: #ffffff !important; border-co
 }
 @media (max-width: 620px) {
   html body .tt-workspace { padding: 16px; border-radius: 14px; }
-  html body .tt-design .tt-hero { display: block; padding: 6px 0 22px; }
+  html body .tt-design .tt-hero { display: block; padding: 23px 18px; border-radius: 20px; }
   html body .tt-design .tt-hero h1 { font-size: 38px; }
-  html body .tt-design .tt-hero-visual { display: none; }
   html body .tt-design .tt-hero-actions { flex-wrap: wrap; }
   html body .tt-design .tt-context { gap: 10px; padding: 12px; }
   html body .tt-design .tt-context label { min-width: 0; }
   html body .tt-design .tt-context > .tt-button { width: 100%; height: 33px; }
-  html body .tt-design .tt-nav { gap: 0; margin-top: 10px; }
+  html body .tt-design .tt-nav { gap: 2px; margin-top: 10px; width: 100%; padding: 4px; }
   html body .tt-design .tt-nav .tt-button { flex: 1; padding: 12px 3px; font-size: 10px; gap: 4px; }
   html body .tt-design .tt-nav svg { width: 12px; height: 12px; }
   html body .tt-design .tt-panel { padding: 16px; }
@@ -292,7 +342,7 @@ html body .tt-design.tt-confirmation { background: #ffffff !important; border-co
   html body .tt-design .tt-composer-layout { display: flex; flex-direction: column; }
   html body .tt-design .tt-steps { position: sticky; top: 0; z-index: 3; flex-shrink: 0; padding: 7px; gap: 3px; }
   html body .tt-design .tt-step { flex-direction: column; padding: 8px 3px; gap: 5px; }
-  html body .tt-design .tt-step strong { font-size: 8px; }
+  html body .tt-design .tt-step strong { font-size: 10px; line-height: 1.35; }
   html body .tt-design .tt-step-number { height: 23px; width: 23px; font-size: 10px; }
   html body .tt-design .tt-composer-form { padding: 20px; }
   html body .tt-design .tt-preview { border-left: 0; border-top: 1px solid #e0e8ef; }
