@@ -29,7 +29,7 @@ export function PhonePreview({ asset, username, text, cta = 'Află mai multe' }:
       <div className="tt-phone-actions" aria-hidden="true"><span className="tt-phone-avatar"><Building2 /></span><Heart /><MessageCircle /><Share2 /></div>
       <div className="tt-phone-copy"><strong>@{username || 'profilul_agenției'}</strong><span className="tt-sponsored">Sponsorizat</span><p>{text || 'Povestea următoarei tale proprietăți începe aici.'}</p><div className="tt-phone-cta">{cta}<ArrowUpRight /></div></div>
     </div></div>
-    <p className="tt-preview-note"><ShieldCheck />Previzualizare orientativă. Crearea nu activează reclama.</p>
+    <p className="tt-preview-note"><ShieldCheck />Previzualizare orientativă. Administratorul aprobă și publică.</p>
   </aside>;
 }
 

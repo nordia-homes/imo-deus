@@ -11,7 +11,7 @@ import loadConfig from 'tailwindcss/loadConfig.js';
 
 const root = process.cwd();
 const fixtures = {
-  role: 'admin', status: { configured: true, connected: true, writesEnabled: true, spendMutationsEnabled: true, requiresReconnect: false },
+  role: 'agent', status: { configured: true, connected: true, writesEnabled: true, spendMutationsEnabled: true, requiresReconnect: false },
   advertisers: ['adv-1', 'adv-2'].map((advertiserId, index) => ({ advertiserId, name: `Cont agenție ${index + 1}`, currency: 'EUR', timezone: 'Europe/Bucharest', authorized: true, selected: index === 0, billingReadiness: 'ready', version: 1 })),
   advertiserId: 'adv-1', properties: [{ id: 'home-1', title: 'Apartament test', location: 'București', price: 120000 }],
   assets: [{ id: 'video-1', propertyId: 'home-1', name: 'Tur apartament', url: '/fixture.mp4', thumbnailUrl: null, durationSeconds: 30 }],
@@ -49,8 +49,18 @@ try {
     let data = {};
     if (request.method() !== 'GET') writes.push({ path: url.pathname, body });
     if (url.pathname.endsWith('/workspace')) data = { ...fixtures, advertiserId: url.searchParams.get('advertiserId') || 'adv-1' };
-    else if (url.pathname.endsWith('/drafts') && request.method() === 'PUT') { const previous = drafts.get(body.id); assert.equal(body.expectedVersion, previous?.version || 0); data = { ...body, version: body.expectedVersion + 1 }; drafts.set(body.id, data); }
-    else if (url.pathname.endsWith('/drafts')) data = { drafts: [...drafts.values()].filter(draft => draft.advertiserId === url.searchParams.get('advertiserId')) };
+    else if (url.pathname.endsWith('/drafts') && request.method() === 'PUT') { const previous = drafts.get(body.id); assert.equal(body.expectedVersion, previous?.version || 0); data = { ...previous, ...body, ownerUid: 'fixture-user', ownerName: 'Agent test', status: previous?.status || 'draft', version: body.expectedVersion + 1 }; drafts.set(body.id, data); }
+    else if (url.pathname.endsWith('/drafts') && request.method() === 'PATCH') {
+      const previous = drafts.get(body.id); assert.equal(body.expectedVersion, previous.version);
+      const status = { submit: 'submitted', withdraw: 'draft', request_changes: 'changes_requested', reject: 'rejected', delete: 'deleted' }[body.action];
+      data = { ...previous, status, feedback: body.note || '', version: previous.version + 1 }; drafts.set(body.id, data);
+    }
+    else if (url.pathname.endsWith('/publication')) {
+      const previous = drafts.get(body.id); assert.equal(body.expectedVersion, previous.version);
+      if (body.action === 'preview') data = { token: 'fixture-consent', name: previous.data.name, currency: 'EUR', timezone: 'UTC', budget: '50', start: '2027-01-01', end: 'Fără termen', affectedAds: [{ id: 'other-ad', name: 'Altă reclamă activată' }], createsHierarchy: false, retry: false };
+      else { assert.equal(body.token, 'fixture-consent'); data = { status: 'published', version: previous.version + 1, message: 'Reclama a fost aprobată și publicată. Livrarea depinde de TikTok.' }; drafts.set(body.id, { ...previous, ...data, publishRevision: previous.version }); }
+    }
+    else if (url.pathname.endsWith('/drafts')) data = { drafts: [...drafts.values()].filter(draft => draft.status !== 'deleted' && draft.advertiserId === url.searchParams.get('advertiserId')) };
     else if (url.pathname.endsWith('/manager')) data = { rows: url.searchParams.get('kind') === 'report' ? [{ spend: '12.50', impressions: '1000', clicks: '20', conversion: '2' }] : [{ id: 'campaign-1', name: 'Campanie test', propertyId: 'home-1', status: 'DISABLE', budget: '50' }] };
     else if (url.pathname.endsWith('/operations')) data = { operationId: 'fixture-op', status: 'succeeded', createdResourceIds: [{ resourceType: 'ad', resourceId: 'fixture-ad' }] };
     else if (url.pathname.endsWith('/resources')) data = body.confirm ? { verified: true, message: 'Modificare confirmată în TikTok.' } : { current: { id: 'campaign-1', name: 'Campanie test', status: 'DISABLE', budget: '50' } };
@@ -80,7 +90,7 @@ try {
   assert.equal(drafts.size, 1, 'Closing immediately must save the draft');
   assert.equal([...drafts.values()][0].data.propertyId, 'home-1');
   await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: 'Reclame', exact: true }).click();
-  await page.getByRole('button', { name: /Apartament test.*Versiunea/ }).click();
+  await page.getByRole('button', { name: /Apartament test.*Draft/ }).click();
   await composer.getByRole('button', { name: '2. Conținut', exact: true }).click();
   await composer.locator('select').nth(0).selectOption('post');
   await composer.getByRole('button', { name: 'Încarcă postările autorizate' }).click();
@@ -90,14 +100,42 @@ try {
   await composer.getByLabel('Textul reclamei', { exact: true }).fill('Apartament test, programează o vizionare.');
   await composer.getByLabel('Pagina proprietății (HTTPS)', { exact: true }).fill('https://example.com/property');
   await composer.getByRole('button', { name: '4. Verificare', exact: true }).click();
-  await composer.getByRole('button', { name: 'Creează reclama oprită', exact: true }).click();
-  await composer.getByText('Reclama a fost creată oprită.', { exact: false }).waitFor();
-  const creation = writes.find(item => item.path.endsWith('/operations'));
-  assert.equal(creation.body.capability, 'SPARK_EXISTING_POST');
-  assert.equal(creation.body.propertyId, 'home-1');
-  assert.equal(creation.body.idempotencyKey, `draft-${[...drafts.keys()][0]}`);
+  await composer.getByRole('button', { name: 'Trimite spre aprobare', exact: true }).click();
+  await composer.getByRole('button', { name: 'Retrage pentru editare', exact: true }).waitFor();
+  assert.equal(writes.some(item => item.path.endsWith('/operations')), false, 'Agent submission must not create remote resources');
+  await composer.getByRole('button', { name: '1. Proprietate', exact: true }).click();
+  assert.equal(await composer.getByLabel('Numele reclamei', { exact: true }).isDisabled(), true, 'Submitted version is immutable');
+  await composer.getByRole('button', { name: 'Închide', exact: true }).click();
+  fixtures.role = 'admin';
+  await page.reload();
+  await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: /Aprobări/ }).click();
+  await page.getByRole('button', { name: 'Verifică și decide', exact: true }).click();
+  await composer.getByLabel('Motiv / modificări solicitate', { exact: true }).fill('Clarifică descrierea proprietății.');
+  await composer.getByRole('button', { name: 'Cere modificări', exact: true }).click();
   await composer.getByRole('button', { name: 'Salvează și închide', exact: true }).click();
-  await composer.waitFor({ state: 'hidden' });
+  fixtures.role = 'agent';
+  await page.reload();
+  await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: /Aprobări/ }).click();
+  await page.getByText('Clarifică descrierea proprietății.', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Deschide draftul', exact: true }).click();
+  await composer.getByRole('button', { name: '2. Conținut', exact: true }).click();
+  await composer.getByLabel('Textul reclamei', { exact: true }).fill('Descrierea corectată a apartamentului.');
+  await composer.getByRole('button', { name: '4. Verificare', exact: true }).click();
+  await composer.getByRole('button', { name: 'Trimite spre aprobare', exact: true }).click();
+  await composer.getByRole('button', { name: 'Închide', exact: true }).click();
+  fixtures.role = 'admin';
+  await page.reload();
+  await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: /Aprobări/ }).click();
+  await page.getByRole('button', { name: 'Verifică și decide', exact: true }).click();
+  await composer.getByRole('button', { name: 'Aprobă și publică', exact: true }).click();
+  await composer.getByText('Altă reclamă activată · other-ad', { exact: true }).waitFor();
+  assert.equal(writes.filter(item => item.path.endsWith('/publication') && item.body.action === 'publish').length, 0, 'Publication must wait for explicit spending confirmation');
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/approval-confirmation.png'), fullPage: true });
+  await composer.getByRole('button', { name: 'Confirmă aprobarea și publicarea', exact: true }).click();
+  await composer.getByText('Reclama a fost aprobată și publicată. Livrarea depinde de TikTok.', { exact: true }).waitFor();
+  assert.equal(await composer.getByRole('button', { name: 'Șterge draftul', exact: true }).count(), 0, 'Published records cannot be deleted as drafts');
+  await composer.getByRole('button', { name: 'Închide', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: 'Reclame', exact: true }).click();
   await page.getByRole('button', { name: 'Actualizează', exact: true }).click();
   await page.getByRole('button', { name: 'Activează', exact: true }).click();
   await page.getByRole('dialog', { name: 'Confirmă modificarea în TikTok' }).waitFor();
@@ -133,13 +171,21 @@ try {
   await composer.getByLabel('Textul reclamei', { exact: true }).fill('Reclamă în grup existent');
   await composer.getByLabel('Pagina proprietății (HTTPS)', { exact: true }).fill('https://example.com/property');
   await composer.getByRole('button', { name: '4. Verificare', exact: true }).click();
-  await composer.getByRole('button', { name: 'Creează reclama oprită', exact: true }).click();
-  await composer.getByText('Reclama a fost creată oprită.', { exact: false }).waitFor();
-  const reused = writes.find(item => item.body?.capability === 'SPARK_NEW_VIDEO_AD_ONLY').body.payload;
-  assert.equal(reused.ad.adgroup_id, 'campaign-1');
-  assert.equal(reused.campaign, undefined, 'An existing group must not create another campaign');
-  assert.equal(reused.adGroup, undefined, 'An existing group must not be recreated or have its budget changed');
+  await composer.getByRole('button', { name: 'Aprobă și publică', exact: true }).click();
+  await composer.getByRole('button', { name: 'Confirmă aprobarea și publicarea', exact: true }).click();
+  await composer.getByText('Reclama a fost aprobată și publicată. Livrarea depinde de TikTok.', { exact: true }).waitFor();
+  const reused = [...drafts.values()].find(item => item.data.mode === 'video');
+  assert.equal(reused.data.adgroupId, 'campaign-1', 'Publication uses the saved target group');
+  await composer.getByRole('button', { name: 'Închide', exact: true }).click();
+  await page.getByRole('button', { name: 'Creează reclamă', exact: true }).click();
+  await composer.getByLabel('Numele reclamei', { exact: true }).fill('Draft de șters');
   await composer.getByRole('button', { name: 'Salvează și închide', exact: true }).click();
+  await page.getByRole('button', { name: /Draft de șters.*Draft/ }).click();
+  await composer.getByRole('button', { name: '4. Verificare', exact: true }).click();
+  page.once('dialog', dialog => dialog.accept());
+  await composer.getByRole('button', { name: 'Șterge draftul', exact: true }).click();
+  await composer.waitFor({ state: 'hidden' });
+  assert.equal([...drafts.values()].find(item => item.data.name === 'Draft de șters').status, 'deleted');
   await page.getByLabel('Cont publicitar', { exact: true }).selectOption('adv-2');
   await page.getByText('Alege nivelul sau apasă Actualizează', { exact: false }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Campanie test', exact: true }).count(), 0, 'Switching accounts must clear the old list');
@@ -167,5 +213,5 @@ try {
   await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/mobile.png'), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'Mobile layout must not overflow');
   assert.deepEqual(errors, [], 'No uncaught React errors');
-  console.log('PASS: overview/report, draft save-on-close, ad composer submission with stable key, activation confirmation, account isolation, video editor, accounts, mobile layout. Fixture APIs only.');
+  console.log('PASS: overview/report, draft save-on-close, agent submission, admin changes, version lock, approve/publish consent, draft deletion, activation confirmation, account isolation, video editor, accounts, mobile layout. Fixture APIs only.');
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }
