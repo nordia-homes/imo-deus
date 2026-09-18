@@ -348,6 +348,14 @@ html body .tt-design .tt-step[aria-current="step"] { box-shadow: 0 5px 14px #308
   html body .tt-design .tt-preview { border-left: 0; border-top: 1px solid #e0e8ef; }
   html body .tt-design .tt-preview-label, html body .tt-design .tt-preview-note { max-width: 250px; margin-left: auto; margin-right: auto; }
 }
+html body .tt-hierarchy-composer { position: fixed; z-index: 1201; inset: 50% auto auto 50%; transform: translate(-50%,-50%); width: min(740px,calc(100vw - 24px)); max-height: calc(100dvh - 24px); display: flex; flex-direction: column; overflow: hidden; background: #fff !important; border: 1px solid #e1ebe9; border-radius: 24px; box-shadow: 0 30px 90px #36576e35; }
+html body .tt-design .tt-hierarchy-body { padding: 26px; overflow-y: auto; min-height: 0; display: grid; gap: 18px; }
+html body .tt-design .tt-hierarchy-intro { display: flex; align-items: center; gap: 16px; background: linear-gradient(120deg,#edf9f4,#faf4f8); padding: 18px; border-radius: 15px; font-size: 12px; color: #516d7a; }
+html body .tt-design .tt-hierarchy-intro svg { width: 29px; flex-shrink: 0; color: #248b7c; }
+html body .tt-design .tt-hierarchy-safety { display: flex; gap: 10px; align-items: center; color: #46766b; background: #f1faf6; padding: 14px; border-radius: 12px; font-size: 12px; }
+html body .tt-design .tt-hierarchy-safety svg { flex-shrink: 0; width: 18px; }
+html body .tt-design .tt-hierarchy-locations { display: grid; gap: 8px; max-height: 180px; overflow-y: auto; }
+html body .tt-design .tt-hierarchy-locations label { display: flex; gap: 10px; font-size: 13px; }
 /* Video studio lives in a portal, above the desktop shell and theme picker. */
 html body .tt-video-editor { position: fixed; inset: 50% auto auto 50%; transform: translate(-50%,-50%); z-index: 1201; width: min(1320px,calc(100vw - 40px)); max-height: calc(100dvh - 40px); display: flex; flex-direction: column; overflow: hidden; background: #f7fafc !important; border: 1px solid #fff; border-radius: 28px; box-shadow: 0 35px 110px #29445935; }
 html body .tt-design .tt-video-header { display: flex; align-items: center; gap: 18px; flex-shrink: 0; padding: 26px 32px; border-bottom: 1px solid #e0eceb; background: radial-gradient(ellipse at 95% 10%,#f7e5ef,transparent 50%),linear-gradient(120deg,#e6f7f1,#fff 65%); }

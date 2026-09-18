@@ -1,6 +1,6 @@
 import type { JsonSchema } from './types';
 
-export type TikTokRow = { id: string; name: string; status: string; campaignId?: string; adgroupId?: string; propertyId?: string | null; budget?: string; scheduleEnd?: string; rejection?: string; url?: string; metrics?: Record<string, string>; };
+export type TikTokRow = { id: string; name: string; status: string; objectiveType?: string; campaignId?: string; adgroupId?: string; propertyId?: string | null; budget?: string; scheduleEnd?: string; rejection?: string; url?: string; metrics?: Record<string, string>; };
 export type AdDraft = { name: string; propertyId: string; assetId: string; identityId: string; objective: 'TRAFFIC' | 'LEAD_GENERATION' | 'VIDEO_VIEWS'; text: string; url: string; formId: string; locationIds: string[]; budget: string; start: string; end: string; cta: string; mode: 'video' | 'post'; postId: string; adgroupId: string; };
 export const emptyAdDraft: AdDraft = { name: '', propertyId: '', assetId: '', identityId: '', objective: 'TRAFFIC', text: '', url: '', formId: '', locationIds: [], budget: '', start: '', end: '', cta: 'LEARN_MORE', mode: 'video', postId: '', adgroupId: '' };
 
@@ -54,7 +54,7 @@ export function rowsFor(value: unknown, kind: 'campaign' | 'adgroup' | 'ad' | 'p
     const id = idKeys.map(key => record[key]).find(value => typeof value === 'string' || typeof value === 'number');
     if (!id) return [];
     const name = record[`${kind}_name`] || record.name || record.title || record.display_name || record.region_name || id;
-    return [{ id: String(id), name: String(name), status: String(record.operation_status || record.secondary_status || record.status || 'UNKNOWN'), campaignId: record.campaign_id ? String(record.campaign_id) : undefined, adgroupId: record.adgroup_id ? String(record.adgroup_id) : undefined, budget: record.budget == null ? undefined : String(record.budget), scheduleEnd: record.schedule_end_time ? String(record.schedule_end_time) : undefined, rejection: record.rejection_reason ? String(record.rejection_reason) : undefined, url: typeof record.video_url === 'string' ? record.video_url : undefined }];
+    return [{ id: String(id), name: String(name), status: String(record.operation_status || record.secondary_status || record.status || 'UNKNOWN'), objectiveType: typeof record.objective_type === 'string' ? record.objective_type : undefined, campaignId: record.campaign_id ? String(record.campaign_id) : undefined, adgroupId: record.adgroup_id ? String(record.adgroup_id) : undefined, budget: record.budget == null ? undefined : String(record.budget), scheduleEnd: record.schedule_end_time ? String(record.schedule_end_time) : undefined, rejection: record.rejection_reason ? String(record.rejection_reason) : undefined, url: typeof record.video_url === 'string' ? record.video_url : undefined }];
   });
   // A response may repeat only an ID inside metadata. Keep the richer resource.
   const byId = new Map<string, TikTokRow>();
@@ -96,12 +96,20 @@ export function accountTimeToUtc(value: string, timezone: string): string | unde
 }
 
 export function buildAdInputs(draft: AdDraft, schemas: Partial<Record<string, JsonSchema>>, timezone = 'UTC') {
-  const ad = schemaInput(schemas.AD_CREATE, { ad_name: draft.name, ad_text: draft.text, ad_format: 'SINGLE_VIDEO', call_to_action: draft.cta, landing_page_url: draft.url || undefined, page_id: draft.formId || undefined, adgroup_id: draft.mode === 'post' ? draft.adgroupId : undefined, tiktok_item_id: draft.mode === 'post' ? draft.postId : undefined });
+  const ad = schemaInput(schemas.AD_CREATE, { ad_name: draft.name, ad_text: draft.text, ad_format: 'SINGLE_VIDEO', call_to_action: draft.cta, landing_page_url: draft.url || undefined, page_id: draft.formId || undefined, adgroup_id: draft.adgroupId || undefined, tiktok_item_id: draft.mode === 'post' ? draft.postId : undefined });
+  if (draft.adgroupId && !records(ad).some(row => row.adgroup_id === draft.adgroupId)) throw new Error('Configurația TikTok nu permite asocierea reclamei cu grupul selectat.');
   if (draft.mode === 'post') return { campaign: {}, adGroup: {}, video: {}, ad };
-  const scheduleTime = (value: string) => accountTimeToUtc(value, timezone);
-  const common = { campaign_name: draft.name, objective_type: draft.objective, campaign_type: 'REGULAR_CAMPAIGN', is_search_campaign: false, budget_mode: 'BUDGET_MODE_INFINITE' };
-  const campaign = schemaInput(schemas.CAMPAIGN_CREATE, common);
-  const adGroup = schemaInput(schemas.ADGROUP_CREATE, { adgroup_name: draft.name, budget: draft.budget, budget_mode: 'BUDGET_MODE_DAY', schedule_type: draft.end ? 'SCHEDULE_START_END' : 'SCHEDULE_FROM_NOW', schedule_start_time: scheduleTime(draft.start), schedule_end_time: scheduleTime(draft.end), location_ids: draft.locationIds, placement_type: 'PLACEMENT_TYPE_NORMAL', placements: ['PLACEMENT_TIKTOK'], promotion_type: draft.objective === 'LEAD_GENERATION' ? 'LEAD_GENERATION' : draft.objective === 'VIDEO_VIEWS' ? undefined : 'WEBSITE', promotion_target_type: draft.objective === 'LEAD_GENERATION' ? 'INSTANT_PAGE' : undefined, optimization_goal: draft.objective === 'TRAFFIC' ? 'CLICK' : draft.objective === 'VIDEO_VIEWS' ? 'ENGAGED_VIEW' : 'LEAD_GENERATION', billing_event: draft.objective === 'VIDEO_VIEWS' ? 'CPV' : draft.objective === 'TRAFFIC' ? 'CPC' : 'OCPM', bid_type: 'BID_TYPE_NO_BID', pacing: 'PACING_MODE_SMOOTH' });
+  const campaign = draft.adgroupId ? {} : buildCampaignInput(draft, schemas.CAMPAIGN_CREATE);
+  const adGroup = draft.adgroupId ? {} : buildAdGroupInput(draft, schemas.ADGROUP_CREATE, timezone);
   const video = schemaInput(schemas.CREATIVE_UPLOAD, { upload_type: 'UPLOAD_BY_URL', file_name: draft.name.replace(/[^\p{L}\p{N} _-]/gu, '').slice(0, 80) + '.mp4' });
   return { campaign, adGroup, video, ad };
+}
+
+export function buildCampaignInput(draft: Pick<AdDraft, 'name' | 'objective'>, schema?: JsonSchema) {
+  return schemaInput(schema, { campaign_name: draft.name, objective_type: draft.objective, campaign_type: 'REGULAR_CAMPAIGN', is_search_campaign: false, budget_mode: 'BUDGET_MODE_INFINITE' });
+}
+
+export function buildAdGroupInput(draft: AdDraft, schema: JsonSchema | undefined, timezone: string, campaignId?: string) {
+  const scheduleTime = (value: string) => accountTimeToUtc(value, timezone);
+  return schemaInput(schema, { campaign_id: campaignId || undefined, campaignId: campaignId || undefined, adgroup_name: draft.name, budget: draft.budget, budget_mode: 'BUDGET_MODE_DAY', schedule_type: draft.end ? 'SCHEDULE_START_END' : 'SCHEDULE_FROM_NOW', schedule_start_time: scheduleTime(draft.start), schedule_end_time: scheduleTime(draft.end), location_ids: draft.locationIds, placement_type: 'PLACEMENT_TYPE_NORMAL', placements: ['PLACEMENT_TIKTOK'], promotion_type: draft.objective === 'LEAD_GENERATION' ? 'LEAD_GENERATION' : draft.objective === 'VIDEO_VIEWS' ? undefined : 'WEBSITE', promotion_target_type: draft.objective === 'LEAD_GENERATION' ? 'INSTANT_PAGE' : undefined, optimization_goal: draft.objective === 'TRAFFIC' ? 'CLICK' : draft.objective === 'VIDEO_VIEWS' ? 'ENGAGED_VIEW' : 'LEAD_GENERATION', billing_event: draft.objective === 'VIDEO_VIEWS' ? 'CPV' : draft.objective === 'TRAFFIC' ? 'CPC' : 'OCPM', bid_type: 'BID_TYPE_NO_BID', pacing: 'PACING_MODE_SMOOTH' });
 }

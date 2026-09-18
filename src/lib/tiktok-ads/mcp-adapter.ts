@@ -591,6 +591,18 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     let adgroupId = existing('adgroup');
     let videoId = existing('video');
 
+    // Reusing a group must be verified before upload or any other remote write.
+    const requestedAd = request.payload.ad;
+    if (requestedAd && typeof requestedAd === 'object' && !Array.isArray(requestedAd)) {
+      const groups = collectIds(requestedAd, [], 'request').filter(item => item.type === 'adgroup');
+      if (groups.length) {
+        const ids = [...new Set(groups.map(item => item.id))];
+        if (ids.length !== 1 || request.payload.campaign || request.payload.adGroup) throw new TikTokAdsError('INVALID_REQUEST', 'Alege un grup existent sau creează o structură nouă, nu ambele.');
+        await this.assertOwnedPayloadIds(request, requestedAd as Record<string, unknown>);
+        adgroupId = ids[0];
+      }
+    }
+
     const video = request.payload.video;
     if (!video || typeof video !== 'object' || Array.isArray(video)) throw new TikTokAdsError('INVALID_REQUEST', 'Workflow-ul Ads Only necesită un asset video Imodeus.');
     const videoRecord = video as Record<string, unknown>;

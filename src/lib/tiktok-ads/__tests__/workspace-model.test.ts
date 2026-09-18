@@ -1,9 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { accountTimeToUtc, buildAdInputs, emptyAdDraft, reportingRows, rowsFor, schemaInput, schemaMissing } from '../workspace-model';
+import { accountTimeToUtc, buildAdInputs, buildCampaignInput, buildAdGroupInput, emptyAdDraft, reportingRows, rowsFor, schemaInput, schemaMissing } from '../workspace-model';
 import type { JsonSchema } from '../types';
 
 const object = (keys: string[]): JsonSchema => ({ type: 'object', properties: Object.fromEntries(keys.map(key => [key, { type: 'string' }])) });
 describe('TikTok workspace mapping', () => {
+  it('builds a standalone campaign without implicitly creating a group', () => {
+    expect(buildCampaignInput({ name: 'Campanie', objective: 'TRAFFIC' }, object(['campaign_name', 'objective_type', 'budget_mode']))).toEqual({ campaign_name: 'Campanie', objective_type: 'TRAFFIC', budget_mode: 'BUDGET_MODE_INFINITE' });
+  });
+  it('binds a standalone group to its selected campaign and local timezone', () => {
+    const group = buildAdGroupInput({ ...emptyAdDraft, name: 'Grup', start: '2026-09-18T12:00', budget: '75', locationIds: ['RO'] }, object(['campaign_id', 'adgroup_name', 'schedule_start_time', 'budget', 'location_ids']), 'Europe/Bucharest', 'parent');
+    expect(group).toEqual({ campaign_id: 'parent', adgroup_name: 'Grup', schedule_start_time: '2026-09-18 09:00:00', budget: '75', location_ids: ['RO'] });
+  });
+  it('creates a video ad in an existing group without creation schemas or budget changes', () => {
+    const result = buildAdInputs({ ...emptyAdDraft, adgroupId: 'existing', name: 'Ad' }, { AD_CREATE: object(['adgroup_id', 'ad_name']), CREATIVE_UPLOAD: object(['file_name']) });
+    expect(result.campaign).toEqual({});
+    expect(result.adGroup).toEqual({});
+    expect(result.ad).toEqual({ adgroup_id: 'existing', ad_name: 'Ad' });
+  });
+  it('rejects a schema that would silently discard the target group', () => {
+    expect(() => buildAdInputs({ ...emptyAdDraft, adgroupId: 'existing' }, { AD_CREATE: object(['ad_name']) })).toThrow(/grupul/);
+  });
   it('converts the advertiser schedule to UTC across seasons', () => {
     expect(accountTimeToUtc('2026-09-17T12:00', 'Europe/Bucharest')).toBe('2026-09-17 09:00:00');
     expect(accountTimeToUtc('2026-12-17T12:00', 'Europe/Bucharest')).toBe('2026-12-17 10:00:00');

@@ -17,7 +17,7 @@ const fixtures = {
   assets: [{ id: 'video-1', propertyId: 'home-1', name: 'Tur apartament', url: '/fixture.mp4', thumbnailUrl: null, durationSeconds: 30 }],
   permissions: [{ advertiserId: 'adv-1', tiktokAccountId: 'profile-1', username: 'agentie', deliverAds: true, existingPosts: true, publishAndManageNewVideos: true, onlyShowAsAds: true, verificationStatus: 'verified', lastVerifiedAt: new Date().toISOString() }],
   operations: [], capabilities: ['AD_CREATE', 'TIKTOK_PERMISSION_READ', 'SPARK_NEW_VIDEO_AD_ONLY', 'CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'CREATIVE_UPLOAD', 'TARGETING_READ', 'SPARK_EXISTING_POST'].map(capability => ({ capability, executionAllowed: true })),
-  schemas: Object.fromEntries(['AD_CREATE', 'CAMPAIGN_CREATE', 'ADGROUP_CREATE', 'CREATIVE_UPLOAD'].map(key => [key, { type: 'object', properties: {} }])),
+  schemas: Object.fromEntries(Object.entries({ AD_CREATE: ['ad_name', 'adgroup_id', 'tiktok_item_id', 'ad_text'], CAMPAIGN_CREATE: ['campaign_name', 'objective_type', 'budget_mode'], ADGROUP_CREATE: ['campaign_id', 'adgroup_name', 'budget', 'location_ids', 'schedule_start_time'], CREATIVE_UPLOAD: ['file_name'] }).map(([key, fields]) => [key, { type: 'object', properties: Object.fromEntries(fields.map(field => [field, {}])) }])),
 };
 const result = await build({
   stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import Workspace from '@/components/marketing/tiktok-ads/TikTokWorkspace'; createRoot(document.getElementById('root')).render(<Workspace/>);`, loader: 'tsx', resolveDir: root },
@@ -67,8 +67,8 @@ try {
   await page.getByText('12,5', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Creează reclamă', exact: true }).click();
   const composer = page.getByRole('dialog', { name: 'Creează reclamă', exact: true });
-  await composer.locator('select').nth(0).selectOption('home-1');
-  await composer.locator('select').nth(1).selectOption('profile-1');
+  await composer.locator('select').nth(1).selectOption('home-1');
+  await composer.locator('select').nth(2).selectOption('profile-1');
   await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/composer-redesign.png'), fullPage: true });
   assert.equal(await composer.evaluate(element => element.contains(document.activeElement)), true, 'Dialog must trap focus');
   await page.setViewportSize({ width: 390, height: 844 });
@@ -103,6 +103,43 @@ try {
   await page.getByRole('dialog', { name: 'Confirmă modificarea în TikTok' }).waitFor();
   assert.equal(writes.filter(item => item.path.endsWith('/resources') && item.body.confirm).length, 0, 'Activation must wait for confirmation');
   await page.getByRole('button', { name: 'Anulează', exact: true }).click();
+  await page.getByRole('button', { name: 'Creează campanie', exact: true }).click();
+  const campaignDialog = page.getByRole('dialog', { name: 'Creează campanie', exact: true });
+  await campaignDialog.getByLabel('Numele campaniei', { exact: true }).fill('Campanie independentă');
+  await campaignDialog.getByRole('button', { name: 'Creează campania oprită' }).click();
+  await campaignDialog.getByText('Creat cu succes', { exact: false }).waitFor();
+  assert.equal(writes.find(item => item.body?.capability === 'CAMPAIGN_CREATE').body.payload.campaign_name, 'Campanie independentă');
+  await campaignDialog.getByRole('button', { name: 'Gata', exact: true }).click();
+  await page.getByRole('button', { name: 'Adaugă grup', exact: true }).click();
+  const groupDialog = page.getByRole('dialog', { name: 'Creează grup de reclame', exact: true });
+  await groupDialog.getByLabel('Numele grupului', { exact: true }).fill('Grup independent');
+  await groupDialog.getByLabel('Buget zilnic', { exact: true }).fill('75');
+  await groupDialog.getByLabel('Început', { exact: true }).fill('2027-01-01T12:00');
+  await groupDialog.getByRole('button', { name: 'Caută locații', exact: true }).click();
+  await groupDialog.getByRole('checkbox', { name: 'Campanie test' }).check();
+  await groupDialog.getByRole('button', { name: 'Creează grupul oprit' }).click();
+  await groupDialog.getByText('Creat cu succes', { exact: false }).waitFor();
+  const groupRequest = writes.find(item => item.body?.capability === 'ADGROUP_CREATE').body;
+  assert.equal(groupRequest.payload.campaign_id, 'campaign-1');
+  assert.equal(groupRequest.payload.budget, '75');
+  await page.screenshot({ path: path.join(root, '.tmp/tiktok-workspace/group-composer.png'), fullPage: true });
+  await groupDialog.getByRole('button', { name: 'Gata', exact: true }).click();
+  await page.getByRole('button', { name: 'Grupuri de reclame', exact: true }).click();
+  await page.getByRole('button', { name: 'Adaugă reclamă', exact: true }).click();
+  await composer.locator('select').filter({ has: page.locator('option[value="home-1"]') }).selectOption('home-1');
+  await composer.locator('select').filter({ has: page.locator('option[value="profile-1"]') }).selectOption('profile-1');
+  await composer.getByRole('button', { name: '2. Conținut', exact: true }).click();
+  await composer.locator('select').filter({ has: page.locator('option[value="video-1"]') }).selectOption('video-1');
+  await composer.getByLabel('Textul reclamei', { exact: true }).fill('Reclamă în grup existent');
+  await composer.getByLabel('Pagina proprietății (HTTPS)', { exact: true }).fill('https://example.com/property');
+  await composer.getByRole('button', { name: '4. Verificare', exact: true }).click();
+  await composer.getByRole('button', { name: 'Creează reclama oprită', exact: true }).click();
+  await composer.getByText('Reclama a fost creată oprită.', { exact: false }).waitFor();
+  const reused = writes.find(item => item.body?.capability === 'SPARK_NEW_VIDEO_AD_ONLY').body.payload;
+  assert.equal(reused.ad.adgroup_id, 'campaign-1');
+  assert.equal(reused.campaign, undefined, 'An existing group must not create another campaign');
+  assert.equal(reused.adGroup, undefined, 'An existing group must not be recreated or have its budget changed');
+  await composer.getByRole('button', { name: 'Salvează și închide', exact: true }).click();
   await page.getByLabel('Cont publicitar', { exact: true }).selectOption('adv-2');
   await page.getByText('Alege nivelul sau apasă Actualizează', { exact: false }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Campanie test', exact: true }).count(), 0, 'Switching accounts must clear the old list');
