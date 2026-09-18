@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef, type ReactNode } from 'react';
-import { ArrowUpRight, Building2, Check, Heart, MessageCircle, Play, Share2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Bookmark, Building2, Check, Heart, Play, Plus, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button as BaseButton, type ButtonProps } from '@/components/ui/button';
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function StudioButton({ variant = 'default', className = '', ...props }, ref) {
@@ -26,7 +26,7 @@ export function PhonePreview({ asset, username, text, cta = 'Află mai multe' }:
     <div className="tt-preview-heading"><h3>Așa începe<br /><em>prima impresie.</em></h3><p>Mesajul tău, în format TikTok.</p></div><div className="tt-phone"><div className="tt-phone-island" aria-hidden="true" /><div className="tt-phone-screen">
       {asset ? <video controls playsInline src={asset.url} poster={asset.thumbnailUrl || undefined} className="tt-phone-video" /> : <div className="tt-phone-placeholder"><div className="tt-building-art" aria-hidden="true"><Building2 /><span /><span /></div><span className="tt-placeholder-label">PROPRIETATEA TA.<br /><strong>În lumina potrivită.</strong></span><p>Selectează un videoclip<br />pentru previzualizare.</p></div>}
       <div className="tt-phone-top" aria-hidden="true">Urmărești <strong>Pentru tine</strong></div>
-      <div className="tt-phone-actions" aria-hidden="true"><span className="tt-phone-avatar"><Building2 /></span><Heart /><MessageCircle /><Share2 /></div>
+      <div className="tt-phone-actions" aria-hidden="true"><span className="tt-phone-avatar"><Building2 /><i><Plus /></i></span><span className="tt-phone-action"><Heart fill="currentColor" /><small>—</small></span><span className="tt-phone-action"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C5.9 2 1 6.1 1 11.2c0 4.5 3.6 8.2 8.5 9v3.1c0 .5.6.8 1 .5l7-4.2C21 17.6 23 14.6 23 11.2 23 6.1 18.1 2 12 2Z" /><g fill="#999"><circle cx="6.5" cy="11" r="1.4" /><circle cx="12" cy="11" r="1.4" /><circle cx="17.5" cy="11" r="1.4" /></g></svg><small>—</small></span><span className="tt-phone-action"><Bookmark fill="currentColor" /><small>—</small></span><span className="tt-phone-action"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2.5c0-.7.8-1 1.3-.5l8 7.5c.5.4.5 1.1 0 1.5l-8 7.5c-.5.5-1.3.1-1.3-.5v-4.3C8.3 13.7 4.2 16 1 21c-.4-8.6 4.2-14 13-14V2.5Z" /></svg><small>—</small></span><span className="tt-phone-record"><Building2 /></span></div>
       <div className="tt-phone-copy"><strong>@{username || 'profilul_agenției'}</strong><span className="tt-sponsored">Sponsorizat</span><p>{text || 'Povestea următoarei tale proprietăți începe aici.'}</p><div className="tt-phone-cta">{cta}<ArrowUpRight /></div></div>
     </div></div>
     <p className="tt-preview-note"><ShieldCheck />Previzualizare orientativă. Administratorul aprobă și publică.</p>

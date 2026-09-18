@@ -1,5 +1,7 @@
 import { adminDb } from '@/firebase/admin';
 import { randomUUID } from 'node:crypto';
+import { buildTikTokVideoLibrary } from './tiktok-video-library';
+import type { Property, TikTokStudioAsset } from './types';
 import { TikTokMcpAdapter } from './tiktok-ads/mcp-adapter';
 import { TikTokAdsError } from './tiktok-ads/errors';
 import {
@@ -165,7 +167,7 @@ export async function getTikTokAdsWorkspace(agencyId: string, options?: { advert
   }
 
   type StudioAssetDocument = { id: string } & Record<string, unknown>;
-  const assets = assetsSnapshot.docs
+  const studioAssets = assetsSnapshot.docs
     .map((doc) => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }) as StudioAssetDocument)
     .filter((asset) => asset.agencyId === agencyId && asset.type === 'video' && asset.status === 'ready' && typeof asset.url === 'string')
     .map((asset) => ({
@@ -178,7 +180,16 @@ export async function getTikTokAdsWorkspace(agencyId: string, options?: { advert
       sizeBytes: typeof asset.sizeBytes === 'number' ? asset.sizeBytes : null,
       durationSeconds: typeof asset.durationSeconds === 'number' ? asset.durationSeconds : null,
       updatedAt: typeof asset.updatedAt === 'string' ? asset.updatedAt : null,
+      source: asset.source,
+      createdAt: asset.createdAt,
+      ownerUid: asset.ownerUid,
     }));
+  // Use the same sources as the Videos tab, including property Video AI and uploads.
+  // Native property videos are registered lazily when selected, never during this GET.
+  const assets = buildTikTokVideoLibrary(agencyId,
+    propertiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Property),
+    studioAssets.map(asset => ({ ...asset, agencyId, type: 'video', status: 'ready' }) as TikTokStudioAsset),
+  );
   const properties = propertiesSnapshot.docs.map((doc) => {
     const property = doc.data();
     return {

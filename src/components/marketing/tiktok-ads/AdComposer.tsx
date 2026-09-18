@@ -6,6 +6,8 @@ import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { emptyAdDraft, type AdDraft, type TikTokRow } from '@/lib/tiktok-ads/workspace-model';
 import { approvalLabels, canEditApproval, isApprovalAdmin, type ApprovalDraft, type ApprovalStatus } from '@/lib/tiktok-ads/approval-model';
 import type { PublishPreview } from '@/lib/tiktok-ads/approval-publishing';
+import { AdVideoPicker, type AdVideo } from './AdVideoPicker';
+import { identityRouteLabel } from './AccountDiagnostics';
 import { inputClass, type Api, type Workspace } from './workspace-types';
 
 export type SavedAdDraft = Pick<ApprovalDraft, 'id' | 'version' | 'data'> & Partial<Omit<ApprovalDraft, 'id' | 'version' | 'data'>>;
@@ -33,7 +35,9 @@ export function AdComposer({ api, workspace, advertiserId, initial, onClose, onC
   const lastSaved = useRef(initial.version > 0 ? JSON.stringify(initial.data) : '');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const advertiser = workspace.advertisers.find(item => item.advertiserId === advertiserId);
-  const asset = workspace.assets.find(item => item.id === draft.assetId && item.propertyId === draft.propertyId);
+  const [selectedVideos, setSelectedVideos] = useState<AdVideo[]>([]);
+  const videos = [...new Map([...workspace.assets, ...selectedVideos].map(item => [item.id, item])).values()];
+  const asset = videos.find(item => item.id === draft.assetId && item.propertyId === draft.propertyId);
   const available = (capability: string) => workspace.capabilities.some(item => item.capability === capability && item.executionAllowed);
   const admin = isApprovalAdmin(workspace.role);
   function change(patch: Partial<AdDraft>) { if (busy || locked) return; setPreview(null); setDraft(current => ({ ...current, ...patch })); setResult(null); setError(''); }
@@ -130,13 +134,13 @@ export function AdComposer({ api, workspace, advertiserId, initial, onClose, onC
             {existingGroup && <><Button variant="outline" disabled={busy || locked} onClick={() => void loadOptions('adgroup')}>Încarcă grupurile disponibile</Button><select aria-label="Grup țintă" className={inputClass} value={draft.adgroupId} disabled={busy || locked} onChange={event => change({ adgroupId: event.target.value })}><option value="">Selectează grupul</option>{draft.adgroupId && !groups.some(row => row.id === draft.adgroupId) && <option value={draft.adgroupId}>Grup selectat · {draft.adgroupId}</option>}{groups.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}</select><p className="text-xs text-slate-500">Se păstrează campania, audiența, programul și bugetul grupului.</p></>}
             <Field label="Caută proprietatea"><input className={inputClass} value={search} onChange={event => setSearch(event.target.value)} placeholder="Titlu sau localitate" /></Field>
             <Field label="Proprietate"><select className={inputClass} value={draft.propertyId} onChange={event => { const property = workspace.properties.find(item => item.id === event.target.value); change({ propertyId: event.target.value, assetId: '', name: property?.title.replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, '').trim() || '' }); }}><option value="">Selectează</option>{workspace.properties.filter(item => `${item.title} ${item.location}`.toLowerCase().includes(search.toLowerCase()) || item.id === draft.propertyId).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
-            <Field label="Profil TikTok"><select className={inputClass} value={draft.identityId} onChange={event => change({ identityId: event.target.value, postId: '' })}><option value="">Selectează profilul autorizat</option>{workspace.permissions.map(item => <option key={item.tiktokAccountId} value={item.tiktokAccountId}>{item.username || item.tiktokAccountId}{!item.deliverAds ? ' · necesită autorizare' : ''}</option>)}</select></Field>
+            <Field label="Profil TikTok"><select className={inputClass} value={draft.identityId} onChange={event => change({ identityId: event.target.value, postId: '' })}><option value="">Selectează profilul autorizat</option>{workspace.permissions.map(item => <option key={item.tiktokAccountId} value={item.tiktokAccountId}>{item.username || item.tiktokAccountId} · {identityRouteLabel(item)}{!item.deliverAds ? ' · necesită autorizare' : ''}</option>)}</select></Field>
             <Field label="Numele reclamei"><input className={inputClass} value={draft.name} onChange={event => change({ name: event.target.value })} /></Field>
             <Field label="Obiectiv"><select className={inputClass} value={draft.objective} onChange={event => change({ objective: event.target.value as AdDraft['objective'] })}><option value="TRAFFIC">Vizite pe pagina proprietății</option><option value="VIDEO_VIEWS">Vizualizări video</option>{available('LEAD_FORM_READ') && <option value="LEAD_GENERATION">Cereri de informații prin formular</option>}</select></Field>
           </>}
           {step === 1 && <>
             <Field label="Material publicitar"><select className={inputClass} value={draft.mode} onChange={event => { change({ mode: event.target.value as AdDraft['mode'] }); if (event.target.value === 'post') setExistingGroup(true); }}><option value="video">Videoclip nou · doar în reclame</option><option value="post">Promovează o postare existentă</option></select></Field>
-            {draft.mode === 'video' ? <Field label="Videoclipul proprietății"><select className={inputClass} value={draft.assetId} onChange={event => change({ assetId: event.target.value })}><option value="">Selectează un videoclip</option>{workspace.assets.filter(item => item.propertyId === draft.propertyId).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select><p className="mt-2 text-xs text-slate-500">Creează sau asociază materialele în secțiunea Videoclipuri.</p></Field> : <>
+            {draft.mode === 'video' ? <AdVideoPicker api={api} videos={videos} propertyId={draft.propertyId} value={draft.assetId} disabled={locked || busy} onBusy={setBusy} onSelected={video => { setSelectedVideos(current => [...current.filter(item => item.id !== video.id), video]); change({ assetId: video.id }); }} /> : <>
               <Button variant="outline" disabled={busy || !draft.identityId} onClick={() => void loadOptions('post')}>Încarcă postările autorizate</Button><select aria-label="Postare" className={inputClass} value={draft.postId} onChange={event => change({ postId: event.target.value })}><option value="">Selectează postarea</option>{posts.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
               <Button variant="outline" disabled={busy} onClick={() => void loadOptions('adgroup')}>Încarcă grupurile de reclame</Button><select aria-label="Grup de reclame" className={inputClass} value={draft.adgroupId} onChange={event => change({ adgroupId: event.target.value })}><option value="">Selectează grupul</option>{groups.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
             </>}
