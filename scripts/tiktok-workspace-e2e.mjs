@@ -54,7 +54,7 @@ try {
     else if (url.pathname.endsWith('/manager')) data = { rows: url.searchParams.get('kind') === 'report' ? [{ spend: '12.50', impressions: '1000', clicks: '20', conversion: '2' }] : [{ id: 'campaign-1', name: 'Campanie test', propertyId: 'home-1', status: 'DISABLE', budget: '50' }] };
     else if (url.pathname.endsWith('/operations')) data = { operationId: 'fixture-op', status: 'succeeded', createdResourceIds: [{ resourceType: 'ad', resourceId: 'fixture-ad' }] };
     else if (url.pathname.endsWith('/resources')) data = body.confirm ? { verified: true, message: 'Modificare confirmată în TikTok.' } : { current: { id: 'campaign-1', name: 'Campanie test', status: 'DISABLE', budget: '50' } };
-    else if (url.pathname.endsWith('/dashboard')) data = { portfolioProperties: [{ ...fixtures.properties[0], images: [] }], studioAssets: [], studioProjects: [], drafts: [], status: { connected: true } };
+    else if (url.pathname.endsWith('/dashboard')) data = { portfolioProperties: [{ ...fixtures.properties[0], images: [] }], studioAssets: [{ id: 'photo-1', type: 'image', propertyId: 'home-1', name: 'Fotografie sursă ascunsă', url: '/photo.jpg' }], videoLibrary: [{ ...fixtures.assets[0], type: 'video', name: 'Video AI proprietate', source: 'property_video_tour', status: 'ready' }, { ...fixtures.assets[0], id: 'uploaded-video', type: 'video', name: 'Video încărcat proprietate', source: 'upload', status: 'ready' }], studioProjects: [], drafts: [], status: { connected: true } };
     else if (url.pathname.endsWith('/voices')) data = { voices: [{ id: 'voice-fixture', name: 'Voce test română', previewUrl: null }] };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(data) });
   });
@@ -107,6 +107,10 @@ try {
   await page.getByText('Alege nivelul sau apasă Actualizează', { exact: false }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Campanie test', exact: true }).count(), 0, 'Switching accounts must clear the old list');
   await page.getByRole('navigation', { name: 'Secțiuni TikTok' }).getByRole('button', { name: 'Videoclipuri', exact: true }).click();
+  await page.getByRole('heading', { name: 'Video AI proprietate', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Video încărcat proprietate', exact: true }).waitFor();
+  assert.equal(await page.locator('.tt-media-library article').count(), 2, 'Gallery must include both video sources, not source photos');
+  assert.equal(await page.getByText('Fotografie sursă ascunsă', { exact: true }).count(), 0, 'Property photos stay outside the video gallery');
   await page.getByRole('button', { name: 'Creează videoclip', exact: true }).click();
   await page.getByRole('dialog', { name: 'Editor videoclip', exact: true }).waitFor();
   const videoEditor = page.getByRole('dialog', { name: 'Editor videoclip', exact: true });

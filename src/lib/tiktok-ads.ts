@@ -131,7 +131,7 @@ export async function getTikTokAdsWorkspace(agencyId: string, options?: { advert
   const [status, advertisers, assetsSnapshot, propertiesSnapshot, recentOperations] = await Promise.all([
     getTikTokAdsStatus(agencyId),
     listAdvertisers(agencyId),
-    adminDb.collection('agencies').doc(agencyId).collection('tiktokStudioAssets').orderBy('updatedAt', 'desc').limit(120).get(),
+    adminDb.collection('agencies').doc(agencyId).collection('tiktokStudioAssets').where('type', '==', 'video').get(),
     adminDb.collection('agencies').doc(agencyId).collection('properties').limit(500).get(),
     listRecentTikTokOperations(agencyId, options?.propertyId),
   ]);

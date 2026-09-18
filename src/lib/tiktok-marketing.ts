@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
+import { buildTikTokVideoLibrary } from '@/lib/tiktok-video-library';
 import type {
   Property,
   TikTokMarketingIntegrationPrivate,
@@ -706,6 +707,7 @@ export async function getTikTokDashboardSummary(agencyId: string, uid: string) {
     status,
     readyVideoTours,
     portfolioProperties,
+    videoLibrary: await listTikTokPropertyVideoLibrary(agencyId),
     studioAssets: await listTikTokStudioAssets(agencyId).catch(() => []),
     studioProjects: await listTikTokStudioProjects(agencyId).catch(() => []),
     drafts,
@@ -1145,6 +1147,18 @@ export async function listTikTokPostDrafts(agencyId: string) {
 export async function listTikTokStudioAssets(agencyId: string) {
   const snapshot = await getStudioAssetsCollection(agencyId).orderBy('updatedAt', 'desc').limit(120).get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as TikTokStudioAsset);
+}
+
+export async function listTikTokPropertyVideoLibrary(agencyId: string) {
+  const [properties, videos] = await Promise.all([
+    adminDb.collection('agencies').doc(agencyId).collection('properties').get(),
+    getStudioAssetsCollection(agencyId).where('type', '==', 'video').get(),
+  ]);
+  return buildTikTokVideoLibrary(
+    agencyId,
+    properties.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Property),
+    videos.docs.map(doc => ({ ...doc.data(), id: doc.id }) as TikTokStudioAsset),
+  );
 }
 
 export async function listTikTokStudioProjects(agencyId: string) {
