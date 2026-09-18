@@ -42,6 +42,37 @@ const officialShapeTools: TikTokMcpTool[] = [
 ];
 
 describe('TikTok capability registry', () => {
+  it('recognizes official camelCase SDK names and versioned endpoint aliases', () => {
+    const matrix = new Map(resolveTikTokCapabilities([
+      tool('oauth2AdvertiserGet', '', {}),
+      tool('/open_api/v1.3/advertiser/info/', '', { advertiser_ids: { type: 'array' } }),
+      tool('adReviewInfo', '', { advertiser_id: { type: 'string' }, ad_ids: { type: 'array' } }),
+      tool('bcAssetAccountAuthorization', '', { bc_id: { type: 'string' } }),
+      tool('bcAdvertiserCreate', '', { bc_id: { type: 'string' } }),
+    ]).map(item => [item.capability, item]));
+    for (const capability of ['ADVERTISER_DISCOVERY', 'ADVERTISER_STATUS', 'ACCOUNT_REVIEW_READ', 'AD_REVIEW_READ', 'TIKTOK_ACCOUNT_AUTHORIZE'] as const) expect(matrix.get(capability)?.executionAllowed).toBe(true);
+    expect(matrix.get('ADVERTISER_PROVISION')).toMatchObject({ available: true, executionAllowed: false });
+  });
+  it('never binds advertiser review to another business or ad review tool', () => {
+    const matrix = resolveTikTokCapabilities([
+      tool('smartPlusAdReviewInfo', 'Get ad account review status'),
+      tool('bcAdvertiserQualificationGet', 'Get ad account verification details'),
+    ]);
+    expect(matrix.find(item => item.capability === 'ACCOUNT_REVIEW_READ')?.available).toBe(false);
+    expect(matrix.find(item => item.capability === 'AD_REVIEW_READ')?.available).toBe(false);
+  });
+  it('keeps event subscriptions disabled and distinguishes them from other webhook tools', () => {
+    const matrix = resolveTikTokCapabilities([tool('subscriptionSubscribe', 'Create webhook subscription'), tool('businessWebhookCreate', 'Create webhook subscription')]);
+    expect(matrix.find(item => item.capability === 'EVENT_SUBSCRIBE')).toMatchObject({ toolName: 'subscriptionSubscribe', available: true, executionAllowed: false });
+  });
+  it('propagates a changed write contract to composite workflows', () => {
+    const previous = new Map(resolveTikTokCapabilities(officialShapeTools).map(item => [item.capability, item]));
+    const changed = officialShapeTools.map(candidate => candidate.name === 'ad_create' ? { ...candidate, inputSchema: { ...candidate.inputSchema, required: ['new_required_field'] } } : candidate);
+    const matrix = resolveTikTokCapabilities(changed, previous);
+    expect(matrix.find(item => item.capability === 'AD_CREATE')?.executionAllowed).toBe(false);
+    expect(matrix.find(item => item.capability === 'SPARK_NEW_VIDEO_AD_ONLY')).toMatchObject({ available: false, executionAllowed: false });
+    expect(matrix.find(item => item.capability === 'SPARK_EXISTING_POST')?.reason).toContain('AD_CREATE');
+  });
   it('recognizes exact ad endpoints even when official descriptions mention ad groups and campaigns', () => {
     const tools = officialShapeTools.map(candidate => candidate.name.startsWith('ad_') ? { ...candidate, description: `${candidate.description}. Manage ads within an ad group and campaign.` } : candidate);
     const matrix = new Map(resolveTikTokCapabilities(tools).map(item => [item.capability, item]));

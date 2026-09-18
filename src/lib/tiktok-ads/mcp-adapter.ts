@@ -422,7 +422,7 @@ export class TikTokMcpAdapter implements TikTokAdsPort {
     if (!tool) throw new TikTokAdsError('CAPABILITY_UNAVAILABLE', `Capability-ul ${input.capability} nu are un tool MCP neambiguu.`, { correlationId: input.request.correlationId });
     const providerPayload = Object.fromEntries(Object.entries(input.payload).filter(([key]) => key !== '_imodeus'));
     let payload = bindAdvertiser(providerPayload, tool.inputSchema, input.request.advertiserId);
-    if (input.capability === 'ADVERTISER_STATUS') payload = bindAdvertiserStatusFields(payload, tool.inputSchema);
+    if (input.capability === 'ADVERTISER_STATUS' || input.capability === 'ACCOUNT_REVIEW_READ') payload = bindAdvertiserStatusFields(payload, tool.inputSchema);
     payload = enforceStatusIntent(input.capability, payload, tool.inputSchema);
     payload = forceDisabledCreatePayload(input.capability, payload, tool.inputSchema);
     await this.assertOwnedPayloadIds({ ...input.request, capability: input.capability }, payload);

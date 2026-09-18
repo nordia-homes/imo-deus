@@ -18,6 +18,10 @@ type Matcher = {
 const EXACT_TOOL_NAMES: Partial<Record<TikTokCapability, RegExp[]>> = {
   ADVERTISER_DISCOVERY: [/^oauth2\/advertiser\/get$/, /^advertiser\/get$/],
   ADVERTISER_STATUS: [/^advertiser\/info(?:\/get)?$/],
+  // Account eligibility is also returned by the official advertiser info endpoint.
+  ACCOUNT_REVIEW_READ: [/^account\/verification\/status$/, /^advertiser\/info(?:\/get)?$/],
+  ADVERTISER_PROVISION: [/^bc\/advertiser\/create$/, /^bc\/ad\/account\/create$/],
+  EVENT_SUBSCRIBE: [/^subscription\/subscribe$/],
   BILLING_READINESS: [/^advertiser\/balance\/get$/, /^bc\/balance\/get$/],
   TIKTOK_ACCOUNT_AUTHORIZE: [/^bc\/asset\/account\/authorization$/],
   TIKTOK_PERMISSION_READ: [/^identity\/get$/],
@@ -189,7 +193,11 @@ function searchable(tool: TikTokMcpTool) {
 }
 
 function normalizedToolName(tool: TikTokMcpTool) {
-  return tool.name.toLowerCase().replace(/[^a-z0-9]+/g, '/').replace(/^\/+|\/+$/g, '');
+  // The official SDK and MCP adapters expose endpoint paths, snake_case and
+  // camelCase aliases. Keep endpoint matching strict after normalizing aliases.
+  return tool.name.replace(/([a-z0-9])([A-Z])/g, '$1/$2').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '/').replace(/^\/+|\/+$/g, '')
+    .replace(/^(?:open\/api\/)?v\d+\/\d+\//, '');
 }
 
 function schemaRichness(schema: JsonSchema) {
@@ -286,7 +294,7 @@ function resolveDirect(capability: TikTokCapability, tools: TikTokMcpTool[], now
   const classification = CAPABILITY_CLASSIFICATION[capability];
   const operationClass = OPERATION_CLASS[capability];
   if (classification === 'CURRENTLY_UNSUPPORTED') {
-    return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Documentația oficială curentă nu expune această operație.', toolName: null, schemaHash: null, schemaStatus: 'unsupported', discoveredAt: now };
+    return { capability, classification, operationClass, available: false, executionAllowed: false, reason: 'Această operație nu este implementată de conectorul Imodeus. Folosește TikTok Ads Manager pentru acest pas.', toolName: null, schemaHash: null, schemaStatus: 'unsupported', discoveredAt: now };
   }
   const matcher = MATCHERS[capability];
   if (!matcher) {
@@ -347,6 +355,8 @@ function resolveDirect(capability: TikTokCapability, tools: TikTokMcpTool[], now
     executionAllowed: classification !== 'EXTERNAL_APPROVAL_REQUIRED',
     reason: classification === 'EXTERNAL_APPROVAL_REQUIRED'
       ? 'Tool-ul există, dar necesită aprobarea și permisiunile Business Center corespunzătoare.'
+      : capability === 'ACCOUNT_REVIEW_READ' && normalizedToolName(best.tool).startsWith('advertiser/info')
+        ? 'Starea generală a contului este citită prin advertiser/info; documentele de verificare și contestațiile se gestionează în TikTok.'
       : 'Tool MCP oficial descoperit și schema de bază este validă.',
     toolName: best.tool.name,
     schemaHash: hashToolSchema(best.tool),
@@ -362,27 +372,20 @@ export function resolveTikTokCapabilities(tools: TikTokMcpTool[], previous?: Map
   const derive = (capability: TikTokCapability, dependencies: TikTokCapability[]) => {
     const current = result.get(capability)!;
     const resolved = dependencies.map((dependency) => result.get(dependency)!);
-    const available = resolved.every((item) => item.available && item.schemaStatus === 'compatible');
+    const available = resolved.every((item) => item.available && item.executionAllowed && item.schemaStatus === 'compatible');
     result.set(capability, {
       ...current,
       available,
       executionAllowed: available,
       reason: available
         ? `Workflow MCP compus validat din: ${dependencies.join(', ')}.`
-        : `Workflow indisponibil până la validarea: ${dependencies.filter((_, index) => !resolved[index].available).join(', ')}.`,
+        : `Workflow indisponibil până la validarea: ${dependencies.filter((_, index) => !resolved[index].available || !resolved[index].executionAllowed || resolved[index].schemaStatus !== 'compatible').join(', ')}.`,
       schemaStatus: available ? 'compatible' : 'not_discovered',
       schemaHash: available
         ? createHash('sha256').update(resolved.map((item) => item.schemaHash).join(':')).digest('hex')
         : null,
     });
   };
-  derive('TIKTOK_PERMISSION_RECONCILE', ['TIKTOK_PERMISSION_READ']);
-  derive('SPARK_EXISTING_POST', ['ASSET_DISCOVERY', 'TIKTOK_PERMISSION_READ', 'AD_CREATE']);
-  derive('SPARK_NEW_VIDEO_AD_ONLY', ['CREATIVE_UPLOAD', 'TIKTOK_PERMISSION_READ', 'AD_CREATE']);
-  derive('TARGETING_UPDATE', ['ADGROUP_UPDATE', 'TARGETING_READ']);
-  derive('BUDGET_UPDATE', ['CAMPAIGN_UPDATE', 'ADGROUP_UPDATE']);
-  derive('BID_UPDATE', ['ADGROUP_UPDATE']);
-  derive('SCHEDULE_UPDATE', ['CAMPAIGN_UPDATE', 'ADGROUP_UPDATE']);
 
   for (const [capability, resolution] of result) {
     const old = previous?.get(capability);
@@ -403,6 +406,15 @@ export function resolveTikTokCapabilities(tools: TikTokMcpTool[], previous?: Map
       result.set(capability, { ...resolution, approvedSchemaHash });
     }
   }
+  // Propagate contract blocks after schema review; composite workflows must not
+  // claim to work while their underlying operation is disabled.
+  derive('TIKTOK_PERMISSION_RECONCILE', ['TIKTOK_PERMISSION_READ']);
+  derive('SPARK_EXISTING_POST', ['ASSET_DISCOVERY', 'TIKTOK_PERMISSION_READ', 'AD_CREATE']);
+  derive('SPARK_NEW_VIDEO_AD_ONLY', ['CREATIVE_UPLOAD', 'TIKTOK_PERMISSION_READ', 'AD_CREATE']);
+  derive('TARGETING_UPDATE', ['ADGROUP_UPDATE', 'TARGETING_READ']);
+  derive('BUDGET_UPDATE', ['CAMPAIGN_UPDATE', 'ADGROUP_UPDATE']);
+  derive('BID_UPDATE', ['ADGROUP_UPDATE']);
+  derive('SCHEDULE_UPDATE', ['CAMPAIGN_UPDATE', 'ADGROUP_UPDATE']);
   return Array.from(result.values());
 }
 
