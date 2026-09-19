@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 type Payload = {
   connections: FacebookCloudConnection[];
@@ -242,44 +243,71 @@ export default function FacebookAccountsPage() {
 
   return (
     <div className="min-h-full space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div className="inline-flex items-center rounded-full border border-sky-300/20 bg-sky-400/10 px-4 py-1.5 text-sm text-sky-100">
-            <Facebook className="mr-2 h-4 w-4" />
-            Marketing
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <Facebook size={17} />
+              <span className="tt-eyebrow">MARKETING FACEBOOK</span>
+            </div>
+            <h1>Conturi <em>Facebook</em></h1>
+            <p className="tt-hero-lead">
+              Sesiuni independente pentru publicare automată.
+              <br />
+              <strong>Fiecare cont are coadă și sesiune separată.</strong>
+            </p>
+            <p>
+              Conectează conturile folosite pentru publicarea în grupuri și administrează-le dintr-un singur loc.
+            </p>
           </div>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight">Conturi Facebook</h1>
-          <p className="mt-2 max-w-3xl text-white/65">
-            Conectează conturile independente folosite pentru publicarea automată în grupuri. Fiecare cont are o sesiune și o coadă separată.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void load()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reîmprospătează
-          </Button>
-          <Button disabled={!localRunner?.paired || pairingRunner} className="bg-sky-400 text-slate-950 hover:bg-sky-300" onClick={() => setAddOpen(true)}>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm">
+
+          <div className="flex w-full flex-col gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-3 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+              onClick={() => void load()}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-[0_10px_22px_-14px_rgba(8,145,178,0.7)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
+                <RefreshCw className="h-4 w-4" />
+              </span>
+              <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Reîmprospătează</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={!localRunner?.paired || pairingRunner}
+              className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-sky-200 bg-gradient-to-br from-sky-100 via-white to-cyan-50 p-3 text-left text-sky-950 shadow-[0_14px_34px_-22px_rgba(14,165,233,0.55)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+              onClick={() => setAddOpen(true)}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700 shadow-[0_10px_22px_-14px_rgba(14,165,233,0.7)] ring-1 ring-sky-100 transition-transform duration-300 group-hover:scale-110">
+                <Plus className="h-4 w-4" />
+              </span>
+              <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Adaugă un cont</span>
+            </Button>
+          </div>
+        </header>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#152A47] px-4 py-3 text-sm text-white">
         <div>
           <p className="font-medium">
-            {localRunner?.paired ? 'Runner local activ pe acest laptop' : pairingRunner ? 'Se activeaza runnerul local...' : 'Deschide aceasta pagina in aplicatia Desktop pentru activare'}
+            {localRunner?.paired ? 'Runner local activ pe acest laptop' : pairingRunner ? 'Se activează runnerul local...' : 'Deschide această pagină în aplicația Desktop pentru activare'}
           </p>
           <p className="mt-1 text-white/55">
-            {localRunner?.lastError || (localRunner?.nextWakeAt ? 'Urmatoarea trezire: ' + new Date(localRunner.nextWakeAt).toLocaleString('ro-RO') : 'Sincronizare la pornire si zilnic la 06:00, ora Bucuresti.')}
+            {localRunner?.lastError || (localRunner?.nextWakeAt ? 'Următoarea trezire: ' + new Date(localRunner.nextWakeAt).toLocaleString('ro-RO') : 'Sincronizare la pornire și zilnic la 06:00, ora București.')}
           </p>
         </div>
         {localRunner?.paired ? (
-          <Button variant="outline" className="border-white/10 bg-white/5 text-white" onClick={() => void window.imodeusDesktop?.syncFacebookLocalRunnerNow()}>
+          <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void window.imodeusDesktop?.syncFacebookLocalRunnerNow()}>
             <RefreshCw className={`mr-2 h-4 w-4 ${localRunner.running ? 'animate-spin' : ''}`} />
-            Sincronizeaza acum
+            Sincronizează acum
           </Button>
         ) : null}
       </div>
-            <Plus className="mr-2 h-4 w-4" />
-            Adaugă un cont
-          </Button>
-        </div>
-      </header>
 
       {loading ? (
         <Card className="border-white/10 bg-[#152A47] text-white">

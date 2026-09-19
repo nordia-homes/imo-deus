@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ExternalLink, Loader2, PlugZap, RefreshCcw, Unplug } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle2, ExternalLink, Loader2, PlugZap, RefreshCcw, Unplug, AlertTriangle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser } from '@/firebase';
@@ -191,34 +191,53 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
   }
 
   return (
-    <Card className="agentfinder-integration-card shadow-2xl rounded-2xl bg-[#152A47] border-none text-white">
+    <Card className="agentfinder-integration-card relative isolate flex h-full flex-col overflow-hidden rounded-[28px] border border-violet-200/70 bg-gradient-to-br from-white via-violet-50/80 to-fuchsia-50 text-slate-950 shadow-[0_28px_70px_-38px_rgba(139,92,246,0.5)]">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-violet-400 via-fuchsia-400 to-rose-400" />
+      <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-violet-200/30 blur-2xl" />
       <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-white">
-            <img src="/storia-official-logo.svg" alt="storia.ro" className="h-5 w-auto max-w-[110px] object-contain" />
-          </CardTitle>
-          <span className={`flex items-center text-sm ${status?.connected ? 'text-green-400' : 'text-red-400'}`}>
-            {status?.connected ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Unplug className="h-4 w-4 mr-1" />}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-16 min-w-[64px] max-w-[120px] shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/90 bg-white/85 px-3 py-2 shadow-sm">
+              <img src="/storia-official-logo.svg" alt="storia.ro" className="h-8 w-auto object-contain" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Portal</p>
+            </div>
+          </div>
+          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${status?.connected ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+            {status?.connected ? <CheckCircle2 className="mr-1 h-4 w-4" /> : <Unplug className="mr-1 h-4 w-4" />}
             {statusLabel}
           </span>
         </div>
-        <CardDescription className="text-white/70">
+        <CardDescription className="text-slate-500">
           Ultima sincronizare: {lastSync}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="text-sm flex justify-between">
-          <span className="text-white/70">Anunturi sincronizate:</span>
-          <span className="font-medium">{listings}</span>
+        <div className="grid grid-cols-[1.2fr_.8fr] gap-2">
+          <div className="rounded-3xl border border-white/90 bg-white/85 p-4 shadow-[0_16px_38px_-26px_rgba(16,185,129,0.55)]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Anunțuri live</p>
+            <p className="mt-2 text-4xl font-black tracking-[-0.06em] text-slate-950">{listings}</p>
+          </div>
+          <div className="rounded-3xl border border-white/90 bg-white/70 p-4 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Lead-uri</p>
+            <p className="mt-2 text-4xl font-black tracking-[-0.06em] text-slate-950">0</p>
+          </div>
         </div>
-        <div className="text-sm flex justify-between">
-          <span className="text-white/70">Erori:</span>
-          <span className="font-medium">{errors}</span>
-        </div>
-
+        {errors > 0 ? (
+          <div className="flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+            <span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Necesită atenție</span>
+            <span>{errors} erori</span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-2xl border border-white/80 bg-white/60 px-4 py-3 text-sm font-semibold text-slate-500">
+            <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-500" /> Flux sănătos</span>
+            <span>0 erori</span>
+          </div>
+        )}
         {status?.connected ? (
-          <div className="rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm text-emerald-50">
+          <div className="rounded-2xl border border-white/80 bg-white/60 p-4 text-sm text-slate-600">
             <p>Conectarea OAuth este activa pentru agentia ta.</p>
             <p>Conectat la: {status.connectedAt ? new Date(status.connectedAt).toLocaleString('ro-RO') : '-'}</p>
             <p>Ultimul refresh token: {status.lastTokenRefreshAt ? new Date(status.lastTokenRefreshAt).toLocaleString('ro-RO') : '-'}</p>
@@ -226,7 +245,7 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
             <p>Lead-uri Storia: {status.hasLeadScopes ? 'active' : 'necesita reconectare'}</p>
           </div>
         ) : (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">
+          <div className="rounded-2xl border border-white/80 bg-white/60 p-4 text-sm text-slate-600">
             Integrarea Storia foloseste OAuth2 prin OLX Group. Conectarea se face o singura data per agentie, apoi proprietatile pot fi publicate direct din ImoDeus.
           </div>
         )}
@@ -272,7 +291,7 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
           <Button
             onClick={handleConnect}
             disabled={!isAdmin || isSubmitting || isLoading}
-            className="w-full bg-white/10 border border-white/20 hover:bg-white/20 text-white"
+            className="w-full rounded-[18px] border-2 border-emerald-500 bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_20px_44px_-22px_rgba(16,185,129,0.9)] hover:bg-emerald-400"
           >
             {activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlugZap className="mr-2 h-4 w-4" />}
             Conecteaza Storia

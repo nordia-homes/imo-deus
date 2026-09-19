@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { addDoc, collection, query, where } from 'firebase/firestore';
 import type { Contact, Property, MatchedProperty } from '@/lib/types';
 import { propertyMatcher } from '@/ai/flows/property-matcher';
 import { useToast } from "@/hooks/use-toast";
@@ -16,14 +16,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Loader2, Wand2, Star, Info } from 'lucide-react';
+import { Loader2, Wand2, Star, Info, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
+import { useUser } from '@/firebase';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 const propertyMatchSchema = z.object({
   desiredPriceRangeMin: z.coerce.number(),
@@ -34,27 +36,35 @@ const propertyMatchSchema = z.object({
   desiredSquareFootageMax: z.coerce.number(),
   desiredFeatures: z.string(),
   locationPreferences: z.string(),
+}).refine((values) => values.desiredPriceRangeMin <= values.desiredPriceRangeMax, {
+  message: 'Prețul minim nu poate fi mai mare decât prețul maxim.',
+  path: ['desiredPriceRangeMin'],
+}).refine((values) => values.desiredSquareFootageMin <= values.desiredSquareFootageMax, {
+  message: 'Suprafața minimă nu poate fi mai mare decât suprafața maximă.',
+  path: ['desiredSquareFootageMin'],
 });
 
 export default function MatchingPage() {
     const { agencyId } = useAgency();
+    const { user, userProfile } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
 
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [isMatching, setIsMatching] = useState(false);
     const [matchedProperties, setMatchedProperties] = useState<MatchedProperty[]>([]);
+    const [actionPropertyId, setActionPropertyId] = useState<string | null>(null);
     
     // --- Data Fetching ---
     const contactsQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
-        return collection(firestore, 'agencies', agencyId, 'contacts');
+        return query(collection(firestore, 'agencies', agencyId, 'contacts'), where('contactType', '==', 'Cumparator'));
     }, [firestore, agencyId]);
     const { data: contacts, isLoading: areContactsLoading } = useCollection<Contact>(contactsQuery);
 
     const propertiesQuery = useMemoFirebase(() => {
         if (!agencyId) return null;
-        return collection(firestore, 'agencies', agencyId, 'properties');
+        return query(collection(firestore, 'agencies', agencyId, 'properties'), where('status', '==', 'Activ'));
     }, [firestore, agencyId]);
     const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
     
@@ -69,9 +79,10 @@ export default function MatchingPage() {
 
     useEffect(() => {
         if (selectedContact) {
+            const baseBudget = selectedContact.budget && selectedContact.budget > 0 ? selectedContact.budget : 100000;
             const preferences = selectedContact.preferences || {
-                desiredPriceRangeMin: (selectedContact.budget || 0) * 0.8,
-                desiredPriceRangeMax: (selectedContact.budget || 0) * 1.2,
+                desiredPriceRangeMin: baseBudget * 0.8,
+                desiredPriceRangeMax: baseBudget * 1.2,
                 desiredRooms: 2,
                 desiredBathrooms: 1,
                 desiredSquareFootageMin: 50,
@@ -84,6 +95,11 @@ export default function MatchingPage() {
             form.reset({});
         }
     }, [selectedContact, form]);
+
+    const handleSelectContact = (contactId: string) => {
+        setSelectedContactId(contactId);
+        setMatchedProperties([]);
+    };
 
 
     const onMatchSubmit = async (values: z.infer<typeof propertyMatchSchema>) => {
@@ -112,6 +128,7 @@ export default function MatchingPage() {
             const result = await propertyMatcher({
                 clientPreferences,
                 properties: matcherProperties,
+                contact: selectedContact,
             });
             setMatchedProperties(result.matchedProperties as MatchedProperty[]);
             if (result.matchedProperties.length === 0) {
@@ -128,15 +145,129 @@ export default function MatchingPage() {
         }
     };
 
+    const createTaskForMatch = async (property: MatchedProperty) => {
+        if (!agencyId || !user || !selectedContact) return;
+        setActionPropertyId(property.id);
+        try {
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 1);
+            await addDoc(collection(firestore, 'agencies', agencyId, 'tasks'), {
+                description: `Contactează ${selectedContact.name} despre ${property.title}`,
+                dueDate: dueDate.toISOString(),
+                status: 'open',
+                agentId: user.uid,
+                agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
+                contactId: selectedContact.id,
+                contactName: selectedContact.name,
+                propertyId: property.id,
+                propertyTitle: property.title,
+                createdAt: new Date().toISOString(),
+            });
+            toast({ title: 'Task creat', description: 'Task-ul a fost adăugat în calendarul agenției.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Task-ul nu a putut fi creat', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
+        } finally {
+            setActionPropertyId(null);
+        }
+    };
+
+    const createViewingForMatch = async (property: MatchedProperty) => {
+        if (!agencyId || !user || !selectedContact) return;
+        setActionPropertyId(property.id);
+        try {
+            const viewingDate = new Date();
+            viewingDate.setDate(viewingDate.getDate() + 1);
+            viewingDate.setHours(11, 0, 0, 0);
+            await addDoc(collection(firestore, 'agencies', agencyId, 'viewings'), {
+                propertyId: property.id,
+                propertyTitle: property.title,
+                propertyAddress: property.location || '',
+                contactId: selectedContact.id,
+                contactName: selectedContact.name,
+                agentId: user.uid,
+                agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
+                viewingDate: viewingDate.toISOString(),
+                status: 'scheduled',
+                createdAt: new Date().toISOString(),
+            });
+            toast({ title: 'Vizionare programată', description: 'Vizionarea a fost adăugată în calendar.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Vizionarea nu a putut fi programată', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
+        } finally {
+            setActionPropertyId(null);
+        }
+    };
+
     const isLoading = areContactsLoading || arePropertiesLoading;
 
     return (
-        <div className="agentfinder-matching-page space-y-6 bg-[#0F1E33] text-white p-2 lg:p-4">
-            <div className="agentfinder-matching-hero text-center lg:text-left">
-                <h1 className="text-3xl font-headline font-bold text-white">Potrivire Proprietăți AI</h1>
-                <p className="text-white/70">
-                    Găsește cele mai bune proprietăți pentru clienții tăi folosind inteligența artificială.
-                </p>
+        <div className="tt-design tt-workspace settings-matching-page space-y-6 p-2 lg:p-4">
+            <style>{`
+                .settings-matching-page [class*="text-white"] { color: #182b40 !important; -webkit-text-fill-color: currentColor !important; }
+                .settings-matching-page [class*="bg-white"] { background-color: transparent !important; background-image: none !important; }
+                .settings-matching-page .agentfinder-matching-card,
+                .settings-matching-page .agentfinder-matching-result-card,
+                .settings-matching-page .agentfinder-matching-score-card {
+                    background: #ffffff !important;
+                    border-color: rgba(119,146,173,.20) !important;
+                }
+                .settings-matching-page input,
+                .settings-matching-page textarea,
+                .settings-matching-page select {
+                    height: 44px; border-radius: 10px !important; border: 1px solid #d5e0e9 !important;
+                    background: #ffffff !important; color: #263b51 !important; padding: 10px 13px; font-size: 13px;
+                    box-shadow: none !important;
+                }
+                .settings-matching-page button:not([role=switch]) {
+                    border-radius: 12px !important; min-height: 42px; font-weight: 650;
+                    background: #ffffff !important; border: 1px solid #d9e3ec !important; color: #2d455d !important;
+                }
+                .settings-matching-page button[type=submit] {
+                    background: linear-gradient(115deg,#b5f2e1,#78e4db) !important;
+                    color: #082a2a !important;
+                    border-color: #a0e5dc !important;
+                }
+                .settings-matching-page [role=combobox] {
+                    background: #ffffff !important;
+                    color: #263b51 !important;
+                    border-color: #d5e0e9 !important;
+                }
+            `}</style>
+            <div className="tt-design settings-tiktok">
+                <style>{`
+                    .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+                `}</style>
+                <header className="tt-hero">
+                    <div>
+                        <div className="tt-hero-kicker">
+                            <Wand2 size={17} />
+                            <span className="tt-eyebrow">POTRIVIRE AI</span>
+                        </div>
+                        <h1>Potrivire <em>Proprietăți AI</em></h1>
+                        <p className="tt-hero-lead">
+                            Cele mai bune proprietăți pentru clienții tăi.
+                            <br />
+                            <strong>Analiză inteligentă, rezultate clare.</strong>
+                        </p>
+                        <p>
+                            Selectează un client, ajustează preferințele și lasă AI-ul să găsească potrivirile.
+                        </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <article className="tt-feature">
+                            <span className="tt-icon-tile"><Users size={18} /></span>
+                            <span className="tt-eyebrow">01 / CLIENT</span>
+                            <h2>Alege clientul</h2>
+                            <p>Selectează un cumpărător din CRM pentru a-i încărca preferințele.</p>
+                        </article>
+                        <article className="tt-feature tt-feature--video">
+                            <span className="tt-icon-tile"><Wand2 size={18} /></span>
+                            <span className="tt-eyebrow">02 / ANALIZĂ</span>
+                            <h2>Lansează potrivirea</h2>
+                            <p>AI-ul compară preferințele cu portofoliul activ și propune cele mai bune proprietăți.</p>
+                        </article>
+                    </div>
+                </header>
             </div>
             
             <Card className="agentfinder-matching-card bg-[#152A47] border-none text-white rounded-2xl shadow-2xl">
@@ -146,7 +277,7 @@ export default function MatchingPage() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? <Skeleton className="h-10 w-full md:w-1/2 bg-white/10" /> : (
-                        <Select onValueChange={setSelectedContactId} value={selectedContactId || ''}>
+                        <Select onValueChange={handleSelectContact} value={selectedContactId || ''}>
                             <SelectTrigger className="agentfinder-matching-select w-full md:w-1/2 bg-white/10 border-white/20 text-white">
                                 <SelectValue placeholder="Selectează un client..." />
                             </SelectTrigger>
@@ -224,7 +355,7 @@ export default function MatchingPage() {
                                     </Link>
                                     <p className="text-lg font-bold text-primary mt-1">€{prop.price.toLocaleString()}</p>
                                     
-                                     <Card className="agentfinder-matching-score-card mt-4 bg-blue-900/30 border-blue-500/50 text-white">
+                                    <Card className="agentfinder-matching-score-card mt-4 bg-blue-900/30 border-blue-500/50 text-white">
                                         <CardHeader className="flex flex-row items-center gap-2 p-2">
                                             <Star className="h-4 w-4 text-blue-400" />
                                             <CardTitle className="font-bold text-blue-300 text-sm">Potrivire: {prop.matchScore}/100</CardTitle>
@@ -235,6 +366,28 @@ export default function MatchingPage() {
                                             </CardDescription>
                                         </CardContent>
                                     </Card>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={actionPropertyId === prop.id}
+                                            onClick={() => void createViewingForMatch(prop)}
+                                        >
+                                            {actionPropertyId === prop.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                            Programează vizionare
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={actionPropertyId === prop.id}
+                                            onClick={() => void createTaskForMatch(prop)}
+                                        >
+                                            {actionPropertyId === prop.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                            Creează task
+                                        </Button>
+                                    </div>
                                 </div>
                             </Card>
                         ))}

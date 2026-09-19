@@ -21,6 +21,7 @@ import { EditViewingDialog } from '@/components/viewings/EditViewingDialog';
 import { DeleteViewingAlert } from '@/components/viewings/DeleteViewingAlert';
 import { cn } from '@/lib/utils';
 import { useAgencyAgents } from '@/hooks/use-agency-agents';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 export default function ViewingsPage() {
     const { agencyId, agency, userProfile } = useAgency();
@@ -201,17 +202,63 @@ export default function ViewingsPage() {
 
     return (
         <div className="flex h-full min-w-0 w-full max-w-full flex-col gap-4 overflow-x-hidden bg-[#0F1E33] px-2 py-2 text-white sm:gap-6 sm:p-2">
-            <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-                <Button onClick={() => setIsAddViewingOpen(true)} variant="outline" className="agentfinder-schedule-viewing-button w-full h-12 text-base bg-white/10 border-white/20 hover:bg-white/20 hover:text-white">
-                    <PlusCircle className="mr-2 h-4 w-4"/>
-                    Programează Vizionare
-                </Button>
-                <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []} properties={properties || []} requireSchedule>
-                    <Button variant="outline" className="agentfinder-schedule-task-button h-12 w-full bg-white/10 text-base text-white border-white/20 hover:bg-white/20 hover:text-white">
-                        <ListTodo className="mr-2 h-4 w-4" />
-                        Adaugă Task
-                    </Button>
-                </AddTaskDialog>
+            <div className="tt-design settings-tiktok">
+                <style>{`
+                    .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+                    @media (max-width: 640px) {
+                      .settings-tiktok .tt-hero { text-align: center; padding: 18px !important; }
+                      .settings-tiktok .tt-hero-kicker { justify-content: center; }
+                      .settings-tiktok .tt-hero .tt-hero-lead { display: none; }
+                    }
+                `}</style>
+                <header className="tt-hero">
+                    <div>
+                        <div className="tt-hero-kicker">
+                            <ListTodo size={17} />
+                            <span className="tt-eyebrow">CALENDAR AGENȚIE</span>
+                        </div>
+                        <h1>Vizionări <em>și task-uri</em></h1>
+                        <p className="tt-hero-lead">
+                            Programează întâlnirile și sarcinile echipei.
+                            <br />
+                            <strong>Totul într-un singur calendar.</strong>
+                        </p>
+                        <p className="hidden sm:block">
+                            Vezi vizionările următoare, arhiva și task-urile asociate.
+                        </p>
+                    </div>
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-col sm:gap-3">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => setIsAddViewingOpen(true)}
+                            className="group flex h-auto min-h-[56px] items-center gap-2 rounded-[16px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-2 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1 sm:min-h-[64px] sm:gap-3 sm:rounded-[18px] sm:p-3"
+                        >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-[0_10px_22px_-14px_rgba(8,145,178,0.7)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
+                                <PlusCircle className="h-4 w-4" />
+                            </span>
+                            <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">
+                                <span className="sm:hidden">Vizionare</span>
+                                <span className="hidden sm:inline">Programează Vizionare</span>
+                            </span>
+                        </Button>
+                        <AddTaskDialog onAddTask={handleAddTask} contacts={contacts || []} properties={properties || []} requireSchedule>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="group flex h-auto min-h-[56px] items-center gap-2 rounded-[16px] border border-emerald-200 bg-gradient-to-br from-emerald-300 via-teal-200 to-emerald-200 p-2 text-left text-emerald-950 shadow-[0_16px_38px_-20px_rgba(16,185,129,0.78)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 sm:min-h-[64px] sm:gap-3 sm:rounded-[18px] sm:p-3"
+                            >
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/85 text-emerald-700 shadow-[0_10px_22px_-14px_rgba(6,95,70,0.6)] ring-1 ring-white transition-transform duration-300 group-hover:scale-110">
+                                    <PlusCircle className="h-4 w-4" />
+                                </span>
+                                <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">
+                                    <span className="sm:hidden">Task</span>
+                                    <span className="hidden sm:inline">Adaugă Task</span>
+                                </span>
+                            </Button>
+                        </AddTaskDialog>
+                    </div>
+                </header>
             </div>
             
             <ViewingsCalendar 

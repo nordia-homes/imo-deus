@@ -37,16 +37,20 @@ import {
 import { useFirestore, useStorage } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 const formSchema = z.object({
-  customDomain: z.string().optional(),
+  customDomain: z.string().trim().max(253).refine((value) => {
+    if (!value) return false;
+    return /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.[a-z0-9-]{1,63})+$/i.test(value.replace(/^www\./i, ''));
+  }, 'Introdu un domeniu valid, fără protocol sau spații.'),
 });
 
 function StatusBadge({ status }: { status?: 'pending' | 'connected' | 'error' }) {
   if (status === 'connected') {
     return (
-      <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/15">
-        <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+      <Badge className="inline-flex items-center rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100">
+        <CheckCircle2 className="mr-1 h-4 w-4" />
         Conectat
       </Badge>
     );
@@ -54,16 +58,16 @@ function StatusBadge({ status }: { status?: 'pending' | 'connected' | 'error' })
 
   if (status === 'error') {
     return (
-      <Badge variant="destructive">
-        <AlertTriangle className="mr-1 h-3.5 w-3.5" />
+      <Badge variant="destructive" className="inline-flex items-center rounded-full px-4 py-1.5 text-xs font-bold">
+        <AlertTriangle className="mr-1 h-4 w-4" />
         Necesita verificare
       </Badge>
     );
   }
 
   return (
-    <Badge className="bg-amber-500/15 text-amber-200 hover:bg-amber-500/15">
-      <Clock3 className="mr-1 h-3.5 w-3.5" />
+    <Badge className="inline-flex items-center rounded-full bg-amber-100 px-4 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100">
+      <Clock3 className="mr-1 h-4 w-4" />
       In asteptare
     </Badge>
   );
@@ -79,12 +83,22 @@ function DomainStateBadge({
   const normalized = value || 'Necunoscut';
   const isActive = normalized.endsWith('ACTIVE');
   const isIssue = normalized.endsWith('ERROR') || normalized.endsWith('CONFLICT') || normalized.endsWith('FAILED');
+  const translated = normalized
+    .replaceAll('_', ' ')
+    .replace('HOST', 'Gazdă')
+    .replace('OWNERSHIP', 'Proprietate')
+    .replace('CERT', 'Certificat')
+    .replace('ACTIVE', 'Activ')
+    .replace('PENDING', 'În așteptare')
+    .replace('ERROR', 'Eroare')
+    .replace('CONFLICT', 'Conflict')
+    .replace('FAILED', 'Eșuat');
 
   return (
     <div className="agentfinder-custom-domain-state rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">{label}</p>
       <p className={`mt-1 text-sm font-medium ${isActive ? 'text-emerald-200' : isIssue ? 'text-rose-200' : 'text-white/80'}`}>
-        {normalized.replaceAll('_', ' ')}
+        {translated}
       </p>
     </div>
   );
@@ -137,6 +151,17 @@ function InstructionTable({ instructions }: { instructions: CustomDomainInstruct
   }
 
   return (
+    <div className="space-y-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="ml-auto rounded-full border-emerald-200 bg-white text-emerald-800 hover:bg-emerald-50"
+        onClick={() => void copyToClipboard(instructions.map((item) => `${item.action}\t${item.type}\t${item.host}\t${item.value}`).join('\n'))}
+      >
+        <Copy className="mr-2 h-4 w-4" />
+        Copiază toate instrucțiunile
+      </Button>
     <div className="agentfinder-custom-domain-table overflow-hidden rounded-2xl border border-white/10">
       <div className="agentfinder-custom-domain-table-header grid grid-cols-[90px_90px_1fr_1.2fr_54px] bg-white/5 px-4 py-3 text-[11px] uppercase tracking-[0.18em] text-white/45">
         <span>Actiune</span>
@@ -168,6 +193,7 @@ function InstructionTable({ instructions }: { instructions: CustomDomainInstruct
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 }
@@ -236,6 +262,13 @@ export default function CustomDomainPage() {
         description: 'Introdu un domeniu valid inainte sa continui.',
       });
       return;
+    }
+
+    if (currentDomain && currentDomain !== normalizedCustomDomain) {
+      const confirmed = window.confirm(
+        `Domeniul curent este ${currentDomain}. Dacă îl schimbi în ${normalizedCustomDomain}, vechile aliasuri vor fi eliminate. Continui?`
+      );
+      if (!confirmed) return;
     }
 
     try {
@@ -313,6 +346,16 @@ export default function CustomDomainPage() {
     const file = event.target.files?.[0];
     if (!file || !agency?.id || userProfile?.role !== 'admin') return;
 
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast({ variant: 'destructive', title: 'Format neacceptat', description: 'Folosește PNG, JPEG sau WebP.' });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: 'destructive', title: 'Imagine prea mare', description: 'Dimensiunea maximă este 5 MB.' });
+      return;
+    }
+
     try {
       setIsUploadingShareImage(true);
       const shareImageRef = ref(storage, `agencies/${agency.id}/share/share-image-${Date.now()}`);
@@ -353,16 +396,92 @@ export default function CustomDomainPage() {
 
   return (
     <>
-      <div className="agentfinder-custom-domain-page space-y-8 bg-[#0F1E33] p-4 text-white">
-        <div className="agentfinder-custom-domain-hero space-y-2">
-          <div className="agentfinder-custom-domain-eyebrow inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
-            <Globe className="mr-2 h-4 w-4" />
-            Domeniu custom
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Website public pe domeniul agentiei</h1>
-          <p className="max-w-3xl text-white/70">
-            Introdu domeniul agentiei, iar platforma va pregati server-side instructiunile exacte din Firebase App Hosting pentru registrar.
-          </p>
+      <div className="tt-design tt-workspace settings-custom-domain space-y-8 p-4 lg:p-6">
+        <style>{`
+          .settings-custom-domain [class*="text-white"] { color: #182b40 !important; -webkit-text-fill-color: currentColor !important; }
+          .settings-custom-domain [class*="bg-white"] { background-color: transparent !important; background-image: none !important; }
+          .settings-custom-domain .agentfinder-custom-domain-card,
+          .settings-custom-domain .agentfinder-custom-domain-panel,
+          .settings-custom-domain .agentfinder-custom-domain-state,
+          .settings-custom-domain .agentfinder-custom-domain-table-header,
+          .settings-custom-domain .agentfinder-custom-domain-table-row,
+          .settings-custom-domain .agentfinder-custom-domain-table-body {
+            background: #ffffff !important;
+            border-color: rgba(119,146,173,.20) !important;
+          }
+          .settings-custom-domain input {
+            height: 44px; border-radius: 10px !important; border: 1px solid #d5e0e9 !important;
+            background: #ffffff !important; color: #263b51 !important; padding: 10px 13px; font-size: 13px;
+            box-shadow: none !important;
+          }
+          .settings-custom-domain button:not([role=switch]) {
+            border-radius: 12px !important; min-height: 42px; font-weight: 650;
+            background: #ffffff !important; border: 1px solid #d9e3ec !important; color: #2d455d !important;
+          }
+        `}</style>
+        <div className="tt-design settings-tiktok">
+          <style>{`
+            .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          `}</style>
+          <header className="tt-hero">
+            <div>
+              <div className="tt-hero-kicker">
+                <Globe size={17} />
+                <span className="tt-eyebrow">DOMENIU CUSTOM</span>
+              </div>
+              <h1>Website public pe <em>domeniul agenției</em></h1>
+              <p className="tt-hero-lead">
+                Domeniul tău, configurat corect.
+                <br />
+                <strong>Instructiuni DNS exacte din Firebase App Hosting.</strong>
+              </p>
+              <p>
+                Introdu domeniul agenției și urmărește pașii reali de conectare și certificare.
+              </p>
+            </div>
+            <div className="tt-scene" aria-hidden="true">
+              <div className="tt-scene-halo" />
+              <div className="tt-scene-sheet tt-scene-sheet--back">
+                <span>DNS CONFIG</span>
+                <div className="flex h-full items-center justify-center">
+                  <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-slate-700">
+                    <Globe size={30} />
+                  </div>
+                </div>
+              </div>
+              <div className="tt-scene-sheet tt-scene-sheet--front">
+                <span className="tt-scene-brand">
+                  <ShieldCheck size={12} /> DOMENIU
+                </span>
+                <div className="flex h-full items-center justify-center">
+                  <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                    <CheckCircle2 className="mx-auto text-emerald-700" size={28} />
+                    <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Securizat
+                    </span>
+                    <strong className="block text-sm text-slate-900">SSL activ</strong>
+                  </div>
+                </div>
+                <div className="tt-scene-caption">
+                  <small>URMĂTOAREA CONFIGURARE</small>
+                  <strong>Domeniul tău, gata de public.</strong>
+                  <span>DNS exact din Firebase App Hosting</span>
+                </div>
+              </div>
+              <div className="tt-scene-tag tt-scene-tag--video">
+                <Globe size={16} />
+                <span>
+                  Domeniu
+                  <br />
+                  <strong>personalizat</strong>
+                </span>
+              </div>
+              <div className="tt-scene-tag tt-scene-tag--spark">
+                <ShieldCheck size={16} />
+                <span>Firebase App Hosting</span>
+              </div>
+            </div>
+          </header>
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -429,6 +548,22 @@ export default function CustomDomainPage() {
                     >
                       <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                       Verifica din nou
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isRefreshing || !form.getValues('customDomain') || userProfile?.role !== 'admin'}
+                      onClick={() => {
+                        toast({
+                          title: 'Verificare automată programată',
+                          description: 'Statusul va fi reverificat automat în 60 de secunde.',
+                        });
+                        window.setTimeout(() => void handleRefreshStatus(), 60000);
+                      }}
+                      className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    >
+                      <Clock3 className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      Verifică automat
                     </Button>
                     {previewUrl ? (
                       <Button asChild variant="outline" className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10">

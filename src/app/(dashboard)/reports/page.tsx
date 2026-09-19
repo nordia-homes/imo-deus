@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAgency } from '@/context/AgencyContext';
 import { useToast } from '@/hooks/use-toast';
 import { isArchivedContact } from '@/lib/contact-aging';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 import {
   Activity,
   ArrowDownRight,
@@ -1014,16 +1015,69 @@ export default function ReportsPage() {
 
   return (
     <div className="agentfinder-reports-page space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <div className="agentfinder-reports-hero flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-white">Rapoarte de Performanță</h1>
-          <p className="max-w-3xl text-white/70">
-            Pagina include acum o vedere completă asupra lead-urilor, portofoliului, vizionărilor și performanței comerciale.
-          </p>
-        </div>
-        <Badge variant="outline" className="w-fit border-primary/30 bg-primary/10 text-primary">
-          OpenAI activ pentru analiza AI
-        </Badge>
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <Activity size={17} />
+              <span className="tt-eyebrow">RAPOARTE</span>
+            </div>
+            <h1>Rapoarte de <em>Performanță</em></h1>
+            <p className="tt-hero-lead">
+              O vedere completă asupra businessului.
+              <br />
+              <strong>Lead-uri, portofoliu, vizionări și performanță comercială.</strong>
+            </p>
+            <p>
+              Analizează rapid sursele, conversiile, blocajele și tendințele agenției.
+            </p>
+          </div>
+          <div className="tt-scene" aria-hidden="true">
+            <div className="tt-scene-halo" />
+            <div className="tt-scene-sheet tt-scene-sheet--back">
+              <span>RAPOARTE CRM</span>
+              <div className="flex h-full items-center justify-center">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-slate-700">
+                  <Activity size={30} />
+                </div>
+              </div>
+            </div>
+            <div className="tt-scene-sheet tt-scene-sheet--front">
+              <span className="tt-scene-brand">
+                <Sparkles size={12} /> ANALIZĂ
+              </span>
+              <div className="flex h-full items-center justify-center">
+                <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                  <Sparkles className="mx-auto text-emerald-700" size={28} />
+                  <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Business
+                  </span>
+                  <strong className="block text-sm text-slate-900">Performanță clară</strong>
+                </div>
+              </div>
+              <div className="tt-scene-caption">
+                <small>URMĂTOAREA DECIZIE</small>
+                <strong>Pe date, nu pe presupuneri.</strong>
+                <span>lead-uri, portofoliu și conversii</span>
+              </div>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--video">
+              <Activity size={16} />
+              <span>
+                Raport
+                <br />
+                <strong>operațional</strong>
+              </span>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--spark">
+              <Sparkles size={16} />
+              <span>OpenAI activ</span>
+            </div>
+          </div>
+        </header>
       </div>
 
       <Card className="border-none bg-[#152A47] text-white shadow-2xl">

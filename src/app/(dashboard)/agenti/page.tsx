@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 type AgentCardProfile = UserProfile & {
   activeListingsCount?: number;
@@ -278,36 +279,58 @@ export default function AgentsPage() {
 
   return (
     <div className="agentfinder-agents-page space-y-8 p-4 text-white">
-      <section className="agentfinder-agents-hero overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(74,222,128,0.22),_transparent_32%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(14,29,49,1)_55%,_rgba(10,18,33,1)_100%)] p-6 shadow-2xl">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <div className="agentfinder-agents-eyebrow inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-emerald-100/85">
-              <Users2 className="h-3.5 w-3.5" />
-              Agenti
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <Users2 size={17} />
+              <span className="tt-eyebrow">ECHIPA AGENȚIEI</span>
             </div>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">Echipa agenției</h1>
-              <p className="mt-2 text-sm leading-7 text-white/72">
-                Aici vezi toți agenții activi și poți crea rapid conturi noi pentru echipă, fără să mai intri în Setări.
-              </p>
-            </div>
+            <h1>Agenți <em>activi</em></h1>
+            <p className="tt-hero-lead">
+              Toți membrii echipei.
+              <br />
+              <strong>Adaugă, editează și urmărește performanța agenților.</strong>
+            </p>
+            <p>
+              Aici vezi agenții activi și poți crea rapid conturi noi pentru echipă.
+            </p>
           </div>
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="agentfinder-agents-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/55">Total</p>
-              <p className="mt-2 text-2xl font-semibold">{isLoading ? '...' : agentStats.totalAgents}</p>
-            </div>
-            <div className="agentfinder-agents-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/55">Admini</p>
-              <p className="mt-2 text-2xl font-semibold">{isLoading ? '...' : agentStats.admins}</p>
-            </div>
-            <div className="agentfinder-agents-stat rounded-2xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/55">Agenți</p>
-              <p className="mt-2 text-2xl font-semibold">{isLoading ? '...' : agentStats.activeAgents}</p>
-            </div>
+            <article className="tt-metric">
+              <div className="tt-metric-top">
+                <span className="tt-icon-tile"><Users2 size={18} /></span>
+                <span className="tt-metric-dot" aria-hidden="true" />
+              </div>
+              <p>Total</p>
+              <strong>{isLoading ? '...' : agentStats.totalAgents}</strong>
+              <span className="tt-metric-caption">Membri</span>
+            </article>
+            <article className="tt-metric tt-metric--amber">
+              <div className="tt-metric-top">
+                <span className="tt-icon-tile"><ShieldCheck size={18} /></span>
+                <span className="tt-metric-dot" aria-hidden="true" />
+              </div>
+              <p>Admini</p>
+              <strong>{isLoading ? '...' : agentStats.admins}</strong>
+              <span className="tt-metric-caption">Administratori</span>
+            </article>
+            <article className="tt-metric tt-metric--violet">
+              <div className="tt-metric-top">
+                <span className="tt-icon-tile"><UserRound size={18} /></span>
+                <span className="tt-metric-dot" aria-hidden="true" />
+              </div>
+              <p>Agenți</p>
+              <strong>{isLoading ? '...' : agentStats.activeAgents}</strong>
+              <span className="tt-metric-caption">Echipa comercială</span>
+            </article>
           </div>
-        </div>
-      </section>
+        </header>
+      </div>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {isLoading ? (

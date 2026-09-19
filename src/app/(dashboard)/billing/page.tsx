@@ -5,12 +5,14 @@ import PlanCard from '@/components/billing/PlanCard';
 import UsageMeter from '@/components/billing/UsageMeter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { changeBillingPlan, changeBillingSeats, redirectToBillingPortal, redirectToCheckout } from '@/lib/stripe';
 import { type BillingPlanId } from '@/lib/billing/plans';
 import { type BillingSummary, getPlanComparisonRows, getSeatPricing } from '@/lib/billing/entitlements';
 import { CreditCard, Loader2, Lock, Users } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 type PlanApiRecord = {
   id: BillingPlanId;
@@ -218,11 +220,30 @@ export default function BillingPage() {
 
   return (
     <div className="agentfinder-billing-page space-y-8 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <div className="agentfinder-billing-hero space-y-2">
-        <h1 className="text-3xl font-headline font-bold text-white">Facturare si abonament</h1>
-        <p className="text-white/70">
-          Agentia este taxata pe plan si pe numarul de utilizatori activi. Seats-urile disponibile controleaza adaugarea de agenti noi.
-        </p>
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <CreditCard size={17} />
+              <span className="tt-eyebrow">FACTURARE</span>
+            </div>
+            <h1>Facturare <em>și abonament</em></h1>
+            <p className="tt-hero-lead">
+              Planuri și locuri pentru agenție.
+              <br />
+              <strong>Administrează abonamentul și facturarea dintr-un singur loc.</strong>
+            </p>
+            <p>
+              Agenția este taxată pe plan și pe numărul de utilizatori activi.
+            </p>
+          </div>
+          <Badge variant="outline" className="tt-badge tt-badge--active">
+            Stripe + SmartBill
+          </Badge>
+        </header>
       </div>
 
       <Card className="agentfinder-billing-current-card rounded-2xl border-none bg-[#152A47] text-white shadow-2xl">

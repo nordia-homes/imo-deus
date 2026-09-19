@@ -19,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 type GroupDraft = FacebookGroup & { purpose: FacebookGroupPurpose };
 
@@ -120,26 +122,78 @@ export default function FacebookGroupsPage() {
 
   return (
     <div className="min-h-full bg-[var(--app-page-bg)] p-4 md:p-6 lg:p-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <Card className="overflow-hidden rounded-[28px] border-[var(--app-card-border)] bg-[var(--app-surface)] shadow-[var(--app-card-shadow)]">
-          <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1877f2]/10 text-[#1877f2]">
-                  <Facebook className="h-6 w-6" />
-                </div>
-                <CardTitle className="text-2xl md:text-3xl">Grupuri Facebook</CardTitle>
+      <div className="mx-auto w-full max-w-[1500px] space-y-6">
+        <div className="tt-design settings-tiktok">
+          <style>{`
+            .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          `}</style>
+          <header className="tt-hero">
+            <div>
+              <div className="tt-hero-kicker">
+                <Facebook size={17} />
+                <span className="tt-eyebrow">GRUPURI FACEBOOK</span>
               </div>
-              <CardDescription className="max-w-3xl text-sm md:text-base">
-                Organizează grupurile după tipul anunțului. La publicare vor apărea automat numai grupurile potrivite proprietății.
-              </CardDescription>
+              <h1>Grupuri <em>Facebook</em></h1>
+              <p className="tt-hero-lead">
+                Organizează grupurile după tipul anunțului.
+                <br />
+                <strong>La publicare apar doar grupurile potrivite proprietății.</strong>
+              </p>
             </div>
-            <Button onClick={saveGroups} disabled={saving || isAgencyLoading || !agencyId} className="rounded-full px-6">
-              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-              Salvează grupurile
-            </Button>
-          </CardHeader>
-        </Card>
+            <div className="space-y-3">
+              <div className="tt-scene" aria-hidden="true">
+                <div className="tt-scene-halo" />
+                <div className="tt-scene-sheet tt-scene-sheet--back">
+                  <span>ORGANIZARE</span>
+                  <div className="flex h-full items-center justify-center">
+                    <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-slate-700">
+                      <Facebook size={30} />
+                    </div>
+                  </div>
+                </div>
+                <div className="tt-scene-sheet tt-scene-sheet--front">
+                  <span className="tt-scene-brand">
+                    <Facebook size={12} /> GRUPURI
+                  </span>
+                  <div className="flex h-full items-center justify-center">
+                    <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                      <Link2 className="mx-auto text-blue-700" size={28} />
+                      <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        Publicare
+                      </span>
+                      <strong className="block text-sm text-slate-900">Filtrată automat</strong>
+                    </div>
+                  </div>
+                  <div className="tt-scene-caption">
+                    <small>GRUPURI CONFIGURATE</small>
+                    <strong>Anunțul ajunge unde trebuie.</strong>
+                    <span>vânzări și închirieri</span>
+                  </div>
+                </div>
+                <div className="tt-scene-tag tt-scene-tag--video">
+                  <Facebook size={16} />
+                  <span>
+                    Facebook
+                    <br />
+                    <strong>Groups</strong>
+                  </span>
+                </div>
+                <div className="tt-scene-tag tt-scene-tag--spark">
+                  <Link2 size={16} />
+                  <span>Publicare automată</span>
+                </div>
+              </div>
+              <Button
+                onClick={saveGroups}
+                disabled={saving || isAgencyLoading || !agencyId}
+                className="tt-button tt-button--default w-full rounded-full px-6"
+              >
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Salvează grupurile
+              </Button>
+            </div>
+          </header>
+        </div>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'sale' | 'rent')}>
           <TabsList className="grid h-14 w-full grid-cols-2 rounded-2xl border border-[var(--app-card-border)] bg-[var(--app-surface-soft)] p-1.5 md:w-[480px]">
@@ -158,7 +212,90 @@ export default function FacebookGroupsPage() {
                   <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
                 </div>
               ) : visibleGroups.length ? (
-                <div className="grid gap-4 lg:grid-cols-2">
+                <>
+                <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm lg:block">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="font-bold text-slate-600">Grup</TableHead>
+                        <TableHead className="font-bold text-slate-600">Link Facebook</TableHead>
+                        <TableHead className="font-bold text-slate-600">Folosit pentru</TableHead>
+                        <TableHead className="text-right font-bold text-slate-600">Acțiuni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {visibleGroups.map(({ group, index }) => {
+                        const groupHref = getGroupHref(group.url);
+                        return (
+                          <TableRow key={`${index}-${group.url}`} className="hover:bg-slate-50">
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-50 text-blue-600">
+                                  <Facebook className="h-4 w-4" />
+                                </span>
+                                <Input
+                                  value={group.name}
+                                  onChange={(event) => updateGroup(index, { name: event.target.value })}
+                                  placeholder="Ex: Imobiliare București"
+                                  className="h-11 rounded-xl"
+                                />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="relative min-w-0 flex-1">
+                                  <Link2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                  <Input
+                                    value={group.url}
+                                    onChange={(event) => updateGroup(index, { url: event.target.value })}
+                                    placeholder="https://www.facebook.com/groups/..."
+                                    className="h-11 rounded-xl pl-9"
+                                  />
+                                </div>
+                                {groupHref ? (
+                                  <Button asChild type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0 rounded-xl">
+                                    <a href={groupHref} target="_blank" rel="noopener noreferrer" aria-label={`Deschide ${group.name || 'grupul Facebook'}`}>
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={group.purpose}
+                                onValueChange={(purpose) => updateGroup(index, { purpose: purpose as FacebookGroupPurpose })}
+                              >
+                                <SelectTrigger className="h-11 rounded-xl">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sale">Vânzări</SelectItem>
+                                  <SelectItem value="rent">Închirieri</SelectItem>
+                                  <SelectItem value="both">Ambele</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="h-11 w-11 rounded-xl text-rose-600 hover:text-rose-700"
+                                onClick={() => removeGroup(index)}
+                                aria-label={`Șterge ${group.name || 'grupul'}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="grid gap-4 lg:hidden">
                   {visibleGroups.map(({ group, index }) => {
                     const groupHref = getGroupHref(group.url);
                     return (
@@ -242,6 +379,7 @@ export default function FacebookGroupsPage() {
                     );
                   })}
                 </div>
+                </>
               ) : (
                 <Card className="rounded-3xl border-dashed border-[var(--app-card-border)] bg-[var(--app-surface-soft)]">
                   <CardContent className="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
