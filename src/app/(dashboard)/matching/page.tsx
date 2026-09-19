@@ -45,8 +45,8 @@ const propertyMatchSchema = z.object({
 });
 
 export default function MatchingPage() {
-    const { agencyId } = useAgency();
-    const { user, userProfile } = useUser();
+    const { agencyId, userProfile } = useAgency();
+    const { user } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
 
