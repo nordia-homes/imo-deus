@@ -2,16 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import { collection } from 'firebase/firestore';
-import { BadgeCheck, Search, X } from 'lucide-react';
+import { BadgeCheck, Building2, Search, TrendingUp, X } from 'lucide-react';
 import { PropertyList } from '@/components/properties/PropertyList';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 function normalizeSearch(value: string) {
   return value
@@ -133,38 +133,67 @@ export default function SoldPropertiesPage() {
 
   return (
     <div className={cn('agentfinder-sold-properties-page space-y-6', isMobile ? 'p-0' : 'px-3')}>
-      <Card className="overflow-hidden border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)] lg:rounded-[30px]">
-        <CardHeader className="px-5 py-5 lg:px-7 lg:py-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85">
-                <BadgeCheck className="h-3.5 w-3.5" />
-                Tranzactii finalizate
-              </div>
-              <CardTitle className="mt-4 text-3xl font-semibold tracking-tight text-white lg:text-4xl">
-                Proprietati Vandute
-              </CardTitle>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/68 lg:text-base lg:leading-7">
-                Proprietatile marcate ca vandute de agentie sunt pastrate aici, cu pretul final si data schimbarii de status.
-              </p>
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          .settings-tiktok .tt-hero { grid-template-columns: minmax(0,0.9fr) minmax(520px,1.1fr) !important; }
+          @media (max-width: 900px) {
+            .settings-tiktok .tt-hero { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <BadgeCheck size={17} />
+              <span className="tt-eyebrow">TRANZACȚII FINALIZATE</span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[520px]">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Total</p>
-                <p className="mt-1 text-3xl font-semibold text-white">{soldProperties.length}</p>
+            <h1>Proprietăți <em>Vândute</em></h1>
+            <p className="tt-hero-lead">
+              Istoricul tău de rezultate.
+              <br />
+              <strong>Volumul și ritmul agenției, la vedere.</strong>
+            </p>
+            <p>
+              Proprietățile marcate ca vândute sunt păstrate aici, cu prețul final și data schimbării de status.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <Building2 className="h-4 w-4 text-emerald-600" />
+                Total
               </div>
-              <div className="rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Volum</p>
-                <p className="mt-1 text-xl font-semibold text-white">{formatCurrency(totalSoldValue)}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                {soldProperties.length}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Proprietăți vândute</p>
+            </div>
+
+            <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-violet-600">
+                <TrendingUp className="h-4 w-4" />
+                Volum
               </div>
-              <div className="rounded-3xl border border-white/10 bg-white/[0.06] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Ultima</p>
-                <p className="mt-1 text-xl font-semibold text-white">{lastSoldAt}</p>
+              <p className="mt-3 break-words text-xl font-semibold tracking-[-0.04em] text-slate-950">
+                {formatCurrency(totalSoldValue)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Valoare finală</p>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+                <BadgeCheck className="h-4 w-4" />
+                Ultima
               </div>
+              <p className="mt-3 text-xl font-semibold tracking-[-0.04em] text-slate-950">
+                {lastSoldAt}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Tranzacție finalizată</p>
             </div>
           </div>
-        </CardHeader>
-      </Card>
+        </header>
+      </div>
 
       <div className="px-2 lg:px-0">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">

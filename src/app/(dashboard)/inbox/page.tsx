@@ -25,6 +25,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 function formatDate(value?: string | null) {
   if (!value) return 'Fara data';
@@ -169,22 +170,48 @@ export default function StoriaInboxPage() {
           </div>
         </section>
 
-        <header className="hidden flex-col gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm lg:flex lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Inbox className="h-5 w-5 text-slate-500" />
-              <h1 className="text-xl font-semibold tracking-normal">Inbox Storia</h1>
-              <Badge className="h-7 border border-emerald-200 bg-emerald-50 px-3 text-[11px] uppercase tracking-[0.16em] text-emerald-700 hover:bg-emerald-50">
-                {stats.unread} necitite
-              </Badge>
+        <div className="tt-design settings-tiktok hidden lg:block">
+          <style>{`
+            .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          `}</style>
+          <header className="tt-hero">
+            <div>
+              <div className="tt-hero-kicker">
+                <Inbox size={17} />
+                <span className="tt-eyebrow">INBOX STORIA</span>
+              </div>
+              <h1>Mesaje <em>Storia</em></h1>
+              <p className="tt-hero-lead">
+                Lead-urile tale într-un singur loc.
+                <br />
+                <strong>Conversații grupate pe client și proprietate.</strong>
+              </p>
+              <p>
+                Vezi rapid mesajele noi, răspunde și adaugă lead-urile direct în CRM.
+              </p>
             </div>
-            <p className="mt-1 text-sm text-slate-500">Lead-uri din Storia, grupate dupa client si proprietate.</p>
-          </div>
-          <div className="flex gap-2 text-sm">
-            <StatChip label="Total" value={stats.total} />
-            <StatChip label="Deschise" value={stats.open} />
-          </div>
-        </header>
+            <div className="grid grid-cols-2 gap-3">
+              <article className="tt-metric">
+                <div className="tt-metric-top">
+                  <span className="tt-icon-tile"><Inbox size={18} /></span>
+                  <span className="tt-metric-dot" aria-hidden="true" />
+                </div>
+                <p>Total</p>
+                <strong>{stats.total}</strong>
+                <span className="tt-metric-caption">Conversații</span>
+              </article>
+              <article className="tt-metric tt-metric--amber">
+                <div className="tt-metric-top">
+                  <span className="tt-icon-tile"><MessageSquare size={18} /></span>
+                  <span className="tt-metric-dot" aria-hidden="true" />
+                </div>
+                <p>Deschise</p>
+                <strong>{stats.open}</strong>
+                <span className="tt-metric-caption">Lead-uri active</span>
+              </article>
+            </div>
+          </header>
+        </div>
 
         <div className="lg:hidden">
           {isLoading ? (

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertTriangle,
+  ArrowRight,
   BarChart3,
   Building2,
   CheckCircle2,
@@ -34,6 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MetaCampaignEditorDialog } from '@/components/marketing/MetaCampaignEditorDialog';
 import type { MetaMarketingCampaignDraft, MetaMarketingIntegrationPublicStatus } from '@/lib/types';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 type DashboardPayload = {
   status: MetaMarketingIntegrationPublicStatus;
@@ -466,51 +468,72 @@ export default function MarketingPage() {
 
   return (
     <div className="agentfinder-marketing-page min-h-full space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1.5 text-sm font-medium text-emerald-200">
-            <Megaphone className="mr-2 h-4 w-4" />
-            Marketing
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <Megaphone size={17} />
+              <span className="tt-eyebrow">PROMOVARE META</span>
+            </div>
+            <h1>Meta pentru <em>proprietăți</em></h1>
+            <p className="tt-hero-lead">
+              Campanii Housing pentru fiecare proprietate.
+              <br />
+              <strong>Conectează Business Manager-ul și pregătește reclamele.</strong>
+            </p>
+            <p>
+              Alege contul de reclame, urmărește performanța și administrează campaniile direct din ImoDeus.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Promovare Meta pentru proprietati</h1>
-          <p className="max-w-3xl text-white/70">
-            Conecteaza Business Manager-ul agentiei, alege contul de reclame si pregateste campanii Housing pentru fiecare proprietate.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10"
-            onClick={() => void loadDashboard()}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reimprospateaza
-          </Button>
-          {status?.connected ? (
+
+          <div className="flex w-full flex-col gap-3">
             <Button
               type="button"
-              variant="outline"
-              disabled={!isAdmin || activeAction === 'disconnect'}
-              className="rounded-full border-rose-300/20 bg-rose-500/10 text-rose-100 hover:bg-rose-500/15"
-              onClick={() => void handleDisconnect()}
+              variant="ghost"
+              className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-3 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+              onClick={() => void loadDashboard()}
             >
-              {activeAction === 'disconnect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Unplug className="mr-2 h-4 w-4" />}
-              Deconecteaza
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-[0_10px_22px_-14px_rgba(8,145,178,0.7)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
+                <RefreshCw className="h-4 w-4" />
+              </span>
+              <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Reîmprospătează</span>
+              <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-cyan-500 transition-transform duration-300 group-hover:translate-x-1" />
             </Button>
-          ) : (
-            <Button
-              type="button"
-              disabled={!isAdmin || activeAction === 'connect'}
-              className="rounded-full bg-emerald-400 px-6 text-black hover:bg-emerald-300"
-              onClick={() => void handleConnect()}
-            >
-              {activeAction === 'connect' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlugZap className="mr-2 h-4 w-4" />}
-              Conecteaza Meta
-            </Button>
-          )}
-        </div>
-      </header>
+            {status?.connected ? (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={!isAdmin || activeAction === 'disconnect'}
+                className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-pink-50 p-3 text-left text-rose-950 shadow-[0_14px_34px_-22px_rgba(244,63,94,0.5)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+                onClick={() => void handleDisconnect()}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-rose-600 shadow-[0_10px_22px_-14px_rgba(244,63,94,0.55)] ring-1 ring-rose-100 transition-transform duration-300 group-hover:scale-110">
+                  {activeAction === 'disconnect' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unplug className="h-4 w-4" />}
+                </span>
+                <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Deconectează</span>
+                <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-rose-500 transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={!isAdmin || activeAction === 'connect'}
+                className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-emerald-200 bg-gradient-to-br from-emerald-300 via-teal-200 to-emerald-200 p-3 text-left text-emerald-950 shadow-[0_16px_38px_-20px_rgba(16,185,129,0.78)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1"
+                onClick={() => void handleConnect()}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/85 text-emerald-700 shadow-[0_10px_22px_-14px_rgba(6,95,70,0.6)] ring-1 ring-white transition-transform duration-300 group-hover:scale-110">
+                  {activeAction === 'connect' ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
+                </span>
+                <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Conectează Meta</span>
+                <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-emerald-800 transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            )}
+          </div>
+        </header>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <KpiCard icon={CircleDollarSign} label="Spend" value={formatMoney(dashboard?.totals.spend || 0, selectedCurrency)} helper="Din campaniile urmarite" />

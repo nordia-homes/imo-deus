@@ -51,6 +51,7 @@ import {
 import { normalizeSaleForWorkspace } from '@/lib/sales-workspace';
 import type { Property, SaleChecklistStage, SaleStage, SaleTransaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 const STAGE_ORDER: SaleStage[] = ['preparing', 'reservation', 'precontract', 'contract', 'completed'];
 const STAGE_COLORS: Record<SaleStage, string> = {
@@ -480,27 +481,53 @@ export default function SalesManagementPage() {
 
   return (
     <div data-testid="sales-management-page" className="relative isolate space-y-6 rounded-[36px] bg-[radial-gradient(circle_at_0%_12%,rgba(209,250,229,.34),transparent_24%),radial-gradient(circle_at_100%_68%,rgba(224,242,254,.38),transparent_28%)] px-0 pb-12 text-slate-950 md:px-3">
-      <section className="relative isolate overflow-hidden rounded-none border border-white/90 bg-[radial-gradient(circle_at_8%_0%,rgba(167,243,208,.7),transparent_30%),radial-gradient(circle_at_92%_8%,rgba(186,230,253,.74),transparent_28%),radial-gradient(circle_at_70%_110%,rgba(221,214,254,.48),transparent_32%),linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,250,252,.92))] px-5 py-7 shadow-[0_30px_80px_-40px_rgba(14,116,144,.34),0_12px_28px_-22px_rgba(15,23,42,.16)] ring-1 ring-slate-900/[.035] md:rounded-[34px] md:px-8 md:py-8">
-        <div className="pointer-events-none absolute -right-24 -top-36 h-80 w-80 rounded-full border-[42px] border-white/45 shadow-[0_0_80px_rgba(255,255,255,.8)]" />
-        <div className="pointer-events-none absolute -right-8 -top-16 h-52 w-52 rounded-full border border-sky-200/45" />
-        <div className="relative grid gap-7 xl:grid-cols-[minmax(0,1fr)_680px] xl:items-end">
+      <div className="tt-design settings-tiktok">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          .settings-tiktok .tt-hero { grid-template-columns: minmax(0,0.8fr) minmax(480px,1.1fr) !important; }
+          .settings-tiktok .sales-metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+          .settings-tiktok .sales-metrics { width: 100%; max-width: 520px; justify-self: end; }
+          @media (max-width: 900px) {
+            .settings-tiktok .tt-hero { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+        <header className="tt-hero">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-white/75 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-800 shadow-[0_10px_24px_-16px_rgba(5,150,105,.45)] backdrop-blur-xl"><Sparkles className="h-3.5 w-3.5" /> Deal workspace</div>
-            <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-.045em] md:text-5xl"><span className="text-slate-950">Gestionare</span>{' '}<span className="text-teal-600">vânzări</span></h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base md:leading-7">De la oferta acceptată până la notar: participanți, acte, emailuri și răspunsuri într-un singur dosar, fără mesaje repetitive pentru client.</p>
+            <div className="tt-hero-kicker">
+              <Sparkles size={17} />
+              <span className="tt-eyebrow">DEAL WORKSPACE</span>
+            </div>
+            <h1>Gestionare <em>vânzări</em></h1>
+            <p className="tt-hero-lead">
+              De la oferta acceptată până la notar.
+              <br />
+              <strong>Totul într-un singur dosar.</strong>
+            </p>
+            <p>
+              Participanți, acte, emailuri și răspunsuri într-un singur loc, fără mesaje repetitive pentru client.
+            </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+          <div className="sales-metrics tt-metrics">
             {[
-              { label: 'În lucru', value: metrics.active, icon: CircleDot, tone: 'bg-sky-50 text-sky-600 ring-sky-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(224,242,254,.82))]' },
-              { label: 'Antecontracte', value: metrics.precontracts, icon: FileCheck2, tone: 'bg-amber-50 text-amber-600 ring-amber-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(254,243,199,.72))]' },
-              { label: 'Răspunsuri noi', value: metrics.unread, icon: Inbox, tone: 'bg-emerald-50 text-emerald-600 ring-emerald-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(209,250,229,.78))]' },
-              { label: 'Finalizate', value: metrics.completed, icon: BadgeCheck, tone: 'bg-violet-50 text-violet-600 ring-violet-100', surface: 'bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(237,233,254,.8))]' },
+              { label: 'În lucru', value: metrics.active, icon: CircleDot, accent: '' },
+              { label: 'Antecontracte', value: metrics.precontracts, icon: FileCheck2, accent: 'tt-metric--amber' },
+              { label: 'Răspunsuri noi', value: metrics.unread, icon: Inbox, accent: 'tt-metric--violet' },
+              { label: 'Finalizate', value: metrics.completed, icon: BadgeCheck, accent: 'tt-metric--pink' },
             ].map((metric) => (
-              <div key={metric.label} className={cn('relative overflow-hidden rounded-[22px] border border-white/90 p-4 shadow-[0_18px_38px_-24px_rgba(15,23,42,.22),inset_0_1px_0_rgba(255,255,255,.9)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:bg-white/95', metric.surface)}><metric.icon className={cn('h-9 w-9 rounded-[13px] p-2 shadow-sm ring-1', metric.tone)} /><p className="mt-3 text-3xl font-semibold tracking-[-.04em] text-slate-950">{metric.value}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-[.12em] text-slate-500">{metric.label}</p></div>
+              <article key={metric.label} className={cn('tt-metric', metric.accent)}>
+                <div className="tt-metric-top">
+                  <span className="tt-icon-tile"><metric.icon size={18} /></span>
+                  <span className="tt-metric-dot" aria-hidden="true" />
+                </div>
+                <p>{metric.label}</p>
+                <strong>{metric.value}</strong>
+                <span className="tt-metric-caption">În dosarele tale</span>
+              </article>
             ))}
           </div>
-        </div>
-      </section>
+        </header>
+      </div>
 
       {eligibleProperties.length ? (
         <section className="relative overflow-hidden rounded-[30px] border border-amber-200/70 bg-[radial-gradient(circle_at_8%_0%,rgba(254,243,199,.82),transparent_26%),radial-gradient(circle_at_96%_100%,rgba(204,251,241,.7),transparent_30%),rgba(255,255,255,.86)] p-5 shadow-[0_24px_60px_-38px_rgba(180,83,9,.3)] ring-1 ring-white md:p-6">

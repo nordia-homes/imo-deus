@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
-import { PlusCircle, Filter, Search, X, Loader2, LockKeyhole, ArrowRight, BadgeEuro, KeyRound } from "lucide-react";
+import { PlusCircle, Filter, Search, X, Loader2, LockKeyhole, ArrowRight, BadgeEuro, KeyRound, Building2, Sparkles, Globe } from "lucide-react";
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import { PropertyFilters, type PropertyFiltersType } from "@/components/properti
 import { getAgencyThemePreset } from '@/lib/theme';
 import { isCompletePropertyRecord } from '@/lib/property-record';
 import { useSidebar } from '@/components/ui/sidebar';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -571,73 +572,99 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             ) : null}
-            <Card className="agentfinder-properties-hero-card overflow-hidden rounded-[30px] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.14),_transparent_28%),linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] text-white shadow-[0_28px_70px_-34px_rgba(0,0,0,0.55)]">
-                <CardHeader className="px-7 py-6">
-                    <div className="flex items-center justify-between gap-6">
-                        <div className="min-w-0">
-                            <div className="agentfinder-properties-eyebrow inline-flex items-center gap-2 rounded-full border border-emerald-300/15 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100/85">
-                                Portofoliu activ
-                            </div>
-                            <div className="mt-4 min-w-0">
-                                <h1 className="text-4xl font-semibold tracking-tight text-white">
-                                    Portofoliu Proprietăți ({filteredProperties?.length || 0})
-                                </h1>
-                                <p className="mt-2 max-w-2xl text-base leading-7 text-white/68">
-                                    Vezi rapid tot stocul disponibil, filtrează oportunitățile bune și intră direct în proprietățile care au nevoie de atenție.
-                                </p>
-                            </div>
-                        </div>
+            <div className="tt-design settings-tiktok">
+              <style>{`
+                .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+              `}</style>
+              <header className="tt-hero">
+                <div>
+                  <div className="tt-hero-kicker">
+                    <Building2 size={17} />
+                    <span className="tt-eyebrow">PORTOFOLIU ACTIV</span>
+                  </div>
+                  <h1>Proprietăți <em>({filteredProperties?.length || 0})</em></h1>
+                  <p className="tt-hero-lead">
+                    Stocul tău disponibil.
+                    <br />
+                    <strong>Filtrează, adaugă și acționează rapid.</strong>
+                  </p>
+                  <p>
+                    Vezi rapid proprietățile active, folosește filtrele și intră direct în detaliile care au nevoie de atenție.
+                  </p>
+                </div>
 
-                        <div className="flex min-h-[150px] shrink-0 flex-col items-stretch justify-between gap-3 self-stretch">
-                            <div className="grid grid-cols-2 gap-3">
-                            <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
-                              <Button variant="outline" className="agentfinder-properties-soft-button h-[68px] w-full rounded-[22px] border border-slate-500/35 bg-slate-800/70 px-5 text-base text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-slate-700/80 hover:text-white">
-                                <Filter className="mr-2 h-4 w-4" /> Filtrează
-                              </Button>
-                            </PropertyFilters>
-                            <AddPropertyDialog 
-                                isOpen={isAddOpen} 
-                                onOpenChange={setIsAddOpen}
-                                property={null}
-                            >
-                                <Button className="agentfinder-properties-primary-button h-[68px] w-full rounded-[22px] border border-sky-300/15 bg-[linear-gradient(135deg,rgba(39,66,104,0.95)_0%,rgba(27,52,86,0.98)_100%)] px-6 text-base text-white shadow-[0_18px_38px_-22px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] hover:bg-[linear-gradient(135deg,rgba(46,77,120,0.98)_0%,rgba(31,59,96,1)_100%)]">
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adaugă Proprietate
-                                </Button>
-                            </AddPropertyDialog>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setPortalQuickFilter((current) => current === 'imobiliare' ? null : 'imobiliare')}
-                                    className={cn(
-                                        "agentfinder-properties-portal-button h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
-                                        isImobiliareQuickFilterActive
-                                            ? "agentfinder-properties-portal-button--active border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
-                                            : "border border-slate-500/35 bg-slate-800/70 hover:bg-slate-700/80 hover:text-white"
-                                    )}
-                                >
-                                    Publicate pe imobiliare.ro
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setPortalQuickFilter((current) => current === 'storia-olx' ? null : 'storia-olx')}
-                                    className={cn(
-                                        "agentfinder-properties-portal-button h-[68px] rounded-[22px] px-4 text-sm leading-5 text-slate-50 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
-                                        isStoriaOlxQuickFilterActive
-                                            ? "agentfinder-properties-portal-button--active border-sky-300/30 bg-sky-500/20 text-sky-50 hover:bg-sky-500/25"
-                                            : "border border-slate-500/35 bg-slate-800/70 hover:bg-slate-700/80 hover:text-white"
-                                    )}
-                                >
-                                    Publicate pe Storia/Publi24
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </CardHeader>
-            </Card>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <PropertyFilters onApplyFilters={setFilters} onResetFilters={() => setFilters(null)}>
+                      <Button variant="ghost" className="group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-4 text-left text-cyan-950 shadow-[0_18px_44px_-24px_rgba(8,145,178,0.65)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_26px_54px_-24px_rgba(8,145,178,0.8)]">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-[0_12px_28px_-14px_rgba(8,145,178,0.75)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
+                          <Filter className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-base font-extrabold tracking-[-0.02em]">Filtrează</span>
+                        </span>
+                        <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-cyan-500 transition-transform duration-300 group-hover:translate-x-1" />
+                      </Button>
+                    </PropertyFilters>
+                    <AddPropertyDialog
+                      isOpen={isAddOpen}
+                      onOpenChange={setIsAddOpen}
+                      property={null}
+                    >
+                      <Button className="group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border border-emerald-200 bg-gradient-to-br from-emerald-300 via-teal-200 to-emerald-200 p-4 text-left text-emerald-950 shadow-[0_20px_48px_-22px_rgba(16,185,129,0.85)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_58px_-22px_rgba(16,185,129,1)]">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-emerald-700 shadow-[0_12px_28px_-14px_rgba(6,95,70,0.65)] ring-1 ring-white transition-transform duration-300 group-hover:scale-110">
+                          <PlusCircle className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-base font-extrabold tracking-[-0.02em]">Adaugă</span>
+                        </span>
+                        <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-emerald-800 transition-transform duration-300 group-hover:translate-x-1" />
+                      </Button>
+                    </AddPropertyDialog>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setPortalQuickFilter((current) => current === 'imobiliare' ? null : 'imobiliare')}
+                      className={cn(
+                        'group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border p-4 text-left shadow-[0_18px_44px_-24px_rgba(124,58,237,0.55)] ring-1 ring-white/50 transition-all duration-300 hover:-translate-y-1',
+                        isImobiliareQuickFilterActive
+                          ? 'border-violet-300 bg-gradient-to-br from-violet-300 via-fuchsia-200 to-violet-200 text-violet-950 shadow-[0_24px_54px_-24px_rgba(124,58,237,0.85)]'
+                          : 'border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 text-violet-950'
+                      )}
+                    >
+                      <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 transition-transform duration-300 group-hover:scale-110', isImobiliareQuickFilterActive ? 'text-violet-700 ring-violet-100' : 'text-violet-600 ring-violet-100 shadow-[0_12px_28px_-14px_rgba(124,58,237,0.55)]')}>
+                        <Globe className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-extrabold leading-tight">imobiliare.ro</span>
+                      </span>
+                      <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-violet-500 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setPortalQuickFilter((current) => current === 'storia-olx' ? null : 'storia-olx')}
+                      className={cn(
+                        'group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border p-4 text-left shadow-[0_18px_44px_-24px_rgba(219,39,119,0.48)] ring-1 ring-white/50 transition-all duration-300 hover:-translate-y-1',
+                        isStoriaOlxQuickFilterActive
+                          ? 'border-pink-300 bg-gradient-to-br from-pink-300 via-rose-200 to-pink-200 text-pink-950 shadow-[0_24px_54px_-24px_rgba(219,39,119,0.78)]'
+                          : 'border-pink-200/80 bg-gradient-to-br from-pink-50 via-white to-rose-50 text-pink-950'
+                      )}
+                    >
+                      <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white ring-1 transition-transform duration-300 group-hover:scale-110', isStoriaOlxQuickFilterActive ? 'text-pink-700 ring-pink-100' : 'text-pink-600 ring-pink-100 shadow-[0_12px_28px_-14px_rgba(219,39,119,0.5)]')}>
+                        <Globe className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-extrabold leading-tight">Storia/Publi24</span>
+                      </span>
+                      <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-pink-500 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Button>
+                  </div>
+                </div>
+              </header>
+            </div>
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
                 {searchControls}
                 {propertySearch ? (

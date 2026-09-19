@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { locations, type City } from '@/lib/locations';
 import { Filter, Search } from 'lucide-react';
 import { Label } from '../ui/label';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 const propertyFilterSchema = z.object({
   transactionType: z.string().optional(),
@@ -96,12 +97,45 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent 
-        side="bottom" 
-        className="flex max-h-[90vh] flex-col rounded-t-[2rem] border-t border-white/10 bg-[#090909] p-0 text-stone-100"
-        >
-        <SheetHeader className="shrink-0 border-b border-white/10 p-4 text-center">
-          <SheetTitle className="text-stone-50">Filtreaza Proprietati</SheetTitle>
+      <SheetContent
+        side="bottom"
+        className="tt-design settings-filter-sheet flex max-h-[90vh] flex-col overflow-hidden rounded-t-[2rem] border border-slate-200 bg-[#f7f9fc] p-0 text-slate-900 shadow-2xl"
+      >
+        <style>{`
+          .settings-filter-sheet input:not([type=checkbox]):not([type=radio]),
+          .settings-filter-sheet select,
+          .settings-filter-sheet textarea {
+            height: 44px;
+            border-radius: 10px !important;
+            border: 1px solid #d5e0e9 !important;
+            background: #ffffff !important;
+            color: #263b51 !important;
+            padding: 10px 13px;
+            font-size: 13px;
+            box-shadow: none !important;
+          }
+          .settings-filter-sheet button:not([role=checkbox]) {
+            border-radius: 12px !important;
+            min-height: 42px;
+            font-weight: 650;
+          }
+          .settings-filter-sheet label { color: #4d657d !important; }
+          .settings-filter-sheet [role=combobox],
+          .settings-filter-sheet [role=listbox] {
+            background: #ffffff !important;
+            color: #263b51 !important;
+            border-color: #d5e0e9 !important;
+          }
+          .settings-filter-sheet [role=option] { color: #263b51 !important; }
+        `}</style>
+        <SheetHeader className="shrink-0 border-b border-slate-200 bg-white/80 p-5 text-left backdrop-blur">
+          <div className="tt-hero-kicker">
+            <Filter size={17} />
+            <span className="tt-eyebrow">FILTRE PROPRIETĂȚI</span>
+          </div>
+          <SheetTitle className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+            Rafinează portofoliul
+          </SheetTitle>
         </SheetHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
@@ -231,8 +265,8 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
             </div>
             <SheetFooter className="shrink-0 border-t border-white/10 p-4">
               <div className="flex justify-end gap-2 w-full">
-                  <Button type="button" variant="ghost" onClick={handleReset} className="text-stone-300 hover:bg-white/5 hover:text-stone-50">Reseteaza</Button>
-                  <Button type="submit" className="bg-[#22c55e] text-black hover:bg-[#4ade80]">Aplica Filtre</Button>
+                  <Button type="button" variant="outline" onClick={handleReset} className="tt-button tt-button--outline">Resetează</Button>
+                  <Button type="submit" className="tt-button tt-button--default">Aplică filtrele</Button>
               </div>
             </SheetFooter>
           </form>

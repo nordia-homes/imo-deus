@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { Users, Target, BarChart, PlusCircle, Filter, Archive, ArchiveRestore, ArrowUpDown, Search, X } from 'lucide-react';
+import { Users, Target, BarChart, PlusCircle, Filter, Archive, ArchiveRestore, ArrowUpDown, Search, X, ArrowRight } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
@@ -19,6 +19,7 @@ import { LeadFiltersDialog, type LeadFilters } from '@/components/leads/LeadFilt
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ContactAgeBucket, getContactAgeBucket, getContactAgeInDays, isArchivedContact, shouldAutoArchiveContact } from '@/lib/contact-aging';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -448,101 +449,98 @@ export default function LeadsPage() {
                     </div>
                 </div>
             )}
-            <Card className="agentfinder-leads-hero-card overflow-hidden border-white/10 bg-[#152A47] text-white shadow-xl">
-                <CardContent className="p-0">
-                    <div className="grid gap-6 p-6">
-                        <div className="space-y-4">
-                            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                                <div className="flex items-start gap-4">
-                                    <div className="agentfinder-leads-hero-icon flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-inset ring-white/10">
-                                        <Users className="h-6 w-6" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <h1 className="text-3xl font-headline font-bold text-white">Cumpărători</h1>
-                                            <span className="agentfinder-leads-count-pill rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/10">
-                                                {filteredContacts.length}
-                                            </span>
-                                            <span className="agentfinder-leads-count-pill rounded-full bg-white/5 px-3 py-1 text-sm font-medium text-white/65 ring-1 ring-inset ring-white/10">
-                                                {showArchived ? `Arhiva ${archivedContacts.length}` : `Activi ${activeContacts.length}`}
-                                            </span>
-                                        </div>
-                                        <p className="max-w-2xl text-sm leading-6 text-white/70">
-                                            Vezi rapid cumpărătorii activi, filtrează după preferințe, urmărește vechimea lead-urilor și intră rapid în arhivă când ai nevoie.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button
-                                            type="button"
-                                            className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
-                                        >
-                                            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/45">
-                                                <ArrowUpDown className="h-3.5 w-3.5" />
-                                                Sortare
-                                            </div>
-                                            <p className="mt-1 truncate text-lg font-semibold text-white">{activeAgeSortLabel}</p>
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="start" className="w-56">
-                                        <DropdownMenuRadioGroup value={ageSortBucket} onValueChange={(value) => setAgeSortBucket(value as ContactAgeBucket)}>
-                                            {AGE_BUCKET_OPTIONS.map((option) => (
-                                                <DropdownMenuRadioItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </DropdownMenuRadioItem>
-                                            ))}
-                                        </DropdownMenuRadioGroup>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowArchived((current) => !current)}
-                                    className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
-                                >
-                                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/45">
-                                        {showArchived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
-                                        Afișare
-                                    </div>
-                                    <p className="mt-1 text-lg font-semibold text-white">
-                                        {showArchived ? `Vezi activi (${activeContacts.length})` : `Vezi arhiva (${archivedContacts.length})`}
-                                    </p>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsFilterOpen(true)}
-                                    className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition-colors hover:bg-white/10"
-                                >
-                                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/45">
-                                        <Filter className="h-3.5 w-3.5" />
-                                        Filtrare
-                                    </div>
-                                    <p className="mt-1 text-lg font-semibold text-white">Preferințe și Buget</p>
-                                </button>
-                                <AddLeadDialog 
-                                    properties={properties || []}
-                                    contacts={buyerContacts}
-                                    isOpen={isAddLeadOpen}
-                                    onOpenChange={setIsAddLeadOpen}
-                                >
-                                    <button
-                                        type="button"
-                                        className="agentfinder-leads-primary-tile rounded-2xl border border-emerald-400/20 bg-emerald-500/12 px-4 py-3 text-left text-white transition-colors hover:bg-emerald-500/18"
-                                    >
-                                        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-emerald-200/80">
-                                            <PlusCircle className="h-3.5 w-3.5" />
-                                            Acțiune
-                                        </div>
-                                        <p className="mt-1 text-lg font-semibold text-white">Adaugă Cumpărător</p>
-                                    </button>
-                                </AddLeadDialog>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="tt-design settings-tiktok">
+              <style>{`
+                .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+              `}</style>
+              <header className="tt-hero">
+                <div>
+                  <div className="tt-hero-kicker">
+                    <Users size={17} />
+                    <span className="tt-eyebrow">CUMPĂRĂTORI</span>
+                  </div>
+                  <h1>Cumpărători <em>({filteredContacts.length})</em></h1>
+                  <p className="tt-hero-lead">
+                    Lead-urile tale active.
+                    <br />
+                    <strong>Urmărește preferințele, vechimea și bugetul.</strong>
+                  </p>
+                  <p>
+                    Vezi rapid cumpărătorii activi, filtrează după preferințe și intră în arhivă când ai nevoie.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-4 text-left text-cyan-950 shadow-[0_18px_44px_-24px_rgba(8,145,178,0.65)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+                      >
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-cyan-700 shadow-[0_12px_28px_-14px_rgba(8,145,178,0.75)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
+                          <ArrowUpDown className="h-5 w-5" />
+                        </span>
+                        <span className="block min-w-0 break-words text-sm leading-tight font-extrabold tracking-[-0.02em]">Sortare</span>
+                        <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-cyan-500 transition-transform duration-300 group-hover:translate-x-1" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuRadioGroup value={ageSortBucket} onValueChange={(value) => setAgeSortBucket(value as ContactAgeBucket)}>
+                        {AGE_BUCKET_OPTIONS.map((option) => (
+                          <DropdownMenuRadioItem key={option.value} value={option.value}>
+                            {option.label}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowArchived((current) => !current)}
+                    className="group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border border-pink-200/80 bg-gradient-to-br from-pink-50 via-white to-rose-50 p-4 text-left text-pink-950 shadow-[0_18px_44px_-24px_rgba(219,39,119,0.48)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-pink-600 shadow-[0_12px_28px_-14px_rgba(219,39,119,0.5)] ring-1 ring-pink-100 transition-transform duration-300 group-hover:scale-110">
+                      {showArchived ? <ArchiveRestore className="h-5 w-5" /> : <Archive className="h-5 w-5" />}
+                    </span>
+                    <span className="block min-w-0 break-words text-sm leading-tight font-extrabold tracking-[-0.02em]">
+                      {showArchived ? 'Vezi activi' : 'Vezi arhiva'}
+                    </span>
+                    <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-pink-500 transition-transform duration-300 group-hover:translate-x-1" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterOpen(true)}
+                    className="group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border border-violet-200/80 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-4 text-left text-violet-950 shadow-[0_18px_44px_-24px_rgba(124,58,237,0.55)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-violet-600 shadow-[0_12px_28px_-14px_rgba(124,58,237,0.55)] ring-1 ring-violet-100 transition-transform duration-300 group-hover:scale-110">
+                      <Filter className="h-5 w-5" />
+                    </span>
+                    <span className="block min-w-0 break-words text-sm leading-tight font-extrabold tracking-[-0.02em]">Filtrare</span>
+                    <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-violet-500 transition-transform duration-300 group-hover:translate-x-1" />
+                  </button>
+
+                  <AddLeadDialog
+                    properties={properties || []}
+                    contacts={buyerContacts}
+                    isOpen={isAddLeadOpen}
+                    onOpenChange={setIsAddLeadOpen}
+                  >
+                    <button
+                      type="button"
+                      className="group flex h-auto min-h-[92px] items-center gap-3 rounded-[24px] border border-emerald-200 bg-gradient-to-br from-emerald-300 via-teal-200 to-emerald-200 p-4 text-left text-emerald-950 shadow-[0_20px_48px_-22px_rgba(16,185,129,0.85)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1"
+                    >
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/85 text-emerald-700 shadow-[0_12px_28px_-14px_rgba(6,95,70,0.65)] ring-1 ring-white transition-transform duration-300 group-hover:scale-110">
+                        <PlusCircle className="h-5 w-5" />
+                      </span>
+                      <span className="block min-w-0 break-words text-sm leading-tight font-extrabold tracking-[-0.02em]">Adaugă</span>
+                      <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-emerald-800 transition-transform duration-300 group-hover:translate-x-1" />
+                    </button>
+                  </AddLeadDialog>
+                </div>
+              </header>
+            </div>
                 
                 <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
                     {isLoading ? (
