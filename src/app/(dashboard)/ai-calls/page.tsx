@@ -10,8 +10,10 @@ import {
   CalendarClock,
   CalendarRange,
   CheckCircle2,
+  CircleDollarSign,
   Clipboard,
   ExternalLink,
+  Headphones,
   Loader2,
   PhoneCall,
   RotateCcw,
@@ -20,8 +22,13 @@ import {
   Search,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users,
   XCircle,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -227,7 +234,7 @@ function validateSettings(settings: AiOutreachSettings) {
   }
 
   if (
-    settings.monthlyBudgetCap !== null &&
+    settings.monthlyBudgetCap != null &&
     (!Number.isFinite(settings.monthlyBudgetCap) || settings.monthlyBudgetCap < 0)
   ) {
     return 'Bugetul lunar trebuie să fie 0 sau o valoare pozitivă.';
@@ -820,96 +827,159 @@ export default function AiCallsPage() {
 
   return (
     <div className="space-y-6 px-3 pb-8 pt-3 sm:px-4 xl:px-5">
-      <div className="rounded-[1.5rem] border border-white/75 bg-[linear-gradient(135deg,_rgba(21,42,71,1)_0%,_rgba(18,38,63,1)_52%,_rgba(11,26,45,1)_100%)] px-5 py-5 text-white shadow-[0_18px_48px_-34px_rgba(15,23,42,0.24)]">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="tt-design">
+        <header className="tt-hero">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-100">
-              <Bot className="h-3.5 w-3.5" />
-              AI Outreach
+            <div className="tt-hero-kicker">
+              <PhoneCall size={17} />
+              <span className="tt-eyebrow">AI OUTREACH</span>
             </div>
-            <h1 className="text-3xl font-semibold tracking-[-0.04em]">Apeluri AI</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/70">
-              Configurează regulile comerciale, bugetul și intervalele orare. Vezi istoricul
-              apelurilor, detaliile conversațiilor și rezultatele care cer intervenție umană.
+            <h1>
+              Apeluri <em>AI</em>
+            </h1>
+            <p className="tt-hero-lead">
+              Prospectare inteligentă.
+              <br />
+              <strong>Conversații care aduc mandatul mai aproape.</strong>
             </p>
+            <p>
+              Configurează regulile comerciale, bugetul și intervalele orare. Vezi istoricul,
+              rezultatele și acțiunile care cer intervenție umană.
+            </p>
+            <div className="tt-hero-actions">
+              {settings?.enabled ? (
+                <Button
+                  className="tt-button tt-button--default"
+                  onClick={() => router.push('/owner-listings')}
+                >
+                  <PhoneCall size={17} />
+                  Pornește un apel
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="tt-button tt-button--outline"
+                  disabled
+                >
+                  <PhoneCall size={17} />
+                  Apeluri AI inactive
+                </Button>
+              )}
+
+              {isAdmin ? (
+                <Button
+                  variant="outline"
+                  className="tt-button tt-button--outline"
+                  onClick={saveSettings}
+                  disabled={isSaving || isLoadingSettings || !settings || !hasChanges}
+                >
+                  {isSaving ? (
+                    <Loader2 size={17} className="animate-spin" />
+                  ) : (
+                    <Save size={17} />
+                  )}
+                  {hasChanges ? 'Salvează setările' : 'Setări salvate'}
+                </Button>
+              ) : null}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {settings?.enabled ? (
-              <Button
-                variant="secondary"
-                className="rounded-full"
-                onClick={() => router.push('/owner-listings')}
-              >
-                <PhoneCall className="mr-2 h-4 w-4" />
-                Pornește un apel
-              </Button>
-            ) : (
-              <Button variant="secondary" className="rounded-full" disabled>
-                <PhoneCall className="mr-2 h-4 w-4" />
-                Apeluri AI inactive
-              </Button>
-            )}
-
-            {isAdmin ? (
-              <Button
-                onClick={saveSettings}
-                disabled={isSaving || isLoadingSettings || !settings || !hasChanges}
-                className="rounded-full bg-emerald-500 text-white hover:bg-emerald-600"
-              >
-                {isSaving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                {hasChanges ? 'Salvează setările' : 'Setări salvate'}
-              </Button>
-            ) : null}
+          <div className="tt-scene" aria-hidden="true">
+            <div className="tt-scene-halo" />
+            <div className="tt-scene-sheet tt-scene-sheet--back">
+              <span>APEL CALIFICAT</span>
+              <div className="flex h-full items-center justify-center">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-emerald-800">
+                  <Headphones size={30} />
+                </div>
+              </div>
+            </div>
+            <div className="tt-scene-sheet tt-scene-sheet--front">
+              <span className="tt-scene-brand">
+                <Bot size={12} /> AI CALL
+              </span>
+              <div className="flex h-full items-center justify-center">
+                <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                  <PhoneCall className="mx-auto text-emerald-700" size={28} />
+                  <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Conversație
+                  </span>
+                  <strong className="block text-sm text-slate-900">Intenție + obiecții</strong>
+                </div>
+              </div>
+              <div className="tt-scene-caption">
+                <small>URMĂTORUL PAS</small>
+                <strong>Agentul preia.</strong>
+                <span>context clar, follow-up simplu</span>
+              </div>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--video">
+              <Headphones size={16} />
+              <span>
+                Conversație
+                <br />
+                <strong>calificată</strong>
+              </span>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--spark">
+              <Sparkles size={16} />
+              <span>Prospectare AI</span>
+            </div>
           </div>
-        </div>
+        </header>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total apeluri</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold">{stats.total}</CardContent>
-        </Card>
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Finalizate</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold">{stats.completed}</CardContent>
-        </Card>
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Pozitive</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold text-emerald-600">
-            {stats.positive}
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Răspuns</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold">{stats.answerRate}%</CardContent>
-        </Card>
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Colaborare</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold text-emerald-600">
-            {stats.collaborationRate}%
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Cost estimat</CardTitle>
-          </CardHeader>
-          <CardContent className="text-3xl font-semibold">{formatCost(stats.totalCost)}</CardContent>
-        </Card>
+      <div className="tt-design">
+        <div className="tt-metrics !grid-cols-2 !gap-2 sm:!grid-cols-3 xl:!grid-cols-6">
+          <MetricCard
+            label="Total apeluri"
+            value={stats.total}
+            hint="Toate interacțiunile AI"
+            icon={PhoneCall}
+            accentClass=""
+            iconClass=""
+          />
+          <MetricCard
+            label="Finalizate"
+            value={stats.completed}
+            hint="Apeluri închise"
+            icon={CheckCircle2}
+            accentClass="tt-metric--violet"
+            iconClass=""
+          />
+          <MetricCard
+            label="Pozitive"
+            value={stats.positive}
+            hint="Oportunități calde"
+            icon={TrendingUp}
+            accentClass="tt-metric--amber"
+            iconClass=""
+          />
+          <MetricCard
+            label="Răspuns"
+            value={`${stats.answerRate}%`}
+            hint="Din apelurile finalizate"
+            icon={Headphones}
+            accentClass="tt-metric--pink"
+            iconClass=""
+          />
+          <MetricCard
+            label="Colaborare"
+            value={`${stats.collaborationRate}%`}
+            hint="Din conversațiile purtate"
+            icon={Users}
+            accentClass=""
+            iconClass=""
+          />
+          <MetricCard
+            label="Cost estimat"
+            value={formatCost(stats.totalCost)}
+            hint="Cost înregistrat"
+            icon={CircleDollarSign}
+            accentClass="tt-metric--violet"
+            iconClass=""
+          />
+        </div>
       </div>
 
       {stats.scheduled || stats.calling ? (
@@ -1266,6 +1336,40 @@ export default function AiCallsPage() {
                 </div>
               </fieldset>
             )}
+
+            {isAdmin && settings ? (
+              <div
+                className={cn(
+                  'mt-5 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between',
+                  hasChanges
+                    ? 'border-emerald-200 bg-emerald-50/80'
+                    : 'border-slate-200 bg-muted/40',
+                )}
+              >
+                <div>
+                  <p className="font-semibold">
+                    {hasChanges ? 'Ai modificări nesalvate' : 'Setările sunt salvate'}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {hasChanges
+                      ? 'Apasă Salvează setările pentru a aplica noile reguli.'
+                      : 'Orice modificare va apărea aici înainte de salvare.'}
+                  </p>
+                </div>
+                <Button
+                  onClick={saveSettings}
+                  disabled={isSaving || isLoadingSettings || !settings || !hasChanges}
+                  className="rounded-full bg-emerald-500 text-white hover:bg-emerald-600"
+                >
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Salvează setările
+                </Button>
+              </div>
+            ) : null}
 
             {!isAdmin && settings ? (
               <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -1908,6 +2012,38 @@ export default function AiCallsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  accentClass,
+  iconClass,
+  className = '',
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  icon: LucideIcon;
+  accentClass: string;
+  iconClass: string;
+  className?: string;
+}) {
+  return (
+    <article className={cn('tt-metric !p-3.5', accentClass, className)}>
+      <div className="tt-metric-top !mb-2">
+        <span className={cn('tt-icon-tile !h-8 !w-8 !rounded-[10px]', iconClass)}>
+          <Icon className="!h-4 !w-4" />
+        </span>
+        <span className="tt-metric-dot" aria-hidden="true" />
+      </div>
+      <p className="!text-[10px]">{label}</p>
+      <strong className="!text-[24px]">{value}</strong>
+      {hint ? <span className="tt-metric-caption !text-[9px]">{hint}</span> : null}
+    </article>
   );
 }
 

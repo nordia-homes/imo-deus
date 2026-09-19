@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFirestore, updateDocumentNonBlocking, useStorage, useUser } from '@/firebase';
-import { collection, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { useFirestore, useStorage, useUser } from '@/firebase';
+import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Camera, Globe, Building2, ShieldCheck, BriefcaseBusiness, UserRound, Palette } from 'lucide-react';
+import { Loader2, Camera, Globe, Building2, ShieldCheck, BriefcaseBusiness, UserRound, Palette, KeyRound, LogOut, Trash2, Upload, AlertTriangle, RefreshCcw } from 'lucide-react';
 import Link from 'next/link';
 import { useAgency } from '@/context/AgencyContext';
 import { DesktopAppCard } from '@/components/settings/DesktopAppCard';
@@ -25,9 +25,11 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateEmail, updateProfile } from 'firebase/auth';
+import { EmailAuthProvider, reauthenticateWithCredential, updateEmail, updatePassword, updateProfile } from 'firebase/auth';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DEFAULT_THEME_PRESET, applyAgencyThemeToRoot, THEME_PRESET_OPTIONS } from '@/lib/theme';
 import { locations, type City } from '@/lib/locations';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Numele este obligatoriu.'),
@@ -35,12 +37,27 @@ const profileSchema = z.object({
   phone: z.string().optional(),
 });
 
+type ProfileValues = z.infer<typeof profileSchema>;
+
+function isValidSocialUrl(value: string | undefined, allowedHosts: string[]) {
+  if (!value) return true;
+
+  try {
+    const url = new URL(value);
+    return allowedHosts.some((host) => url.hostname === host || url.hostname.endsWith(`.${host}`));
+  } catch {
+    return false;
+  }
+}
+
 const agencySchema = z.object({
   name: z.string().min(1, 'Numele agenției este obligatoriu.'),
   agencyDescription: z.string().optional(),
   legalCompanyName: z.string().optional(),
-  companyTaxId: z.string().optional(),
-  tradeRegisterNumber: z.string().optional(),
+  companyTaxId: z.string().optional()
+    .refine((value) => !value || /^RO\d{2,10}$/i.test(value), 'CUI-ul trebuie să înceapă cu RO și să conțină între 2 și 10 cifre.'),
+  tradeRegisterNumber: z.string().optional()
+    .refine((value) => !value || /^J\d{1,3}\/\d{1,6}\/\d{4}$/i.test(value), 'Formatul trebuie să fie Jxx/xxxx/xxxx.'),
   registeredOffice: z.string().optional(),
   legalRepresentative: z.string().optional(),
   termsAndConditions: z.string().optional(),
@@ -53,9 +70,12 @@ const agencySchema = z.object({
   logoUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Culoarea trebuie să fie în format hex (ex: #22c55e).').optional(),
   themePreset: z.enum(['classic', 'forest', 'agentfinder']).optional(),
-  facebookUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
-  instagramUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
-  linkedinUrl: z.string().url('URL invalid.').or(z.literal('')).optional(),
+  facebookUrl: z.string().url('URL invalid.').or(z.literal('')).optional()
+    .refine((value) => isValidSocialUrl(value, ['facebook.com']), 'URL-ul trebuie să fie de pe facebook.com.'),
+  instagramUrl: z.string().url('URL invalid.').or(z.literal('')).optional()
+    .refine((value) => isValidSocialUrl(value, ['instagram.com']), 'URL-ul trebuie să fie de pe instagram.com.'),
+  linkedinUrl: z.string().url('URL invalid.').or(z.literal('')).optional()
+    .refine((value) => isValidSocialUrl(value, ['linkedin.com']), 'URL-ul trebuie să fie de pe linkedin.com.'),
 });
 
 export default function SettingsPage() {
@@ -73,6 +93,16 @@ export default function SettingsPage() {
   const hasSyncedPublicAgentRef = useRef(false);
   const profileAutosaveReadyRef = useRef(false);
   const agencyAutosaveReadyRef = useRef(false);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
+  const [pendingEmailValues, setPendingEmailValues] = useState<ProfileValues | null>(null);
+  const [reauthPassword, setReauthPassword] = useState('');
+  const [isReauthing, setIsReauthing] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -182,26 +212,87 @@ export default function SettingsPage() {
     await setDoc(publicAgentProfileRef, nextProfile, { merge: true });
   };
   
-  const handleProfileSave = async (values: z.infer<typeof profileSchema>, options?: { silent?: boolean }) => {
+  const handleProfileSave = async (values: ProfileValues, options?: { silent?: boolean }) => {
     if (!user) return;
-    const userDocRef = doc(firestore, 'users', user.uid);
     const normalizedEmail = values.email.trim();
-    const dataToSave = { ...values, email: normalizedEmail };
-    updateDocumentNonBlocking(userDocRef, dataToSave);
-    if(user.displayName !== values.name) {
-      updateProfile(user, { displayName: values.name });
+
+    if ((user.email || '').toLowerCase() !== normalizedEmail.toLowerCase()) {
+      setPendingEmailValues({ ...values, email: normalizedEmail });
+      setReauthPassword('');
+      return;
     }
-    if ((user.email || '') !== normalizedEmail) {
-      await updateEmail(user, normalizedEmail);
+
+    const userDocRef = doc(firestore, 'users', user.uid);
+    await updateDoc(userDocRef, { ...values, email: normalizedEmail });
+
+    if (user.displayName !== values.name) {
+      await updateProfile(user, { displayName: values.name });
     }
+
     await syncPublicAgentProfile({
       name: values.name,
       email: normalizedEmail,
       phone: values.phone,
       photoUrl: userProfile?.photoUrl || user.photoURL || undefined,
     });
+
     if (!options?.silent) {
       toast({ title: 'Profil salvat!', description: 'Informațiile profilului tău au fost actualizate.' });
+    }
+  };
+
+  const confirmEmailChange = async () => {
+    if (!user || !pendingEmailValues) return;
+
+    try {
+      setIsReauthing(true);
+      const credential = EmailAuthProvider.credential(user.email || '', reauthPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updateEmail(user, pendingEmailValues.email);
+      await updateDoc(doc(firestore, 'users', user.uid), {
+        name: pendingEmailValues.name,
+        email: pendingEmailValues.email,
+        phone: pendingEmailValues.phone || '',
+      });
+      await syncPublicAgentProfile({
+        name: pendingEmailValues.name,
+        email: pendingEmailValues.email,
+        phone: pendingEmailValues.phone,
+      });
+      setPendingEmailValues(null);
+      setReauthPassword('');
+      toast({ title: 'Email actualizat', description: 'Adresa de email a fost schimbată cu succes.' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Schimbarea emailului a eșuat',
+        description: error instanceof Error ? error.message : 'Reautentificarea nu a reușit.',
+      });
+    } finally {
+      setIsReauthing(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!user || !currentPassword || !newPassword) return;
+
+    try {
+      setIsChangingPassword(true);
+      const credential = EmailAuthProvider.credential(user.email || '', currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+      setPasswordDialogOpen(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      toast({ title: 'Parolă schimbată', description: 'Noua parolă este activă pentru acest cont.' });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Schimbarea parolei a eșuat',
+        description: error instanceof Error ? error.message : 'Verifică parola actuală și încearcă din nou.',
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
   
@@ -243,8 +334,9 @@ export default function SettingsPage() {
         await updateProfile(user, { photoURL });
 
         const userDocRef = doc(firestore, 'users', user.uid);
-        await updateDocumentNonBlocking(userDocRef, { photoUrl: photoURL });
+        await updateDoc(userDocRef, { photoUrl: photoURL });
         await syncPublicAgentProfile({ photoUrl: photoURL });
+        setProfilePhotoPreview(photoURL);
 
         toast({ title: 'Fotografie actualizată!', description: 'Noua ta fotografie de profil a fost salvată.' });
     } catch (error) {
@@ -252,6 +344,31 @@ export default function SettingsPage() {
         toast({ variant: 'destructive', title: 'Eroare la încărcare', description: 'Nu am putut salva fotografia. Încearcă din nou.' });
     } finally {
         setIsUploading(false);
+    }
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !agency?.id) return;
+
+    setIsLogoUploading(true);
+
+    try {
+      const logoRef = ref(storage, `agencies/${agency.id}/logo`);
+      await uploadBytes(logoRef, file);
+      const logoURL = await getDownloadURL(logoRef);
+      agencyForm.setValue('logoUrl', logoURL, { shouldDirty: true, shouldValidate: true });
+      await updateDoc(doc(firestore, 'agencies', agency.id), { logoUrl: logoURL });
+      toast({ title: 'Logo actualizat', description: 'Logo-ul agenției a fost salvat.' });
+    } catch (error) {
+      console.error('Logo upload failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Încărcare eșuată',
+        description: 'Nu am putut salva logo-ul agenției.',
+      });
+    } finally {
+      setIsLogoUploading(false);
     }
   };
 
@@ -292,7 +409,7 @@ export default function SettingsPage() {
 
     try {
       const agencyDocRef = doc(firestore, 'agencies', agency.id);
-      updateDocumentNonBlocking(agencyDocRef, nextValues);
+      await updateDoc(agencyDocRef, nextValues);
 
       if (!options?.silent) {
         toast({ title: 'Setări salvate!', description: 'Setările agenției tale au fost actualizate.' });
@@ -390,6 +507,10 @@ export default function SettingsPage() {
           email: watchedProfileEmail || '',
           phone: watchedProfilePhone || '',
         }, { silent: true });
+        if ((user.email || '').toLowerCase() !== (watchedProfileEmail || '').toLowerCase()) {
+          setProfileAutosaveState('idle');
+          return;
+        }
         setProfileAutosaveState('saved');
       } catch (error) {
         console.error('Profile autosave failed:', error);
@@ -483,19 +604,81 @@ export default function SettingsPage() {
   return (
     <div className="agentfinder-settings-page bg-[var(--app-shell-bg)] px-4 py-6 text-[var(--app-page-foreground)] md:px-6">
       <div className="agentfinder-form mx-auto flex w-full max-w-7xl flex-col gap-8">
-        <header className="agentfinder-settings-hero space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className="rounded-full border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] px-3 py-1 text-[var(--app-page-foreground)]">Setări</Badge>
-            <Badge className="rounded-full bg-emerald-400/15 px-3 py-1 text-emerald-100">
-              <ShieldCheck className="mr-1 h-3.5 w-3.5" />
-              {userProfile?.role ? userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1) : 'Indisponibil'}
-            </Badge>
-          </div>
+        <div className="tt-design settings-tiktok">
+          <style>{`
+            .settings-tiktok .tt-hero { margin-bottom: 18px; min-height: 0 !important; padding: 26px 30px !important; }
+            .settings-tiktok .tt-hero h1 { margin: 10px 0 6px; }
+          `}</style>
+        <header className="tt-hero">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--app-page-foreground)] md:text-3xl">Setările contului și ale agenției</h1>
-            <p className="mt-1 text-sm text-[var(--app-page-muted)] md:text-base">O vedere unitară pentru profilul agentului, datele firmei, website-ul public și branding.</p>
+            <div className="tt-hero-kicker">
+              <ShieldCheck size={17} />
+              <span className="tt-eyebrow">SPAȚIUL TĂU DE CONTROL</span>
+            </div>
+            <h1>Setările <em>agenției</em></h1>
+            <p className="tt-hero-lead">
+              Profilul tău.
+              <br />
+              <strong>Brandul și prezența agenției, într-un singur loc.</strong>
+            </p>
+            <p>
+              Configurează datele firmei, website-ul public, brandingul și preferințele de comunicare.
+            </p>
+            <div className="tt-hero-actions">
+              <span className="tt-badge tt-badge--active">
+                <span aria-hidden="true" />
+                {userProfile?.role ? userProfile.role.charAt(0).toUpperCase() + userProfile.role.slice(1) : 'Indisponibil'}
+              </span>
+              <span className="tt-badge">
+                <span aria-hidden="true" />
+                {agency?.name || 'Fără agenție'}
+              </span>
+            </div>
+          </div>
+          <div className="tt-scene" aria-hidden="true">
+            <div className="tt-scene-halo" />
+            <div className="tt-scene-sheet tt-scene-sheet--back">
+              <span>IDENTITATE</span>
+              <div className="flex h-full items-center justify-center">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-slate-700">
+                  <Palette size={30} />
+                </div>
+              </div>
+            </div>
+            <div className="tt-scene-sheet tt-scene-sheet--front">
+              <span className="tt-scene-brand">
+                <Building2 size={12} /> AGENȚIE
+              </span>
+              <div className="flex h-full items-center justify-center">
+                <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                  <ShieldCheck className="mx-auto text-emerald-700" size={28} />
+                  <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Control
+                  </span>
+                  <strong className="block text-sm text-slate-900">Profil + brand</strong>
+                </div>
+              </div>
+              <div className="tt-scene-caption">
+                <small>TOTUL ÎNTR-UN LOC</small>
+                <strong>Setări coerente.</strong>
+                <span>profil, agenție și prezență publică</span>
+              </div>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--video">
+              <Building2 size={16} />
+              <span>
+                Agenția ta,
+                <br />
+                <strong>în control.</strong>
+              </span>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--spark">
+              <ShieldCheck size={16} />
+              <span>Setări unificate</span>
+            </div>
           </div>
         </header>
+        </div>
 
         <Card className="agentfinder-settings-card agentfinder-surface overflow-hidden rounded-[32px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
           <CardContent className="p-6 md:p-7">
@@ -503,7 +686,7 @@ export default function SettingsPage() {
               <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
               <div className="relative w-fit">
                 <Avatar className="h-28 w-28 border border-[var(--app-surface-border)] bg-[var(--app-surface-soft)] md:h-32 md:w-32">
-                  <AvatarImage src={userProfile?.photoUrl || user?.photoURL || undefined} alt={userProfile?.name} />
+                  <AvatarImage src={profilePhotoPreview || userProfile?.photoUrl || user?.photoURL || undefined} alt={userProfile?.name} />
                   <AvatarFallback className="bg-[var(--app-surface-soft)] text-4xl">{userProfile?.name?.charAt(0) || user?.email?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <Button
@@ -619,12 +802,12 @@ export default function SettingsPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-white/50">Nume agenție</p>
-                    <Input
-                      value={agencyForm.watch('name') || ''}
-                      onChange={(event) => agencyForm.setValue('name', event.target.value, { shouldDirty: true, shouldValidate: true })}
-                      className="mt-3 h-11 border-white/10 bg-white/10 text-white placeholder:text-white/35"
-                      placeholder="Nume agenție"
-                    />
+                    <p className="mt-3 truncate text-lg font-semibold text-white">
+                      {agency?.name || 'Fără nume'}
+                    </p>
+                    <p className="mt-1 text-xs text-white/45">
+                      Se editează în cardul Setări agenție de mai jos.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -673,6 +856,67 @@ export default function SettingsPage() {
                 </Card>
                 <DesktopAppCard />
                 <PushNotificationsCard />
+                <Card className="agentfinder-settings-card rounded-2xl border border-white/10 bg-[#152A47] text-white shadow-2xl">
+                  <CardHeader className="space-y-2">
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <KeyRound className="h-5 w-5 text-emerald-300" />
+                      Securitate cont
+                    </CardTitle>
+                    <CardDescription className="text-white/70">
+                      Schimbă parola de acces la platformă.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setPasswordDialogOpen(true)}
+                      className="w-full border-white/20 bg-transparent text-white hover:bg-white/10"
+                    >
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      Schimbă parola
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="agentfinder-settings-card rounded-2xl border border-rose-400/20 bg-[#1a1f2e] text-white shadow-2xl">
+                  <CardHeader className="space-y-2">
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <AlertTriangle className="h-5 w-5 text-rose-300" />
+                      Zona periculoasă
+                    </CardTitle>
+                    <CardDescription className="text-white/70">
+                      Acțiuni ireversibile pentru contul tău.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-white/15 bg-white/5 text-white hover:bg-white/10"
+                      onClick={() => {
+                        toast({
+                          title: 'Acțiunea necesită suport',
+                          description: 'Contactează echipa ImoDeus pentru părăsirea agenției sau transferul ownership-ului.',
+                        });
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Părăsește agenția
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full border-rose-300/20 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20"
+                      onClick={() => {
+                        window.open('/data-deletion', '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Șterge contul
+                    </Button>
+                  </CardContent>
+                </Card>
             </div>
             <div className="space-y-6">
                  <Card className="agentfinder-settings-card agentfinder-surface overflow-hidden rounded-[28px] border border-[var(--app-surface-border)] bg-[var(--app-surface-elevated)] text-[var(--app-page-foreground)] shadow-2xl shadow-black/25">
@@ -773,7 +1017,7 @@ export default function SettingsPage() {
                                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                     <FormField control={agencyForm.control} name="city" render={({ field }) => (
                                       <FormItem className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition-colors hover:border-white/15 hover:bg-white/[0.06]">
-                                        <FormLabel className="text-white">Oras de lucru pentru scraping</FormLabel>
+                                        <FormLabel className="text-white">Oras de lucru</FormLabel>
                                         <FormControl>
                                           <Select onValueChange={field.onChange} value={field.value || ''}>
                                             <SelectTrigger className="mt-3 !border-white/14 !bg-white/10 !text-white">
@@ -788,9 +1032,6 @@ export default function SettingsPage() {
                                             </SelectContent>
                                           </Select>
                                         </FormControl>
-                                        <FormDescription className="text-white/62">
-                                          Momentan acest camp este folosit pentru owner listings doar pe Bucuresti-Ilfov, pe baza linkurilor dedicate de scraping.
-                                        </FormDescription>
                                         <FormMessage />
                                       </FormItem>
                                     )}/>
@@ -808,7 +1049,41 @@ export default function SettingsPage() {
                                   <p className="text-sm text-white/65">Elementele care definesc vizual agenția în produs și în website-ul public.</p>
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                  <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">URL logo</FormLabel><FormControl><Input {...field} placeholder="https://..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" /></FormControl><FormMessage /></FormItem> )}/>
+                                  <FormField control={agencyForm.control} name="logoUrl" render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-white/80">Logo agenție</FormLabel>
+                                      <div className="flex flex-col gap-3">
+                                        <div className="flex items-center gap-3">
+                                          <FormControl>
+                                            <Input {...field} placeholder="https://..." className="bg-white/10 border-white/20 text-white placeholder:text-white/50" />
+                                          </FormControl>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => logoFileInputRef.current?.click()}
+                                            disabled={isLogoUploading || userProfile?.role !== 'admin'}
+                                            className="shrink-0 border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                          >
+                                            {isLogoUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                                            Încarcă
+                                          </Button>
+                                        </div>
+                                        <input
+                                          ref={logoFileInputRef}
+                                          type="file"
+                                          accept="image/png,image/jpeg,image/svg+xml"
+                                          className="hidden"
+                                          onChange={handleLogoUpload}
+                                        />
+                                        {field.value ? (
+                                          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/10">
+                                            <img src={field.value} alt="Previzualizare logo agenție" className="h-full w-full object-contain" />
+                                          </div>
+                                        ) : null}
+                                      </div>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}/>
                                   <FormField control={agencyForm.control} name="themePreset" render={({ field }) => (
                                     <FormItem>
                                       <FormLabel className="text-white/80">Tema aplicației</FormLabel>
@@ -849,7 +1124,14 @@ export default function SettingsPage() {
                               </section>
                             </div>
                           </div>
-                        <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'} className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
+                        <div className="sticky bottom-4 z-20 mt-8 flex flex-col gap-2 rounded-2xl border border-white/10 bg-[var(--app-surface-solid)]/90 p-3 shadow-2xl backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+                          <p className="text-xs text-white/65">
+                            {agencyForm.formState.isDirty
+                              ? 'Ai modificări nesalvate în setările agenției.'
+                              : 'Toate modificările agenției sunt salvate.'}
+                          </p>
+                          <Button type="submit" disabled={agencyForm.formState.isSubmitting || userProfile?.role !== 'admin'} className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">{agencyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Salvează Setări Agenție</Button>
+                        </div>
                         {userProfile?.role !== 'admin' && <p className="text-xs text-muted-foreground mt-2 text-white/70">Doar administratorii agenției pot modifica aceste setări.</p>}
                         </CardContent>
                     </form>
@@ -858,7 +1140,76 @@ export default function SettingsPage() {
             </div>
       </div>
       </div>
-      
+
+      <Dialog open={Boolean(pendingEmailValues)} onOpenChange={(open) => !open && setPendingEmailValues(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmă schimbarea emailului</DialogTitle>
+            <DialogDescription>
+              Pentru a schimba adresa de email, introdu parola actuală a contului.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label>Parolă actuală</Label>
+            <Input
+              type="password"
+              value={reauthPassword}
+              onChange={(event) => setReauthPassword(event.target.value)}
+              placeholder="Parola actuală"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPendingEmailValues(null)}>
+              Anulează
+            </Button>
+            <Button type="button" onClick={confirmEmailChange} disabled={isReauthing || !reauthPassword}>
+              {isReauthing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+              Confirmă
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Schimbă parola</DialogTitle>
+            <DialogDescription>
+              Introdu parola actuală și alege o parolă nouă.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Parolă actuală</Label>
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                placeholder="Parola actuală"
+              />
+            </div>
+            <div>
+              <Label>Parolă nouă</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="Minimum 8 caractere"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPasswordDialogOpen(false)}>
+              Anulează
+            </Button>
+            <Button type="button" onClick={handlePasswordChange} disabled={isChangingPassword || !currentPassword || !newPassword}>
+              {isChangingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+              Schimbă parola
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

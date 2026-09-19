@@ -111,9 +111,9 @@ export function PushNotificationsCard() {
       setRegistrationId(id);
       setPermission(Notification.permission);
       await updatePreferences({ pushEnabled: true });
-      toast({ title: 'Notificari activate', description: 'Acest dispozitiv poate primi notificari push.' });
+      toast({ title: 'Notificări activate', description: 'Acest dispozitiv poate primi notificări push.' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Notificarile nu au putut fi activate', description: error instanceof Error ? error.message : 'Incearca din nou.' });
+      toast({ variant: 'destructive', title: 'Notificările nu au putut fi activate', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
     } finally {
       setIsLoading(false);
     }
@@ -125,9 +125,9 @@ export function PushNotificationsCard() {
     try {
       await unregisterPushNotifications({ firebaseApp, user });
       setRegistrationId(null);
-      toast({ title: 'Dispozitiv dezactivat', description: 'Inboxul din aplicatie ramane activ.' });
+      toast({ title: 'Dispozitiv dezactivat', description: 'Inboxul din aplicație rămâne activ.' });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Dezactivare esuata', description: error instanceof Error ? error.message : 'Incearca din nou.' });
+      toast({ variant: 'destructive', title: 'Dezactivare eșuată', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
     } finally {
       setIsLoading(false);
     }
@@ -142,20 +142,20 @@ export function PushNotificationsCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           {status === 'enabled' || status === 'desktop' ? <Bell className="h-5 w-5 text-emerald-300" /> : <BellOff className="h-5 w-5 text-white/70" />}
-          Notificari
+          Notificări
         </CardTitle>
-        <CardDescription className="text-white/70">Inboxul din aplicatie este permanent activ. Aici controlezi canalul push si categoriile lui.</CardDescription>
+        <CardDescription className="text-white/70">Inboxul din aplicație este permanent activ. Aici controlezi canalul push și categoriile lui.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <Badge className={status === 'enabled' || status === 'desktop' ? 'bg-emerald-500/20 text-emerald-100' : status === 'blocked' ? 'bg-rose-500/20 text-rose-100' : 'bg-white/10 text-white/80'}>
-            {status === 'desktop' ? 'Native in aplicatia desktop' : status === 'enabled' ? 'Push activ pe acest dispozitiv' : status === 'blocked' ? 'Blocat in browser' : status === 'unsupported' ? 'Push nesuportat' : 'Push inactiv'}
+            {status === 'desktop' ? 'Nativ în aplicația desktop' : status === 'enabled' ? 'Push activ pe acest dispozitiv' : status === 'blocked' ? 'Blocat în browser' : status === 'unsupported' ? 'Push nesuportat' : 'Push inactiv'}
           </Badge>
         </div>
 
         <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-white/55" /> Inbox in aplicatie</span>
+            <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-white/55" /> Inbox în aplicație</span>
             <span className="font-medium text-emerald-200">Activ</span>
           </div>
           <div className="flex items-center justify-between gap-3">
@@ -168,11 +168,11 @@ export function PushNotificationsCard() {
           <div className="flex flex-col gap-2 sm:flex-row">
             {!isRegistered ? (
               <Button type="button" onClick={handleEnable} disabled={isLoading || status === 'blocked'}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Activeaza pe acest dispozitiv
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Activează pe acest dispozitiv
               </Button>
             ) : (
               <Button type="button" variant="outline" onClick={handleDisable} disabled={isLoading} className="border-white/20 bg-transparent text-white hover:bg-white/10">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Dezactiveaza acest dispozitiv
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Dezactivează acest dispozitiv
               </Button>
             )}
           </div>
@@ -180,7 +180,7 @@ export function PushNotificationsCard() {
 
         <div className="space-y-2">
           <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
-            <div><p className="text-sm font-semibold">Push pentru categorii</p><p className="text-xs text-white/55">Comutator general; inboxul ramane activ.</p></div>
+            <div><p className="text-sm font-semibold">Push pentru categorii</p><p className="text-xs text-white/55">Comutator general; inboxul rămâne activ.</p></div>
             <Switch checked={preferences.pushEnabled} onCheckedChange={(checked) => void updatePreferences({ pushEnabled: checked })} />
           </div>
           {NOTIFICATION_CATEGORY_KEYS.map((category) => (

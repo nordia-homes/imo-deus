@@ -23,6 +23,10 @@ export function DesktopAppCard() {
         </div>
       </CardHeader>
       <CardContent className="pt-0">
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/65">
+          <Laptop className="h-4 w-4" />
+          Disponibil pentru Windows · actualizare automată activă.
+        </div>
         <Button
           type="button"
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
