@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { changeBillingPlan, changeBillingSeats, redirectToBillingPortal, redirectToCheckout } from '@/lib/stripe';
 import { type BillingPlanId } from '@/lib/billing/plans';
 import { type BillingSummary, getPlanComparisonRows, getSeatPricing } from '@/lib/billing/entitlements';
-import { CreditCard, Loader2, Lock, Users } from 'lucide-react';
+import { CreditCard, Loader2, Lock, Users, Sparkles } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
@@ -240,9 +240,48 @@ export default function BillingPage() {
               Agenția este taxată pe plan și pe numărul de utilizatori activi.
             </p>
           </div>
-          <Badge variant="outline" className="tt-badge tt-badge--active">
-            Stripe + SmartBill
-          </Badge>
+          <div className="tt-scene" aria-hidden="true">
+            <div className="tt-scene-halo" />
+            <div className="tt-scene-sheet tt-scene-sheet--back">
+              <span>ABONAMENT</span>
+              <div className="flex h-full items-center justify-center">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-slate-700">
+                  <CreditCard size={30} />
+                </div>
+              </div>
+            </div>
+            <div className="tt-scene-sheet tt-scene-sheet--front">
+              <span className="tt-scene-brand">
+                <Sparkles size={12} /> FACTURARE
+              </span>
+              <div className="flex h-full items-center justify-center">
+                <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                  <CreditCard className="mx-auto text-emerald-700" size={28} />
+                  <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Plăți
+                  </span>
+                  <strong className="block text-sm text-slate-900">Plan activ</strong>
+                </div>
+              </div>
+              <div className="tt-scene-caption">
+                <small>URMĂTOAREA FACTURĂ</small>
+                <strong>Abonamentul tău, sub control.</strong>
+                <span>Stripe + SmartBill</span>
+              </div>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--video">
+              <CreditCard size={16} />
+              <span>
+                Stripe
+                <br />
+                <strong>integrat</strong>
+              </span>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--spark">
+              <Sparkles size={16} />
+              <span>SmartBill fiscal</span>
+            </div>
+          </div>
         </header>
       </div>
 

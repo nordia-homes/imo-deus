@@ -327,11 +327,12 @@ export function SalesDocumentWorkspace({
           const isBusy = busyId === item.id;
           const uploadId = 'sales-document-upload-' + item.id;
           return (
-            <article key={item.id} className={cn('relative overflow-hidden rounded-[26px] p-px shadow-[0_20px_48px_-38px_rgba(15,118,110,.48)]', scope === 'property' ? 'bg-[linear-gradient(145deg,#a7f3d0,#ffffff_46%,#fde68a)]' : scope === 'participant' ? 'bg-[linear-gradient(145deg,#bae6fd,#ffffff_46%,#99f6e4)]' : 'bg-[linear-gradient(145deg,#ddd6fe,#ffffff_46%,#bae6fd)]')}>
-              <div className="rounded-[25px] bg-white/95 p-4">
-                <div className="flex items-start gap-3">
-                  {selectedDocumentIds && onSelectedDocumentIdsChange ? <Checkbox checked={selectedDocumentIds.includes(item.id)} disabled={!hasFile} onCheckedChange={(checked) => toggleAttachment(item.id, checked === true)} className="mt-3" /> : null}
-                  <span className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-2xl border shadow-sm', scope === 'property' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : scope === 'participant' ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-violet-200 bg-violet-50 text-violet-700')}>
+            <article key={item.id} className="flex overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_14px_40px_-30px_rgba(15,23,42,0.45)] transition-shadow hover:shadow-[0_20px_48px_-30px_rgba(15,23,42,0.5)]">
+              <span className={cn('w-1.5 shrink-0', scope === 'property' ? 'bg-emerald-400' : scope === 'participant' ? 'bg-sky-400' : 'bg-violet-400')} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start gap-3 p-4">
+                  {selectedDocumentIds && onSelectedDocumentIdsChange ? <Checkbox checked={selectedDocumentIds.includes(item.id)} disabled={!hasFile} onCheckedChange={(checked) => toggleAttachment(item.id, checked === true)} className="mt-1" /> : null}
+                  <span className={cn('grid h-11 w-11 shrink-0 place-items-center rounded-2xl border', scope === 'property' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : scope === 'participant' ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-violet-200 bg-violet-50 text-violet-700')}>
                     {hasFile ? <FileCheck2 className="h-5 w-5" /> : <FilePlus2 className="h-5 w-5" />}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -345,15 +346,27 @@ export function SalesDocumentWorkspace({
                       <span>{participant?.name || participantRoleLabel(item.participantRole)}</span>
                       {stages.length ? <><span>·</span><span>{stages.map((stage) => SALE_STAGE_META[stage].shortLabel).join(', ')}</span></> : null}
                     </div>
-                    {hasFile ? <div className="mt-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-3 py-2.5"><div className="flex flex-wrap items-center gap-2 text-xs"><span className="max-w-full truncate font-semibold text-slate-700">{item.fileName}</span><span className="text-slate-400">v{item.version || 1}</span>{formatBytes(item.sizeBytes) ? <span className="text-slate-400">{formatBytes(item.sizeBytes)}</span> : null}</div><div className="mt-1 flex flex-wrap gap-2 text-[10px] text-slate-500"><span>Încărcat {formatDate(item.uploadedAt || item.receivedAt)}</span>{typeof item.qualityScore === 'number' ? <span>Calitate {item.qualityScore}%</span> : null}{item.expiresAt ? <span className="text-violet-600">Expiră {formatDate(item.expiresAt)}</span> : null}</div></div> : <p className="mt-3 text-xs text-amber-700">Nu există încă un fișier asociat acestei cerințe.</p>}
+                    {hasFile ? (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 px-3 py-2.5 text-xs">
+                        <FileArchive className="h-4 w-4 shrink-0 text-slate-400" />
+                        <span className="max-w-full truncate font-semibold text-slate-700">{item.fileName}</span>
+                        <span className="text-slate-400">v{item.version || 1}</span>
+                        {formatBytes(item.sizeBytes) ? <span className="text-slate-400">{formatBytes(item.sizeBytes)}</span> : null}
+                        <span className="ml-auto text-slate-400">Încărcat {formatDate(item.uploadedAt || item.receivedAt)}</span>
+                        {typeof item.qualityScore === 'number' ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Calitate {item.qualityScore}%</span> : null}
+                        {item.expiresAt ? <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold text-violet-700">Expiră {formatDate(item.expiresAt)}</span> : null}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs font-medium text-amber-700">Nu există încă un fișier asociat acestei cerințe.</p>
+                    )}
                     {item.classification && item.classification !== item.label ? <p className="mt-2 text-[11px] text-sky-700">Sugestie identificată: <span className="font-semibold">{item.classification}</span>{typeof item.classificationConfidence === 'number' ? ' · ' + Math.round(item.classificationConfidence * 100) + '%' : ''}</p> : null}
                     {item.duplicateOfDocumentId ? <p className="mt-2 text-[11px] font-semibold text-amber-700">Posibil duplicat al unui document existent în dosar.</p> : null}
                     {item.extractedTextPreview ? <p className="mt-2 line-clamp-2 text-[11px] leading-5 text-slate-500">{item.extractedTextPreview}</p> : null}
                   </div>
-                  {isBusy ? <Loader2 className="mt-3 h-4 w-4 shrink-0 animate-spin text-emerald-600" /> : null}
+                  {isBusy ? <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-emerald-600" /> : null}
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+                <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/50 px-4 py-3">
                   <input id={uploadId} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadDocument(item, file); event.currentTarget.value = ''; }} />
                   <Button asChild type="button" size="sm" variant="outline" className="rounded-xl border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-50"><label htmlFor={uploadId} className="cursor-pointer"><Upload className="mr-1.5 h-3.5 w-3.5" />{hasFile ? 'Versiune nouă' : 'Încarcă'}</label></Button>
                   {hasFile && item.downloadUrl ? <Button asChild type="button" size="sm" variant="outline" className="rounded-xl"><a href={item.downloadUrl} target="_blank" rel="noreferrer"><FolderOpen className="mr-1.5 h-3.5 w-3.5" />Deschide</a></Button> : null}
@@ -365,7 +378,7 @@ export function SalesDocumentWorkspace({
                 </div>
 
                 {item.versions?.length ? (
-                  <details className="mt-3 rounded-2xl border border-slate-100 bg-slate-50/65 p-3">
+                  <details className="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
                     <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-slate-600"><History className="h-3.5 w-3.5" />Istoric versiuni · {item.versions.length}</summary>
                     <div className="mt-3 space-y-2">
                       {[...item.versions].sort((left, right) => right.version - left.version).map((version) => (

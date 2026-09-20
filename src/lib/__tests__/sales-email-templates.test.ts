@@ -13,7 +13,7 @@ import type { SaleTransaction } from '@/lib/types';
 
 const expectedPurposes = [
   'Documente necesare antecontract',
-  'Documente necesare contract vânzare-cumpărare',
+  'Documente contract vânzare-cumpărare',
   'Documente lipsă antecontract',
   'Documente lipsă contract vânzare-cumpărare',
   'Confirmare programare antecontract',

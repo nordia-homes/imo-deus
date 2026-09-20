@@ -101,7 +101,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
   },
   {
     id: "owner-required-documents-sale-contract",
-    name: "Proprietar · Documente necesare contract vânzare-cumpărare",
+    name: "Proprietar · Documente contract vânzare-cumpărare",
     description: "Centralizează actele necesare semnării contractului final de vânzare-cumpărare.",
     recipientRole: "owner",
     stage: "contract",
@@ -180,7 +180,7 @@ export const DEFAULT_SALES_EMAIL_TEMPLATES: SalesEmailTemplate[] = [
   },
   {
     id: "buyer-required-documents-sale-contract",
-    name: "Cumpărător · Documente necesare contract vânzare-cumpărare",
+    name: "Cumpărător · Documente contract vânzare-cumpărare",
     description: "Centralizează actele și informațiile cumpărătorului pentru contractul final.",
     recipientRole: "buyer",
     stage: "contract",

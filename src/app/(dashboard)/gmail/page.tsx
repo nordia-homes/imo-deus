@@ -22,6 +22,7 @@ import {
   Plus,
   RotateCcw,
   Search,
+  Send,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -42,6 +43,7 @@ import type { DesktopGmailRunnerStatus } from '@/lib/desktop/gmail-runner';
 import { applySalesEmailTemplateOverrides, DEFAULT_SALES_EMAIL_TEMPLATES } from '@/lib/sales';
 import type { SaleParticipantRole, SalesEmailTemplate, SalesEmailTemplateOverride } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 type TemplateAudience = Extract<SaleParticipantRole, 'owner' | 'buyer'>;
 
@@ -118,7 +120,7 @@ function templateVisual(template: SalesEmailTemplate) {
     };
   }
   return {
-    label: 'Documente necesare',
+    label: 'Documente contract',
     bar: 'bg-[linear-gradient(90deg,#06b6d4,#3b82f6,#6366f1)]',
     icon: 'bg-blue-500/12 text-blue-600',
     pill: 'border-blue-500/20 bg-blue-500/8 text-blue-700 dark:text-blue-300',
@@ -159,7 +161,17 @@ export default function GmailPage() {
     [customTemplates, userProfile?.id, userProfile?.role]
   );
   const templates = useMemo(
-    () => applySalesEmailTemplateOverrides(baseTemplates, templateOverrides),
+    () =>
+      applySalesEmailTemplateOverrides(
+        baseTemplates.map((template) => ({
+          ...template,
+          name: template.name.replace(
+            'Documente necesare contract vânzare-cumpărare',
+            'Documente contract vânzare-cumpărare'
+          ),
+        })),
+        templateOverrides
+      ),
     [baseTemplates, templateOverrides]
   );
   const personalizedTemplateIds = useMemo(
@@ -403,104 +415,95 @@ export default function GmailPage() {
 
   return (
     <div className="gmail-workspace min-h-full bg-[var(--app-page-background)] pb-16 text-[var(--app-page-foreground)]">
-      <section className="px-4 pt-5 md:px-8 md:pt-7">
-        <div className="gmail-workspace__hero relative isolate mx-auto max-w-[1500px] overflow-hidden rounded-[32px] border px-5 py-6 md:px-8 md:py-8">
-          <div className="gmail-workspace__accent-line absolute inset-x-0 top-0 h-1" />
-          <div className="gmail-workspace__hero-pattern pointer-events-none absolute inset-0" />
-          <div className="gmail-workspace__hero-glow pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full" />
-          <div className="gmail-workspace__hero-glow gmail-workspace__hero-glow--secondary pointer-events-none absolute -bottom-32 left-[38%] h-72 w-72 rounded-full" />
-          <div className="relative grid gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(460px,.92fr)] xl:items-center">
-            <div className="max-w-3xl">
-              <div className="gmail-workspace__hero-eyebrow inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.2em]">
-                <WandSparkles className="h-3.5 w-3.5" />
-                Gmail workspace
+      <div className="tt-design settings-tiktok mx-auto block w-full max-w-[1500px] px-4 md:px-8">
+        <style>{`
+          .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          .settings-tiktok .gmail-forwarding-compact__action {
+            background: linear-gradient(135deg,#7dd3fc,#38bdf8) !important;
+            color: #082f49 !important;
+            border-color: #7dd3fc !important;
+          }
+        `}</style>
+        <header className="tt-hero">
+          <div>
+            <div className="tt-hero-kicker">
+              <Mail size={17} />
+              <span className="tt-eyebrow">GMAIL WORKSPACE</span>
+            </div>
+            <h1>Comunicare <em>Gmail</em></h1>
+            <p className="tt-hero-lead">
+              Pregătești în Imodeus, trimiți din Gmail.
+              <br />
+              <strong>Răspunsurile și documentele ajung în dosarul corect.</strong>
+            </p>
+            <p>
+              Fără acces OAuth la inbox. Autentificarea rămâne doar pe calculatorul tău.
+            </p>
+          </div>
+          <div className="space-y-3">
+          <div className="tt-scene" aria-hidden="true">
+            <div className="tt-scene-halo" />
+            <div className="tt-scene-sheet tt-scene-sheet--back">
+              <span>TRIMITERE</span>
+              <div className="flex h-full items-center justify-center">
+                <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-slate-700">
+                  <Send className="h-5 w-5" />
+                </div>
               </div>
-              <h1 className="gmail-workspace__hero-title mt-5 max-w-[760px] text-[clamp(2.35rem,3.7vw,3.85rem)] font-semibold leading-[.98] tracking-[-.055em]">
-                Fiecare mesaj, pregătit
-                <span className="gmail-workspace__hero-gradient block">pentru pasul următor.</span>
-              </h1>
-              <p className="gmail-workspace__hero-copy mt-5 max-w-2xl text-sm leading-7 md:text-base">
-                Pregătești comunicarea în Imodeus, trimiți din Gmail, iar răspunsurile și documentele se așază în dosarul corect.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {[
-                  { label: activeTemplateCount + ' active în email', Icon: Files },
-                  { label: 'Proprietar + cumpărător', Icon: UserRound },
-                  { label: 'Fără acces OAuth la inbox', Icon: ShieldCheck },
-                ].map(({ label, Icon }) => (
-                  <span key={label} className="gmail-workspace__feature-pill inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium">
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
+            </div>
+            <div className="tt-scene-sheet tt-scene-sheet--front">
+              <span className="tt-scene-brand">
+                <Mail size={12} /> GMAIL
+              </span>
+              <div className="flex h-full items-center justify-center">
+                <div className="w-28 rounded-[2rem] border border-white bg-white/85 p-4 text-center shadow-xl">
+                  <CheckCircle2 className="mx-auto text-emerald-700" size={28} />
+                  <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Confirmat
                   </span>
-                ))}
+                  <strong className="block text-sm text-slate-900">Dosar actualizat</strong>
+                </div>
+              </div>
+              <div className="tt-scene-caption">
+                <small>FLUX DE EMAIL</small>
+                <strong>Fiecare mesaj, la locul lui.</strong>
+                <span>template + răspuns + documente</span>
               </div>
             </div>
-
-            <div className="gmail-workspace__connection-card relative overflow-hidden rounded-[26px] border p-5 md:p-6">
-              <div className="flex items-start gap-4">
-                <div className="gmail-workspace__gmail-mark grid h-12 w-12 shrink-0 place-items-center rounded-2xl">
-                  <Mail className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-semibold">Contul Gmail al agentului</p>
-                    <span className="gmail-workspace__status-pill inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.12em]">
-                      {ready ? <CheckCircle2 className="h-3.5 w-3.5" /> : <CircleDashed className="h-3.5 w-3.5" />}
-                      {ready ? 'Conectat' : 'Local'}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm font-medium">
-                    {runnerStatus
-                      ? statusLabel[runnerStatus.state]
-                      : isDesktop
-                        ? 'Verific sesiunea Gmail'
-                        : 'Necesită Imodeus Desktop'}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-[var(--app-muted-foreground)]">
-                    {runnerStatus?.message || 'Autentificarea rămâne doar pe acest calculator.'}
-                  </p>
-                </div>
-              </div>
-              <Button
-                onClick={() => void connectGmail()}
-                className="gmail-workspace__primary-action mt-4 h-11 w-full rounded-2xl"
-              >
-                {runnerStatus?.state === 'starting' ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowUpRight className="mr-2 h-4 w-4" />
-                )}
-                {ready ? 'Deschide Gmail' : 'Conectează contul Gmail'}
-              </Button>
-              <div className="gmail-workspace__forwarding-wrap mt-4 border-t pt-4">
-                <GmailForwardingSetup compact className="gmail-workspace__forwarding-card" />
-              </div>
+            <div className="tt-scene-tag tt-scene-tag--video">
+              <Mail size={16} />
+              <span>
+                Gmail
+                <br />
+                <strong>conectat</strong>
+              </span>
+            </div>
+            <div className="tt-scene-tag tt-scene-tag--spark">
+              <CheckCircle2 size={16} />
+              <span>Trimitere controlată</span>
             </div>
           </div>
-
-          <div className="gmail-workspace__journey relative mt-7 grid gap-1 border-t pt-5 sm:grid-cols-3">
-            {[
-              { number: '01', label: 'Pregătești', detail: 'Template + date', Icon: Files },
-              { number: '02', label: 'Trimiți din Gmail', detail: 'Verifici și confirmi', Icon: Mail },
-              { number: '03', label: 'Urmărești dosarul', detail: 'Răspunsuri + acte', Icon: Inbox },
-            ].map(({ number, label, detail, Icon }) => (
-              <div key={number} className="gmail-workspace__journey-step relative flex items-center gap-3 rounded-2xl px-3 py-2.5">
-                <div className="gmail-workspace__journey-icon grid h-9 w-9 shrink-0 place-items-center rounded-xl">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[9px] font-semibold uppercase tracking-[.16em] text-blue-600">{number}</p>
-                  <p className="truncate text-sm font-semibold">{label}</p>
-                  <p className="truncate text-[10px] text-[var(--app-muted-foreground)]">{detail}</p>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => void connectGmail()}
+              className="tt-button rounded-full border-sky-200 bg-sky-100 px-4 text-sky-950 hover:bg-sky-200"
+            >
+              {runnerStatus?.state === 'starting' ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="mr-2 h-4 w-4" />
+              )}
+              {ready ? 'Deschide Gmail' : 'Conectează Gmail'}
+            </Button>
+            <div className="gmail-workspace__forwarding-wrap">
+              <GmailForwardingSetup compact className="tt-button rounded-full border-sky-200 bg-sky-100 px-4 text-sky-950 hover:bg-sky-200" />
+            </div>
           </div>
-        </div>
-      </section>
-
+          </div>
+        </header>
+      </div>
       <div className="mx-auto max-w-[1500px] space-y-8 px-4 py-8 md:px-8">
-        <section className="overflow-hidden rounded-[34px] border border-[var(--app-surface-border)] bg-[radial-gradient(circle_at_90%_0%,rgba(168,85,247,.09),transparent_32%),radial-gradient(circle_at_0%_30%,rgba(6,182,212,.08),transparent_28%),var(--app-surface)] shadow-[0_32px_95px_-70px_rgba(15,23,42,.95)]">
+        <section className="tt-design settings-tiktok tt-panel overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_32px_95px_-70px_rgba(15,23,42,.5)]">
           <div className="border-b border-[var(--app-surface-border)] px-5 py-6 md:px-7">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>
@@ -511,9 +514,6 @@ export default function GmailPage() {
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-.04em] md:text-4xl">
                   Template-uri pentru fiecare parte
                 </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-muted-foreground)]">
-                  Selectează destinatarul, găsește momentul tranzacției și personalizează mesajul într-un editor familiar.
-                </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <div className="relative min-w-0 flex-1 sm:min-w-[280px]">
@@ -620,6 +620,19 @@ export default function GmailPage() {
                               <div className={cn('grid h-12 w-12 place-items-center rounded-2xl', visual.icon)}>
                                 <Glyph className="h-5 w-5" />
                               </div>
+                              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'rounded-full text-[10px]',
+                                    personalized
+                                      ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                      : visual.pill
+                                  )}
+                                >
+                                  {personalized ? 'Personalizat de tine' : visual.label}
+                                </Badge>
+                              </div>
                               <div className="flex gap-1">
                                 {personalized ? (
                                   <Button
@@ -657,25 +670,6 @@ export default function GmailPage() {
                                   <Edit3 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            </div>
-
-                            <div className="relative mt-5 flex flex-wrap items-center gap-2">
-                              <Badge variant="outline" className={cn('rounded-full text-[10px]', visual.pill)}>
-                                {visual.label}
-                              </Badge>
-                              <Badge variant="outline" className="rounded-full text-[10px]">
-                                {template.isSystem
-                                  ? 'Imodeus'
-                                  : template.approvalStatus === 'approved'
-                                    ? 'Aprobat'
-                                    : 'Draft personal'}
-                              </Badge>
-                              {personalized ? (
-                                <Badge className="rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300">
-                                  <ShieldCheck className="mr-1 h-3 w-3" />
-                                  Personalizat de tine
-                                </Badge>
-                              ) : null}
                             </div>
 
                             <h3 className="relative mt-4 text-lg font-semibold leading-6 tracking-[-.015em]">

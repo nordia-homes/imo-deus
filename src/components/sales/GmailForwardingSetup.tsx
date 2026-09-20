@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, Clock3, Copy, Loader2, MessageSquareReply, RefreshCw, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Clock3, Copy, Loader2, Mail, MessageSquareReply, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -43,21 +43,14 @@ export function GmailForwardingSetup({ compact = false, className }: { compact?:
   if (loading) return <div className={cn('flex items-center gap-2 rounded-[20px] border border-white/10 bg-white/[.055] p-4 text-sm text-white/65', className)}><Loader2 className="h-4 w-4 animate-spin" /> Verific sincronizarea răspunsurilor…</div>;
 
   if (compact && !connection) return (
-    <div className={cn('rounded-[20px] border border-white/10 bg-white/[.055] p-4 text-white backdrop-blur-xl', className)}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="rounded-xl bg-emerald-400/12 p-2.5 text-emerald-300"><MessageSquareReply className="h-4 w-4" /></div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold">Sincronizează răspunsurile</p>
-            <p className="mt-0.5 text-xs leading-5 text-white/58">Primești în dosar o copie prin Gmail Forwarding.</p>
-          </div>
-        </div>
-        <Button onClick={create} disabled={creating} className="gmail-forwarding-compact__action h-10 shrink-0 rounded-xl px-4">
-          {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
-          Generează adresa
-        </Button>
-      </div>
-    </div>
+    <Button
+      onClick={create}
+      disabled={creating}
+      className={cn('inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-4', className)}
+    >
+      {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+      Sincronizează răspunsurile
+    </Button>
   );
 
   if (compact && connection) return (
@@ -79,7 +72,7 @@ export function GmailForwardingSetup({ compact = false, className }: { compact?:
   if (!connection) return (
     <div className={cn('rounded-[26px] border border-white/10 bg-white/[.055] p-5 text-white backdrop-blur-xl', className)}>
       <div className="flex items-start gap-3"><div className="rounded-2xl bg-emerald-400/12 p-3 text-emerald-300"><MessageSquareReply className="h-5 w-5" /></div><div><p className="font-semibold">Sincronizează răspunsurile</p><p className="mt-1 text-sm leading-6 text-white/58">Clienții răspund normal. Imodeus primește o copie prin Gmail Forwarding.</p></div></div>
-      <Button onClick={create} disabled={creating} className="mt-5 w-full rounded-xl bg-white text-slate-950 hover:bg-white/90">{creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />} Generează adresa Imodeus</Button>
+      <Button onClick={create} disabled={creating} className="mt-5 w-full rounded-xl bg-white text-slate-950 hover:bg-white/90">{creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />} Sincronizează răspunsurile</Button>
     </div>
   );
   return (

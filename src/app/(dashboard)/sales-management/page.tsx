@@ -228,7 +228,7 @@ function SaleCard({ sale, imageUrl, onEmail, onDossier, onSetup, onStageChange }
                 aria-label={'Completează participanții și documentele. ' + (setupComplete ? 'Informațiile sunt complete.' : 'Informațiile nu sunt complete.')}
                 onClick={(event) => runAction(event, onSetup)}
                 className={cn(
-                  'sales-management-setup-cta group/setup relative min-h-[150px] w-full overflow-hidden rounded-[24px] border-2 p-4 text-left transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2',
+                  'sales-management-setup-cta group/setup relative min-h-[150px] w-full overflow-hidden rounded-[24px] border-2 p-4 text-left transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 !border-slate-200 !bg-white !text-slate-950',
                   setupComplete ? 'sales-management-setup-cta--complete' : 'sales-management-setup-cta--incomplete'
                 )}
               >
@@ -480,7 +480,7 @@ export default function SalesManagementPage() {
   }, [normalizedSales]);
 
   return (
-    <div data-testid="sales-management-page" className="relative isolate space-y-6 rounded-[36px] bg-[radial-gradient(circle_at_0%_12%,rgba(209,250,229,.34),transparent_24%),radial-gradient(circle_at_100%_68%,rgba(224,242,254,.38),transparent_28%)] px-0 pb-12 text-slate-950 md:px-3">
+    <div data-testid="sales-management-page" className="relative isolate space-y-6 rounded-b-[36px] bg-[radial-gradient(circle_at_0%_12%,rgba(209,250,229,.34),transparent_24%),radial-gradient(circle_at_100%_68%,rgba(224,242,254,.38),transparent_28%)] px-0 pb-12 text-slate-950 md:px-3">
       <div className="tt-design settings-tiktok">
         <style>{`
           .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
