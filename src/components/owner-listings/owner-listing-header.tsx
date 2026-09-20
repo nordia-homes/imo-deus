@@ -30,13 +30,19 @@ export function OwnerListingHeader({
     typeof listingCount === 'number'
       ? new Intl.NumberFormat('ro-RO').format(listingCount)
       : null;
+  const compactListingCount =
+    typeof listingCount === 'number'
+      ? listingCount >= 1000
+        ? `${(listingCount / 1000).toFixed(1).replace(/\.0$/, '')}K`
+        : String(listingCount)
+      : null;
   const tabs = [
     {
       href: '/owner-listings',
       label: `Anunturi${formattedListingCount ? ` (${formattedListingCount})` : ''}`,
       icon: LayoutGrid,
       active: activeTab === 'listings',
-      mobileCount: formattedListingCount ?? 0,
+      mobileCount: compactListingCount ?? 0,
       tone: {
         active: 'border-slate-200 bg-white text-slate-950 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.5)] ring-2 ring-emerald-300 ring-offset-2',
         inactive: 'border-slate-200 bg-white/75 text-slate-700 hover:bg-white hover:shadow-[0_16px_36px_-26px_rgba(15,23,42,0.45)]',
