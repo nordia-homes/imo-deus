@@ -69,6 +69,7 @@ async function launchContext(profileDir) {
       '--no-first-run',
       '--no-default-browser-check',
       '--disable-session-crashed-bubble',
+      '--disable-blink-features=AutomationControlled',
       '--disable-features=Translate,OptimizationHints,MediaRouter',
       `--disk-cache-dir=${cacheDir}`,
       '--start-maximized',
@@ -82,7 +83,11 @@ async function launchContext(profileDir) {
   const errors = [];
   for (const attempt of attempts) {
     try {
-      return await chromium.launchPersistentContext(profileDir, attempt.options);
+      const context = await chromium.launchPersistentContext(profileDir, attempt.options);
+      await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+      });
+      return context;
     } catch (error) {
       errors.push(`${attempt.label}: ${error instanceof Error ? error.message : String(error)}`);
     }
