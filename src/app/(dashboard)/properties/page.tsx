@@ -13,7 +13,6 @@ import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import type { Property, PropertyDeletionEvent, PropertyDeletionReason, PropertyStatusEvent, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -511,20 +510,28 @@ export default function PropertiesPage() {
                     </div>
                 </div>
             ) : null}
-            <Card className="agentfinder-properties-header-card bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
-                <CardHeader className="px-4 sm:px-6">
-                    <div className="flex items-center justify-between gap-3">
-                        <CardTitle className="text-left text-xl text-white">
-                          Proprietăți ({filteredProperties?.length || 0})
-                        </CardTitle>
-                         <div className="flex shrink-0 items-center gap-2">
-                           <Button size="sm" className="agentfinder-properties-primary-button bg-white/20 hover:bg-white/30 text-white" onClick={() => setIsAddOpen(true)}>
-                             <PlusCircle className="mr-2 h-4 w-4" /> Adaugă
-                           </Button>
+            <div className="tt-design mx-2 mt-4">
+                <style>{`
+                    .agentfinder-properties-mobile .tt-hero { min-height: 0 !important; padding: 23px 18px !important; grid-template-columns: 1fr !important; }
+                `}</style>
+                <header className="tt-hero">
+                    <div>
+                        <div className="tt-hero-kicker">
+                            <Building2 size={17} />
+                            <span className="tt-eyebrow">PORTOFOLIU ACTIV</span>
+                        </div>
+                        <h1>Proprietăți <em>({filteredProperties?.length || 0})</em></h1>
+                        <p className="tt-hero-lead">
+                            Stocul tău disponibil.
+                            <br />
+                            <strong>Filtrează, adaugă și acționează rapid.</strong>
+                        </p>
+                        <div className="tt-hero-actions">
+                            <Button type="button" className="h-12 rounded-2xl bg-emerald-600 px-5 text-white shadow-[0_14px_28px_-16px_rgba(16,185,129,.55)] hover:bg-emerald-700" onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
                         </div>
                     </div>
-                </CardHeader>
-            </Card>
+                </header>
+            </div>
              <div className="px-2">
                 {searchInput}
             </div>
