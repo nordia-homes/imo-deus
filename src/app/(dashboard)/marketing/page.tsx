@@ -468,9 +468,21 @@ export default function MarketingPage() {
 
   return (
     <div className="agentfinder-marketing-page min-h-full space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <div className="tt-design settings-tiktok">
+      <div className="tt-design settings-tiktok meta-advertising-hero">
         <style>{`
           .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          @media (max-width: 620px) {
+            .meta-advertising-hero .meta-hero-actions { flex-direction: row !important; align-items: center; gap: 8px !important; margin-top: 16px !important; }
+            .meta-advertising-hero .meta-lead-br { display: none; }
+            .meta-advertising-hero .tt-hero-lead { margin-top: 4px !important; }
+            .meta-advertising-hero .meta-refresh-button { min-height: 0 !important; padding: 10px !important; flex: 0 0 auto; }
+            .meta-advertising-hero .meta-refresh-text { display: none; }
+            .meta-advertising-hero .meta-refresh-arrow { display: none; }
+            .meta-advertising-hero .meta-lead-first { display: none; }
+            .meta-advertising-hero .meta-hero-desc { display: none; }
+            .meta-advertising-hero .tt-hero h1 { font-size: 30px !important; }
+            .meta-advertising-hero .meta-connect-button { flex: 1 1 auto; min-width: 0; }
+          }
         `}</style>
         <header className="tt-hero">
           <div>
@@ -480,34 +492,34 @@ export default function MarketingPage() {
             </div>
             <h1>Meta pentru <em>proprietăți</em></h1>
             <p className="tt-hero-lead">
-              Campanii Housing pentru fiecare proprietate.
-              <br />
+              <span className="meta-lead-first">Campanii Housing pentru fiecare proprietate.</span>
+              <br className="meta-lead-br" />
               <strong>Conectează Business Manager-ul și pregătește reclamele.</strong>
             </p>
-            <p>
+            <p className="meta-hero-desc">
               Alege contul de reclame, urmărește performanța și administrează campaniile direct din ImoDeus.
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-3">
+          <div className="meta-hero-actions flex w-full flex-col gap-3">
             <Button
               type="button"
               variant="ghost"
-              className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-3 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+              className="meta-refresh-button group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-3 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
               onClick={() => void loadDashboard()}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-[0_10px_22px_-14px_rgba(8,145,178,0.7)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
                 <RefreshCw className="h-4 w-4" />
               </span>
-              <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Reîmprospătează</span>
-              <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-cyan-500 transition-transform duration-300 group-hover:translate-x-1" />
+              <span className="meta-refresh-text block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Reîmprospătează</span>
+              <ArrowRight className="meta-refresh-arrow ml-auto h-4 w-4 shrink-0 text-cyan-500 transition-transform duration-300 group-hover:translate-x-1" />
             </Button>
             {status?.connected ? (
               <Button
                 type="button"
                 variant="ghost"
                 disabled={!isAdmin || activeAction === 'disconnect'}
-                className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-pink-50 p-3 text-left text-rose-950 shadow-[0_14px_34px_-22px_rgba(244,63,94,0.5)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+                className="meta-connect-button group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-pink-50 p-3 text-left text-rose-950 shadow-[0_14px_34px_-22px_rgba(244,63,94,0.5)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
                 onClick={() => void handleDisconnect()}
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-rose-600 shadow-[0_10px_22px_-14px_rgba(244,63,94,0.55)] ring-1 ring-rose-100 transition-transform duration-300 group-hover:scale-110">
@@ -521,7 +533,7 @@ export default function MarketingPage() {
                 type="button"
                 variant="ghost"
                 disabled={!isAdmin || activeAction === 'connect'}
-                className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-emerald-200 bg-gradient-to-br from-emerald-300 via-teal-200 to-emerald-200 p-3 text-left text-emerald-950 shadow-[0_16px_38px_-20px_rgba(16,185,129,0.78)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1"
+                className="meta-connect-button group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-emerald-200 bg-gradient-to-br from-emerald-300 via-teal-200 to-emerald-200 p-3 text-left text-emerald-950 shadow-[0_16px_38px_-20px_rgba(16,185,129,0.78)] ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1"
                 onClick={() => void handleConnect()}
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/85 text-emerald-700 shadow-[0_10px_22px_-14px_rgba(6,95,70,0.6)] ring-1 ring-white transition-transform duration-300 group-hover:scale-110">

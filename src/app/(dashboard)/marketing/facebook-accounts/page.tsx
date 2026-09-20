@@ -243,9 +243,17 @@ export default function FacebookAccountsPage() {
 
   return (
     <div className="min-h-full space-y-6 bg-[#0F1E33] p-4 text-white lg:p-6">
-      <div className="tt-design settings-tiktok">
+      <div className="tt-design settings-tiktok fb-accounts-hero">
         <style>{`
           .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+          @media (max-width: 620px) {
+            .settings-tiktok .tt-hero { padding: 23px 18px !important; }
+            .fb-accounts-hero .fb-accounts-hero-actions { flex-direction: row !important; align-items: center; gap: 8px !important; margin-top: 16px !important; }
+            .fb-accounts-hero .fb-refresh-button { min-height: 0 !important; padding: 10px !important; flex: 0 0 auto; }
+            .fb-accounts-hero .fb-refresh-text { display: none; }
+            .fb-accounts-hero .fb-add-button { flex: 1 1 auto; min-width: 0; }
+            .fb-accounts-hero .tt-hero-lead { display: none; }
+          }
         `}</style>
         <header className="tt-hero">
           <div>
@@ -264,23 +272,23 @@ export default function FacebookAccountsPage() {
             </p>
           </div>
 
-          <div className="flex w-full flex-col gap-3">
+          <div className="fb-accounts-hero-actions flex w-full flex-col gap-3">
             <Button
               type="button"
               variant="ghost"
-              className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-3 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+              className="fb-refresh-button group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-cyan-200/80 bg-gradient-to-br from-cyan-50 via-white to-sky-50 p-3 text-left text-cyan-950 shadow-[0_14px_34px_-22px_rgba(8,145,178,0.6)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
               onClick={() => void load()}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-cyan-700 shadow-[0_10px_22px_-14px_rgba(8,145,178,0.7)] ring-1 ring-cyan-100 transition-transform duration-300 group-hover:scale-110">
                 <RefreshCw className="h-4 w-4" />
               </span>
-              <span className="block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Reîmprospătează</span>
+              <span className="fb-refresh-text block min-w-0 whitespace-nowrap text-sm font-extrabold tracking-[-0.02em]">Reîmprospătează</span>
             </Button>
             <Button
               type="button"
               variant="ghost"
               disabled={!localRunner?.paired || pairingRunner}
-              className="group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-sky-200 bg-gradient-to-br from-sky-100 via-white to-cyan-50 p-3 text-left text-sky-950 shadow-[0_14px_34px_-22px_rgba(14,165,233,0.55)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
+              className="fb-add-button group flex h-auto min-h-[64px] items-center gap-3 rounded-[18px] border border-sky-200 bg-gradient-to-br from-sky-100 via-white to-cyan-50 p-3 text-left text-sky-950 shadow-[0_14px_34px_-22px_rgba(14,165,233,0.55)] ring-1 ring-white/60 transition-all duration-300 hover:-translate-y-1"
               onClick={() => setAddOpen(true)}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700 shadow-[0_10px_22px_-14px_rgba(14,165,233,0.7)] ring-1 ring-sky-100 transition-transform duration-300 group-hover:scale-110">

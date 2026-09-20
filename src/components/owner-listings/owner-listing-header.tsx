@@ -36,7 +36,7 @@ export function OwnerListingHeader({
       label: `Anunturi${formattedListingCount ? ` (${formattedListingCount})` : ''}`,
       icon: LayoutGrid,
       active: activeTab === 'listings',
-      mobileCount: null,
+      mobileCount: formattedListingCount ?? 0,
       tone: {
         active: 'border-slate-200 bg-white text-slate-950 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.5)] ring-2 ring-emerald-300 ring-offset-2',
         inactive: 'border-slate-200 bg-white/75 text-slate-700 hover:bg-white hover:shadow-[0_16px_36px_-26px_rgba(15,23,42,0.45)]',
@@ -70,10 +70,14 @@ export function OwnerListingHeader({
   ];
 
   return (
-    <div className="tt-design settings-tiktok">
+    <div className="tt-design settings-tiktok owner-listings-hero">
       <style>{`
         .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
         .settings-tiktok .tt-hero { grid-template-columns: minmax(0,1fr) auto !important; }
+        @media (max-width: 620px) {
+          .owner-listings-hero .tt-hero h1 { font-size: 28px !important; }
+          .owner-listings-hero .owner-listings-tabs { margin-top: 16px !important; }
+        }
       `}</style>
       <header className="tt-hero">
         <div>
@@ -90,7 +94,7 @@ export function OwnerListingHeader({
           ) : null}
         </div>
 
-        <div className="inline-flex items-center gap-2">
+        <div className="owner-listings-tabs inline-flex items-center gap-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (

@@ -521,13 +521,8 @@ export default function PropertiesPage() {
                             <span className="tt-eyebrow">PORTOFOLIU ACTIV</span>
                         </div>
                         <h1>Proprietăți <em>({filteredProperties?.length || 0})</em></h1>
-                        <p className="tt-hero-lead">
-                            Stocul tău disponibil.
-                            <br />
-                            <strong>Filtrează, adaugă și acționează rapid.</strong>
-                        </p>
                         <div className="tt-hero-actions">
-                            <Button type="button" className="h-12 rounded-2xl bg-emerald-600 px-5 text-white shadow-[0_14px_28px_-16px_rgba(16,185,129,.55)] hover:bg-emerald-700" onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-4 w-4" /> Adaugă</Button>
+                            <Button type="button" className="h-16 w-full rounded-2xl bg-emerald-600 px-8 text-base text-white shadow-[0_14px_28px_-16px_rgba(16,185,129,.55)] hover:bg-emerald-700" onClick={() => setIsAddOpen(true)}><PlusCircle className="mr-2 h-5 w-5" /> Adaugă proprietate</Button>
                         </div>
                     </div>
                 </header>

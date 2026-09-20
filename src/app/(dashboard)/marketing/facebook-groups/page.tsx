@@ -123,9 +123,13 @@ export default function FacebookGroupsPage() {
   return (
     <div className="min-h-full bg-[var(--app-page-bg)] p-4 md:p-6 lg:p-8">
       <div className="mx-auto w-full max-w-[1500px] space-y-6">
-        <div className="tt-design settings-tiktok">
+        <div className="tt-design settings-tiktok fb-groups-hero">
           <style>{`
             .settings-tiktok .tt-hero { min-height: 0 !important; padding: 24px 28px !important; }
+            @media (max-width: 620px) {
+              .fb-groups-hero .fb-groups-lead-strong { display: none; }
+              html body .tt-design.fb-groups-hero .fb-groups-save-button { background: #eaf8f3 !important; color: #216b57 !important; border-color: #c5e9e1 !important; }
+            }
           `}</style>
           <header className="tt-hero">
             <div>
@@ -137,7 +141,7 @@ export default function FacebookGroupsPage() {
               <p className="tt-hero-lead">
                 Organizează grupurile după tipul anunțului.
                 <br />
-                <strong>La publicare apar doar grupurile potrivite proprietății.</strong>
+                <strong className="fb-groups-lead-strong">La publicare apar doar grupurile potrivite proprietății.</strong>
               </p>
             </div>
             <div className="space-y-3">
@@ -186,7 +190,7 @@ export default function FacebookGroupsPage() {
               <Button
                 onClick={saveGroups}
                 disabled={saving || isAgencyLoading || !agencyId}
-                className="tt-button tt-button--default w-full rounded-full px-6"
+                className="fb-groups-save-button tt-button tt-button--default w-full rounded-full px-6"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Salvează grupurile
