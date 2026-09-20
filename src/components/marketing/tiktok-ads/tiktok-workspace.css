@@ -327,9 +327,11 @@ html body .tt-design .tt-step[aria-current="step"] { box-shadow: 0 5px 14px #308
 }
 @media (max-width: 620px) {
   html body .tt-workspace { padding: 16px; border-radius: 14px; }
-  html body .tt-design .tt-hero { display: block; padding: 23px 18px; border-radius: 20px; }
+  html body .tt-design .tt-hero { display: block; padding: 23px 18px; border-radius: 20px; text-align: center; }
   html body .tt-design .tt-hero h1 { font-size: 38px; }
-  html body .tt-design .tt-hero-actions { flex-wrap: wrap; }
+  html body .tt-design .tt-hero-kicker { justify-content: center; }
+  html body .tt-design .tt-hero-actions { flex-wrap: nowrap; justify-content: center; gap: 8px; }
+  html body .tt-design .tt-hero-actions .tt-button { padding: 0 13px; }
   html body .tt-design .tt-context { gap: 10px; padding: 12px; }
   html body .tt-design .tt-context label { min-width: 0; }
   html body .tt-design .tt-context > .tt-button { width: 100%; height: 33px; }

@@ -14,7 +14,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { LeadFiltersDialog, type LeadFilters } from '@/components/leads/LeadFiltersDialog';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -346,57 +345,48 @@ export default function LeadsPage() {
                     </div>
                 </div>
             )}
-            <Card className="agentfinder-leads-hero-card bg-[#152A47] text-white border-none rounded-b-2xl rounded-t-none">
-                <CardHeader>
-                    <div className="space-y-4">
-                        <div className="agentfinder-leads-action-tile rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                            <div className="flex items-start justify-between gap-3">
-                                <div className="space-y-1">
-                                    <CardTitle className="text-white text-xl">Cumpărători</CardTitle>
-                                    <p className="text-sm text-white/65">
-                                        {showArchived ? `Arhivă: ${filteredContacts.length}` : `Activi: ${filteredContacts.length}`}
-                                    </p>
-                                </div>
-                                <span className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium text-white/90 ring-1 ring-inset ring-white/10">
-                                    {filteredContacts.length}
-                                </span>
-                            </div>
+            <div className="tt-design mx-2 mt-4">
+                <style>{`
+                    .agentfinder-leads-mobile .tt-hero { min-height: 0 !important; padding: 23px 18px !important; grid-template-columns: 1fr !important; }
+                `}</style>
+                <header className="tt-hero">
+                    <div>
+                        <div className="tt-hero-kicker">
+                            <Users size={17} />
+                            <span className="tt-eyebrow">CUMPĂRĂTORI</span>
                         </div>
-                        <AddLeadDialog properties={properties || []} contacts={buyerContacts} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
-                            <button
-                                type="button"
-                                className="agentfinder-leads-primary-tile w-full rounded-2xl border border-emerald-400/20 bg-emerald-500/12 px-4 py-3 text-left text-white transition-colors hover:bg-emerald-500/18"
-                            >
-                                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-emerald-200/80">
-                                    <PlusCircle className="h-3.5 w-3.5" />
-                                    Acțiune
-                                </div>
-                                <p className="mt-1 text-lg font-semibold text-white">Adaugă Cumpărător</p>
-                            </button>
-                        </AddLeadDialog>
+                        <h1>Cumpărători <em>({filteredContacts.length})</em></h1>
+                        <p className="tt-hero-lead">
+                            Lead-urile tale active.
+                            <br />
+                            <strong>Urmărește preferințele, vechimea și bugetul.</strong>
+                        </p>
+                        <div className="tt-hero-actions">
+                            <AddLeadDialog properties={properties || []} contacts={buyerContacts} isOpen={isAddLeadOpen} onOpenChange={setIsAddLeadOpen}>
+                                <Button type="button" className="h-12 rounded-2xl bg-emerald-600 px-5 text-white shadow-[0_14px_28px_-16px_rgba(16,185,129,.55)] hover:bg-emerald-700"><PlusCircle className="mr-2 h-4 w-4" /> Adaugă Cumpărător</Button>
+                            </AddLeadDialog>
+                        </div>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <Skeleton className="h-16 w-full" />
-                    ) : (
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-2xl">{newBuyersCount.toString()}</p>
-                                <p className="text-xs text-white/80">Noi (7 zile)</p>
-                            </div>
-                            <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-2xl">{formatBudget(totalBudget)}</p>
-                                <p className="text-xs text-white/80">Buget Total</p>
-                            </div>
-                            <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
-                                <p className="font-bold text-2xl">{averageAiScore.toString()}</p>
-                                <p className="text-xs text-white/80">Scor Mediu AI</p>
-                            </div>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                </header>
+            </div>
+            {isLoading ? (
+                <Skeleton className="mx-2 h-16" />
+            ) : (
+                <div className="mx-2 grid grid-cols-3 gap-2 text-center">
+                    <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
+                        <p className="font-bold text-2xl">{newBuyersCount.toString()}</p>
+                        <p className="text-xs text-white/80">Noi (7 zile)</p>
+                    </div>
+                    <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
+                        <p className="font-bold text-2xl">{formatBudget(totalBudget)}</p>
+                        <p className="text-xs text-white/80">Buget Total</p>
+                    </div>
+                    <div className="agentfinder-leads-mini-stat p-2 rounded-lg bg-white/10">
+                        <p className="font-bold text-2xl">{averageAiScore.toString()}</p>
+                        <p className="text-xs text-white/80">Scor Mediu AI</p>
+                    </div>
+                </div>
+            )}
             <div className="mt-4 px-2">
                 <div className="flex gap-2">
                     <Button variant="outline" className="agentfinder-leads-soft-button w-full" onClick={() => setIsFilterOpen(true)}>
