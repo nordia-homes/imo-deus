@@ -4,7 +4,12 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   serverExternalPackages: ['@napi-rs/canvas', '@sparticuz/chromium', 'ffmpeg-static'],
   outputFileTracingIncludes: {
-    '/*': ['node_modules/@sparticuz/chromium/bin/**/*', 'node_modules/ffmpeg-static/**/*'],
+    '/*': [
+      'node_modules/@sparticuz/chromium/bin/**/*',
+      'node_modules/ffmpeg-static/**/*',
+      'node_modules/pdfjs-dist/standard_fonts/**/*',
+      'node_modules/pdfjs-dist/legacy/build/**/*',
+    ],
   },
   turbopack: {
     root: __dirname,
