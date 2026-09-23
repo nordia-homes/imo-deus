@@ -1,4 +1,6 @@
-const HARTA_BLOCURI_MAP_BASE_URL = 'https://map.byteremix.com/maps/7';
+const HARTA_BLOCURI_MAP_ID = '980178c0-a348-4a1b-a17b-9d8f234f46d7';
+const HARTA_BLOCURI_MAP_BASE_URL = `https://pin.byteremix.com/maps/${HARTA_BLOCURI_MAP_ID}`;
+const HARTA_BLOCURI_API_BASE_URL = `https://pin.byteremix.com/api/maps/${HARTA_BLOCURI_MAP_ID}`;
 const HARTA_BLOCURI_SOURCE_URL = 'https://www.hartablocuri.ro/';
 const LOOKUP_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const MAX_CACHE_ENTRIES = 100;
@@ -13,12 +15,18 @@ type HartaBlocuriFeature = {
 
 type HartaBlocuriFeatureCollection = { features?: unknown };
 type HartaBlocuriRawDetail = { key?: unknown; value?: unknown };
+type HartaBlocuriRawField = { label?: unknown; value?: unknown };
+type HartaBlocuriRawDetailsPayload = {
+  title?: unknown;
+  fields?: unknown;
+};
+type HartaBlocuriFilterPayload = { ids?: unknown };
 
 type HartaBlocuriCandidate = {
   id: number;
   title: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type HartaBlocuriDetail = { label: string; value: string };
@@ -198,12 +206,16 @@ export function selectHartaBlocuriCandidates(payload: HartaBlocuriFeatureCollect
 }
 
 export function parseHartaBlocuriDetails(rawDetails: unknown): HartaBlocuriDetail[] {
-  if (!Array.isArray(rawDetails)) return [];
+  const detailItems = Array.isArray(rawDetails)
+    ? rawDetails
+    : rawDetails && typeof rawDetails === 'object' && Array.isArray((rawDetails as HartaBlocuriRawDetailsPayload).fields)
+      ? (rawDetails as HartaBlocuriRawDetailsPayload).fields as unknown[]
+      : [];
   const seenLabels = new Set<string>();
 
-  return rawDetails.flatMap((rawDetail) => {
-    const detail = rawDetail as HartaBlocuriRawDetail;
-    const label = cleanHartaBlocuriText(detail.key).replace(/:\s*$/, '');
+  return detailItems.flatMap((rawDetail) => {
+    const detail = rawDetail as HartaBlocuriRawDetail & HartaBlocuriRawField;
+    const label = cleanHartaBlocuriText(detail.label ?? detail.key).replace(/:\s*$/, '');
     const value = cleanHartaBlocuriText(detail.value);
     const normalizedLabel = normalizeComparableAddress(label);
     if (!label || !value || seenLabels.has(normalizedLabel)) return [];
@@ -221,7 +233,11 @@ export function buildHartaBlocuriResult(candidate: HartaBlocuriCandidate, rawDet
   const details = parseHartaBlocuriDetails(rawDetails);
   if (details.length === 0) return null;
 
-  const name = findDetail(details, ['Nume', 'Name']) || candidate.title || 'Imobil identificat';
+  const payloadTitle = rawDetails && typeof rawDetails === 'object'
+    ? cleanHartaBlocuriText((rawDetails as HartaBlocuriRawDetailsPayload).title)
+    : '';
+  const candidateTitle = payloadTitle && payloadTitle !== '-' ? payloadTitle : candidate.title;
+  const name = findDetail(details, ['Nume', 'Name']) || candidateTitle || 'Imobil identificat';
   const address = findDetail(details, ['Adresă', 'Adresa', 'Address']);
   const constructionYear = findDetail(details, ['Anul finalizării', 'Anul finalizarii', 'An construcție', 'An constructie']);
 
@@ -253,15 +269,27 @@ async function fetchWithTimeout(url: string, timeoutMs: number, signal?: AbortSi
   }
 }
 
+function parseFilteredCandidateIds(payload: HartaBlocuriFilterPayload) {
+  if (!Array.isArray(payload.ids)) return [];
+  return payload.ids
+    .map(Number)
+    .filter((id): id is number => Number.isSafeInteger(id) && id > 0)
+    .slice(0, MAX_MATCHING_FEATURES);
+}
+
 async function fetchCandidates(query: string, signal?: AbortSignal) {
-  const url = new URL(`${HARTA_BLOCURI_MAP_BASE_URL}/locations`);
-  url.searchParams.set('filters', JSON.stringify({ 'Adresă': { type: 'exact', value: query } }));
+  const url = new URL(`${HARTA_BLOCURI_API_BASE_URL}/filter`);
+  url.searchParams.set('filters', JSON.stringify([{ colN: 2, type: 'text', value: query }]));
   const response = await fetchWithTimeout(url.toString(), 45_000, signal);
 
   if (!response.ok) {
-    throw new HartaBlocuriLookupError(response.status === 429
-      ? 'HartaBlocuri.ro a limitat temporar numărul de verificări. Încearcă din nou mai târziu.'
-      : 'HartaBlocuri.ro nu a putut fi accesat momentan.');
+    if (response.status === 429) {
+      throw new HartaBlocuriLookupError('HartaBlocuri.ro a limitat temporar numărul de verificări. Încearcă din nou mai târziu.');
+    }
+    if (response.status === 403) {
+      throw new HartaBlocuriLookupError('HartaBlocuri.ro solicită momentan o verificare anti-robot și nu poate fi interogat automat.');
+    }
+    throw new HartaBlocuriLookupError('HartaBlocuri.ro nu a putut fi accesat momentan.');
   }
 
   const contentLength = Number(response.headers.get('content-length') || 0);
@@ -275,14 +303,15 @@ async function fetchCandidates(query: string, signal?: AbortSignal) {
   }
 
   try {
-    return selectHartaBlocuriCandidates(JSON.parse(responseText) as HartaBlocuriFeatureCollection, query);
+    const ids = parseFilteredCandidateIds(JSON.parse(responseText) as HartaBlocuriFilterPayload);
+    return ids.map((id) => ({ id, title: '' }));
   } catch {
     throw new HartaBlocuriLookupError('HartaBlocuri.ro a trimis un răspuns care nu poate fi procesat.');
   }
 }
 
 async function fetchDetails(candidate: HartaBlocuriCandidate, query: string, signal?: AbortSignal) {
-  const response = await fetchWithTimeout(`${HARTA_BLOCURI_MAP_BASE_URL}/locations/${candidate.id}`, 12_000, signal);
+  const response = await fetchWithTimeout(`${HARTA_BLOCURI_API_BASE_URL}/locations/${candidate.id}`, 12_000, signal);
   if (!response.ok) return null;
   try {
     return buildHartaBlocuriResult(candidate, await response.json(), query);

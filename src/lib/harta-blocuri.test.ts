@@ -74,4 +74,30 @@ describe('HartaBlocuri address lookup', () => {
       exactMatch: true,
     });
   });
+
+  it('parses the current Byteremix details payload', () => {
+    const rawDetails = {
+      title: '-',
+      fields: [
+        { label: 'Adresă', value: 'Strada Poiana Narciselor nr. 8' },
+        { label: 'Nume', value: 'Bloc fără număr' },
+        { label: 'Anul finalizării', value: '1960 conform AMCCRS' },
+        { label: 'Apartamente', value: '56 <span>apartamente</span>' },
+      ],
+    };
+    const details = parseHartaBlocuriDetails(rawDetails);
+    const result = buildHartaBlocuriResult({
+      id: 8904,
+      title: '',
+    }, rawDetails, 'Strada Poiana Narciselor nr. 8');
+
+    expect(details).toContainEqual({ label: 'Apartamente', value: '56 apartamente' });
+    expect(result).toMatchObject({
+      id: 8904,
+      name: 'Bloc fără număr',
+      constructionYear: '1960 conform AMCCRS',
+      exactMatch: true,
+      sourceUrl: 'https://pin.byteremix.com/maps/980178c0-a348-4a1b-a17b-9d8f234f46d7?id=8904',
+    });
+  });
 });
