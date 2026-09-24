@@ -148,6 +148,10 @@ export async function GET(
 
     await page.setContent(html, { waitUntil: 'networkidle', timeout: 30000 });
     await page.emulateMedia({ media: 'print' });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await Promise.all(Array.from(document.images, (image) => image.decode()));
+    });
 
     const pdfBytes = await page.pdf({
       format: 'A4',

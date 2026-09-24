@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createCanvas} from '@napi-rs/canvas';
+import jsQR from 'jsqr';
+import {getDocument} from 'pdfjs-dist/legacy/build/pdf.mjs';
+const doc=await getDocument({data:new Uint8Array(fs.readFileSync('tmp/presentation-qr-qa.pdf')),useSystemFonts:true}).promise;
+const page=await doc.getPage(1);const viewport=page.getViewport({scale:2});
+const canvas=createCanvas(Math.ceil(viewport.width),Math.ceil(viewport.height));const context=canvas.getContext('2d');
+await page.render({canvasContext:context,viewport}).promise;
+const pixels=context.getImageData(0,0,canvas.width,canvas.height);
+const decoded=jsQR(pixels.data,canvas.width,canvas.height);
+assert.equal(decoded?.data,'https://example.com/property/qa');
+fs.writeFileSync('tmp/presentation-qr-qa-render.png',canvas.toBuffer('image/png'));
+console.log('Actual PDF QR decoded correctly at A4 144 dpi:',decoded.data);
+const text=await page.getTextContent();assert(text.items.some(i=>i.str.includes('Pagina')));console.log('Diacritics and text extraction available; pages:',doc.numPages);

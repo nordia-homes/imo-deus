@@ -1,0 +1,81 @@
+{
+  "property": {
+    "id": "0m28BP8YDRXj0RD2wFR7",
+    "images": [
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2Fd7570e4f-12ea-4aa5-a10e-aa89d83b9b14.jpg?alt=media&token=7b989717-6662-45af-9956-e862688fcf43",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 1",
+        "localPath": "tmp/presentation-photos/photo-1.jpg",
+        "sha256": "59ccc65d8477d9653a6728b11f9d3f78e5e1b3fc1c1f179413f4bdee616a406d"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2F0ca1d0d6-c179-434f-aa82-f615becf6b1b.jpg?alt=media&token=fcad60bf-dfc3-43f1-9028-d92cd9c6e25c",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 2",
+        "localPath": "tmp/presentation-photos/photo-2.jpg",
+        "sha256": "f1e20b62c7d890b771f088ca61174b8b4d6b76a1a88616ffeeaa77181f09b7d5"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2F6a340a9a-300c-4bc4-8d99-26043d2a8c78.jpg?alt=media&token=6673ed65-78a9-461b-b52b-ec8a7c385deb",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 3",
+        "localPath": "tmp/presentation-photos/photo-3.jpg",
+        "sha256": "92caa90db5e89e68e4aa8f2e15e289e4570d9478c27d4b8613ee4bc04ff7f498"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2F2d8bc785-d0c3-4418-a0ad-bf69ea94c802.jpg?alt=media&token=d7622e4a-8ac7-4ace-9ead-7a763599217f",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 4",
+        "localPath": "tmp/presentation-photos/photo-4.jpg",
+        "sha256": "49ea0a49cc27d463df0bb5d9ac32e004f7d54f22b1f317735ab7c204f52fb18e"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2Fb8ecf1d4-e82f-4308-a502-80405c51fb5a.jpg?alt=media&token=10f2703a-14a8-4bfa-a0e1-02448dc4f013",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 5",
+        "localPath": "tmp/presentation-photos/photo-5.jpg",
+        "sha256": "296df7424b1e61c4d17caab600de43eae2cb8b2cae2e1e7d1e2c9a01e24d4b91"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2F819b4576-7b78-4ced-a092-a7d1594a062a.jpg?alt=media&token=7a77497b-cc87-4b31-947d-3ba1eefb013c",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 6",
+        "localPath": "tmp/presentation-photos/photo-6.jpg",
+        "sha256": "3ac28f97b5ff30eb41364492c8564e820c144910c8097571fc96b1497a5c5fb7"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2Fb9a993cd-aff6-4822-9d2a-a38fc7406ad2.jpg?alt=media&token=30a862b9-8beb-4e65-abea-4efea8d80779",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 7",
+        "localPath": "tmp/presentation-photos/photo-7.jpg",
+        "sha256": "53119ad0ac48ca1924700cae0d80ffb620b51714786761d9b17822c4c50f8fc0"
+      },
+      {
+        "url": "https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/agencies%2FlTLGa8vkfrQOEZQ9iQwW%2Fproperties%2FlzDHhGnAlnGxzPiUzEP6%2F2dc24c71-bf7d-409f-a868-cb8fd1e4fa37.jpg?alt=media&token=350e3e66-1357-4537-a348-aa3e4169280a",
+        "alt": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014 - imagine 8",
+        "localPath": "tmp/presentation-photos/photo-8.jpg",
+        "sha256": "70ed98d21dc206990553ed7ce1c3610201d2297daa5464f28c5faff9b34bcb29"
+      }
+    ],
+    "rooms": 3,
+    "address": "Strada Ion Conea 12-14",
+    "constructionYear": 2014,
+    "city": "Bucuresti-Ilfov",
+    "agentName": "Mirela",
+    "title": "Apartament 3 camere decomandat | 2 Băi | Centrală proprie-Șoseaua Alexandriei – Ion Conea | Bloc 2014",
+    "bathrooms": 2,
+    "transactionType": "Vânzare",
+    "squareFootage": 73,
+    "zone": "Bucureşti Sectorul 5",
+    "price": 134800,
+    "totalSurface": 79,
+    "propertyType": "Apartament",
+    "partitioning": "Decomandat",
+    "location": "Bucureşti Sectorul 5, Bucuresti-Ilfov"
+  },
+  "agency": {
+    "id": "lTLGa8vkfrQOEZQ9iQwW",
+    "name": "Nordia Homes",
+    "customDomain": "nordia.ro"
+  },
+  "agent": {
+    "name": "Mirela",
+    "phone": "+40 744 128 805",
+    "email": "nordia.vanzari@gmail.com"
+  },
+  "publicPropertyUrl": "https://nordia.ro/properties/0m28BP8YDRXj0RD2wFR7"
+}

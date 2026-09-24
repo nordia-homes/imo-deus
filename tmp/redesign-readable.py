@@ -1,175 +1,14 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import QRCode from 'qrcode';
-import type { Agency, Property, UserProfile } from '@/lib/types';
-import type { NearbyObjective } from '@/lib/property-presentations/nearby-google';
-
-export type PropertyPresentationTemplateInput = {
-  property: Property;
-  agency: Agency | null;
-  agent: UserProfile | null;
-  generatedAt: Date;
-  publicPropertyUrl?: string | null;
-  nearbyObjectives?: NearbyObjective[];
-};
-
-const escapeHtml = (value: unknown) => String(value ?? '')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-const clean = (value: unknown) => String(value ?? '').replace(/\s+/g, ' ').trim();
-
-let embeddedFont: string | undefined;
-function presentationFont() {
-  // Embedded, licensed font: identical glyphs and metrics on Windows and Linux.
-  embeddedFont ??= fs.readFileSync(path.join(process.cwd(), 'public/fonts/manrope/Manrope.ttf')).toString('base64');
-  return `@font-face{font-family:Presentation;src:url(data:font/ttf;base64,${embeddedFont}) format('truetype');font-weight:200 800;font-style:normal;font-display:block;}`;
-}
-
-function renderQr(url: string) {
-  const { modules } = QRCode.create(url, { errorCorrectionLevel: 'M' });
-  const quietZone = 4;
-  const size = modules.size + quietZone * 2;
-  const cells: string[] = [];
-  for (let y = 0; y < modules.size; y++) {
-    for (let x = 0; x < modules.size; x++) {
-      if (modules.get(y, x)) cells.push(`M${x + quietZone} ${y + quietZone}h1v1h-1z`);
-    }
-  }
-  return `<svg class="qr-code" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" role="img" aria-label="Cod QR pentru pagina proprietății" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path fill="#202820" d="${cells.join('')}"/></svg>`;
-}
-
-function shorten(value: unknown, max: number) {
-  const text = clean(value);
-  if (text.length <= max) return text;
-  return `${text.slice(0, max - 1).replace(/\s+\S*$/, '').trim()}…`;
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 1 }).format(value);
-}
-
-function positive(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0;
-}
-
-function unique(values: Array<string | null | undefined>, limit: number) {
-  return Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, limit);
-}
-
-function safeUrl(value: unknown) {
-  const url = clean(value);
-  try {
-    const parsed = new URL(url);
-    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
-  } catch {
-    return '';
-  }
-}
-
-function imageUrl(value: unknown) {
-  const url = clean(value);
-  return safeUrl(url) || (/^data:image\/(png|jpe?g|webp);base64,/i.test(url) ? url : '');
-}
-
-function icon(name: 'home' | 'pin' | 'arrow' | 'area' | 'rooms' | 'bath' | 'building' | 'key' | 'heat' | 'floor' | 'leaf' | 'phone') {
-  const paths = {
-    home: '<path d="m3 11 9-8 9 8M6 10v11h12V10M10 21v-7h4v7"/>',
-    pin: '<path d="M12 22s7-6 7-13A7 7 0 1 0 5 9c0 7 7 13 7 13Z"/><circle cx="12" cy="9" r="2"/>',
-    arrow: '<path d="M4 12h16m-6-6 6 6-6 6"/>',
-    area: '<path d="M4 9V4h5m6 0h5v5m0 6v5h-5m-6 0H4v-5M8 8h8v8H8z"/>',
-    rooms: '<path d="M3 19V8h18v11M3 15h18M6 8V5h12v3M7 11h3m4 0h3M3 19v2m18-2v2"/>',
-    bath: '<path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5zm3 0V6a3 3 0 0 1 6 0M7 20v2m10-2v2"/>',
-    building: '<path d="M5 21V3h10v18m0-13h5v13M8 7h4m-4 4h4m-4 4h4m-4 4h4M2 21h21"/>',
-    key: '<circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-6-6 3-3m0 6 3-3"/>',
-    heat: '<path d="M6 21c-5-6 5-7 0-13m6 13c-5-6 5-7 0-13m6 13c-5-6 5-7 0-13M6 3v1m6-1v1m6-1v1"/>',
-    floor: '<path d="M2 21h5v-5h5v-5h5V6h5V2"/>',
-    leaf: '<path d="M21 3C11 2 4 7 4 14s7 9 12 3c4-4 4-9 5-14ZM3 22C7 14 12 9 17 7"/>',
-    phone: '<path d="M5 3h4l2 5-3 2c2 4 4 6 7 7l2-3 4 2v4c0 2-3 2-5 1C8 19 3 13 3 6c0-2 1-3 2-3Z"/>',
-  };
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
-}
-
-function renderPhoto(photo: Property['images'][number] | undefined) {
-  return photo
-    ? `<img class="photo" src="${escapeHtml(photo.url)}" alt="${escapeHtml(photo.alt || 'Fotografie proprietate')}" />`
-    : `<div class="photo-empty">${icon('home')}<span>Fotografii disponibile la cerere</span></div>`;
-}
-
-/** A4 brochure with embedded typography, unique photographs and a local vector QR. */
-export function renderPropertyPresentationHtml(input: PropertyPresentationTemplateInput) {
-  const { property, agency, agent, generatedAt, nearbyObjectives = [] } = input;
-  const seen = new Set<string>();
-  const images = (property.images || []).flatMap((photo) => {
-    const url = imageUrl(photo.url);
-    if (!url || seen.has(url)) return [];
-    seen.add(url);
-    return [{ ...photo, url }];
-  });
-  const agencyName = clean(agency?.name) || 'ImoDeus';
-  const agentName = clean(agent?.name || property.agentName || property.agent?.name) || 'Consultant imobiliar';
-  const agentPhone = clean(agent?.phone || agency?.phone);
-  const agentEmail = clean(agent?.email || agency?.email);
-  const publicUrl = safeUrl(input.publicPropertyUrl);
-  const qrSvg = publicUrl ? renderQr(publicUrl) : '';
-  const location = unique([property.zone || property.location, property.city], 2).join(' · ');
-  const address = unique([property.address, property.city], 2).join(', ') || 'Adresa disponibilă la cerere';
-  const isRental = /inchir|închir|rent/i.test(property.transactionType || '');
-  const transaction = isRental ? 'De închiriat' : /v[aâ]nz/i.test(property.transactionType || '') ? 'De vânzare' : clean(property.transactionType) || 'Prezentare proprietate';
-  const propertyType = shorten(property.propertyType, 40);
-  const headline = propertyType || shorten(property.title, 70) || 'Proprietate';
-  const roomHeadline = positive(property.rooms) ? `${formatNumber(property.rooms)} ${property.rooms === 1 ? 'cameră' : 'camere'}` : '';
-  const secondaryHeadline = roomHeadline || shorten(property.partitioning, 36);
-  const titleSize = headline.length > 38 ? ' title-small' : headline.length > 23 ? ' title-medium' : '';
-  const surface = positive(property.squareFootage) ? property.squareFootage : property.totalSurface;
-  const price = positive(property.price)
-    ? `${new Intl.NumberFormat('ro-RO', { maximumFractionDigits: 0 }).format(property.price)} €`
-    : 'La cerere';
-  const commissionValue = property.buyerCommissionValue;
-  const commission = typeof commissionValue === 'number' && Number.isFinite(commissionValue) && commissionValue >= 0
-    && (commissionValue === 0 || property.buyerCommissionType)
-    ? `Comision ${isRental ? 'chiriaș' : 'cumpărător'}: ${formatNumber(commissionValue)}${commissionValue === 0 || property.buyerCommissionType === 'percentage' ? '%' : ' €'}`
-    : '';
-  const specs = [
-    positive(surface) ? { icon: 'area' as const, value: formatNumber(surface), unit: 'm²', label: positive(property.squareFootage) ? 'Suprafață utilă' : 'Suprafață construită' } : null,
-    positive(property.rooms) ? { icon: 'rooms' as const, value: formatNumber(property.rooms), unit: '', label: property.rooms === 1 ? 'Cameră' : 'Camere' } : null,
-    positive(property.bathrooms) ? { icon: 'bath' as const, value: formatNumber(property.bathrooms), unit: '', label: property.bathrooms === 1 ? 'Baie' : 'Băi' } : null,
-    positive(property.constructionYear) ? { icon: 'building' as const, value: String(property.constructionYear), unit: '', label: 'An construcție' } : null,
-  ].filter((item) => item !== null);
-  const features = unique([
-    ...(property.keyFeatures || '').split(/[,;\n]/),
-    ...(property.amenities || []),
-  ], 8);
-  const nearby = nearbyObjectives.slice(0, 4);
-  const logoUrl = imageUrl(agency?.logoUrl);
-  const brand = `<div class="brand">${logoUrl ? `<img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="" />` : `<span class="brand-mark">${icon('home')}</span>`}<span>${escapeHtml(shorten(agencyName, 48))}</span></div>`;
-  const date = Number.isFinite(generatedAt.getTime())
-    ? new Intl.DateTimeFormat('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(generatedAt)
-    : '';
-  const photoGroups: Property['images'][] = [];
-  for (let index = 4; index < images.length; index += 3) photoGroups.push(images.slice(index, index + 3));
-  const coverGallery = images.slice(1, 4);
-  const photoCaption = (photo: Property['images'][number], number: number, max: number) => {
-    const alt = clean(photo.alt);
-    const generatedAlt = alt === clean(property.title) || /\s[-–—]\s*imagine\s*\d+$/i.test(alt);
-    return !alt || generatedAlt ? `Fotografie ${String(number).padStart(2, '0')}` : shorten(alt, max);
-  };
-  const pageCount = 1 + photoGroups.length;
-  const footer = (page: number) => `<footer class="footer"><span>${escapeHtml(shorten(agencyName, 40))} · ${escapeHtml(date)}</span><span>${String(page).padStart(2, '0')} / ${String(pageCount).padStart(2, '0')}</span></footer>`;
-  const contact = `<div class="contact">
-    <div class="contact-invite"><span class="eyebrow">Hai să o descoperi</span><h2>Programează<br />o vizionare <span class="inline-arrow">${icon('arrow')}</span></h2></div>
-    <div class="contact-person"><strong>${escapeHtml(shorten(agentName, 64))}</strong>${agentPhone ? `<a class="contact-phone" href="tel:${escapeHtml(agentPhone.replace(/[^+\d]/g, ''))}">${escapeHtml(agentPhone)}</a>` : ''}${agentEmail ? `<a class="contact-email" href="mailto:${escapeHtml(agentEmail)}">${escapeHtml(agentEmail)}</a>` : ''}${!agentPhone && !agentEmail ? `<span class="contact-email">Contactează ${escapeHtml(agencyName)}</span>` : ''}</div>
-  </div>`;
-  const online = publicUrl
-    ? `<a class="online-panel" href="${escapeHtml(publicUrl)}">${qrSvg}<div><h2>Pagina<br />proprietății</h2><p>Scanează codul<br />pentru fotografii<br />și detalii complete.</p><span class="online-link">Deschide online ↗</span></div></a>`
-    : `<div class="online-panel online-pending"><h2>Pagina proprietății</h2><p>Solicită consultantului linkul prezentării online.</p></div>`;
-
-  return `<!doctype html>
+from pathlib import Path
+p=Path('src/lib/property-presentations/pdf-template.ts')
+s=p.read_text(encoding='utf-8-sig')
+start=s.index('  return `<!doctype html>')
+s=s[:start]+r'''  return `<!doctype html>
 <html lang="ro"><head><meta charset="utf-8" /><title>${escapeHtml(property.title)} — prezentare</title>
 <style>
   ${presentationFont()}
   @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
-  :root { --paper: #faf7f0; --gold: #735329; --ink: #252a26; --muted: #50564f; --line: #c9b58f; }
+  :root { --paper: #faf7f0; --gold: #80602f; --ink: #252a26; --muted: #50564f; --line: #c9b58f; }
   html, body { margin: 0; background: #fff; color: var(--ink); font-family: Presentation, Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   a { color: inherit; text-decoration: none; }
   svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -286,7 +125,7 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
       <div class="price-card"><span class="eyebrow">${isRental ? 'Chirie lunară' : 'Preț de vânzare'}</span><strong class="price${price.length > 11 ? ' price-long' : ''}">${escapeHtml(price)}${isRental && positive(property.price) ? '<small> / lună</small>' : ''}</strong>${commission ? `<div class="commission">${escapeHtml(commission)}</div>` : ''}</div>
     </div>
     <div class="specs${specs.length ? '' : ' specs-empty'}" style="--count:${specs.length || 1}">${specs.length ? specs.map((spec) => `<div class="spec"><i class="spec-icon">${icon(spec.icon)}</i><div><strong>${escapeHtml(spec.value)}${spec.unit ? ` <small>${spec.unit}</small>` : ''}</strong><span class="spec-label">${escapeHtml(spec.label)}</span></div></div>`).join('') : 'Detalii despre proprietate, la cerere.'}</div>
-    ${coverGallery.length ? `<section class="cover-gallery"><div class="gallery-heading"><strong>Descoperă proprietatea</strong>${publicUrl ? `<a href="${escapeHtml(publicUrl)}">Toate fotografiile ↗</a>` : ''}</div><div class="cover-photos" style="--count:${coverGallery.length}">${coverGallery.map((photo, index) => `<figure><div class="cover-photo-frame">${renderPhoto(photo)}</div><figcaption>${escapeHtml(photoCaption(photo, index + 2, 30))}</figcaption></figure>`).join('')}</div></section>` : ''}
+    ${coverGallery.length ? `<section class="cover-gallery"><div class="gallery-heading"><strong>Descoperă proprietatea</strong>${publicUrl ? `<a href="${escapeHtml(publicUrl)}">Toate fotografiile ↗</a>` : ''}</div><div class="cover-photos" style="--count:${coverGallery.length}">${coverGallery.map((photo, index) => `<figure><div class="cover-photo-frame">${renderPhoto(photo)}</div><figcaption>${escapeHtml(shorten(photo.alt || `Fotografie ${index + 2}`, 30))}</figcaption></figure>`).join('')}</div></section>` : ''}
     <div class="information">
       <section class="nearby-panel"><h2 class="section-title"><i>${icon('pin')}</i>${nearby.length ? 'În apropiere' : 'Localizare'}</h2>${nearby.length ? `${nearby.map((item) => `<div class="nearby-row"><strong>${escapeHtml(shorten(item.name, 45))}</strong><span>${escapeHtml(formatNumber(item.walkingMinutes))} min</span></div>`).join('')}<p class="nearby-note">Timp estimat de mers pe jos.</p>` : `<p class="area-address">${escapeHtml(shorten(address, 110))}</p>`}</section>
       ${online}
@@ -296,9 +135,11 @@ export function renderPropertyPresentationHtml(input: PropertyPresentationTempla
   ${photoGroups.map((group, pageIndex) => `<section class="page gallery-page">
     <header class="masthead">${brand}<div class="masthead-note">${escapeHtml(shorten(location || headline, 65))}<br />Galerie foto</div></header>
     <div class="gallery-intro"><span class="eyebrow">${escapeHtml(transaction)} · ${escapeHtml(headline)}${roomHeadline ? ` · ${escapeHtml(roomHeadline)}` : ''}</span><h2>Proprietatea, în imagini.</h2></div>
-    <div class="gallery" data-count="${group.length}">${group.map((photo, index) => `<figure><div class="gallery-image">${renderPhoto(photo)}</div><figcaption><b>${String(pageIndex * 3 + index + 5).padStart(2, '0')}</b>${escapeHtml(photoCaption(photo, pageIndex * 3 + index + 5, 72))}</figcaption></figure>`).join('')}</div>
+    <div class="gallery" data-count="${group.length}">${group.map((photo, index) => `<figure><div class="gallery-image">${renderPhoto(photo)}</div><figcaption><b>${String(pageIndex * 3 + index + 5).padStart(2, '0')}</b>${escapeHtml(shorten(photo.alt || property.title, 72))}</figcaption></figure>`).join('')}</div>
     ${features.length && pageIndex === 0 ? `<div class="gallery-details">${features.map((feature) => `<span>${escapeHtml(shorten(feature, 65))}</span>`).join('')}</div>` : ''}
     ${contact}${footer(pageIndex + 2)}
   </section>`).join('')}
 </body></html>`;
 }
+'''
+p.write_text(s,encoding='utf-8')
