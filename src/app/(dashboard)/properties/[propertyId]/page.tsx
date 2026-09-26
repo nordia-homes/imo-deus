@@ -3,9 +3,9 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import type { Property, Viewing, Contact, MatchedBuyer } from "@/lib/types";
+import type { Property, Viewing, Contact } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
-import { buyerMatcherFromProperty } from '@/ai/flows/property-matcher';
+import { usePropertyBuyerMatches } from '@/hooks/use-property-buyer-matches';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 
 // UI Components
@@ -24,7 +24,6 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Accordion,
   AccordionContent,
@@ -45,14 +44,12 @@ import { PriceStatusCard } from '@/components/properties/detail/actions/PriceSta
 import { AgentCard } from '@/components/properties/detail/actions/AgentCard';
 import { ScheduledViewingsCard } from '@/components/properties/detail/actions/ScheduledViewingsCard';
 import { PotentialBuyersCard } from '@/components/properties/detail/actions/PotentialBuyersCard';
-import { CmaCard } from '@/components/properties/detail/actions/CmaCard';
 import { PublishCard } from '@/components/properties/detail/actions/PublishCard';
-import { FacebookPromotionCard } from '@/components/properties/detail/actions/FacebookPromotionCard';
-import { FacebookGroupPromotionLauncherCard } from '@/components/properties/detail/actions/FacebookGroupPromotionLauncherCard';
+import { TikTokAdsCard } from '@/components/properties/detail/actions/TikTokAdsCard';
+import { TikTokOrganicPublishingCard } from '@/components/properties/detail/actions/TikTokOrganicPublishingCard';
 import { MetaAdsCard } from '@/components/properties/detail/actions/MetaAdsCard';
 import { FacebookCloudPublishingCard } from '@/components/properties/detail/actions/FacebookCloudPublishingCard';
 import { SocialMediaCard } from '@/components/properties/detail/actions/SocialMediaCard';
-import { WebsiteToggleCard } from '@/components/properties/detail/actions/WebsiteToggleCard';
 import { PropertyNotesCard } from '@/components/properties/detail/actions/PropertyNotesCard';
 import { NearbyObjectivesCard } from '@/components/properties/detail/actions/NearbyObjectivesCard';
 import { MatchedLeadsTab } from '@/components/properties/detail/MatchedLeadsTab';
@@ -92,12 +89,15 @@ export default function PropertyDetailPage() {
     const { agents, error: agentsError } = useAgencyAgents({ enabled: Boolean(agencyId) });
 
     const [isAddViewingOpen, setIsAddViewingOpen] = useState(false);
-    const [matchedBuyers, setMatchedBuyers] = useState<MatchedBuyer[]>([]);
     const isMobile = useIsMobile();
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-    const [shouldLoadBuyerMatches, setShouldLoadBuyerMatches] = useState(false);
+    const buyerMatchScope = JSON.stringify([agencyId, user?.uid, propertyId]);
+    const [preparedBuyerScope, setPreparedBuyerScope] = useState<string | null>(null);
+    const [contactsAttempt, setContactsAttempt] = useState(0);
+    const shouldLoadBuyerMatches = preparedBuyerScope === buyerMatchScope;
+    const requestBuyerMatches = () => setPreparedBuyerScope(buyerMatchScope);
     const TRUNCATION_LENGTH = 500;
 
     const propertyDocRef = useMemoFirebase(() => {
@@ -115,8 +115,18 @@ export default function PropertyDetailPage() {
     const allContactsQuery = useMemoFirebase(() => {
         if (!agencyId || (!isAddViewingOpen && !shouldLoadBuyerMatches)) return null;
         return collection(firestore, 'agencies', agencyId, 'contacts');
-    }, [firestore, agencyId, isAddViewingOpen, shouldLoadBuyerMatches]);
-    const { data: allContacts } = useCollection<Contact>(allContactsQuery);
+    }, [firestore, agencyId, isAddViewingOpen, shouldLoadBuyerMatches, contactsAttempt]);
+    const { data: allContacts, error: contactsError } = useCollection<Contact>(allContactsQuery);
+    const { matchedBuyers, isMatching, matchingError, retryMatches } = usePropertyBuyerMatches(
+        buyerMatchScope, property, allContacts, shouldLoadBuyerMatches && Boolean(user && agencyId),
+    );
+    const buyerMatchesError = contactsError ? 'Lista cumpărătorilor nu a putut fi încărcată.' : matchingError;
+    const isLoadingBuyerMatches = !buyerMatchesError && isMatching;
+    const handleRequestBuyerMatches = () => {
+        requestBuyerMatches();
+        if (contactsError) setContactsAttempt((value) => value + 1);
+        if (matchingError) retryMatches();
+    };
 
     useEffect(() => {
         if (!agentsError) return;
@@ -128,28 +138,21 @@ export default function PropertyDetailPage() {
         return agents.find((agent) => agent.id === property.agentId) || null;
     }, [agents, property?.agentId]);
 
+    // Let the property render first; prepare the full recommendation during idle
+    // time instead of making the user start both the contact fetch and AI call.
+    const loadedPropertyId = property?.id;
+    const matchingUserId = user?.uid;
     useEffect(() => {
-        if (!property || !allContacts) {
-            return;
+        if (!loadedPropertyId || isPropertyLoading || isAgencyLoading || !matchingUserId || !agencyId || shouldLoadBuyerMatches) return;
+        const prepare = () => setPreparedBuyerScope(buyerMatchScope);
+        if (typeof window.requestIdleCallback === 'function') {
+            const idleId = window.requestIdleCallback(prepare, { timeout: 1200 });
+            return () => window.cancelIdleCallback(idleId);
         }
+        const timerId = window.setTimeout(prepare, 200);
+        return () => window.clearTimeout(timerId);
+    }, [loadedPropertyId, isPropertyLoading, isAgencyLoading, matchingUserId, agencyId, buyerMatchScope, shouldLoadBuyerMatches]);
 
-        let isCancelled = false;
-        buyerMatcherFromProperty(property, allContacts)
-            .then((result) => {
-                if (isCancelled) return;
-                setMatchedBuyers(result.matchedBuyers || []);
-            })
-            .catch((error) => {
-                if (isCancelled) return;
-                console.error('Automatic OpenAI buyer matching failed:', error);
-                setMatchedBuyers([]);
-            });
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [property, allContacts]);
-    
     const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
         if (!agencyId || !user || !property) return;
         
@@ -188,7 +191,7 @@ export default function PropertyDetailPage() {
         return (
           <div className="agentfinder-property-detail-page agentfinder-property-detail-mobile bg-[#0F1E33] -mt-6 pb-6 min-h-screen">
              <div className="space-y-4">
-                 <MediaColumn property={property} shareUrl={publicPropertyUrl} />
+                 <MediaColumn property={property} shareUrl={publicPropertyUrl} showMobileActions />
 
                 <div className="space-y-4 px-2">
                     <Card className={`${ACTION_CARD_CLASSNAME} rounded-[1.55rem]`}>
@@ -270,13 +273,6 @@ export default function PropertyDetailPage() {
                                                 {isDescriptionExpanded ? 'Citește mai puțin' : 'Citește toată descrierea'}
                                             </Button>
                                         )}
-                                         {property.amenities && property.amenities.length > 0 && (
-                                            <div className="mt-4 flex flex-wrap gap-2">
-                                                {property.amenities.map(amenity => (
-                                                    <Badge key={amenity} variant="secondary" className="bg-white/10 text-white border-none">{amenity}</Badge>
-                                                ))}
-                                            </div>
-                                         )}
                                     </AccordionContent>
                                 </AccordionItem>
                             </Card>
@@ -323,16 +319,14 @@ export default function PropertyDetailPage() {
                         </Accordion>
                         
                         <div className="pt-4 space-y-4">
-                            <CmaCard property={property} allProperties={[]} />
                             <PublishCard property={property} />
                             <MetaAdsCard property={property} />
                             <FacebookCloudPublishingCard property={property} />
-                            <FacebookGroupPromotionLauncherCard property={property} />
-                            <FacebookPromotionCard />
                             <SocialMediaCard property={property} />
-                            <WebsiteToggleCard property={property} />
+                            <TikTokAdsCard property={property} />
+                            <TikTokOrganicPublishingCard property={property} />
                             <PropertyNotesCard property={property} />
-                             <PotentialBuyersCard matchedBuyers={matchedBuyers} onRequestMatches={() => setShouldLoadBuyerMatches(true)} />
+                             <PotentialBuyersCard matchedBuyers={matchedBuyers} onRequestMatches={handleRequestBuyerMatches} isLoading={isLoadingBuyerMatches} error={buyerMatchesError} />
                              <ScheduledViewingsCard viewings={viewings || []} />
                         </div>
                     </div>
@@ -375,7 +369,9 @@ export default function PropertyDetailPage() {
                             property={property}
                             matchedBuyers={matchedBuyers}
                             viewings={viewings || []}
-                            onRequestBuyerMatches={() => setShouldLoadBuyerMatches(true)}
+                            onRequestBuyerMatches={handleRequestBuyerMatches}
+                            isLoadingBuyerMatches={isLoadingBuyerMatches}
+                            buyerMatchesError={buyerMatchesError}
                         />
                     </div>
 

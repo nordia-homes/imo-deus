@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, ArrowRight } from 'lucide-react';
+import { Users, ArrowRight, Loader2 } from 'lucide-react';
 import type { MatchedBuyer } from '@/lib/types';
 import Link from 'next/link';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from './cardStyles';
@@ -10,6 +10,8 @@ import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from './cardStyles
 interface PotentialBuyersCardProps {
   matchedBuyers: MatchedBuyer[];
   onRequestMatches?: () => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty', value: number) => {
@@ -59,17 +61,17 @@ const formatZoneReasoning = (zoneReasoning?: string | null) => {
   return (hasExactMatch ? ['Exact Match', ...parts] : parts).join(' · ');
 };
 
-export function PotentialBuyersCard({ matchedBuyers, onRequestMatches }: PotentialBuyersCardProps) {
+export function PotentialBuyersCard({ matchedBuyers, onRequestMatches, isLoading = false, error }: PotentialBuyersCardProps) {
   return (
     <Card className={ACTION_CARD_CLASSNAME}>
       <CardHeader className="px-3 pt-3 pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-semibold flex items-center gap-2">
           <Users className="h-4 w-4" />
-          Cumpărători Potriviți ({matchedBuyers.length})
+          Cumpărători Potriviți{!isLoading && !error ? ` (${matchedBuyers.length})` : ''}
         </CardTitle>
         {onRequestMatches ? (
-          <Button type="button" variant="link" size="sm" className="text-white text-xs px-0" onClick={onRequestMatches}>
-            Calculeaza
+          <Button type="button" variant="link" size="sm" className="text-white text-xs px-0" onClick={onRequestMatches} disabled={isLoading}>
+            {isLoading ? 'Se calculează…' : error ? 'Reîncearcă' : 'Calculează'}
           </Button>
         ) : (
           <Button asChild variant="link" size="sm" className="text-white text-xs px-0">
@@ -80,7 +82,11 @@ export function PotentialBuyersCard({ matchedBuyers, onRequestMatches }: Potenti
         )}
       </CardHeader>
       <CardContent className="px-3 pb-3 pt-0">
-        {matchedBuyers.length > 0 ? (
+        {error ? (
+          <p role="alert" className="py-4 text-center text-sm text-white/70">{error}</p>
+        ) : isLoading ? (
+          <p role="status" className="flex items-center justify-center gap-2 py-4 text-sm text-white/70"><Loader2 className="h-4 w-4 animate-spin shrink-0" />Se pregătesc recomandările…</p>
+        ) : matchedBuyers.length > 0 ? (
           <div className="space-y-2">
             {matchedBuyers.slice(0, 3).map((lead) => (
               <Link

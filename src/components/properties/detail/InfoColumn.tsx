@@ -26,11 +26,15 @@ export function InfoColumn({
     matchedBuyers,
     viewings,
     onRequestBuyerMatches,
+    isLoadingBuyerMatches = false,
+    buyerMatchesError,
 }: {
     property: Property,
     matchedBuyers: MatchedBuyer[],
     viewings: Viewing[],
     onRequestBuyerMatches?: () => void,
+    isLoadingBuyerMatches?: boolean,
+    buyerMatchesError?: string | null,
 }) {
     const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -128,17 +132,6 @@ export function InfoColumn({
                                     </Button>
                                 )}
                             </div>
-                             {property.amenities && property.amenities.length > 0 && (
-                                <div className="mt-6">
-                                     <div className="flex flex-wrap gap-2">
-                                        {property.amenities.map(amenity => (
-                                            <Button key={amenity} variant="outline" size="sm" className="pointer-events-none cursor-default bg-muted lg:bg-white/10 lg:border-white/20">
-                                                {amenity}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                     <div className="hidden lg:block h-[448px]">
@@ -152,7 +145,7 @@ export function InfoColumn({
                     </div>
                 </TabsContent>
                 <TabsContent value="leads" className="mt-5">
-                    <MatchedLeadsTab matchedBuyers={matchedBuyers} />
+                    <MatchedLeadsTab matchedBuyers={matchedBuyers} isLoading={isLoadingBuyerMatches} error={buyerMatchesError} onRetry={onRequestBuyerMatches} />
                 </TabsContent>
                 <TabsContent value="viewings" className="mt-5">
                     <Card className="agentfinder-property-info-card rounded-2xl shadow-2xl bg-[#f8f8f9] lg:bg-[#152A47] lg:text-white lg:border-none">

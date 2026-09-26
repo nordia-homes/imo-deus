@@ -4,7 +4,7 @@ import type { MatchedBuyer } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, User } from 'lucide-react';
+import { ArrowRight, User, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -17,6 +17,9 @@ import {
 
 interface MatchedLeadsTabProps {
   matchedBuyers: MatchedBuyer[];
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 const toneClass = (label: 'exact' | 'adjacent' | 'cluster' | 'macro' | 'penalty', value: number) => {
@@ -66,7 +69,13 @@ const formatZoneReasoning = (zoneReasoning?: string | null) => {
   return (hasExactMatch ? ['Exact Match', ...parts] : parts).join(' · ');
 };
 
-export function MatchedLeadsTab({ matchedBuyers }: MatchedLeadsTabProps) {
+export function MatchedLeadsTab({ matchedBuyers, isLoading = false, error, onRetry }: MatchedLeadsTabProps) {
+  if (error) {
+    return <div role="alert" className="py-10 text-center"><p>{error}</p>{onRetry && <Button variant="link" onClick={onRetry}>Încearcă din nou</Button>}</div>;
+  }
+  if (isLoading) {
+    return <div role="status" className="flex items-center justify-center gap-2 py-10 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Se pregătesc recomandările de cumpărători…</div>;
+  }
   if (matchedBuyers.length === 0) {
     return (
       <div className="text-center py-10 lg:text-white/70">

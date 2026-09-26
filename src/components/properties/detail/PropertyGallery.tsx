@@ -17,7 +17,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Grid, Heart, Play, Share2, X } from "lucide-react"
+import { ExternalLink, Grid, Heart, Play, Share2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -29,6 +29,8 @@ export function PropertyGallery({
   shareUrl,
   shareImageUrl,
   videoAction,
+  pdfAction,
+  ownerListingUrl,
   uploadedVideoUrl,
   uploadedVideoName,
 }: {
@@ -39,6 +41,8 @@ export function PropertyGallery({
   shareUrl?: string;
   shareImageUrl?: string;
   videoAction?: React.ReactNode;
+  pdfAction?: React.ReactNode;
+  ownerListingUrl?: string | null;
   uploadedVideoUrl?: string | null;
   uploadedVideoName?: string | null;
 }) {
@@ -50,6 +54,16 @@ export function PropertyGallery({
   const [isCopied, setIsCopied] = React.useState(false);
   const [isVideoOpen, setIsVideoOpen] = React.useState(false);
   const isMobile = useIsMobile();
+  const ownerListingHref = (() => {
+    const value = ownerListingUrl?.trim();
+    if (!value || (/^[a-z][a-z\d+.-]*:/i.test(value) && !/^https?:\/\//i.test(value))) return null;
+    try {
+      const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+      return (url.protocol === 'https:' || url.protocol === 'http:') && !url.username && !url.password ? url.href : null;
+    } catch {
+      return null;
+    }
+  })();
   const financeCardClassName = "overflow-hidden rounded-[2rem] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(135deg,rgba(7,18,12,0.96)_0%,rgba(10,10,12,0.98)_52%,rgba(16,24,18,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
 
   const handleShare = React.useCallback(async () => {
@@ -235,6 +249,13 @@ export function PropertyGallery({
             <Play className="ml-0.5 h-5 w-5 fill-current" />
           </Button>
         ) : null}
+        {ownerListingHref ? (
+          <Button asChild variant="secondary" size="icon" className="absolute right-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-white/12 text-white backdrop-blur-xl hover:bg-white/18 md:hidden">
+            <a href={ownerListingHref} target="_blank" rel="noopener noreferrer" aria-label="Deschide anunțul proprietarului" title="Deschide anunțul proprietarului">
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </Button>
+        ) : null}
         {showMatchPrompt ? (
           <div className={cn("absolute top-4 z-10 flex items-center gap-3 rounded-full border border-white/20 bg-black/24 px-4 py-2 text-white shadow-[0_16px_38px_-18px_rgba(0,0,0,0.6)] backdrop-blur-xl", uploadedVideoUrl ? "left-16" : "left-4")}>
             <span className="whitespace-nowrap text-sm font-medium leading-none text-white/92">Aceasta proprietate ti se potriveste?</span>
@@ -251,7 +272,8 @@ export function PropertyGallery({
             </Button>
           </div>
         ) : null}
-        <div className="absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs">
+        <div className={cn("absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
+          {pdfAction}
           {videoAction}
           <Button
             variant="secondary"

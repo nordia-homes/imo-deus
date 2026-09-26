@@ -2,6 +2,7 @@
 import type { Property } from "@/lib/types";
 import { PropertyGallery } from "./PropertyGallery";
 import { VideoTourCard } from "./actions/VideoTourCard";
+import { PresentationPdfButton } from "./actions/PresentationPdfButton";
 
 export function MediaColumn({
     property,
@@ -9,12 +10,14 @@ export function MediaColumn({
     showVideoTour = true,
     shareUrl,
     shareImageUrl,
+    showMobileActions = false,
 }: {
     property: Property;
     showMatchPrompt?: boolean;
     showVideoTour?: boolean;
     shareUrl?: string;
     shareImageUrl?: string;
+    showMobileActions?: boolean;
 }) {
     const propertyImages = (property.images || []).map(img => img.url).filter(Boolean);
     
@@ -27,6 +30,8 @@ export function MediaColumn({
                 showMatchPrompt={showMatchPrompt}
                 shareUrl={shareUrl}
                 shareImageUrl={shareImageUrl}
+                pdfAction={showMobileActions ? <PresentationPdfButton property={property} /> : null}
+                ownerListingUrl={showMobileActions ? property.ownerListingUrl : undefined}
                 videoAction={showVideoTour ? <VideoTourCard property={property} triggerVariant="gallery-button" /> : null}
                 uploadedVideoUrl={property.uploadedVideo?.url}
                 uploadedVideoName={property.uploadedVideo?.fileName}
