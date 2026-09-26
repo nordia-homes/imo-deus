@@ -1,5 +1,7 @@
 'use client';
 
+import { brandAssets } from '@/lib/brand-assets';
+
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,7 +55,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const ImobiliareLogo = () => (
   <img
-    src="/imobiliare-logo.svg"
+    src={brandAssets.imobiliare}
     alt="imobiliare.ro"
     className="h-[18px] w-auto max-w-[126px] object-contain"
   />
@@ -62,7 +64,7 @@ const ImobiliareLogo = () => (
 const StoriaLogo = () => (
   <span className="inline-flex min-w-0 flex-col items-start leading-none">
     <img
-      src="/storia-official-logo.svg"
+      src={brandAssets.storia}
       alt="Storia.ro"
       className="h-[22.5px] w-auto max-w-[97px] object-contain"
     />
@@ -73,7 +75,7 @@ const StoriaLogo = () => (
 const Publi24Logo = () => (
   <span className="inline-flex min-w-0 flex-col items-start leading-none">
     <img
-      src="/publi24-logo.svg"
+      src={brandAssets.publi24}
       alt="Publi24.ro"
       className="h-[21.5px] w-auto max-w-[97px] object-contain"
     />
@@ -99,7 +101,7 @@ const TrimbitasuLogo = () => (
     aria-label="TRÎMBIȚAȘU.RO"
   >
     <img
-      src="/trimbitasu-logo.png"
+      src={brandAssets.trimbitasu}
       alt=""
       aria-hidden="true"
       className="h-[21.5px] w-auto shrink-0 object-contain"

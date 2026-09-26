@@ -1,3 +1,4 @@
+import { brandAssets } from '@/lib/brand-assets';
 import Image from "next/image";
 import Link from "next/link";
 import { Fragment } from "react";
@@ -57,10 +58,10 @@ const heroStats = [
 ];
 
 const publishingPartners = [
-  { name: "Storia", logo: "/storia-official-logo.svg", width: 109, height: 30 },
-  { name: "Imobiliare.ro", logo: "/imobiliare-logo.svg", width: 148, height: 18 },
-  { name: "OLX", logo: "/olx-logo.svg", width: 92, height: 34 },
-  { name: "Publi24.ro", logo: "/publi24-logo.svg", width: 142, height: 26 },
+  { name: "Storia", logo: brandAssets.storia, width: 109, height: 30 },
+  { name: "Imobiliare.ro", logo: brandAssets.imobiliare, width: 148, height: 18 },
+  { name: "OLX", logo: brandAssets.olx, width: 92, height: 34 },
+  { name: "Publi24.ro", logo: brandAssets.publi24, width: 142, height: 26 },
 ];
 
 const proofSignals = [

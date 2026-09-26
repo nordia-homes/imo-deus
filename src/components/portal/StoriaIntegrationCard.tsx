@@ -1,5 +1,7 @@
 'use client';
 
+import { brandAssets } from '@/lib/brand-assets';
+
 import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, ExternalLink, Loader2, PlugZap, RefreshCcw, Unplug, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
@@ -198,7 +200,7 @@ export default function StoriaIntegrationCard({ listings, errors, lastSync, onSt
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex h-16 min-w-[64px] max-w-[120px] shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/90 bg-white/85 px-3 py-2 shadow-sm">
-              <img src="/storia-official-logo.svg" alt="storia.ro" className="h-8 w-auto object-contain" />
+              <img src={brandAssets.storia} alt="storia.ro" className="h-8 w-auto object-contain" />
             </span>
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Portal</p>

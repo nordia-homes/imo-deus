@@ -1,10 +1,12 @@
 'use client';
 
+import { brandAssets } from '@/lib/brand-assets';
+
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { HTMLAttributes } from 'react';
 
-const IMO_DEUS_LOGO_SRC = '/imodeus-logo.png';
+const IMO_DEUS_LOGO_SRC = brandAssets.imodeus;
 
 export function ImoDeusTextLogo({
   className,

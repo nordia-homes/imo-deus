@@ -251,22 +251,24 @@ export function PropertyGallery({
             </Button>
           </div>
         ) : null}
-        <div className="absolute bottom-4 right-4 z-10 flex max-w-[calc(100%-2rem)] flex-wrap items-center justify-end gap-2">
+        <div className="absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs">
           {videoAction}
           <Button
             variant="secondary"
-            className="rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"
+            className="w-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white md:w-auto"
+            aria-label={isCopied ? "Link copiat" : "Distribuie"}
+            title={isCopied ? "Link copiat" : "Distribuie"}
             onClick={handleShare}
           >
-            <Share2 className="mr-2 h-4 w-4" />
-            {isCopied ? "Link copiat" : "Distribuie"}
+            <Share2 className="h-4 w-4 md:mr-2" />
+            <span className="sr-only md:not-sr-only" aria-live="polite">{isCopied ? "Link copiat" : "Distribuie"}</span>
           </Button>
           <Button
             variant="secondary"
             className="rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white"
             onClick={() => handleOpenGallery(0)}
           >
-            <Grid className="mr-2 h-4 w-4" />
+            <Grid className="h-4 w-4 md:mr-2" />
             Vezi Fotografiile
           </Button>
         </div>

@@ -1,5 +1,7 @@
 'use client';
 
+import { brandAssets } from '@/lib/brand-assets';
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -100,7 +102,7 @@ function SidebarBrand() {
         className="absolute left-1/2 top-2 flex h-12 w-12 -translate-x-1/2 items-center justify-center overflow-hidden rounded-2xl"
       >
         <Image
-          src="/imodeus-sidebar-icon.png"
+          src={brandAssets.imodeusSidebar}
           alt=""
           width={44}
           height={44}

@@ -1,3 +1,4 @@
+import { brandAssets } from '@/lib/brand-assets';
 import type { Agency, ClientPortal, Property } from '@/lib/types';
 import type { Metadata } from 'next';
 import { firebaseConfig } from '@/firebase/config';
@@ -155,7 +156,7 @@ export function buildClientPortalMetadata({
     : agency?.customDomain
       ? `https://${getCanonicalCustomDomain(agency.customDomain)}`
       : getDefaultPublicBaseUrl();
-  const image = buildAbsoluteUrl(baseUrl, agency?.shareImageUrl || agency?.logoUrl) || `${baseUrl}/imodeus-logo.png`;
+  const image = buildAbsoluteUrl(baseUrl, agency?.shareImageUrl || agency?.logoUrl) || `${baseUrl}${brandAssets.imodeus}`;
   const url = baseUrl ? `${baseUrl}/portal/${portal.id}` : undefined;
 
   return {

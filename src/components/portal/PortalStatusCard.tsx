@@ -1,5 +1,7 @@
 'use client';
 
+import { brandAssets } from '@/lib/brand-assets';
+
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '../ui/card';
 import { ArrowUpRight, CheckCircle2, XCircle, AlertTriangle, Radio } from 'lucide-react';
@@ -15,8 +17,8 @@ interface PortalStatusCardProps {
 }
 
 const PORTAL_LOGOS: Record<string, { src: string; alt: string }> = {
-  storia: { src: '/storia-official-logo.svg', alt: 'Storia.ro' },
-  publi24: { src: '/publi24-logo.svg', alt: 'Publi24.ro' },
+  storia: { src: brandAssets.storia, alt: 'Storia.ro' },
+  publi24: { src: brandAssets.publi24, alt: 'Publi24.ro' },
 };
 
 function PortalLogo({ id, name }: { id?: string; name: string }) {
@@ -31,7 +33,7 @@ function PortalLogo({ id, name }: { id?: string; name: string }) {
   if (id === 'trimbitasu') {
     return (
       <span className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-3 py-2">
-        <img src="/trimbitasu-logo.png" alt="" aria-hidden="true" className="h-5 w-auto object-contain" />
+        <img src={brandAssets.trimbitasu} alt="" aria-hidden="true" className="h-5 w-auto object-contain" />
         <span className="font-serif text-[10px] font-bold tracking-wide text-amber-400">TRÎMBIȚAȘU.RO</span>
       </span>
     );
