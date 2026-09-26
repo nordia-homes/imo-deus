@@ -236,7 +236,7 @@ export function PropertyGallery({
                 <ImageItem index={2} className="w-full h-full" />
             </div>
         </div>
-        {rlvAction ? <div className="absolute left-4 top-4 z-20 md:hidden">{rlvAction}</div> : null}
+        {rlvAction ? <div className="absolute left-4 top-10 z-20 md:hidden">{rlvAction}</div> : null}
         {uploadedVideoUrl ? (
           <Button
             type="button"
