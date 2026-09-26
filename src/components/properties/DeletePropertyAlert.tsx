@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import type { PortalRemovalResult } from '@/lib/property-removal/schema';
 import type { Property, PropertyDeletionReason } from '@/lib/types';
 
 export type SoldDisposition = 'agency' | 'other_agency' | 'owner';
@@ -30,6 +31,8 @@ type DeletePropertyAlertProps = {
   property: Property | null;
   isOpen: boolean;
   isDeleting?: boolean;
+  errorMessage?: string;
+  portalResults?: PortalRemovalResult[];
   themeVariant?: 'light' | 'dark';
   initialReason?: PropertyDeletionReason;
   onOpenChange: (open: boolean) => void;
@@ -122,6 +125,8 @@ export function DeletePropertyAlert({
   property,
   isOpen,
   isDeleting = false,
+  errorMessage,
+  portalResults = [],
   themeVariant = 'dark',
   initialReason = 'not_interesting',
   onOpenChange,
@@ -156,7 +161,7 @@ export function DeletePropertyAlert({
   const isLightTheme = themeVariant === 'light';
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!isDeleting) onOpenChange(open); }}>
       <DialogContent
         className={cn(
           'flex max-h-[92vh] w-[calc(100vw-1.25rem)] max-w-[760px] flex-col overflow-hidden rounded-[28px] p-0 shadow-[0_32px_90px_-40px_rgba(15,23,42,0.7)] sm:w-full',
@@ -181,7 +186,7 @@ export function DeletePropertyAlert({
                 Scoate proprietatea din portofoliu
               </DialogTitle>
               <DialogDescription className={cn('mt-2 max-w-2xl text-sm leading-6', isLightTheme ? 'text-slate-600' : 'text-white/60')}>
-                Alege motivul corect. Doar vanzarile realizate de agentia ta sunt mutate in pagina Proprietati Vandute.
+                Anunțurile sunt retrase de pe portalurile integrate înainte de finalizare. Dacă o retragere nu este confirmată, proprietatea rămâne în CRM. Vânzările agenției tale sunt mutate în Proprietăți Vândute.
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -189,6 +194,10 @@ export function DeletePropertyAlert({
 
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
           <div className="space-y-5">
+            {errorMessage && <div role="alert" className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-sm">
+              <p>{errorMessage}</p>
+              {portalResults.length > 0 && <ul className="mt-2 space-y-1">{portalResults.map(result => <li key={result.portal}>{result.state === 'withdrawn' ? '✓ ' : '• '}{result.message}</li>)}</ul>}
+            </div>}
             <div className={cn('rounded-[22px] border p-4', isLightTheme ? 'border-slate-200 bg-slate-50' : 'border-white/10 bg-white/[0.05]')}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -204,7 +213,7 @@ export function DeletePropertyAlert({
 
             <div className="space-y-3">
               <p className={cn('text-sm font-semibold', isLightTheme ? 'text-slate-600' : 'text-white/80')}>Motiv</p>
-              <RadioGroup value={reason} onValueChange={(value) => setReason(value as PropertyDeletionReason)} className="grid gap-3 sm:grid-cols-3">
+              <RadioGroup disabled={isDeleting} value={reason} onValueChange={(value) => setReason(value as PropertyDeletionReason)} className="grid gap-3 sm:grid-cols-3">
                 {REASON_OPTIONS.map((option) => {
                   const Icon = option.icon;
                   const selected = option.value === reason;
@@ -250,6 +259,7 @@ export function DeletePropertyAlert({
                       Cine a vandut proprietatea?
                     </Label>
                     <RadioGroup
+                      disabled={isDeleting}
                       value={soldDisposition}
                       onValueChange={(value) => setSoldDisposition(value as SoldDisposition)}
                       className="mt-3 grid gap-2"
@@ -284,6 +294,7 @@ export function DeletePropertyAlert({
                     </Label>
                     <div className={cn('mt-3 rounded-2xl border p-3', isLightTheme ? 'border-slate-200 bg-white' : 'border-white/10 bg-black/15')}>
                       <Input
+                        disabled={isDeleting}
                         id="sold-price"
                         inputMode="numeric"
                         placeholder="125000"
@@ -342,7 +353,7 @@ export function DeletePropertyAlert({
             )}
           >
             {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {reason === 'sold' && soldDisposition === 'agency' ? 'Marcheaza ca vanduta' : reason === 'sold' ? 'Arhiveaza ca vanduta' : 'Sterge proprietatea'}
+            {isDeleting ? 'Retragere și salvare…' : errorMessage ? 'Reîncearcă finalizarea' : reason === 'sold' && soldDisposition === 'agency' ? 'Marcheaza ca vanduta' : reason === 'sold' ? 'Arhiveaza ca vanduta' : 'Sterge proprietatea'}
           </Button>
         </DialogFooter>
       </DialogContent>

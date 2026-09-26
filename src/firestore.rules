@@ -172,7 +172,9 @@ service cloud.firestore {
 
     match /agencies/{agencyId}/properties/{propertyId} {
       allow get, list: if isUserInAgency(agencyId) || isPublicActivePropertyRead();
-      allow create, update, delete: if isUserInAgency(agencyId);
+      allow create, update: if isUserInAgency(agencyId);
+      // Portal withdrawal and history are finalized by the server first.
+      allow delete: if false;
     }
 
     match /agencies/{agencyId}/contractTemplates/{templateId} {
@@ -187,7 +189,7 @@ service cloud.firestore {
 
     // --- Generic Rule for other Agency Subcollections ---
     match /agencies/{agencyId}/{collectionId}/{document=**} {
-      allow read, write: if collectionId != 'sales' &&
+      allow read, write: if collectionId != 'properties' && collectionId != 'sales' &&
                             collectionId != 'salesEmailTemplates' &&
                             collectionId != 'salesSettings' &&
                             collectionId != 'salesTemplateAudit' &&

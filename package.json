@@ -29,6 +29,8 @@
     "typecheck:tiktok-ads": "tsc -p tsconfig.codex-tiktok-ads.json --noEmit",
     "facebook:helper": "node scripts/facebook-promotion-helper.mjs",
     "test:owner-listings": "vitest run src/lib/owner-listings/__tests__",
+    "test:romimo": "vitest run src/lib/romimo/__tests__",
+    "test:property-removal": "vitest run src/lib/property-removal/__tests__",
     "test:tiktok-ads": "vitest run src/lib/tiktok-ads/__tests__",
     "test:tiktok-ads:rules": "firebase emulators:exec --project demo-imodeus-tiktok-ads --only firestore \"vitest run src/lib/tiktok-ads/__tests__/firestore-rules.integration.test.ts\"",
     "test:sales-email": "vitest run src/lib/__tests__/sales-inbound.test.ts src/lib/__tests__/sales-document-processing.test.ts src/lib/__tests__/sales-readiness.test.ts",

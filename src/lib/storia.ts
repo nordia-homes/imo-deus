@@ -1,3 +1,4 @@
+import { mergeExistingProperty, propertyUpdateFields, recordPortalAttempt, withPropertyOperation } from '@/lib/property-removal/lifecycle';
 import { createHash, createHmac, randomBytes } from 'crypto';
 import { adminDb } from '@/firebase/admin';
 import type {
@@ -741,6 +742,7 @@ async function requestAccessToken(body: Record<string, string>) {
 
   const response = await fetch(`${STORIA_API_BASE_URL}/oauth/v1/token`, {
     method: 'POST',
+    signal: AbortSignal.timeout(20000),
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -842,6 +844,7 @@ async function storiaRequest<T>(agencyId: string, path: string, init?: RequestIn
   const { apiKey } = requireStoriaConfig();
   const response = await fetch(`${STORIA_API_BASE_URL}${path}`, {
     ...init,
+    signal: init?.signal || AbortSignal.timeout(20000),
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${integration.accessToken}`,
@@ -872,6 +875,20 @@ async function storiaRequest<T>(agencyId: string, path: string, init?: RequestIn
   }
 
   return payload as T;
+}
+
+// Do not equate an accepted deactivate request with a completed withdrawal.
+export async function withdrawStoriaForRemoval(agencyId: string, property: Property) {
+  const uuid = property.portalProfiles?.storia?.remoteUuid || property.promotions?.storia?.remoteId;
+  if (typeof uuid !== 'string' || !uuid) throw new Error('Missing Storia UUID.');
+  const path = `/advert/v1/${encodeURIComponent(uuid)}`;
+  const isWithdrawn = async () => {
+    const metadata = await storiaRequest<AdvertMetadataResponse>(agencyId, `${path}/meta`, { method: 'GET' });
+    return getAdvertMetadataState(metadata).code === 'removed_by_user';
+  };
+  if (await isWithdrawn()) return true;
+  await storiaRequest(agencyId, `${path}/deactivate`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+  return isWithdrawn();
 }
 
 async function storiaTaxonomyRequest<T>(path: string): Promise<T> {
@@ -951,7 +968,7 @@ async function persistPropertyPublishState(params: {
       : null,
   });
 
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       promotions: {
         storia: {
@@ -1001,7 +1018,7 @@ async function persistPublishAudit(params: {
   const history =
     ((snapshot.data() as Property | undefined)?.portalProfiles?.storia?.lastPublishAuditHistory || []).slice(-9);
 
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       portalProfiles: {
         storia: {
@@ -1067,7 +1084,7 @@ async function persistStoriaPromotionState(params: {
     promotionRequests !== undefined ? getPromotionRequestTransactionIds(promotionRequests) : undefined;
   const promotionRequestVasUuids =
     promotionRequests !== undefined ? getPromotionRequestVasUuids(promotionRequests) : undefined;
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       portalProfiles: {
         storia: {
@@ -1441,7 +1458,7 @@ export async function updatePropertyStoriaPromotionSettings(params: {
   };
 }
 
-export async function applyStoriaPromotions(params: {
+async function applyStoriaPromotionsInternal(params: {
   agencyId: string;
   propertyId: string;
   promotionSettings?: StoriaPromotionSettings | null;
@@ -1527,7 +1544,7 @@ export async function applyStoriaPromotions(params: {
   };
 }
 
-export async function publishPropertyToStoria(params: {
+async function publishPropertyToStoriaInternal(params: {
   agencyId: string;
   propertyId: string;
   requestedByUid: string;
@@ -1571,6 +1588,7 @@ export async function publishPropertyToStoria(params: {
   });
 
   try {
+    await recordPortalAttempt({ db: adminDb, agencyId, propertyId }, 'storia');
     const publishResponse = await storiaRequest<PublishResponse>(agencyId, requestPath, {
       method: requestMethod,
       headers: {
@@ -1640,7 +1658,7 @@ export async function publishPropertyToStoria(params: {
     const savedPromotionSettings = normalizePromotionSettings(property.portalProfiles?.storia?.promotionSettings);
     if (savedPromotionSettings?.selections?.length) {
       try {
-        await applyStoriaPromotions({
+        await applyStoriaPromotionsInternal({
           agencyId,
           propertyId,
           promotionSettings: savedPromotionSettings,
@@ -1757,7 +1775,7 @@ export async function resolvePropertyStoriaPublicUrl(params: { agencyId: string;
 
   if (metadataState.url) {
     const remoteAdId = extractStoriaAdIdFromUrl(metadataState.url);
-    await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+    await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
       {
         promotions: {
           storia: {
@@ -1824,7 +1842,7 @@ export async function refreshPropertyStoriaPublicUrl(params: { agencyId: string;
   const remoteCode = metadataState.code || null;
   const remoteAdId = extractStoriaAdIdFromUrl(remoteUrl);
 
-  await propertyRef.set(
+  await mergeExistingProperty(propertyRef,
     {
       promotions: {
         storia: {
@@ -2347,9 +2365,9 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
             ? [nextPromotion, ...currentPromotions].slice(0, 20)
             : currentPromotions;
 
-      batch.set(
+      batch.update(
         docSnapshot.ref,
-        {
+        propertyUpdateFields({
           portalProfiles: {
             storia: {
               promotionRequests: nextRequests,
@@ -2360,8 +2378,7 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
               lastPromotionSyncAt: nowIso(),
             },
           },
-        },
-        { merge: true }
+        })
       );
     });
     await batch.commit();
@@ -2382,9 +2399,9 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
     const remoteUrl = normalizeStoriaPublicUrl(rawRemoteUrl, property.title);
     const remoteAdId = extractStoriaAdIdFromUrl(remoteUrl);
     const agencyId = getAgencyIdFromPropertyPath(docSnapshot.ref.path);
-    batch.set(
+    batch.update(
       docSnapshot.ref,
-      {
+      propertyUpdateFields({
         promotions: {
           storia: {
             status: errorMessage ? 'error' : mapRemoteCodeToPromotionStatus(remoteCode),
@@ -2406,8 +2423,7 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
             lastTransactionId: transactionId,
           },
         },
-      },
-      { merge: true }
+      })
     );
     if (agencyId && !errorMessage) {
       setStoriaAdvertMappingOnBatch(
@@ -2427,4 +2443,12 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
   await batch.commit();
 
   return { matched: snapshot.size };
+}
+
+export async function publishPropertyToStoria(params: Parameters<typeof publishPropertyToStoriaInternal>[0]) {
+  return withPropertyOperation({ db: adminDb, ...params }, 'publish', () => publishPropertyToStoriaInternal(params));
+}
+
+export async function applyStoriaPromotions(params: Parameters<typeof applyStoriaPromotionsInternal>[0]) {
+  return withPropertyOperation({ db: adminDb, ...params }, 'publish', () => applyStoriaPromotionsInternal(params));
 }

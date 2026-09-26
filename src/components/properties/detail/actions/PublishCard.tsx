@@ -50,6 +50,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { AlertCircle, CheckCircle2, Clock3, ExternalLink, EyeOff, Handshake, Loader2, RefreshCcw, Rocket, Sparkles, Trash2, Unplug, Zap } from 'lucide-react';
 import { ACTION_CARD_CLASSNAME, ACTION_CARD_INNER_CLASSNAME } from "./cardStyles";
 import { useAgency } from "@/context/AgencyContext";
+import RomimoPublishRow from './RomimoPublishRow';
 import { useSidebar } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -1701,6 +1702,7 @@ export function PublishCard({ property }: { property: Property }) {
         </div>
 
         {PORTALS.map((portal) => {
+          if (portal.id === 'publi24') return <RomimoPublishRow key={`${agencyId}-${portal.id}-${property.id}`} property={property} />;
           const isImobiliare = portal.id === 'imobiliare';
           const isStoria = portal.id === 'storia';
           const isHomezz = portal.id === 'homezz';

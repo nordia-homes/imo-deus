@@ -5,13 +5,14 @@ import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
 import { PlusCircle, Filter, Search, X, Loader2, LockKeyhole, ArrowRight, BadgeEuro, KeyRound, Building2, Sparkles, Globe } from "lucide-react";
 import { useState, useMemo } from 'react';
+import type { PortalRemovalResult, RemovalResult } from '@/lib/property-removal/schema';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
-import type { Property, PropertyDeletionEvent, PropertyDeletionReason, PropertyStatusEvent, Viewing } from '@/lib/types';
+import type { Property, PropertyDeletionReason, PropertyStatusEvent, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -45,7 +46,7 @@ const REPORT_PRESET_LABELS: Record<string, string> = {
 
 export default function PropertiesPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const { agency, agencyId } = useAgency();
+  const { agency, agencyId, user } = useAgency();
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
@@ -53,6 +54,7 @@ export default function PropertiesPage() {
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
   const [deletionInitialReason, setDeletionInitialReason] = useState<PropertyDeletionReason>('not_interesting');
   const [isDeletingProperty, setIsDeletingProperty] = useState(false);
+  const [deletionFeedback, setDeletionFeedback] = useState<{ message: string; portals: PortalRemovalResult[] } | null>(null);
   const [reservationProperty, setReservationProperty] = useState<Property | null>(null);
   const [isUpdatingReservation, setIsUpdatingReservation] = useState(false);
   const { toast } = useToast();
@@ -220,107 +222,32 @@ export default function PropertiesPage() {
     });
   }, [properties, filters, normalizedPropertySearch, portalQuickFilter, searchParams, transactionQuickFilter, viewings]);
 
-  const handleDelete = async ({ reason, soldDisposition, soldPrice, agentMessage }: DeletePropertyPayload) => {
-    if (!agencyId || !deletingProperty || isDeletingProperty) return;
-
+  const handleDelete = async (payload: DeletePropertyPayload) => {
+    if (!agencyId || !user || !deletingProperty || isDeletingProperty) return;
     setIsDeletingProperty(true);
-
+    setDeletionFeedback(null);
     try {
-      const deletedAt = new Date().toISOString();
-      const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', deletingProperty.id);
-      const batch = writeBatch(firestore);
-
-      if (reason === 'sold' && soldDisposition === 'agency') {
-        const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
-        const soldPropertySnapshot: Property = {
-          ...deletingProperty,
-          price: soldPrice ?? deletingProperty.price,
-          status: 'Vândut',
-          statusUpdatedAt: deletedAt,
-          soldPrice: soldPrice ?? null,
-        };
-        const statusEvent: PropertyStatusEvent = {
-          id: statusEventRef.id,
-          agencyId,
-          propertyId: deletingProperty.id,
-          changedAt: deletedAt,
-          previousStatus: deletingProperty.status ?? null,
-          nextStatus: 'Vândut',
-          reason: 'sale_completed',
-          reasonLabel: 'Vandut de agentia mea',
-          agentMessage,
-          soldPrice: soldPrice ?? null,
-          marketAnalysisEligible: true,
-          propertySnapshot: soldPropertySnapshot,
-        };
-
-        batch.update(propertyRef, {
-          price: soldPrice ?? deletingProperty.price,
-          status: 'Vândut',
-          statusUpdatedAt: deletedAt,
-          soldPrice: soldPrice ?? null,
-        });
-        batch.set(statusEventRef, statusEvent);
-        await batch.commit();
-
-        toast({
-          title: 'Proprietate mutata in Proprietati Vandute',
-          description: `Am salvat vanzarea agentiei pentru "${deletingProperty.title}" si pretul final.`,
-        });
-
-        setDeletingProperty(null);
+      const response = await fetch('/api/properties/remove', {
+        method: 'POST', signal: AbortSignal.timeout(190000),
+        headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ propertyId: deletingProperty.id, ...payload }),
+      });
+      const result = await response.json() as RemovalResult & { message?: string };
+      if (!response.ok || !result.complete) {
+        const message = result.message || 'Proprietatea rămâne în CRM. Rezolvă portalurile de mai jos și reîncearcă. Publicarea rămâne blocată până la finalizarea retragerii.';
+        setDeletionFeedback({ message, portals: result.portals || [] });
+        toast({ variant: 'destructive', title: 'Scoaterea din portofoliu nu este finalizată', description: message });
         return;
       }
-
-      const deletionEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyDeletionEvents'));
-      const propertySnapshot: Property = {
-        ...deletingProperty,
-        price: reason === 'sold' && soldPrice ? soldPrice : deletingProperty.price,
-        status: reason === 'sold' ? 'Vândut' : deletingProperty.status ?? 'Inactiv',
-        statusUpdatedAt: deletedAt,
-      };
-
-      const deletionEvent: PropertyDeletionEvent = {
-        id: deletionEventRef.id,
-        agencyId,
-        propertyId: deletingProperty.id,
-        deletedAt,
-        reason,
-        reasonLabel:
-          reason === 'sold'
-            ? soldDisposition === 'other_agency'
-              ? 'Vandut de alta agentie'
-              : 'Vandut de proprietar'
-            : reason === 'collaboration_ended'
-              ? 'Colaborare incetata'
-              : 'Nu prezinta interes',
-        agentMessage,
-        soldPrice: reason === 'sold' ? soldPrice ?? null : null,
-        listingPriceAtDeletion: deletingProperty.price,
-        marketAnalysisEligible: reason === 'sold',
-        propertySnapshot,
-      };
-
-      batch.set(deletionEventRef, deletionEvent);
-      batch.delete(propertyRef);
-      await batch.commit();
-
       toast({
-        title: reason === 'sold' ? 'Proprietate arhivata ca vanduta' : 'Proprietate stearsa',
-        description:
-          reason === 'sold'
-            ? `Am salvat vanzarea pentru "${deletingProperty.title}" si o vom folosi in analiza de piata.`
-            : `Proprietatea "${deletingProperty.title}" a fost scoasa din portofoliu.`,
+        title: result.outcome === 'sold' ? 'Proprietate mutată în Proprietăți Vândute' : 'Proprietate scoasă din portofoliu',
+        description: result.portals.length ? 'Retragerea anunțurilor de pe portaluri a fost confirmată. Istoricul a fost salvat.' : 'Operațiunea și istoricul proprietății au fost salvate.',
       });
-
       setDeletingProperty(null);
-    } catch (error) {
-      console.error('Property deletion failed:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Stergerea a esuat',
-        description: 'Nu am reusit sa sterg proprietatea. Incearca din nou.',
-      });
+    } catch {
+      const message = 'Rezultatul nu a putut fi confirmat. Reîncearcă; retragerile deja confirmate se păstrează.';
+      setDeletionFeedback({ message, portals: [] });
+      toast({ variant: 'destructive', title: 'Verificare necesară', description: message });
     } finally {
       setIsDeletingProperty(false);
     }
@@ -472,11 +399,13 @@ export default function PropertiesPage() {
 
   const openDeleteDialog = (property: Property) => {
     setDeletionInitialReason('not_interesting');
+    setDeletionFeedback(null);
     setDeletingProperty(property);
   };
 
   const openSoldDialog = (property: Property) => {
     setDeletionInitialReason('sold');
+    setDeletionFeedback(null);
     setDeletingProperty(property);
   };
 
@@ -691,6 +620,8 @@ export default function PropertiesPage() {
             onOpenChange={(isOpen) => !isOpen && setDeletingProperty(null)}
             property={deletingProperty}
             isDeleting={isDeletingProperty}
+            errorMessage={deletionFeedback?.message}
+            portalResults={deletionFeedback?.portals}
             themeVariant={deleteModalThemeVariant}
             initialReason={deletionInitialReason}
             onDelete={handleDelete}

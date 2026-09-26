@@ -1,3 +1,4 @@
+import { mergeExistingProperty, recordPortalAttempt, withPropertyOperation } from '@/lib/property-removal/lifecycle';
 import { createHash } from 'crypto';
 import { readFile } from 'fs/promises';
 import path from 'path';
@@ -370,6 +371,7 @@ async function safeJson(response: Response) {
 async function requestAccessToken(body: URLSearchParams) {
   const response = await fetch(`${IMOBILIARE_BASE_URL}/api/v1/auth/oauth/token`, {
     method: 'POST',
+    signal: AbortSignal.timeout(20000),
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Accept: 'application/json',
@@ -623,6 +625,7 @@ async function imobiliareRequest<T>(agencyId: string, path: string, init?: Reque
   const integration = await ensureValidIntegration(agencyId);
   const response = await fetch(`${IMOBILIARE_BASE_URL}${path}`, {
     ...init,
+    signal: init?.signal || AbortSignal.timeout(20000),
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${integration.accessToken}`,
@@ -649,6 +652,19 @@ async function imobiliareRequest<T>(agencyId: string, path: string, init?: Reque
   }
 
   return payload as T;
+}
+
+// Used by CRM removal: only an explicit remote draft confirms withdrawal.
+// Missing/unknown state (including a 404 after an uncertain publish) stays pending.
+export async function withdrawImobiliareForRemoval(agencyId: string, property: Property) {
+  const reference = property.portalProfiles?.imobiliare?.customReference || property.id;
+  const current = await getListingByCustomReference(agencyId, reference);
+  if (current?.data?.state === 'draft') return true;
+  if (!current) return false;
+  await imobiliareRequest(agencyId, `/api/v3/listings/${encodeURIComponent(reference)}/promotions`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'draft' }),
+  });
+  return (await getListingByCustomReference(agencyId, reference))?.data?.state === 'draft';
 }
 
 async function getAvailableImobiliareLocations(agencyId: string) {
@@ -1267,7 +1283,7 @@ async function persistPublishAudit(params: {
       .filter(Boolean)
       .slice(-14);
 
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       portalProfiles: {
         imobiliare: {
@@ -1951,7 +1967,7 @@ async function persistPropertyRemoteSnapshot(params: {
   const link = promotionStatus === 'unpublished' ? null : path ?? null;
   const normalizedRemoteId = promotionStatus === 'unpublished' ? null : remoteId ?? null;
 
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       promotions: {
         imobiliare: {
@@ -1996,7 +2012,7 @@ async function persistPropertyPublishState(params: {
     Object.entries(portalProfilePatch || {}).map(([key, value]) => [key, value ?? null])
   );
 
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       promotions: {
         imobiliare: promotionPatch,
@@ -2072,7 +2088,7 @@ export async function syncAgencyImobiliareAgentMappings(params: { agencyId: stri
   };
 }
 
-export async function updatePropertyImobiliarePromotionSettings(params: {
+async function updatePropertyImobiliarePromotionSettingsInternal(params: {
   agencyId: string;
   propertyId: string;
   promotionSettings: ImobiliarePromotionSettings | null;
@@ -2091,7 +2107,7 @@ export async function updatePropertyImobiliarePromotionSettings(params: {
 
   const normalizedSettings = promotionSettings || null;
 
-  await propertyRef.set(
+  await mergeExistingProperty(propertyRef,
     {
       portalProfiles: {
         imobiliare: {
@@ -2110,7 +2126,7 @@ export async function updatePropertyImobiliarePromotionSettings(params: {
       promotionSettings: normalizedSettings || undefined,
     };
     await applyPromotions(agencyId, customReference, mergedProfile);
-    await propertyRef.set(
+    await mergeExistingProperty(propertyRef,
       {
         promotions: {
           imobiliare: {
@@ -2437,7 +2453,7 @@ export async function resolvePropertyImobiliarePublicUrl(params: {
   throw new Error('Nu am putut determina linkul public al anuntului din imobiliare.ro.');
 }
 
-export async function publishPropertyToImobiliare(params: {
+async function publishPropertyToImobiliareInternal(params: {
   agencyId: string;
   propertyId: string;
   requestedByUid: string;
@@ -2499,6 +2515,7 @@ export async function publishPropertyToImobiliare(params: {
   let payloadHash = getPayloadHash(payload);
   let listingResponse: Record<string, unknown> | { data?: Record<string, unknown> } | null = null;
   try {
+    await recordPortalAttempt({ db: adminDb, agencyId, propertyId }, 'imobiliare');
     listingResponse = await upsertListing(agencyId, payload);
   } catch (error) {
     const typedError = error as ImobiliareApiError;
@@ -2771,7 +2788,7 @@ export async function unpublishPropertyFromImobiliare(params: {
     }),
   });
 
-  await adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId).set(
+  await mergeExistingProperty(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(propertyId),
     {
       promotions: {
         imobiliare: {
@@ -2820,4 +2837,12 @@ export async function getImobiliareLocations(agencyId: string) {
 
 export async function getImobiliareLocationCatalog(agencyId: string) {
   return buildLocationCatalog(await getAvailableImobiliareLocations(agencyId));
+}
+
+export async function publishPropertyToImobiliare(params: Parameters<typeof publishPropertyToImobiliareInternal>[0]) {
+  return withPropertyOperation({ db: adminDb, ...params }, 'publish', () => publishPropertyToImobiliareInternal(params));
+}
+
+export async function updatePropertyImobiliarePromotionSettings(params: Parameters<typeof updatePropertyImobiliarePromotionSettingsInternal>[0]) {
+  return withPropertyOperation({ db: adminDb, ...params }, 'publish', () => updatePropertyImobiliarePromotionSettingsInternal(params));
 }

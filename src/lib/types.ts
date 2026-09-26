@@ -1,5 +1,7 @@
 
 
+import type { RomimoPortalProfile } from './romimo/types';
+
 export type PromotionStatus = {
   status: 'unpublished' | 'pending' | 'published' | 'error';
   lastSync?: string;
@@ -943,6 +945,7 @@ export type Property = {
   portalProfiles?: {
     imobiliare?: ImobiliarePortalProfile;
     storia?: StoriaPortalProfile;
+    publi24?: RomimoPortalProfile;
   };
   metaFacebookPost?: MetaFacebookPagePost | null;
   uploadedVideo?: PropertyUploadedVideo | null;

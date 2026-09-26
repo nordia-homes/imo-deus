@@ -3,6 +3,7 @@
 import PortalStatusCard from "@/components/portal/PortalStatusCard";
 import ImobiliareIntegrationCard from "@/components/portal/ImobiliareIntegrationCard";
 import StoriaIntegrationCard from "@/components/portal/StoriaIntegrationCard";
+import RomimoIntegrationCard from "@/components/portal/RomimoIntegrationCard";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import type { Property } from '@/lib/types';
 import { collection } from 'firebase/firestore';
@@ -241,6 +242,8 @@ export default function PortalSyncPage() {
                             errors={portal.errors}
                             lastSync={portal.lastSync}
                         />
+                    ) : portal.id === 'publi24' ? (
+                        <RomimoIntegrationCard key={`${portal.name}-${agencyId}`} listings={portal.listings} errors={portal.errors} lastSync={portal.lastSync} />
                     ) : (
                         <PortalStatusCard key={portal.name} {...portal} />
                     )

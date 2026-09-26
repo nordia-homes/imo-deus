@@ -98,14 +98,16 @@ service cloud.firestore {
 
     match /agencies/{agencyId}/properties/{propertyId} {
       allow get, list: if isUserInAgency(agencyId) || isPublicActivePropertyRead();
-      allow create, update, delete: if isUserInAgency(agencyId);
+      allow create, update: if isUserInAgency(agencyId);
+      // The server withdraws portal listings and archives history before deletion.
+      allow delete: if false;
     }
     
     // --- Agency Subcollections (Generic Rule) ---
     // Public updates are now handled by the Admin SDK, so we only need to
     // allow authenticated agency members to perform actions.
     match /agencies/{agencyId}/{collectionId}/{document=**} {
-      allow read, write: if isUserInAgency(agencyId) &&
+      allow read, write: if collectionId != 'properties' && isUserInAgency(agencyId) &&
                             !isServerManagedAgencyCollection(collectionId);
     }
 
