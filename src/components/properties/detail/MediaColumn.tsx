@@ -3,6 +3,7 @@ import type { Property } from "@/lib/types";
 import { PropertyGallery } from "./PropertyGallery";
 import { VideoTourCard } from "./actions/VideoTourCard";
 import { PresentationPdfButton } from "./actions/PresentationPdfButton";
+import { RlvGalleryButton } from "./actions/RlvGalleryButton";
 
 export function MediaColumn({
     property,
@@ -31,6 +32,7 @@ export function MediaColumn({
                 shareUrl={shareUrl}
                 shareImageUrl={shareImageUrl}
                 pdfAction={showMobileActions ? <PresentationPdfButton property={property} /> : null}
+                rlvAction={showMobileActions ? <RlvGalleryButton property={property} /> : null}
                 ownerListingUrl={showMobileActions ? property.ownerListingUrl : undefined}
                 videoAction={showVideoTour ? <VideoTourCard property={property} triggerVariant="gallery-button" /> : null}
                 uploadedVideoUrl={property.uploadedVideo?.url}

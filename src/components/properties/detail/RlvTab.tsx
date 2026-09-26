@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface RlvTabProps {
   property: Property;
+  showPdfPreview?: boolean;
 }
 
 const getDecodedFilePath = (url?: string) => {
@@ -25,7 +26,7 @@ const getDecodedFilePath = (url?: string) => {
   }
 };
 
-export function RlvTab({ property }: RlvTabProps) {
+export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { agencyId } = useAgency();
@@ -132,6 +133,8 @@ export function RlvTab({ property }: RlvTabProps) {
                         className="rounded-xl object-contain"
                       />
                    </div>
+              ) : showPdfPreview ? (
+                  <iframe src={property.rlvUrl} title={`Releveu PDF pentru ${property.title}`} className="h-[50dvh] min-h-[260px] w-full rounded-xl border-0 bg-white" />
               ) : (
                   <>
                     <FileText className="mb-4 h-16 w-16 text-primary" />

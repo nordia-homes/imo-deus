@@ -30,6 +30,7 @@ export function PropertyGallery({
   shareImageUrl,
   videoAction,
   pdfAction,
+  rlvAction,
   ownerListingUrl,
   uploadedVideoUrl,
   uploadedVideoName,
@@ -42,6 +43,7 @@ export function PropertyGallery({
   shareImageUrl?: string;
   videoAction?: React.ReactNode;
   pdfAction?: React.ReactNode;
+  rlvAction?: React.ReactNode;
   ownerListingUrl?: string | null;
   uploadedVideoUrl?: string | null;
   uploadedVideoName?: string | null;
@@ -234,13 +236,14 @@ export function PropertyGallery({
                 <ImageItem index={2} className="w-full h-full" />
             </div>
         </div>
+        {rlvAction ? <div className="absolute left-4 top-4 z-20 md:hidden">{rlvAction}</div> : null}
         {uploadedVideoUrl ? (
           <Button
             type="button"
             size="icon"
             variant="secondary"
             aria-label="Redă videoclipul proprietății"
-            className="absolute left-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-black/38 text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.75)] backdrop-blur-xl hover:scale-105 hover:bg-black/55 hover:text-white"
+            className={cn("absolute left-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-black/38 text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.75)] backdrop-blur-xl hover:scale-105 hover:bg-black/55 hover:text-white", rlvAction && "max-md:left-20")}
             onClick={(event) => {
               event.stopPropagation();
               setIsVideoOpen(true);
@@ -272,7 +275,7 @@ export function PropertyGallery({
             </Button>
           </div>
         ) : null}
-        <div className={cn("absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
+        <div className={cn("absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-md:left-2 max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
           {pdfAction}
           {videoAction}
           <Button
