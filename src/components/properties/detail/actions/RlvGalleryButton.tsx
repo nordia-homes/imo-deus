@@ -9,7 +9,7 @@ export function RlvGalleryButton({ property }: { property: Property }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="secondary" className="h-11 w-14 rounded-full border border-white/40 bg-white/12 text-white backdrop-blur-xl hover:bg-white/18 hover:text-white" aria-label="Deschide releveul proprietății">
+        <Button type="button" variant="secondary" className="h-10 w-10 rounded-full border border-white/40 bg-white/12 text-white backdrop-blur-xl hover:bg-white/18 hover:text-white md:hidden" aria-label="Deschide releveul proprietății">
           RLV
         </Button>
       </DialogTrigger>

@@ -236,14 +236,13 @@ export function PropertyGallery({
                 <ImageItem index={2} className="w-full h-full" />
             </div>
         </div>
-        {rlvAction ? <div className="absolute left-4 top-10 z-20 md:hidden">{rlvAction}</div> : null}
         {uploadedVideoUrl ? (
           <Button
             type="button"
             size="icon"
             variant="secondary"
             aria-label="Redă videoclipul proprietății"
-            className={cn("absolute left-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-black/38 text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.75)] backdrop-blur-xl hover:scale-105 hover:bg-black/55 hover:text-white", rlvAction && "max-md:left-20")}
+            className={cn("absolute left-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-black/38 text-white shadow-[0_14px_34px_-14px_rgba(0,0,0,0.75)] backdrop-blur-xl hover:scale-105 hover:bg-black/55 hover:text-white", rlvAction && "max-md:top-10", ownerListingHref && "max-md:left-20")}
             onClick={(event) => {
               event.stopPropagation();
               setIsVideoOpen(true);
@@ -253,10 +252,24 @@ export function PropertyGallery({
           </Button>
         ) : null}
         {ownerListingHref ? (
-          <Button asChild variant="secondary" size="icon" className="absolute right-4 top-4 z-20 h-11 w-11 rounded-full border border-white/40 bg-white/12 text-white backdrop-blur-xl hover:bg-white/18 md:hidden">
+          <Button asChild variant="secondary" size="icon" className="absolute left-4 top-10 z-20 h-11 w-11 rounded-full border border-white/40 bg-white/12 text-white backdrop-blur-xl hover:bg-white/18 md:hidden">
             <a href={ownerListingHref} target="_blank" rel="noopener noreferrer" aria-label="Deschide anunțul proprietarului" title="Deschide anunțul proprietarului">
               <ExternalLink className="h-4 w-4" />
             </a>
+          </Button>
+        ) : null}
+        {rlvAction ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="absolute right-4 top-10 z-20 h-11 w-11 rounded-full border border-white/40 bg-white/12 text-white backdrop-blur-xl hover:bg-white/18 hover:text-white md:hidden"
+            aria-label={isCopied ? "Link copiat" : "Distribuie"}
+            title={isCopied ? "Link copiat" : "Distribuie"}
+            onClick={handleShare}
+          >
+            <Share2 className="h-4 w-4" />
+            <span className="sr-only" aria-live="polite">{isCopied ? "Link copiat" : "Distribuie"}</span>
           </Button>
         ) : null}
         {showMatchPrompt ? (
@@ -276,11 +289,12 @@ export function PropertyGallery({
           </div>
         ) : null}
         <div className={cn("absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-md:left-2 max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
+          {rlvAction}
           {pdfAction}
           {videoAction}
           <Button
             variant="secondary"
-            className="w-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white md:w-auto"
+            className={cn("w-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white md:w-auto", rlvAction && "max-md:hidden")}
             aria-label={isCopied ? "Link copiat" : "Distribuie"}
             title={isCopied ? "Link copiat" : "Distribuie"}
             onClick={handleShare}
