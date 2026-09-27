@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { listAuthorizedPages } from '../meta';
+import type { Firestore } from 'firebase-admin/firestore';
+import { listAuthorizedPages, startAuthorization } from '../meta';
 
 beforeEach(() => vi.stubEnv('META_APP_ID', 'test-app'));
 afterEach(() => {
@@ -39,5 +40,21 @@ describe('Meta page discovery', () => {
 
     expect((await listAuthorizedPages('user-token')).map(page => page.id)).toEqual(['111']);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+describe('Meta authorization', () => {
+  it('stores only serializable actor identifiers in the OAuth state', async () => {
+    vi.stubEnv('META_APP_SECRET', 'test-secret');
+    const create = vi.fn(async (_value: unknown) => undefined);
+    const db = { collection: () => ({ doc: () => ({ create }) }) } as unknown as Firestore;
+    const actor = { uid: 'admin-1', agencyId: 'nordia', role: 'admin', adminDb: db };
+
+    const result = await startAuthorization(db, actor, { features: ['publish', 'messaging'] });
+
+    expect(result.authorizationUrl).toContain('client_id=test-app');
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
+      uid: 'admin-1', agencyId: 'nordia', features: ['publish', 'messaging'],
+    }));
+    expect(Object.keys(create.mock.calls[0][0] as object).sort()).toEqual(['agencyId', 'expiresAt', 'features', 'uid']);
   });
 });

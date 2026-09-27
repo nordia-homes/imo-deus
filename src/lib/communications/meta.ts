@@ -28,7 +28,7 @@ export async function startAuthorization(db: Firestore, actor: Actor, body: unkn
   const data = z.object({ features: z.array(z.enum(['publish', 'messaging', 'comments', 'insights'])).min(1) }).parse(body);
   if (!appId() || !appSecret()) throw new CommunicationError('Conectarea Meta nu este configurată pe server.', 503);
   const state = randomBytes(32).toString('hex');
-  await db.collection('communicationOAuthStates').doc(stableId(state)).create({ ...actor, features: data.features, expiresAt: Date.now() + 600000 });
+  await db.collection('communicationOAuthStates').doc(stableId(state)).create({ uid: actor.uid, agencyId: actor.agencyId, features: data.features, expiresAt: Date.now() + 600000 });
   const url = new URL(`https://www.facebook.com/${version()}/dialog/oauth`);
   url.searchParams.set('client_id', appId()); url.searchParams.set('redirect_uri', callback());
   url.searchParams.set('state', state); url.searchParams.set('response_type', 'code');
