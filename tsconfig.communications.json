@@ -11,6 +11,7 @@
     "src/lib/communications/**/*.ts",
     "src/components/communications/**/*.tsx",
     "src/components/communications/**/*.ts",
+    "src/components/notifications/**/*.tsx",
     "src/app/api/communications/**/*.ts",
     "src/app/api/communications-worker/**/*.ts",
     "src/app/api/webhooks/**/*.ts",

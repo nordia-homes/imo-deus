@@ -1,1 +1,2 @@
-export { runtime, GET, POST } from '../meta/route';
+export const runtime = 'nodejs';
+export { GET, POST } from '../meta/route';

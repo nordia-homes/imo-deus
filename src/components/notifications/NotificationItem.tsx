@@ -29,6 +29,12 @@ type CategoryVisual = {
 };
 
 const CATEGORY_VISUALS: Record<NotificationCategory, CategoryVisual> = {
+  inboxMessages: {
+    icon: MessageCircleMore,
+    label: 'Inbox',
+    iconClassName: 'bg-emerald-500/[0.12] text-emerald-700 ring-emerald-500/20 dark:text-emerald-300',
+    haloClassName: 'bg-emerald-400/20',
+  },
   storiaMessages: {
     icon: MessageCircleMore,
     label: 'Storia',
