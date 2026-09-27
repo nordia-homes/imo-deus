@@ -89,6 +89,21 @@ env:
     availability:
       - RUNTIME
 
+  - variable: APP_BASE_URL
+    value: "https://imodeus.ro"
+    availability:
+      - RUNTIME
+
+  - variable: COMMUNICATIONS_WORKER_SECRET
+    secret: COMMUNICATIONS_WORKER_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: META_WEBHOOK_VERIFY_TOKEN
+    secret: META_WEBHOOK_VERIFY_TOKEN
+    availability:
+      - RUNTIME
+
   - variable: STORIA_API_KEY
     secret: STORIA_API_KEY
     availability:
