@@ -53,7 +53,7 @@ service cloud.firestore {
     }
 
     function isServerManagedAgencyCollection(collectionId) {
-      return collectionId == 'tiktokWorkspaceDrafts' ||
+      return collectionId in ['channelConnections', 'conversations', 'communicationMedia', 'communicationConsents', 'communicationBudgets', 'socialPosts', 'automationRules', 'contactChannelIdentities'] || collectionId == 'tiktokWorkspaceDrafts' ||
              collectionId == 'tiktokStudioProjects' ||
              collectionId == 'tiktokStudioAssets' ||
              collectionId == 'tiktokPostDrafts' ||
@@ -103,8 +103,34 @@ service cloud.firestore {
 
     // --- User Profiles ---
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       !request.resource.data.keys().hasAny(['agencyId', 'role']);
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['agencyId', 'role']);
+      allow delete: if false;
       allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
+    }
+
+    function canReadConversation(agencyId, conversationId) {
+      let conversation = get(/databases/$(database)/documents/agencies/$(agencyId)/conversations/$(conversationId)).data;
+      return isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || request.auth.uid in conversation.accessUids);
+    }
+    match /agencies/{agencyId}/conversations/{conversationId} {
+      allow read: if isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || request.auth.uid in resource.data.accessUids);
+      allow write: if false;
+      match /{subcollection}/{itemId} {
+        allow read: if subcollection in ['messages', 'notes'] && canReadConversation(agencyId, conversationId);
+        allow write: if false;
+      }
+    }
+    match /agencies/{agencyId}/channelConnections/{id} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+    match /agencies/{agencyId}/socialPosts/{id} {
+      allow read: if isUserAdminForAgency(agencyId);
+      allow write: if false;
     }
 
     // Private per-agent template content. The shared base template is never
@@ -135,7 +161,7 @@ service cloud.firestore {
                               request.resource.data.pushEnabled is bool &&
                               request.resource.data.categories is map &&
                               request.resource.data.categories.keys().hasOnly([
-                                'storiaMessages', 'viewingAssignments', 'viewingRescheduled', 'viewingReminders',
+                                'storiaMessages', 'inboxMessages', 'viewingAssignments', 'viewingRescheduled', 'viewingReminders',
                                 'taskAssignments', 'taskUpdates', 'facebookCompleted', 'facebookFailed',
                                 'propertyAssignments', 'clientPortalFeedback',
                                 'salesReplies', 'salesDocuments', 'salesDigest'
@@ -163,7 +189,7 @@ service cloud.firestore {
     match /portalFeedbackRateLimits/{portalId} {
       allow read, write: if false;
     }
-    
+
     // --- Specific Rule for Contacts ---
     match /agencies/{agencyId}/contacts/{contactId} {
       allow get, list, create, delete: if isUserInAgency(agencyId);
@@ -247,9 +273,9 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow update: if isUserAdminForAgency(agencyId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow delete: if false; 
+      allow delete: if false;
     }
-    
+
     // --- Invites ---
     match /invites/{inviteId} {
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
@@ -274,7 +300,7 @@ service cloud.firestore {
           request.resource.data.agencyId == getUserData(request.auth.uid).agencyId
         );
     }
-    
+
     // --- Scraper Collection ---
     match /ownerListings/{listingId} {
       allow read: if isSignedIn();
@@ -302,7 +328,7 @@ service cloud.firestore {
       // Anyone with the link can read portal and recommendation data.
       allow get: if true;
       allow list: if isSignedIn() && isUserInAgency(resource.data.agencyId);
-      
+
       // Agency members can create portals for contacts in their agency.
       allow create: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
       // Deletes must read the existing document because request.resource is null on delete.
@@ -312,10 +338,10 @@ service cloud.firestore {
       match /recommendations/{recommendationId} {
         // Publicly readable for the client with the portal link.
         allow get, list: if true;
-        
+
         // Agency members can add/delete recommendations.
         allow create, delete: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
-                                
+
         // Public feedback is validated and written only by the server endpoint.
         allow update: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
       }

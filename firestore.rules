@@ -28,6 +28,20 @@ service cloud.firestore {
               getUserData(request.auth.uid).role == 'admin';
     }
 
+    function canAccessSale(agencyId, saleId) {
+      return isUserAdminForAgency(agencyId) ||
+             (
+               isUserInAgency(agencyId) &&
+               (
+                 get(/databases/$(database)/documents/agencies/$(agencyId)/sales/$(saleId)).data.agentId == request.auth.uid ||
+                 (
+                   'collaboratorIds' in get(/databases/$(database)/documents/agencies/$(agencyId)/sales/$(saleId)).data &&
+                   request.auth.uid in get(/databases/$(database)/documents/agencies/$(agencyId)/sales/$(saleId)).data.collaboratorIds
+                 )
+               )
+             );
+    }
+
     function isPublicAgencyRead() {
       return true;
     }
@@ -39,11 +53,11 @@ service cloud.firestore {
     }
 
     function isServerManagedAgencyCollection(collectionId) {
-      return collectionId == 'tiktokAdvertisers' ||
-             collectionId == 'tiktokWorkspaceDrafts' ||
+      return collectionId in ['channelConnections', 'conversations', 'communicationMedia', 'communicationConsents', 'communicationBudgets', 'socialPosts', 'automationRules', 'contactChannelIdentities'] || collectionId == 'tiktokWorkspaceDrafts' ||
              collectionId == 'tiktokStudioProjects' ||
              collectionId == 'tiktokStudioAssets' ||
              collectionId == 'tiktokPostDrafts' ||
+             collectionId == 'tiktokAdvertisers' ||
              collectionId == 'tiktokAccountPermissions' ||
              collectionId == 'tiktokResourceReferences' ||
              collectionId == 'tiktokCapabilityStates' ||
@@ -79,36 +93,178 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // --- User Profiles ---
-    match /users/{userId} {
-      // A user can always read and write their own profile.
-      // This is crucial for the helper functions above to work correctly.
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    function isPublicPreferencesUpdate(agencyId, contactId) {
+      return request.auth == null &&
+             'validationLinkId' in request.resource.data &&
+             exists(/databases/$(database)/documents/buyer-preferences-links/$(request.resource.data.validationLinkId)) &&
+             get(/databases/$(database)/documents/buyer-preferences-links/$(request.resource.data.validationLinkId)).data.contactId == contactId &&
+             get(/databases/$(database)/documents/buyer-preferences-links/$(request.resource.data.validationLinkId)).data.agencyId == agencyId;
     }
 
-    // Private per-agent content overrides. The base template remains shared,
-    // while only its owner can read, create, update or remove the override.
+    // --- User Profiles ---
+    match /users/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       !request.resource.data.keys().hasAny(['agencyId', 'role']);
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['agencyId', 'role']);
+      allow delete: if false;
+      allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
+    }
+
+    function canReadConversation(agencyId, conversationId) {
+      let conversation = get(/databases/$(database)/documents/agencies/$(agencyId)/conversations/$(conversationId)).data;
+      return isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || request.auth.uid in conversation.accessUids);
+    }
+    match /agencies/{agencyId}/conversations/{conversationId} {
+      allow read: if isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || request.auth.uid in resource.data.accessUids);
+      allow write: if false;
+      match /{subcollection}/{itemId} {
+        allow read: if subcollection in ['messages', 'notes'] && canReadConversation(agencyId, conversationId);
+        allow write: if false;
+      }
+    }
+    match /agencies/{agencyId}/channelConnections/{id} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+    match /agencies/{agencyId}/socialPosts/{id} {
+      allow read: if isUserAdminForAgency(agencyId);
+      allow write: if false;
+    }
+
+    // Private per-agent template content. The shared base template is never
+    // modified, and only the owning agent can access this override.
     match /users/{userId}/emailTemplateOverrides/{templateId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
-      allow create, update: if isSignedIn()
-                            && request.auth.uid == userId
-                            && request.resource.data.baseTemplateId == templateId;
+      allow create, update: if isSignedIn() &&
+                            request.auth.uid == userId &&
+                            request.resource.data.baseTemplateId == templateId;
       allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       resource.data.recipientId == userId &&
+                       request.resource.data.recipientId == userId &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']);
+      allow create, delete: if false;
+    }
+
+    match /users/{userId}/notificationPreferences/{preferenceId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() &&
+                              request.auth.uid == userId &&
+                              preferenceId == 'default' &&
+                              request.resource.data.keys().hasOnly(['pushEnabled', 'categories', 'updatedAt']) &&
+                              request.resource.data.pushEnabled is bool &&
+                              request.resource.data.categories is map &&
+                              request.resource.data.categories.keys().hasOnly([
+                                'storiaMessages', 'inboxMessages', 'viewingAssignments', 'viewingRescheduled', 'viewingReminders',
+                                'taskAssignments', 'taskUpdates', 'facebookCompleted', 'facebookFailed',
+                                'propertyAssignments', 'clientPortalFeedback',
+                                'salesReplies', 'salesDocuments', 'salesDigest'
+                              ]);
+      allow delete: if false;
+    }
+
+    match /users/{userId}/messagingRegistrations/{registrationId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /notificationEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    match /notificationSchedules/{scheduleId} {
+      allow read, write: if false;
+    }
+
+    match /notificationDeliveryJobs/{deliveryId} {
+      allow read, write: if false;
+    }
+
+    match /portalFeedbackRateLimits/{portalId} {
+      allow read, write: if false;
+    }
+
+    // --- Specific Rule for Contacts ---
+    match /agencies/{agencyId}/contacts/{contactId} {
+      allow get, list, create, delete: if isUserInAgency(agencyId);
+      allow update: if isUserInAgency(agencyId) || isPublicPreferencesUpdate(agencyId, contactId);
     }
 
     match /agencies/{agencyId}/properties/{propertyId} {
       allow get, list: if isUserInAgency(agencyId) || isPublicActivePropertyRead();
       allow create, update: if isUserInAgency(agencyId);
-      // The server withdraws portal listings and archives history before deletion.
+      // Portal withdrawal and history are finalized by the server first.
       allow delete: if false;
     }
-    
-    // --- Agency Subcollections (Generic Rule) ---
-    // Public updates are now handled by the Admin SDK, so we only need to
-    // allow authenticated agency members to perform actions.
+
+    match /agencies/{agencyId}/contractTemplates/{templateId} {
+      allow get, list: if isUserInAgency(agencyId);
+      allow create, update, delete: if isUserAdminForAgency(agencyId);
+    }
+
+    match /agencies/{agencyId}/generatedContracts/{documentId} {
+      allow get, list, create: if isUserInAgency(agencyId);
+      allow update, delete: if isUserAdminForAgency(agencyId);
+    }
+
+    // --- Generic Rule for other Agency Subcollections ---
     match /agencies/{agencyId}/{collectionId}/{document=**} {
-      allow read, write: if collectionId != 'properties' && isUserInAgency(agencyId) &&
-                            !isServerManagedAgencyCollection(collectionId);
+      allow read, write: if collectionId != 'properties' && collectionId != 'sales' &&
+                            collectionId != 'salesEmailTemplates' &&
+                            collectionId != 'salesSettings' &&
+                            collectionId != 'salesTemplateAudit' &&
+                            !isServerManagedAgencyCollection(collectionId) &&
+                            isUserInAgency(agencyId);
+    }
+
+    match /agencies/{agencyId}/salesEmailTemplates/{templateId} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+
+    match /agencies/{agencyId}/salesSettings/{settingsId} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+
+    match /agencies/{agencyId}/salesTemplateAudit/{eventId} {
+      allow read: if isUserAdminForAgency(agencyId);
+      allow write: if false;
+    }
+
+    match /agencies/{agencyId}/sales/{saleId} {
+      allow read: if isUserAdminForAgency(agencyId) ||
+                     (isUserInAgency(agencyId) && (resource.data.agentId == request.auth.uid || ('collaboratorIds' in resource.data && request.auth.uid in resource.data.collaboratorIds)));
+      allow create: if isUserAdminForAgency(agencyId) ||
+                       (isUserInAgency(agencyId) && request.resource.data.agentId == request.auth.uid);
+      allow update: if isUserAdminForAgency(agencyId) ||
+                       (
+                         isUserInAgency(agencyId) &&
+                         (
+                           (
+                             resource.data.agentId == request.auth.uid &&
+                             request.resource.data.agentId == request.auth.uid
+                           ) ||
+                           (
+                             'collaboratorIds' in resource.data &&
+                             request.auth.uid in resource.data.collaboratorIds &&
+                             request.resource.data.agentId == resource.data.agentId &&
+                             request.resource.data.collaboratorIds == resource.data.collaboratorIds
+                           )
+                         )
+                       );
+      allow delete: if isUserAdminForAgency(agencyId) ||
+                       (isUserInAgency(agencyId) && resource.data.agentId == request.auth.uid);
+    }
+
+    match /agencies/{agencyId}/sales/{saleId}/{nestedCollection}/{nestedDocument} {
+      allow read, write: if canAccessSale(agencyId, saleId);
     }
 
     // --- Agency Top-Level Document ---
@@ -117,9 +273,9 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow update: if isUserAdminForAgency(agencyId);
       allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow delete: if false; 
+      allow delete: if false;
     }
-    
+
     // --- Invites ---
     match /invites/{inviteId} {
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
@@ -144,36 +300,59 @@ service cloud.firestore {
           request.resource.data.agencyId == getUserData(request.auth.uid).agencyId
         );
     }
-    
+
     // --- Scraper Collection ---
     match /ownerListings/{listingId} {
       allow read: if isSignedIn();
       allow write: if false;
     }
 
+    match /ownerListingOlxPhoneQueue/{queueId} {
+      allow read, write: if false;
+    }
+
+    match /ownerListingSyncCycles/{cycleId} {
+      allow read, write: if false;
+    }
+
+    match /ownerListingSyncCycleJobs/{jobId} {
+      allow read, write: if false;
+    }
+
+    match /ownerListingSyncRuns/{runId} {
+      allow read, write: if false;
+    }
+
     // --- Client Portals ---
     match /portals/{portalId} {
-      allow get, list: if true;
-      allow create, delete: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
+      // Anyone with the link can read portal and recommendation data.
+      allow get: if true;
+      allow list: if isSignedIn() && isUserInAgency(resource.data.agencyId);
 
+      // Agency members can create portals for contacts in their agency.
+      allow create: if isSignedIn() && isUserInAgency(request.resource.data.agencyId);
+      // Deletes must read the existing document because request.resource is null on delete.
+      allow delete: if isSignedIn() && isUserInAgency(resource.data.agencyId);
+
+      // --- Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {
+        // Publicly readable for the client with the portal link.
         allow get, list: if true;
+
+        // Agency members can add/delete recommendations.
         allow create, delete: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
-        allow update: if (isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId)) ||
-                        (request.auth == null && request.resource.data.keys().hasOnly(['clientFeedback', 'clientComment']));
+
+        // Public feedback is validated and written only by the server endpoint.
+        allow update: if isSignedIn() && isUserInAgency(get(/databases/$(database)/documents/portals/$(portalId)).data.agencyId);
       }
     }
 
     // --- Buyer Preferences Link ---
-    // This collection is now only written to by server-side logic (Admin SDK), which bypasses rules.
-    // We only need a rule to allow agents to create the links.
-    // Public access for validation is no longer needed in the rules, as the Admin SDK handles it.
     match /buyer-preferences-links/{linkId} {
-        // Only authenticated agency members can create links.
-        allow create: if isUserInAgency(request.resource.data.agencyId);
-
-        // No one should be able to read, update or delete these directly.
-        allow read, update, delete: if false;
+        allow get: if true; // Allow the security rule function to read the link
+        allow create: if isUserAdminForAgency(request.resource.data.agencyId);
+        // Allow an admin to manage links if needed for debugging/cleanup
+        allow read, write, delete: if isUserAdminForAgency(get(/databases/$(database)/documents/buyer-preferences-links/$(linkId)).data.agencyId);
     }
   }
 }

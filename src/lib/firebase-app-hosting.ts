@@ -94,7 +94,7 @@ type VerifiedAdminContext = {
   runtimeMode: 'real' | 'demo';
 };
 
-async function verifyTokenAgainstAvailableBackends(token: string): Promise<VerifiedAdminContext> {
+export async function verifyTokenAgainstAvailableBackends(token: string): Promise<VerifiedAdminContext> {
   try {
     const decoded = await adminAuth.verifyIdToken(token);
     return {

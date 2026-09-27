@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
   if (payload?.user_id) {
     const { disconnectMetaMarketingByMetaUser } = await import('@/lib/meta-marketing');
     await disconnectMetaMarketingByMetaUser(payload.user_id).catch(() => undefined);
+    const [{ disconnectCommunicationsByMetaUser }, { adminDb }] = await Promise.all([import('@/lib/communications/sync'), import('@/firebase/admin')]);
+    await disconnectCommunicationsByMetaUser(adminDb, payload.user_id);
   }
 
   return NextResponse.json({ success: true });

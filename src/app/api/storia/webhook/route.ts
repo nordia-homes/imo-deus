@@ -17,6 +17,7 @@ async function buildWebhookAck(request: NextRequest) {
     console.error('[storia] webhook processing failed', {
       message: error instanceof Error ? error.message : String(error),
     });
+    return NextResponse.json({ ok: false }, { status: 503 });
   }
 
   return NextResponse.json(

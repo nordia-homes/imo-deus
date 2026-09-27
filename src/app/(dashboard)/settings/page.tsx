@@ -424,45 +424,13 @@ export default function SettingsPage() {
       if (!user) return;
       setIsCreatingAgency(true);
 
-      const agenciesCollection = collection(firestore, 'agencies');
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const publicAgentProfileRef = doc(firestore, 'publicAgentProfiles', user.uid);
-
       try {
-        const newAgencyRef = doc(agenciesCollection);
-        const batch = writeBatch(firestore);
-
-        batch.set(newAgencyRef, {
-            ...values,
-            ownerId: user.uid,
-            agentIds: [user.uid],
-            billingProvider: 'stripe',
-            billingPlan: 'esential',
-            billingStatus: 'inactive',
-            billingInterval: 'month',
-            billingCurrency: 'EUR',
-            purchasedSeats: 1,
-            seatUsageCount: 1,
-            id: newAgencyRef.id,
+        const response = await fetch('/api/account/membership', {
+          method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'createAgency', values }),
         });
-        
-        batch.set(userDocRef, { 
-            name: user.displayName || user.email,
-            email: user.email,
-            agencyId: newAgencyRef.id, 
-            role: 'admin',
-            photoUrl: user.photoURL,
-        }, { merge: true });
-        batch.set(publicAgentProfileRef, {
-            agencyId: newAgencyRef.id,
-            name: user.displayName || user.email,
-            email: user.email,
-            phone: user.phoneNumber || '',
-            photoUrl: user.photoURL || '',
-            updatedAt: new Date().toISOString(),
-        }, { merge: true });
-
-        await batch.commit();
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
         
         toast({ title: 'Agenție creată!', description: `Bun venit la ${values.name}!` });
       } catch (error) {

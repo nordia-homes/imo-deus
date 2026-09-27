@@ -158,10 +158,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Inbox Storia" asChild isActive={currentPath.startsWith('/inbox')}>
+                <SidebarMenuButton tooltip="Inbox" asChild isActive={currentPath.startsWith('/inbox')}>
                     <Link href="/inbox">
                         <Inbox />
-                        <span>Inbox Storia</span>
+                        <span>Inbox</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -203,6 +203,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         <Users />
                         <span>Grupuri Facebook</span>
                       </Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/facebook-instagram')}>
+                      <Link href="/marketing/facebook-instagram"><Facebook /><span>Facebook + Instagram</span></Link>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton asChild isActive={currentPath.startsWith('/marketing/whatsapp')}>
+                      <Link href="/marketing/whatsapp"><MessageSquare /><span>WhatsApp</span></Link>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>

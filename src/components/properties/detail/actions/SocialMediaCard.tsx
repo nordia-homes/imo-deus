@@ -309,6 +309,10 @@ export function SocialMediaCard({ property }: { property: Property }) {
         </div>
 
         <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
+          <Button asChild variant="outline" className="rounded-full">
+            <a href={`/marketing/facebook-instagram?propertyId=${encodeURIComponent(property.id)}`}>Facebook + Instagram</a>
+          </Button>
+          <Button asChild variant="outline" className="rounded-full"><a href={`/inbox?propertyId=${encodeURIComponent(property.id)}`}>Conversații</a></Button>
           {facebookPost?.permalinkUrl ? (
             <Button asChild variant="outline" className="rounded-full">
               <a href={facebookPost.permalinkUrl} target="_blank" rel="noopener noreferrer">

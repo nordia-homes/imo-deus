@@ -1,6 +1,7 @@
 import type { Timestamp } from 'firebase/firestore';
 
 export const NOTIFICATION_CATEGORY_KEYS = [
+  'inboxMessages',
   'storiaMessages',
   'viewingAssignments',
   'viewingRescheduled',
@@ -19,6 +20,7 @@ export const NOTIFICATION_CATEGORY_KEYS = [
 export type NotificationCategory = (typeof NOTIFICATION_CATEGORY_KEYS)[number];
 
 export const NOTIFICATION_CATEGORY_LABELS: Record<NotificationCategory, string> = {
+  inboxMessages: 'Mesaj nou în Inbox',
   storiaMessages: 'Mesaj Storia nou',
   viewingAssignments: 'Vizionare atribuita sau realocata',
   viewingRescheduled: 'Vizionare reprogramata',

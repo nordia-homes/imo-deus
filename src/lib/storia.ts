@@ -2280,6 +2280,7 @@ export async function handleStoriaWebhookNotification(notification: StoriaWebhoo
   const objectId = notification.object_id || notification.data?.uuid || '';
   const transactionId = notification.transaction_id || '';
   const secret = getWebhookSecret();
+  if (!secret) throw new Error('STORIA_WEBHOOK_SECRET nu este configurat.');
   if (!objectId || !transactionId) {
     throw new Error('Webhook Storia invalid: lipsesc object_id sau transaction_id.');
   }

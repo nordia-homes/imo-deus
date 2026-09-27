@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { AuthError, User } from 'firebase/auth';
-import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, sendEmailVerification } from 'firebase/auth';
 import { arrayUnion, deleteDoc, doc, getDoc, increment, setDoc, updateDoc } from 'firebase/firestore';
 import {
   ArrowRight,
@@ -146,26 +146,18 @@ export default function RegisterPage() {
 
       if (inviteSnap.exists()) {
         const inviteData = inviteSnap.data() as Invite;
-        const userProfile = {
-          name: values?.fullName?.trim() || newUser.displayName || newUser.email,
-          email: newUser.email,
-          phone: values?.phone?.trim() || '',
-          agencyId: inviteData.agencyId,
-          role: inviteData.role,
-          agencyName: inviteData.agencyName,
-          photoUrl: newUser.photoURL || '',
-        };
-
-        const userDocRef = doc(firestore, 'users', newUser.uid);
-        await setDoc(userDocRef, userProfile, { merge: true });
-
-          const agencyRef = doc(firestore, 'agencies', inviteData.agencyId);
-          await updateDoc(agencyRef, {
-            agentIds: arrayUnion(newUser.uid),
-            seatUsageCount: increment(1),
-          });
-
-        await deleteDoc(inviteRef);
+        await persistBaseProfile(newUser, values);
+        if (!newUser.emailVerified) {
+          await sendEmailVerification(newUser);
+          toast({ title: 'Verifică adresa de email', description: 'Ți-am trimis un link. După verificare și reautentificare, invitația va fi acceptată automat.' });
+          return;
+        }
+        const membershipResponse = await fetch('/api/account/membership', {
+          method: 'POST', headers: { Authorization: `Bearer ${await newUser.getIdToken()}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'acceptInvite' }),
+        });
+        const membership = await membershipResponse.json();
+        if (!membershipResponse.ok) throw new Error(membership.message);
 
         toast({ title: `Bun venit la ${inviteData.agencyName}!` });
         return;

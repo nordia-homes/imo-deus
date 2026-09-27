@@ -44,6 +44,14 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     const agencyId = isPlatformAdmin ? null : userProfile?.agencyId || persistedAgencyId || null;
 
     useEffect(() => {
+        if (!user?.emailVerified || isProfileLoading || userProfile?.agencyId || isPlatformAdmin) return;
+        user.getIdToken(true).then(token => fetch('/api/account/membership', {
+            method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'acceptInvite' }),
+        })).catch(error => console.error('Invite acceptance failed:', error));
+    }, [user, isProfileLoading, userProfile?.agencyId, isPlatformAdmin]);
+
+    useEffect(() => {
         if (typeof window === 'undefined' || !userProfile?.agencyId) return;
 
         try {
@@ -86,11 +94,10 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
             const needsProfileUpdate = userProfile.role !== 'admin' || userProfile.agencyId !== agency.id;
             if (needsProfileUpdate) {
                 console.warn(`Self-healing: Owner profile for ${user.uid} is out of sync. Correcting role and agencyId.`);
-                const currentUserDocRef = doc(firestore, 'users', user.uid);
-                updateDocumentNonBlocking(currentUserDocRef, {
-                    role: 'admin',
-                    agencyId: agency.id,
-                });
+                user.getIdToken().then(token => fetch('/api/account/membership', {
+                    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'repairOwner', agencyId: agency.id }),
+                })).catch(err => console.error('Owner membership repair failed:', err));
             }
         }
         

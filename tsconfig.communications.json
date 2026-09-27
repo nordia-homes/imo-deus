@@ -1,0 +1,36 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "types": [
+      "node",
+      "next/image-types/global"
+    ]
+  },
+  "include": [
+    "src/lib/communications/**/*.ts",
+    "src/components/communications/**/*.tsx",
+    "src/components/communications/**/*.ts",
+    "src/app/api/communications/**/*.ts",
+    "src/app/api/communications-worker/**/*.ts",
+    "src/app/api/webhooks/**/*.ts",
+    "src/app/auth/communications/**/*.ts",
+    "src/app/(dashboard)/marketing/facebook-instagram/**/*.tsx",
+    "src/app/(dashboard)/marketing/whatsapp/**/*.tsx",
+    "src/app/(dashboard)/inbox/**/*.tsx",
+    "src/app/api/communications-media/**/*.ts",
+    "src/app/api/account/**/*.ts",
+    "src/app/(auth)/register/page.tsx",
+    "src/app/(dashboard)/settings/page.tsx",
+    "src/context/AgencyContext.tsx",
+    "src/app/data-deletion/route.ts",
+    "src/app/auth/meta/deauthorize/route.ts",
+    "node_modules/next/image-types/global.d.ts",
+    "src/types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "functions"
+  ]
+}

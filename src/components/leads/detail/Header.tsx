@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { Contact, Property, Task } from '@/lib/types';
 import { BadgeCheck, Phone, CalendarCheck, Wand2 } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
+import Link from 'next/link';
 
 type LeadHeaderProps = {
   contact: Contact;
@@ -41,6 +42,7 @@ export function LeadHeader({
     <header className="agentfinder-lead-detail-topbar sticky top-16 z-20 bg-background/95 backdrop-blur-sm -mt-4 border-b px-0 py-0 md:-mt-6 lg:-mt-8 lg:border-white/10 lg:bg-[#0F1E33]/95">
       <div className="agentfinder-lead-detail-topbar__inner flex flex-col gap-3 px-4 py-4 md:px-5 lg:flex-row lg:items-center lg:justify-between lg:px-6">
         <div className="agentfinder-lead-detail-topbar__identity flex min-w-0 flex-wrap items-center gap-3">
+          <Button asChild variant="outline" size="sm"><Link href={`/inbox?contactId=${encodeURIComponent(contact.id)}`}>Inbox</Link></Button>
           <h1 className="agentfinder-lead-detail-topbar__title truncate text-[2.05rem] font-bold leading-none tracking-tight text-white">
             {contact.name}
           </h1>

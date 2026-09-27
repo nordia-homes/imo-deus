@@ -4,6 +4,8 @@ import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import { createHmac, timingSafeEqual } from 'node:crypto';
+export { communicationStoriaProjection, communicationMessageSearchProjection, communicationsMinuteTick } from './communications';
 
 export {
   notificationDeliveriesCreated,
@@ -12,6 +14,7 @@ export {
   notificationPropertiesWritten,
   notificationSalesWritten,
   notificationStoriaMessagesWritten,
+  notificationInboxMessageCreated,
   notificationTasksWritten,
   notificationViewingsWritten,
   notificationsMinuteTick,
@@ -24,6 +27,7 @@ const ownerListingsAppBaseUrl = defineSecret('OWNER_LISTINGS_APP_BASE_URL');
 const ownerListingsCronSecret = defineSecret('OWNER_LISTINGS_FUNCTIONS_CRON_SECRET');
 const aiOutreachCronSecret = defineSecret('AI_OUTREACH_CRON_SECRET');
 const propertyVideoTourCronSecret = defineSecret('PROPERTY_VIDEO_TOUR_CRON_SECRET');
+const storiaWebhookSecret = defineSecret('STORIA_WEBHOOK_SECRET');
 const STORIA_WEBHOOK_FORWARD_URL = 'https://imodeus.ro/api/storia/webhook';
 const STORIA_PROVIDER = 'storia';
 const STORIA_SITE_URL = 'https://www.storia.ro';
@@ -609,6 +613,7 @@ export const storiaWebhookAck = onRequest(
     memory: '256MiB',
     timeoutSeconds: 15,
     minInstances: 1,
+    secrets: [storiaWebhookSecret],
   },
   async (request, response) => {
     const contentType = request.get('content-type') || 'application/json';
@@ -620,6 +625,16 @@ export const storiaWebhookAck = onRequest(
 
     if (request.method === 'POST' && request.rawBody?.length) {
       const forwardedBody = request.rawBody.toString('utf8');
+      try {
+        const payload = JSON.parse(forwardedBody) as StoriaWebhookNotification;
+        const objectId = payload.object_id || payload.data?.uuid || '';
+        const transactionId = payload.transaction_id || '';
+        const expected = createHmac('sha1', storiaWebhookSecret.value()).update(`${objectId},${transactionId}`).digest('hex');
+        const actual = signature.trim().toLowerCase();
+        if (!objectId || !transactionId || !actual || Buffer.byteLength(actual) !== Buffer.byteLength(expected) || !timingSafeEqual(Buffer.from(actual), Buffer.from(expected))) {
+          response.status(403).json({ ok: false }); return;
+        }
+      } catch { response.status(400).json({ ok: false }); return; }
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 8000);
 
@@ -670,7 +685,7 @@ export const storiaWebhookAck = onRequest(
       directPersistenceResult,
     });
 
-    response.status(200).json({
+    response.status(forwardError || directPersistenceResult?.reason === 'direct_persistence_error' ? 503 : 200).json({
       ok: true,
       provider: 'storia',
       method: request.method,

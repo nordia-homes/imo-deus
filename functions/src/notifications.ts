@@ -22,6 +22,7 @@ const MAX_ATTEMPTS = 8;
 const LEASE_MS = 2 * 60_000;
 
 type NotificationEventType =
+  | 'inbox.message_received'
   | 'storia.message_received'
   | 'viewing.assigned'
   | 'viewing.assignment_changed'
@@ -213,6 +214,13 @@ async function resolveRecipients(event: NotificationEventDocument): Promise<Reci
   let recipients: Recipient[] = [];
 
   switch (event.type) {
+    case 'inbox.message_received': {
+      const conversation = await db.collection('agencies').doc(event.agencyId).collection('conversations').doc(event.entityId).get();
+      if (!conversation.exists) break;
+      const access = conversation.data()?.accessUids || [];
+      recipients = [...new Set([...access, ...await getAgencyAdmins(event.agencyId)])].map(uid => ({ uid: String(uid) }));
+      break;
+    }
     case 'viewing.assigned':
     case 'task.assigned':
     case 'property.assigned': {
@@ -308,6 +316,9 @@ function buildPresentation(event: NotificationEventDocument, recipient: Recipien
   const nextAgentName = stringValue(p.newAgentName, 'noul agent');
 
   switch (event.type) {
+    case 'inbox.message_received':
+      return { category: 'inboxMessages', title: 'Mesaj nou în Inbox', body: `${contactName} a trimis un mesaj.`,
+        actionUrl: `/inbox?conversationId=${encodeURIComponent(event.entityId)}`, tag: `inbox:${event.entityId}`, ttlSeconds: 6 * 60 * 60 };
     case 'storia.message_received':
       return {
         category: 'storiaMessages',
@@ -1020,6 +1031,18 @@ export const notificationPropertiesWritten = onDocumentWritten(
     });
   },
 );
+
+export const notificationInboxMessageCreated = onDocumentCreated({
+  document: 'agencies/{agencyId}/conversations/{conversationId}/messages/{messageId}', region: REGION, retry: true,
+}, async event => {
+  const message = event.data?.data();
+  if (!message || message.direction !== 'received' || message.imported) return;
+  const conversation = await db.collection('agencies').doc(event.params.agencyId).collection('conversations').doc(event.params.conversationId).get();
+  if (!conversation.exists || conversation.data()?.channel === 'storia') return;
+  await createNotificationEvent({ type: 'inbox.message_received', agencyId: event.params.agencyId, entityType: 'conversation', entityId: event.params.conversationId,
+    sourceEventId: `inbox:${event.params.conversationId}:${event.params.messageId}`, priority: 'action_required',
+    payload: { contactName: conversation.data()?.name || 'Client' } });
+});
 
 export const notificationStoriaMessagesWritten = onDocumentWritten(
   {
