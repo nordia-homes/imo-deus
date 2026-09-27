@@ -57,8 +57,26 @@ export async function listAssets(db: Firestore, agencyId: string) {
   const grant = await db.collection('communicationGrants').doc(stableId(agencyId, 'meta')).get();
   if (!grant.exists) return { pages: [] };
   const token = unseal(grant.data()!.token);
-  const pages = await graph<{ data: Array<{ id: string; name: string; instagram_business_account?: { id: string; username?: string } }> }>('/me/accounts?fields=id,name,instagram_business_account{id,username}&limit=100', token);
-  return { pages: pages.data };
+  const pages = await listAuthorizedPages(token);
+  return { pages: pages.map(({ id, name, instagram_business_account }) => ({ id, name, instagram_business_account })) };
+}
+type MetaPage = { id: string; name: string; access_token?: string; instagram_business_account?: { id: string; username?: string } };
+export async function listAuthorizedPages(userToken: string): Promise<MetaPage[]> {
+  const response = await graph<{ data: MetaPage[] }>('/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100', userToken);
+  const pages = new Map(response.data.map(page => [page.id, page]));
+  try {
+    const debug = await graph<{ data: { app_id?: string; is_valid?: boolean; granular_scopes?: Array<{ scope: string; target_ids?: string[] }> } }>('/debug_token?input_token=' + encodeURIComponent(userToken), userToken);
+    if (debug.data.is_valid && debug.data.app_id === appId()) {
+      const ids = debug.data.granular_scopes?.filter(scope => scope.scope === 'pages_show_list').flatMap(scope => scope.target_ids || []) || [];
+      for (const id of [...new Set(ids)].filter(id => /^\d+$/.test(id) && !pages.has(id)).slice(0, 100)) {
+        try {
+          const page = await graph<MetaPage>('/' + id + '?fields=id,name,access_token,instagram_business_account{id,username}', userToken);
+          if (page.id === id && page.access_token) pages.set(id, page);
+        } catch { /* A granted target may no longer be accessible. */ }
+      }
+    }
+  } catch { /* Keep the pages returned by /me/accounts if token inspection is unavailable. */ }
+  return [...pages.values()];
 }
 async function registerConnection(db: Firestore, row: Connection, token: string, metaUserId?: string) {
   const ownership = db.collection('communicationAccountOwners').doc(stableId(row.channel, row.externalId));
@@ -75,9 +93,9 @@ export async function selectPage(db: Firestore, actor: Actor, pageId: string) {
   const grant = await db.collection('communicationGrants').doc(stableId(actor.agencyId, 'meta')).get();
   if (!grant.exists) throw new CommunicationError('Conectează mai întâi contul Meta.');
   const userToken = unseal(grant.data()!.token);
-  const pages = await graph<{ data: Array<{ id: string; name: string; access_token: string; instagram_business_account?: { id: string; username?: string } }> }>('/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100', userToken);
-  const page = pages.data.find(p => p.id === pageId);
-  if (!page) throw new CommunicationError('Pagina nu este administrată de contul conectat.', 403);
+  const pages = await listAuthorizedPages(userToken);
+  const page = pages.find(p => p.id === pageId);
+  if (!page?.access_token) throw new CommunicationError('Pagina nu este administrată de contul conectat.', 403);
   const permissionData = await graph<{ data: Array<{ permission: string; status: string }> }>('/me/permissions', userToken);
   const scopes = new Set(permissionData.data.filter(p => p.status === 'granted').map(p => p.permission));
   let subscribed = false;
