@@ -1,14 +1,16 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCheck, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
-import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import Image from 'next/image';
+import { ArrowLeft, ArrowRight, Building2, CheckCheck, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
+import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { CHANNEL_LABELS, withinResponseWindow, type Connection, type Conversation, type Message } from '@/lib/communications/model';
+import { CHANNEL_LABELS, type Connection, type Conversation, type Message } from '@/lib/communications/model';
+import type { Property } from '@/lib/types';
 import { useCommunications } from './useCommunications';
 
 const field = 'h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/15';
@@ -24,6 +26,7 @@ export default function InboxWorkspace() {
   const [channel, setChannel] = useState('all'); const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('all');
   const [attentionOnly, setAttentionOnly] = useState(false);
+  const [mobilePane, setMobilePane] = useState<'list' | 'conversation'>('list');
   const [detailsOpen, setDetailsOpen] = useState(false);
   useEffect(() => {
     if (!detailsOpen) return;
@@ -52,7 +55,10 @@ export default function InboxWorkspace() {
   useEffect(() => { api('dashboard').then(d => { setConnections(d.connections.filter((c: Connection) => c.channel === 'whatsapp' && c.status === 'connected')); setNewContactId(new URLSearchParams(window.location.search).get('contactId') || ''); }).catch(e => setError(e.message)); }, [api]);
   const open = useCallback(async (id: string, more?: string, target?: string) => {
     const data = await api(`conversations/${id}/messages${more ? `?cursor=${more}` : target ? `?target=${target}` : ''}`);
-    setSelected(data.conversation); setMessages(prev => more ? [...prev, ...data.messages] : data.messages); setMessageCursor(data.cursor);
+    setSelected(data.conversation);
+    setMessages(prev => more ? [...prev, ...data.messages] : data.messages);
+    setMessageCursor(data.cursor);
+    if (!more) setMobilePane('conversation');
     if (!more) { const payload = await api(`conversations/${id}/notes`); setNotes(payload.notes); }
     if (target) setTimeout(() => document.getElementById(`message-${target}`)?.scrollIntoView({ block: 'center' }), 100);
   }, [api]);
@@ -112,25 +118,32 @@ export default function InboxWorkspace() {
     do { const data = await api('migrate', 'POST', { cursor: next || undefined }); next = data.cursor; total += data.imported; setMigration(`${total} conversații verificate`); } while (next);
     await load();
   }
+  const selectedPropertyId = selected?.propertyIds?.[0] || null;
+  const propertyRef = useMemoFirebase(
+    () => agencyId && selectedPropertyId ? doc(firestore, 'agencies', agencyId, 'properties', selectedPropertyId) : null,
+    [agencyId, firestore, selectedPropertyId],
+  );
+  const { data: associatedProperty } = useDoc<Property>(propertyRef);
+  const propertyImage = associatedProperty?.images?.[0]?.url;
   const attentionCount = rows.filter(row => row.needsReply).length;
 
   const visibleRows = attentionOnly ? rows.filter(row => row.needsReply) : rows;
   const selectedAgent = agents.find(agent => agent.id === selected?.assigneeId);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f5f8fc] px-2 pb-3 pt-2 text-slate-800 sm:px-3 sm:pt-3">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f8fc] px-2 pb-20 pt-2 text-slate-800 sm:px-3 md:pb-2">
       <div className="pointer-events-none absolute -left-28 top-36 h-80 w-80 rounded-full bg-emerald-200/35 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-20 h-80 w-80 rounded-full bg-violet-200/30 blur-3xl" />
-      <div className="relative mx-auto max-w-[1800px] space-y-2">
+      <div className="relative mx-auto flex min-h-0 w-full max-w-[1800px] flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-sm"><Inbox className="h-4 w-4" /></span><div><h1 className="text-lg font-bold leading-tight text-[#17304a]">Inbox</h1><p className="text-[11px] text-slate-500">Centrul de mesaje al agenției</p></div></div>
+          <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-sm"><Inbox className="h-4 w-4" /></span><div><h1 className="flex flex-wrap items-baseline gap-1 text-lg font-bold leading-tight text-[#17304a]">Inbox <button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)} className={attentionOnly ? 'rounded-full bg-emerald-100 px-1.5 text-xs font-semibold text-emerald-800' : 'text-xs font-semibold text-emerald-700 hover:underline'}>({attentionCount} de răspuns)</button></h1><p className="text-[11px] text-slate-500">Centrul de mesaje al agenției</p></div></div>
           <div className="flex flex-wrap items-center gap-1.5"><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/marketing/whatsapp">Canale</Link></Button><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/inbox/storia">Istoric Storia</Link></Button>{userProfile?.role === 'admin' && <Button size="sm" disabled={busy} variant="outline" className="h-8 rounded-full border-slate-200 bg-white text-xs" onClick={() => act(migrate)}>Importă</Button>}</div>
         </div>
         {error && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</div>}
         {migration && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{migration}</p>}
 
-        <div className="relative grid gap-2 lg:h-[calc(100dvh-10.5rem)] lg:min-h-[620px] lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
-          <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/90 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)]">
+        <div className="relative grid min-h-0 flex-1 gap-2 md:grid-cols-[minmax(260px,340px)_minmax(0,1fr)]">
+          <aside className={'min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/90 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)] ' + (mobilePane === 'conversation' ? 'hidden md:flex' : 'flex')}>
             <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-cyan-50/70 p-4">
               <div className="flex items-center justify-between">
                 <div><h2 className="font-bold text-[#17304a]">Conversații</h2><p className="text-xs text-slate-500">Fluxul de mesaje al agenției</p></div>
@@ -158,9 +171,9 @@ export default function InboxWorkspace() {
                 <label className="relative"><span className="sr-only">Canal</span><select aria-label="Canal" className={field + ' w-full appearance-none pr-7'} value={channel} onChange={e => setChannel(e.target.value)}><option value="all">Toate canalele</option>{Object.entries(CHANNEL_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select><SlidersHorizontal className="pointer-events-none absolute right-2.5 top-3 h-4 w-4 text-slate-400" /></label>
                 <select aria-label="Starea conversației" className={field + ' w-full'} value={stateFilter} onChange={e => setStateFilter(e.target.value)}>{[['all', 'Toate stările'], ['new', 'Noi'], ['open', 'Deschise'], ['waiting', 'În așteptare'], ['resolved', 'Rezolvate'], ['snoozed', 'Amânate'], ['spam', 'Spam']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
               </div>
-              <button type="button" onClick={() => setAttentionOnly(value => !value)} className={'mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ' + (attentionOnly ? 'border-emerald-300 bg-emerald-100 text-emerald-800' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:text-emerald-700')}><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> De răspuns <span className="opacity-70">{attentionCount}</span></button>
+
             </div>
-            <div className="min-h-[240px] flex-1 space-y-1 overflow-y-auto bg-gradient-to-b from-[#fbfdfd] to-white p-2.5 lg:min-h-0">
+            <div className="min-h-0 flex-1 space-y-1 overflow-y-auto bg-gradient-to-b from-[#fbfdfd] to-white p-2.5">
               {results.length > 0 && <div className="px-2 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Rezultate în mesaje</div>}
               {results.map(result => <button key={result.messageId} className="w-full rounded-2xl border border-cyan-100 bg-cyan-50/70 p-3 text-left transition hover:bg-cyan-100/70" onClick={() => act(() => open(result.conversationId, undefined, result.messageId))}><strong className="text-sm text-[#17304a]">{result.name}</strong><p className="mt-1 line-clamp-2 text-xs text-slate-600">{result.text}</p></button>)}
               {visibleRows.map(conversation => <button key={conversation.id} onClick={() => act(() => open(conversation.id))} className={'group relative w-full overflow-hidden rounded-[18px] border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ' + (selected?.id === conversation.id ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50/50 shadow-[0_10px_25px_-18px_rgba(16,185,129,0.8)]' : 'border-transparent bg-white hover:border-slate-200 hover:bg-slate-50')}>
@@ -171,7 +184,7 @@ export default function InboxWorkspace() {
                     <span className="flex items-start justify-between gap-2"><strong className="truncate text-sm text-[#17304a]">{conversation.name}</strong><time className="shrink-0 text-[10px] text-slate-400">{time(conversation.lastMessageAt)}</time></span>
                     <span className="mt-0.5 block text-[11px] font-medium text-slate-500">{CHANNEL_LABELS[conversation.channel]} · {statusLabel[conversation.status]}</span>
                     <span className="mt-1.5 block truncate text-xs leading-5 text-slate-600">{conversation.latestMessage || 'Conversație deschisă'}</span>
-                    {conversation.needsReply && <span className="mt-2 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">De răspuns</span>}
+
                   </span>
                 </span>
               </button>)}
@@ -180,22 +193,29 @@ export default function InboxWorkspace() {
             </div>
           </aside>
 
-          <main className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)] lg:min-h-0">
+          <main className={'min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)] ' + (mobilePane === 'list' ? 'hidden md:flex' : 'flex')}>
             {selected ? <>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-white via-emerald-50/50 to-cyan-50/60 px-4 py-4 sm:px-5">
                 <div className="flex min-w-0 items-center gap-3">
+                  <button type="button" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 md:hidden" aria-label="Înapoi la conversații" onClick={() => setMobilePane('list')}><ArrowLeft className="h-4 w-4" /></button>
                   <span className={'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span>
                   <div className="min-w-0"><h2 className="truncate text-base font-bold text-[#17304a]">{selected.name}</h2><p className="mt-0.5 text-xs text-slate-500">{CHANNEL_LABELS[selected.channel]} · {statusLabel[selected.status]}</p></div>
                 </div>
                 <div className="flex items-center gap-2"><Button size="sm" variant="outline" className="rounded-full border-slate-200 bg-white" disabled={busy} onClick={() => act(() => patch({ read: true }))}><CheckCheck className="h-4 w-4" /> <span className="hidden sm:inline">Marchează citit</span></Button><Button size="sm" variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" onClick={() => setDetailsOpen(true)}><UserRound className="h-4 w-4" /> Detalii client</Button></div>
               </div>
-              <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5 text-xs sm:px-5">
-                <span className={'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ' + (selected.channel === 'storia' || withinResponseWindow(selected.lastInboundAt) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700')}><span className="h-1.5 w-1.5 rounded-full bg-current" />{selected.channel === 'storia' ? 'Istoric Storia' : withinResponseWindow(selected.lastInboundAt) ? 'Fereastră de răspuns activă' : 'Fereastră de răspuns închisă'}</span>
-                <span className="ml-auto hidden text-slate-400 sm:block">Mesaje și note ale echipei</span>
-              </div>
-              <div className="flex min-h-[280px] flex-1 flex-col gap-3 overflow-y-auto lg:min-h-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.045),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.05),transparent_40%)] px-4 py-5 sm:px-6">
+              {associatedProperty && selectedPropertyId && <Link href={'/properties/' + selectedPropertyId} className="group flex shrink-0 items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-cyan-50/70 via-white to-emerald-50/60 px-4 py-2.5 transition hover:from-cyan-50 hover:to-emerald-50 sm:px-5">
+                <span className="flex h-12 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-slate-400">
+                  {propertyImage ? <Image src={propertyImage} alt={associatedProperty.title || 'Proprietate'} width={56} height={48} unoptimized className="h-full w-full object-cover" /> : <Building2 className="h-5 w-5" />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-[#17304a]">{associatedProperty.title || 'Proprietate asociată'}</span>
+                  <span className="mt-0.5 block truncate text-xs text-slate-500">{[associatedProperty.location || associatedProperty.address, associatedProperty.rooms ? associatedProperty.rooms + ' camere' : null, associatedProperty.squareFootage ? associatedProperty.squareFootage + ' m²' : null, Number.isFinite(associatedProperty.price) ? new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(associatedProperty.price) : null].filter(Boolean).join(' · ')}</span>
+                </span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-700" />
+              </Link>}
+              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.045),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.05),transparent_40%)] px-4 py-5 sm:px-6">
                 {messageCursor && <Button variant="ghost" className="self-center rounded-full text-xs text-slate-500" onClick={() => act(() => open(selected.id, messageCursor))}>Mesaje mai vechi</Button>}
-                {[...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(message => <article id={'message-' + message.id} key={message.id} className={'max-w-[88%] rounded-[20px] border px-4 py-3 shadow-sm sm:max-w-[75%] ' + (message.direction === 'sent' ? 'self-end rounded-br-md border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/80' : 'self-start rounded-bl-md border-slate-200 bg-white')}>
+                {[...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(message => <article id={'message-' + message.id} key={message.id} className={'max-w-[88%] rounded-[20px] border px-4 py-3 shadow-sm sm:max-w-[75%] ' + (message.direction === 'sent' ? 'self-end rounded-br-md border-[#9fdfbc] bg-[#d9f7e8] shadow-[0_8px_22px_-16px_rgba(16,130,84,0.55)]' : 'self-start rounded-bl-md border-[#b9d3fa] bg-[#e6f0ff] shadow-[0_8px_22px_-16px_rgba(55,105,185,0.45)]')}>
                   <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">{message.text}</p>
                   {message.attachments.map((attachmentItem, index) => <button key={index} className="mt-2 flex items-center gap-1.5 text-xs font-medium text-emerald-700 underline underline-offset-2" onClick={() => act(() => download(message.id, index, attachmentItem.name))}><Paperclip className="h-3.5 w-3.5" /> {attachmentItem.name}</button>)}
                   <p className="mt-2 text-[10px] text-slate-400">{date(message.createdAt)} · {message.direction === 'sent' ? (message.origin === 'imodeus' ? 'ImoDeus' : 'Aplicație externă') + ' · ' + message.status : 'Primit'}</p>
@@ -210,7 +230,7 @@ export default function InboxWorkspace() {
                   <button type="button" onClick={() => setNote(true)} className={'rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Notă internă</button>
                 </div>
                 {selected.channel === 'whatsapp' && !note && <div className="mb-2 space-y-2"><select className={field + ' w-full'} aria-label="Șablon WhatsApp" value={template} onChange={e => { setTemplate(e.target.value); setEstimate(''); }}><option value="">Mesaj liber</option>{templates.map(item => <option key={item.name + '|' + item.language} value={item.name + '|' + item.language}>{item.name} ({item.language})</option>)}</select>{template && <Textarea aria-label="Parametri șablon" className="rounded-xl" placeholder="Valorile șablonului, câte una pe linie" value={parameters} onChange={e => setParameters(e.target.value)} />}</div>}
-                <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[84px] resize-y rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
+                <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[84px] resize-none rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
                 {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {!note && !template && selected.channel !== 'storia' && <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"><Paperclip className="h-3.5 w-3.5" /> Atașează<input className="sr-only" type="file" accept="image/jpeg,image/png,application/pdf" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file) act(() => upload(file)); e.target.value = ''; }} /></label>}
@@ -263,4 +283,3 @@ export default function InboxWorkspace() {
     </div>
   );
 }
-

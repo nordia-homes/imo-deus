@@ -18,6 +18,17 @@ export async function graph<T = Record<string, any>>(path: string, token: string
   if (!response.ok || result.error) throw new CommunicationError(result.error?.message || 'Meta nu a acceptat solicitarea.', response.status === 401 ? 401 : 502);
   return result as T;
 }
+export async function graphDelete(path: string, token: string): Promise<void> {
+  if (!/^\/\d+(?:_\d+)?$/.test(path)) throw new CommunicationError('ID Meta invalid.');
+  const response = await fetch(`https://graph.facebook.com/${version()}${path}`, {
+    method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store', signal: AbortSignal.timeout(25000),
+  });
+  const result = await response.json();
+  if (!response.ok || result.error || result.success !== true) {
+    throw new CommunicationError(result.error?.message || 'Meta nu a confirmat ștergerea postării.', response.status === 401 ? 401 : 502);
+  }
+}
 const scopeGroups = {
   publish: ['pages_manage_posts', 'instagram_basic', 'instagram_content_publish'],
   messaging: ['pages_messaging', 'pages_manage_metadata', 'instagram_basic', 'instagram_manage_messages'],

@@ -2,7 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { stableId } from './crypto';
 import { agencyCollection, CommunicationError, nowIso } from './server';
-import { connectionToken, graph, refreshPageToken } from './meta';
+import { connectionToken, graph, graphDelete, refreshPageToken } from './meta';
 import type { Actor } from './model';
 
 export function propertyImageUrls(images: Array<{ url?: string }> = []) {
@@ -115,6 +115,33 @@ export async function publishDraft(db: Firestore, actor: Actor, id: string) {
     tx.set(db.collection('communicationSocialJobs').doc(id), { agencyId: actor.agencyId, postId: id, status: 'queued', scheduledAt });
   });
   return { queued: true };
+}
+export async function removePublishedSocialPost(db: Firestore, actor: Actor, postId: string, connectionId: string, remote: boolean) {
+  const ref = agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId);
+  const snap = await ref.get();
+  const post = snap.data();
+  const destination = post?.destinations?.[connectionId];
+  if (!destination?.externalId || destination.status !== 'published') throw new CommunicationError('Postarea nu mai este marcată ca publicată pe acest cont.', 409);
+  if (remote) {
+    if (destination.channel !== 'messenger') throw new CommunicationError('Ștergerea directă este disponibilă doar pentru postările Facebook.', 400);
+    const { connection, token } = await connectionToken(db, actor, connectionId, 'publish');
+    if (connection.channel !== 'messenger' || !new RegExp('^' + connection.externalId + '_\\d+$').test(destination.externalId)) {
+      throw new CommunicationError('ID-ul postării nu aparține paginii Facebook conectate.', 409);
+    }
+    await graphDelete('/' + destination.externalId, token);
+  }
+  await db.runTransaction(async tx => {
+    const current = await tx.get(ref);
+    const data = current.data();
+    const entry = data?.destinations?.[connectionId];
+    if (!entry || entry.externalId !== destination.externalId || entry.status !== 'published') {
+      throw new CommunicationError('Starea postării s-a schimbat. Actualizează istoricul.', 409);
+    }
+    const destinations = { ...data.destinations, [connectionId]: { ...entry, status: 'deleted', deletedAt: nowIso(), deletedBy: actor.uid, removal: remote ? 'meta' : 'confirmed_external' } };
+    const statuses = Object.values(destinations).map((value: any) => value.status);
+    tx.update(ref, { destinations, status: statuses.every(status => status === 'deleted') ? 'deleted' : statuses.includes('published') ? 'published' : 'needs_review', updatedAt: nowIso() });
+  });
+  return { deleted: true };
 }
 async function socialRead<T = Record<string, any>>(
   db: Firestore, actor: Pick<Actor, 'agencyId'>, connection: Awaited<ReturnType<typeof connectionToken>>['connection'],

@@ -4,7 +4,7 @@ import { agencyCollection, addNote, CommunicationError, connectionList, context,
 import { finishWhatsApp, graph, listAssets, onboardingConfig, selectPage, startAuthorization, connectionToken } from '@/lib/communications/meta';
 import { queueMessage } from '@/lib/communications/outbound';
 import { searchMessages } from '@/lib/communications/search';
-import { commentInteraction, createSocialPost, diagnoseSocialPost, postInteraction, propertyImageUrls, publishDraft } from '@/lib/communications/social';
+import { commentInteraction, createSocialPost, diagnoseSocialPost, postInteraction, propertyImageUrls, publishDraft, removePublishedSocialPost } from '@/lib/communications/social';
 import { stableId } from '@/lib/communications/crypto';
 import { syncConversation } from '@/lib/communications/sync';
 export const runtime = 'nodejs';
@@ -66,6 +66,8 @@ async function handle(request: NextRequest, route: RouteContext) {
     else if (resource === 'posts' && id && action === 'comments' && commentId && commentAction === 'replies' && request.method === 'POST') result = await commentInteraction(db, actor, id, body.connectionId, commentId, 'replies', body.text);
     else if (resource === 'posts' && id && action === 'comments' && commentId && commentAction === 'like' && request.method === 'POST') result = await commentInteraction(db, actor, id, body.connectionId, commentId, 'like');
     else if (resource === 'posts' && id && action === 'comments' && !commentId && request.method === 'POST') result = await postInteraction(db, actor, id, body.connectionId, 'comments', body.text);
+    else if (resource === 'posts' && id && action === 'destinations' && commentId && request.method === 'DELETE') result = await removePublishedSocialPost(db, actor, id, commentId, true);
+    else if (resource === 'posts' && id && action === 'destinations' && commentId && commentAction === 'removed' && request.method === 'POST') result = await removePublishedSocialPost(db, actor, id, commentId, false);
     else if (resource === 'posts' && id && request.method === 'DELETE') {
       const ref = agencyCollection(db, actor.agencyId, 'socialPosts').doc(id);
       await db.runTransaction(async tx => { const snap = await tx.get(ref); if (!snap.exists || !['draft', 'queued'].includes(snap.data()?.status)) throw new CommunicationError('Publicarea a început și nu mai poate fi anulată.', 409); tx.update(ref, { status: 'cancelled' }); }); result = { cancelled: true };

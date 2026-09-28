@@ -39,3 +39,7 @@ html body .mi-workspace .mi-history-actions { display:flex; gap:7px; margin-top:
 html body .mi-workspace .mi-history-empty { display:grid; justify-items:center; gap:7px; padding:55px 12px; color:#8296a5; font-size:11px; }
 html body .mi-workspace .mi-history-empty strong { color:#314e5c; font-size:14px; }
 @media (max-width:650px) { html body .mi-workspace .mi-history-heading { align-items:flex-start; flex-direction:column; } html body .mi-workspace .mi-history-details { grid-template-columns:1fr; } }
+
+html body .mi-workspace .mi-history-status--deleted { background:#f0f3f5; color:#667984; }
+html body .mi-workspace .mi-history-destination-actions { display:flex; flex-wrap:wrap; gap:7px; width:100%; margin-top:4px; }
+html body .mi-workspace .mi-history-destination-actions button { min-height:32px; font-size:11px; }

@@ -376,13 +376,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </p>
         </SidebarFooter>
       </InteractiveSidebar>
-      <SidebarInset>
+      <SidebarInset className={currentPath === '/inbox' ? 'h-dvh min-h-0 overflow-hidden' : undefined}>
         <Topbar />
-        <main className="flex-1 [background:var(--app-shell-bg-gradient)] pb-20 lg:pb-0">
+        <main className={currentPath === '/inbox' ? 'flex min-h-0 flex-1 flex-col overflow-hidden [background:var(--app-shell-bg-gradient)]' : 'flex-1 [background:var(--app-shell-bg-gradient)] pb-20 lg:pb-0'}>
             <PushNotificationsBanner />
             {children}
         </main>
-        {currentPath !== '/ai-assistant' ? (
+        {currentPath !== '/ai-assistant' && currentPath !== '/inbox' ? (
           <footer className="hidden border-t border-[var(--app-sidebar-border)] bg-[var(--app-footer-bg)] px-6 py-4 text-sm text-[var(--app-page-muted)] lg:block">
             <div className="flex items-center justify-center gap-2">
               <BadgeCheck className="h-4 w-4 text-[var(--app-highlight-soft)]" />
