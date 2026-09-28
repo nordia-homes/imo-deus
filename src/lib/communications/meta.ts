@@ -134,6 +134,21 @@ export async function connectionToken(db: Firestore, actor: Pick<Actor, 'agencyI
   if (connection.capabilities[capability]?.status !== 'active') throw new CommunicationError(connection.capabilities[capability]?.reason || 'Funcția necesită configurare.', 409);
   return { connection, token: unseal(secret.data()!.token) };
 }
+export async function refreshPageToken(db: Firestore, actor: Pick<Actor, 'agencyId'>, connection: Connection): Promise<string> {
+  if (!['messenger', 'instagram'].includes(connection.channel)) throw new CommunicationError('Conexiunea nu este o pagină Meta.', 400);
+  const pageId = connection.channel === 'instagram' ? connection.parentId : connection.externalId;
+  if (!pageId) throw new CommunicationError('Pagina asociată contului Instagram lipsește.', 409);
+  const grant = await db.collection('communicationGrants').doc(stableId(actor.agencyId, 'meta')).get();
+  if (!grant.exists || grant.data()?.agencyId !== actor.agencyId) throw new CommunicationError('Autorizarea Meta lipsește. Reconectează contul.', 409);
+  const pages = await listAuthorizedPages(unseal(grant.data()!.token));
+  const page = pages.find(candidate => candidate.id === pageId);
+  if (!page?.access_token) throw new CommunicationError('Pagina conectată nu mai este disponibilă în autorizarea Meta. Reconectează contul.', 409);
+  if (connection.channel === 'instagram' && page.instagram_business_account?.id !== connection.externalId) {
+    throw new CommunicationError('Contul Instagram nu mai este asociat paginii conectate. Reconectează contul.', 409);
+  }
+  await db.collection('communicationSecrets').doc(connection.id).update({ token: seal(page.access_token) });
+  return page.access_token;
+}
 export async function finishWhatsApp(db: Firestore, actor: Actor, body: unknown) {
   const data = z.object({ code: z.string().min(1), wabaId: z.string().regex(/^\d+$/), phoneNumberId: z.string().regex(/^\d+$/), mode: z.enum(['cloud', 'coexistence']), pin: z.string().regex(/^\d{6}$/).optional() }).parse(body);
   if (data.mode === 'cloud' && !data.pin) throw new CommunicationError('Pentru numărul dedicat setează un PIN din 6 cifre.');
