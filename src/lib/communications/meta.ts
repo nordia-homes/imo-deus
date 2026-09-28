@@ -78,13 +78,22 @@ export async function listAuthorizedPages(userToken: string): Promise<MetaPage[]
   } catch { /* Keep the pages returned by /me/accounts if token inspection is unavailable. */ }
   return [...pages.values()];
 }
+export function preserveVerifiedConnection(next: Connection, current?: Connection): Connection {
+  if (!current || current.status !== 'connected' || current.agencyId !== next.agencyId || current.channel !== next.channel || current.externalId !== next.externalId) return next;
+  const capabilities = { ...next.capabilities };
+  for (const name of ['receive', 'nativeSync'] as const) {
+    if (capabilities[name]?.status === 'configuration_required' && current.capabilities?.[name]?.status === 'active') capabilities[name] = current.capabilities[name];
+  }
+  return { ...next, capabilities, ...(current.lastSyncAt ? { lastSyncAt: current.lastSyncAt } : {}) };
+}
 async function registerConnection(db: Firestore, row: Connection, token: string, metaUserId?: string) {
   const ownership = db.collection('communicationAccountOwners').doc(stableId(row.channel, row.externalId));
+  const connectionRef = agencyCollection(db, row.agencyId, 'channelConnections').doc(row.id);
   await db.runTransaction(async tx => {
-    const existing = await tx.get(ownership);
+    const [existing, current] = await Promise.all([tx.get(ownership), tx.get(connectionRef)]);
     if (existing.exists && existing.data()?.agencyId !== row.agencyId) throw new CommunicationError('Contul este deja conectat la altă agenție.', 409);
     tx.set(ownership, { agencyId: row.agencyId, connectionId: row.id, channel: row.channel, externalId: row.externalId });
-    tx.set(agencyCollection(db, row.agencyId, 'channelConnections').doc(row.id), row);
+    tx.set(connectionRef, preserveVerifiedConnection(row, current.data() as Connection | undefined));
     tx.set(db.collection('communicationSecrets').doc(row.id), { agencyId: row.agencyId, token: seal(token), metaUserId: metaUserId || null });
   });
 }

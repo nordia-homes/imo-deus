@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Firestore } from 'firebase-admin/firestore';
-import { listAuthorizedPages, startAuthorization } from '../meta';
+import type { Connection } from '../model';
+import { listAuthorizedPages, preserveVerifiedConnection, startAuthorization } from '../meta';
 
 beforeEach(() => vi.stubEnv('META_APP_ID', 'test-app'));
 afterEach(() => {
@@ -56,5 +57,24 @@ describe('Meta authorization', () => {
       uid: 'admin-1', agencyId: 'nordia', features: ['publish', 'messaging'],
     }));
     expect(Object.keys(create.mock.calls[0][0] as object).sort()).toEqual(['agencyId', 'expiresAt', 'features', 'uid']);
+  });
+});
+describe('Meta reconnection', () => {
+  it('keeps webhook-verified reception when the same Page is selected again', () => {
+    const next: Connection = {
+      id: 'nordia-page', agencyId: 'nordia', channel: 'messenger', externalId: 'page-1',
+      name: 'Nordia', status: 'connected', updatedAt: 'later',
+      capabilities: { receive: { status: 'configuration_required', reason: 'Waiting for test' } },
+    };
+    const current: Connection = {
+      ...next, updatedAt: 'earlier', lastSyncAt: '2026-09-28T07:08:36Z',
+      capabilities: { receive: { status: 'active', reason: 'Webhook received' } },
+    };
+
+    const result = preserveVerifiedConnection(next, current);
+
+    expect(result.capabilities.receive?.status).toBe('active');
+    expect(result.lastSyncAt).toBe(current.lastSyncAt);
+    expect(preserveVerifiedConnection({ ...next, capabilities: { receive: { status: 'unavailable', reason: 'Permission revoked' } } }, current).capabilities.receive?.status).toBe('unavailable');
   });
 });
