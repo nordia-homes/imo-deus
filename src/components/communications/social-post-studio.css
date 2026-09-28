@@ -26,12 +26,6 @@ html body .mi-workspace .mi-property-option--selected .mi-property-check { borde
 html body .mi-workspace .mi-caption-input { min-height:185px; border-color:#d5e1e9; border-radius:11px; background:#fafcfd; color:#263d51; font-size:12px; line-height:1.65; resize:vertical; }
 html body .mi-workspace .mi-studio-field-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px; color:#6e8498; font-size:10px; }
 html body .mi-workspace .mi-studio-field-footer button { color:#177f75 !important; font-size:10px; }
-html body .mi-workspace .mi-photo-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:9px; }
-html body .mi-workspace .mi-photo-option { position:relative; overflow:hidden; aspect-ratio:1.15; border:2px solid transparent; border-radius:10px; background:#e8eef2; }
-html body .mi-workspace .mi-photo-option img { width:100%; height:100%; object-fit:cover; }
-html body .mi-workspace .mi-photo-option > span { position:absolute; right:6px; top:6px; display:grid; place-items:center; width:23px; height:23px; border-radius:50%; background:#fffde8; color:#1e5264; font-size:12px; font-weight:700; }
-html body .mi-workspace .mi-photo-option--selected { border-color:#159780; }
-html body .mi-workspace .mi-photo-option--selected > span { background:#159780; color:white; }
 html body .mi-workspace .mi-studio-hint { margin-top:11px; color:#6d8194; font-size:10px; line-height:1.5; }
 html body .mi-workspace .mi-studio-empty { padding:24px 12px; text-align:center; color:#8294a4; font-size:11px; }
 html body .mi-workspace .mi-studio-error, html body .mi-workspace .mi-studio-warning { padding:11px 14px; border:1px solid #efcfad; border-radius:9px; background:#fff7eb; color:#855a25; font-size:12px; }
@@ -56,14 +50,21 @@ html body .mi-workspace .mi-studio-actions { display:flex; flex-wrap:wrap; gap:9
 html body .mi-workspace .mi-studio-actions button { border-radius:11px; }
 html body .mi-workspace .mi-studio-actions button:last-child { background:#b5f2e1; color:#0c3838; }
 
-html body .mi-workspace .mi-photo-order { display:grid; grid-template-columns:repeat(auto-fill,minmax(76px,1fr)); gap:9px; margin-top:15px; padding:12px; border:1px dashed #b9d5d0; border-radius:12px; background:#f8fbfa; }
-html body .mi-workspace .mi-photo-order-item { position:relative; width:auto; height:93px; overflow:hidden; border:1px solid #c7dcd8; border-radius:10px; background:#fff; box-shadow:0 3px 9px #203a4110; }
-html body .mi-workspace .mi-photo-order-item--dragging { z-index:20; opacity:.85; box-shadow:0 14px 28px #203a4140; }
-html body .mi-workspace .mi-photo-order-item img { width:100%; height:100%; object-fit:cover; }
-html body .mi-workspace .mi-photo-order-number { position:absolute; left:5px; top:5px; display:grid; place-items:center; width:19px; height:19px; border-radius:6px; background:#128c7e; color:#fff; font-size:10px; font-weight:700; }
-html body .mi-workspace .mi-photo-drag-handle { position:absolute; right:5px; bottom:5px; display:grid; place-items:center; width:26px; height:29px; border:1px solid #ffffffbb; border-radius:7px; background:#142f3acc; color:white; cursor:grab; touch-action:none; }
+html body .mi-workspace .mi-photo-strip { display:flex; gap:10px; width:100%; overflow-x:auto; overflow-y:hidden; padding:3px 2px 14px; scrollbar-width:thin; scrollbar-color:#7bada9 #e9f1f1; scroll-snap-type:x proximity; }
+html body .mi-workspace .mi-photo-strip::-webkit-scrollbar { height:9px; }
+html body .mi-workspace .mi-photo-strip::-webkit-scrollbar-track { border-radius:9px; background:#e9f1f1; }
+html body .mi-workspace .mi-photo-strip::-webkit-scrollbar-thumb { border-radius:9px; background:#7bada9; }
+html body .mi-workspace .mi-photo-strip-item { position:relative; flex:0 0 146px; width:146px; height:146px; overflow:hidden; border:2px solid #d9e5e9; border-radius:11px; background:#e8eef2; scroll-snap-align:start; }
+html body .mi-workspace .mi-photo-strip-item--selected { border-color:#159780; }
+html body .mi-workspace .mi-photo-strip-item--dragging { z-index:20; opacity:.8; box-shadow:0 16px 30px #203a4140; }
+html body .mi-workspace .mi-photo-strip-item img { width:100%; height:100%; object-fit:cover; }
+html body .mi-workspace .mi-photo-strip-item:not(.mi-photo-strip-item--selected) img { opacity:.5; }
+html body .mi-workspace .mi-photo-select-area { position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:flex-end; padding:7px; background:transparent; }
+html body .mi-workspace .mi-photo-select-area span { display:grid; place-items:center; width:25px; height:25px; border-radius:50%; background:#fff; color:#24505c; font-size:12px; font-weight:750; box-shadow:0 2px 6px #0003; }
+html body .mi-workspace .mi-photo-strip-item--selected .mi-photo-select-area span { background:#159780; color:#fff; }
+html body .mi-workspace .mi-photo-drag-handle { position:absolute; right:7px; bottom:7px; display:grid; place-items:center; width:31px; height:31px; border:1px solid #ffffffbb; border-radius:8px; background:#142f3acc; color:white; cursor:grab; touch-action:none; }
 html body .mi-workspace .mi-photo-drag-handle:active { cursor:grabbing; }
-html body .mi-workspace .mi-photo-drag-handle:focus-visible { outline:3px solid #13a995; outline-offset:2px; }
+html body .mi-workspace .mi-photo-select-area:focus-visible,html body .mi-workspace .mi-photo-drag-handle:focus-visible { outline:3px solid #13a995; outline-offset:-3px; }
 html body .mi-workspace .mi-preview-column { position:sticky; top:18px; min-width:0; }
 html body .mi-workspace .mi-preview-panel { background:radial-gradient(ellipse at 100% 0%,#eff9f5,transparent 55%),#fff !important; }
 html body .mi-workspace .mi-preview-heading h3 { margin-top:8px; font-size:20px; letter-spacing:-.035em; }
@@ -71,12 +72,11 @@ html body .mi-workspace .mi-preview-heading p { margin-top:5px; color:#718398; f
 html body .mi-workspace .mi-preview-tabs { display:flex; gap:5px; margin:0 0 14px; padding:4px; border-radius:10px; background:#edf2f6; }
 html body .mi-workspace .mi-preview-tabs button { display:flex; align-items:center; justify-content:center; gap:7px; flex:1; padding:9px; border-radius:8px; color:#657a8c; font-size:11px; }
 html body .mi-workspace .mi-preview-tabs button.active { background:#fff; color:#148679; box-shadow:0 2px 9px #33556a15; }
-html body .mi-workspace .mi-phone { position:relative; width:min(100%,346px); height:min(600px,calc(100vh - 180px)); margin:0 auto; padding:10px; border:5px solid #161b22; border-radius:48px; background:#161b22; box-shadow:0 5px 0 #3c444e inset,0 22px 42px #102d3840; }
-html body .mi-workspace .mi-phone::before { content:""; position:absolute; right:-8px; top:133px; width:3px; height:69px; border-radius:0 4px 4px 0; background:#2e343a; }
+html body .mi-workspace .mi-phone { position:relative; width:min(100%,346px); height:min(600px,calc(100vh - 180px)); margin:0 auto; padding:10px; border:5px solid #161b22; border-radius:48px; overflow:hidden; background:#161b22; box-shadow:0 5px 0 #3c444e inset,0 22px 42px #102d3840; }
 html body .mi-workspace .mi-phone-top { position:relative; display:flex; align-items:center; justify-content:space-between; height:26px; padding:0 17px; border-radius:29px 29px 0 0; background:#fff; color:#15191d; font-size:10px; font-weight:750; }
 html body .mi-workspace .mi-phone-island { position:absolute; left:50%; top:-3px; width:88px; height:21px; transform:translateX(-50%); border-radius:0 0 14px 14px; background:#161b22; }
 html body .mi-workspace .mi-phone-screen { height:calc(100% - 45px); overflow-y:auto; overflow-x:hidden; background:#f3f4f5; scrollbar-width:thin; scrollbar-color:#d2d7da transparent; }
-html body .mi-workspace .mi-phone-home { display:grid; place-items:center; height:19px; border-radius:0 0 30px 30px; background:#fff; }
+html body .mi-workspace .mi-phone-home { display:grid; place-items:center; height:19px; border-radius:0 0 34px 34px; background:#fff; }
 html body .mi-workspace .mi-phone-home span { width:100px; height:4px; border-radius:4px; background:#15191d; }
 html body .mi-workspace .mi-app-header { display:flex; align-items:center; justify-content:space-between; height:44px; padding:0 13px; background:#fff; color:#161a1e; }
 html body .mi-workspace .mi-app-header--facebook strong { color:#0866ff; font-size:21px; font-weight:800; letter-spacing:-.07em; }
@@ -124,6 +124,6 @@ html body .mi-workspace .mi-ig-caption p.expanded { display:block; overflow:visi
 html body .mi-workspace .mi-ig-date { display:block; padding:4px 11px 12px; background:#fff; color:#899098; font-size:9px; }
 html body .mi-workspace .mi-preview-placeholder { display:grid; justify-items:center; align-content:center; gap:8px; height:220px; background:#f1f5f7; color:#8aa0ad; font-size:10px; }
 html body .mi-workspace .mi-preview-property { margin-top:13px; color:#788b9c; font-size:10px; line-height:1.45; }
-@media (max-width:1100px) { html body .mi-workspace .mi-studio-layout { grid-template-columns:minmax(0,1fr) 365px; } html body .mi-workspace .mi-photo-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media (max-width:1100px) { html body .mi-workspace .mi-studio-layout { grid-template-columns:minmax(0,1fr) 365px; } }
 @media (max-width:850px) { html body .mi-workspace .mi-studio-layout { grid-template-columns:1fr; } html body .mi-workspace .mi-preview-column { position:static; } html body .mi-workspace .mi-preview-panel { max-width:620px; } }
-@media (max-width:520px) { html body .mi-workspace .mi-photo-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } html body .mi-workspace .mi-schedule-fields { grid-template-columns:1fr; } html body .mi-workspace .mi-studio-panel { padding:18px; } html body .mi-workspace .mi-phone { width:min(100%,332px); } }
+@media (max-width:520px) { html body .mi-workspace .mi-schedule-fields { grid-template-columns:1fr; } html body .mi-workspace .mi-studio-panel { padding:18px; } html body .mi-workspace .mi-phone { width:min(100%,332px); } }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Bookmark, CalendarClock, Check, ChevronLeft, ChevronRight, Facebook, Globe2, GripVertical, Heart, Image as ImageIcon, Instagram, MessageCircle, MoreHorizontal, Repeat2, RotateCcw, Search, Send, Share2, Sparkles } from 'lucide-react';
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import { arrayMove, horizontalListSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,11 +29,12 @@ function propertyCaption(property: SocialProperty) {
   return [property.title, property.location].filter(Boolean).join('\n');
 }
 function destinationLabel(connection: Connection) { return connection.channel === 'instagram' ? 'Instagram' : 'Facebook'; }
-function SortablePhoto({ url, index }: { url: string; index: number }) {
+function SortablePhoto({ url, index, selectedIndex, onToggle }: { url: string; index: number; selectedIndex: number; onToggle: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
-  return <div ref={setNodeRef} className={'mi-photo-order-item' + (isDragging ? ' mi-photo-order-item--dragging' : '')} style={{ transform: CSS.Transform.toString(transform), transition }}>
-    <Image src={url} alt={'Fotografia ' + (index + 1)} width={100} height={100} unoptimized />
-    <span className="mi-photo-order-number">{index + 1}</span>
+  const selected = selectedIndex >= 0;
+  return <div ref={setNodeRef} className={'mi-photo-strip-item' + (selected ? ' mi-photo-strip-item--selected' : '') + (isDragging ? ' mi-photo-strip-item--dragging' : '')} style={{ transform: CSS.Transform.toString(transform), transition }}>
+    <Image src={url} alt={'Fotografia ' + (index + 1) + ' a proprietății'} width={180} height={180} unoptimized />
+    <button type="button" className="mi-photo-select-area" onClick={onToggle} aria-label={'Fotografia ' + (index + 1) + (selected ? ', selectată. Elimină din postare' : ', neselectată. Adaugă în postare')} aria-pressed={selected}><span>{selected ? selectedIndex + 1 : '+'}</span></button>
     <button type="button" className="mi-photo-drag-handle" aria-label={'Trage fotografia ' + (index + 1) + ' pentru reordonare'} {...attributes} {...listeners}><GripVertical size={19} /></button>
   </div>;
 }
@@ -47,6 +48,7 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   const [loadingProperty, setLoadingProperty] = useState(Boolean(initialPropertyId));
   const [captionEdit, setCaptionEdit] = useState<string | null>(null);
   const [photoEdit, setPhotoEdit] = useState<string[] | null>(null);
+  const [photoOrder, setPhotoOrder] = useState<string[] | null>(null);
   const [targets, setTargets] = useState<string[]>([]);
   const [preview, setPreview] = useState<'facebook' | 'instagram'>('facebook');
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -67,7 +69,8 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   }, [api, propertyId]);
   const selectedProperty = property?.id === propertyId ? property : null;
   const caption = captionEdit ?? (selectedProperty ? propertyCaption(selectedProperty) : '');
-  const photos = photoEdit ?? selectedProperty?.images ?? [];
+  const availablePhotos = photoOrder ?? selectedProperty?.images ?? [];
+  const photos = photoEdit === null ? availablePhotos : availablePhotos.filter(url => photoEdit.includes(url));
   const visiblePhotoIndex = Math.min(previewIndex, Math.max(0, photos.length - 1));
   const eligible = connections.filter(c => c.status === 'connected' && (c.channel === 'messenger' || c.channel === 'instagram'));
   const selectedTargets = eligible.filter(c => targets.includes(c.id));
@@ -77,7 +80,7 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   const instagramLimitExceeded = wantsInstagram && (caption.length > 2200 || photos.length > 10);
   const ready = Boolean(admin && selectedProperty && caption.trim().length && selectedTargets.length > 0 && selectedTargets.length === targets.length && selectedTargets.every(c => c.capabilities.publish?.status === 'active') && (!wantsInstagram || photos.length) && !instagramLimitExceeded && !busy && !loadingProperty);
   function chooseProperty(id: string) {
-    setPropertyId(id); setProperty(null); setCaptionEdit(null); setPhotoEdit(null); setPreviewIndex(0); setCaptionExpanded(false); setLoadingProperty(Boolean(id)); setError('');
+    setPropertyId(id); setProperty(null); setCaptionEdit(null); setPhotoEdit(null); setPhotoOrder(null); setPreviewIndex(0); setCaptionExpanded(false); setLoadingProperty(Boolean(id)); setError('');
   }
   function togglePhoto(url: string) {
     if (photos.includes(url)) { setPhotoEdit(photos.filter(item => item !== url)); return; }
@@ -86,9 +89,9 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   function reorderPhotos(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = photos.indexOf(String(active.id));
-    const newIndex = photos.indexOf(String(over.id));
-    if (oldIndex >= 0 && newIndex >= 0) { setPhotoEdit(arrayMove(photos, oldIndex, newIndex)); setPreviewIndex(0); }
+    const oldIndex = availablePhotos.indexOf(String(active.id));
+    const newIndex = availablePhotos.indexOf(String(over.id));
+    if (oldIndex >= 0 && newIndex >= 0) { setPhotoOrder(arrayMove(availablePhotos, oldIndex, newIndex)); setPreviewIndex(0); }
   }
   function toggleTarget(id: string) {
     setTargets(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
@@ -128,9 +131,8 @@ export default function SocialPostStudio({ properties, connections, initialPrope
         <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>03</span><div><h3>Fotografii</h3><p>Alege fotografiile dorite, apoi trage-le pentru a le ordona.</p></div></div>
           {!selectedProperty && <p className="mi-studio-empty">Fotografiile apar după alegerea proprietății.</p>}
           {selectedProperty && !selectedProperty.images.length && <p className="mi-studio-empty">Această proprietate nu are fotografii disponibile pentru publicare.</p>}
-          {selectedProperty && <div className="mi-photo-grid">{selectedProperty.images.map((url, index) => <button type="button" key={url + index} className={'mi-photo-option' + (photos.includes(url) ? ' mi-photo-option--selected' : '')} onClick={() => togglePhoto(url)} aria-label={'Fotografia ' + (index + 1) + (photos.includes(url) ? ', selectată' : ', neselectată')} aria-pressed={photos.includes(url)}><Image src={url} alt={'Fotografia ' + (index + 1) + ' a proprietății'} width={240} height={200} unoptimized /><span>{photos.includes(url) ? photos.indexOf(url) + 1 : '+'}</span></button>)}</div>}
-          {!!photos.length && <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderPhotos}><SortableContext items={photos} strategy={rectSortingStrategy}><div className="mi-photo-order" aria-label="Ordinea fotografiilor">{photos.map((url, index) => <SortablePhoto key={url} url={url} index={index} />)}</div></SortableContext></DndContext>}
-          <p className="mi-studio-hint">{photos.length} fotografii selectate. Trage de mâner pentru a schimba ordinea. Instagram necesită cel puțin una.</p>
+          {!!availablePhotos.length && <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderPhotos}><SortableContext items={availablePhotos} strategy={horizontalListSortingStrategy}><div className="mi-photo-strip" aria-label="Fotografiile proprietății, în ordinea postării">{availablePhotos.map((url, index) => <SortablePhoto key={url} url={url} index={index} selectedIndex={photos.indexOf(url)} onToggle={() => togglePhoto(url)} />)}</div></SortableContext></DndContext>}
+          <p className="mi-studio-hint">{photos.length} fotografii selectate. Derulează orizontal pentru toate imaginile; trage de mâner pentru a schimba ordinea. Instagram necesită cel puțin una.</p>
         </section>
         <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>04</span><div><h3>Destinații și publicare</h3><p>Alege conturile și momentul publicării.</p></div></div>
           <div className="mi-destination-list">{eligible.map(connection => <label key={connection.id} className={'mi-destination' + (targets.includes(connection.id) ? ' mi-destination--selected' : '')}><input type="checkbox" checked={targets.includes(connection.id)} disabled={connection.capabilities.publish?.status !== 'active'} onChange={() => toggleTarget(connection.id)} /><span className="mi-destination-icon">{connection.channel === 'instagram' ? <Instagram /> : <Facebook />}</span><span><strong>{connection.name}</strong><small>{destinationLabel(connection)}{connection.capabilities.publish?.status !== 'active' ? ' · Publicarea necesită configurare' : ''}</small></span></label>)}</div>
