@@ -68,10 +68,10 @@ html body .mi-workspace .mi-preview-column { position:sticky; top:18px; min-widt
 html body .mi-workspace .mi-preview-panel { background:radial-gradient(ellipse at 100% 0%,#eff9f5,transparent 55%),#fff !important; }
 html body .mi-workspace .mi-preview-heading h3 { margin-top:8px; font-size:20px; letter-spacing:-.035em; }
 html body .mi-workspace .mi-preview-heading p { margin-top:5px; color:#718398; font-size:11px; }
-html body .mi-workspace .mi-preview-tabs { display:flex; gap:5px; margin:18px 0; padding:4px; border-radius:10px; background:#edf2f6; }
+html body .mi-workspace .mi-preview-tabs { display:flex; gap:5px; margin:0 0 14px; padding:4px; border-radius:10px; background:#edf2f6; }
 html body .mi-workspace .mi-preview-tabs button { display:flex; align-items:center; justify-content:center; gap:7px; flex:1; padding:9px; border-radius:8px; color:#657a8c; font-size:11px; }
 html body .mi-workspace .mi-preview-tabs button.active { background:#fff; color:#148679; box-shadow:0 2px 9px #33556a15; }
-html body .mi-workspace .mi-phone { position:relative; width:min(100%,346px); height:696px; margin:0 auto; padding:10px; border:5px solid #161b22; border-radius:48px; background:#161b22; box-shadow:0 5px 0 #3c444e inset,0 22px 42px #102d3840; }
+html body .mi-workspace .mi-phone { position:relative; width:min(100%,346px); height:min(600px,calc(100vh - 180px)); margin:0 auto; padding:10px; border:5px solid #161b22; border-radius:48px; background:#161b22; box-shadow:0 5px 0 #3c444e inset,0 22px 42px #102d3840; }
 html body .mi-workspace .mi-phone::before { content:""; position:absolute; right:-8px; top:133px; width:3px; height:69px; border-radius:0 4px 4px 0; background:#2e343a; }
 html body .mi-workspace .mi-phone-top { position:relative; display:flex; align-items:center; justify-content:space-between; height:26px; padding:0 17px; border-radius:29px 29px 0 0; background:#fff; color:#15191d; font-size:10px; font-weight:750; }
 html body .mi-workspace .mi-phone-island { position:absolute; left:50%; top:-3px; width:88px; height:21px; transform:translateX(-50%); border-radius:0 0 14px 14px; background:#161b22; }

@@ -69,7 +69,7 @@ async function handle(request: NextRequest, route: RouteContext) {
         const snap = await agencyCollection(db, actor.agencyId, 'properties').doc(id).get();
         if (!snap.exists || snap.data()?.status !== 'Activ') throw new CommunicationError('Proprietatea nu mai este activa.', 404);
         const p = snap.data()!;
-        result = { property: { id: snap.id, title: p.title || '', description: p.description || '', location: p.location || p.address || '', price: p.price ?? null, images: propertyImageUrls(p.images || []).slice(0, 80) } };
+        result = { property: { id: snap.id, title: p.title || '', description: p.description || '', location: p.location || p.address || '', price: p.price ?? null, images: propertyImageUrls(p.images || []) } };
       } else {
         const rows = await agencyCollection(db, actor.agencyId, 'properties').where('status', '==', 'Activ').limit(300).get();
         result = { properties: rows.docs.map(d => ({ id: d.id, title: d.data().title || '', location: d.data().location || d.data().address || '', thumbnailUrl: propertyImageUrls(d.data().images || [])[0] || null })) };

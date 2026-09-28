@@ -23,10 +23,9 @@ type Props = {
   api: (path: string, method?: string, body?: unknown) => Promise<any>;
   onSaved: () => Promise<void>;
 };
-const maxLength = 2200;
 function propertyCaption(property: SocialProperty) {
   const description = property.description.trim().replace(/<[^>]*>/g, ' ').replace(/[ \t]+/g, ' ');
-  if (description) return description.slice(0, maxLength);
+  if (description) return description;
   return [property.title, property.location].filter(Boolean).join('\n');
 }
 function destinationLabel(connection: Connection) { return connection.channel === 'instagram' ? 'Instagram' : 'Facebook'; }
@@ -68,20 +67,20 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   }, [api, propertyId]);
   const selectedProperty = property?.id === propertyId ? property : null;
   const caption = captionEdit ?? (selectedProperty ? propertyCaption(selectedProperty) : '');
-  const photos = photoEdit ?? selectedProperty?.images.slice(0, 10) ?? [];
+  const photos = photoEdit ?? selectedProperty?.images ?? [];
   const visiblePhotoIndex = Math.min(previewIndex, Math.max(0, photos.length - 1));
   const eligible = connections.filter(c => c.status === 'connected' && (c.channel === 'messenger' || c.channel === 'instagram'));
   const selectedTargets = eligible.filter(c => targets.includes(c.id));
   const filteredProperties = useMemo(() => properties.filter(p => (p.title + ' ' + p.location).toLocaleLowerCase('ro-RO').includes(propertySearch.toLocaleLowerCase('ro-RO'))), [properties, propertySearch]);
   const previewAccount = selectedTargets.find(c => c.channel === (preview === 'instagram' ? 'instagram' : 'messenger')) || eligible.find(c => c.channel === (preview === 'instagram' ? 'instagram' : 'messenger'));
   const wantsInstagram = selectedTargets.some(c => c.channel === 'instagram');
-  const ready = Boolean(admin && selectedProperty && caption.trim().length && caption.length <= maxLength && selectedTargets.length > 0 && selectedTargets.length === targets.length && selectedTargets.every(c => c.capabilities.publish?.status === 'active') && (!wantsInstagram || photos.length) && !busy && !loadingProperty);
+  const instagramLimitExceeded = wantsInstagram && (caption.length > 2200 || photos.length > 10);
+  const ready = Boolean(admin && selectedProperty && caption.trim().length && selectedTargets.length > 0 && selectedTargets.length === targets.length && selectedTargets.every(c => c.capabilities.publish?.status === 'active') && (!wantsInstagram || photos.length) && !instagramLimitExceeded && !busy && !loadingProperty);
   function chooseProperty(id: string) {
     setPropertyId(id); setProperty(null); setCaptionEdit(null); setPhotoEdit(null); setPreviewIndex(0); setCaptionExpanded(false); setLoadingProperty(Boolean(id)); setError('');
   }
   function togglePhoto(url: string) {
     if (photos.includes(url)) { setPhotoEdit(photos.filter(item => item !== url)); return; }
-    if (photos.length >= 10) { setError('Poți selecta cel mult 10 fotografii.'); return; }
     setPhotoEdit([...photos, url]); setError('');
   }
   function reorderPhotos(event: DragEndEvent) {
@@ -96,6 +95,7 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   }
   async function save(draft: boolean) {
     if (!ready || !selectedProperty) return;
+    if (instagramLimitExceeded) { setError('Instagram acceptă prin API cel mult 2.200 de caractere și 10 fotografii. Editează postarea sau deselectează Instagram. Textul și fotografiile rămân integral în studio.'); return; }
     let scheduledAt: string | undefined;
     if (scheduleMode === 'later') {
       scheduledAt = bucharestLocalToIso(schedule.date, schedule.time) || undefined;
@@ -122,10 +122,10 @@ export default function SocialPostStudio({ properties, connections, initialPrope
           {loadingProperty && <p className="mi-studio-hint">Se încarcă fotografiile și descrierea...</p>}
         </section>
         <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>02</span><div><h3>Textul postării</h3><p>Descrierea proprietății este preluată automat și rămâne editabilă.</p></div></div>
-          <Textarea aria-label="Textul postării" className="mi-caption-input" rows={9} maxLength={maxLength} value={caption} onChange={event => setCaptionEdit(event.target.value)} placeholder={selectedProperty ? 'Scrie un text pentru această proprietate...' : 'Alege mai întâi o proprietate'} disabled={!selectedProperty} />
-          <div className="mi-studio-field-footer"><span>{caption.length} / {maxLength} caractere</span><Button variant="ghost" size="sm" disabled={!selectedProperty || captionEdit === null} onClick={() => setCaptionEdit(null)}><RotateCcw size={14} />Preia din nou descrierea</Button></div>
+          <Textarea aria-label="Textul postării" className="mi-caption-input" rows={9} value={caption} onChange={event => setCaptionEdit(event.target.value)} placeholder={selectedProperty ? 'Scrie un text pentru această proprietate...' : 'Alege mai întâi o proprietate'} disabled={!selectedProperty} />
+          <div className="mi-studio-field-footer"><span>{caption.length} caractere</span><Button variant="ghost" size="sm" disabled={!selectedProperty || captionEdit === null} onClick={() => setCaptionEdit(null)}><RotateCcw size={14} />Preia din nou descrierea</Button></div>
         </section>
-        <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>03</span><div><h3>Fotografii</h3><p>Alege până la 10 imagini, apoi trage fotografiile pentru a le ordona.</p></div></div>
+        <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>03</span><div><h3>Fotografii</h3><p>Alege fotografiile dorite, apoi trage-le pentru a le ordona.</p></div></div>
           {!selectedProperty && <p className="mi-studio-empty">Fotografiile apar după alegerea proprietății.</p>}
           {selectedProperty && !selectedProperty.images.length && <p className="mi-studio-empty">Această proprietate nu are fotografii disponibile pentru publicare.</p>}
           {selectedProperty && <div className="mi-photo-grid">{selectedProperty.images.map((url, index) => <button type="button" key={url + index} className={'mi-photo-option' + (photos.includes(url) ? ' mi-photo-option--selected' : '')} onClick={() => togglePhoto(url)} aria-label={'Fotografia ' + (index + 1) + (photos.includes(url) ? ', selectată' : ', neselectată')} aria-pressed={photos.includes(url)}><Image src={url} alt={'Fotografia ' + (index + 1) + ' a proprietății'} width={240} height={200} unoptimized /><span>{photos.includes(url) ? photos.indexOf(url) + 1 : '+'}</span></button>)}</div>}
@@ -136,13 +136,14 @@ export default function SocialPostStudio({ properties, connections, initialPrope
           <div className="mi-destination-list">{eligible.map(connection => <label key={connection.id} className={'mi-destination' + (targets.includes(connection.id) ? ' mi-destination--selected' : '')}><input type="checkbox" checked={targets.includes(connection.id)} disabled={connection.capabilities.publish?.status !== 'active'} onChange={() => toggleTarget(connection.id)} /><span className="mi-destination-icon">{connection.channel === 'instagram' ? <Instagram /> : <Facebook />}</span><span><strong>{connection.name}</strong><small>{destinationLabel(connection)}{connection.capabilities.publish?.status !== 'active' ? ' · Publicarea necesită configurare' : ''}</small></span></label>)}</div>
           {!eligible.length && <p className="mi-studio-empty">Conectează un cont Facebook sau Instagram înainte de publicare.</p>}
           {wantsInstagram && !photos.length && <p className="mi-studio-warning">Selectează cel puțin o fotografie pentru Instagram.</p>}
+          {instagramLimitExceeded && <p className="mi-studio-warning">Instagram acceptă prin API maximum 2.200 de caractere și 10 fotografii. Ai {caption.length} caractere și {photos.length} fotografii. Descrierea și selecția nu au fost scurtate. Pentru publicare, editează postarea sau deselectează Instagram.</p>}
           <div className="mi-schedule"><div className="mi-schedule-title"><CalendarClock size={18} /><strong>Când publicăm?</strong></div><div className="mi-schedule-choices"><label><input type="radio" checked={scheduleMode === 'now'} onChange={() => setScheduleMode('now')} /> Acum</label><label><input type="radio" checked={scheduleMode === 'later'} onChange={() => setScheduleMode('later')} /> Programează</label></div>{scheduleMode === 'later' && <div className="mi-schedule-fields"><label>Data<Input type="date" value={schedule.date} onChange={event => setSchedule(current => ({ ...current, date: event.target.value }))} /></label><label>Ora București<Input type="time" value={schedule.time} onChange={event => setSchedule(current => ({ ...current, time: event.target.value }))} /></label></div>}</div>
           <div className="mi-studio-actions"><Button variant="outline" disabled={!ready} onClick={() => void save(true)}>Salvează draft</Button><Button disabled={!ready} onClick={() => void save(false)}><Send size={16} />{scheduleMode === 'later' ? 'Programează postarea' : 'Publică postarea'}</Button></div>
           <p className="mi-studio-hint">Prețul și starea proprietății sunt reverificate înainte de publicarea efectivă.</p>
         </section>
       </div>
       <aside className="mi-preview-column"><div className="tt-panel mi-preview-panel">
-        <div className="mi-preview-heading"><span className="tt-eyebrow">PREVIZUALIZARE PE TELEFON</span><h3>Așa va vedea clientul postarea.</h3><p>Aspect orientativ al aplicațiilor mobile Facebook și Instagram.</p></div>
+
         <div className="mi-preview-tabs"><button type="button" className={preview === 'facebook' ? 'active' : ''} onClick={() => { setPreview('facebook'); setCaptionExpanded(false); }}><Facebook size={15} />Facebook</button><button type="button" className={preview === 'instagram' ? 'active' : ''} onClick={() => { setPreview('instagram'); setCaptionExpanded(false); }}><Instagram size={15} />Instagram</button></div>
         <div className="mi-phone"><div className="mi-phone-top"><span>9:41</span><span className="mi-phone-island" /><span>●●● ▰</span></div>
           <div className="mi-phone-screen" key={preview}>

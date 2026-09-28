@@ -9,14 +9,18 @@ export function propertyImageUrls(images: Array<{ url?: string }> = []) {
   return [...new Set(images.map(image => image?.url).filter((url): url is string => typeof url === 'string' && /^https:\/\//.test(url)))];
 }
 export function selectPostImages(available: string[], selected?: string[]) {
-  if (selected === undefined) return available.slice(0, 10);
-  if (selected.length > 10 || new Set(selected).size !== selected.length || selected.some(url => !available.includes(url))) {
-    throw new CommunicationError('Selectează cel mult 10 fotografii care aparțin proprietății.');
+  if (selected === undefined) return available;
+  if (new Set(selected).size !== selected.length || selected.some(url => !available.includes(url))) {
+    throw new CommunicationError('Selectează doar fotografii distincte care aparțin proprietății.');
   }
   return selected;
 }
+export function validateInstagramPost(text: string, images: string[]) {
+  if (!images.length) throw new CommunicationError('Instagram necesită cel puțin o fotografie.');
+  if (text.length > 2200 || images.length > 10) throw new CommunicationError('Instagram acceptă prin API cel mult 2.200 de caractere și 10 fotografii. Editează postarea sau publică doar pe Facebook.');
+}
 export async function createSocialPost(db: Firestore, actor: Actor, body: unknown) {
-  const input = z.object({ requestId: z.string().uuid(), connectionIds: z.array(z.string()).min(1).max(10), propertyId: z.string().min(1), text: z.string().trim().min(1).max(2200), scheduledAt: z.string().datetime().optional(), draft: z.boolean().default(false), imageUrls: z.array(z.string().url()).max(10).optional() }).parse(body);
+  const input = z.object({ requestId: z.string().uuid(), connectionIds: z.array(z.string()).min(1).max(10), propertyId: z.string().min(1), text: z.string().trim().min(1), scheduledAt: z.string().datetime().optional(), draft: z.boolean().default(false), imageUrls: z.array(z.string().url()).optional() }).parse(body);
   const property = await agencyCollection(db, actor.agencyId, 'properties').doc(input.propertyId).get();
   if (!property.exists || property.data()?.status !== 'Activ') throw new CommunicationError('Publicarea necesită o proprietate activă.');
   const p = property.data()!;
@@ -27,7 +31,7 @@ export async function createSocialPost(db: Firestore, actor: Actor, body: unknow
   for (const id of [...new Set(input.connectionIds)]) {
     const { connection } = await connectionToken(db, actor, id, 'publish');
     if (!['messenger', 'instagram'].includes(connection.channel)) throw new CommunicationError('Destinație de publicare invalidă.');
-    if (connection.channel === 'instagram' && !images.length) throw new CommunicationError('Instagram necesită cel puțin o fotografie.');
+    if (connection.channel === 'instagram') validateInstagramPost(input.text, images);
     destinations[id] = { connectionId: id, channel: connection.channel, status: input.draft ? 'draft' : 'queued', attempts: 0 };
   }
   const id = stableId(actor.agencyId, input.requestId);
@@ -79,13 +83,13 @@ export async function drainSocial(db: Firestore) {
           if (container.status_code !== 'FINISHED') throw new CommunicationError('Instagram nu a procesat materialul.');
           attempted = true;
           const published = await graph(`/${connection.externalId}/media_publish`, token, { creation_id: destination.containerId });
-          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: published.id });
+          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: published.id, [`destinations.${id}.publishedAt`]: nowIso() });
         } else {
           const photoIds = [];
           for (const url of post.images) { const photo = await graph(`/${connection.externalId}/photos`, token, { url, published: false }); photoIds.push({ media_fbid: photo.id }); }
           attempted = true;
           const published = await graph(`/${connection.externalId}/feed`, token, { message: post.text, ...(photoIds.length ? { attached_media: photoIds } : {}) });
-          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: published.id });
+          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: published.id, [`destinations.${id}.publishedAt`]: nowIso() });
         }
       } catch (error) {
         failed = true;
@@ -105,6 +109,7 @@ export async function publishDraft(db: Firestore, actor: Actor, id: string) {
     if (!post || post.status !== 'draft') throw new CommunicationError('Numai drafturile pot fi publicate prin această acțiune.');
     const property = await tx.get(agencyCollection(db, actor.agencyId, 'properties').doc(post.propertyId));
     if (property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url))) throw new CommunicationError('Proprietatea s-a modificat; creează o postare actualizată.');
+    if (Object.values(post.destinations).some((value: any) => value.channel === 'instagram')) validateInstagramPost(post.text, post.images);
     const scheduledAt = post.scheduledAt > nowIso() ? post.scheduledAt : nowIso();
     tx.update(ref, { status: 'queued', scheduledAt, createdBy: actor.uid, destinations: Object.fromEntries(Object.entries(post.destinations).map(([key, value]) => [key, { ...(value as object), status: 'queued' }])) });
     tx.set(db.collection('communicationSocialJobs').doc(id), { agencyId: actor.agencyId, postId: id, status: 'queued', scheduledAt });
