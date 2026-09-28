@@ -107,4 +107,3 @@ export default function SocialPostInteractions({ posts, connections, api }: { po
     </DialogContent></Dialog>
   </section>;
 }
-
