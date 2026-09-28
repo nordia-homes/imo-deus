@@ -130,3 +130,27 @@ export async function postInteraction(db: Firestore, actor: Actor, postId: strin
   }
   return graph(`/${id}/comments?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`, token);
 }
+
+export async function commentInteraction(
+  db: Firestore, actor: Actor, postId: string, connectionId: string,
+  commentId: string, action: 'replies' | 'like', text?: string,
+) {
+  if (!/^[a-zA-Z0-9_-]{1,128}$/.test(commentId)) throw new CommunicationError('Comentariu invalid.', 400);
+  const snap = await agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId).get();
+  const destination = snap.data()?.destinations?.[connectionId];
+  if (!destination?.externalId || destination.status !== 'published') throw new CommunicationError('Postarea nu este publicată pe contul ales.');
+  const { connection, token } = await connectionToken(db, actor, connectionId, 'comments');
+  const instagram = connection.channel === 'instagram';
+  const parent = await graph<{ data?: Array<{ id: string }> }>(`/${destination.externalId}/comments?fields=id&limit=100`, token);
+  if (!parent.data?.some(comment => comment.id === commentId)) throw new CommunicationError('Comentariul nu aparține acestei postări sau nu este disponibil.', 404);
+  if (action === 'like') {
+    if (instagram) throw new CommunicationError('Aprecierea comentariilor Instagram nu este disponibilă prin această integrare.', 400);
+    return graph(`/${commentId}/likes`, token, {});
+  }
+  const edge = instagram ? 'replies' : 'comments';
+  if (text !== undefined) {
+    const message = z.string().trim().min(1).max(2000).parse(text);
+    return graph(`/${commentId}/${edge}`, token, { message });
+  }
+  return graph(`/${commentId}/${edge}?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`, token);
+}

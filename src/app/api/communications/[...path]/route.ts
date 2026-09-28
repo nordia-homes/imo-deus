@@ -4,14 +4,14 @@ import { agencyCollection, addNote, CommunicationError, connectionList, context,
 import { finishWhatsApp, graph, listAssets, onboardingConfig, selectPage, startAuthorization, connectionToken } from '@/lib/communications/meta';
 import { queueMessage } from '@/lib/communications/outbound';
 import { searchMessages } from '@/lib/communications/search';
-import { createSocialPost, postInteraction, propertyImageUrls, publishDraft } from '@/lib/communications/social';
+import { commentInteraction, createSocialPost, postInteraction, propertyImageUrls, publishDraft } from '@/lib/communications/social';
 import { stableId } from '@/lib/communications/crypto';
 import { syncConversation } from '@/lib/communications/sync';
 export const runtime = 'nodejs';
 type RouteContext = { params: Promise<{ path: string[] }> };
 async function handle(request: NextRequest, route: RouteContext) {
   try {
-    const { path } = await route.params; const [resource, id, action] = path;
+    const { path } = await route.params; const [resource, id, action, commentId, commentAction] = path;
     const isRead = request.method === 'GET';
     const admin = ['connect', 'assets', 'whatsapp', 'budget', 'posts', 'migrate', 'consent'].includes(resource) || (resource === 'connections' && !isRead);
     const actor = await context(request, admin); const db = actor.adminDb;
@@ -56,11 +56,15 @@ async function handle(request: NextRequest, route: RouteContext) {
       batch.set(ref, record); batch.create(ref.collection('history').doc(), record); await batch.commit(); result = { saved: true };
     } else if (resource === 'migrate' && request.method === 'POST') result = await migrateStoria(db, actor, body.cursor);
     else if (resource === 'posts' && isRead) {
-      if (id && (action === 'comments' || action === 'insights')) return NextResponse.json(await postInteraction(db, actor, id, params.get('connectionId') || '', action), { headers: { 'Cache-Control': 'no-store' } });
+      if (id && action === 'comments' && commentId && commentAction === 'replies') return NextResponse.json(await commentInteraction(db, actor, id, params.get('connectionId') || '', commentId, 'replies'), { headers: { 'Cache-Control': 'no-store' } });
+      if (id && !commentId && (action === 'comments' || action === 'insights')) return NextResponse.json(await postInteraction(db, actor, id, params.get('connectionId') || '', action), { headers: { 'Cache-Control': 'no-store' } });
+      if (id) throw new CommunicationError('Acțiune indisponibilă.', 404);
       const rows = await agencyCollection(db, actor.agencyId, 'socialPosts').orderBy('createdAt', 'desc').limit(50).get(); result = { posts: rows.docs.map(d => ({ id: d.id, ...d.data() })) };
     } else if (resource === 'posts' && !id && request.method === 'POST') result = await createSocialPost(db, actor, body);
     else if (resource === 'posts' && id && action === 'publish' && request.method === 'POST') result = await publishDraft(db, actor, id);
-    else if (resource === 'posts' && id && action === 'comments' && request.method === 'POST') result = await postInteraction(db, actor, id, body.connectionId, 'comments', body.text);
+    else if (resource === 'posts' && id && action === 'comments' && commentId && commentAction === 'replies' && request.method === 'POST') result = await commentInteraction(db, actor, id, body.connectionId, commentId, 'replies', body.text);
+    else if (resource === 'posts' && id && action === 'comments' && commentId && commentAction === 'like' && request.method === 'POST') result = await commentInteraction(db, actor, id, body.connectionId, commentId, 'like');
+    else if (resource === 'posts' && id && action === 'comments' && !commentId && request.method === 'POST') result = await postInteraction(db, actor, id, body.connectionId, 'comments', body.text);
     else if (resource === 'posts' && id && request.method === 'DELETE') {
       const ref = agencyCollection(db, actor.agencyId, 'socialPosts').doc(id);
       await db.runTransaction(async tx => { const snap = await tx.get(ref); if (!snap.exists || !['draft', 'queued'].includes(snap.data()?.status)) throw new CommunicationError('Publicarea a început și nu mai poate fi anulată.', 409); tx.update(ref, { status: 'cancelled' }); }); result = { cancelled: true };
