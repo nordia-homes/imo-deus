@@ -4,7 +4,7 @@ import { agencyCollection, addNote, CommunicationError, connectionList, context,
 import { finishWhatsApp, graph, listAssets, onboardingConfig, selectPage, startAuthorization, connectionToken } from '@/lib/communications/meta';
 import { queueMessage } from '@/lib/communications/outbound';
 import { searchMessages } from '@/lib/communications/search';
-import { commentInteraction, createSocialPost, postInteraction, propertyImageUrls, publishDraft } from '@/lib/communications/social';
+import { commentInteraction, createSocialPost, diagnoseSocialPost, postInteraction, propertyImageUrls, publishDraft } from '@/lib/communications/social';
 import { stableId } from '@/lib/communications/crypto';
 import { syncConversation } from '@/lib/communications/sync';
 export const runtime = 'nodejs';
@@ -56,6 +56,7 @@ async function handle(request: NextRequest, route: RouteContext) {
       batch.set(ref, record); batch.create(ref.collection('history').doc(), record); await batch.commit(); result = { saved: true };
     } else if (resource === 'migrate' && request.method === 'POST') result = await migrateStoria(db, actor, body.cursor);
     else if (resource === 'posts' && isRead) {
+      if (id && action === 'diagnostics' && !commentId) return NextResponse.json(await diagnoseSocialPost(db, actor, id, params.get('connectionId') || ''), { headers: { 'Cache-Control': 'no-store' } });
       if (id && action === 'comments' && commentId && commentAction === 'replies') return NextResponse.json(await commentInteraction(db, actor, id, params.get('connectionId') || '', commentId, 'replies'), { headers: { 'Cache-Control': 'no-store' } });
       if (id && !commentId && (action === 'comments' || action === 'insights')) return NextResponse.json(await postInteraction(db, actor, id, params.get('connectionId') || '', action), { headers: { 'Cache-Control': 'no-store' } });
       if (id) throw new CommunicationError('Acțiune indisponibilă.', 404);

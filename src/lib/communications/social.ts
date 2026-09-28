@@ -138,6 +138,63 @@ async function socialRead<T = Record<string, any>>(
 async function socialGraph<T = Record<string, any>>(path: string, token: string, body?: Record<string, unknown>): Promise<T> {
   return graph<T>(path, token, body);
 }
+export async function diagnoseSocialPost(db: Firestore, actor: Actor, postId: string, connectionId: string) {
+  const snap = await agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId).get();
+  const destination = snap.data()?.destinations?.[connectionId];
+  if (!destination?.externalId || destination.status !== 'published') throw new CommunicationError('Postarea nu este publicată pe contul ales.', 404);
+  const { connection, token } = await connectionToken(db, actor, connectionId, 'comments');
+  if (!['messenger', 'instagram'].includes(connection.channel)) throw new CommunicationError('Canal invalid.', 400);
+  const instagram = connection.channel === 'instagram';
+  const pageId = instagram ? connection.parentId : connection.externalId;
+  const required = instagram
+    ? ['pages_read_engagement', 'instagram_basic', 'instagram_manage_comments']
+    : ['pages_read_engagement', 'pages_read_user_content', 'pages_manage_engagement'];
+  const appId = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '';
+  const appSecret = process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '';
+  const probe = async <T>(path: string, accessToken: string) => {
+    try { return { data: await graph<T>(path, accessToken), error: null }; }
+    catch (cause) { return { data: null, error: cause instanceof Error ? cause.message : 'Cerere Meta eșuată.' }; }
+  };
+  const [identity, debug, listing, object] = await Promise.all([
+    probe<{ id: string }>('/me?fields=id', token),
+    appId && appSecret ? probe<{ data: { app_id?: string; is_valid?: boolean; type?: string; scopes?: string[] } }>(
+      '/debug_token?input_token=' + encodeURIComponent(token), appId + '|' + appSecret,
+    ) : Promise.resolve({ data: null, error: 'Cheile aplicației Meta lipsesc de pe server.' }),
+    probe<{ data?: Array<{ id: string }> }>(
+      instagram ? '/' + connection.externalId + '/media?fields=id&limit=100' : '/' + connection.externalId + '/posts?fields=id&limit=100', token,
+    ),
+    probe<{ id: string }>('/' + destination.externalId + '?fields=id', token),
+  ]);
+  const tokenInfo = debug.data?.data;
+  const grantedScopes = tokenInfo?.scopes || [];
+  const missingScopes = tokenInfo ? required.filter(scope => !grantedScopes.includes(scope)) : null;
+  let conclusion = 'Meta respinge citirea directă a postării; verifică detaliile de mai jos.';
+  if (tokenInfo?.is_valid === false) conclusion = 'Tokenul paginii nu mai este valid. Reconectează contul Meta.';
+  else if (tokenInfo?.app_id && tokenInfo.app_id !== appId) conclusion = 'Tokenul aparține altei aplicații Meta. Reconectează contul prin ImoDeus.';
+  else if (identity.data?.id && pageId && identity.data.id !== pageId) conclusion = 'Tokenul salvat aparține altei pagini Facebook. Reconectează pagina corectă.';
+  else if (missingScopes?.length) conclusion = 'Tokenul paginii nu include permisiunile: ' + missingScopes.join(', ') + '. Reautorizează cu Comentarii selectat.';
+  else if (listing.error) conclusion = 'Meta refuză și lista postărilor acestui cont: ' + listing.error;
+  else if (listing.data?.data && !listing.data.data.some(item => item.id === destination.externalId)) conclusion = 'ID-ul salvat nu apare în primele 100 de postări ale contului. Verifică dacă postarea a fost ștearsă sau publicată în alt cont.';
+  else if (object.data?.id) conclusion = 'Postarea este accesibilă, dar cererea pentru comentarii este refuzată de Meta.';
+  else if (listing.data?.data?.some(item => item.id === destination.externalId)) conclusion = 'Postarea apare în cont, dar Meta refuză accesul direct la ID-ul ei.';
+  return {
+    conclusion,
+    channel: instagram ? 'Instagram' : 'Facebook',
+    savedPostId: destination.externalId as string,
+    expectedPageId: pageId || null,
+    tokenPageId: identity.data?.id || null,
+    tokenIdentityError: identity.error,
+    tokenValid: tokenInfo?.is_valid ?? null,
+    tokenType: tokenInfo?.type || null,
+    appMatches: tokenInfo?.app_id ? tokenInfo.app_id === appId : null,
+    missingScopes,
+    tokenDebugError: debug.error,
+    postInAccountList: listing.data?.data?.some(item => item.id === destination.externalId) ?? null,
+    accountListError: listing.error,
+    directPostReadable: Boolean(object.data?.id),
+    directPostError: object.error,
+  };
+}
 export async function postInteraction(db: Firestore, actor: Actor, postId: string, connectionId: string, action: 'comments' | 'insights', text?: string) {
   const snap = await agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId).get();
   const destination = snap.data()?.destinations?.[connectionId];

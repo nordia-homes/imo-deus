@@ -21,6 +21,9 @@ html body .mi-workspace .mi-interactions-actions button:hover,html body .mi-work
 .mi-comments-modal > button[aria-label] { background:#edf3f4; color:#20394e; }
 .mi-comments-context { margin-top:-6px; overflow:hidden; color:#71869a; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
 .mi-comments-error { padding:9px 11px; border-radius:8px; background:#fff1e8; color:#a54e2b; font-size:12px; }
+.mi-comments-diagnostic { padding:10px 12px; border:1px solid #cbdce6; border-radius:10px; background:#f4f9fc; color:#18364c; font-size:12px; }
+.mi-comments-diagnostic p { margin:5px 0; line-height:1.45; }
+.mi-comments-diagnostic small { color:#567389; line-height:1.5; overflow-wrap:anywhere; }
 .mi-comments-list { flex:1; min-height:120px; overflow-y:auto; margin:7px -5px 0; padding:5px; }
 .mi-comments-empty { padding:35px 12px; color:#8798a6; text-align:center; font-size:12px; }
 .mi-comment { display:flex; gap:10px; padding:14px 2px; border-top:1px solid #edf1f3; }

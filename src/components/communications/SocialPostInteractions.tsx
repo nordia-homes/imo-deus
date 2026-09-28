@@ -11,6 +11,7 @@ import './social-post-interactions.css';
 
 type Api = (path: string, method?: string, body?: unknown) => Promise<any>;
 type Comment = { id: string; text?: string; message?: string; username?: string; from?: { name?: string }; timestamp?: string; created_time?: string };
+type Diagnostic = { conclusion: string; tokenValid: boolean | null; tokenType: string | null; appMatches: boolean | null; expectedPageId: string | null; tokenPageId: string | null; missingScopes: string[] | null; postInAccountList: boolean | null; accountListError: string | null; directPostReadable: boolean };
 type Metrics = { comments: number | null; likes: number | null; shares: number | null; permalink?: string; error?: string };
 type Row = { key: string; post: SocialPostRecord; connectionId: string; account?: Connection; channel: string };
 const count = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -33,6 +34,7 @@ export default function SocialPostInteractions({ posts, connections, api }: { po
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [diagnostic, setDiagnostic] = useState<Diagnostic | null>(null);
   const [liked, setLiked] = useState<string[]>([]);
   useEffect(() => {
     if (!rows.length) return;
@@ -59,9 +61,15 @@ export default function SocialPostInteractions({ posts, connections, api }: { po
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature, refreshIndex, api]);
   async function openComments(row: Row) {
-    setSelected(row); setComments([]); setReplies({}); setDraft(''); setReplyTo(null); setError(''); setBusy(true);
+    setSelected(row); setComments([]); setReplies({}); setDraft(''); setReplyTo(null); setError(''); setDiagnostic(null); setBusy(true);
     try { const result = await api('posts/' + row.post.id + '/comments?connectionId=' + encodeURIComponent(row.connectionId)); setComments(result.data || []); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'Comentariile nu au putut fi încărcate.'); }
+    catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Comentariile nu au putut fi încărcate.');
+      try {
+        const result = await api('posts/' + row.post.id + '/diagnostics?connectionId=' + encodeURIComponent(row.connectionId));
+        setDiagnostic(result as Diagnostic);
+      } catch { /* Keep the original Meta error visible when diagnostics are unavailable. */ }
+    }
     finally { setBusy(false); }
   }
   async function loadReplies(commentId: string, row: Row) {
@@ -103,6 +111,7 @@ export default function SocialPostInteractions({ posts, connections, api }: { po
     {Object.values(metrics).some(value => value.error) && <p role="status" className="mi-interactions-warning">{Object.values(metrics).find(value => value.error)?.error}</p>}
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="mi-comments-modal"><DialogHeader><DialogTitle>Comentarii · {selected?.account?.name || (selected?.channel === 'instagram' ? 'Instagram' : 'Facebook')}</DialogTitle></DialogHeader><p className="mi-comments-context">{selected?.post.propertyTitle || 'Postare'} · {format(selected ? metrics[selected.key]?.comments : null)} comentarii</p>
       {error && <p role="alert" className="mi-comments-error">{error}</p>}
+      {diagnostic && <div role="status" className="mi-comments-diagnostic"><strong>Verificarea accesului Meta</strong><p>{diagnostic.conclusion}</p><small>Token: {diagnostic.tokenValid === null ? 'neverificat' : diagnostic.tokenValid ? 'valid' : 'invalid'}{diagnostic.tokenType ? ' · ' + diagnostic.tokenType : ''} · Aplicația: {diagnostic.appMatches === null ? 'neverificată' : diagnostic.appMatches ? 'corectă' : 'diferită'} · Pagina: {diagnostic.tokenPageId || 'necunoscută'} / {diagnostic.expectedPageId || 'necunoscută'} · Permisiuni lipsă din token: {diagnostic.missingScopes?.join(', ') || 'niciuna identificată'} · Postare în lista contului: {diagnostic.accountListError ? 'eroare' : diagnostic.postInAccountList === null ? 'neverificat' : diagnostic.postInAccountList ? 'da' : 'nu în primele 100'} · ID accesibil direct: {diagnostic.directPostReadable ? 'da' : 'nu'}</small></div>}
       <div className="mi-comments-list">{!comments.length && !error && <p className="mi-comments-empty">{busy ? 'Se încarcă…' : 'Nu există comentarii disponibile pentru această postare.'}</p>}{comments.map(comment => <article key={comment.id} className="mi-comment"><div className="mi-comment-avatar">{(comment.username || comment.from?.name || 'U').slice(0, 1).toUpperCase()}</div><div className="mi-comment-body"><div className="mi-comment-top"><strong>{comment.username || comment.from?.name || 'Utilizator'}</strong><time>{date(comment.timestamp || comment.created_time)}</time></div><p>{comment.text || comment.message || 'Comentariu fără text'}</p><div className="mi-comment-actions"><button type="button" disabled={busy} onClick={() => { setReplyTo(comment.id); setDraft(''); }}>Răspunde</button><button type="button" disabled={busy} onClick={() => void showReplies(comment.id)}>{replies[comment.id] ? 'Actualizează răspunsurile' : 'Vezi răspunsurile'}</button>{selected?.channel !== 'instagram' && <button type="button" disabled={busy || liked.includes(comment.id)} onClick={() => void like(comment.id)}><Heart size={13} />{liked.includes(comment.id) ? 'Apreciat' : 'Apreciază'}</button>}</div>{replies[comment.id]?.map(reply => <div className="mi-comment-reply" key={reply.id}><strong>{reply.username || reply.from?.name || 'Utilizator'}</strong><p>{reply.text || reply.message}</p></div>)}</div></article>)}</div>
       <div className="mi-comments-compose"><label htmlFor="mi-comment-draft">{replyTo ? 'Răspuns public la comentariu' : 'Comentariu public la postare'}</label>{replyTo && <button type="button" onClick={() => { setReplyTo(null); setDraft(''); }}>Anulează răspunsul</button>}<Textarea id="mi-comment-draft" value={draft} maxLength={2000} onChange={event => setDraft(event.target.value)} placeholder={replyTo ? 'Scrie răspunsul…' : 'Scrie un comentariu…'} /><Button disabled={busy || !draft.trim()} onClick={() => void submit()}><Send size={15} />{replyTo ? 'Trimite răspunsul' : 'Publică comentariul'}</Button></div>{comments.length >= 50 && <small className="mi-comments-limit">Sunt afișate primele 50 de comentarii disponibile.</small>}
     </DialogContent></Dialog>
