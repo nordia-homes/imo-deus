@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { CalendarClock, Check, ChevronLeft, ChevronRight, Facebook, Image as ImageIcon, Instagram, RotateCcw, Search, Send, Sparkles } from 'lucide-react';
+import { Bookmark, CalendarClock, Check, ChevronLeft, ChevronRight, Facebook, Globe2, GripVertical, Heart, Image as ImageIcon, Instagram, MessageCircle, MoreHorizontal, Repeat2, RotateCcw, Search, Send, Share2, Sparkles } from 'lucide-react';
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +30,16 @@ function propertyCaption(property: SocialProperty) {
   return [property.title, property.location].filter(Boolean).join('\n');
 }
 function destinationLabel(connection: Connection) { return connection.channel === 'instagram' ? 'Instagram' : 'Facebook'; }
+function SortablePhoto({ url, index }: { url: string; index: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
+  return <div ref={setNodeRef} className={'mi-photo-order-item' + (isDragging ? ' mi-photo-order-item--dragging' : '')} style={{ transform: CSS.Transform.toString(transform), transition }}>
+    <Image src={url} alt={'Fotografia ' + (index + 1)} width={100} height={100} unoptimized />
+    <span className="mi-photo-order-number">{index + 1}</span>
+    <button type="button" className="mi-photo-drag-handle" aria-label={'Trage fotografia ' + (index + 1) + ' pentru reordonare'} {...attributes} {...listeners}><GripVertical size={19} /></button>
+  </div>;
+}
+function PreviewPhoto({ url, alt }: { url: string; alt: string }) { return <Image src={url} alt={alt} width={500} height={500} unoptimized />; }
+
 
 export default function SocialPostStudio({ properties, connections, initialPropertyId, admin, api, onSaved }: Props) {
   const [propertyId, setPropertyId] = useState(initialPropertyId);
@@ -38,6 +51,8 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   const [targets, setTargets] = useState<string[]>([]);
   const [preview, setPreview] = useState<'facebook' | 'instagram'>('facebook');
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [captionExpanded, setCaptionExpanded] = useState(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const [scheduleMode, setScheduleMode] = useState<'now' | 'later'>('now');
   const [schedule, setSchedule] = useState(defaultBucharestScheduleInput);
   const [busy, setBusy] = useState(false);
@@ -62,17 +77,19 @@ export default function SocialPostStudio({ properties, connections, initialPrope
   const wantsInstagram = selectedTargets.some(c => c.channel === 'instagram');
   const ready = Boolean(admin && selectedProperty && caption.trim().length && caption.length <= maxLength && selectedTargets.length > 0 && selectedTargets.length === targets.length && selectedTargets.every(c => c.capabilities.publish?.status === 'active') && (!wantsInstagram || photos.length) && !busy && !loadingProperty);
   function chooseProperty(id: string) {
-    setPropertyId(id); setProperty(null); setCaptionEdit(null); setPhotoEdit(null); setPreviewIndex(0); setLoadingProperty(Boolean(id)); setError('');
+    setPropertyId(id); setProperty(null); setCaptionEdit(null); setPhotoEdit(null); setPreviewIndex(0); setCaptionExpanded(false); setLoadingProperty(Boolean(id)); setError('');
   }
   function togglePhoto(url: string) {
     if (photos.includes(url)) { setPhotoEdit(photos.filter(item => item !== url)); return; }
     if (photos.length >= 10) { setError('Poți selecta cel mult 10 fotografii.'); return; }
     setPhotoEdit([...photos, url]); setError('');
   }
-  function movePhoto(index: number, direction: -1 | 1) {
-    const next = [...photos]; const other = index + direction;
-    if (other < 0 || other >= next.length) return;
-    [next[index], next[other]] = [next[other], next[index]]; setPhotoEdit(next);
+  function reorderPhotos(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = photos.indexOf(String(active.id));
+    const newIndex = photos.indexOf(String(over.id));
+    if (oldIndex >= 0 && newIndex >= 0) { setPhotoEdit(arrayMove(photos, oldIndex, newIndex)); setPreviewIndex(0); }
   }
   function toggleTarget(id: string) {
     setTargets(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
@@ -108,12 +125,12 @@ export default function SocialPostStudio({ properties, connections, initialPrope
           <Textarea aria-label="Textul postării" className="mi-caption-input" rows={9} maxLength={maxLength} value={caption} onChange={event => setCaptionEdit(event.target.value)} placeholder={selectedProperty ? 'Scrie un text pentru această proprietate...' : 'Alege mai întâi o proprietate'} disabled={!selectedProperty} />
           <div className="mi-studio-field-footer"><span>{caption.length} / {maxLength} caractere</span><Button variant="ghost" size="sm" disabled={!selectedProperty || captionEdit === null} onClick={() => setCaptionEdit(null)}><RotateCcw size={14} />Preia din nou descrierea</Button></div>
         </section>
-        <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>03</span><div><h3>Fotografii</h3><p>Alege până la 10 imagini. Ordinea de mai jos este ordinea din postare.</p></div></div>
+        <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>03</span><div><h3>Fotografii</h3><p>Alege până la 10 imagini, apoi trage fotografiile pentru a le ordona.</p></div></div>
           {!selectedProperty && <p className="mi-studio-empty">Fotografiile apar după alegerea proprietății.</p>}
           {selectedProperty && !selectedProperty.images.length && <p className="mi-studio-empty">Această proprietate nu are fotografii disponibile pentru publicare.</p>}
           {selectedProperty && <div className="mi-photo-grid">{selectedProperty.images.map((url, index) => <button type="button" key={url + index} className={'mi-photo-option' + (photos.includes(url) ? ' mi-photo-option--selected' : '')} onClick={() => togglePhoto(url)} aria-label={'Fotografia ' + (index + 1) + (photos.includes(url) ? ', selectată' : ', neselectată')} aria-pressed={photos.includes(url)}><Image src={url} alt={'Fotografia ' + (index + 1) + ' a proprietății'} width={240} height={200} unoptimized /><span>{photos.includes(url) ? photos.indexOf(url) + 1 : '+'}</span></button>)}</div>}
-          {!!photos.length && <div className="mi-photo-order">{photos.map((url, index) => <div key={url + index} className="mi-photo-order-item"><Image src={url} alt="" width={72} height={58} unoptimized /><span>{index + 1}</span><div><button type="button" onClick={() => movePhoto(index, -1)} disabled={index === 0} aria-label={'Mută fotografia ' + (index + 1) + ' mai devreme'}><ChevronLeft size={15} /></button><button type="button" onClick={() => movePhoto(index, 1)} disabled={index === photos.length - 1} aria-label={'Mută fotografia ' + (index + 1) + ' mai târziu'}><ChevronRight size={15} /></button></div></div>)}</div>}
-          <p className="mi-studio-hint">{photos.length} fotografii selectate. Instagram necesită cel puțin una.</p>
+          {!!photos.length && <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={reorderPhotos}><SortableContext items={photos} strategy={rectSortingStrategy}><div className="mi-photo-order" aria-label="Ordinea fotografiilor">{photos.map((url, index) => <SortablePhoto key={url} url={url} index={index} />)}</div></SortableContext></DndContext>}
+          <p className="mi-studio-hint">{photos.length} fotografii selectate. Trage de mâner pentru a schimba ordinea. Instagram necesită cel puțin una.</p>
         </section>
         <section className="tt-panel mi-studio-panel"><div className="mi-studio-step"><span>04</span><div><h3>Destinații și publicare</h3><p>Alege conturile și momentul publicării.</p></div></div>
           <div className="mi-destination-list">{eligible.map(connection => <label key={connection.id} className={'mi-destination' + (targets.includes(connection.id) ? ' mi-destination--selected' : '')}><input type="checkbox" checked={targets.includes(connection.id)} disabled={connection.capabilities.publish?.status !== 'active'} onChange={() => toggleTarget(connection.id)} /><span className="mi-destination-icon">{connection.channel === 'instagram' ? <Instagram /> : <Facebook />}</span><span><strong>{connection.name}</strong><small>{destinationLabel(connection)}{connection.capabilities.publish?.status !== 'active' ? ' · Publicarea necesită configurare' : ''}</small></span></label>)}</div>
@@ -124,9 +141,31 @@ export default function SocialPostStudio({ properties, connections, initialPrope
           <p className="mi-studio-hint">Prețul și starea proprietății sunt reverificate înainte de publicarea efectivă.</p>
         </section>
       </div>
-      <aside className="mi-preview-column"><div className="tt-panel mi-preview-panel"><div className="mi-preview-heading"><span className="tt-eyebrow">PREVIZUALIZARE</span><h3>Vezi postarea înainte de publicare.</h3><p>Aspect orientativ; Meta poate ajusta afișarea.</p></div><div className="mi-preview-tabs"><button type="button" className={preview === 'facebook' ? 'active' : ''} onClick={() => setPreview('facebook')}><Facebook size={15} />Facebook</button><button type="button" className={preview === 'instagram' ? 'active' : ''} onClick={() => setPreview('instagram')}><Instagram size={15} />Instagram</button></div>
-        <div className={'mi-social-preview mi-social-preview--' + preview}><div className="mi-preview-account"><span>{preview === 'facebook' ? <Facebook size={20} /> : <Instagram size={20} />}</span><div><strong>{previewAccount?.name || (preview === 'facebook' ? 'Pagina Facebook' : 'Contul Instagram')}</strong><small>Previzualizare · Public</small></div></div><p className="mi-preview-caption">{caption || 'Textul postării va apărea aici.'}</p>{photos.length ? <div className="mi-preview-media"><Image src={photos[visiblePhotoIndex]} alt={"Fotografia " + (visiblePhotoIndex + 1) + " selectată pentru postare"} width={720} height={600} unoptimized />{photos.length > 1 && <div className="mi-preview-carousel"><button type="button" onClick={() => setPreviewIndex((visiblePhotoIndex - 1 + photos.length) % photos.length)} aria-label="Fotografia precedentă"><ChevronLeft size={17} /></button><span>{visiblePhotoIndex + 1} / {photos.length}</span><button type="button" onClick={() => setPreviewIndex((visiblePhotoIndex + 1) % photos.length)} aria-label="Fotografia următoare"><ChevronRight size={17} /></button></div>}</div> : <div className="mi-preview-placeholder"><ImageIcon size={27} />Fără fotografii selectate</div>}<div className="mi-preview-reactions">{preview === 'facebook' ? 'Apreciază     Comentează     Distribuie' : '♡     ◯     ↗'}</div></div>
-        {selectedProperty && <p className="mi-preview-property">{selectedProperty.title}{selectedProperty.location ? ' · ' + selectedProperty.location : ''}</p>}
+      <aside className="mi-preview-column"><div className="tt-panel mi-preview-panel">
+        <div className="mi-preview-heading"><span className="tt-eyebrow">PREVIZUALIZARE PE TELEFON</span><h3>Așa va vedea clientul postarea.</h3><p>Aspect orientativ al aplicațiilor mobile Facebook și Instagram.</p></div>
+        <div className="mi-preview-tabs"><button type="button" className={preview === 'facebook' ? 'active' : ''} onClick={() => { setPreview('facebook'); setCaptionExpanded(false); }}><Facebook size={15} />Facebook</button><button type="button" className={preview === 'instagram' ? 'active' : ''} onClick={() => { setPreview('instagram'); setCaptionExpanded(false); }}><Instagram size={15} />Instagram</button></div>
+        <div className="mi-phone"><div className="mi-phone-top"><span>9:41</span><span className="mi-phone-island" /><span>●●● ▰</span></div>
+          <div className="mi-phone-screen" key={preview}>
+            {preview === 'facebook' ? <>
+              <div className="mi-app-header mi-app-header--facebook"><strong>facebook</strong><span>⌕　◎</span></div>
+              <article className="mi-feed-post mi-feed-post--facebook">
+                <div className="mi-feed-author"><span className="mi-feed-avatar">{(previewAccount?.name || 'Nordia').slice(0, 1).toUpperCase()}</span><div><strong>{previewAccount?.name || 'Pagina Facebook'}</strong><small>Acum · <Globe2 size={10} /></small></div><MoreHorizontal size={18} /></div>
+                <div className="mi-fb-copy"><p className={captionExpanded ? 'expanded' : ''}>{caption || 'Textul postării va apărea aici.'}</p>{caption.length > 110 && <button type="button" onClick={() => setCaptionExpanded(!captionExpanded)}>{captionExpanded ? 'vezi mai puțin' : 'mai mult'}</button>}</div>
+                {photos.length ? <div className={'mi-fb-collage mi-fb-collage--' + Math.min(photos.length, 5)}>{photos.slice(0, 5).map((url, index) => <div key={url} className="mi-fb-tile"><PreviewPhoto url={url} alt={'Fotografia ' + (index + 1)} />{index === 4 && photos.length > 5 && <span>+{photos.length - 5}</span>}</div>)}</div> : <div className="mi-preview-placeholder"><ImageIcon size={24} />Fără fotografii selectate</div>}
+                <div className="mi-fb-actions"><span><Heart size={17} />Apreciază</span><span><MessageCircle size={17} />Comentează</span><span><Share2 size={17} />Distribuie</span></div>
+              </article>
+            </> : <>
+              <div className="mi-app-header mi-app-header--instagram"><strong>Instagram</strong><span>♡　⊕</span></div>
+              <article className="mi-feed-post mi-feed-post--instagram">
+                <div className="mi-feed-author"><span className="mi-feed-avatar mi-feed-avatar--instagram">{(previewAccount?.name || 'N').slice(0, 1).toUpperCase()}</span><div><strong>{previewAccount?.name || 'Contul Instagram'}</strong></div><MoreHorizontal size={18} /></div>
+                {photos.length ? <div className="mi-ig-media"><PreviewPhoto url={photos[visiblePhotoIndex]} alt={'Fotografia ' + (visiblePhotoIndex + 1)} />{photos.length > 1 && <><span className="mi-ig-count">{visiblePhotoIndex + 1}/{photos.length}</span><button type="button" className="mi-ig-prev" onClick={() => setPreviewIndex((visiblePhotoIndex - 1 + photos.length) % photos.length)} aria-label="Fotografia precedentă"><ChevronLeft size={16} /></button><button type="button" className="mi-ig-next" onClick={() => setPreviewIndex((visiblePhotoIndex + 1) % photos.length)} aria-label="Fotografia următoare"><ChevronRight size={16} /></button></>}</div> : <div className="mi-preview-placeholder"><ImageIcon size={24} />Selectează o fotografie</div>}
+                {photos.length > 1 && <div className="mi-ig-dots">{photos.map((url, index) => <button key={url} type="button" className={index === visiblePhotoIndex ? 'active' : ''} onClick={() => setPreviewIndex(index)} aria-label={'Arată fotografia ' + (index + 1)} />)}</div>}
+                <div className="mi-ig-actions"><Heart size={23} /><MessageCircle size={23} /><Repeat2 size={23} /><Send size={23} /><Bookmark size={23} /></div>
+                <div className="mi-ig-caption"><p className={captionExpanded ? 'expanded' : ''}><strong>{previewAccount?.name || 'contul_tău'}</strong> {caption || 'Textul postării va apărea aici.'}</p>{caption.length > 110 && <button type="button" onClick={() => setCaptionExpanded(!captionExpanded)}>{captionExpanded ? 'mai puțin' : 'mai mult'}</button>}</div><small className="mi-ig-date">ACUM</small>
+              </article>
+            </>}
+          </div><div className="mi-phone-home"><span /></div>
+        </div>{selectedProperty && <p className="mi-preview-property">{selectedProperty.title}{selectedProperty.location ? ' · ' + selectedProperty.location : ''}</p>}
       </div></aside>
     </div>
   </div>;
