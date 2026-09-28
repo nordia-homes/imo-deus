@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, CheckCheck, Clock3, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, Sparkles, UserRound, UsersRound } from 'lucide-react';
+import { ArrowRight, CheckCheck, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
@@ -24,9 +24,17 @@ export default function InboxWorkspace() {
   const [channel, setChannel] = useState('all'); const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('all');
   const [attentionOnly, setAttentionOnly] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  useEffect(() => {
+    if (!detailsOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setDetailsOpen(false); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [detailsOpen]);
   const [results, setResults] = useState<Array<{ conversationId: string; messageId: string; text: string; name: string }>>([]);
   const [text, setText] = useState(''); const [note, setNote] = useState(false); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const sendAttempt = useRef<{ fingerprint: string; requestId: string } | null>(null);
+  const autoOpened = useRef(false);
   const [cursor, setCursor] = useState<string | null>(null); const [messageCursor, setMessageCursor] = useState<string | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [templates, setTemplates] = useState<Array<{ name: string; language: string; status: string }>>([]);
@@ -49,6 +57,11 @@ export default function InboxWorkspace() {
     if (target) setTimeout(() => document.getElementById(`message-${target}`)?.scrollIntoView({ block: 'center' }), 100);
   }, [api]);
   useEffect(() => { const id = new URLSearchParams(window.location.search).get('conversationId'); if (id) open(id).catch(e => setError(e.message)); }, [open]);
+  useEffect(() => {
+    if (autoOpened.current || selected || !rows.length || new URLSearchParams(window.location.search).get('conversationId')) return;
+    autoOpened.current = true;
+    open(rows[0].id).catch(e => setError(e.message));
+  }, [rows, selected, open]);
   useEffect(() => { load().catch(e => setError(e.message)); }, [load]);
   useEffect(() => {
     if (!agencyId || !user) return;
@@ -100,80 +113,42 @@ export default function InboxWorkspace() {
     await load();
   }
   const attentionCount = rows.filter(row => row.needsReply).length;
-  const activeCount = rows.filter(row => row.status === 'new' || row.status === 'open').length;
+
   const visibleRows = attentionOnly ? rows.filter(row => row.needsReply) : rows;
   const selectedAgent = agents.find(agent => agent.id === selected?.assigneeId);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f5f8fc] px-3 pb-8 pt-3 text-slate-800 sm:px-5 sm:pt-5 lg:px-6">
+    <div className="relative min-h-screen overflow-hidden bg-[#f5f8fc] px-2 pb-3 pt-2 text-slate-800 sm:px-3 sm:pt-3">
       <div className="pointer-events-none absolute -left-28 top-36 h-80 w-80 rounded-full bg-emerald-200/35 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-20 h-80 w-80 rounded-full bg-violet-200/30 blur-3xl" />
-      <div className="relative mx-auto max-w-[1800px] space-y-4">
-        <header className="relative overflow-hidden rounded-[28px] border border-emerald-100/80 bg-gradient-to-br from-white via-[#f3fffc] to-[#f3f1ff] px-5 py-5 shadow-[0_22px_65px_-42px_rgba(35,69,103,0.35)] sm:px-7 sm:py-6">
-          <span className="pointer-events-none absolute -right-12 -top-24 h-60 w-60 rounded-full bg-emerald-200/45 blur-3xl" />
-          <span className="pointer-events-none absolute bottom-[-9rem] left-1/3 h-64 w-64 rounded-full bg-cyan-200/40 blur-3xl" />
-          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/75 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 shadow-sm">
-                <Sparkles className="h-3.5 w-3.5" /> Hub de comunicare
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 text-white shadow-[0_15px_30px_-12px_rgba(16,185,129,0.65)] sm:h-14 sm:w-14">
-                  <Inbox className="h-6 w-6 sm:h-7 sm:w-7" />
-                </span>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-[#17304a] sm:text-3xl">Inbox</h1>
-                  <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">Mesaje, clienți și următorii pași. Totul într-un singur loc.</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="mr-1 hidden items-center gap-1.5 text-xs font-medium text-emerald-700 lg:flex"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.7)]" /> Canale conectate</div>
-              <Button variant="outline" asChild className="rounded-full border-white bg-white/85 shadow-sm hover:bg-white"><Link href="/marketing/whatsapp">Gestionează canalele <ArrowRight className="h-4 w-4" /></Link></Button>
-              <Button variant="outline" asChild className="rounded-full border-white bg-white/85 shadow-sm hover:bg-white"><Link href="/inbox/storia">Istoric Storia</Link></Button>
-              {userProfile?.role === 'admin' && <Button disabled={busy} variant="outline" className="rounded-full border-white bg-white/85 shadow-sm hover:bg-white" onClick={() => act(migrate)}>Importă Storia</Button>}
-            </div>
-          </div>
-          <div className="relative mt-5 grid grid-cols-3 gap-2 sm:gap-3">
-            <div className="rounded-2xl border border-white/90 bg-white/70 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500"><MessageCircleMore className="h-4 w-4 text-cyan-600" /> Conversații</div>
-              <p className="mt-1 text-2xl font-bold text-[#17304a]">{rows.length}</p>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700"><Clock3 className="h-4 w-4" /> De răspuns</div>
-              <p className="mt-1 text-2xl font-bold text-emerald-700">{attentionCount}</p>
-            </div>
-            <div className="rounded-2xl border border-violet-100 bg-violet-50/80 px-3 py-3 shadow-sm backdrop-blur sm:px-4">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700"><UsersRound className="h-4 w-4" /> În lucru</div>
-              <p className="mt-1 text-2xl font-bold text-violet-700">{activeCount}</p>
-            </div>
-          </div>
-        </header>
-
+      <div className="relative mx-auto max-w-[1800px] space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-sm"><Inbox className="h-4 w-4" /></span><div><h1 className="text-lg font-bold leading-tight text-[#17304a]">Inbox</h1><p className="text-[11px] text-slate-500">Centrul de mesaje al agenției</p></div></div>
+          <div className="flex flex-wrap items-center gap-1.5"><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/marketing/whatsapp">Canale</Link></Button><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/inbox/storia">Istoric Storia</Link></Button>{userProfile?.role === 'admin' && <Button size="sm" disabled={busy} variant="outline" className="h-8 rounded-full border-slate-200 bg-white text-xs" onClick={() => act(migrate)}>Importă</Button>}</div>
+        </div>
         {error && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</div>}
         {migration && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{migration}</p>}
 
-        <details className="group rounded-[22px] border border-slate-200/80 bg-white/85 px-4 py-3 shadow-sm">
-          <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-[#17304a] [&::-webkit-details-marker]:hidden">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><Plus className="h-4 w-4" /></span>
-            Conversație WhatsApp nouă
-            <span className="ml-auto text-xs font-normal text-slate-400">Dintr-un contact CRM</span>
-          </summary>
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-            <Input className="h-10 max-w-xs rounded-xl" value={newContactId} onChange={e => setNewContactId(e.target.value)} placeholder="ID contact CRM" />
-            <select className={field} value={newConnectionId} onChange={e => setNewConnectionId(e.target.value)}><option value="">Numărul agenției</option>{connections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-            <Button className="rounded-xl" disabled={busy || !newContactId || !newConnectionId} onClick={() => act(async () => { const d = await api('conversations', 'POST', { contactId: newContactId, connectionId: newConnectionId }); await open(d.conversationId); await load(); })}>Deschide conversația</Button>
-            <p className="w-full text-xs text-slate-500">Deschiderea nu trimite un mesaj. Inițierea cere consimțământ și un șablon aprobat.</p>
-          </div>
-        </details>
-
-        <div className="grid min-h-[680px] gap-4 min-[1150px]:grid-cols-[minmax(235px,305px)_minmax(0,1fr)_minmax(230px,280px)] 2xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)_minmax(270px,310px)]">
-          <aside className="flex min-w-0 flex-col overflow-hidden rounded-[26px] border border-slate-200/80 bg-white/90 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)]">
+        <div className="relative grid gap-2 lg:h-[calc(100dvh-10.5rem)] lg:min-h-[620px] lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)]">
+          <aside className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/90 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)]">
             <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-cyan-50/70 p-4">
               <div className="flex items-center justify-between">
                 <div><h2 className="font-bold text-[#17304a]">Conversații</h2><p className="text-xs text-slate-500">Fluxul de mesaje al agenției</p></div>
                 <span className="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-xs font-bold text-emerald-700">{rows.length}</span>
               </div>
+              <details className="group mt-3 rounded-xl border border-emerald-100 bg-white/90 px-2.5 py-2 shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-[#17304a] [&::-webkit-details-marker]:hidden">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"><Plus className="h-4 w-4" /></span>
+                  Conversație nouă
+                  <span className="ml-auto text-xs font-normal text-slate-400">WhatsApp</span>
+                </summary>
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                  <Input className="h-10 max-w-xs rounded-xl" value={newContactId} onChange={e => setNewContactId(e.target.value)} placeholder="ID contact CRM" />
+                  <select className={field} value={newConnectionId} onChange={e => setNewConnectionId(e.target.value)}><option value="">Numărul agenției</option>{connections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+                  <Button className="rounded-xl" disabled={busy || !newContactId || !newConnectionId} onClick={() => act(async () => { const d = await api('conversations', 'POST', { contactId: newContactId, connectionId: newConnectionId }); await open(d.conversationId); await load(); })}>Deschide conversația</Button>
+                  <p className="w-full text-xs text-slate-500">Deschiderea nu trimite un mesaj. Inițierea cere consimțământ și un șablon aprobat.</p>
+                </div>
+              </details>
               <form className="relative mt-4 flex gap-2" onSubmit={e => { e.preventDefault(); act(async () => { const d = await api('search?q=' + encodeURIComponent(search)); setResults(d.results); }); }}>
                 <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input aria-label="Caută în conversații" className="h-10 min-w-0 rounded-xl border-slate-200 bg-white pl-9" value={search} onChange={e => { setSearch(e.target.value); if (!e.target.value) setResults([]); }} placeholder="Nume, telefon, mesaj..." />
@@ -185,7 +160,7 @@ export default function InboxWorkspace() {
               </div>
               <button type="button" onClick={() => setAttentionOnly(value => !value)} className={'mt-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition ' + (attentionOnly ? 'border-emerald-300 bg-emerald-100 text-emerald-800' : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:text-emerald-700')}><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> De răspuns <span className="opacity-70">{attentionCount}</span></button>
             </div>
-            <div className="max-h-[740px] min-h-[300px] flex-1 space-y-1 overflow-y-auto bg-gradient-to-b from-[#fbfdfd] to-white p-2.5">
+            <div className="min-h-[240px] flex-1 space-y-1 overflow-y-auto bg-gradient-to-b from-[#fbfdfd] to-white p-2.5 lg:min-h-0">
               {results.length > 0 && <div className="px-2 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Rezultate în mesaje</div>}
               {results.map(result => <button key={result.messageId} className="w-full rounded-2xl border border-cyan-100 bg-cyan-50/70 p-3 text-left transition hover:bg-cyan-100/70" onClick={() => act(() => open(result.conversationId, undefined, result.messageId))}><strong className="text-sm text-[#17304a]">{result.name}</strong><p className="mt-1 line-clamp-2 text-xs text-slate-600">{result.text}</p></button>)}
               {visibleRows.map(conversation => <button key={conversation.id} onClick={() => act(() => open(conversation.id))} className={'group relative w-full overflow-hidden rounded-[18px] border p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ' + (selected?.id === conversation.id ? 'border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50/50 shadow-[0_10px_25px_-18px_rgba(16,185,129,0.8)]' : 'border-transparent bg-white hover:border-slate-200 hover:bg-slate-50')}>
@@ -205,20 +180,20 @@ export default function InboxWorkspace() {
             </div>
           </aside>
 
-          <main className="flex min-h-[680px] min-w-0 flex-col overflow-hidden rounded-[26px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)]">
+          <main className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-[22px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)] lg:min-h-0">
             {selected ? <>
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-white via-emerald-50/50 to-cyan-50/60 px-4 py-4 sm:px-5">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className={'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span>
                   <div className="min-w-0"><h2 className="truncate text-base font-bold text-[#17304a]">{selected.name}</h2><p className="mt-0.5 text-xs text-slate-500">{CHANNEL_LABELS[selected.channel]} · {statusLabel[selected.status]}</p></div>
                 </div>
-                <Button size="sm" variant="outline" className="rounded-full border-slate-200 bg-white" disabled={busy} onClick={() => act(() => patch({ read: true }))}><CheckCheck className="h-4 w-4" /> Marchează citit</Button>
+                <div className="flex items-center gap-2"><Button size="sm" variant="outline" className="rounded-full border-slate-200 bg-white" disabled={busy} onClick={() => act(() => patch({ read: true }))}><CheckCheck className="h-4 w-4" /> <span className="hidden sm:inline">Marchează citit</span></Button><Button size="sm" variant="outline" className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" onClick={() => setDetailsOpen(true)}><UserRound className="h-4 w-4" /> Detalii client</Button></div>
               </div>
               <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-2.5 text-xs sm:px-5">
                 <span className={'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold ' + (selected.channel === 'storia' || withinResponseWindow(selected.lastInboundAt) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700')}><span className="h-1.5 w-1.5 rounded-full bg-current" />{selected.channel === 'storia' ? 'Istoric Storia' : withinResponseWindow(selected.lastInboundAt) ? 'Fereastră de răspuns activă' : 'Fereastră de răspuns închisă'}</span>
                 <span className="ml-auto hidden text-slate-400 sm:block">Mesaje și note ale echipei</span>
               </div>
-              <div className="flex max-h-[560px] min-h-[300px] flex-1 flex-col gap-3 overflow-y-auto bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.045),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.05),transparent_40%)] px-4 py-5 sm:px-6">
+              <div className="flex min-h-[280px] flex-1 flex-col gap-3 overflow-y-auto lg:min-h-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.045),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.05),transparent_40%)] px-4 py-5 sm:px-6">
                 {messageCursor && <Button variant="ghost" className="self-center rounded-full text-xs text-slate-500" onClick={() => act(() => open(selected.id, messageCursor))}>Mesaje mai vechi</Button>}
                 {[...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(message => <article id={'message-' + message.id} key={message.id} className={'max-w-[88%] rounded-[20px] border px-4 py-3 shadow-sm sm:max-w-[75%] ' + (message.direction === 'sent' ? 'self-end rounded-br-md border-emerald-100 bg-gradient-to-br from-emerald-50 to-teal-50/80' : 'self-start rounded-bl-md border-slate-200 bg-white')}>
                   <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">{message.text}</p>
@@ -229,13 +204,13 @@ export default function InboxWorkspace() {
                 {notes.map(item => <div key={item.id} className="max-w-[90%] self-center rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm"><strong className="text-xs uppercase tracking-wide text-amber-700">Notă internă</strong><p className="mt-1 whitespace-pre-wrap">{item.text}</p></div>)}
                 {!messages.length && !notes.length && <div className="m-auto text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-emerald-100 to-cyan-100 text-emerald-700"><MessageCircleMore className="h-7 w-7" /></span><p className="mt-3 text-sm font-semibold text-[#17304a]">Conversația începe aici</p><p className="mt-1 text-xs text-slate-500">Mesajele și notele vor apărea în acest spațiu.</p></div>}
               </div>
-              <div className="border-t border-slate-100 bg-white p-4 sm:p-5">
+              <div className="shrink-0 border-t border-slate-100 bg-white p-3 sm:p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <button type="button" onClick={() => setNote(false)} className={'rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (!note ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Răspuns către client</button>
                   <button type="button" onClick={() => setNote(true)} className={'rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Notă internă</button>
                 </div>
                 {selected.channel === 'whatsapp' && !note && <div className="mb-2 space-y-2"><select className={field + ' w-full'} aria-label="Șablon WhatsApp" value={template} onChange={e => { setTemplate(e.target.value); setEstimate(''); }}><option value="">Mesaj liber</option>{templates.map(item => <option key={item.name + '|' + item.language} value={item.name + '|' + item.language}>{item.name} ({item.language})</option>)}</select>{template && <Textarea aria-label="Parametri șablon" className="rounded-xl" placeholder="Valorile șablonului, câte una pe linie" value={parameters} onChange={e => setParameters(e.target.value)} />}</div>}
-                <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[96px] resize-y rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
+                <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[84px] resize-y rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
                 {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {!note && !template && selected.channel !== 'storia' && <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"><Paperclip className="h-3.5 w-3.5" /> Atașează<input className="sr-only" type="file" accept="image/jpeg,image/png,application/pdf" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file) act(() => upload(file)); e.target.value = ''; }} /></label>}
@@ -251,11 +226,12 @@ export default function InboxWorkspace() {
             </> : <div className="flex flex-1 flex-col items-center justify-center px-6 text-center"><span className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-gradient-to-br from-emerald-100 via-cyan-50 to-violet-100 text-emerald-700 shadow-sm"><MessageCircleMore className="h-9 w-9" /></span><h2 className="mt-5 text-xl font-bold text-[#17304a]">Un spațiu pentru fiecare conversație</h2><p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500">Alege un mesaj din stânga pentru a răspunde, a lăsa note și a gestiona relația cu clientul.</p></div>}
           </main>
 
-          <aside className="min-w-0 overflow-hidden rounded-[26px] border border-slate-200/80 bg-white/90 shadow-[0_20px_60px_-45px_rgba(25,53,78,0.4)]">
+          {detailsOpen && selected && <div className="fixed inset-0 z-50 lg:absolute lg:z-20"><button type="button" className="absolute inset-0 bg-[#17304a]/20 backdrop-blur-[2px]" aria-label="Închide detaliile clientului" onClick={() => setDetailsOpen(false)} />
+          <aside role="dialog" aria-modal="true" aria-label="Detalii client" className="absolute inset-y-0 right-0 z-10 flex w-full max-w-[360px] flex-col overflow-hidden border-l border-slate-200 bg-white shadow-[-18px_0_50px_-28px_rgba(25,53,78,0.45)]">
             <div className="border-b border-slate-100 bg-gradient-to-r from-violet-50/80 via-white to-emerald-50/60 px-4 py-4">
-              <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><UserRound className="h-4 w-4" /></span><div><h2 className="font-bold text-[#17304a]">Context client</h2><p className="text-xs text-slate-500">Profil și gestionare</p></div></div>
+              <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><UserRound className="h-4 w-4" /></span><div><h2 className="font-bold text-[#17304a]">Context client</h2><p className="text-xs text-slate-500">Profil și gestionare</p></div><Button type="button" size="icon" variant="ghost" className="ml-auto rounded-full" aria-label="Închide detaliile clientului" onClick={() => setDetailsOpen(false)}><X className="h-4 w-4" /></Button></div>
             </div>
-            {selected ? <div className="max-h-[740px] space-y-4 overflow-y-auto p-4">
+            {selected ? <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
               <div className="rounded-2xl border border-slate-100 bg-gradient-to-br from-[#f8fbfe] to-emerald-50/40 p-4 text-center">
                 <span className={'mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] text-xl font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span>
                 <h3 className="mt-3 font-bold text-[#17304a]">{selected.name}</h3>
@@ -281,6 +257,7 @@ export default function InboxWorkspace() {
               <Button variant="outline" asChild className="w-full rounded-xl border-slate-200"><Link href="/viewings">Vezi vizionările <ArrowRight className="h-4 w-4" /></Link></Button>
             </div> : <div className="flex flex-col items-center px-5 py-14 text-center"><span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-50 text-violet-500"><UserRound className="h-6 w-6" /></span><p className="mt-3 text-sm font-semibold text-[#17304a]">Profilul clientului</p><p className="mt-1 text-xs leading-5 text-slate-500">Selectează o conversație pentru a vedea detaliile și acțiunile CRM.</p></div>}
           </aside>
+          </div>}
         </div>
       </div>
     </div>
