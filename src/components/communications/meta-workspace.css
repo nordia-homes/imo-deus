@@ -1,0 +1,78 @@
+/* Facebook + Instagram shares TikTok Studio's light workspace rhythm. */
+html body .mi-workspace { --mi-ink:#182b40; --mi-muted:#62748a; --mi-line:#dce7ee; }
+html body .mi-workspace .mi-hero {
+  grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);
+  background:radial-gradient(ellipse at 83% 21%,#dff3ef 0%,transparent 48%),radial-gradient(ellipse at 48% 100%,#f5e7f2 0%,transparent 55%),#fff !important;
+}
+html body .mi-workspace .mi-hero-copy { position:relative; z-index:2; }
+html body .mi-workspace .tt-hero-kicker { display:flex; align-items:center; gap:11px; }
+html body .mi-workspace .mi-hero-logo { width:32px; height:32px; }
+html body .mi-workspace .mi-hero h1 { font-size:clamp(39px,4vw,62px); }
+html body .mi-workspace .mi-hero h1 em { color:#148981; }
+html body .mi-workspace .mi-hero .mi-hero-lead { max-width:510px; font-size:18px; line-height:1.45; letter-spacing:-.025em; color:#253f54 !important; }
+html body .mi-workspace .mi-hero-lead strong { color:#148981 !important; }
+html body .mi-workspace .mi-hero-copy > p:last-of-type { max-width:480px; }
+html body .mi-workspace .mi-hero-art { position:relative; min-height:255px; isolation:isolate; }
+html body .mi-workspace .mi-orbit { position:absolute; inset:24px 15px; border:1px solid #a9d7d170; border-radius:50%; transform:rotate(-18deg); }
+html body .mi-workspace .mi-orbit--two { inset:53px -5px; transform:rotate(28deg); border-color:#e2c8db80; }
+html body .mi-workspace .mi-social-card { position:absolute; width:172px; height:212px; padding:16px; border:1px solid #dce8ee; border-radius:18px; background:#fff; box-shadow:0 23px 55px -20px #33556a50; }
+html body .mi-workspace .mi-social-card--facebook { left:10%; top:9%; transform:rotate(-11deg); }
+html body .mi-workspace .mi-social-card--instagram { right:7%; top:19%; transform:rotate(11deg); }
+html body .mi-workspace .mi-social-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; }
+html body .mi-workspace .mi-social-icon svg { width:17px; height:17px; }
+html body .mi-workspace .mi-social-icon--facebook { background:#e6f0ff; color:#176be2; }
+html body .mi-workspace .mi-social-icon--instagram { background:#fde9f1; color:#c74b81; }
+html body .mi-workspace .mi-social-lines { display:grid; gap:5px; margin:13px 0; }
+html body .mi-workspace .mi-social-lines i { height:5px; border-radius:5px; background:#e5edf1; }
+html body .mi-workspace .mi-social-lines i:nth-child(2) { width:68%; }
+html body .mi-workspace .mi-social-lines i:nth-child(3) { width:82%; }
+html body .mi-workspace .mi-social-photo { display:block; position:relative; overflow:hidden; height:93px; border-radius:9px; background:linear-gradient(140deg,#d7e9e8,#a1c8ba 65%,#6e9e98); }
+html body .mi-workspace .mi-social-photo--warm { background:linear-gradient(140deg,#f3e6db,#d8c3be 65%,#a88caa); }
+html body .mi-workspace .mi-social-photo span:first-child { position:absolute; width:70px; height:70px; right:-10px; top:-30px; border-radius:50%; background:#fff8; }
+html body .mi-workspace .mi-social-photo span:last-child { position:absolute; width:102px; height:71px; bottom:-23px; left:20px; border-radius:50% 50% 0 0; background:#fff9; }
+html body .mi-workspace .mi-hero-spark { position:absolute; color:#4db7a6; font-size:25px; }
+html body .mi-workspace .mi-hero-spark--one { left:0; bottom:30px; }
+html body .mi-workspace .mi-hero-spark--two { right:0; top:5px; color:#d58eae; }
+html body .mi-workspace .mi-context { margin-top:0; }
+html body .mi-workspace .mi-context-label { display:grid; gap:2px; }
+html body .mi-workspace .mi-context-label span { color:#71869a !important; font-size:9px; font-weight:650; letter-spacing:.12em; }
+html body .mi-workspace .mi-context-label strong { color:var(--mi-ink) !important; font-size:14px; }
+html body .mi-workspace .mi-context-status { display:inline-flex; align-items:center; gap:7px; border:1px solid #d7e3eb; border-radius:7px; padding:5px 9px; background:#f3f7fa; color:#596f83 !important; font-size:10px; white-space:nowrap; }
+html body .mi-workspace .mi-context-status > span { width:6px; height:6px; border-radius:50%; background:#8397a9; }
+html body .mi-workspace .mi-context-status--active { color:#25745e !important; background:#ebf8f1; border-color:#c7e8d6; }
+html body .mi-workspace .mi-context-status--active > span { background:#359b74; }
+html body .mi-workspace .mi-nav { margin-top:20px; }
+html body .mi-workspace .mi-account-layout { display:grid; gap:18px; }
+html body .mi-workspace .mi-connect-panel > h2 { font-size:19px; letter-spacing:-.025em; }
+html body .mi-workspace .mi-feature-list { display:flex; flex-wrap:wrap; gap:9px; margin:18px 0; }
+html body .mi-workspace .mi-feature-list label { border:1px solid #dce6ee; border-radius:9px; padding:9px 12px; background:#f7fafc; font-size:12px; cursor:pointer; }
+html body .mi-workspace input[type="checkbox"] { accent-color:#168e82; }
+html body .mi-workspace .mi-page-list { display:grid; gap:9px; margin-top:20px; }
+html body .mi-workspace .mi-page-list > div { background:#f8fbfd; border-color:#e0e8ef; border-radius:12px; }
+html body .mi-workspace .mi-connection { min-width:0; }
+html body .mi-workspace .mi-connection > div:first-child { gap:18px; padding-bottom:16px; border-bottom:1px solid var(--mi-line); }
+html body .mi-workspace .mi-connection h3 { font-size:19px; letter-spacing:-.025em; }
+html body .mi-workspace .mi-connection > div:first-child p { margin-top:4px; font-size:11px; }
+html body .mi-workspace .mi-capability-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:18px; }
+html body .mi-workspace .mi-capability-grid > div { min-width:0; min-height:118px; padding:16px; border:1px solid #dfe9ed; border-radius:14px; background:linear-gradient(145deg,#f7fbfa,#fbfdfd) !important; }
+html body .mi-workspace .mi-capability-grid strong { display:block; margin-bottom:10px; font-size:13px; }
+html body .mi-workspace .mi-capability-grid p:nth-child(2) { display:inline-flex; align-items:center; gap:5px; border-radius:6px; padding:3px 7px; font-size:10px; font-weight:650; }
+html body .mi-workspace .mi-capability-grid p:nth-child(2)::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+html body .mi-workspace .mi-capability-grid .text-emerald-700 { color:#28745e !important; background:#e7f6ee; }
+html body .mi-workspace .mi-capability-grid .text-amber-800 { color:#986032 !important; background:#fff3e6; }
+html body .mi-workspace .mi-capability-grid p:last-child { margin-top:10px; line-height:1.5; }
+html body .mi-workspace :is(.mi-connect-panel,.mi-connection,.mi-post) .ui-button:not(.tt-button),
+html body .mi-workspace > section .ui-button:not(.tt-button) { border-radius:11px; }
+html body .mi-workspace .ui-button.bg-primary:not(.tt-button) { background:#b5f2e1 !important; color:#082a2a !important; border:1px solid #a0e5dc; }
+html body .mi-workspace .ui-button.border-input:not(.tt-button) { background:#fff !important; color:#2d455d !important; border-color:#d9e3ec !important; }
+html body .mi-workspace .mi-post { margin-top:12px; }
+html body .mi-workspace .mi-post:first-child { margin-top:0; }
+html body .mi-workspace textarea, html body .mi-workspace select, html body .mi-workspace input:not([type="checkbox"]) { border-radius:10px; border-color:#d5e0e9; }
+@media (max-width:980px) { html body .mi-workspace .mi-hero { grid-template-columns:1fr 260px; } html body .mi-workspace .mi-social-card { transform:scale(.78); transform-origin:center; } html body .mi-workspace .mi-social-card--facebook { left:-12%; } html body .mi-workspace .mi-social-card--instagram { right:-12%; } }
+@media (max-width:760px) { html body .mi-workspace .mi-hero { grid-template-columns:1fr; padding:26px; } html body .mi-workspace .mi-hero-art { display:none; } html body .mi-workspace .mi-context .tt-context-meta { margin-left:0; } html body .mi-workspace .mi-capability-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:540px) { html body .mi-workspace .mi-capability-grid { grid-template-columns:1fr; } html body .mi-workspace .mi-context { align-items:flex-start; } html body .mi-workspace .mi-hero h1 { font-size:38px; } html body .mi-workspace .tt-hero-actions { flex-wrap:wrap; } }
+
+html body .mi-workspace .mi-connection-identity { display:flex; align-items:center; gap:13px; min-width:0; }
+html body .mi-workspace .mi-account-icon { flex:0 0 auto; width:42px; height:42px; display:grid; place-items:center; border:1px solid #cfe1f8; border-radius:12px; background:#eaf3ff; color:#2270d6; }
+html body .mi-workspace .mi-account-icon--instagram { border-color:#f1d6e2; background:#fff0f6; color:#bd5580; }
+html body .mi-workspace .mi-connection-header { flex-wrap:wrap; }
