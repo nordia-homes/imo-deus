@@ -3,7 +3,7 @@ type ObjectValue = Record<string, any>; // Provider payloads are validated field
 export type IncomingEvent = {
   channel: Channel; accountId: string; participantId: string; externalId: string;
   text: string; name?: string; direction: 'received' | 'sent'; createdAt: string;
-  attachments: Message['attachments']; status?: Message['status']; imported?: boolean; nativeEcho?: boolean;
+  attachments: Message['attachments']; status?: Message['status']; imported?: boolean; nativeEcho?: boolean; socialEcho?: boolean; sourceAppId?: string;
 };
 function time(value: unknown, milliseconds = false) {
   const number = Number(value) * (milliseconds ? 1 : 1000);
@@ -54,8 +54,16 @@ export function normalizeWebhook(payload: ObjectValue): IncomingEvent[] {
       if (!accountId || !participantId) continue;
       result.push({ channel: payload.object === 'instagram' ? 'instagram' : 'messenger', accountId, participantId,
         externalId: String(message.mid), direction: sent ? 'sent' : 'received', createdAt: time(event.timestamp, true),
+        socialEcho: sent, ...(message.app_id != null ? { sourceAppId: String(message.app_id) } : {}),
         text: String(message.text || ''), attachments: (message.attachments || []).map((a: ObjectValue) => ({ name: String(a.type || 'Fișier'), type: String(a.type || 'file'), ...(typeof a.payload?.url === 'string' ? { url: a.payload.url } : {}) })) });
     }
   }
   return result;
+}
+
+export function isExternalSocialEcho(event: IncomingEvent, appId: string, mappedOrigin: string | null, possibleOutgoing: boolean) {
+  if (!event.socialEcho || event.status || event.imported) return false;
+  if (mappedOrigin === 'imodeus') return false;
+  if (event.sourceAppId && appId) return event.sourceAppId !== appId;
+  return !possibleOutgoing;
 }

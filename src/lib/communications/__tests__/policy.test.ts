@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advanceStatus, budgetReservation, canReadConversation, normalizeSearch, withinResponseWindow } from '../model';
 import { stableId, validSignature } from '../crypto';
 import { createHmac } from 'crypto';
-import { normalizeWebhook } from '../normalize';
+import { isExternalSocialEcho, normalizeWebhook } from '../normalize';
 
 describe('communications isolation and policy', () => {
   it('never grants cross-agency access, including administrators', () => {
@@ -59,5 +59,19 @@ describe('provider normalization', () => {
   it('normalizes Instagram echo without confusing the business for the customer', () => {
     const events = normalizeWebhook({ object: 'instagram', entry: [{ id: 'business', messaging: [{ sender: { id: 'business' }, recipient: { id: 'customer' }, timestamp: 1760000000000, message: { mid: 'm', is_echo: true, text: 'Răspuns' } }] }] });
     expect(events[0]).toMatchObject({ channel: 'instagram', direction: 'sent', participantId: 'customer' });
+  });
+});
+
+describe('external Meta replies', () => {
+  const echo = { channel: 'messenger' as const, accountId: 'page', participantId: 'customer', externalId: 'mid', text: 'Răspuns', direction: 'sent' as const, createdAt: '2026-09-28T08:00:00Z', attachments: [], socialEcho: true };
+  it('confirms a native or other app reply', () => {
+    expect(isExternalSocialEcho({ ...echo, sourceAppId: 'meta-inbox' }, 'imodeus-app', null, false)).toBe(true);
+    expect(isExternalSocialEcho(echo, 'imodeus-app', null, false)).toBe(true);
+  });
+  it('does not confirm an ImoDeus reply or a send still being reconciled', () => {
+    expect(isExternalSocialEcho({ ...echo, sourceAppId: 'imodeus-app' }, 'imodeus-app', null, false)).toBe(false);
+    expect(isExternalSocialEcho(echo, 'imodeus-app', 'imodeus', false)).toBe(false);
+    expect(isExternalSocialEcho(echo, 'imodeus-app', 'native', true)).toBe(false);
+    expect(isExternalSocialEcho({ ...echo, socialEcho: false }, 'imodeus-app', null, false)).toBe(false);
   });
 });

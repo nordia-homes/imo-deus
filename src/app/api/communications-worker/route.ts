@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/firebase/admin';
 import { secretMatches, stableId } from '@/lib/communications/crypto';
-import { normalizeWebhook } from '@/lib/communications/normalize';
+import { isExternalSocialEcho, normalizeWebhook } from '@/lib/communications/normalize';
 import { agencyCollection, ingestMessage, migrateStoria, nowIso } from '@/lib/communications/server';
 import { drainOutbound } from '@/lib/communications/outbound';
 import { drainSearch } from '@/lib/communications/search';
@@ -42,11 +42,25 @@ export async function POST(request: NextRequest) {
         const ref = agencyCollection(adminDb, data.agencyId, 'channelConnections').doc(data.connectionId);
         const snapshot = await ref.get(); const connection = snapshot.data() as Connection;
         if (!connection || connection.status !== 'connected') continue;
+        let nativeSocialEcho = false;
+        if (event.socialEcho) {
+          const mapped = await adminDb.collection('communicationMessageMappings').doc(stableId(connection.id, event.externalId)).get();
+          const mapping = mapped.data();
+          const message = mapping?.conversationId && mapping?.messageId
+            ? await agencyCollection(adminDb, connection.agencyId, 'conversations').doc(mapping.conversationId).collection('messages').doc(mapping.messageId).get()
+            : null;
+          let possibleOutgoing = false;
+          if (message?.data()?.origin !== 'imodeus' && !event.sourceAppId) {
+            const pending = await adminDb.collection('communicationOutboundJobs').where('status', 'in', ['sending', 'unknown']).limit(100).get();
+            possibleOutgoing = pending.size === 100 || pending.docs.some(job => job.data().connectionId === connection.id && Math.abs(Date.parse(job.data().createdAt) - Date.parse(event.createdAt)) < 600000);
+          }
+          nativeSocialEcho = isExternalSocialEcho(event, process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '', message?.data()?.origin || null, possibleOutgoing);
+        }
         await ingestMessage(adminDb, connection, event);
         const update: Record<string, unknown> = { lastSyncAt: nowIso() };
         if (!event.status && !event.imported) {
           if (event.direction === 'received') update['capabilities.receive'] = { status: 'active', reason: 'Recepție verificată prin webhook.' };
-          if (event.nativeEcho) update['capabilities.nativeSync'] = { status: 'active', reason: 'Activitate din aplicația WhatsApp Business confirmată prin webhook.' };
+          if (event.nativeEcho || nativeSocialEcho) update['capabilities.nativeSync'] = { status: 'active', reason: event.channel === 'whatsapp' ? 'Activitate din aplicația WhatsApp Business confirmată prin webhook.' : 'Răspuns extern confirmat prin webhook.' };
         }
         await ref.update(update);
       }
