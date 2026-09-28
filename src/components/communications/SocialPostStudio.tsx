@@ -147,7 +147,7 @@ export default function SocialPostStudio({ properties, connections, initialPrope
       <aside className="mi-preview-column"><div className="tt-panel mi-preview-panel">
 
         <div className="mi-preview-tabs"><button type="button" className={preview === 'facebook' ? 'active' : ''} onClick={() => { setPreview('facebook'); setCaptionExpanded(false); }}><Facebook size={15} />Facebook</button><button type="button" className={preview === 'instagram' ? 'active' : ''} onClick={() => { setPreview('instagram'); setCaptionExpanded(false); }}><Instagram size={15} />Instagram</button></div>
-        <div className="mi-phone"><div className="mi-phone-top"><span>9:41</span><span className="mi-phone-island" /><span>●●● ▰</span></div>
+        <div className="mi-phone"><div className="mi-phone-inner"><div className="mi-phone-top"><span>9:41</span><span className="mi-phone-island" /><span>●●● ▰</span></div>
           <div className="mi-phone-screen" key={preview}>
             {preview === 'facebook' ? <>
               <div className="mi-app-header mi-app-header--facebook"><strong>facebook</strong><span>⌕　◎</span></div>
@@ -167,7 +167,7 @@ export default function SocialPostStudio({ properties, connections, initialPrope
                 <div className="mi-ig-caption"><p className={captionExpanded ? 'expanded' : ''}><strong>{previewAccount?.name || 'contul_tău'}</strong> {caption || 'Textul postării va apărea aici.'}</p>{caption.length > 110 && <button type="button" onClick={() => setCaptionExpanded(!captionExpanded)}>{captionExpanded ? 'mai puțin' : 'mai mult'}</button>}</div><small className="mi-ig-date">ACUM</small>
               </article>
             </>}
-          </div><div className="mi-phone-home"><span /></div>
+          </div><div className="mi-phone-home"><span /></div></div>
         </div>{selectedProperty && <p className="mi-preview-property">{selectedProperty.title}{selectedProperty.location ? ' · ' + selectedProperty.location : ''}</p>}
       </div></aside>
     </div>

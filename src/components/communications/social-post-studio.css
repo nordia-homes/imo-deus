@@ -73,10 +73,11 @@ html body .mi-workspace .mi-preview-tabs { display:flex; gap:5px; margin:0 0 14p
 html body .mi-workspace .mi-preview-tabs button { display:flex; align-items:center; justify-content:center; gap:7px; flex:1; padding:9px; border-radius:8px; color:#657a8c; font-size:11px; }
 html body .mi-workspace .mi-preview-tabs button.active { background:#fff; color:#148679; box-shadow:0 2px 9px #33556a15; }
 html body .mi-workspace .mi-phone { position:relative; width:min(100%,346px); height:min(600px,calc(100vh - 180px)); margin:0 auto; padding:10px; border:5px solid #161b22; border-radius:48px; overflow:hidden; background:#161b22; box-shadow:0 5px 0 #3c444e inset,0 22px 42px #102d3840; }
-html body .mi-workspace .mi-phone-top { position:relative; display:flex; align-items:center; justify-content:space-between; height:26px; padding:0 17px; border-radius:29px 29px 0 0; background:#fff; color:#15191d; font-size:10px; font-weight:750; }
+html body .mi-workspace .mi-phone-inner { display:flex; flex-direction:column; height:100%; overflow:hidden; border-radius:36px; background:#fff; }
+html body .mi-workspace .mi-phone-top { position:relative; display:flex; flex:0 0 26px; align-items:center; justify-content:space-between; padding:0 17px; background:#fff; color:#15191d; font-size:10px; font-weight:750; }
 html body .mi-workspace .mi-phone-island { position:absolute; left:50%; top:-3px; width:88px; height:21px; transform:translateX(-50%); border-radius:0 0 14px 14px; background:#161b22; }
-html body .mi-workspace .mi-phone-screen { height:calc(100% - 45px); overflow-y:auto; overflow-x:hidden; background:#f3f4f5; scrollbar-width:thin; scrollbar-color:#d2d7da transparent; }
-html body .mi-workspace .mi-phone-home { display:grid; place-items:center; height:19px; border-radius:0 0 34px 34px; background:#fff; }
+html body .mi-workspace .mi-phone-screen { flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; background:#f3f4f5; scrollbar-width:thin; scrollbar-color:#d2d7da transparent; }
+html body .mi-workspace .mi-phone-home { display:grid; flex:0 0 19px; place-items:center; background:#fff; }
 html body .mi-workspace .mi-phone-home span { width:100px; height:4px; border-radius:4px; background:#15191d; }
 html body .mi-workspace .mi-app-header { display:flex; align-items:center; justify-content:space-between; height:44px; padding:0 13px; background:#fff; color:#161a1e; }
 html body .mi-workspace .mi-app-header--facebook strong { color:#0866ff; font-size:21px; font-weight:800; letter-spacing:-.07em; }
