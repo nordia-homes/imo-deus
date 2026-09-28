@@ -21,7 +21,7 @@ export async function graph<T = Record<string, any>>(path: string, token: string
 const scopeGroups = {
   publish: ['pages_manage_posts', 'instagram_basic', 'instagram_content_publish'],
   messaging: ['pages_messaging', 'pages_manage_metadata', 'instagram_basic', 'instagram_manage_messages'],
-  comments: ['pages_manage_engagement', 'instagram_basic', 'instagram_manage_comments'],
+  comments: ['pages_manage_engagement', 'pages_read_user_content', 'instagram_basic', 'instagram_manage_comments'],
   insights: ['read_insights', 'instagram_basic', 'instagram_manage_insights'],
 };
 export async function startAuthorization(db: Firestore, actor: Actor, body: unknown) {
@@ -116,7 +116,7 @@ export async function selectPage(db: Firestore, actor: Actor, pageId: string) {
     receive: { status: subscribed && scopes.has(instagram ? 'instagram_manage_messages' : 'pages_messaging') ? 'configuration_required' : 'unavailable', reason: 'Trimite un mesaj de test către cont; primirea lui activează această funcție.' },
     send: { status: scopes.has(instagram ? 'instagram_manage_messages' : 'pages_messaging') ? 'active' : 'configuration_required', reason: 'Răspunsul necesită o conversație eligibilă și acces valid la trimitere.' },
     nativeSync: { status: 'configuration_required', reason: 'În așteptarea primului răspuns observat din aplicația nativă.' },
-    comments: { status: scopes.has(instagram ? 'instagram_manage_comments' : 'pages_manage_engagement') ? 'active' : 'configuration_required', reason: 'Necesită accesul la comentariile contului.' },
+    comments: { status: instagram ? (scopes.has('instagram_manage_comments') ? 'active' : 'configuration_required') : (scopes.has('pages_manage_engagement') && scopes.has('pages_read_user_content') ? 'active' : 'configuration_required'), reason: instagram ? 'Necesită instagram_manage_comments.' : 'Necesită pages_manage_engagement și pages_read_user_content; reconectează pagina cu Comentarii selectat.' },
     insights: { status: scopes.has(instagram ? 'instagram_basic' : 'pages_read_engagement') ? 'active' : 'configuration_required', reason: 'Indicatori de interacțiune disponibili pentru postările publicate.' },
   });
   const base: Connection = { id: stableId(actor.agencyId, 'messenger', page.id), agencyId: actor.agencyId, channel: 'messenger', externalId: page.id, name: page.name, status: 'connected', capabilities: capabilities(false), updatedAt: nowIso() };

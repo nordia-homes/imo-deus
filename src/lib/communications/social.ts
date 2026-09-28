@@ -116,6 +116,16 @@ export async function publishDraft(db: Firestore, actor: Actor, id: string) {
   });
   return { queued: true };
 }
+async function socialGraph<T = Record<string, any>>(path: string, token: string, instagram: boolean, body?: Record<string, unknown>): Promise<T> {
+  try { return await graph<T>(path, token, body); }
+  catch (error) {
+    if (!instagram && error instanceof CommunicationError && /unsupported (get|post) request|missing permissions|does not exist/i.test(error.message)) {
+      throw new CommunicationError('Meta nu poate accesa această postare Facebook. Verifică dacă postarea există și reconectează pagina cu pages_read_user_content și pages_manage_engagement pentru comentarii.', 409);
+    }
+    throw error;
+  }
+}
+
 export async function postInteraction(db: Firestore, actor: Actor, postId: string, connectionId: string, action: 'comments' | 'insights', text?: string) {
   const snap = await agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId).get();
   const destination = snap.data()?.destinations?.[connectionId];
@@ -123,12 +133,12 @@ export async function postInteraction(db: Firestore, actor: Actor, postId: strin
   const { connection, token } = await connectionToken(db, actor, connectionId, action);
   const instagram = connection.channel === 'instagram';
   const id = destination.externalId;
-  if (action === 'insights') return graph(`/${id}?fields=${instagram ? 'like_count,comments_count,permalink' : 'likes.summary(true),comments.summary(true),shares,permalink_url'}`, token);
+  if (action === 'insights') return socialGraph(`/${id}?fields=${instagram ? 'like_count,comments_count,permalink' : 'likes.summary(true),comments.summary(true),shares,permalink_url'}`, token, instagram);
   if (text !== undefined) {
     const message = z.string().trim().min(1).max(2000).parse(text);
-    return graph(`/${id}/comments`, token, { message });
+    return socialGraph(`/${id}/comments`, token, instagram, { message });
   }
-  return graph(`/${id}/comments?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`, token);
+  return socialGraph(`/${id}/comments?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`, token, instagram);
 }
 
 export async function commentInteraction(
@@ -141,16 +151,16 @@ export async function commentInteraction(
   if (!destination?.externalId || destination.status !== 'published') throw new CommunicationError('Postarea nu este publicată pe contul ales.');
   const { connection, token } = await connectionToken(db, actor, connectionId, 'comments');
   const instagram = connection.channel === 'instagram';
-  const parent = await graph<{ data?: Array<{ id: string }> }>(`/${destination.externalId}/comments?fields=id&limit=100`, token);
+  const parent = await socialGraph<{ data?: Array<{ id: string }> }>(`/${destination.externalId}/comments?fields=id&limit=100`, token, instagram);
   if (!parent.data?.some(comment => comment.id === commentId)) throw new CommunicationError('Comentariul nu aparține acestei postări sau nu este disponibil.', 404);
   if (action === 'like') {
     if (instagram) throw new CommunicationError('Aprecierea comentariilor Instagram nu este disponibilă prin această integrare.', 400);
-    return graph(`/${commentId}/likes`, token, {});
+    return socialGraph(`/${commentId}/likes`, token, instagram, {});
   }
   const edge = instagram ? 'replies' : 'comments';
   if (text !== undefined) {
     const message = z.string().trim().min(1).max(2000).parse(text);
-    return graph(`/${commentId}/${edge}`, token, { message });
+    return socialGraph(`/${commentId}/${edge}`, token, instagram, { message });
   }
-  return graph(`/${commentId}/${edge}?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`, token);
+  return socialGraph(`/${commentId}/${edge}?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`, token, instagram);
 }
