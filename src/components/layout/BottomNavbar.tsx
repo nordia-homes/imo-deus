@@ -87,7 +87,7 @@ export function BottomNavbar() {
 
   return (
     <>
-      <nav className="agentfinder-bottom-nav fixed bottom-2 left-4 right-4 z-40 h-16 overflow-hidden rounded-2xl border bg-background/80 shadow-2xl backdrop-blur-lg md:hidden">
+      {currentPath !== '/inbox' && <nav className="agentfinder-bottom-nav fixed bottom-2 left-4 right-4 z-40 h-16 overflow-hidden rounded-2xl border bg-background/80 shadow-2xl backdrop-blur-lg md:hidden">
         <div className="agentfinder-bottom-nav__inner grid h-full grid-cols-7">
           {navItems.map((item) => {
             const isActive = currentPath.startsWith(item.href);
@@ -121,7 +121,7 @@ export function BottomNavbar() {
             </span>
           </button>
         </div>
-      </nav>
+      </nav>}
 
       <button
         type="button"

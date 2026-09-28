@@ -377,7 +377,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </InteractiveSidebar>
       <SidebarInset className={currentPath === '/inbox' ? 'h-dvh min-h-0 overflow-hidden' : undefined}>
-        <Topbar />
+        <Topbar hideOnMobile={currentPath === '/inbox'} />
         <main className={currentPath === '/inbox' ? 'flex min-h-0 flex-1 flex-col overflow-hidden [background:var(--app-shell-bg-gradient)]' : 'flex-1 [background:var(--app-shell-bg-gradient)] pb-20 lg:pb-0'}>
             <PushNotificationsBanner />
             {children}

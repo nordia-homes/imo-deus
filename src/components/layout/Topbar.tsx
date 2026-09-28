@@ -41,7 +41,7 @@ type SearchSourceCache = {
     tasks: Task[];
 };
 
-export function Topbar() {
+export function Topbar({ hideOnMobile = false }: { hideOnMobile?: boolean }) {
     const auth = useAuth();
     const firebaseApp = useFirebaseApp();
     const firestore = useFirestore();
@@ -210,7 +210,7 @@ export function Topbar() {
     const hasResults = results.contacts.length > 0 || results.properties.length > 0 || results.tasks.length > 0;
 
     return (
-        <header className="agentfinder-topbar sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-[var(--app-page-foreground)] backdrop-blur-xl md:px-6">
+        <header className={'agentfinder-topbar sticky top-0 z-30 flex h-16 min-w-0 w-full items-center gap-3 overflow-hidden border-b border-[var(--app-sidebar-border)] bg-[var(--app-topbar-bg)] px-3 text-[var(--app-page-foreground)] backdrop-blur-xl md:px-6' + (hideOnMobile ? ' max-md:hidden' : '')}>
             <SidebarTrigger
                 aria-label="Deschide meniul"
                 className="h-10 w-10 shrink-0 rounded-xl border border-[var(--app-sidebar-border)] bg-[var(--app-surface-input)] text-[var(--app-page-foreground)] shadow-sm hover:bg-[var(--app-nav-hover-bg)] md:hidden"

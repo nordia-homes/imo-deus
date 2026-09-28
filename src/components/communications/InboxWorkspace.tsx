@@ -9,6 +9,7 @@ import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { CHANNEL_LABELS, type Connection, type Conversation, type Message } from '@/lib/communications/model';
 import type { Property } from '@/lib/types';
 import { useCommunications } from './useCommunications';
@@ -58,11 +59,13 @@ export default function InboxWorkspace() {
     setSelected(data.conversation);
     setMessages(prev => more ? [...prev, ...data.messages] : data.messages);
     setMessageCursor(data.cursor);
-    if (!more) setMobilePane('conversation');
     if (!more) { const payload = await api(`conversations/${id}/notes`); setNotes(payload.notes); }
-    if (target) setTimeout(() => document.getElementById(`message-${target}`)?.scrollIntoView({ block: 'center' }), 100);
+    if (target) setTimeout(() => document.getElementById((window.matchMedia('(max-width: 767px)').matches ? 'mobile-message-' : 'message-') + target)?.scrollIntoView({ block: 'center' }), 100);
   }, [api]);
-  useEffect(() => { const id = new URLSearchParams(window.location.search).get('conversationId'); if (id) open(id).catch(e => setError(e.message)); }, [open]);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('conversationId');
+    if (id) open(id).then(() => setMobilePane('conversation')).catch(e => setError(e.message));
+  }, [open]);
   useEffect(() => {
     if (autoOpened.current || selected || !rows.length || new URLSearchParams(window.location.search).get('conversationId')) return;
     autoOpened.current = true;
@@ -128,13 +131,119 @@ export default function InboxWorkspace() {
   const attentionCount = rows.filter(row => row.needsReply).length;
 
   const visibleRows = attentionOnly ? rows.filter(row => row.needsReply) : rows;
+  const mobileRows = visibleRows.filter(row => !search.trim() || [row.name, row.phone, row.latestMessage].filter(Boolean).join(' ').toLocaleLowerCase('ro-RO').includes(search.trim().toLocaleLowerCase('ro-RO')));
   const selectedAgent = agents.find(agent => agent.id === selected?.assigneeId);
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f8fc] px-2 pb-20 pt-2 text-slate-800 sm:px-3 md:pb-2">
-      <div className="pointer-events-none absolute -left-28 top-36 h-80 w-80 rounded-full bg-emerald-200/35 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 top-20 h-80 w-80 rounded-full bg-violet-200/30 blur-3xl" />
-      <div className="relative mx-auto flex min-h-0 w-full max-w-[1800px] flex-1 flex-col gap-2">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f8fc] text-slate-800 md:px-3 md:py-2">
+      <div className="pointer-events-none absolute -left-28 top-36 hidden h-80 w-80 rounded-full bg-emerald-200/35 blur-3xl md:block" />
+      <div className="pointer-events-none absolute right-0 top-20 hidden h-80 w-80 rounded-full bg-violet-200/30 blur-3xl md:block" />
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-white md:hidden">
+        {mobilePane === 'list' ? <>
+          <header className="shrink-0 border-b border-slate-100 bg-white px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
+            <div className="flex items-center justify-between gap-3">
+              <SidebarTrigger aria-label="Deschide meniul aplicației" className="h-10 w-10 shrink-0 rounded-full bg-slate-100 text-slate-600" />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-[28px] font-bold tracking-tight text-[#17304a]">Inbox</h1>
+                <p className="text-xs text-slate-500">{rows.length} conversații · {attentionCount} de răspuns</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link href="/marketing/whatsapp" aria-label="Gestionează canalele" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600"><SlidersHorizontal className="h-5 w-5" /></Link>
+                <details className="relative">
+                  <summary aria-label="Conversație nouă" className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_10px_24px_-10px_rgba(16,130,84,0.7)] [&::-webkit-details-marker]:hidden"><Plus className="h-6 w-6" /></summary>
+                  <div className="absolute right-0 top-12 z-30 w-[min(88vw,320px)] space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                    <p className="text-sm font-semibold text-[#17304a]">Conversație WhatsApp nouă</p>
+                    <Input value={newContactId} onChange={e => setNewContactId(e.target.value)} placeholder="ID contact CRM" />
+                    <select className={field + ' w-full'} value={newConnectionId} onChange={e => setNewConnectionId(e.target.value)}><option value="">Numărul agenției</option>{connections.map(connection => <option key={connection.id} value={connection.id}>{connection.name}</option>)}</select>
+                    <Button className="w-full rounded-xl bg-emerald-600 text-white" disabled={busy || !newContactId || !newConnectionId} onClick={() => act(async () => { const result = await api('conversations', 'POST', { contactId: newContactId, connectionId: newConnectionId }); await open(result.conversationId); await load(); setMobilePane('conversation'); })}>Deschide conversația</Button>
+                    <p className="text-[11px] leading-4 text-slate-500">Deschiderea nu trimite automat un mesaj.</p>
+                  </div>
+                </details>
+              </div>
+            </div>
+            <form className="relative mt-4" onSubmit={event => { event.preventDefault(); act(async () => { const result = await api('search?q=' + encodeURIComponent(search)); setResults(result.results); }); }}>
+              <Search className="pointer-events-none absolute left-4 top-3 h-4 w-4 text-slate-400" />
+              <Input type="search" aria-label="Caută conversații" className="h-11 rounded-full border-0 bg-[#f1f4f7] pl-11 text-sm shadow-none focus-visible:ring-emerald-300" value={search} onChange={event => { setSearch(event.target.value); if (!event.target.value) setResults([]); }} placeholder="Caută un client sau un mesaj" />
+            </form>
+            <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+              <button type="button" onClick={() => setAttentionOnly(false)} className={'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ' + (!attentionOnly ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600')}>Toate</button>
+              <button type="button" onClick={() => setAttentionOnly(true)} className={'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ' + (attentionOnly ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600')}>De răspuns {attentionCount}</button>
+              <select aria-label="Canal" className="h-8 shrink-0 rounded-full border-0 bg-slate-100 px-3 text-xs font-semibold text-slate-600" value={channel} onChange={event => setChannel(event.target.value)}><option value="all">Toate canalele</option>{Object.entries(CHANNEL_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+              <select aria-label="Stare" className="h-8 shrink-0 rounded-full border-0 bg-slate-100 px-3 text-xs font-semibold text-slate-600" value={stateFilter} onChange={event => setStateFilter(event.target.value)}>{[['all', 'Toate stările'], ['new', 'Noi'], ['open', 'În lucru'], ['waiting', 'În așteptare'], ['resolved', 'Rezolvate'], ['snoozed', 'Amânate'], ['spam', 'Spam']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+            </div>
+          </header>
+          {error && <div role="alert" className="shrink-0 bg-amber-50 px-4 py-2 text-xs text-amber-800">{error}</div>}
+          {migration && <p className="shrink-0 bg-emerald-50 px-4 py-2 text-xs text-emerald-700">{migration}</p>}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
+            {results.map(result => <button key={result.messageId} type="button" className="flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left" onClick={() => act(async () => { await open(result.conversationId, undefined, result.messageId); setMobilePane('conversation'); })}><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-sm font-bold text-cyan-700">{initials(result.name)}</span><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-[#17304a]">{result.name}</strong><span className="mt-1 block line-clamp-2 text-xs text-slate-500">{result.text}</span></span></button>)}
+            {mobileRows.map(conversation => <button key={conversation.id} type="button" className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-left transition active:bg-emerald-50" onClick={() => act(async () => { await open(conversation.id); setMobilePane('conversation'); })}>
+              <span className={'relative flex h-13 w-13 shrink-0 items-center justify-center rounded-full text-base font-bold ' + channelClass[conversation.channel]}>{initials(conversation.name)}{conversation.needsReply && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-2"><strong className="truncate text-[15px] font-semibold text-[#17304a]">{conversation.name}</strong><time className={'shrink-0 text-[11px] ' + (conversation.needsReply ? 'font-semibold text-emerald-700' : 'text-slate-400')}>{time(conversation.lastMessageAt)}</time></span>
+                <span className="mt-1 flex items-center gap-1.5"><span className="truncate text-[13px] text-slate-500">{conversation.latestMessage || 'Conversație deschisă'}</span>{conversation.needsReply && <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}</span>
+                <span className="mt-1 block text-[11px] text-slate-400">{CHANNEL_LABELS[conversation.channel]} · {statusLabel[conversation.status]}</span>
+              </span>
+            </button>)}
+            {!mobileRows.length && <div className="px-6 py-16 text-center"><MessageCircleMore className="mx-auto h-9 w-9 text-emerald-500" /><p className="mt-3 text-sm font-semibold text-[#17304a]">{attentionOnly ? 'Niciun mesaj de răspuns' : 'Nicio conversație găsită'}</p><p className="mt-1 text-xs text-slate-500">Schimbă filtrele sau începe o conversație nouă.</p></div>}
+            {cursor && <Button variant="ghost" className="my-3 w-full text-emerald-700" onClick={() => act(() => load(cursor))}>Încarcă mai multe</Button>}
+          </div>
+        </> : selected ? <section role="dialog" aria-modal="true" aria-label={'Conversația cu ' + selected.name} className="fixed inset-x-0 top-0 z-50 flex h-dvh min-h-0 flex-col bg-[#f7f4ee]">
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-2 shadow-sm">
+            <button type="button" className="flex h-10 w-9 shrink-0 items-center justify-center text-slate-600" aria-label="Înapoi la conversații" onClick={() => { setDetailsOpen(false); setMobilePane('list'); }}><ArrowLeft className="h-5 w-5" /></button>
+            <span className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span>
+            <div className="min-w-0 flex-1"><h2 className="truncate text-sm font-bold text-[#17304a]">{selected.name}</h2><p className="truncate text-[11px] text-slate-500">{CHANNEL_LABELS[selected.channel]} · {statusLabel[selected.status]}</p></div>
+            <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600" aria-label="Detalii client" onClick={() => setDetailsOpen(true)}><UserRound className="h-5 w-5" /></button>
+          </header>
+          {associatedProperty && selectedPropertyId && <Link href={'/properties/' + selectedPropertyId} className="flex shrink-0 items-center gap-2 border-b border-emerald-100 bg-white/95 px-3 py-2">
+            <span className="flex h-10 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100 text-slate-400">{propertyImage ? <Image src={propertyImage} alt={associatedProperty.title || 'Proprietate'} width={44} height={40} unoptimized className="h-full w-full object-cover" /> : <Building2 className="h-5 w-5" />}</span>
+            <span className="min-w-0 flex-1"><strong className="block truncate text-xs text-[#17304a]">{associatedProperty.title}</strong><span className="block truncate text-[11px] text-slate-500">{[associatedProperty.location || associatedProperty.address, associatedProperty.rooms ? associatedProperty.rooms + ' camere' : null, associatedProperty.squareFootage ? associatedProperty.squareFootage + ' m²' : null].filter(Boolean).join(' · ')}</span></span>
+            <ArrowRight className="h-4 w-4 shrink-0 text-emerald-700" />
+          </Link>}
+          {error && <div role="alert" className="shrink-0 bg-amber-50 px-3 py-2 text-xs text-amber-800">{error}</div>}
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4" style={{ backgroundImage: 'radial-gradient(rgba(113,143,125,0.11) 0.7px, transparent 0.7px)', backgroundSize: '22px 22px' }}>
+            {messageCursor && <Button variant="ghost" className="mx-auto flex rounded-full bg-white text-xs text-slate-600" onClick={() => act(() => open(selected.id, messageCursor))}>Mesaje mai vechi</Button>}
+            {[...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(message => <article id={'mobile-message-' + message.id} key={message.id} className={'w-fit max-w-[85%] rounded-2xl border px-3 py-2 shadow-sm ' + (message.direction === 'sent' ? 'ml-auto rounded-br-sm border-[#9fdfbc] bg-[#d9f7e8]' : 'mr-auto rounded-bl-sm border-[#b9d3fa] bg-[#e6f0ff]')}><p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-[#17304a]">{message.text}</p>{message.attachments.map((item, index) => <button key={index} type="button" className="mt-2 flex items-center gap-1 text-xs text-emerald-700 underline" onClick={() => act(() => download(message.id, index, item.name))}><Paperclip className="h-3 w-3" />{item.name}</button>)}<p className="mt-1 text-right text-[10px] text-slate-500">{time(message.createdAt)} · {message.direction === 'sent' ? message.status : 'Primit'}</p>{message.error && <p className="text-xs text-red-700">{message.error}</p>}</article>)}
+            {notes.map(item => <div key={item.id} className="mx-auto max-w-[90%] rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"><strong>Notă internă</strong><p className="mt-1 whitespace-pre-wrap">{item.text}</p></div>)}
+            {!messages.length && !notes.length && <p className="py-16 text-center text-xs text-slate-500">Conversația începe aici.</p>}
+          </div>
+          <div className="shrink-0 border-t border-slate-200 bg-[#f7faf9] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+            <div className="mb-2 flex items-center gap-2"><button type="button" onClick={() => setNote(false)} className={'rounded-full px-3 py-1 text-[11px] font-semibold ' + (!note ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-slate-500')}>Răspuns</button><button type="button" onClick={() => setNote(true)} className={'rounded-full px-3 py-1 text-[11px] font-semibold ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500')}>Notă internă</button><span className="ml-auto text-[10px] text-slate-400">{selected.channel === 'storia' && !note ? 'Istoric Storia' : ''}</span></div>
+            {selected.channel === 'whatsapp' && !note && <div className="mb-2"><select className={field + ' w-full'} aria-label="Șablon WhatsApp" value={template} onChange={event => { setTemplate(event.target.value); setEstimate(''); }}><option value="">Mesaj liber</option>{templates.map(item => <option key={item.name + '|' + item.language} value={item.name + '|' + item.language}>{item.name} ({item.language})</option>)}</select>{template && <Textarea className="mt-2" aria-label="Parametri șablon" placeholder="Valori șablon, câte una pe linie" value={parameters} onChange={event => setParameters(event.target.value)} />}</div>}
+            <div className="flex items-end gap-2">
+              {!note && !template && selected.channel !== 'storia' && <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-slate-600 shadow-sm" aria-label="Atașează fișier"><Paperclip className="h-5 w-5" /><input className="sr-only" type="file" accept="image/jpeg,image/png,application/pdf" disabled={busy} onChange={event => { const file = event.target.files?.[0]; if (file) act(() => upload(file)); event.target.value = ''; }} /></label>}
+              <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className="max-h-28 min-h-11 flex-1 resize-none rounded-[22px] border-0 bg-white px-4 py-3 text-sm shadow-sm focus-visible:ring-emerald-300" value={text} onChange={event => { setText(event.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă...' : 'Scrie un mesaj...'} />
+              <Button size="icon" className="h-11 w-11 shrink-0 rounded-full bg-emerald-600 text-white hover:bg-emerald-700" aria-label={note ? 'Salvează nota' : 'Trimite mesajul'} disabled={busy || (!text.trim() && !template && !attachment) || (!note && selected.channel === 'storia')} onClick={() => act(send)}><Send className="h-5 w-5" /></Button>
+            </div>
+            {attachment && <button type="button" className="mt-2 text-xs text-emerald-700" onClick={() => setAttachment(null)}>{attachment.name} · Elimină</button>}
+            {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
+            <details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Mai multe opțiuni</summary><div className="mt-2 flex flex-wrap gap-2">{['messenger', 'instagram'].includes(selected.channel) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => { await api('conversations/' + selected.id + '/sync', 'POST', {}); await open(selected.id); })}>Sincronizează istoricul</Button>}{!note && selected.channel !== 'storia' && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => { const result = await api('conversations/' + selected.id + '/preview', 'POST', buildMessage()); setEstimate('Cost estimat: ' + (result.estimate.amountMicros / 1000000).toFixed(4) + ' ' + result.estimate.currency + ' · ' + result.estimate.category); })}>Verifică trimiterea</Button>}{selected.externalUrl && <Button size="sm" variant="outline" asChild><a href={selected.externalUrl} target="_blank" rel="noreferrer">Deschide în Storia</a></Button>}<Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => patch({ read: true }))}>Marchează citit</Button></div></details>
+          </div>
+        </section> : null}
+        {detailsOpen && selected && <section role="dialog" aria-modal="true" aria-label="Detalii client" className="fixed inset-x-0 top-0 z-[80] flex h-dvh min-h-0 flex-col bg-[#f7f9fc]">
+          <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4"><button type="button" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600" aria-label="Înapoi la conversație" onClick={() => setDetailsOpen(false)}><ArrowLeft className="h-5 w-5" /></button><h2 className="text-base font-bold text-[#17304a]">Detalii client</h2></header>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5">
+            <div className="rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-sm"><span className={'mx-auto flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span><h3 className="mt-3 font-bold text-[#17304a]">{selected.name}</h3><p className="mt-1 text-sm text-slate-500">{selected.phone || selected.email || 'Date de contact necompletate'}</p><p className="mt-2 text-xs text-slate-400">{CHANNEL_LABELS[selected.channel]}</p></div>
+            <section className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Gestionare conversație</h3>
+              <label className="block text-xs font-medium text-slate-600">Stare<select className={field + ' mt-1 w-full'} value={selected.status} onChange={event => act(() => patch({ status: event.target.value }))}><option value="new">Nouă</option><option value="open">În lucru</option><option value="waiting">Așteaptă clientul</option><option value="resolved">Rezolvată</option><option value="spam">Spam</option></select></label>
+              {userProfile?.role === 'admin' && <label className="block text-xs font-medium text-slate-600">Agent responsabil<select className={field + ' mt-1 w-full'} value={selected.assigneeId || ''} onChange={event => act(() => patch({ assigneeId: event.target.value || null }))}><option value="">Neatribuită</option>{agents.map(agent => <option key={agent.id} value={agent.id}>{agent.name}</option>)}</select></label>}
+              <Button variant="outline" className="w-full rounded-xl" disabled={busy} onClick={() => act(() => patch({ read: true }))}><CheckCheck className="h-4 w-4" /> Marchează citit</Button>
+            </section>
+            <section className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Contact CRM</h3>
+              {selected.contactId ? <Button variant="outline" asChild className="w-full rounded-xl"><Link href="/leads">Vezi cumpărătorii <ArrowRight className="h-4 w-4" /></Link></Button> : <><select className={field + ' w-full'} value={contactType} onChange={event => setContactType(event.target.value)} aria-label="Tip contact"><option value="Cumparator">Cumpărător</option><option value="Client">Client / proprietar</option><option value="Partener">Partener</option></select><Button disabled={busy} className="w-full rounded-xl bg-emerald-600 text-white" onClick={() => act(async () => { await api('conversations/' + selected.id + '/contact', 'POST', { contactType }); await open(selected.id); })}>Adaugă în CRM</Button></>}
+            </section>
+            <section className="space-y-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Proprietăți asociate</h3>
+              {selected.propertyIds.length ? selected.propertyIds.map(id => <Link key={id} href={'/properties/' + id} className="block truncate rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{id} <ArrowRight className="inline h-3.5 w-3.5" /></Link>) : <p className="text-xs text-slate-500">Nicio proprietate asociată.</p>}
+              <div className="flex gap-2"><Input className="min-w-0 rounded-xl" placeholder="ID proprietate" value={propertyId} onChange={event => setPropertyId(event.target.value)} /><Button variant="outline" size="icon" className="shrink-0 rounded-xl" disabled={busy || !propertyId} aria-label="Asociază proprietatea" onClick={() => act(() => patch({ propertyId }))}><Plus className="h-4 w-4" /></Button></div>
+            </section>
+            {userProfile?.role === 'admin' && selected.channel === 'whatsapp' && <details className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"><summary className="cursor-pointer text-xs font-bold uppercase tracking-wider text-slate-500">Consimțământ WhatsApp</summary><div className="mt-3 space-y-2"><select className={field + ' w-full'} value={consentPurpose} onChange={event => setConsentPurpose(event.target.value)}><option value="marketing">Oferte / marketing</option><option value="service">Comunicare de serviciu</option></select><Textarea placeholder="Dovada și data acordului sau retragerii" value={consentEvidence} onChange={event => setConsentEvidence(event.target.value)} /><div className="flex gap-2">{[['granted', 'Înregistrează'], ['revoked', 'Retrage']].map(([status, label]) => <Button key={status} size="sm" variant="outline" disabled={busy || consentEvidence.trim().length < 10} onClick={() => act(async () => { await api('consent', 'POST', { conversationId: selected.id, purpose: consentPurpose, status, evidence: consentEvidence }); setConsentEvidence(''); })}>{label}</Button>)}</div></div></details>}
+            <Button variant="outline" asChild className="w-full rounded-xl"><Link href="/viewings">Vezi vizionările <ArrowRight className="h-4 w-4" /></Link></Button>
+          </div>
+        </section>}
+      </div>
+      <div className="relative mx-auto hidden min-h-0 w-full max-w-[1800px] flex-1 flex-col gap-2 md:flex">
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-sm"><Inbox className="h-4 w-4" /></span><div><h1 className="flex flex-wrap items-baseline gap-1 text-lg font-bold leading-tight text-[#17304a]">Inbox <button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)} className={attentionOnly ? 'rounded-full bg-emerald-100 px-1.5 text-xs font-semibold text-emerald-800' : 'text-xs font-semibold text-emerald-700 hover:underline'}>({attentionCount} de răspuns)</button></h1><p className="text-[11px] text-slate-500">Centrul de mesaje al agenției</p></div></div>
           <div className="flex flex-wrap items-center gap-1.5"><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/marketing/whatsapp">Canale</Link></Button><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/inbox/storia">Istoric Storia</Link></Button>{userProfile?.role === 'admin' && <Button size="sm" disabled={busy} variant="outline" className="h-8 rounded-full border-slate-200 bg-white text-xs" onClick={() => act(migrate)}>Importă</Button>}</div>
