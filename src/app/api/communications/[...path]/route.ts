@@ -4,7 +4,7 @@ import { agencyCollection, addNote, CommunicationError, connectionList, context,
 import { finishWhatsApp, graph, listAssets, onboardingConfig, selectPage, startAuthorization, connectionToken } from '@/lib/communications/meta';
 import { queueMessage } from '@/lib/communications/outbound';
 import { searchMessages } from '@/lib/communications/search';
-import { createSocialPost, postInteraction, publishDraft } from '@/lib/communications/social';
+import { createSocialPost, postInteraction, propertyImageUrls, publishDraft } from '@/lib/communications/social';
 import { stableId } from '@/lib/communications/crypto';
 import { syncConversation } from '@/lib/communications/sync';
 export const runtime = 'nodejs';
@@ -65,7 +65,15 @@ async function handle(request: NextRequest, route: RouteContext) {
       const ref = agencyCollection(db, actor.agencyId, 'socialPosts').doc(id);
       await db.runTransaction(async tx => { const snap = await tx.get(ref); if (!snap.exists || !['draft', 'queued'].includes(snap.data()?.status)) throw new CommunicationError('Publicarea a început și nu mai poate fi anulată.', 409); tx.update(ref, { status: 'cancelled' }); }); result = { cancelled: true };
     } else if (resource === 'properties' && isRead) {
-      const rows = await agencyCollection(db, actor.agencyId, 'properties').where('status', '==', 'Activ').limit(100).get(); result = { properties: rows.docs.map(d => ({ id: d.id, title: d.data().title })) };
+      if (id) {
+        const snap = await agencyCollection(db, actor.agencyId, 'properties').doc(id).get();
+        if (!snap.exists || snap.data()?.status !== 'Activ') throw new CommunicationError('Proprietatea nu mai este activa.', 404);
+        const p = snap.data()!;
+        result = { property: { id: snap.id, title: p.title || '', description: p.description || '', location: p.location || p.address || '', price: p.price ?? null, images: propertyImageUrls(p.images || []).slice(0, 80) } };
+      } else {
+        const rows = await agencyCollection(db, actor.agencyId, 'properties').where('status', '==', 'Activ').limit(300).get();
+        result = { properties: rows.docs.map(d => ({ id: d.id, title: d.data().title || '', location: d.data().location || d.data().address || '', thumbnailUrl: propertyImageUrls(d.data().images || [])[0] || null })) };
+      }
     } else if (resource === 'agents' && isRead) {
       if (actor.role !== 'admin') throw new CommunicationError('Administrator necesar.', 403);
       const users = await db.collection('users').where('agencyId', '==', actor.agencyId).get(); result = { agents: users.docs.map(d => ({ id: d.id, name: d.data().name || d.id })) };

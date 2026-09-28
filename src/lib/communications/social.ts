@@ -5,12 +5,22 @@ import { agencyCollection, CommunicationError, nowIso } from './server';
 import { connectionToken, graph } from './meta';
 import type { Actor } from './model';
 
+export function propertyImageUrls(images: Array<{ url?: string }> = []) {
+  return [...new Set(images.map(image => image?.url).filter((url): url is string => typeof url === 'string' && /^https:\/\//.test(url)))];
+}
+export function selectPostImages(available: string[], selected?: string[]) {
+  if (selected === undefined) return available.slice(0, 10);
+  if (selected.length > 10 || new Set(selected).size !== selected.length || selected.some(url => !available.includes(url))) {
+    throw new CommunicationError('Selectează cel mult 10 fotografii care aparțin proprietății.');
+  }
+  return selected;
+}
 export async function createSocialPost(db: Firestore, actor: Actor, body: unknown) {
-  const input = z.object({ requestId: z.string().uuid(), connectionIds: z.array(z.string()).min(1).max(10), propertyId: z.string().min(1), text: z.string().trim().min(1).max(2200), scheduledAt: z.string().datetime().optional(), draft: z.boolean().default(false) }).parse(body);
+  const input = z.object({ requestId: z.string().uuid(), connectionIds: z.array(z.string()).min(1).max(10), propertyId: z.string().min(1), text: z.string().trim().min(1).max(2200), scheduledAt: z.string().datetime().optional(), draft: z.boolean().default(false), imageUrls: z.array(z.string().url()).max(10).optional() }).parse(body);
   const property = await agencyCollection(db, actor.agencyId, 'properties').doc(input.propertyId).get();
   if (!property.exists || property.data()?.status !== 'Activ') throw new CommunicationError('Publicarea necesită o proprietate activă.');
   const p = property.data()!;
-  const images: string[] = (p.images || []).map((image: { url?: string }) => image.url).filter((url: string) => /^https:\/\//.test(url)).slice(0, 10);
+  const images = selectPostImages(propertyImageUrls(p.images || []), input.imageUrls);
   const scheduledAt = input.scheduledAt || nowIso();
   if (Date.parse(scheduledAt) < Date.now() - 60000) throw new CommunicationError('Alege o dată viitoare.');
   const destinations: Record<string, unknown> = {};
@@ -48,7 +58,7 @@ export async function drainSocial(db: Firestore) {
     const post = (await ref.get()).data()!;
     const property = await agencyCollection(db, post.agencyId, 'properties').doc(post.propertyId).get();
     const author = await db.collection('users').doc(post.createdBy).get();
-    if (post.status === 'cancelled' || !property.exists || property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || author.data()?.agencyId !== post.agencyId || author.data()?.role !== 'admin') {
+    if (post.status === 'cancelled' || !property.exists || property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url)) || author.data()?.agencyId !== post.agencyId || author.data()?.role !== 'admin') {
       await ref.update({ status: 'needs_review', error: 'Proprietatea, aprobarea sau accesul s-a schimbat.' }); await job.ref.update({ status: 'blocked' }); continue;
     }
     let pending = false; let failed = false;
@@ -94,7 +104,7 @@ export async function publishDraft(db: Firestore, actor: Actor, id: string) {
     const snap = await tx.get(ref); const post = snap.data();
     if (!post || post.status !== 'draft') throw new CommunicationError('Numai drafturile pot fi publicate prin această acțiune.');
     const property = await tx.get(agencyCollection(db, actor.agencyId, 'properties').doc(post.propertyId));
-    if (property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice) throw new CommunicationError('Proprietatea s-a modificat; creează o postare actualizată.');
+    if (property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url))) throw new CommunicationError('Proprietatea s-a modificat; creează o postare actualizată.');
     const scheduledAt = post.scheduledAt > nowIso() ? post.scheduledAt : nowIso();
     tx.update(ref, { status: 'queued', scheduledAt, createdBy: actor.uid, destinations: Object.fromEntries(Object.entries(post.destinations).map(([key, value]) => [key, { ...(value as object), status: 'queued' }])) });
     tx.set(db.collection('communicationSocialJobs').doc(id), { agencyId: actor.agencyId, postId: id, status: 'queued', scheduledAt });
