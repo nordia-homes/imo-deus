@@ -330,11 +330,6 @@ export default function InboxWorkspace() {
                 <div><h2 className="font-bold text-[#17304a]">Conversații</h2><p className="text-xs text-slate-500">Fluxul de mesaje al agenției</p></div>
                 <div className="flex items-center gap-1"><button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)} className={'rounded-full px-2 py-1 text-[10px] font-semibold ' + (attentionOnly ? 'bg-emerald-200 text-emerald-900' : 'bg-white text-emerald-700 hover:bg-emerald-50')}>De răspuns {attentionCount}</button><span className="rounded-full border border-emerald-100 bg-white px-2 py-1 text-[10px] font-bold text-emerald-700">{rows.length}</span></div>
               </div>
-              <div className="mt-2 flex items-center gap-1.5">
-                <Button size="sm" variant="outline" asChild className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[10px]"><Link href="/marketing/whatsapp">Canale</Link></Button>
-                <Button size="sm" variant="outline" asChild className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[10px]"><Link href="/inbox/storia">Istoric Storia</Link></Button>
-                {userProfile?.role === 'admin' && <Button size="sm" disabled={busy} variant="outline" className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[10px]" onClick={() => act(migrate)}>Importă</Button>}
-              </div>
               <details className="group mt-3 rounded-xl border border-emerald-100 bg-white/90 px-2.5 py-2 shadow-sm">
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-[#17304a] [&::-webkit-details-marker]:hidden">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"><Plus className="h-4 w-4" /></span>
@@ -425,7 +420,7 @@ export default function InboxWorkspace() {
                 {selected.channel === 'whatsapp' && !note && <div className="mb-2 space-y-2"><select className={field + ' w-full'} aria-label="Șablon WhatsApp" value={template} onChange={e => { setTemplate(e.target.value); setEstimate(''); }}><option value="">Mesaj liber</option>{templates.map(item => <option key={item.name + '|' + item.language} value={item.name + '|' + item.language}>{item.name} ({item.language})</option>)}</select>{template && <Textarea aria-label="Parametri șablon" className="rounded-xl" placeholder="Valorile șablonului, câte una pe linie" value={parameters} onChange={e => setParameters(e.target.value)} />}</div>}
                 <div className="flex items-end gap-2">
                   <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[76px] min-w-0 flex-1 resize-none rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
-                  <Button size="sm" className="h-11 shrink-0 rounded-full bg-emerald-600 px-5 text-white hover:bg-emerald-700" disabled={busy || (!text.trim() && !template && !attachment) || (!note && selected.channel === 'storia')} onClick={() => act(send)}>{note ? 'Salvează nota' : 'Trimite'} <Send className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" className="h-11 shrink-0 rounded-full bg-emerald-400 px-5 text-emerald-950 hover:bg-emerald-500" disabled={busy || (!text.trim() && !template && !attachment) || (!note && selected.channel === 'storia')} onClick={() => act(send)}>{note ? 'Salvează nota' : 'Trimite'} <Send className="h-3.5 w-3.5" /></Button>
                 </div>
                 {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
               </div>
