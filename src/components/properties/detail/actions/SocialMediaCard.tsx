@@ -57,11 +57,12 @@ export function SocialMediaCard({ property }: { property: Property }) {
           </CardContent>
         </Card>
       </DialogTrigger>
-      <DialogContent className="h-[100dvh] w-[100vw] max-w-none overflow-y-auto rounded-none border-0 bg-slate-50 p-4 text-slate-900 sm:max-w-none sm:p-7 [&>button]:bg-slate-900/70 [&>button]:text-white">
+      <DialogContent className="h-[100dvh] w-[100vw] max-w-none overflow-y-auto rounded-none border-0 bg-slate-50 p-2 text-slate-900 sm:max-w-none sm:p-7">
         <DialogHeader className="mx-auto w-full max-w-[1600px] pb-2 pr-12 text-left">
           <DialogTitle className="text-xl">Creează postare · {property.title}</DialogTitle>
         </DialogHeader>
-        <div className="tt-design tt-workspace mi-workspace mx-auto w-full max-w-[1600px] flex-1">
+        <div className="tt-design tt-workspace mi-workspace mi-property-social-studio mx-auto w-full max-w-[1600px] flex-1">
+          <style>{`@media (max-width: 1100px) { html body .mi-property-social-studio .mi-studio-layout { grid-template-columns: minmax(0, 1fr); } html body .mi-property-social-studio .mi-preview-column { position: static; } html body .mi-property-social-studio .mi-preview-panel { max-width: 620px; } }`}</style>
           {loading && <p className="p-6 text-sm text-slate-500">Se încarcă editorul de postări…</p>}
           {error && <p role="alert" className="rounded-lg bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
           {!loading && !error && <SocialPostStudio
