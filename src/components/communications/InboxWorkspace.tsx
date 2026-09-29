@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, ArrowRight, Building2, CheckCheck, Clock3, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, CheckCheck, ChevronDown, Clock3, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
 import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
@@ -40,25 +40,39 @@ export default function InboxWorkspace() {
   const sendAttempt = useRef<{ fingerprint: string; requestId: string } | null>(null);
   const autoOpened = useRef(false);
   const mobileConversationRef = useRef<HTMLElement | null>(null);
+  const mobileMessagesRef = useRef<HTMLDivElement | null>(null);
+  const mobileComposerRef = useRef<HTMLTextAreaElement | null>(null);
+  const scrollMobileToLatest = useCallback(() => {
+    const scroller = mobileMessagesRef.current;
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  }, []);
+  useEffect(() => {
+    if (mobilePane !== 'conversation') return;
+    const frame = window.requestAnimationFrame(scrollMobileToLatest);
+    return () => window.cancelAnimationFrame(frame);
+  }, [mobilePane, selected?.id, scrollMobileToLatest]);
   useEffect(() => {
     if (mobilePane !== 'conversation' || !window.visualViewport) return;
     const viewport = window.visualViewport;
+    let frame = 0;
     const syncViewport = () => {
-      const pane = mobileConversationRef.current;
-      if (!pane) return;
-      pane.style.top = `${viewport.offsetTop}px`;
-      pane.style.height = `${viewport.height}px`;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const pane = mobileConversationRef.current;
+        if (!pane) return;
+        pane.style.height = `${viewport.height}px`;
+        if (document.activeElement === mobileComposerRef.current) scrollMobileToLatest();
+      });
     };
     syncViewport();
     viewport.addEventListener('resize', syncViewport);
-    viewport.addEventListener('scroll', syncViewport);
     window.addEventListener('resize', syncViewport);
     return () => {
+      window.cancelAnimationFrame(frame);
       viewport.removeEventListener('resize', syncViewport);
-      viewport.removeEventListener('scroll', syncViewport);
       window.removeEventListener('resize', syncViewport);
     };
-  }, [mobilePane, selected?.id]);
+  }, [mobilePane, selected?.id, scrollMobileToLatest]);
   const [cursor, setCursor] = useState<string | null>(null); const [messageCursor, setMessageCursor] = useState<string | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [templates, setTemplates] = useState<Array<{ name: string; language: string; status: string }>>([]);
@@ -227,23 +241,23 @@ export default function InboxWorkspace() {
             <ArrowRight className="h-4 w-4 shrink-0 text-emerald-700" />
           </Link>}
           {error && <div role="alert" className="shrink-0 bg-amber-50 px-3 py-2 text-xs text-amber-800">{error}</div>}
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4" style={{ backgroundImage: 'radial-gradient(rgba(113,143,125,0.11) 0.7px, transparent 0.7px)', backgroundSize: '22px 22px' }}>
+          <div ref={mobileMessagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 py-4" style={{ backgroundImage: 'radial-gradient(rgba(113,143,125,0.11) 0.7px, transparent 0.7px)', backgroundSize: '22px 22px' }}>
             {messageCursor && <Button variant="ghost" className="mx-auto flex rounded-full bg-white text-xs text-slate-600" onClick={() => act(() => open(selected.id, messageCursor))}>Mesaje mai vechi</Button>}
             {[...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(message => <article id={'mobile-message-' + message.id} key={message.id} className={'w-fit max-w-[85%] rounded-2xl border px-3 py-2 shadow-sm ' + (message.direction === 'sent' ? 'ml-auto rounded-br-sm border-[#9fdfbc] bg-[#d9f7e8]' : 'mr-auto rounded-bl-sm border-[#b9d3fa] bg-[#e6f0ff]')}><p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-[#17304a]">{message.text}</p>{message.attachments.map((item, index) => <button key={index} type="button" className="mt-2 flex items-center gap-1 text-xs text-emerald-700 underline" onClick={() => act(() => download(message.id, index, item.name))}><Paperclip className="h-3 w-3" />{item.name}</button>)}<p className="mt-1 text-right text-[10px] text-slate-500">{time(message.createdAt)} · {message.direction === 'sent' ? message.status : 'Primit'}</p>{message.error && <p className="text-xs text-red-700">{message.error}</p>}</article>)}
             {notes.map(item => <div key={item.id} className="mx-auto max-w-[90%] rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"><strong>Notă internă</strong><p className="mt-1 whitespace-pre-wrap">{item.text}</p></div>)}
             {!messages.length && !notes.length && <p className="py-16 text-center text-xs text-slate-500">Conversația începe aici.</p>}
           </div>
           <div className="shrink-0 border-t border-slate-200 bg-[#f7faf9] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-            <div className="mb-2 flex items-center gap-2"><button type="button" onClick={() => setNote(false)} className={'rounded-full px-3 py-1 text-[11px] font-semibold ' + (!note ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-slate-500')}>Răspuns</button><button type="button" onClick={() => setNote(true)} className={'rounded-full px-3 py-1 text-[11px] font-semibold ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500')}>Notă internă</button><span className="ml-auto text-[10px] text-slate-400">{selected.channel === 'storia' && !note ? 'Istoric Storia' : ''}</span></div>
+            <div className="mb-2 flex items-center gap-1"><button type="button" onClick={() => setNote(false)} className={'rounded-full px-2.5 py-1 text-[10px] font-semibold ' + (!note ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-slate-500')}>Răspuns</button><button type="button" onClick={() => setNote(true)} className={'rounded-full px-2.5 py-1 text-[10px] font-semibold ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-white text-slate-500')}>Notă internă</button><details className="group relative ml-auto shrink-0 text-slate-600"><summary className="flex cursor-pointer list-none items-center gap-0.5 whitespace-nowrap rounded-full bg-white px-2 py-1 text-[10px] font-semibold [&::-webkit-details-marker]:hidden">Mai multe opțiuni<ChevronDown className="h-3 w-3 transition group-open:rotate-180" /></summary><div className="absolute bottom-full right-0 z-20 mb-2 flex max-h-[min(45dvh,360px)] w-[min(86vw,320px)] flex-wrap gap-2 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">{['messenger', 'instagram'].includes(selected.channel) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => { await api('conversations/' + selected.id + '/sync', 'POST', {}); await open(selected.id); })}>Sincronizează istoricul</Button>}{!note && selected.channel !== 'storia' && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => { const result = await api('conversations/' + selected.id + '/preview', 'POST', buildMessage()); setEstimate('Cost estimat: ' + (result.estimate.amountMicros / 1000000).toFixed(4) + ' ' + result.estimate.currency + ' · ' + result.estimate.category); })}>Verifică trimiterea</Button>}{selected.externalUrl && <Button size="sm" variant="outline" asChild><a href={selected.externalUrl} target="_blank" rel="noreferrer">Deschide în Storia</a></Button>}<Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => patch({ read: true }))}>Marchează citit</Button></div></details></div>
             {selected.channel === 'whatsapp' && !note && <div className="mb-2"><select className={field + ' w-full'} aria-label="Șablon WhatsApp" value={template} onChange={event => { setTemplate(event.target.value); setEstimate(''); }}><option value="">Mesaj liber</option>{templates.map(item => <option key={item.name + '|' + item.language} value={item.name + '|' + item.language}>{item.name} ({item.language})</option>)}</select>{template && <Textarea className="mt-2 text-base" aria-label="Parametri șablon" placeholder="Valori șablon, câte una pe linie" value={parameters} onChange={event => setParameters(event.target.value)} />}</div>}
             <div className="flex items-end gap-2">
               {!note && !template && selected.channel !== 'storia' && <label className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-slate-600 shadow-sm" aria-label="Atașează fișier"><Paperclip className="h-5 w-5" /><input className="sr-only" type="file" accept="image/jpeg,image/png,application/pdf" disabled={busy} onChange={event => { const file = event.target.files?.[0]; if (file) act(() => upload(file)); event.target.value = ''; }} /></label>}
-              <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className="max-h-28 min-h-11 flex-1 resize-none rounded-[22px] border-0 bg-white px-4 py-3 text-base shadow-sm focus-visible:ring-emerald-300" value={text} onChange={event => { setText(event.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă...' : 'Scrie un mesaj...'} />
+              <Textarea ref={mobileComposerRef} onFocus={() => window.requestAnimationFrame(scrollMobileToLatest)} aria-label={note ? 'Notă internă' : 'Mesaj către client'} className="max-h-28 min-h-11 flex-1 resize-none rounded-[22px] border-0 bg-white px-4 py-3 text-base shadow-sm focus-visible:ring-emerald-300" value={text} onChange={event => { setText(event.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă...' : 'Scrie un mesaj...'} />
               <Button size="icon" className="h-11 w-11 shrink-0 rounded-full bg-emerald-600 text-white hover:bg-emerald-700" aria-label={note ? 'Salvează nota' : 'Trimite mesajul'} disabled={busy || (!text.trim() && !template && !attachment) || (!note && selected.channel === 'storia')} onClick={() => act(send)}><Send className="h-5 w-5" /></Button>
             </div>
             {attachment && <button type="button" className="mt-2 text-xs text-emerald-700" onClick={() => setAttachment(null)}>{attachment.name} · Elimină</button>}
             {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
-            <details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Mai multe opțiuni</summary><div className="mt-2 flex flex-wrap gap-2">{['messenger', 'instagram'].includes(selected.channel) && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => { await api('conversations/' + selected.id + '/sync', 'POST', {}); await open(selected.id); })}>Sincronizează istoricul</Button>}{!note && selected.channel !== 'storia' && <Button size="sm" variant="outline" disabled={busy} onClick={() => act(async () => { const result = await api('conversations/' + selected.id + '/preview', 'POST', buildMessage()); setEstimate('Cost estimat: ' + (result.estimate.amountMicros / 1000000).toFixed(4) + ' ' + result.estimate.currency + ' · ' + result.estimate.category); })}>Verifică trimiterea</Button>}{selected.externalUrl && <Button size="sm" variant="outline" asChild><a href={selected.externalUrl} target="_blank" rel="noreferrer">Deschide în Storia</a></Button>}<Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => patch({ read: true }))}>Marchează citit</Button></div></details>
+
           </div>
         </section> : null}
         {detailsOpen && selected && <section role="dialog" aria-modal="true" aria-label="Detalii client" className="fixed inset-x-0 top-0 z-[80] flex h-dvh min-h-0 flex-col bg-[#f7f9fc]">
