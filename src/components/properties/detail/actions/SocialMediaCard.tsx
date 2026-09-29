@@ -58,11 +58,11 @@ export function SocialMediaCard({ property }: { property: Property }) {
         </Card>
       </DialogTrigger>
       <DialogContent className="h-[100dvh] w-[100vw] max-w-none overflow-y-auto rounded-none border-0 bg-slate-50 p-2 text-slate-900 sm:max-w-none sm:p-7">
-        <DialogHeader className="mx-auto w-full max-w-[1600px] pb-2 pr-12 text-left">
+        <DialogHeader className="mx-auto hidden w-full max-w-[1600px] pb-2 pr-12 text-left min-[1101px]:flex">
           <DialogTitle className="text-xl">Creează postare · {property.title}</DialogTitle>
         </DialogHeader>
         <div className="tt-design tt-workspace mi-workspace mi-property-social-studio mx-auto w-full max-w-[1600px] flex-1">
-          <style>{`@media (max-width: 1100px) { html body .mi-property-social-studio .mi-studio-layout { grid-template-columns: minmax(0, 1fr); } html body .mi-property-social-studio .mi-preview-column { position: static; } html body .mi-property-social-studio .mi-preview-panel { max-width: 620px; } }`}</style>
+          <style>{`@media (max-width: 1100px) { html body .mi-property-social-studio .mi-studio-layout { grid-template-columns: minmax(0, 1fr); } html body .mi-property-social-studio .mi-preview-column { position: static; } html body .mi-property-social-studio .mi-preview-panel { max-width: 620px; } html body .mi-property-social-studio .mi-studio-actions { flex-wrap: nowrap; } html body .mi-property-social-studio .mi-studio-actions button { flex: 1 1 0; min-width: 0; justify-content: center; padding-inline: 8px; white-space: nowrap; font-size: 12px; } }`}</style>
           {loading && <p className="p-6 text-sm text-slate-500">Se încarcă editorul de postări…</p>}
           {error && <p role="alert" className="rounded-lg bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
           {!loading && !error && <SocialPostStudio
