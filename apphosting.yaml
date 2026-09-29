@@ -129,6 +129,21 @@ env:
     availability:
       - RUNTIME
 
+  - variable: TIKTOK_CLIENT_KEY
+    secret: TIKTOK_CLIENT_KEY
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_REDIRECT_URI
+    value: "https://imodeus.ro/auth/tiktok/callback"
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_UNAUDITED_PRIVATE_ONLY
+    value: "true"
+    availability:
+      - RUNTIME
+
   - variable: TIKTOK_TOKEN_ENCRYPTION_KEY
     secret: TIKTOK_TOKEN_ENCRYPTION_KEY
     availability:

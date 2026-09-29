@@ -605,14 +605,16 @@ function createWindow() {
 
 function openOAuthWindow(input) {
   const authorizationUrl = typeof input?.authorizationUrl === 'string' ? input.authorizationUrl : '';
+  const organic = input?.organic === true;
   let parsed;
   try {
     parsed = new URL(authorizationUrl);
   } catch {
     throw new Error('URL-ul OAuth este invalid.');
   }
-  if (parsed.protocol !== 'https:' || parsed.hostname.toLowerCase() !== 'business-api.tiktok.com' || parsed.username || parsed.password) {
-    throw new Error('Fereastra OAuth acceptă numai endpointul oficial TikTok for Business.');
+  const expectedHost = organic ? 'www.tiktok.com' : 'business-api.tiktok.com';
+  if (parsed.protocol !== 'https:' || parsed.hostname.toLowerCase() !== expectedHost || parsed.username || parsed.password || (organic && parsed.pathname !== '/v2/auth/authorize/')) {
+    throw new Error('Fereastra OAuth acceptă numai endpointul oficial TikTok pentru integrarea selectată.');
   }
   if (oauthWindow && !oauthWindow.isDestroyed()) {
     oauthWindow.focus();
@@ -645,7 +647,7 @@ function openOAuthWindow(input) {
       show: false,
       autoHideMenuBar: true,
       backgroundColor: '#ffffff',
-      title: 'Autorizare TikTok for Business',
+      title: organic ? 'Autorizare profil TikTok' : 'Autorizare TikTok for Business',
       webPreferences: {
         contextIsolation: true,
         nodeIntegration: false,
@@ -669,7 +671,7 @@ function openOAuthWindow(input) {
     const inspectNavigation = (_event, targetUrl) => {
       try {
         const target = new URL(targetUrl);
-        const outcome = target.searchParams.get('tiktokAds');
+        const outcome = target.searchParams.get(organic ? 'tiktok' : 'tiktokAds');
         if (!appOrigins.has(target.origin) || !outcome) return;
         const result = { completed: outcome === 'connected', error: outcome === 'error' ? target.searchParams.get('message') || 'Autorizarea TikTok a eșuat.' : null };
         finish(result);

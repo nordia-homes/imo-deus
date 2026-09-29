@@ -2,6 +2,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypt
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { buildTikTokVideoLibrary } from '@/lib/tiktok-video-library';
+import { planTikTokVideoChunks, prepareTikTokVideo, uploadTikTokVideo } from '@/lib/tiktok-organic-media';
 import type {
   Property,
   TikTokMarketingIntegrationPrivate,
@@ -99,7 +100,7 @@ type TikTokPublishStatusResponse = {
   data?: {
     status?: string;
     fail_reason?: string;
-    publicaly_available_post_id?: string;
+    publicaly_available_post_id?: Array<string | number>;
     uploaded_bytes?: number;
   };
   error?: {
@@ -139,7 +140,7 @@ function createPkceVerifier() {
 }
 
 function createPkceChallenge(verifier: string) {
-  return base64UrlEncode(createHash('sha256').update(verifier).digest());
+  return createHash('sha256').update(verifier).digest('hex');
 }
 
 function getPrivateDocId(uid: string) {
@@ -183,7 +184,12 @@ function getAppBaseUrl() {
 }
 
 function getRedirectUri() {
-  return (process.env.TIKTOK_REDIRECT_URI || `${getAppBaseUrl()}/auth/tiktok/callback`).trim();
+  const uri = (process.env.TIKTOK_REDIRECT_URI || `${getAppBaseUrl()}/auth/tiktok/callback`).trim();
+  const parsed = new URL(uri);
+  if (parsed.protocol !== 'https:' || parsed.search || parsed.hash || parsed.pathname !== '/auth/tiktok/callback') {
+    throw new Error('TIKTOK_REDIRECT_URI trebuie să fie un URL HTTPS static cu ruta /auth/tiktok/callback.');
+  }
+  return parsed.toString();
 }
 
 function getTikTokClientKey() {
@@ -213,8 +219,9 @@ function requireTikTokConfig() {
   const clientKey = getTikTokClientKey();
   const clientSecret = getTikTokClientSecret();
   if (!clientKey || !clientSecret) {
-    throw new Error('Configureaza TIKTOK_CLIENT_KEY si TIKTOK_CLIENT_SECRET in .env.local.');
+    throw new Error('Configurarea TikTok lipsește: verifică TIKTOK_CLIENT_KEY și TIKTOK_CLIENT_SECRET pentru aceeași aplicație TikTok Developer.');
   }
+  getRedirectUri();
   return { clientKey, clientSecret };
 }
 
@@ -295,6 +302,8 @@ async function tiktokRequest<T>(path: string, accessToken: string, init?: Reques
   });
   const payload = await safeJson(response);
   if (!response.ok) {
+    const providerError = payload && typeof payload === 'object' ? (payload as { error?: { code?: string; log_id?: string } }).error : undefined;
+    console.error('tiktok_organic_api_error', { path, status: response.status, code: providerError?.code || 'http_error', logId: providerError?.log_id || null });
     const error = new Error(extractTikTokError(payload, `TikTok API a raspuns cu ${response.status}.`)) as TikTokApiError;
     error.status = response.status;
     error.payload = payload;
@@ -418,7 +427,7 @@ function toPublicIntegration(privateIntegration: TikTokMarketingIntegrationPriva
 }
 
 async function fetchTikTokUser(accessToken: string) {
-  const fields = 'open_id,union_id,avatar_url,avatar_url_100,avatar_large_url,display_name,username';
+  const fields = 'open_id,union_id,avatar_url,avatar_url_100,avatar_large_url,display_name';
   const response = await tiktokRequest<TikTokUserInfoResponse>(`/v2/user/info/?fields=${encodeURIComponent(fields)}`, accessToken);
   return response.data?.user || {};
 }
@@ -477,6 +486,7 @@ export async function finalizeTikTokAuthorization(params: { code: string; state:
   }
 
   const token = await requestAccessToken(params.code, stateData.codeVerifier);
+  if (token.scope && !token.scope.split(',').map(scope => scope.trim()).includes('video.publish')) throw new Error('Profilul nu a acordat permisiunea video.publish. Reîncearcă autorizarea și acceptă publicarea.');
   const user = await fetchTikTokUser(token.access_token || '');
   const uid = stateData.requestedByUid || '';
   if (!uid) throw new Error('Nu am putut identifica utilizatorul care a pornit conectarea TikTok.');
@@ -828,7 +838,12 @@ export async function createTikTokPostDraft(input: {
   disableDuet?: boolean;
   disableStitch?: boolean;
   aiGeneratedContent?: boolean;
+  brandOrganic?: boolean;
+  brandContent?: boolean;
+  userConsent?: boolean;
 }) {
+  const integration = await getPrivateIntegration(input.requestedByUid);
+  if (!integration?.connected || integration.agencyId !== input.agencyId || !integration.openId) throw new Error('Conectează profilul TikTok înainte de a pregăti postarea.');
   const propertySnapshot = await adminDb
     .collection('agencies')
     .doc(input.agencyId)
@@ -858,6 +873,7 @@ export async function createTikTokPostDraft(input: {
     createdAt: now,
     updatedAt: now,
     createdByUid: input.requestedByUid,
+    targetOpenId: integration.openId,
     status: 'draft',
     description: (input.description || generated?.description || '').trim(),
     hashtags: normalizeHashtags(input.hashtags?.length ? input.hashtags : generated?.hashtags || []),
@@ -866,6 +882,9 @@ export async function createTikTokPostDraft(input: {
     disableDuet: Boolean(input.disableDuet),
     disableStitch: Boolean(input.disableStitch),
     aiGeneratedContent: input.aiGeneratedContent !== false,
+    brandOrganic: Boolean(input.brandOrganic),
+    brandContent: Boolean(input.brandContent),
+    consentedAt: input.userConsent === true ? now : null,
     coverTimestampMs: 1000,
     publishLog: [{ at: now, status: 'draft', message: 'Draft TikTok creat in ImoDeus Studio.' }],
   };
@@ -878,6 +897,7 @@ export async function createTikTokPostDraft(input: {
 export async function updateTikTokPostDraft(input: {
   agencyId: string;
   draftId: string;
+  requestedByUid: string;
   description?: string;
   hashtags?: string[];
   privacyLevel?: string;
@@ -885,12 +905,11 @@ export async function updateTikTokPostDraft(input: {
   disableDuet?: boolean;
   disableStitch?: boolean;
   aiGeneratedContent?: boolean;
+  brandOrganic?: boolean;
+  brandContent?: boolean;
   coverTimestampMs?: number | null;
 }) {
   const ref = getDraftRef(input.agencyId, input.draftId);
-  const snapshot = await ref.get();
-  if (!snapshot.exists) throw new Error('Draftul TikTok nu a fost gasit.');
-  const draft = { id: snapshot.id, ...snapshot.data() } as TikTokPostDraft;
   const patch: Partial<TikTokPostDraft> = {
     updatedAt: nowIso(),
   };
@@ -901,9 +920,18 @@ export async function updateTikTokPostDraft(input: {
   if (typeof input.disableDuet === 'boolean') patch.disableDuet = input.disableDuet;
   if (typeof input.disableStitch === 'boolean') patch.disableStitch = input.disableStitch;
   if (typeof input.aiGeneratedContent === 'boolean') patch.aiGeneratedContent = input.aiGeneratedContent;
+  if (typeof input.brandOrganic === 'boolean') patch.brandOrganic = input.brandOrganic;
+  if (typeof input.brandContent === 'boolean') patch.brandContent = input.brandContent;
   if (input.coverTimestampMs !== undefined) patch.coverTimestampMs = input.coverTimestampMs;
-
-  await ref.set(patch, { merge: true });
+  const draft = await adminDb.runTransaction(async tx => {
+    const snapshot = await tx.get(ref);
+    if (!snapshot.exists) throw new Error('Draftul TikTok nu a fost gasit.');
+    const current = { id: snapshot.id, ...snapshot.data() } as TikTokPostDraft;
+    if (current.createdByUid !== input.requestedByUid) throw new Error('Numai autorul poate modifica postarea.');
+    if (!['draft', 'ready'].includes(current.status) || current.scheduleStatus === 'scheduled' || current.publishId || current.publishOutcomeUnknown || current.manualReviewRequired) throw new Error('Postarea a fost programată sau trimisă. Anulează programarea înainte de editare.');
+    tx.update(ref, patch);
+    return current;
+  });
   const updated = { ...draft, ...patch } as TikTokPostDraft;
   await updatePropertyTikTokSummary(input.agencyId, updated.propertyId, updated);
   return updated;
@@ -920,18 +948,9 @@ export async function getTikTokCreatorInfo(uid: string) {
 
 function buildTikTokTitle(draft: TikTokPostDraft) {
   const tags = draft.hashtags.join(' ');
-  return [draft.description, tags].filter(Boolean).join('\n\n').trim().slice(0, 2200);
-}
-
-async function downloadVideo(videoUrl: string) {
-  const response = await fetch(videoUrl, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Nu am putut descarca video turul pentru TikTok (${response.status}).`);
-  const arrayBuffer = await response.arrayBuffer();
-  const contentType = response.headers.get('content-type') || 'video/mp4';
-  return {
-    bytes: new Uint8Array(arrayBuffer),
-    contentType,
-  };
+  const title = [draft.description, tags].filter(Boolean).join('\n\n').trim();
+  if (!title || title.length > 2200) throw new Error('Descrierea și hashtagurile trebuie să aibă maximum 2200 de unități UTF-16.');
+  return title;
 }
 
 async function initTikTokFileUpload(input: {
@@ -952,6 +971,8 @@ async function initTikTokFileUpload(input: {
         disable_stitch: input.draft.disableStitch,
         video_cover_timestamp_ms: input.draft.coverTimestampMs ?? 1000,
         is_aigc: input.draft.aiGeneratedContent,
+        brand_organic_toggle: Boolean(input.draft.brandOrganic),
+        brand_content_toggle: Boolean(input.draft.brandContent),
       },
       source_info: {
         source: 'FILE_UPLOAD',
@@ -970,30 +991,6 @@ async function initTikTokFileUpload(input: {
   return { publishId, uploadUrl };
 }
 
-async function uploadVideoToTikTok(uploadUrl: string, bytes: Uint8Array, contentType: string, chunkSize: number) {
-  const total = bytes.byteLength;
-  let offset = 0;
-
-  while (offset < total) {
-    const endExclusive = Math.min(offset + chunkSize, total);
-    const chunk = bytes.slice(offset, endExclusive);
-    const endInclusive = endExclusive - 1;
-    const response = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': contentType || 'video/mp4',
-        'Content-Length': String(chunk.byteLength),
-        'Content-Range': `bytes ${offset}-${endInclusive}/${total}`,
-      },
-      body: chunk,
-    });
-    if (!response.ok) {
-      throw new Error(`Upload-ul catre TikTok a esuat la ${offset}-${endInclusive} (${response.status}).`);
-    }
-    offset = endExclusive;
-  }
-}
-
 function mapTikTokPublishStatus(status?: string): TikTokPostDraft['status'] {
   const normalized = (status || '').toUpperCase();
   if (['PUBLISH_COMPLETE', 'SUCCESS', 'PUBLISHED'].includes(normalized)) return 'published';
@@ -1006,6 +1003,7 @@ export async function publishTikTokPostDraft(input: {
   agencyId: string;
   draftId: string;
   requestedByUid: string;
+  fromSchedule?: boolean;
 }) {
   const ref = getDraftRef(input.agencyId, input.draftId);
   let draft = await adminDb.runTransaction(async tx => {
@@ -1013,9 +1011,11 @@ export async function publishTikTokPostDraft(input: {
     if (!snapshot.exists) throw new Error('Draftul TikTok nu a fost gasit.');
     const current = { id: snapshot.id, ...snapshot.data() } as TikTokPostDraft;
     if (current.createdByUid !== input.requestedByUid) throw new Error('Numai autorul poate publica pe profilul conectat.');
-      if (current.publishId || current.publishOutcomeUnknown || ['publishing', 'processing', 'published'].includes(current.status)) throw new Error('Publicarea a fost deja inițiată. Verifică starea fără a retrimite.');
-    if (!current.description.trim() || !current.videoTourUrl) throw new Error('Completează descrierea și videoclipul.');
-    tx.update(ref, { status: 'publishing', updatedAt: nowIso() });
+    if (current.scheduleStatus === 'scheduled' && !input.fromSchedule) throw new Error('Postarea este programată. Anulează programarea înainte de publicarea manuală.');
+    if (current.publishId || current.publishOutcomeUnknown || current.manualReviewRequired || ['publishing', 'processing', 'published'].includes(current.status)) throw new Error('Publicarea a fost deja inițiată. Verifică starea fără a retrimite.');
+    if (!current.description.trim() || !current.videoTourUrl || !current.consentedAt) throw new Error('Completează postarea și confirmă acordul pentru publicare.');
+    if (current.brandContent && current.privacyLevel === 'SELF_ONLY') throw new Error('Parteneriatul plătit nu poate fi publicat privat.');
+    tx.update(ref, { status: 'publishing', updatedAt: nowIso(), lastStatusCheckedAt: nowIso() });
     return current;
   });
   if (!draft.description.trim()) throw new Error('Descrierea TikTok este obligatorie.');
@@ -1033,24 +1033,33 @@ export async function publishTikTokPostDraft(input: {
   await ref.set(draft, { merge: true });
   await updatePropertyTikTokSummary(input.agencyId, draft.propertyId || null, draft);
 
-    let initializationStarted = false;
-    try {
-      const creator = await getTikTokCreatorInfo(input.requestedByUid);
-      if (!creator.privacy_level_options?.includes(draft.privacyLevel)) throw new Error('Vizibilitatea aleasă nu mai este permisă de profil.');
-      if (isPrivateModeOnly() && draft.privacyLevel !== 'SELF_ONLY') throw new Error('Integrarea permite momentan numai publicări private.');
-      const { accessToken } = await getAccessTokenForUser(input.requestedByUid);
-    const video = await downloadVideo(draft.videoTourUrl);
+  let initializationStarted = false;
+  let publishAllocated = false;
+  let prepared: Awaited<ReturnType<typeof prepareTikTokVideo>> | null = null;
+  try {
+    const { accessToken, integration } = await getAccessTokenForUser(input.requestedByUid);
+    if (!draft.targetOpenId || integration.openId !== draft.targetOpenId || integration.agencyId !== input.agencyId) throw new Error('Profilul TikTok conectat s-a schimbat. Creează un draft nou pentru profilul curent.');
+    const creator = await getTikTokCreatorInfo(input.requestedByUid);
+    if (!creator.privacy_level_options?.includes(draft.privacyLevel)) throw new Error('Vizibilitatea aleasă nu mai este permisă de profil.');
+    if (isPrivateModeOnly() && draft.privacyLevel !== 'SELF_ONLY') throw new Error('Integrarea permite momentan numai publicări private.');
+    if (isPrivateModeOnly() && creator.privacy_level_options?.includes('PUBLIC_TO_EVERYONE')) throw new Error('Aplicația TikTok este neauditată; setează profilul TikTok ca privat pentru test.');
+    if (creator.creator_username) {
+      draft.creatorUsername = creator.creator_username;
+      await ref.update({ creatorUsername: creator.creator_username });
+    }
+    buildTikTokTitle(draft);
+    prepared = await prepareTikTokVideo(draft.videoTourUrl, input.agencyId, draft.videoOwnerUid || input.requestedByUid, creator.max_video_post_duration_sec);
     const maxChunkSize = Number(process.env.TIKTOK_MAX_FILE_UPLOAD_CHUNK_BYTES || 10_000_000);
-    const chunkSize = Math.min(Math.max(maxChunkSize, 1_000_000), video.bytes.byteLength);
-    const totalChunkCount = Math.max(1, Math.ceil(video.bytes.byteLength / chunkSize));
-      initializationStarted = true;
-      const { publishId, uploadUrl } = await initTikTokFileUpload({
+    const chunks = planTikTokVideoChunks(prepared.size, maxChunkSize);
+    initializationStarted = true;
+    const { publishId, uploadUrl } = await initTikTokFileUpload({
       accessToken,
       draft,
-      videoSize: video.bytes.byteLength,
-      chunkSize,
-      totalChunkCount,
+      videoSize: prepared.size,
+      chunkSize: chunks.chunkSize,
+      totalChunkCount: chunks.count,
     });
+    publishAllocated = true;
 
     await ref.set({
       publishId,
@@ -1058,12 +1067,13 @@ export async function publishTikTokPostDraft(input: {
       publishLog: appendLog(draft, { at: nowIso(), status: 'publishing', message: 'TikTok a alocat upload URL.', tiktokObjectId: publishId }),
     }, { merge: true });
 
-    await uploadVideoToTikTok(uploadUrl, video.bytes, video.contentType, chunkSize);
+    await uploadTikTokVideo(uploadUrl, prepared.tempPath, prepared.size, prepared.contentType, chunks.chunkSize);
     const processingDraft: TikTokPostDraft = {
       ...draft,
       publishId,
       status: 'processing',
       updatedAt: nowIso(),
+      lastStatusCheckedAt: nowIso(),
       publishLog: appendLog(draft, { at: nowIso(), status: 'processing', message: 'Video incarcat. TikTok proceseaza postarea.', tiktokObjectId: publishId }),
     };
     await ref.set(processingDraft, { merge: true });
@@ -1071,16 +1081,20 @@ export async function publishTikTokPostDraft(input: {
     return processingDraft;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Publicarea TikTok a esuat.';
+    const providerStatus = (error as TikTokApiError | null)?.status;
+    const remoteOutcomeUnknown = publishAllocated || (initializationStarted && !(typeof providerStatus === 'number' && providerStatus >= 400 && providerStatus < 500));
     const failedDraft: Partial<TikTokPostDraft> = {
       status: 'error',
       updatedAt: nowIso(),
-        lastPublishError: initializationStarted ? `${message} Verifică în TikTok înainte de a încerca o altă publicare.` : message,
-        publishOutcomeUnknown: initializationStarted,
+      lastPublishError: remoteOutcomeUnknown ? `${message} Verifică în TikTok înainte de a încerca o altă publicare.` : message,
+      publishOutcomeUnknown: remoteOutcomeUnknown,
       publishLog: appendLog(draft, { at: nowIso(), status: 'error', message }),
     };
     await ref.set(failedDraft, { merge: true });
     await updatePropertyTikTokSummary(input.agencyId, draft.propertyId || null, { ...draft, ...failedDraft } as TikTokPostDraft);
     throw error;
+  } finally {
+    await prepared?.dispose();
   }
 }
 
@@ -1096,19 +1110,25 @@ export async function refreshTikTokPostDraftStatus(input: {
   if (draft.createdByUid !== input.requestedByUid) throw new Error('Verifică publicarea folosind profilul autorului.');
   if (!draft.publishId) return draft;
 
-  const { accessToken } = await getAccessTokenForUser(input.requestedByUid);
+  const { accessToken, integration } = await getAccessTokenForUser(input.requestedByUid);
+  if (!draft.targetOpenId || integration.openId !== draft.targetOpenId) throw new Error('Profilul conectat nu este cel folosit pentru această publicare. Reconectează profilul original pentru verificare.');
   const response = await tiktokRequest<TikTokPublishStatusResponse>('/v2/post/publish/status/fetch/', accessToken, {
     method: 'POST',
     body: JSON.stringify({ publish_id: draft.publishId }),
   });
   const status = mapTikTokPublishStatus(response.data?.status);
   const message = response.data?.fail_reason || `Status TikTok: ${response.data?.status || 'processing'}.`;
+  const publicPostIds = response.data?.publicaly_available_post_id?.map(String) || draft.publicPostIds || [];
   const patch: Partial<TikTokPostDraft> = {
     status,
+    scheduleStatus: status === 'published' ? 'sent' : status === 'error' ? 'error' : draft.scheduleStatus || 'none',
     updatedAt: nowIso(),
     lastStatusCheckedAt: nowIso(),
-    publishedAt: status === 'published' ? nowIso() : draft.publishedAt || null,
-    lastPublishError: status === 'error' ? message : draft.lastPublishError || null,
+    publishedAt: status === 'published' ? draft.publishedAt || nowIso() : draft.publishedAt || null,
+    publicPostIds,
+    awaitingPublicId: status === 'published' && draft.privacyLevel === 'PUBLIC_TO_EVERYONE' && !publicPostIds.length && Date.now() - Date.parse(draft.publishedAt || nowIso()) < 24 * 60 * 60 * 1000,
+    publishOutcomeUnknown: status === 'published' || status === 'error' ? false : draft.publishOutcomeUnknown || false,
+    lastPublishError: status === 'error' ? message : null,
     publishLog: appendLog(draft, { at: nowIso(), status, message, tiktokObjectId: draft.publishId }),
   };
 
@@ -1178,6 +1198,12 @@ export async function createTikTokStudioAsset(input: {
   sizeBytes?: number | null;
   source?: TikTokStudioAsset['source'];
 }) {
+  let durationSeconds: number | null = null;
+  if (input.type === 'video') {
+    const prepared = await prepareTikTokVideo(input.url, input.agencyId, input.ownerUid);
+    durationSeconds = prepared.durationSeconds;
+    await prepared.dispose();
+  }
   if (input.propertyId) {
     const property = await adminDb.collection('agencies').doc(input.agencyId).collection('properties').doc(input.propertyId).get();
     if (!property.exists) throw new Error('Proprietatea nu aparține agenției.');
@@ -1197,7 +1223,7 @@ export async function createTikTokStudioAsset(input: {
     thumbnailUrl: input.thumbnailUrl || null,
     mimeType: input.mimeType || null,
     sizeBytes: input.sizeBytes || null,
-    durationSeconds: null,
+    durationSeconds,
     source: input.source || 'upload',
     studioProjectId: null,
     status: 'ready',
@@ -1469,14 +1495,18 @@ export async function createTikTokPostDraftFromStudioAsset(input: {
   disableDuet?: boolean;
   disableStitch?: boolean;
   aiGeneratedContent?: boolean;
-  scheduledAt?: string | null;
+  brandOrganic?: boolean;
+  brandContent?: boolean;
+  userConsent?: boolean;
   repurposeVariant?: TikTokStudioRepurposeVariant | null;
 }) {
+  const integration = await getPrivateIntegration(input.requestedByUid);
+  if (!integration?.connected || integration.agencyId !== input.agencyId || !integration.openId) throw new Error('Conectează profilul TikTok înainte de a pregăti postarea.');
   const assetSnapshot = await getStudioAssetsCollection(input.agencyId).doc(input.assetId).get();
   if (!assetSnapshot.exists) throw new Error('Asset-ul TikTok Studio nu a fost gasit.');
 
   const asset = { id: assetSnapshot.id, ...assetSnapshot.data() } as TikTokStudioAsset;
-  if (asset.type !== 'video') {
+  if (asset.type !== 'video' || asset.status !== 'ready') {
     throw new Error('Pentru publicare TikTok directa, asset-ul trebuie sa fie video. Fotografiile trebuie randate intai ca video AI.');
   }
 
@@ -1495,17 +1525,22 @@ export async function createTikTokPostDraftFromStudioAsset(input: {
     createdAt: now,
     updatedAt: now,
     createdByUid: input.requestedByUid,
+    targetOpenId: integration.openId,
     status: 'draft',
     description: (input.description || asset.editorState?.description || 'Video pregatit in ImoDeus TikTok Studio.').trim(),
-    hashtags: normalizeHashtags(input.hashtags?.length ? input.hashtags : asset.editorState?.hashtags?.length ? asset.editorState.hashtags : ['#imobiliare', '#tiktokstudio', '#imodeus']),
+    hashtags: normalizeHashtags(input.hashtags !== undefined ? input.hashtags : asset.editorState?.hashtags?.length ? asset.editorState.hashtags : ['#imobiliare', '#tiktokstudio', '#imodeus']),
     privacyLevel: isPrivateModeOnly() ? 'SELF_ONLY' : input.privacyLevel || getDefaultPrivacyLevel(),
     disableComment: Boolean(input.disableComment),
     disableDuet: Boolean(input.disableDuet),
     disableStitch: Boolean(input.disableStitch),
     aiGeneratedContent: input.aiGeneratedContent !== false,
+    brandOrganic: Boolean(input.brandOrganic),
+    brandContent: Boolean(input.brandContent),
+    consentedAt: input.userConsent === true ? now : null,
+    videoOwnerUid: asset.ownerUid,
     coverTimestampMs: 1000,
-    scheduledAt: input.scheduledAt || null,
-    scheduleStatus: input.scheduledAt ? 'scheduled' : 'none',
+    scheduledAt: null,
+    scheduleStatus: 'none',
     repurposeVariant: input.repurposeVariant || asset.editorState?.repurposeVariant || null,
     publishLog: [{ at: now, status: 'draft', message: 'Draft TikTok creat dintr-un video importat in Studio.' }],
   };

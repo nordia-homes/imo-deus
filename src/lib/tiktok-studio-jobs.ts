@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { adminDb } from '@/firebase/admin';
-import { renderTikTokStudioProject, publishTikTokPostDraft } from './tiktok-marketing';
+import { renderTikTokStudioProject, publishTikTokPostDraft, refreshTikTokPostDraftStatus } from './tiktok-marketing';
 
 const jobs = () => adminDb.collection('tiktokStudioJobs');
 
@@ -55,7 +55,7 @@ export async function drainStudioRenders() {
       const actor = await adminDb.collection('users').doc(job.uid).get();
       if (actor.data()?.agencyId !== job.agencyId) throw new Error('Autorul nu mai este membru al agenției.');
       if (job.kind === 'publish') {
-        await publishTikTokPostDraft({ agencyId: job.agencyId, draftId: job.draftId, requestedByUid: job.uid });
+        await publishTikTokPostDraft({ agencyId: job.agencyId, draftId: job.draftId, requestedByUid: job.uid, fromSchedule: true });
         await adminDb.collection('agencies').doc(job.agencyId).collection('tiktokPostDrafts').doc(job.draftId).update({ scheduleStatus: 'sent' });
       } else {
         const rendered = await renderTikTokStudioProject({ agencyId: job.agencyId, projectId: job.projectId, requestedByUid: job.uid, expectedVersion: job.version, maxVariants: 1 });
@@ -82,13 +82,43 @@ export async function drainStudioRenders() {
   return { processed: pending.size };
 }
 
+/** Keep publishing outcomes current even when no ImoDeus browser tab is open. */
+export async function drainTikTokPostStatuses() {
+  const collection = adminDb.collectionGroup('tiktokPostDrafts');
+  const [processing, publishing, uncertain, awaitingPublicId] = await Promise.all([
+    collection.where('status', '==', 'processing').orderBy('updatedAt').limit(25).get(),
+    collection.where('status', '==', 'publishing').orderBy('updatedAt').limit(25).get(),
+    collection.where('publishOutcomeUnknown', '==', true).orderBy('updatedAt').limit(25).get(),
+    collection.where('awaitingPublicId', '==', true).orderBy('updatedAt').limit(25).get(),
+  ]);
+  let checked = 0;
+  for (const doc of new Map([...processing.docs, ...publishing.docs, ...uncertain.docs, ...awaitingPublicId.docs].map(doc => [doc.ref.path, doc])).values()) {
+    const draft = doc.data();
+    const lastCheck = Date.parse(draft.lastStatusCheckedAt || draft.updatedAt || '') || 0;
+    if (!draft.publishId) {
+      if ((draft.status === 'publishing' && Date.now() - lastCheck > 10 * 60_000) || draft.publishOutcomeUnknown) {
+        await doc.ref.update({ status: 'error', publishOutcomeUnknown: false, manualReviewRequired: true, updatedAt: new Date().toISOString(), lastPublishError: 'Publicarea a fost întreruptă înainte de confirmarea TikTok. Verifică manual profilul înainte de o nouă încercare.' });
+      }
+      continue;
+    }
+    if (!draft.agencyId || !draft.createdByUid || Date.now() - lastCheck < 30_000) continue;
+    try {
+      await refreshTikTokPostDraftStatus({ agencyId: draft.agencyId, draftId: doc.id, requestedByUid: draft.createdByUid });
+      checked += 1;
+    } catch (error) {
+      await doc.ref.update({ updatedAt: new Date().toISOString(), lastStatusCheckedAt: new Date().toISOString(), lastPublishError: error instanceof Error ? error.message : 'Statusul TikTok nu poate fi verificat.' });
+    }
+  }
+  return { checked };
+}
+
 export async function scheduleTikTokPost(agencyId: string, uid: string, draftId: string, runAt: string) {
   if (!Number.isFinite(Date.parse(runAt)) || Date.parse(runAt) < Date.now() + 60000) throw new Error('Alege o dată viitoare pentru publicare.');
   const ref = adminDb.collection('agencies').doc(agencyId).collection('tiktokPostDrafts').doc(draftId);
   await adminDb.runTransaction(async tx => {
     const snapshot = await tx.get(ref);
     const draft = snapshot.data();
-    if (!draft || draft.createdByUid !== uid || draft.agencyId !== agencyId || draft.status !== 'draft' || draft.publishId || draft.publishOutcomeUnknown) throw new Error('Postarea nu poate fi programată de acest utilizator.');
+    if (!draft || draft.createdByUid !== uid || draft.agencyId !== agencyId || draft.status !== 'draft' || !draft.consentedAt || draft.publishId || draft.publishOutcomeUnknown || draft.manualReviewRequired) throw new Error('Postarea nu poate fi programată de acest utilizator fără acordul pentru publicare.');
     const jobRef = jobs().doc(`publish_${agencyId}_${draftId}`);
     const previous = await tx.get(jobRef);
     if (previous.exists && !['queued', 'canceled'].includes(previous.data()?.status)) throw new Error('Publicarea a pornit deja. Verifică starea ei.');

@@ -28,7 +28,7 @@ beforeEach(() => {
   state.documents.clear(); state.render.mockReset(); state.publish.mockReset();
   state.documents.set('users/user', { agencyId: 'org' });
   state.documents.set(projectPath, { agencyId: 'org', ownerUid: 'user', propertyId: 'home', script: 'A home', sourceAssetIds: ['one', 'two'], version: 1, status: 'draft' });
-  state.documents.set(postPath, { agencyId: 'org', createdByUid: 'user', status: 'draft' });
+  state.documents.set(postPath, { agencyId: 'org', createdByUid: 'user', status: 'draft', consentedAt: new Date().toISOString() });
 });
 describe('Durable property video and publishing queue', () => {
   it('cancels a queued post without deleting its draft, but never interrupts a started publish', async () => {

@@ -24,6 +24,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ dr
     if (isDemoAgencyId(agencyId)) {
       return createDemoBlockedResponse('Publicarea TikTok este doar preview in mediul demo.');
     }
+    const body = await request.json().catch(() => ({}));
+    if (body.confirm !== true) return NextResponse.json({ message: 'Confirmă explicit publicarea pe profilul TikTok.' }, { status: 400 });
     const draft = await publishTikTokPostDraft({ agencyId, draftId, requestedByUid: uid });
     return NextResponse.json({ draft }, { status: 200 });
   } catch (error) {

@@ -94,7 +94,7 @@ export default function TikTokWorkspace({ initialTab = 'overview' }: { initialTa
   async function connect(organic = false) {
     const result = await api<{ authorizationUrl: string }>(organic ? '/api/marketing/tiktok/connect' : '/api/marketing/tiktok-ads/connect?returnTo=/marketing/tiktok-ads');
     if (window.imodeusDesktop?.openOAuthWindow) {
-      const auth = await window.imodeusDesktop.openOAuthWindow(result);
+      const auth = await window.imodeusDesktop.openOAuthWindow({ ...result, organic });
       if (auth.error) throw new Error(auth.error);
       if (auth.completed) await loadWorkspace(advertiserId);
       return;

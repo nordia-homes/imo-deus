@@ -19,11 +19,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ d
       import('@/lib/firebase-app-hosting'),
       import('@/lib/tiktok-marketing'),
     ]);
-    const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, uid } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     const body = await request.json().catch(() => ({}));
     const draft = await updateTikTokPostDraft({
       agencyId,
       draftId,
+      requestedByUid: uid,
       description: body.description,
       hashtags: body.hashtags,
       privacyLevel: body.privacyLevel,
@@ -31,6 +32,8 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ d
       disableDuet: body.disableDuet,
       disableStitch: body.disableStitch,
       aiGeneratedContent: body.aiGeneratedContent,
+      brandOrganic: body.brandOrganic,
+      brandContent: body.brandContent,
       coverTimestampMs: body.coverTimestampMs,
     });
     return NextResponse.json({ draft }, { status: 200 });

@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
         disableDuet: body.disableDuet,
         disableStitch: body.disableStitch,
         aiGeneratedContent: body.aiGeneratedContent,
-        scheduledAt: typeof body.scheduledAt === 'string' ? body.scheduledAt : null,
+        brandOrganic: body.brandOrganic,
+        brandContent: body.brandContent,
+        userConsent: body.userConsent,
         repurposeVariant: typeof body.repurposeVariant === 'string' ? body.repurposeVariant : null,
       });
       return NextResponse.json({ draft }, { status: 201 });
@@ -73,6 +75,9 @@ export async function POST(request: NextRequest) {
       disableDuet: body.disableDuet,
       disableStitch: body.disableStitch,
       aiGeneratedContent: body.aiGeneratedContent,
+      brandOrganic: body.brandOrganic,
+      brandContent: body.brandContent,
+      userConsent: body.userConsent,
     });
     return NextResponse.json({ draft }, { status: 201 });
   } catch (error) {

@@ -1,6 +1,30 @@
 {
   "indexes": [
     {
+      "collectionGroup": "tiktokPostDrafts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokPostDrafts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "publishOutcomeUnknown", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokPostDrafts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "awaitingPublicId", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "tiktokStudioJobs",
       "queryScope": "COLLECTION",
       "fields": [
@@ -965,6 +989,14 @@
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "tiktokPostDrafts",
+      "fieldPath": "status",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    },
     {
       "collectionGroup": "communicationWebhookEvents",
       "fieldPath": "expiresAt",
