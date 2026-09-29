@@ -1,204 +1,44 @@
 'use client';
 
-import { signOut } from 'firebase/auth';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { useCallback, useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  CheckCircle2,
-  ExternalLink,
-  Globe2,
-  Loader2,
-  MessageCircle,
-  MoreHorizontal,
-  Send,
-  Share2,
-  ThumbsUp,
-} from 'lucide-react';
-import type { MetaFacebookPagePost, Property } from '@/lib/types';
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Send, Share2 } from 'lucide-react';
+import type { Property } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { useAgency } from '@/context/AgencyContext';
-import { useAuth, useUser } from '@/firebase';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image';
+import SocialPostStudio, { type SocialPropertySummary } from '@/components/communications/SocialPostStudio';
+import { useCommunications } from '@/components/communications/useCommunications';
+import type { Connection } from '@/lib/communications/model';
 import { ACTION_CARD_INTERACTIVE_CLASSNAME, ACTION_PILL_CLASSNAME } from './cardStyles';
 
-async function authorizedFetch(
-  user: NonNullable<ReturnType<typeof useUser>['user']>,
-  auth: ReturnType<typeof useAuth>,
-  input: RequestInfo,
-  init?: RequestInit,
-) {
-  let token: string;
-  try {
-    token = await user.getIdToken(true);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error || '');
-    if (message.includes('auth/invalid-credential') || message.includes('invalid-credential')) {
-      await signOut(auth).catch(() => undefined);
-      throw new Error('Sesiunea Firebase nu mai este valida. Autentifica-te din nou si reincearca.');
-    }
-    throw error;
-  }
-
-  return fetch(input, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(init?.headers || {}),
-    },
-  });
-}
-
-function buildFacebookPreviewText(property: Property) {
-  return [property.title, property.description]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .join('\n\n')
-    .trim();
-}
-
-function FacebookImageGrid({ property }: { property: Property }) {
-  const images = property.images?.filter((image) => image?.url).slice(0, 5) || [];
-  const remainingCount = Math.max((property.images?.length || 0) - 5, 0);
-
-  if (!images.length) {
-    return (
-      <div className="flex aspect-[4/3] items-center justify-center bg-slate-100 text-sm font-medium text-slate-500">
-        Fara fotografii
-      </div>
-    );
-  }
-
-  if (images.length === 1) {
-    return (
-      <div className="relative aspect-square overflow-hidden bg-slate-100">
-        <Image src={images[0].url} alt={images[0].alt || property.title} fill className="object-cover" sizes="520px" />
-      </div>
-    );
-  }
-
-  if (images.length === 2) {
-    return (
-      <div className="grid aspect-[1.7/1] grid-cols-2 gap-0.5 overflow-hidden bg-white">
-        {images.map((image, index) => (
-          <div key={`${image.url}-${index}`} className="relative bg-slate-100">
-            <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (images.length === 3) {
-    return (
-      <div className="grid aspect-[1.45/1] grid-cols-2 gap-0.5 overflow-hidden bg-white">
-        <div className="relative bg-slate-100">
-          <Image src={images[0].url} alt={images[0].alt || property.title} fill className="object-cover" sizes="260px" />
-        </div>
-        <div className="grid grid-rows-2 gap-0.5">
-          {images.slice(1).map((image, index) => (
-            <div key={`${image.url}-${index}`} className="relative bg-slate-100">
-              <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (images.length === 4) {
-    return (
-      <div className="grid aspect-[1.45/1] grid-cols-2 gap-0.5 overflow-hidden bg-white">
-        {images.map((image, index) => (
-          <div key={`${image.url}-${index}`} className="relative bg-slate-100">
-            <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid aspect-[1.45/1] grid-rows-[1.05fr_0.95fr] gap-0.5 overflow-hidden bg-white">
-      <div className="grid grid-cols-2 gap-0.5">
-        {images.slice(0, 2).map((image, index) => (
-          <div key={`${image.url}-${index}`} className="relative bg-slate-100">
-            <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="260px" />
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-3 gap-0.5">
-        {images.slice(2, 5).map((image, index) => {
-          const showOverlay = index === 2 && remainingCount > 0;
-          return (
-            <div key={`${image.url}-${index}`} className="relative bg-slate-100">
-              <Image src={image.url} alt={image.alt || property.title} fill className="object-cover" sizes="180px" />
-              {showOverlay ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-3xl font-semibold text-white">
-                  +{remainingCount}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function SocialMediaCard({ property }: { property: Property }) {
-  const { agency } = useAgency();
-  const { user } = useUser();
-  const auth = useAuth();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isPublishingFacebook, setIsPublishingFacebook] = useState(false);
-  const [facebookPost, setFacebookPost] = useState<MetaFacebookPagePost | null>(property.metaFacebookPost || null);
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
-  const previewText = buildFacebookPreviewText(property);
-  const pageName = facebookPost?.pageName || agency?.name || 'Pagina Facebook';
+  const api = useCommunications();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [properties, setProperties] = useState<SocialPropertySummary[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [admin, setAdmin] = useState(false);
 
-  const handlePublishFacebook = async () => {
-    if (!user || !property.id || isPublishingFacebook) return;
-    setIsPublishingFacebook(true);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
-      const response = await authorizedFetch(user, auth, '/api/marketing/meta/property-posts', {
-        method: 'POST',
-        body: JSON.stringify({ propertyId: property.id }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload?.message || 'Nu am putut publica proprietatea pe Facebook.');
-      }
-      setFacebookPost(payload.post as MetaFacebookPagePost);
-      toast({
-        title: 'Publicata pe Facebook',
-        description: 'Proprietatea a fost publicata pe pagina agentiei, cu descrierea si pozele din anunt.',
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Publicare Facebook esuata',
-        description: error instanceof Error ? error.message : 'Nu am putut publica proprietatea pe Facebook.',
-      });
+      const [dashboard, propertyList] = await Promise.all([api('dashboard'), api('properties')]);
+      setConnections((dashboard.connections || []).filter((connection: Connection) => ['messenger', 'instagram'].includes(connection.channel)));
+      setAdmin(Boolean(dashboard.admin));
+      setProperties(propertyList.properties || []);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Editorul nu a putut fi încărcat.');
     } finally {
-      setIsPublishingFacebook(false);
+      setLoading(false);
     }
-  };
+  }, [api]);
+
+  useEffect(() => { if (open) void load(); }, [open, load]);
 
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Card className={cn(`${ACTION_CARD_INTERACTIVE_CLASSNAME} p-0 cursor-pointer`)}>
           <CardContent className="flex w-full items-center justify-between p-2">
@@ -217,119 +57,21 @@ export function SocialMediaCard({ property }: { property: Property }) {
           </CardContent>
         </Card>
       </DialogTrigger>
-
-      <DialogContent
-        className={cn(
-          'border-none bg-white p-0 text-slate-950 shadow-2xl sm:max-w-[620px]',
-          isMobile && 'h-screen w-screen max-w-full rounded-none',
-        )}
-      >
-        <DialogHeader className="border-b border-slate-200 px-5 py-4 text-left">
-          <DialogTitle className="text-xl font-semibold tracking-tight">Publica pe pagina ta Facebook</DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
-            Verifica previzualizarea si publica postarea organic, fara buget de promovare.
-          </DialogDescription>
+      <DialogContent className="h-[100dvh] w-[100vw] max-w-none overflow-y-auto rounded-none border-0 bg-slate-50 p-4 text-slate-900 sm:max-w-none sm:p-7 [&>button]:bg-slate-900/70 [&>button]:text-white">
+        <DialogHeader className="mx-auto w-full max-w-[1600px] pb-2 pr-12 text-left">
+          <DialogTitle className="text-xl">Creează postare · {property.title}</DialogTitle>
         </DialogHeader>
-
-        <div className={cn('max-h-[72vh] overflow-y-auto bg-[#f0f2f5] px-4 py-5', isMobile && 'max-h-[calc(100vh-190px)]')}>
-          <div className="mx-auto overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200 sm:max-w-[500px]">
-            <div className="flex items-start justify-between px-4 pb-2.5 pt-3.5">
-              <div className="flex items-center gap-2.5">
-                <Avatar className="h-10 w-10 border border-slate-200">
-                  <AvatarImage src={agency?.logoUrl || undefined} alt={pageName} />
-                  <AvatarFallback className="bg-slate-950 text-white">{pageName.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-[15px] font-bold leading-tight text-slate-950">{pageName}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[13px] leading-tight text-slate-500">
-                    Chiar acum
-                    <span aria-hidden="true">·</span>
-                    <Globe2 className="h-3.5 w-3.5" />
-                  </p>
-                </div>
-              </div>
-              <MoreHorizontal className="mt-1 h-6 w-6 text-slate-500" />
-            </div>
-
-            <div className="px-4 pb-3">
-              <p className="whitespace-pre-wrap text-[15px] leading-[1.32] tracking-normal text-slate-950">
-                {previewText || 'Descrierea proprietatii va aparea aici.'}
-              </p>
-            </div>
-
-            <FacebookImageGrid property={property} />
-
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-2.5 text-slate-600">
-              <button type="button" className="flex items-center gap-2 text-[14px] font-semibold">
-                <ThumbsUp className="h-5 w-5" />
-                Apreciaza
-              </button>
-              <button type="button" className="flex items-center gap-2 text-[14px] font-semibold">
-                <MessageCircle className="h-5 w-5" />
-                Comenteaza
-              </button>
-              <button type="button" className="flex items-center gap-2 text-[14px] font-semibold">
-                <Share2 className="h-5 w-5" />
-                Distribuie
-              </button>
-            </div>
-          </div>
-
-          {facebookPost ? (
-            <div className="mx-auto mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-[520px]">
-              <div className="flex items-start gap-3">
-                <CheckCircle2
-                  className={cn(
-                    'mt-0.5 h-5 w-5',
-                    facebookPost.status === 'error' ? 'text-red-500' : 'text-emerald-600',
-                  )}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-950">
-                    {facebookPost.status === 'error'
-                      ? 'Eroare la publicare'
-                      : facebookPost.status === 'publishing'
-                        ? 'Se publica...'
-                        : `Publicata pe ${facebookPost.pageName || 'Facebook'}`}
-                  </p>
-                  <p className="mt-1 text-sm leading-5 text-slate-500">
-                    {facebookPost.errorMessage || `${facebookPost.imageCount} fotografii au fost trimise catre pagina Facebook.`}
-                  </p>
-                </div>
-                {facebookPost.permalinkUrl ? (
-                  <Button asChild variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                    <a href={facebookPost.permalinkUrl} target="_blank" rel="noopener noreferrer" aria-label="Deschide postarea Facebook">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
-          <Button asChild variant="outline" className="rounded-full">
-            <a href={`/marketing/facebook-instagram?propertyId=${encodeURIComponent(property.id)}`}>Facebook + Instagram</a>
-          </Button>
-          <Button asChild variant="outline" className="rounded-full"><a href={`/inbox?propertyId=${encodeURIComponent(property.id)}`}>Conversații</a></Button>
-          {facebookPost?.permalinkUrl ? (
-            <Button asChild variant="outline" className="rounded-full">
-              <a href={facebookPost.permalinkUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Vezi postarea
-              </a>
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            className="rounded-full bg-[#1877F2] px-6 text-white hover:bg-[#166FE5]"
-            onClick={() => void handlePublishFacebook()}
-            disabled={isPublishingFacebook || !user}
-          >
-            {isPublishingFacebook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            {facebookPost?.status === 'published' ? 'Publica din nou' : 'Publica pe Facebook'}
-          </Button>
+        <div className="tt-design tt-workspace mi-workspace mx-auto w-full max-w-[1600px] flex-1">
+          {loading && <p className="p-6 text-sm text-slate-500">Se încarcă editorul de postări…</p>}
+          {error && <p role="alert" className="rounded-lg bg-amber-50 p-4 text-sm text-amber-900">{error}</p>}
+          {!loading && !error && <SocialPostStudio
+            properties={properties}
+            connections={connections}
+            initialPropertyId={property.id}
+            admin={admin}
+            api={api}
+            onSaved={async () => { await load(); setOpen(false); }}
+          />}
         </div>
       </DialogContent>
     </Dialog>
