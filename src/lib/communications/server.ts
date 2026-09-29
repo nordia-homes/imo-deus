@@ -24,6 +24,14 @@ export async function getConversation(db: Firestore, actor: Actor, id: string) {
   return value;
 }
 export async function listConversations(db: Firestore, actor: Actor, params: URLSearchParams) {
+  if (params.get('status') === 'unassigned') {
+    if (actor.role !== 'admin') throw new CommunicationError('Administrator necesar pentru conversațiile neatribuite.', 403);
+    let pending = agencyCollection(db, actor.agencyId, 'conversations').where('assigneeId', '==', null).orderBy('lastMessageAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
+    const cursor = params.get('cursor');
+    if (cursor) { const previous = await getConversation(db, actor, cursor); pending = pending.startAfter(previous.lastMessageAt, cursor); }
+    const docs = await pending.limit(30).get();
+    return { conversations: docs.docs.map(d => ({ ...d.data(), id: d.id } as Conversation)), cursor: docs.size === 30 ? docs.docs.at(-1)!.id : null };
+  }
   let query = agencyCollection(db, actor.agencyId, 'conversations').orderBy('lastMessageAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
   if (actor.role !== 'admin') query = query.where('accessUids', 'array-contains', actor.uid);
   const channel = params.get('channel'); const state = params.get('status');
@@ -104,11 +112,12 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
         const status = advanceStatus(existing.data()!.status, event.status);
         const jobRef = db.collection('communicationOutboundJobs').doc(messageId);
         const job = existing.data()?.origin === 'imodeus' ? await tx.get(jobRef) : null;
-        tx.update(messageRef, { status });
-        if (job?.exists && ['accepted', 'delivered', 'read'].includes(status)) tx.update(jobRef, { status: 'accepted', externalId: event.externalId, budgetSettled: job.data()?.budgetSettled || false });
-        else if (job?.exists && status === 'failed') tx.update(jobRef, { status: 'failed', budgetSettled: job.data()?.budgetSettled || false });
+        tx.update(messageRef, { status, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
+        if (job?.exists && ['accepted', 'delivered', 'read', 'failed'].includes(status)) {
+          tx.update(jobRef, { status, externalId: event.externalId, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
+        }
       }
-      else tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId, pendingStatus: advanceStatus(map.data()?.pendingStatus || 'queued', event.status) }, { merge: true });
+      else tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId, pendingStatus: advanceStatus(map.data()?.pendingStatus || 'queued', event.status), ...(event.error ? { pendingError: event.error } : {}) }, { merge: true });
       return;
     }
     if (existing.exists) {

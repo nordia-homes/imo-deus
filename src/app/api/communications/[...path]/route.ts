@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { agencyCollection, addNote, CommunicationError, connectionList, context, getConversation, linkContact, listConversations, listMessages, migrateStoria, nowIso, startContactConversation, updateConversation } from '@/lib/communications/server';
-import { finishWhatsApp, graph, listAssets, onboardingConfig, selectPage, startAuthorization, connectionToken } from '@/lib/communications/meta';
+import { finishWhatsApp, startWhatsAppSignup, graph, listAssets, onboardingConfig, selectPage, startAuthorization, connectionToken } from '@/lib/communications/meta';
 import { queueMessage } from '@/lib/communications/outbound';
 import { searchMessages } from '@/lib/communications/search';
 import { commentInteraction, createSocialPost, diagnoseSocialPost, postInteraction, propertyImageUrls, publishDraft, removePublishedSocialPost } from '@/lib/communications/social';
 import { stableId } from '@/lib/communications/crypto';
 import { syncConversation } from '@/lib/communications/sync';
+import { bodyParameterCount, listWhatsAppTemplates } from '@/lib/communications/templates';
 export const runtime = 'nodejs';
 type RouteContext = { params: Promise<{ path: string[] }> };
 async function handle(request: NextRequest, route: RouteContext) {
@@ -35,12 +36,14 @@ async function handle(request: NextRequest, route: RouteContext) {
     else if (resource === 'connect' && request.method === 'POST') result = await startAuthorization(db, actor, body);
     else if (resource === 'assets' && isRead) result = await listAssets(db, actor.agencyId);
     else if (resource === 'assets' && request.method === 'POST') result = await selectPage(db, actor, body.pageId);
-    else if (resource === 'whatsapp' && request.method === 'POST') {
+    else if (resource === 'whatsapp' && request.method === 'POST' && id === 'start') result = await startWhatsAppSignup(db, actor, body);
+    else if (resource === 'whatsapp' && request.method === 'POST' && !id) {
       if (!onboardingConfig().whatsappReady) throw new CommunicationError('Onboardingul WhatsApp și plata directă trebuie configurate pe server.', 503);
       result = await finishWhatsApp(db, actor, body);
     } else if (resource === 'templates' && id && isRead) {
       const { connection, token } = await connectionToken(db, actor, id, 'templates');
-      result = await graph(`/${connection.parentId}/message_templates?fields=name,language,status,category,components&limit=100`, token);
+      const templates = await listWhatsAppTemplates(connection.parentId || '', token);
+      result = { data: templates.map(template => ({ ...template, bodyParameterCount: bodyParameterCount(template), sendable: bodyParameterCount(template) !== null })) };
     } else if (resource === 'connections' && id && request.method === 'DELETE') {
       const ref = agencyCollection(db, actor.agencyId, 'channelConnections').doc(id); const existing = await ref.get();
       if (!existing.exists) throw new CommunicationError('Conexiune inexistentă.', 404);
@@ -49,7 +52,7 @@ async function handle(request: NextRequest, route: RouteContext) {
       const value = z.object({ limitMicros: z.number().int().min(0).max(1000000000000), currency: z.string().regex(/^[A-Z]{3}$/) }).parse(body);
       await agencyCollection(db, actor.agencyId, 'communicationBudgets').doc(`${nowIso().slice(0, 7)}-${value.currency}`).set({ ...value, updatedBy: actor.uid, updatedAt: nowIso() }, { merge: true }); result = { saved: true };
     } else if (resource === 'consent' && request.method === 'POST') {
-      const value = z.object({ conversationId: z.string(), purpose: z.enum(['marketing', 'service']), status: z.enum(['granted', 'revoked']), evidence: z.string().trim().min(10).max(2000) }).parse(body);
+      const value = z.object({ conversationId: z.string(), purpose: z.enum(['marketing', 'service', 'all']), status: z.enum(['granted', 'revoked']), evidence: z.string().trim().min(10).max(2000) }).parse(body);
       const c = await getConversation(db, actor, value.conversationId);
       const ref = agencyCollection(db, actor.agencyId, 'communicationConsents').doc(stableId(c.connectionId, c.externalParticipantId, value.purpose));
       const batch = db.batch(); const record = { ...value, recordedBy: actor.uid, recordedAt: nowIso() };

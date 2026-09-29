@@ -5,6 +5,11 @@ import type { Actor, Capability, Connection } from './model';
 import { agencyCollection, CommunicationError, nowIso } from './server';
 import { seal, stableId, unseal } from './crypto';
 
+export class MetaGraphError extends CommunicationError {
+  constructor(message: string, public providerStatus: number, public providerCode?: number) {
+    super(message, providerStatus === 401 ? 401 : 502);
+  }
+}
 const version = () => process.env.META_GRAPH_VERSION || 'v23.0';
 const appId = () => process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '';
 const appSecret = () => process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '';
@@ -15,7 +20,7 @@ export async function graph<T = Record<string, any>>(path: string, token: string
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify(body) } : {}), cache: 'no-store', signal: AbortSignal.timeout(25000) });
   const result = await response.json();
-  if (!response.ok || result.error) throw new CommunicationError(result.error?.message || 'Meta nu a acceptat solicitarea.', response.status === 401 ? 401 : 502);
+  if (!response.ok || result.error) throw new MetaGraphError(result.error?.message || 'Meta nu a acceptat solicitarea.', response.status, result.error?.code);
   return result as T;
 }
 export async function graphDelete(path: string, token: string): Promise<void> {
@@ -76,7 +81,7 @@ export async function listAuthorizedPages(userToken: string): Promise<MetaPage[]
   const response = await graph<{ data: MetaPage[] }>('/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100', userToken);
   const pages = new Map(response.data.map(page => [page.id, page]));
   try {
-    const debug = await graph<{ data: { app_id?: string; is_valid?: boolean; granular_scopes?: Array<{ scope: string; target_ids?: string[] }> } }>('/debug_token?input_token=' + encodeURIComponent(userToken), userToken);
+    const debug = await graph<{ data: { app_id?: string; is_valid?: boolean; granular_scopes?: Array<{ scope: string; target_ids?: string[] }>; user_id?: string } }>('/debug_token?input_token=' + encodeURIComponent(userToken), userToken);
     if (debug.data.is_valid && debug.data.app_id === appId()) {
       const ids = debug.data.granular_scopes?.filter(scope => scope.scope === 'pages_show_list').flatMap(scope => scope.target_ids || []) || [];
       for (const id of [...new Set(ids)].filter(id => /^\d+$/.test(id) && !pages.has(id)).slice(0, 100)) {
@@ -97,7 +102,7 @@ export function preserveVerifiedConnection(next: Connection, current?: Connectio
   }
   return { ...next, capabilities, ...(current.lastSyncAt ? { lastSyncAt: current.lastSyncAt } : {}) };
 }
-async function registerConnection(db: Firestore, row: Connection, token: string, metaUserId?: string) {
+async function registerConnection(db: Firestore, row: Connection, token: string, metaUserId?: string, tokenExpiresAt?: number | null) {
   const ownership = db.collection('communicationAccountOwners').doc(stableId(row.channel, row.externalId));
   const connectionRef = agencyCollection(db, row.agencyId, 'channelConnections').doc(row.id);
   await db.runTransaction(async tx => {
@@ -105,7 +110,7 @@ async function registerConnection(db: Firestore, row: Connection, token: string,
     if (existing.exists && existing.data()?.agencyId !== row.agencyId) throw new CommunicationError('Contul este deja conectat la altă agenție.', 409);
     tx.set(ownership, { agencyId: row.agencyId, connectionId: row.id, channel: row.channel, externalId: row.externalId });
     tx.set(connectionRef, preserveVerifiedConnection(row, current.data() as Connection | undefined));
-    tx.set(db.collection('communicationSecrets').doc(row.id), { agencyId: row.agencyId, token: seal(token), metaUserId: metaUserId || null });
+    tx.set(db.collection('communicationSecrets').doc(row.id), { agencyId: row.agencyId, token: seal(token), metaUserId: metaUserId || null, tokenExpiresAt: tokenExpiresAt || null, verifiedAt: nowIso() });
   });
 }
 export async function selectPage(db: Firestore, actor: Actor, pageId: string) {
@@ -142,6 +147,10 @@ export async function connectionToken(db: Firestore, actor: Pick<Actor, 'agencyI
   const [row, secret] = await Promise.all([agencyCollection(db, actor.agencyId, 'channelConnections').doc(id).get(), db.collection('communicationSecrets').doc(id).get()]);
   const connection = row.data() as Connection | undefined;
   if (!connection || connection.status !== 'connected' || secret.data()?.agencyId !== actor.agencyId) throw new CommunicationError('Conexiunea nu mai este activă.', 409);
+  if (secret.data()?.tokenExpiresAt && secret.data()!.tokenExpiresAt <= Date.now()) {
+    await row.ref.update({ [`capabilities.${capability}`]: { status: 'reconnect_required', reason: 'Autorizarea Meta a expirat. Reconectează contul.' } });
+    throw new CommunicationError('Autorizarea Meta a expirat. Reconectează numărul.', 409);
+  }
   if (connection.capabilities[capability]?.status !== 'active') throw new CommunicationError(connection.capabilities[capability]?.reason || 'Funcția necesită configurare.', 409);
   return { connection, token: unseal(secret.data()!.token) };
 }
@@ -160,22 +169,52 @@ export async function refreshPageToken(db: Firestore, actor: Pick<Actor, 'agency
   await db.collection('communicationSecrets').doc(connection.id).update({ token: seal(page.access_token) });
   return page.access_token;
 }
+export async function startWhatsAppSignup(db: Firestore, actor: Actor, body: unknown) {
+  const { mode } = z.object({ mode: z.enum(['cloud', 'coexistence']) }).parse(body);
+  if (!appId() || !appSecret() || !onboardingConfig().whatsappReady) throw new CommunicationError('Conectarea WhatsApp nu este configurată.', 503);
+  const signupState = randomBytes(32).toString('hex');
+  await db.collection('communicationWhatsAppSignupStates').doc(stableId(signupState)).create({
+    agencyId: actor.agencyId, uid: actor.uid, mode, expiresAt: Date.now() + 10 * 60 * 1000,
+    createdAt: nowIso(), consumed: false,
+  });
+  return { signupState };
+}
 export async function finishWhatsApp(db: Firestore, actor: Actor, body: unknown) {
-  const data = z.object({ code: z.string().min(1), wabaId: z.string().regex(/^\d+$/), phoneNumberId: z.string().regex(/^\d+$/), mode: z.enum(['cloud', 'coexistence']), pin: z.string().regex(/^\d{6}$/).optional() }).parse(body);
+  const data = z.object({ code: z.string().min(1), signupState: z.string().regex(/^[a-f0-9]{64}$/), wabaId: z.string().regex(/^\d+$/), phoneNumberId: z.string().regex(/^\d+$/), mode: z.enum(['cloud', 'coexistence']), pin: z.string().regex(/^\d{6}$/).optional() }).parse(body);
   if (data.mode === 'cloud' && !data.pin) throw new CommunicationError('Pentru numărul dedicat setează un PIN din 6 cifre.');
+  const stateRef = db.collection('communicationWhatsAppSignupStates').doc(stableId(data.signupState));
+  await db.runTransaction(async tx => {
+    const state = await tx.get(stateRef); const value = state.data();
+    if (!value || value.consumed || value.expiresAt < Date.now() || value.uid !== actor.uid || value.agencyId !== actor.agencyId || value.mode !== data.mode) {
+      throw new CommunicationError('Sesiunea de conectare WhatsApp a expirat. Reîncearcă.', 409);
+    }
+    tx.update(stateRef, { consumed: true, consumedAt: nowIso() });
+  });
   const exchange = await graph<{ access_token: string }>(`/oauth/access_token?client_id=${encodeURIComponent(appId())}&client_secret=${encodeURIComponent(appSecret())}&code=${encodeURIComponent(data.code)}`, '');
+  const inspection = await graph<{ data: { is_valid?: boolean; app_id?: string; scopes?: string[]; expires_at?: number; granular_scopes?: Array<{ scope: string; target_ids?: string[] }>; user_id?: string } }>(
+    `/debug_token?input_token=${encodeURIComponent(exchange.access_token)}`, `${appId()}|${appSecret()}`);
+  if (!inspection.data.is_valid || inspection.data.app_id !== appId()) throw new CommunicationError('Tokenul WhatsApp nu aparține aplicației IMO Deus.', 403);
+  const scopes = new Set(inspection.data.scopes || []);
+  if (!scopes.has('whatsapp_business_management') || !scopes.has('whatsapp_business_messaging')) {
+    throw new CommunicationError('Autorizarea WhatsApp nu include permisiunile de gestionare și mesagerie.', 403);
+  }
+  const managedTargets = inspection.data.granular_scopes?.find(scope => scope.scope === 'whatsapp_business_management')?.target_ids;
+  if (managedTargets?.length && !managedTargets.includes(data.wabaId)) throw new CommunicationError('WABA nu este inclus în autorizarea acordată.', 403);
+  const waba = await graph<{ id: string; currency?: string }>(`/${data.wabaId}?fields=id,currency`, exchange.access_token);
+  if (waba.id !== data.wabaId || !waba.currency || !/^[A-Z]{3}$/.test(waba.currency)) throw new CommunicationError('Moneda contului WhatsApp nu a putut fi verificată.', 409);
   const phones = await graph<{ data: Array<{ id: string; display_phone_number: string; verified_name: string }> }>(`/${data.wabaId}/phone_numbers?fields=id,display_phone_number,verified_name`, exchange.access_token);
   const phone = phones.data.find(p => p.id === data.phoneNumberId);
   if (!phone) throw new CommunicationError('Numărul nu aparține contului WhatsApp autorizat.', 403);
   if (data.mode === 'cloud') await graph(`/${phone.id}/register`, exchange.access_token, { messaging_product: 'whatsapp', pin: data.pin });
   await graph(`/${data.wabaId}/subscribed_apps`, exchange.access_token, {});
-  const row: Connection = { id: stableId(actor.agencyId, 'whatsapp', phone.id), agencyId: actor.agencyId, channel: 'whatsapp', externalId: phone.id, parentId: data.wabaId, name: `${phone.verified_name} · ${phone.display_phone_number}`, mode: data.mode, status: 'connected', updatedAt: nowIso(), capabilities: {
+  const row: Connection = { id: stableId(actor.agencyId, 'whatsapp', phone.id), agencyId: actor.agencyId, channel: 'whatsapp', externalId: phone.id, parentId: data.wabaId, currency: waba.currency, name: `${phone.verified_name} · ${phone.display_phone_number}`, mode: data.mode, status: 'connected', updatedAt: nowIso(), capabilities: {
     receive: { status: 'configuration_required', reason: 'Trimite un mesaj de test către număr.' },
     send: { status: 'active', reason: 'Verificarea eligibilității și costului se face înainte de fiecare trimitere.' },
     templates: { status: 'active', reason: 'Șabloanele sunt sincronizate din Meta.' },
     nativeSync: { status: data.mode === 'coexistence' ? 'configuration_required' : 'unavailable', reason: data.mode === 'coexistence' ? 'Așteptăm primul răspuns din Business App.' : 'Număr dedicat Cloud API.' },
   } };
-  await registerConnection(db, row, exchange.access_token);
+  await registerConnection(db, row, exchange.access_token, inspection.data.user_id, inspection.data.expires_at ? inspection.data.expires_at * 1000 : null);
+
   return { connected: true };
 }
 export function onboardingConfig() {

@@ -3,7 +3,7 @@ type ObjectValue = Record<string, any>; // Provider payloads are validated field
 export type IncomingEvent = {
   channel: Channel; accountId: string; participantId: string; externalId: string;
   text: string; name?: string; direction: 'received' | 'sent'; createdAt: string;
-  attachments: Message['attachments']; status?: Message['status']; imported?: boolean; nativeEcho?: boolean; socialEcho?: boolean; sourceAppId?: string;
+  attachments: Message['attachments']; status?: Message['status']; error?: string; imported?: boolean; nativeEcho?: boolean; socialEcho?: boolean; sourceAppId?: string;
 };
 function time(value: unknown, milliseconds = false) {
   const number = Number(value) * (milliseconds ? 1 : 1000);
@@ -34,7 +34,9 @@ export function normalizeWebhook(payload: ObjectValue): IncomingEvent[] {
       }
       for (const status of value.statuses || []) {
         if (!['sent', 'delivered', 'read', 'failed'].includes(status.status) || !status.id || !status.recipient_id) continue;
-        result.push({ channel: 'whatsapp', accountId: account, participantId: String(status.recipient_id), externalId: String(status.id), text: '', direction: 'sent', createdAt: time(status.timestamp), attachments: [], status: status.status === 'sent' ? 'accepted' : status.status });
+        const failure = status.status === 'failed' ? status.errors?.[0] : null;
+        const error = failure ? [failure.code, failure.title || failure.message].filter(Boolean).join(': ').slice(0, 500) : undefined;
+        result.push({ channel: 'whatsapp', accountId: account, participantId: String(status.recipient_id), externalId: String(status.id), text: '', direction: 'sent', createdAt: time(status.timestamp), attachments: [], status: status.status === 'sent' ? 'accepted' : status.status, ...(error ? { error } : {}) });
       }
       for (const history of value.history || []) for (const thread of history.threads || []) for (const message of thread.messages || []) {
         const echo = message.from !== thread.id;

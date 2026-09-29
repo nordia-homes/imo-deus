@@ -6,6 +6,7 @@ import { agencyCollection, ingestMessage, migrateStoria, nowIso } from '@/lib/co
 import { drainOutbound } from '@/lib/communications/outbound';
 import { drainSearch } from '@/lib/communications/search';
 import { drainSocial } from '@/lib/communications/social';
+import { recordInboundOptOut } from '@/lib/communications/optout';
 import type { Connection } from '@/lib/communications/model';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -20,6 +21,23 @@ export async function POST(request: NextRequest) {
   });
   if (!claimed) return NextResponse.json({ busy: true });
   try {
+  const expiredSignups = await adminDb.collection('communicationWhatsAppSignupStates').where('expiresAt', '<', Date.now()).limit(50).get();
+  if (!expiredSignups.empty) {
+    const cleanup = adminDb.batch();
+    for (const signup of expiredSignups.docs) cleanup.delete(signup.ref);
+    await cleanup.commit();
+  }
+  const expiredTokens = await adminDb.collection('communicationSecrets').where('tokenExpiresAt', '>', 0).where('tokenExpiresAt', '<=', Date.now()).limit(50).get();
+  for (const secret of expiredTokens.docs) {
+    const value = secret.data();
+    if (!value.tokenExpiresAt || !value.agencyId) continue;
+    const ref = agencyCollection(adminDb, value.agencyId, 'channelConnections').doc(secret.id);
+    const connection = await ref.get();
+    if (connection.exists && connection.data()?.channel === 'whatsapp' && connection.data()?.capabilities?.send?.status === 'active') {
+      await ref.update({ 'capabilities.send': { status: 'reconnect_required', reason: 'Autorizarea Meta a expirat.' },
+        'capabilities.templates': { status: 'reconnect_required', reason: 'Autorizarea Meta a expirat.' } });
+    }
+  }
   const projections = await adminDb.collection('communicationStoriaEvents').where('status', '==', 'queued').limit(10).get();
   for (const projection of projections.docs) {
     const value = projection.data();
@@ -57,6 +75,7 @@ export async function POST(request: NextRequest) {
           nativeSocialEcho = isExternalSocialEcho(event, process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '', message?.data()?.origin || null, possibleOutgoing);
         }
         await ingestMessage(adminDb, connection, event);
+        await recordInboundOptOut(adminDb, connection, event);
         const update: Record<string, unknown> = { lastSyncAt: nowIso() };
         if (!event.status && !event.imported) {
           if (event.direction === 'received') update['capabilities.receive'] = { status: 'active', reason: 'Recepție verificată prin webhook.' };

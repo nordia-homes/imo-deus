@@ -59,7 +59,7 @@ describe('durable ingestion', () => {
     values.set(`communicationOutboundJobs/${messageId}`, { status: 'unknown', budgetSettled: false });
     await ingestMessage(db, connection, { ...message, direction: 'sent', status: 'delivered' });
     expect(values.get(path)?.status).toBe('delivered');
-    expect(values.get(`communicationOutboundJobs/${messageId}`)).toMatchObject({ status: 'accepted', budgetSettled: false });
+    expect(values.get(`communicationOutboundJobs/${messageId}`)).toMatchObject({ status: 'delivered', budgetSettled: false });
   });
   it('denies an unassigned agent and accepts the agency administrator', async () => {
     const { db } = memoryDb(); const id = await ingestMessage(db, connection, message);

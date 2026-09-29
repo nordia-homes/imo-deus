@@ -22,6 +22,8 @@ describe('communications isolation and policy', () => {
     expect(advanceStatus('read', 'accepted')).toBe('read');
     expect(advanceStatus('delivered', 'failed')).toBe('delivered');
     expect(advanceStatus('unknown', 'delivered')).toBe('delivered');
+    expect(advanceStatus('accepted', 'failed')).toBe('failed');
+    expect(advanceStatus('failed', 'accepted')).toBe('failed');
   });
   it('reserves integer micros and rejects overspend or malformed amounts', () => {
     expect(budgetReservation(100, 20, 30, 50)).toBe(80);
@@ -51,6 +53,8 @@ describe('provider normalization', () => {
   it('keeps delivery notifications separate from new message bodies', () => {
     const events = normalizeWebhook({ entry: [{ changes: [{ value: { metadata: { phone_number_id: '1' }, statuses: [{ id: 'm', recipient_id: '2', timestamp: '1760000000', status: 'read' }] } }] }] });
     expect(events[0]).toMatchObject({ status: 'read', externalId: 'm', participantId: '2' });
+    const failed = normalizeWebhook({ entry: [{ changes: [{ value: { metadata: { phone_number_id: '1' }, statuses: [{ id: 'm', recipient_id: '2', timestamp: '1760000001', status: 'failed', errors: [{ code: 131026, title: 'Message undeliverable' }] }] } }] }] });
+    expect(failed[0]).toMatchObject({ status: 'failed', error: '131026: Message undeliverable' });
   });
   it('marks imported WhatsApp history so it cannot create fresh notifications', () => {
     const events = normalizeWebhook({ entry: [{ changes: [{ value: { metadata: { phone_number_id: '1' }, history: [{ threads: [{ id: 'customer', messages: [{ id: 'm', from: 'business', type: 'text', text: { body: 'Past' }, timestamp: '1760000000' }] }] }] } }] }] });
