@@ -1,7 +1,8 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, Building2, CheckCheck, ChevronDown, Clock3, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
 import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -41,6 +42,7 @@ export default function InboxWorkspace() {
   const autoOpened = useRef(false);
   const mobileConversationRef = useRef<HTMLElement | null>(null);
   const mobileMessagesRef = useRef<HTMLDivElement | null>(null);
+  const desktopMessagesRef = useRef<HTMLDivElement | null>(null);
   const mobileComposerRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollMobileToLatest = useCallback(() => {
     const scroller = mobileMessagesRef.current;
@@ -52,6 +54,26 @@ export default function InboxWorkspace() {
     return () => window.cancelAnimationFrame(frame);
   }, [mobilePane, selected?.id, scrollMobileToLatest]);
   useEffect(() => {
+    if (mobilePane !== 'conversation' || !window.matchMedia('(max-width: 767px)').matches) return;
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const previous = { rootOverflow: root.style.overflow, bodyOverflow: body.style.overflow, bodyPosition: body.style.position, bodyTop: body.style.top, bodyWidth: body.style.width };
+    root.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    return () => {
+      root.style.overflow = previous.rootOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      body.style.position = previous.bodyPosition;
+      body.style.top = previous.bodyTop;
+      body.style.width = previous.bodyWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [mobilePane]);
+  useEffect(() => {
     if (mobilePane !== 'conversation' || !window.visualViewport) return;
     const viewport = window.visualViewport;
     let frame = 0;
@@ -60,16 +82,25 @@ export default function InboxWorkspace() {
       frame = window.requestAnimationFrame(() => {
         const pane = mobileConversationRef.current;
         if (!pane) return;
+        pane.style.top = `${viewport.offsetTop}px`;
         pane.style.height = `${viewport.height}px`;
         if (document.activeElement === mobileComposerRef.current) scrollMobileToLatest();
       });
     };
+    let settleTimer = 0;
+    const settleViewport = () => {
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(syncViewport, 80);
+    };
     syncViewport();
     viewport.addEventListener('resize', syncViewport);
+    viewport.addEventListener('scroll', settleViewport);
     window.addEventListener('resize', syncViewport);
     return () => {
       window.cancelAnimationFrame(frame);
+      window.clearTimeout(settleTimer);
       viewport.removeEventListener('resize', syncViewport);
+      viewport.removeEventListener('scroll', settleViewport);
       window.removeEventListener('resize', syncViewport);
     };
   }, [mobilePane, selected?.id, scrollMobileToLatest]);
@@ -168,6 +199,10 @@ export default function InboxWorkspace() {
   const visibleRows = attentionOnly ? rows.filter(row => row.needsReply) : rows;
   const mobileRows = visibleRows.filter(row => !search.trim() || [row.name, row.phone, row.latestMessage].filter(Boolean).join(' ').toLocaleLowerCase('ro-RO').includes(search.trim().toLocaleLowerCase('ro-RO')));
   const selectedAgent = agents.find(agent => agent.id === selected?.assigneeId);
+  useLayoutEffect(() => {
+    const scroller = desktopMessagesRef.current;
+    if (scroller && selected?.id) scroller.scrollTop = scroller.scrollHeight;
+  }, [selected?.id, notes]);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f5f8fc] text-slate-800 md:px-3 md:py-2">
@@ -228,7 +263,7 @@ export default function InboxWorkspace() {
             {!mobileRows.length && <div className="rounded-[22px] border border-emerald-100 bg-white px-6 py-12 text-center shadow-sm"><MessageCircleMore className="mx-auto h-9 w-9 text-emerald-500" /><p className="mt-3 text-sm font-semibold text-[#17304a]">{attentionOnly ? 'Niciun mesaj de răspuns' : 'Nicio conversație găsită'}</p><p className="mt-1 text-xs text-slate-500">Schimbă filtrele sau începe o conversație nouă.</p></div>}
             {cursor && <Button variant="ghost" className="w-full rounded-2xl bg-white text-emerald-700" onClick={() => act(() => load(cursor))}>Încarcă mai multe</Button>}
           </div>
-        </> : selected ? <section ref={mobileConversationRef} role="dialog" aria-modal="true" aria-label={'Conversația cu ' + selected.name} className="fixed inset-x-0 top-0 z-50 flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f7f4ee]">
+        </> : selected && typeof document !== 'undefined' ? createPortal(<section ref={mobileConversationRef} role="dialog" aria-modal="true" aria-label={'Conversația cu ' + selected.name} className="fixed inset-x-0 top-0 z-50 flex h-dvh min-h-0 flex-col overflow-hidden overscroll-none bg-[#f7f4ee] md:hidden">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-2 shadow-sm">
             <button type="button" className="flex h-10 w-9 shrink-0 items-center justify-center text-slate-600" aria-label="Înapoi la conversații" onClick={() => { setDetailsOpen(false); setMobilePane('list'); }}><ArrowLeft className="h-5 w-5" /></button>
             <span className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span>
@@ -259,8 +294,8 @@ export default function InboxWorkspace() {
             {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
 
           </div>
-        </section> : null}
-        {detailsOpen && selected && <section role="dialog" aria-modal="true" aria-label="Detalii client" className="fixed inset-x-0 top-0 z-[80] flex h-dvh min-h-0 flex-col bg-[#f7f9fc]">
+        </section>, document.body) : null}
+        {detailsOpen && selected && typeof document !== 'undefined' && createPortal(<section role="dialog" aria-modal="true" aria-label="Detalii client" className="fixed inset-x-0 top-0 z-[80] flex h-dvh min-h-0 flex-col bg-[#f7f9fc] md:hidden">
           <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4"><button type="button" className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600" aria-label="Înapoi la conversație" onClick={() => setDetailsOpen(false)}><ArrowLeft className="h-5 w-5" /></button><h2 className="text-base font-bold text-[#17304a]">Detalii client</h2></header>
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5">
             <div className="rounded-2xl border border-slate-100 bg-white p-5 text-center shadow-sm"><span className={'mx-auto flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span><h3 className="mt-3 font-bold text-[#17304a]">{selected.name}</h3><p className="mt-1 text-sm text-slate-500">{selected.phone || selected.email || 'Date de contact necompletate'}</p><p className="mt-2 text-xs text-slate-400">{CHANNEL_LABELS[selected.channel]}</p></div>
@@ -282,13 +317,9 @@ export default function InboxWorkspace() {
             {userProfile?.role === 'admin' && selected.channel === 'whatsapp' && <details className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"><summary className="cursor-pointer text-xs font-bold uppercase tracking-wider text-slate-500">Consimțământ WhatsApp</summary><div className="mt-3 space-y-2"><select className={field + ' w-full'} value={consentPurpose} onChange={event => setConsentPurpose(event.target.value)}><option value="marketing">Oferte / marketing</option><option value="service">Comunicare de serviciu</option></select><Textarea placeholder="Dovada și data acordului sau retragerii" value={consentEvidence} onChange={event => setConsentEvidence(event.target.value)} /><div className="flex gap-2">{[['granted', 'Înregistrează'], ['revoked', 'Retrage']].map(([status, label]) => <Button key={status} size="sm" variant="outline" disabled={busy || consentEvidence.trim().length < 10} onClick={() => act(async () => { await api('consent', 'POST', { conversationId: selected.id, purpose: consentPurpose, status, evidence: consentEvidence }); setConsentEvidence(''); })}>{label}</Button>)}</div></div></details>}
             <Button variant="outline" asChild className="w-full rounded-xl"><Link href="/viewings">Vezi vizionările <ArrowRight className="h-4 w-4" /></Link></Button>
           </div>
-        </section>}
+        </section>, document.body)}
       </div>
       <div className="relative mx-auto hidden min-h-0 w-full max-w-[1800px] flex-1 flex-col gap-2 md:flex">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 text-white shadow-sm"><Inbox className="h-4 w-4" /></span><div><h1 className="flex flex-wrap items-baseline gap-1 text-lg font-bold leading-tight text-[#17304a]">Inbox <button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)} className={attentionOnly ? 'rounded-full bg-emerald-100 px-1.5 text-xs font-semibold text-emerald-800' : 'text-xs font-semibold text-emerald-700 hover:underline'}>({attentionCount} de răspuns)</button></h1><p className="text-[11px] text-slate-500">Centrul de mesaje al agenției</p></div></div>
-          <div className="flex flex-wrap items-center gap-1.5"><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/marketing/whatsapp">Canale</Link></Button><Button size="sm" variant="outline" asChild className="h-8 rounded-full border-slate-200 bg-white text-xs"><Link href="/inbox/storia">Istoric Storia</Link></Button>{userProfile?.role === 'admin' && <Button size="sm" disabled={busy} variant="outline" className="h-8 rounded-full border-slate-200 bg-white text-xs" onClick={() => act(migrate)}>Importă</Button>}</div>
-        </div>
         {error && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</div>}
         {migration && <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{migration}</p>}
 
@@ -297,7 +328,12 @@ export default function InboxWorkspace() {
             <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 via-white to-cyan-50/70 p-4">
               <div className="flex items-center justify-between">
                 <div><h2 className="font-bold text-[#17304a]">Conversații</h2><p className="text-xs text-slate-500">Fluxul de mesaje al agenției</p></div>
-                <span className="rounded-full border border-emerald-100 bg-white px-2.5 py-1 text-xs font-bold text-emerald-700">{rows.length}</span>
+                <div className="flex items-center gap-1"><button type="button" aria-pressed={attentionOnly} onClick={() => setAttentionOnly(value => !value)} className={'rounded-full px-2 py-1 text-[10px] font-semibold ' + (attentionOnly ? 'bg-emerald-200 text-emerald-900' : 'bg-white text-emerald-700 hover:bg-emerald-50')}>De răspuns {attentionCount}</button><span className="rounded-full border border-emerald-100 bg-white px-2 py-1 text-[10px] font-bold text-emerald-700">{rows.length}</span></div>
+              </div>
+              <div className="mt-2 flex items-center gap-1.5">
+                <Button size="sm" variant="outline" asChild className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[10px]"><Link href="/marketing/whatsapp">Canale</Link></Button>
+                <Button size="sm" variant="outline" asChild className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[10px]"><Link href="/inbox/storia">Istoric Storia</Link></Button>
+                {userProfile?.role === 'admin' && <Button size="sm" disabled={busy} variant="outline" className="h-7 rounded-full border-slate-200 bg-white px-2.5 text-[10px]" onClick={() => act(migrate)}>Importă</Button>}
               </div>
               <details className="group mt-3 rounded-xl border border-emerald-100 bg-white/90 px-2.5 py-2 shadow-sm">
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-[#17304a] [&::-webkit-details-marker]:hidden">
@@ -363,7 +399,7 @@ export default function InboxWorkspace() {
                 </span>
                 <ArrowRight className="h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-700" />
               </Link>}
-              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.045),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.05),transparent_40%)] px-4 py-5 sm:px-6">
+              <div ref={desktopMessagesRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.045),transparent_40%),radial-gradient(circle_at_80%_80%,rgba(139,92,246,0.05),transparent_40%)] px-4 py-5 sm:px-6">
                 {messageCursor && <Button variant="ghost" className="self-center rounded-full text-xs text-slate-500" onClick={() => act(() => open(selected.id, messageCursor))}>Mesaje mai vechi</Button>}
                 {[...messages].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map(message => <article id={'message-' + message.id} key={message.id} className={'max-w-[88%] rounded-[20px] border px-4 py-3 shadow-sm sm:max-w-[75%] ' + (message.direction === 'sent' ? 'self-end rounded-br-md border-[#9fdfbc] bg-[#d9f7e8] shadow-[0_8px_22px_-16px_rgba(16,130,84,0.55)]' : 'self-start rounded-bl-md border-[#b9d3fa] bg-[#e6f0ff] shadow-[0_8px_22px_-16px_rgba(55,105,185,0.45)]')}>
                   <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700">{message.text}</p>
@@ -375,23 +411,23 @@ export default function InboxWorkspace() {
                 {!messages.length && !notes.length && <div className="m-auto text-center"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-emerald-100 to-cyan-100 text-emerald-700"><MessageCircleMore className="h-7 w-7" /></span><p className="mt-3 text-sm font-semibold text-[#17304a]">Conversația începe aici</p><p className="mt-1 text-xs text-slate-500">Mesajele și notele vor apărea în acest spațiu.</p></div>}
               </div>
               <div className="shrink-0 border-t border-slate-100 bg-white p-3 sm:p-4">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => setNote(false)} className={'rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (!note ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Răspuns către client</button>
-                  <button type="button" onClick={() => setNote(true)} className={'rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Notă internă</button>
+                <div className="mb-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap pb-1">
+                  <button type="button" onClick={() => setNote(false)} className={'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (!note ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Răspuns către client</button>
+                  <button type="button" onClick={() => setNote(true)} className={'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ' + (note ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500 hover:text-slate-700')}>Notă internă</button>
+                  <span className="mx-1 h-5 w-px shrink-0 bg-slate-200" aria-hidden="true" />
+                  {!note && !template && selected.channel !== 'storia' && <label title="JPEG, PNG sau PDF, maximum 10 MB" className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"><Paperclip className="h-3.5 w-3.5" /> Atașează<input className="sr-only" type="file" accept="image/jpeg,image/png,application/pdf" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file) act(() => upload(file)); e.target.value = ''; }} /></label>}
+                  {attachment && <button type="button" className="shrink-0 rounded-full bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700" onClick={() => setAttachment(null)}>{attachment.name} · Elimină</button>}
+                  {['messenger', 'instagram'].includes(selected.channel) && <Button size="sm" variant="outline" className="h-8 shrink-0 rounded-full text-xs" disabled={busy} onClick={() => act(async () => { await api('conversations/' + selected.id + '/sync', 'POST', {}); await open(selected.id); })}>Sincronizează istoricul</Button>}
+                  <span className="min-w-1 flex-1" />
+                  {!note && selected.channel !== 'storia' && <Button size="sm" variant="outline" className="h-8 shrink-0 rounded-full text-xs" disabled={busy} onClick={() => act(async () => { const d = await api('conversations/' + selected.id + '/preview', 'POST', buildMessage()); setEstimate('Cost estimat: ' + (d.estimate.amountMicros / 1000000).toFixed(4) + ' ' + d.estimate.currency + ' · ' + d.estimate.category); })}>Verifică trimiterea</Button>}
+                  {selected.externalUrl && <Button size="sm" asChild variant="outline" className="h-8 shrink-0 rounded-full text-xs"><a href={selected.externalUrl} target="_blank" rel="noreferrer">Deschide în Storia <ExternalLink className="h-3.5 w-3.5" /></a></Button>}
                 </div>
                 {selected.channel === 'whatsapp' && !note && <div className="mb-2 space-y-2"><select className={field + ' w-full'} aria-label="Șablon WhatsApp" value={template} onChange={e => { setTemplate(e.target.value); setEstimate(''); }}><option value="">Mesaj liber</option>{templates.map(item => <option key={item.name + '|' + item.language} value={item.name + '|' + item.language}>{item.name} ({item.language})</option>)}</select>{template && <Textarea aria-label="Parametri șablon" className="rounded-xl" placeholder="Valorile șablonului, câte una pe linie" value={parameters} onChange={e => setParameters(e.target.value)} />}</div>}
-                <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[84px] resize-none rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
-                {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {!note && !template && selected.channel !== 'storia' && <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-emerald-200 hover:text-emerald-700"><Paperclip className="h-3.5 w-3.5" /> Atașează<input className="sr-only" type="file" accept="image/jpeg,image/png,application/pdf" disabled={busy} onChange={e => { const file = e.target.files?.[0]; if (file) act(() => upload(file)); e.target.value = ''; }} /></label>}
-                  {attachment && <button className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700" onClick={() => setAttachment(null)}>{attachment.name} · Elimină</button>}
-                  {['messenger', 'instagram'].includes(selected.channel) && <Button size="sm" variant="outline" className="rounded-full" disabled={busy} onClick={() => act(async () => { await api('conversations/' + selected.id + '/sync', 'POST', {}); await open(selected.id); })}>Sincronizează istoricul</Button>}
-                  <span className="ml-auto" />
-                  {!note && selected.channel !== 'storia' && <Button size="sm" variant="outline" className="rounded-full" disabled={busy} onClick={() => act(async () => { const d = await api('conversations/' + selected.id + '/preview', 'POST', buildMessage()); setEstimate('Cost estimat: ' + (d.estimate.amountMicros / 1000000).toFixed(4) + ' ' + d.estimate.currency + ' · ' + d.estimate.category); })}>Verifică trimiterea</Button>}
-                  {selected.externalUrl && <Button size="sm" asChild variant="outline" className="rounded-full"><a href={selected.externalUrl} target="_blank" rel="noreferrer">Deschide în Storia <ExternalLink className="h-3.5 w-3.5" /></a></Button>}
-                  <Button size="sm" className="rounded-full bg-emerald-600 px-5 text-white hover:bg-emerald-700" disabled={busy || (!text.trim() && !template && !attachment) || (!note && selected.channel === 'storia')} onClick={() => act(send)}>{note ? 'Salvează nota' : 'Trimite'} <Send className="h-3.5 w-3.5" /></Button>
+                <div className="flex items-end gap-2">
+                  <Textarea aria-label={note ? 'Notă internă' : 'Mesaj către client'} className={'min-h-[76px] min-w-0 flex-1 resize-none rounded-2xl border-slate-200 p-3 focus-visible:ring-emerald-400/30 ' + (note ? 'bg-amber-50/60' : 'bg-[#fbfdfd]')} value={text} onChange={e => { setText(e.target.value); setEstimate(''); }} placeholder={note ? 'Scrie o notă pentru echipă...' : 'Scrie un răspuns pentru client...'} />
+                  <Button size="sm" className="h-11 shrink-0 rounded-full bg-emerald-600 px-5 text-white hover:bg-emerald-700" disabled={busy || (!text.trim() && !template && !attachment) || (!note && selected.channel === 'storia')} onClick={() => act(send)}>{note ? 'Salvează nota' : 'Trimite'} <Send className="h-3.5 w-3.5" /></Button>
                 </div>
-                {!note && !template && selected.channel !== 'storia' && <p className="mt-2 text-[11px] text-slate-400">Atașamente acceptate: JPEG, PNG sau PDF, maximum 10 MB.</p>}
+                {estimate && <p className="mt-2 text-xs text-emerald-700">{estimate}</p>}
               </div>
             </> : <div className="flex flex-1 flex-col items-center justify-center px-6 text-center"><span className="flex h-20 w-20 items-center justify-center rounded-[28px] bg-gradient-to-br from-emerald-100 via-cyan-50 to-violet-100 text-emerald-700 shadow-sm"><MessageCircleMore className="h-9 w-9" /></span><h2 className="mt-5 text-xl font-bold text-[#17304a]">Un spațiu pentru fiecare conversație</h2><p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500">Alege un mesaj din stânga pentru a răspunde, a lăsa note și a gestiona relația cu clientul.</p></div>}
           </main>
