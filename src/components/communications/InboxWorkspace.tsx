@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, ArrowRight, Building2, CheckCheck, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, CheckCheck, Clock3, ExternalLink, Inbox, MessageCircleMore, Paperclip, Plus, Search, Send, ShieldCheck, SlidersHorizontal, UserRound, UsersRound, X } from 'lucide-react';
 import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
@@ -174,18 +174,25 @@ export default function InboxWorkspace() {
           </header>
           {error && <div role="alert" className="shrink-0 bg-amber-50 px-4 py-2 text-xs text-amber-800">{error}</div>}
           {migration && <p className="shrink-0 bg-emerald-50 px-4 py-2 text-xs text-emerald-700">{migration}</p>}
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
-            {results.map(result => <button key={result.messageId} type="button" className="flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left" onClick={() => act(async () => { await open(result.conversationId, undefined, result.messageId); setMobilePane('conversation'); })}><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-sm font-bold text-cyan-700">{initials(result.name)}</span><span className="min-w-0 flex-1"><strong className="block truncate text-sm text-[#17304a]">{result.name}</strong><span className="mt-1 block line-clamp-2 text-xs text-slate-500">{result.text}</span></span></button>)}
-            {mobileRows.map(conversation => <button key={conversation.id} type="button" className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-left transition active:bg-emerald-50" onClick={() => act(async () => { await open(conversation.id); setMobilePane('conversation'); })}>
-              <span className={'relative flex h-13 w-13 shrink-0 items-center justify-center rounded-full text-base font-bold ' + channelClass[conversation.channel]}>{initials(conversation.name)}{conversation.needsReply && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />}</span>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center justify-between gap-2"><strong className="truncate text-[15px] font-semibold text-[#17304a]">{conversation.name}</strong><time className={'shrink-0 text-[11px] ' + (conversation.needsReply ? 'font-semibold text-emerald-700' : 'text-slate-400')}>{time(conversation.lastMessageAt)}</time></span>
-                <span className="mt-1 flex items-center gap-1.5"><span className="truncate text-[13px] text-slate-500">{conversation.latestMessage || 'Conversație deschisă'}</span>{conversation.needsReply && <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}</span>
-                <span className="mt-1 block text-[11px] text-slate-400">{CHANNEL_LABELS[conversation.channel]} · {statusLabel[conversation.status]}</span>
-              </span>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-gradient-to-b from-[#f1f7f8] via-[#f6f8fb] to-[#f8fafc] px-3 py-3">
+            {results.map(result => <button key={result.messageId} type="button" className="group relative flex w-full items-start gap-3 overflow-hidden rounded-[22px] border border-sky-100 bg-gradient-to-br from-white via-white to-sky-50/70 p-4 text-left shadow-[0_12px_30px_-24px_rgba(23,48,74,0.55)] transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" onClick={() => act(async () => { await open(result.conversationId, undefined, result.messageId); setMobilePane('conversation'); })}>
+              <span className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-base font-bold text-sky-700">{initials(result.name)}</span>
+              <span className="min-w-0 flex-1"><span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Rezultat în mesaje</span><strong className="mt-1 block truncate text-[15px] text-[#17304a]">{result.name}</strong><span className="mt-1 block line-clamp-2 text-[13px] leading-5 text-slate-600">{result.text}</span></span>
+              <span className="mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-500"><ArrowRight className="h-4 w-4" /></span>
             </button>)}
-            {!mobileRows.length && <div className="px-6 py-16 text-center"><MessageCircleMore className="mx-auto h-9 w-9 text-emerald-500" /><p className="mt-3 text-sm font-semibold text-[#17304a]">{attentionOnly ? 'Niciun mesaj de răspuns' : 'Nicio conversație găsită'}</p><p className="mt-1 text-xs text-slate-500">Schimbă filtrele sau începe o conversație nouă.</p></div>}
-            {cursor && <Button variant="ghost" className="my-3 w-full text-emerald-700" onClick={() => act(() => load(cursor))}>Încarcă mai multe</Button>}
+            {mobileRows.map(conversation => <button key={conversation.id} type="button" className={'group relative flex w-full items-start gap-3 overflow-hidden rounded-[22px] border p-4 text-left shadow-[0_14px_36px_-27px_rgba(23,48,74,0.45)] transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ' + (conversation.needsReply ? 'border-emerald-100 bg-gradient-to-br from-white via-white to-cyan-50/90' : 'border-slate-200/80 bg-white/90')} onClick={() => act(async () => { await open(conversation.id); setMobilePane('conversation'); })}>
+              {conversation.needsReply && <><span className="pointer-events-none absolute inset-y-4 left-0 w-1 rounded-r-full bg-gradient-to-b from-emerald-400 via-cyan-400 to-violet-400" /><span className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-cyan-200/45 blur-2xl" /></>}
+              <span className={'relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border border-white/80 text-base font-bold ring-1 ring-slate-200/50 ' + channelClass[conversation.channel]}>{initials(conversation.name)}{conversation.needsReply && <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-[3px] border-white bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.65)]" />}</span>
+              <span className="relative min-w-0 flex-1">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{CHANNEL_LABELS[conversation.channel]}</span>
+                <strong className="mt-1 block truncate text-[15px] leading-5 text-[#17304a]">{conversation.name}</strong>
+                <span className="mt-1 block line-clamp-2 text-[13px] leading-5 text-slate-600">{conversation.latestMessage || 'Conversație deschisă'}</span>
+                <span className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500"><Clock3 className="h-3.5 w-3.5" /><time>{time(conversation.lastMessageAt)}</time><span aria-hidden="true">·</span><span>{statusLabel[conversation.status]}</span></span>
+              </span>
+              <span className={'relative mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ' + (conversation.needsReply ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')}><ArrowRight className="h-4 w-4" /></span>
+            </button>)}
+            {!mobileRows.length && <div className="rounded-[22px] border border-emerald-100 bg-white px-6 py-12 text-center shadow-sm"><MessageCircleMore className="mx-auto h-9 w-9 text-emerald-500" /><p className="mt-3 text-sm font-semibold text-[#17304a]">{attentionOnly ? 'Niciun mesaj de răspuns' : 'Nicio conversație găsită'}</p><p className="mt-1 text-xs text-slate-500">Schimbă filtrele sau începe o conversație nouă.</p></div>}
+            {cursor && <Button variant="ghost" className="w-full rounded-2xl bg-white text-emerald-700" onClick={() => act(() => load(cursor))}>Încarcă mai multe</Button>}
           </div>
         </> : selected ? <section role="dialog" aria-modal="true" aria-label={'Conversația cu ' + selected.name} className="fixed inset-x-0 top-0 z-50 flex h-dvh min-h-0 flex-col bg-[#f7f4ee]">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-2 shadow-sm">
