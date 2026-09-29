@@ -567,6 +567,8 @@ export type MetaFacebookPagePost = {
 export type TikTokMarketingIntegrationPublicStatus = {
   provider: 'tiktok';
   connected: boolean;
+  environment?: 'production' | 'sandbox';
+  sandboxAvailable?: boolean;
   connectedAt?: string | null;
   updatedAt?: string | null;
   lastError?: string | null;
@@ -619,6 +621,7 @@ export type TikTokPostDraft = {
   awaitingPublicId?: boolean;
   creatorUsername?: string | null;
   targetOpenId?: string | null;
+  targetEnvironment?: 'production' | 'sandbox';
   coverTimestampMs?: number | null;
   scheduledAt?: string | null;
   scheduleStatus?: 'none' | 'scheduled' | 'sent' | 'error';

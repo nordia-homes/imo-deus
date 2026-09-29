@@ -31,6 +31,7 @@ export default function TikTokWorkspace({ initialTab = 'overview' }: { initialTa
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [advertiserId, setAdvertiserId] = useState('');
   const [notice, setNotice] = useState('');
+  const [organicStatus, setOrganicStatus] = useState<{ sandboxAvailable?: boolean; environment?: 'production' | 'sandbox' } | null>(null);
   const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState<Kind>('campaign');
   const [rows, setRows] = useState<TikTokRow[]>([]);
@@ -62,6 +63,7 @@ export default function TikTokWorkspace({ initialTab = 'overview' }: { initialTa
     return data;
   }, [api]);
   useEffect(() => { let live = true; if (user) void loadWorkspace().catch(error => { if (live) setNotice(error.message); }); return () => { live = false; }; }, [user, loadWorkspace]);
+  useEffect(() => { if (user) void api<{ status: { sandboxAvailable?: boolean; environment?: 'production' | 'sandbox' } }>('/api/marketing/tiktok/status').then(data => setOrganicStatus(data.status)).catch(() => undefined); }, [api, user]);
   useEffect(() => {
     if (!advertiserId) return;
     let live = true;
@@ -91,12 +93,15 @@ export default function TikTokWorkspace({ initialTab = 'overview' }: { initialTa
     await loadWorkspace(advertiserId);
     setNotice(failures.length ? failures.join(' • ') : 'Contul și permisiunile au fost reverificate.');
   }
-  async function connect(organic = false) {
-    const result = await api<{ authorizationUrl: string }>(organic ? '/api/marketing/tiktok/connect' : '/api/marketing/tiktok-ads/connect?returnTo=/marketing/tiktok-ads');
+  async function connect(organic = false, sandbox = false) {
+    const result = await api<{ authorizationUrl: string }>(organic ? `/api/marketing/tiktok/connect${sandbox ? '?sandbox=1' : ''}` : '/api/marketing/tiktok-ads/connect?returnTo=/marketing/tiktok-ads');
     if (window.imodeusDesktop?.openOAuthWindow) {
       const auth = await window.imodeusDesktop.openOAuthWindow({ ...result, organic });
       if (auth.error) throw new Error(auth.error);
-      if (auth.completed) await loadWorkspace(advertiserId);
+      if (auth.completed) {
+        await loadWorkspace(advertiserId);
+        if (organic) setOrganicStatus((await api<{ status: { sandboxAvailable?: boolean; environment?: 'production' | 'sandbox' } }>('/api/marketing/tiktok/status')).status);
+      }
       return;
     }
     window.location.assign(result.authorizationUrl);
@@ -133,6 +138,7 @@ export default function TikTokWorkspace({ initialTab = 'overview' }: { initialTa
     <div className="tt-context"><span className="tt-context-avatar"><Building2 size={19} /></span><label>Cont publicitar<select aria-label="Cont publicitar" className={`${inputClass} mt-1`} value={advertiserId} disabled={busy || !!draft || !!change || !!hierarchy} onChange={event => void run(() => switchAdvertiser(event.target.value))}><option value="" disabled>Selectează contul</option>{workspace?.advertisers.map(item => <option key={item.advertiserId} value={item.advertiserId}>{item.name || item.advertiserId}</option>)}</select></label><p className="tt-context-meta">{advertiser ? `${advertiser.currency || 'Monedă necunoscută'} · ${advertiser.timezone || 'Fus orar necunoscut'}` : 'Niciun cont selectat'}</p><StatusBadge active={!!advertiser?.authorized}>{advertiser?.authorized ? "Autorizat" : "Acces de verificat"}</StatusBadge><Button variant="outline" disabled={busy || !advertiserId} onClick={() => void run(reconcile)}><ShieldCheck size={15} />Verifică accesul</Button></div>
     {notice && <div role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm">{notice}</div>}
     <nav aria-label="Secțiuni TikTok" className="tt-nav">{tabs.map(([key, label]) => <Button key={key} variant={tab === key ? 'default' : 'ghost'} aria-current={tab === key ? 'page' : undefined} onClick={() => setTab(key)}>{key === "overview" ? <LayoutDashboard /> : key === "ads" ? <Megaphone /> : key === "videos" ? <Clapperboard /> : <Settings2 />}{label}{key === 'approvals' && <span className="ml-2 rounded-full bg-teal-100 px-2 text-xs text-teal-800">{drafts.filter(item => item.status === 'submitted').length}</span>}</Button>)}</nav>
+    {tab === 'accounts' && organicStatus?.sandboxAvailable && <section className={panelClass}><h2 className="text-lg font-semibold">Test TikTok Sandbox</h2><p className="my-3 text-sm text-slate-500">Conectează numai contul adăugat ca Target user în TikTok Sandbox. Postările de test rămân private.</p><Button disabled={busy} variant="outline" onClick={() => void run(() => connect(true, true))}>Conectează profilul TikTok în Sandbox</Button>{organicStatus.environment === 'sandbox' && <p className="mt-2 text-sm">Profilul organic curent este conectat la Sandbox.</p>}</section>}
     {!workspace ? <p role="status">{notice ? 'Pagina nu a putut fi încărcată.' : 'Se încarcă spațiul TikTok…'}</p> : <>
       {tab === 'overview' && <div className="space-y-5">
         <section className={panelClass}><div className="tt-panel-heading"><div><h2>Performanța campaniilor</h2><p>Date reale din TikTok, pentru contul selectat.</p></div><div className="tt-report-tools"><label>De la<input type="date" className={inputClass} value={start} onChange={event => { setStart(event.target.value); setReport(null); }} /></label><label>Până la<input type="date" className={inputClass} value={end} onChange={event => { setEnd(event.target.value); setReport(null); }} /></label><Button variant="outline" disabled={busy || !advertiserId} onClick={() => void run(loadReport)}><RefreshCw size={14} />Încarcă raportul</Button></div></div>

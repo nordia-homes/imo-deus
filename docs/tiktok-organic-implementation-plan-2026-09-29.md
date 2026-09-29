@@ -2,6 +2,12 @@
 
 ## Starea implementării în repository
 
+### Test Sandbox (actualizare)
+
+Sandbox-ul „Imodeus Test” are redirectul Web `https://imodeus.ro/auth/tiktok/callback`, scope-urile `user.info.basic` și `video.publish` și utilizatorul țintă adăugat. Backendul poate selecta separat credențialele Sandbox prin `TIKTOK_SANDBOX_CLIENT_KEY` și `TIKTOK_SANDBOX_CLIENT_SECRET`; alegerea este stocată în OAuth state și în conexiunea utilizatorului, astfel încât schimbul și reînnoirea tokenului să folosească aceeași pereche. În Conturi apare butonul de test numai când ambele secrete sunt disponibile. Acest flux nu trimite aplicația spre review.
+
+Testul de acceptare rămas: autentificare cu contul țintă, revenire în Studio, verificare `creator_info`, publicare `SELF_ONLY` și status final. Dacă Sandbox-ul a fost modificat în portal, „Apply changes” trebuie folosit pentru ca setările sale să intre în vigoare.
+
 Codul pentru OAuth, verificarea fișierelor, uploadul pe fragmente, confirmarea publicării, programare și reconcilierea statusului este implementat. Selectorul de afișare pe telefon și marcajele video nu au fost modificate.
 
 **Activarea în producție necesită acces la sistemele externe:**

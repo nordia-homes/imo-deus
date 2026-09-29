@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (isDemoAgencyId(agencyId)) {
       return createDemoBlockedResponse('Conectarea TikTok este blocata in mediul demo.');
     }
-    const result = await createTikTokAuthorization({ agencyId, requestedByUid: uid });
+    const result = await createTikTokAuthorization({ agencyId, requestedByUid: uid, environment: request.nextUrl.searchParams.get('sandbox') === '1' ? 'sandbox' : 'production' });
     return NextResponse.json(result, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);

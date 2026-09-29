@@ -27,6 +27,7 @@ const TIKTOK_API_BASE_URL = 'https://open.tiktokapis.com';
 const TIKTOK_TOKEN_URL = `${TIKTOK_API_BASE_URL}/v2/oauth/token/`;
 const OPENAI_RESPONSES_API_URL = 'https://api.openai.com/v1/responses';
 const DEFAULT_SCOPES = ['user.info.basic', 'video.publish'];
+type TikTokEnvironment = 'production' | 'sandbox';
 
 type TikTokApiError = Error & {
   status?: number;
@@ -192,12 +193,12 @@ function getRedirectUri() {
   return parsed.toString();
 }
 
-function getTikTokClientKey() {
-  return (process.env.TIKTOK_CLIENT_KEY || '').trim();
+function getTikTokClientKey(environment: TikTokEnvironment = 'production') {
+  return ((environment === 'sandbox' ? process.env.TIKTOK_SANDBOX_CLIENT_KEY : process.env.TIKTOK_CLIENT_KEY) || '').trim();
 }
 
-function getTikTokClientSecret() {
-  return (process.env.TIKTOK_CLIENT_SECRET || '').trim();
+function getTikTokClientSecret(environment: TikTokEnvironment = 'production') {
+  return ((environment === 'sandbox' ? process.env.TIKTOK_SANDBOX_CLIENT_SECRET : process.env.TIKTOK_CLIENT_SECRET) || '').trim();
 }
 
 function getConfiguredScopes() {
@@ -215,11 +216,11 @@ function getDefaultPrivacyLevel() {
   return process.env.TIKTOK_DEFAULT_PRIVACY_LEVEL || 'SELF_ONLY';
 }
 
-function requireTikTokConfig() {
-  const clientKey = getTikTokClientKey();
-  const clientSecret = getTikTokClientSecret();
+function requireTikTokConfig(environment: TikTokEnvironment = 'production') {
+  const clientKey = getTikTokClientKey(environment);
+  const clientSecret = getTikTokClientSecret(environment);
   if (!clientKey || !clientSecret) {
-    throw new Error('Configurarea TikTok lipsește: verifică TIKTOK_CLIENT_KEY și TIKTOK_CLIENT_SECRET pentru aceeași aplicație TikTok Developer.');
+    throw new Error(environment === 'sandbox' ? 'Configurarea TikTok Sandbox lipsește: setează TIKTOK_SANDBOX_CLIENT_KEY și TIKTOK_SANDBOX_CLIENT_SECRET.' : 'Configurarea TikTok lipsește: verifică TIKTOK_CLIENT_KEY și TIKTOK_CLIENT_SECRET pentru aceeași aplicație TikTok Developer.');
   }
   getRedirectUri();
   return { clientKey, clientSecret };
@@ -313,8 +314,8 @@ async function tiktokRequest<T>(path: string, accessToken: string, init?: Reques
   return payload as T;
 }
 
-async function requestAccessToken(code: string, codeVerifier: string) {
-  const { clientKey, clientSecret } = requireTikTokConfig();
+async function requestAccessToken(code: string, codeVerifier: string, environment: TikTokEnvironment) {
+  const { clientKey, clientSecret } = requireTikTokConfig(environment);
   const body = new URLSearchParams({
     client_key: clientKey,
     client_secret: clientSecret,
@@ -341,7 +342,7 @@ async function refreshAccessToken(integration: TikTokMarketingIntegrationPrivate
     throw new Error('Conexiunea TikTok nu are refresh token. Reconecteaza contul.');
   }
 
-  const { clientKey, clientSecret } = requireTikTokConfig();
+  const { clientKey, clientSecret } = requireTikTokConfig(integration.environment || 'production');
   const refreshToken = decryptToken(integration.encryptedRefreshToken);
   const body = new URLSearchParams({
     client_key: clientKey,
@@ -432,8 +433,9 @@ async function fetchTikTokUser(accessToken: string) {
   return response.data?.user || {};
 }
 
-export async function createTikTokAuthorization(params: { agencyId: string; requestedByUid: string }) {
-  const { clientKey } = requireTikTokConfig();
+export async function createTikTokAuthorization(params: { agencyId: string; requestedByUid: string; environment?: TikTokEnvironment }) {
+  const environment = params.environment || 'production';
+  const { clientKey } = requireTikTokConfig(environment);
   const state = randomBytes(24).toString('hex');
   const codeVerifier = createPkceVerifier();
   const codeChallenge = createPkceChallenge(codeVerifier);
@@ -441,6 +443,7 @@ export async function createTikTokAuthorization(params: { agencyId: string; requ
     state,
     agencyId: params.agencyId,
     requestedByUid: params.requestedByUid,
+    environment,
     codeVerifier,
     createdAt: nowIso(),
     expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
@@ -472,6 +475,7 @@ export async function finalizeTikTokAuthorization(params: { code: string; state:
     agencyId: string;
     requestedByUid?: string | null;
     codeVerifier?: string | null;
+    environment?: TikTokEnvironment;
     expiresAt?: string | null;
   };
 
@@ -485,7 +489,8 @@ export async function finalizeTikTokAuthorization(params: { code: string; state:
     throw new Error('Autorizarea TikTok nu contine PKCE verifier. Reincearca din TikTok Studio.');
   }
 
-  const token = await requestAccessToken(params.code, stateData.codeVerifier);
+  const environment = stateData.environment || 'production';
+  const token = await requestAccessToken(params.code, stateData.codeVerifier, environment);
   if (token.scope && !token.scope.split(',').map(scope => scope.trim()).includes('video.publish')) throw new Error('Profilul nu a acordat permisiunea video.publish. Reîncearcă autorizarea și acceptă publicarea.');
   const user = await fetchTikTokUser(token.access_token || '');
   const uid = stateData.requestedByUid || '';
@@ -496,6 +501,7 @@ export async function finalizeTikTokAuthorization(params: { code: string; state:
     agencyId: stateData.agencyId,
     uid,
     connected: true,
+    environment,
     connectedAt: nowIso(),
     updatedAt: nowIso(),
     encryptedAccessToken: encryptToken(token.access_token || ''),
@@ -553,6 +559,7 @@ export async function getTikTokMarketingStatus(uid: string) {
   return {
     provider: TIKTOK_PROVIDER,
     connected: false,
+    sandboxAvailable: Boolean(getTikTokClientKey('sandbox') && getTikTokClientSecret('sandbox')),
     privateModeOnly: isPrivateModeOnly(),
     ...publicStatus,
   } satisfies TikTokMarketingIntegrationPublicStatus;
@@ -874,6 +881,7 @@ export async function createTikTokPostDraft(input: {
     updatedAt: now,
     createdByUid: input.requestedByUid,
     targetOpenId: integration.openId,
+    targetEnvironment: integration.environment || 'production',
     status: 'draft',
     description: (input.description || generated?.description || '').trim(),
     hashtags: normalizeHashtags(input.hashtags?.length ? input.hashtags : generated?.hashtags || []),
@@ -1038,7 +1046,7 @@ export async function publishTikTokPostDraft(input: {
   let prepared: Awaited<ReturnType<typeof prepareTikTokVideo>> | null = null;
   try {
     const { accessToken, integration } = await getAccessTokenForUser(input.requestedByUid);
-    if (!draft.targetOpenId || integration.openId !== draft.targetOpenId || integration.agencyId !== input.agencyId) throw new Error('Profilul TikTok conectat s-a schimbat. Creează un draft nou pentru profilul curent.');
+    if (!draft.targetOpenId || integration.openId !== draft.targetOpenId || (draft.targetEnvironment || 'production') !== (integration.environment || 'production') || integration.agencyId !== input.agencyId) throw new Error('Profilul sau mediul TikTok conectat s-a schimbat. Creează un draft nou pentru conexiunea curentă.');
     const creator = await getTikTokCreatorInfo(input.requestedByUid);
     if (!creator.privacy_level_options?.includes(draft.privacyLevel)) throw new Error('Vizibilitatea aleasă nu mai este permisă de profil.');
     if (isPrivateModeOnly() && draft.privacyLevel !== 'SELF_ONLY') throw new Error('Integrarea permite momentan numai publicări private.');
@@ -1111,7 +1119,7 @@ export async function refreshTikTokPostDraftStatus(input: {
   if (!draft.publishId) return draft;
 
   const { accessToken, integration } = await getAccessTokenForUser(input.requestedByUid);
-  if (!draft.targetOpenId || integration.openId !== draft.targetOpenId) throw new Error('Profilul conectat nu este cel folosit pentru această publicare. Reconectează profilul original pentru verificare.');
+  if (!draft.targetOpenId || integration.openId !== draft.targetOpenId || (draft.targetEnvironment || 'production') !== (integration.environment || 'production')) throw new Error('Profilul sau mediul TikTok conectat nu este cel folosit pentru această publicare. Reconectează profilul original pentru verificare.');
   const response = await tiktokRequest<TikTokPublishStatusResponse>('/v2/post/publish/status/fetch/', accessToken, {
     method: 'POST',
     body: JSON.stringify({ publish_id: draft.publishId }),
@@ -1526,6 +1534,7 @@ export async function createTikTokPostDraftFromStudioAsset(input: {
     updatedAt: now,
     createdByUid: input.requestedByUid,
     targetOpenId: integration.openId,
+    targetEnvironment: integration.environment || 'production',
     status: 'draft',
     description: (input.description || asset.editorState?.description || 'Video pregatit in ImoDeus TikTok Studio.').trim(),
     hashtags: normalizeHashtags(input.hashtags !== undefined ? input.hashtags : asset.editorState?.hashtags?.length ? asset.editorState.hashtags : ['#imobiliare', '#tiktokstudio', '#imodeus']),

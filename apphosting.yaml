@@ -134,6 +134,16 @@ env:
     availability:
       - RUNTIME
 
+  - variable: TIKTOK_SANDBOX_CLIENT_KEY
+    secret: TIKTOK_SANDBOX_CLIENT_KEY
+    availability:
+      - RUNTIME
+
+  - variable: TIKTOK_SANDBOX_CLIENT_SECRET
+    secret: TIKTOK_SANDBOX_CLIENT_SECRET
+    availability:
+      - RUNTIME
+
   - variable: TIKTOK_REDIRECT_URI
     value: "https://imodeus.ro/auth/tiktok/callback"
     availability:
