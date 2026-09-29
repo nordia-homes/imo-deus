@@ -39,6 +39,26 @@ export default function InboxWorkspace() {
   const [text, setText] = useState(''); const [note, setNote] = useState(false); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const sendAttempt = useRef<{ fingerprint: string; requestId: string } | null>(null);
   const autoOpened = useRef(false);
+  const mobileConversationRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (mobilePane !== 'conversation' || !window.visualViewport) return;
+    const viewport = window.visualViewport;
+    const syncViewport = () => {
+      const pane = mobileConversationRef.current;
+      if (!pane) return;
+      pane.style.top = `${viewport.offsetTop}px`;
+      pane.style.height = `${viewport.height}px`;
+    };
+    syncViewport();
+    viewport.addEventListener('resize', syncViewport);
+    viewport.addEventListener('scroll', syncViewport);
+    window.addEventListener('resize', syncViewport);
+    return () => {
+      viewport.removeEventListener('resize', syncViewport);
+      viewport.removeEventListener('scroll', syncViewport);
+      window.removeEventListener('resize', syncViewport);
+    };
+  }, [mobilePane, selected?.id]);
   const [cursor, setCursor] = useState<string | null>(null); const [messageCursor, setMessageCursor] = useState<string | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [templates, setTemplates] = useState<Array<{ name: string; language: string; status: string }>>([]);
@@ -129,6 +149,7 @@ export default function InboxWorkspace() {
   const { data: associatedProperty } = useDoc<Property>(propertyRef);
   const propertyImage = associatedProperty?.images?.[0]?.url;
   const attentionCount = rows.filter(row => row.needsReply).length;
+  const unreadCount = user ? rows.filter(row => row.lastInboundAt && (!row.readBy?.[user.uid] || row.lastInboundAt > row.readBy[user.uid])).length : 0;
 
   const visibleRows = attentionOnly ? rows.filter(row => row.needsReply) : rows;
   const mobileRows = visibleRows.filter(row => !search.trim() || [row.name, row.phone, row.latestMessage].filter(Boolean).join(' ').toLocaleLowerCase('ro-RO').includes(search.trim().toLocaleLowerCase('ro-RO')));
@@ -140,15 +161,14 @@ export default function InboxWorkspace() {
       <div className="pointer-events-none absolute right-0 top-20 hidden h-80 w-80 rounded-full bg-violet-200/30 blur-3xl md:block" />
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-white md:hidden">
         {mobilePane === 'list' ? <>
-          <header className="shrink-0 border-b border-slate-100 bg-white px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
+          <header className="relative isolate shrink-0 border-b border-emerald-100 bg-gradient-to-br from-white via-[#f5fcfa] to-[#eaf7fb] px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] shadow-[0_14px_32px_-26px_rgba(23,48,74,0.5)]">
             <div className="flex items-center justify-between gap-3">
-              <SidebarTrigger aria-label="Deschide meniul aplicației" className="h-10 w-10 shrink-0 rounded-full bg-slate-100 text-slate-600" />
+              <SidebarTrigger aria-label="Deschide meniul aplicației" className="h-10 w-10 shrink-0 rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-cyan-50 text-emerald-700 shadow-sm" />
               <div className="min-w-0 flex-1">
-                <h1 className="text-[28px] font-bold tracking-tight text-[#17304a]">Inbox</h1>
-                <p className="text-xs text-slate-500">{rows.length} conversații · {attentionCount} de răspuns</p>
+                <h1 className="flex items-baseline gap-1.5 text-[28px] font-bold tracking-tight text-[#17304a]">Inbox <span className="text-[18px] font-semibold text-emerald-700">({unreadCount})</span></h1>
               </div>
               <div className="flex items-center gap-2">
-                <Link href="/marketing/whatsapp" aria-label="Gestionează canalele" className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600"><SlidersHorizontal className="h-5 w-5" /></Link>
+                <Link href="/marketing/whatsapp" aria-label="Gestionează canalele" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-white/85 text-slate-600 shadow-sm"><SlidersHorizontal className="h-5 w-5" /></Link>
                 <details className="relative">
                   <summary aria-label="Conversație nouă" className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full bg-emerald-600 text-white shadow-[0_10px_24px_-10px_rgba(16,130,84,0.7)] [&::-webkit-details-marker]:hidden"><Plus className="h-6 w-6" /></summary>
                   <div className="absolute right-0 top-12 z-30 w-[min(88vw,320px)] space-y-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
@@ -163,7 +183,7 @@ export default function InboxWorkspace() {
             </div>
             <form className="relative mt-4" onSubmit={event => { event.preventDefault(); act(async () => { const result = await api('search?q=' + encodeURIComponent(search)); setResults(result.results); }); }}>
               <Search className="pointer-events-none absolute left-4 top-3 h-4 w-4 text-slate-400" />
-              <Input type="search" aria-label="Caută conversații" className="h-11 rounded-full border-0 bg-[#f1f4f7] pl-11 text-sm shadow-none focus-visible:ring-emerald-300" value={search} onChange={event => { setSearch(event.target.value); if (!event.target.value) setResults([]); }} placeholder="Caută un client sau un mesaj" />
+              <Input type="search" aria-label="Caută conversații" className="h-11 rounded-2xl border border-white/90 bg-white/90 pl-11 text-base shadow-[0_10px_24px_-20px_rgba(23,48,74,0.5)] focus-visible:ring-emerald-300" value={search} onChange={event => { setSearch(event.target.value); if (!event.target.value) setResults([]); }} placeholder="Caută un client sau un mesaj" />
             </form>
             <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
               <button type="button" onClick={() => setAttentionOnly(false)} className={'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ' + (!attentionOnly ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600')}>Toate</button>
@@ -177,7 +197,7 @@ export default function InboxWorkspace() {
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-gradient-to-b from-[#f1f7f8] via-[#f6f8fb] to-[#f8fafc] px-3 py-3">
             {results.map(result => <button key={result.messageId} type="button" className="group relative flex w-full items-start gap-3 overflow-hidden rounded-[22px] border border-sky-100 bg-gradient-to-br from-white via-white to-sky-50/70 p-4 text-left shadow-[0_12px_30px_-24px_rgba(23,48,74,0.55)] transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" onClick={() => act(async () => { await open(result.conversationId, undefined, result.messageId); setMobilePane('conversation'); })}>
               <span className="relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border border-sky-100 bg-sky-50 text-base font-bold text-sky-700">{initials(result.name)}</span>
-              <span className="min-w-0 flex-1"><span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Rezultat în mesaje</span><strong className="mt-1 block truncate text-[15px] text-[#17304a]">{result.name}</strong><span className="mt-1 block line-clamp-2 text-[13px] leading-5 text-slate-600">{result.text}</span></span>
+              <span className="min-w-0 flex-1"><span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-sky-700">Rezultat în mesaje</span><strong className="mt-1 block truncate text-[15px] text-[#17304a]">{result.name}</strong><span className="mt-1 line-clamp-2 max-h-10 overflow-hidden text-[13px] leading-5 text-slate-600" style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}>{result.text}</span></span>
               <span className="mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100/90 text-slate-500"><ArrowRight className="h-4 w-4" /></span>
             </button>)}
             {mobileRows.map(conversation => <button key={conversation.id} type="button" className={'group relative flex w-full items-start gap-3 overflow-hidden rounded-[22px] border p-4 text-left shadow-[0_14px_36px_-27px_rgba(23,48,74,0.45)] transition active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ' + (conversation.needsReply ? 'border-emerald-100 bg-gradient-to-br from-white via-white to-cyan-50/90' : 'border-slate-200/80 bg-white/90')} onClick={() => act(async () => { await open(conversation.id); setMobilePane('conversation'); })}>
@@ -186,7 +206,7 @@ export default function InboxWorkspace() {
               <span className="relative min-w-0 flex-1">
                 <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{CHANNEL_LABELS[conversation.channel]}</span>
                 <strong className="mt-1 block truncate text-[15px] leading-5 text-[#17304a]">{conversation.name}</strong>
-                <span className="mt-1 block line-clamp-2 text-[13px] leading-5 text-slate-600">{conversation.latestMessage || 'Conversație deschisă'}</span>
+                <span className="mt-1 line-clamp-2 max-h-10 overflow-hidden text-[13px] leading-5 text-slate-600" style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}>{conversation.latestMessage || 'Conversație deschisă'}</span>
                 <span className="mt-2 flex items-center gap-1.5 text-[11px] text-slate-500"><Clock3 className="h-3.5 w-3.5" /><time>{time(conversation.lastMessageAt)}</time><span aria-hidden="true">·</span><span>{statusLabel[conversation.status]}</span></span>
               </span>
               <span className={'relative mt-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ' + (conversation.needsReply ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500')}><ArrowRight className="h-4 w-4" /></span>
@@ -194,7 +214,7 @@ export default function InboxWorkspace() {
             {!mobileRows.length && <div className="rounded-[22px] border border-emerald-100 bg-white px-6 py-12 text-center shadow-sm"><MessageCircleMore className="mx-auto h-9 w-9 text-emerald-500" /><p className="mt-3 text-sm font-semibold text-[#17304a]">{attentionOnly ? 'Niciun mesaj de răspuns' : 'Nicio conversație găsită'}</p><p className="mt-1 text-xs text-slate-500">Schimbă filtrele sau începe o conversație nouă.</p></div>}
             {cursor && <Button variant="ghost" className="w-full rounded-2xl bg-white text-emerald-700" onClick={() => act(() => load(cursor))}>Încarcă mai multe</Button>}
           </div>
-        </> : selected ? <section role="dialog" aria-modal="true" aria-label={'Conversația cu ' + selected.name} className="fixed inset-x-0 top-0 z-50 flex h-dvh min-h-0 flex-col bg-[#f7f4ee]">
+        </> : selected ? <section ref={mobileConversationRef} role="dialog" aria-modal="true" aria-label={'Conversația cu ' + selected.name} className="fixed inset-x-0 top-0 z-50 flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f7f4ee]">
           <header className="flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-2 shadow-sm">
             <button type="button" className="flex h-10 w-9 shrink-0 items-center justify-center text-slate-600" aria-label="Înapoi la conversații" onClick={() => { setDetailsOpen(false); setMobilePane('list'); }}><ArrowLeft className="h-5 w-5" /></button>
             <span className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ' + channelClass[selected.channel]}>{initials(selected.name)}</span>
