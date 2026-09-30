@@ -768,6 +768,8 @@ export default function HomePage() {
               >
                 <Link href="/login">Autentificare</Link>
               </Button>
+              <Button asChild variant="outline" className="hidden h-9 rounded-full border-emerald-300/40 bg-emerald-500/10 px-4 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/20 sm:inline-flex"><Link href="/register-collaborator">Devino colaborator</Link></Button>
+              <Link href="/register-collaborator" className="rounded-full border border-emerald-300/40 px-3 py-2 text-xs font-semibold text-emerald-100 sm:hidden">Colaboratori</Link>
               <Button
                 asChild
                 variant="outline"

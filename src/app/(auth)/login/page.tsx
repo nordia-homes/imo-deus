@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { AuthError } from 'firebase/auth';
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { ArrowRight, BadgeCheck, CheckCircle2, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { GoogleIcon } from '@/components/icons/GoogleIcon';
 import { ImoDeusTextLogo } from '@/components/icons/ImoDeusTextLogo';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { setStoredRuntimeMode } from '@/lib/runtime-mode';
 
 const loginSchema = z.object({
@@ -27,6 +28,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const isLoggedIn = !!user;
   const router = useRouter();
@@ -47,9 +49,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      router.replace('/dashboard');
+      void getDoc(doc(firestore, 'users', user!.uid)).then(snapshot => {
+        const profile = snapshot.data();
+        const next = new URLSearchParams(window.location.search).get('next');
+        router.replace(next && /^\/join-collaboration\/[A-Za-z0-9_-]{25,100}$/.test(next) ? next : profile?.accountType === 'collaborator_only' ? '/collaboration' : profile?.onboardingIntent === 'collaborator' && !profile?.agencyId ? '/register-collaborator' : '/dashboard');
+      }).catch(() => router.replace('/dashboard'));
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, router, firestore, user]);
 
   const handleLogin = (values: LoginFormValues) => {
     setIsSubmitting(true);

@@ -34,6 +34,14 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
     }, [agency]);
 
     useEffect(() => {
+        if (!isAgencyLoading && userProfile?.accountType === 'collaborator_only') {
+            router.replace('/collaboration');
+            return;
+        }
+        if (!isAgencyLoading && userProfile?.onboardingIntent === 'collaborator' && !userProfile.agencyId) {
+            router.replace('/register-collaborator');
+            return;
+        }
         if (!isAgencyLoading && userProfile?.role === 'platform_admin') {
             router.replace('/master-admin');
             return;
@@ -44,14 +52,14 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
         if (!isAgencyLoading && (!agencyId || (agencyId && !agency)) && pathname !== '/settings') {
             router.replace('/settings');
         }
-    }, [agency, agencyId, isAgencyLoading, pathname, router, userProfile?.role]);
+    }, [agency, agencyId, isAgencyLoading, pathname, router, userProfile?.role, userProfile?.accountType, userProfile?.onboardingIntent, userProfile?.agencyId]);
 
     // We show the loader if ANY data is still loading.
     if (isAgencyLoading) {
         return <FullScreenLoader />;
     }
 
-    if (userProfile?.role === 'platform_admin') {
+    if (userProfile?.role === 'platform_admin' || userProfile?.accountType === 'collaborator_only' || userProfile?.onboardingIntent === 'collaborator') {
         return <FullScreenLoader />;
     }
     

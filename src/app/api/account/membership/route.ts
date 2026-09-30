@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
     const profile = db.collection('users').doc(decoded.uid);
     const result = await db.runTransaction(async tx => {
       const user = await tx.get(profile);
+      if (user.data()?.accountType === 'collaborator_only' || user.data()?.collaborationOrganizationId || user.data()?.onboardingIntent === 'collaborator') {
+        throw new Error('Contul de colaborator nu poate accesa apartenența CRM.');
+      }
       if (body.action === 'createAgency') {
         if (user.data()?.agencyId || user.data()?.role === 'platform_admin') throw new Error('Contul are deja o apartenență.');
         const values = agencyFields.parse(body.values);
