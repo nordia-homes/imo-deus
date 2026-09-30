@@ -6,6 +6,7 @@ import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 export { communicationStoriaProjection, communicationMessageSearchProjection, communicationsMinuteTick } from './communications';
+export { collaborationPropertyWritten, collaborationRateLimitCleanup } from './collaboration';
 
 export {
   notificationDeliveriesCreated,

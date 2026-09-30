@@ -1701,7 +1701,12 @@ export type UserProfile = {
   photoUrl?: string;
   agentBio?: string;
   agencyId?: string;
-  role?: 'admin' | 'agent' | 'platform_admin';
+  role?: 'admin' | 'agent' | 'platform_admin' | 'collaborator';
+  accountType?: 'collaborator_only';
+  collaborationOrganizationId?: string;
+  collaborationStatus?: 'active' | 'suspended';
+  organizationName?: string;
+  onboardingIntent?: 'collaborator';
   pushTokens?: string[];
   pushNotificationsEnabled?: boolean;
   pushNotificationsUpdatedAt?: string;

@@ -174,6 +174,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Colaborări" asChild>
+                    <Link href="/collaboration"><Handshake /><span>Colaborări</span></Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Marketing" asChild isActive={currentPath.startsWith('/marketing')}>
                     <Link href="/marketing">
                         <Megaphone />
