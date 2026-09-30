@@ -41,15 +41,15 @@ export function AgencyProvider({ children }: { children: ReactNode }) {
     }, [firestore, user]);
     const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
     const isPlatformAdmin = userProfile?.role === 'platform_admin';
-    const agencyId = isPlatformAdmin ? null : userProfile?.agencyId || persistedAgencyId || null;
+    const agencyId = isPlatformAdmin || userProfile?.accountType === 'collaborator_only' || userProfile?.onboardingIntent === 'collaborator' ? null : userProfile?.agencyId || persistedAgencyId || null;
 
     useEffect(() => {
-        if (!user?.emailVerified || isProfileLoading || userProfile?.agencyId || isPlatformAdmin) return;
+        if (!user?.emailVerified || isProfileLoading || userProfile?.agencyId || isPlatformAdmin || userProfile?.accountType === 'collaborator_only' || userProfile?.onboardingIntent === 'collaborator') return;
         user.getIdToken(true).then(token => fetch('/api/account/membership', {
             method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'acceptInvite' }),
         })).catch(error => console.error('Invite acceptance failed:', error));
-    }, [user, isProfileLoading, userProfile?.agencyId, isPlatformAdmin]);
+    }, [user, isProfileLoading, userProfile?.agencyId, userProfile?.accountType, userProfile?.onboardingIntent, isPlatformAdmin]);
 
     useEffect(() => {
         if (typeof window === 'undefined' || !userProfile?.agencyId) return;

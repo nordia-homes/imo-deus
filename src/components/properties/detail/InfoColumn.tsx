@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { PropertySalesRecommendationsCard } from "./actions/PropertySalesRecommendationsCard";
 import { AdminPropertyDetailsMap } from "@/components/map/AdminPropertyDetailsMap";
 import { NearbyObjectivesCard } from "./actions/NearbyObjectivesCard";
+import { CollaborationPublishCard } from '@/components/collaboration/CollaborationPublishCard';
 
 export function InfoColumn({
     property,
@@ -139,6 +140,7 @@ export function InfoColumn({
                     </div>
                     <div className="hidden lg:block">
                         <NearbyObjectivesCard property={property} />
+                        <CollaborationPublishCard property={property} />
                     </div>
                     <div className="hidden lg:block">
                         <PropertySalesRecommendationsCard property={property} />

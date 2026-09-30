@@ -5,6 +5,8 @@ import { isDemoAgencyId } from '@/lib/demo/guards';
 import { PropertyLifecycleError } from '@/lib/property-removal/lifecycle';
 import { removalSchema } from '@/lib/property-removal/schema';
 import { removeProperty } from '@/lib/property-removal/service';
+import { listingIdFor } from '@/lib/collaboration/id';
+import { notifyUser } from '@/lib/collaboration/server';
 import { BodyLimitError, readBoundedText } from '@/lib/romimo/transport';
 
 export const runtime = 'nodejs';
@@ -19,6 +21,11 @@ export async function POST(request: NextRequest) {
     try { body = JSON.parse(text); } catch { throw new PropertyLifecycleError('Cerere JSON invalidă.', 400); }
     const input = removalSchema.parse(body);
     const result = await removeProperty({ db: auth.adminDb, agencyId: auth.agencyId, uid: auth.uid, role: auth.role!, propertyId: input.propertyId, demo: auth.runtimeMode === 'demo' || isDemoAgencyId(auth.agencyId) }, input);
+    if (result.complete) {
+      const listingId = listingIdFor(auth.agencyId, input.propertyId);
+      const links = await auth.adminDb.collection('collaborationLinks').where('listingId', '==', listingId).get().catch(() => null);
+      if (links) await Promise.all(links.docs.filter(doc => doc.data().status === 'active').map(doc => notifyUser(auth.adminDb, String(doc.data().collaboratorUid), 'Proprietate retrasă din colaborare', 'Proprietatea asociată linkului tău nu mai este disponibilă.', '/collaboration').catch(() => {})));
+    }
     return NextResponse.json(result, { status: result.complete ? 200 : 409, headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
     if (error instanceof BodyLimitError) return NextResponse.json({ message: 'Cererea este prea mare.' }, { status: 413 });

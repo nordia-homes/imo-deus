@@ -15,6 +15,12 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(uid)).data;
     }
 
+    function isCrmUser() {
+      return isSignedIn() && isUserProfile(request.auth.uid) &&
+             (('agencyId' in getUserData(request.auth.uid) && getUserData(request.auth.uid).agencyId is string) ||
+              ('role' in getUserData(request.auth.uid) && getUserData(request.auth.uid).role == 'platform_admin'));
+    }
+
     function isUserInAgency(agencyId) {
       return isSignedIn() &&
              isUserProfile(request.auth.uid) &&
@@ -105,9 +111,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn() && request.auth.uid == userId &&
-                       !request.resource.data.keys().hasAny(['agencyId', 'role']);
+                       !request.resource.data.keys().hasAny(['agencyId', 'role', 'accountType', 'collaborationOrganizationId', 'collaborationStatus', 'organizationName']);
       allow update: if isSignedIn() && request.auth.uid == userId &&
-                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['agencyId', 'role']);
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['agencyId', 'role', 'accountType', 'collaborationOrganizationId', 'collaborationStatus', 'organizationName']);
       allow delete: if false;
       allow get: if isUserAdminForAgency(getUserData(userId).agencyId);
     }
@@ -270,17 +276,32 @@ service cloud.firestore {
     // --- Agency Top-Level Document ---
     match /agencies/{agencyId} {
       allow get: if isUserInAgency(agencyId) || isPublicAgencyRead();
-      allow list: if isSignedIn();
+      allow list: if isCrmUser();
       allow update: if isUserAdminForAgency(agencyId);
-      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow create: if isCrmUser() && request.resource.data.ownerId == request.auth.uid;
       allow delete: if false;
     }
 
     // --- Invites ---
     match /invites/{inviteId} {
       allow create: if isUserAdminForAgency(request.resource.data.agencyId);
-      allow read, delete: if isSignedIn();
+      allow get: if isSignedIn() && resource.data.email == request.auth.token.email;
+      allow list: if false;
+      allow delete: if isUserAdminForAgency(resource.data.agencyId);
+      allow update: if false;
     }
+
+    match /collaborationListings/{id} { allow read, write: if false; }
+    match /collaborationLinks/{id} { allow read, write: if false; }
+    match /collaborationLinkLookup/{id} { allow read, write: if false; }
+    match /collaborationLeads/{id} { allow read, write: if false; }
+    match /collaborationCases/{id} { allow read, write: if false; match /messages/{messageId} { allow read, write: if false; } }
+    match /collaborationOrganizations/{id} { allow read, write: if false; }
+    match /collaborationOrganizations/{id}/members/{uid} { allow read, write: if false; }
+    match /collaborationInvites/{id} { allow read, write: if false; }
+    match /collaborationLinkActivity/{id} { allow read, write: if false; }
+    match /collaborationLinkStats/{id} { allow read, write: if false; }
+    match /collaborationRateLimits/{id} { allow read, write: if false; }
 
     match /publicDomains/{domainId} {
       allow get: if true;
@@ -293,7 +314,7 @@ service cloud.firestore {
     match /publicAgentProfiles/{userId} {
       allow get: if true;
       allow list: if false;
-      allow create, update, delete: if isSignedIn() &&
+      allow create, update, delete: if isCrmUser() &&
         request.auth.uid == userId &&
         (
           !('agencyId' in request.resource.data) ||
@@ -303,7 +324,7 @@ service cloud.firestore {
 
     // --- Scraper Collection ---
     match /ownerListings/{listingId} {
-      allow read: if isSignedIn();
+      allow read: if isCrmUser();
       allow write: if false;
     }
 

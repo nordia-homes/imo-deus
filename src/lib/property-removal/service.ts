@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { listingIdFor } from '@/lib/collaboration/id';
 import type { Property, PropertyDeletionEvent, PropertyStatusEvent } from '@/lib/types';
 import { lifecycleRef, PropertyLifecycleError, withPropertyOperation, type PropertyContext } from './lifecycle';
 import type { RemovalInput, RemovalResult, PortalRemovalResult } from './schema';
@@ -109,6 +110,7 @@ export async function removeProperty(ctx: RemovalContext, input: RemovalInput, w
         tx.set(agency.collection('propertyDeletionEvents').doc(eventId), event);
         tx.delete(propertyRef);
       }
+      tx.set(ctx.db.collection('collaborationListings').doc(listingIdFor(ctx.agencyId, ctx.propertyId)), { status: 'closed', updatedAt: now }, { merge: true });
       tx.set(operationRef, { result, inputHash, completedInputHash: inputHash, completedAt: now, eventId }, { merge: true });
     });
     return result;

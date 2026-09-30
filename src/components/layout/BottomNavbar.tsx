@@ -34,6 +34,7 @@ const navItems = [
   { href: '/inbox', label: 'Storia', icon: Inbox },
   { href: '/properties', label: 'Proprietati', icon: Building2 },
   { href: '/sales-management', label: 'Vanzari', icon: Handshake },
+  { href: '/collaboration', label: 'Colaborari', icon: Handshake },
   { href: '/ai-calls', label: 'Apeluri AI', icon: PhoneCall },
 ];
 
@@ -88,7 +89,7 @@ export function BottomNavbar() {
   return (
     <>
       {currentPath !== '/inbox' && <nav className="agentfinder-bottom-nav fixed bottom-2 left-4 right-4 z-40 h-16 overflow-hidden rounded-2xl border bg-background/80 shadow-2xl backdrop-blur-lg md:hidden">
-        <div className="agentfinder-bottom-nav__inner grid h-full grid-cols-7">
+        <div className="agentfinder-bottom-nav__inner grid h-full grid-cols-8">
           {navItems.map((item) => {
             const isActive = currentPath.startsWith(item.href);
             return (
