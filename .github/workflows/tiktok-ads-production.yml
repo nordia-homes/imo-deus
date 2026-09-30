@@ -15,6 +15,13 @@ on:
       - "src/components/properties/detail/actions/TikTokAdsCard.tsx"
       - "src/lib/tiktok-ads.ts"
       - "src/lib/tiktok-ads/**"
+      - "src/lib/collaboration/**"
+      - "src/app/api/collaboration/**"
+      - "src/app/collaboration/**"
+      - "src/app/c/**"
+      - "src/app/register-collaborator/**"
+      - "src/app/join-collaboration/**"
+      - "functions/src/collaboration.ts"
   push:
     branches:
       - main
@@ -31,6 +38,13 @@ on:
       - "src/components/properties/detail/actions/TikTokAdsCard.tsx"
       - "src/lib/tiktok-ads.ts"
       - "src/lib/tiktok-ads/**"
+      - "src/lib/collaboration/**"
+      - "src/app/api/collaboration/**"
+      - "src/app/collaboration/**"
+      - "src/app/c/**"
+      - "src/app/register-collaborator/**"
+      - "src/app/join-collaboration/**"
+      - "functions/src/collaboration.ts"
   workflow_dispatch:
 
 permissions:
@@ -69,11 +83,20 @@ jobs:
       - name: Run Firestore Rules integration tests
         run: npm run test:tiktok-ads:rules
 
+      - name: Run collaboration tests
+        run: npm run test:collaboration
+
+      - name: Run collaboration Firestore Rules integration tests
+        run: npm run test:collaboration:rules
+
       - name: Run strict TikTok Ads lint
         run: npm run lint:tiktok-ads
 
       - name: Run repository typecheck
-        run: npm run typecheck
+        run: npx next typegen && npm run typecheck
+
+      - name: Build Firebase functions
+        run: npm ci --prefix functions && npm run build --prefix functions
 
       - name: Build production application
         run: npm run build
