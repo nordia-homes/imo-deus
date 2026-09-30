@@ -17,10 +17,13 @@ export const collaborationPropertyWritten = onDocumentWritten(
 
     const listingId = createHash('sha256').update(`${event.params.agencyId}:${event.params.propertyId}`).digest('hex');
     const listingRef = db.collection('collaborationListings').doc(listingId);
+    const propertyRef = db.collection('agencies').doc(event.params.agencyId).collection('properties').doc(event.params.propertyId);
     const listing = await db.runTransaction(async tx => {
-      const snapshot = await tx.get(listingRef);
-      if (!snapshot.exists || snapshot.data()?.status !== 'active') return null;
-      tx.update(listingRef, { status: 'closed', updatedAt: new Date().toISOString(), closedReason: after ? 'property_changed' : 'property_removed' });
+      const [currentProperty, snapshot] = await Promise.all([tx.get(propertyRef), tx.get(listingRef)]);
+      if (!snapshot.exists) return null;
+      if (snapshot.data()?.status !== 'active') return snapshot.data()?.closedEventId === event.id ? snapshot.data() : null;
+      if (currentProperty.data()?.status === 'Activ' && (!currentProperty.data()?.agentId || currentProperty.data()?.agentId === snapshot.data()?.ownerAgentUid)) return null;
+      tx.update(listingRef, { status: 'closed', updatedAt: new Date().toISOString(), closedReason: after ? 'property_changed' : 'property_removed', closedEventId: event.id });
       return snapshot.data();
     });
     if (!listing) return;
@@ -29,11 +32,16 @@ export const collaborationPropertyWritten = onDocumentWritten(
     const collaboratorUids = [...new Set(links.docs.filter(doc => doc.data().status === 'active').map(doc => String(doc.data().collaboratorUid)))];
     for (const uid of collaboratorUids) {
       const notificationId = createHash('sha256').update(`${event.id}:${uid}`).digest('hex');
-      await db.collection('users').doc(uid).collection('notifications').doc(notificationId).set({
-        eventId: event.id, recipientId: uid, agencyId: '', type: 'collaboration', category: 'inboxMessages', priority: 'action_required',
-        title: 'Proprietate retrasă din colaborare', body: `${String(listing.title || 'Proprietatea')} nu mai este disponibilă.`,
-        actionUrl: '/collaboration', entityType: 'collaboration', entityId: listingId, isRead: false, createdAt: new Date().toISOString(),
-      });
+      try {
+        await db.collection('users').doc(uid).collection('notifications').doc(notificationId).create({
+          eventId: event.id, recipientId: uid, agencyId: '', type: 'collaboration', category: 'inboxMessages', priority: 'action_required',
+          title: 'Proprietate retrasă din colaborare', body: `${String(listing.title || 'Proprietatea')} nu mai este disponibilă.`,
+          actionUrl: '/collaboration', entityType: 'collaboration', entityId: listingId, isRead: false, createdAt: new Date().toISOString(),
+        });
+      } catch (error) {
+        const code = (error as { code?: string | number }).code;
+        if (code !== 6 && code !== 'already-exists') throw error;
+      }
     }
   },
 );
