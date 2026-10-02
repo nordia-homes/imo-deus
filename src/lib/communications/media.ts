@@ -51,7 +51,7 @@ export async function downloadAttachment(db: Firestore, actor: Actor, conversati
   }
   let url = attachment.url; let token = '';
   if (conversation.channel === 'whatsapp' && attachment.id) {
-    const credentials = await connectionToken(db, actor, conversation.connectionId, 'send'); token = credentials.token;
+    const credentials = await connectionToken(db, actor, conversation.connectionId, 'media'); token = credentials.token;
     const media = await graph(`/${encodeURIComponent(attachment.id)}`, token); url = media.url;
   }
   if (!url) throw new CommunicationError('Atașamentul nu mai este disponibil.', 404);

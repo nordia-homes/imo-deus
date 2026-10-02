@@ -31,10 +31,12 @@ export async function syncConversation(db: Firestore, actor: Actor, id: string) 
   await ref.update({ lastSyncAt: nowIso(), historyImportLimit: 250 });
   return { imported: count, limit: 250 };
 }
-export async function disconnectCommunicationsByMetaUser(db: Firestore, metaUserId: string) {
+export async function disconnectCommunicationsByMetaUser(db: Firestore, metaUserId: string, appId?: string) {
   const secrets = await db.collection('communicationSecrets').where('metaUserId', '==', metaUserId).get();
   for (const secret of secrets.docs) {
     const data = secret.data();
+    const legacyAppId = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '';
+    if (appId && (data.appId || legacyAppId) !== appId) continue;
     const ref = agencyCollection(db, data.agencyId, 'channelConnections').doc(secret.id);
     const snapshot = await ref.get();
     if (snapshot.exists) {
@@ -44,5 +46,8 @@ export async function disconnectCommunicationsByMetaUser(db: Firestore, metaUser
     await secret.ref.delete();
   }
   const grants = await db.collection('communicationGrants').where('metaUserId', '==', metaUserId).get();
-  for (const grant of grants.docs) await grant.ref.delete();
+  for (const grant of grants.docs) {
+    const legacyAppId = process.env.META_APP_ID || process.env.FACEBOOK_APP_ID || '';
+    if (!appId || (grant.data().appId || legacyAppId) === appId) await grant.ref.delete();
+  }
 }

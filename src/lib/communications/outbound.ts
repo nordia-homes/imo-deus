@@ -7,6 +7,8 @@ import { stableId } from './crypto';
 import { attachmentForSend } from './media';
 import { bodyParameterCount, listWhatsAppTemplates, renderTemplateBody } from './templates';
 import { isDeepStrictEqual } from 'node:util';
+import { assertWhatsAppAccess, whatsappAppId } from './whatsapp-config';
+import { receiptCorrelation } from './receipt-correlation';
 
 const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
@@ -18,6 +20,9 @@ export async function estimateSend(db: Firestore, actor: Actor, conversation: Co
   let renderedText = input.text;
   if (!inWindow && !input.template) throw new CommunicationError('Fereastra de răspuns a expirat. Pentru WhatsApp selectează un șablon aprobat.');
   if (conversation.channel === 'whatsapp') {
+    assertWhatsAppAccess(actor);
+    if (connection.appId !== whatsappAppId()) throw new CommunicationError('Reconectează numărul la noua aplicație WhatsApp.', 409);
+    if (process.env.WHATSAPP_ONBOARDING_MODE === 'test' && !(process.env.WHATSAPP_TEST_RECIPIENTS || '').split(',').map(v => v.trim().replace(/^\+/, '')).includes(conversation.externalParticipantId)) throw new CommunicationError('Destinatarul nu este autorizat pentru pilot.', 403);
     const globalConsent = await agencyCollection(db, actor.agencyId, 'communicationConsents')
       .doc(stableId(conversation.connectionId, conversation.externalParticipantId, 'all')).get();
     if (globalConsent.data()?.status === 'revoked') throw new CommunicationError('Contactul a cerut oprirea mesajelor WhatsApp.', 409);
@@ -88,28 +93,42 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   });
   return { messageId: jobId, status: 'queued' };
 }
-async function settleBudget(db: Firestore, jobId: string, accepted: boolean) {
+async function settleBudget(db: Firestore, jobId: string) {
   const ref = db.collection('communicationOutboundJobs').doc(jobId);
   await db.runTransaction(async tx => {
     const row = await tx.get(ref); const job = row.data()!;
-    if (job.budgetSettled) return;
+    if (!job || job.budgetSettled || !['delivered', 'read', 'failed'].includes(job.status)) return;
     if (!job.estimate.amount) { tx.update(ref, { budgetSettled: true }); return; }
     const budgetRef = agencyCollection(db, job.agencyId, 'communicationBudgets').doc(job.budgetId);
     const budget = await tx.get(budgetRef);
-    tx.update(budgetRef, { reservedMicros: Math.max(0, (budget.data()?.reservedMicros || 0) - job.estimate.amount), spentMicros: (budget.data()?.spentMicros || 0) + (accepted ? job.estimate.amount : 0) });
-    tx.update(ref, { budgetSettled: true });
+    const charge = ['delivered', 'read'].includes(job.status) ? job.estimate.amount : 0;
+    const previousCharge = job.settledAmountMicros || 0;
+    tx.update(budgetRef, { reservedMicros: Math.max(0, (budget.data()?.reservedMicros || 0) - (job.reservationReleased ? 0 : job.estimate.amount)), spentMicros: Math.max(0, (budget.data()?.spentMicros || 0) + charge - previousCharge) });
+    tx.update(ref, { budgetSettled: true, reservationReleased: true, settledAmountMicros: charge });
   });
 }
 export async function drainOutbound(db: Firestore) {
   const accounting = await db.collection('communicationOutboundJobs').where('budgetSettled', '==', false).where('status', 'in', ['delivered', 'read', 'failed']).limit(50).get();
-  for (const row of accounting.docs) await settleBudget(db, row.id, row.data().status !== 'failed');
+  const failures: string[] = [];
+  for (const row of accounting.docs) { try { await settleBudget(db, row.id); } catch { failures.push('Budget settlement failed'); } }
   const stuck = await db.collection('communicationOutboundJobs').where('status', '==', 'sending').limit(50).get();
   for (const doc of stuck.docs) if (doc.data().leaseUntil < Date.now()) {
-    await doc.ref.update({ status: 'unknown', error: 'Confirmarea trimiterii nu a sosit. Verifică înainte de retrimitere.' });
-    await agencyCollection(db, doc.data().agencyId, 'conversations').doc(doc.data().conversationId).collection('messages').doc(doc.id).update({ status: 'unknown' });
+    try { await db.runTransaction(async tx => {
+      const fresh = await tx.get(doc.ref); const job = fresh.data();
+      if (job?.status !== 'sending' || job.leaseUntil >= Date.now()) return;
+      const ref = agencyCollection(db, job.agencyId, 'conversations').doc(job.conversationId).collection('messages').doc(doc.id);
+      const message = await tx.get(ref);
+      if (['delivered', 'read', 'failed'].includes(message.data()?.status)) return;
+      tx.update(doc.ref, { status: 'unknown', error: 'Confirmarea trimiterii nu a sosit. Verifică înainte de retrimitere.' });
+      if (message.exists) tx.update(ref, { status: 'unknown' });
+    }); } catch { failures.push('Send recovery failed'); }
   }
+  const inboundBacklog = await db.collection('communicationWebhookEvents').where('status', 'in', ['queued', 'failed']).limit(1).get();
   const jobs = await db.collection('communicationOutboundJobs').where('status', '==', 'queued').limit(3).get();
   for (const row of jobs.docs) {
+    try {
+    const queuedConversation = await agencyCollection(db, row.data().agencyId, 'conversations').doc(row.data().conversationId).get();
+    if (queuedConversation.data()?.channel === 'whatsapp' && !inboundBacklog.empty) continue;
     const claimed = await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.status !== 'queued') return false; tx.update(row.ref, { status: 'sending', leaseUntil: Date.now() + 90000 }); return true; });
     if (!claimed) continue;
     const job = row.data(); const messageRef = agencyCollection(db, job.agencyId, 'conversations').doc(job.conversationId).collection('messages').doc(row.id);
@@ -124,7 +143,7 @@ export async function drainOutbound(db: Firestore) {
       const { connection, token } = await connectionToken(db, actor, job.connectionId, 'send');
       await messageRef.update({ status: 'sending' });
       attempted = true;
-      const response = await graph(`/${connection.externalId}/messages`, token, estimate.body);
+      const response = await graph(`/${connection.externalId}/messages`, token, { ...estimate.body, ...(connection.channel === 'whatsapp' ? { biz_opaque_callback_data: receiptCorrelation(row.id, connection.id) } : {}) });
       const externalId = response.messages?.[0]?.id || response.message_id;
       if (!externalId) throw new Error('Platforma nu a returnat identificatorul mesajului.');
       const mapping = db.collection('communicationMessageMappings').doc(stableId(job.connectionId, externalId));
@@ -155,9 +174,16 @@ export async function drainOutbound(db: Firestore) {
           'capabilities.send': { status: 'reconnect_required', reason: 'Meta a revocat sau a expirat autorizarea de trimitere.' },
         }).catch(() => undefined);
       }
-      await row.ref.update({ status, error: message }); await messageRef.update({ status, error: message });
-      if (status === 'failed') await settleBudget(db, row.id, false);
+      await db.runTransaction(async tx => {
+        const [freshJob, freshMessage] = await Promise.all([tx.get(row.ref), tx.get(messageRef)]);
+        if (['delivered', 'read', 'failed'].includes(freshJob.data()?.status) || (freshJob.data()?.status === 'accepted' && freshJob.data()?.externalId)) return;
+        tx.update(row.ref, { status, error: message });
+        if (freshMessage.exists) tx.update(messageRef, { status, error: message });
+      });
+      if (status === 'failed') await settleBudget(db, row.id);
     }
+    } catch { failures.push('Outbound job persistence failed'); }
   }
+  if (failures.length) throw new Error(failures.join('; '));
   return jobs.size;
 }

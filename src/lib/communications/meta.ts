@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Actor, Capability, Connection } from './model';
 import { agencyCollection, CommunicationError, nowIso } from './server';
 import { seal, stableId, unseal } from './crypto';
+import { assertWhatsAppAccess, whatsappAccess, whatsappAppId, whatsappAppSecret, whatsappConfigId } from './whatsapp-config';
 
 export class MetaGraphError extends CommunicationError {
   constructor(message: string, public providerStatus: number, public providerCode?: number) {
@@ -95,7 +96,7 @@ export async function listAuthorizedPages(userToken: string): Promise<MetaPage[]
   return [...pages.values()];
 }
 export function preserveVerifiedConnection(next: Connection, current?: Connection): Connection {
-  if (!current || current.status !== 'connected' || current.agencyId !== next.agencyId || current.channel !== next.channel || current.externalId !== next.externalId) return next;
+  if (!current || current.status !== 'connected' || current.agencyId !== next.agencyId || current.channel !== next.channel || current.externalId !== next.externalId || (current.appId || appId()) !== (next.appId || appId())) return next;
   const capabilities = { ...next.capabilities };
   for (const name of ['receive', 'nativeSync'] as const) {
     if (capabilities[name]?.status === 'configuration_required' && current.capabilities?.[name]?.status === 'active') capabilities[name] = current.capabilities[name];
@@ -110,7 +111,7 @@ async function registerConnection(db: Firestore, row: Connection, token: string,
     if (existing.exists && existing.data()?.agencyId !== row.agencyId) throw new CommunicationError('Contul este deja conectat la altă agenție.', 409);
     tx.set(ownership, { agencyId: row.agencyId, connectionId: row.id, channel: row.channel, externalId: row.externalId });
     tx.set(connectionRef, preserveVerifiedConnection(row, current.data() as Connection | undefined));
-    tx.set(db.collection('communicationSecrets').doc(row.id), { agencyId: row.agencyId, token: seal(token), metaUserId: metaUserId || null, tokenExpiresAt: tokenExpiresAt || null, verifiedAt: nowIso() });
+    tx.set(db.collection('communicationSecrets').doc(row.id), { agencyId: row.agencyId, appId: row.appId || appId(), token: seal(token), metaUserId: metaUserId || null, tokenExpiresAt: tokenExpiresAt || null, verifiedAt: nowIso() });
   });
 }
 export async function selectPage(db: Firestore, actor: Actor, pageId: string) {
@@ -143,15 +144,15 @@ export async function selectPage(db: Firestore, actor: Actor, pageId: string) {
   }
   return { connected: true };
 }
-export async function connectionToken(db: Firestore, actor: Pick<Actor, 'agencyId'>, id: string, capability: Capability) {
+export async function connectionToken(db: Firestore, actor: Pick<Actor, 'agencyId'>, id: string, capability: Capability | 'media') {
   const [row, secret] = await Promise.all([agencyCollection(db, actor.agencyId, 'channelConnections').doc(id).get(), db.collection('communicationSecrets').doc(id).get()]);
   const connection = row.data() as Connection | undefined;
   if (!connection || connection.status !== 'connected' || secret.data()?.agencyId !== actor.agencyId) throw new CommunicationError('Conexiunea nu mai este activă.', 409);
   if (secret.data()?.tokenExpiresAt && secret.data()!.tokenExpiresAt <= Date.now()) {
-    await row.ref.update({ [`capabilities.${capability}`]: { status: 'reconnect_required', reason: 'Autorizarea Meta a expirat. Reconectează contul.' } });
+    await row.ref.update({ [`capabilities.${capability === 'media' ? 'receive' : capability}`]: { status: 'reconnect_required', reason: 'Autorizarea Meta a expirat. Reconectează contul.' } });
     throw new CommunicationError('Autorizarea Meta a expirat. Reconectează numărul.', 409);
   }
-  if (connection.capabilities[capability]?.status !== 'active') throw new CommunicationError(connection.capabilities[capability]?.reason || 'Funcția necesită configurare.', 409);
+  if (capability !== 'media' && connection.capabilities[capability]?.status !== 'active') throw new CommunicationError(connection.capabilities[capability]?.reason || 'Funcția necesită configurare.', 409);
   return { connection, token: unseal(secret.data()!.token) };
 }
 export async function refreshPageToken(db: Firestore, actor: Pick<Actor, 'agencyId'>, connection: Connection): Promise<string> {
@@ -171,29 +172,31 @@ export async function refreshPageToken(db: Firestore, actor: Pick<Actor, 'agency
 }
 export async function startWhatsAppSignup(db: Firestore, actor: Actor, body: unknown) {
   const { mode } = z.object({ mode: z.enum(['cloud', 'coexistence']) }).parse(body);
-  if (!appId() || !appSecret() || !onboardingConfig().whatsappReady) throw new CommunicationError('Conectarea WhatsApp nu este configurată.', 503);
+  assertWhatsAppAccess(actor);
   const signupState = randomBytes(32).toString('hex');
   await db.collection('communicationWhatsAppSignupStates').doc(stableId(signupState)).create({
-    agencyId: actor.agencyId, uid: actor.uid, mode, expiresAt: Date.now() + 10 * 60 * 1000,
+    agencyId: actor.agencyId, uid: actor.uid, mode, appId: whatsappAppId(), configId: whatsappConfigId(), expiresAt: Date.now() + 10 * 60 * 1000,
     createdAt: nowIso(), consumed: false,
   });
   return { signupState };
 }
 export async function finishWhatsApp(db: Firestore, actor: Actor, body: unknown) {
+  assertWhatsAppAccess(actor);
   const data = z.object({ code: z.string().min(1), signupState: z.string().regex(/^[a-f0-9]{64}$/), wabaId: z.string().regex(/^\d+$/), phoneNumberId: z.string().regex(/^\d+$/), mode: z.enum(['cloud', 'coexistence']), pin: z.string().regex(/^\d{6}$/).optional() }).parse(body);
   if (data.mode === 'cloud' && !data.pin) throw new CommunicationError('Pentru numărul dedicat setează un PIN din 6 cifre.');
+  seal('preflight'); // Fail before consuming state or mutating Meta if encryption is unavailable.
   const stateRef = db.collection('communicationWhatsAppSignupStates').doc(stableId(data.signupState));
   await db.runTransaction(async tx => {
     const state = await tx.get(stateRef); const value = state.data();
-    if (!value || value.consumed || value.expiresAt < Date.now() || value.uid !== actor.uid || value.agencyId !== actor.agencyId || value.mode !== data.mode) {
+    if (!value || value.consumed || value.expiresAt <= Date.now() || value.uid !== actor.uid || value.agencyId !== actor.agencyId || value.mode !== data.mode || value.appId !== whatsappAppId() || value.configId !== whatsappConfigId()) {
       throw new CommunicationError('Sesiunea de conectare WhatsApp a expirat. Reîncearcă.', 409);
     }
     tx.update(stateRef, { consumed: true, consumedAt: nowIso() });
   });
-  const exchange = await graph<{ access_token: string }>(`/oauth/access_token?client_id=${encodeURIComponent(appId())}&client_secret=${encodeURIComponent(appSecret())}&code=${encodeURIComponent(data.code)}`, '');
+  const exchange = await graph<{ access_token: string }>(`/oauth/access_token?client_id=${encodeURIComponent(whatsappAppId())}&client_secret=${encodeURIComponent(whatsappAppSecret())}&code=${encodeURIComponent(data.code)}`, '');
   const inspection = await graph<{ data: { is_valid?: boolean; app_id?: string; scopes?: string[]; expires_at?: number; granular_scopes?: Array<{ scope: string; target_ids?: string[] }>; user_id?: string } }>(
-    `/debug_token?input_token=${encodeURIComponent(exchange.access_token)}`, `${appId()}|${appSecret()}`);
-  if (!inspection.data.is_valid || inspection.data.app_id !== appId()) throw new CommunicationError('Tokenul WhatsApp nu aparține aplicației IMO Deus.', 403);
+    `/debug_token?input_token=${encodeURIComponent(exchange.access_token)}`, `${whatsappAppId()}|${whatsappAppSecret()}`);
+  if (!inspection.data.is_valid || inspection.data.app_id !== whatsappAppId() || (inspection.data.expires_at && inspection.data.expires_at * 1000 <= Date.now())) throw new CommunicationError('Tokenul WhatsApp nu aparține aplicației IMO Deus.', 403);
   const scopes = new Set(inspection.data.scopes || []);
   if (!scopes.has('whatsapp_business_management') || !scopes.has('whatsapp_business_messaging')) {
     throw new CommunicationError('Autorizarea WhatsApp nu include permisiunile de gestionare și mesagerie.', 403);
@@ -201,15 +204,33 @@ export async function finishWhatsApp(db: Firestore, actor: Actor, body: unknown)
   const managedTargets = inspection.data.granular_scopes?.find(scope => scope.scope === 'whatsapp_business_management')?.target_ids;
   if (managedTargets?.length && !managedTargets.includes(data.wabaId)) throw new CommunicationError('WABA nu este inclus în autorizarea acordată.', 403);
   const waba = await graph<{ id: string; currency?: string }>(`/${data.wabaId}?fields=id,currency`, exchange.access_token);
-  if (waba.id !== data.wabaId || !waba.currency || !/^[A-Z]{3}$/.test(waba.currency)) throw new CommunicationError('Moneda contului WhatsApp nu a putut fi verificată.', 409);
-  const phones = await graph<{ data: Array<{ id: string; display_phone_number: string; verified_name: string }> }>(`/${data.wabaId}/phone_numbers?fields=id,display_phone_number,verified_name`, exchange.access_token);
-  const phone = phones.data.find(p => p.id === data.phoneNumberId);
+  if (waba.id !== data.wabaId) throw new CommunicationError('Contul WhatsApp nu corespunde autorizării.', 403);
+  // Missing billing metadata must not prevent connecting; never infer currency.
+  const currency = typeof waba.currency === 'string' && /^[A-Z]{3}$/.test(waba.currency) ? waba.currency : undefined;
+  const phone = await findWhatsAppPhone(data.wabaId, data.phoneNumberId, exchange.access_token);
   if (!phone) throw new CommunicationError('Numărul nu aparține contului WhatsApp autorizat.', 403);
-  if (data.mode === 'cloud') await graph(`/${phone.id}/register`, exchange.access_token, { messaging_product: 'whatsapp', pin: data.pin });
-  await graph(`/${data.wabaId}/subscribed_apps`, exchange.access_token, {});
-  const row: Connection = { id: stableId(actor.agencyId, 'whatsapp', phone.id), agencyId: actor.agencyId, channel: 'whatsapp', externalId: phone.id, parentId: data.wabaId, currency: waba.currency, name: `${phone.verified_name} · ${phone.display_phone_number}`, mode: data.mode, status: 'connected', updatedAt: nowIso(), capabilities: {
+  if (phone.platform_type === 'ON_PREMISE') throw new CommunicationError('Numărul necesită o migrare explicită; conectarea automată a fost oprită.', 409);
+  if (data.mode === 'coexistence' && phone.is_on_biz_app !== true) throw new CommunicationError('Meta nu a confirmat un număr Business App pentru Coexistence.', 409);
+  if (data.mode === 'cloud' && phone.is_on_biz_app) throw new CommunicationError('Numărul folosește Business App. Reia explicit fluxul Coexistence.', 409);
+  const ownership = db.collection('communicationAccountOwners').doc(stableId('whatsapp', phone.id));
+  // Reserve ownership before external mutations; a partial failure must not transfer the number.
+  await db.runTransaction(async tx => {
+    const owner = await tx.get(ownership);
+    if (owner.exists && owner.data()?.agencyId !== actor.agencyId) throw new CommunicationError('Contul este deja conectat la altă agenție.', 409);
+    tx.set(ownership, { agencyId: actor.agencyId, connectionId: stableId(actor.agencyId, 'whatsapp', phone.id), channel: 'whatsapp', externalId: phone.id });
+  });
+  if (data.mode === 'cloud' && phone.status !== 'CONNECTED') {
+    if (!['PENDING', 'UNREGISTERED', 'DISCONNECTED'].includes(phone.status || '')) throw new CommunicationError('Starea numărului nu permite înregistrarea automată. Verifică numărul în Meta.', 409);
+    const registered = await graph<{ success: boolean }>('/' + phone.id + '/register', exchange.access_token, { messaging_product: 'whatsapp', pin: data.pin });
+    if (registered.success !== true) throw new CommunicationError('Meta nu a confirmat înregistrarea numărului.', 502);
+  }
+  const subscribed = await graph<{ success: boolean }>('/' + data.wabaId + '/subscribed_apps', exchange.access_token, {});
+  if (subscribed.success !== true) throw new CommunicationError('Meta nu a confirmat abonarea WABA.', 502);
+  const row: Connection = { id: stableId(actor.agencyId, 'whatsapp', phone.id), agencyId: actor.agencyId, appId: whatsappAppId(), channel: 'whatsapp', externalId: phone.id, parentId: data.wabaId, ...(currency ? { currency } : {}), name: `${phone.verified_name} · ${phone.display_phone_number}`, mode: data.mode, status: 'connected', updatedAt: nowIso(), capabilities: {
     receive: { status: 'configuration_required', reason: 'Trimite un mesaj de test către număr.' },
-    send: { status: 'active', reason: 'Verificarea eligibilității și costului se face înainte de fiecare trimitere.' },
+    send: currency
+      ? { status: 'active', reason: 'Verificarea eligibilității și costului se face înainte de fiecare trimitere.' }
+      : { status: 'configuration_required', reason: 'Meta nu a furnizat moneda contului WhatsApp. Verifică facturarea în Meta, apoi reconectează numărul pentru reverificare. Trimiterile sunt blocate.' },
     templates: { status: 'active', reason: 'Șabloanele sunt sincronizate din Meta.' },
     nativeSync: { status: data.mode === 'coexistence' ? 'configuration_required' : 'unavailable', reason: data.mode === 'coexistence' ? 'Așteptăm primul răspuns din Business App.' : 'Număr dedicat Cloud API.' },
   } };
@@ -217,6 +238,20 @@ export async function finishWhatsApp(db: Firestore, actor: Actor, body: unknown)
 
   return { connected: true };
 }
-export function onboardingConfig() {
-  return { appId: appId(), version: version(), whatsappConfigId: process.env.META_WHATSAPP_CONFIG_ID || '', whatsappReady: Boolean(process.env.META_WHATSAPP_CONFIG_ID && process.env.WHATSAPP_DIRECT_BILLING_READY === 'true'), searchReady: Boolean(process.env.TYPESENSE_URL && process.env.TYPESENSE_API_KEY) };
+type WhatsAppPhone = { id: string; display_phone_number: string; verified_name: string; status?: string; is_on_biz_app?: boolean; platform_type?: string };
+export async function findWhatsAppPhone(wabaId: string, phoneId: string, token: string): Promise<WhatsAppPhone | undefined> {
+  let after = ''; const seen = new Set<string>();
+  for (let page = 0; page < 100; page++) {
+    const params = new URLSearchParams({ fields: 'id,display_phone_number,verified_name,status,is_on_biz_app,platform_type', limit: '100' });
+    if (after) params.set('after', after);
+    const result = await graph<{ data: WhatsAppPhone[]; paging?: { next?: string; cursors?: { after?: string } } }>('/' + wabaId + '/phone_numbers?' + params, token);
+    const phone = result.data.find(p => p.id === phoneId); if (phone) return phone;
+    const cursor = result.paging?.next && result.paging.cursors?.after;
+    if (!cursor || seen.has(cursor)) return undefined;
+    seen.add(cursor); after = cursor;
+  }
+  throw new CommunicationError('Lista numerelor este prea mare pentru verificare completă.', 409);
+}
+export function onboardingConfig(actor?: Actor) {
+  return { appId: appId(), whatsappAppId: whatsappAppId(), version: version(), whatsappConfigId: whatsappConfigId(), ...whatsappAccess(actor), searchReady: Boolean(process.env.TYPESENSE_URL && process.env.TYPESENSE_API_KEY) };
 }

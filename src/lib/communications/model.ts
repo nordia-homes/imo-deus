@@ -3,7 +3,7 @@ export type Capability = 'publish' | 'receive' | 'send' | 'comments' | 'insights
 export type CapabilityState = { status: 'active' | 'configuration_required' | 'reconnect_required' | 'unavailable'; reason: string };
 export type Connection = {
   id: string; agencyId: string; channel: Channel; externalId: string; name: string;
-  parentId?: string; currency?: string; status: 'connected' | 'disconnected'; capabilities: Partial<Record<Capability, CapabilityState>>;
+  parentId?: string; currency?: string; appId?: string; status: 'connected' | 'disconnected'; capabilities: Partial<Record<Capability, CapabilityState>>;
   updatedAt: string; mode?: 'cloud' | 'coexistence'; lastSyncAt?: string; historyFrom?: string;
 };
 export type Conversation = {

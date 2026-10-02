@@ -1,0 +1,10 @@
+{
+  "apphosting": [
+    {
+      "backendId": "studio",
+      "rootDir": ".",
+      "alwaysDeployFromSource": true,
+      "ignore": ["node_modules", ".git", ".env*", ".tmp", ".next", ".firebase", "functions", "desktop-downloads", "dist-desktop", "desktop-dist-app", "*.log"]
+    }
+  ]
+}

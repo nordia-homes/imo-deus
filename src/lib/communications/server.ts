@@ -5,6 +5,7 @@ import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import { isDemoAgencyId } from '@/lib/demo/guards';
 import { advanceStatus, canReadConversation, type Actor, type Connection, type Conversation, type Message } from './model';
 import { stableId } from './crypto';
+import { correlatedJob } from './receipt-correlation';
 import type { IncomingEvent } from './normalize';
 
 export const nowIso = () => new Date().toISOString();
@@ -103,7 +104,11 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
   const mapping = db.collection('communicationMessageMappings').doc(stableId(connection.id, event.externalId));
   await db.runTransaction(async tx => {
     const map = await tx.get(mapping);
-    const messageId = map.data()?.messageId || stableId(connection.id, event.externalId);
+    const correlationId = event.status && event.channel === 'whatsapp' ? correlatedJob(event.correlation, connection.id) : null;
+    const correlated = correlationId ? await tx.get(db.collection('communicationOutboundJobs').doc(correlationId)) : null;
+    const correlatedData = correlated?.data();
+    const matches = correlatedData && correlatedData.agencyId === connection.agencyId && correlatedData.connectionId === connection.id && correlatedData.conversationId === id && (!correlatedData.externalId || correlatedData.externalId === event.externalId);
+    const messageId = matches ? correlationId! : map.data()?.messageId || stableId(connection.id, event.externalId);
     const messageRef = ref.collection('messages').doc(messageId);
     const [conversationDoc, existing] = await Promise.all([tx.get(ref), tx.get(messageRef)]);
     const current = conversationDoc.data() as Conversation | undefined;
@@ -112,9 +117,14 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
         const status = advanceStatus(existing.data()!.status, event.status);
         const jobRef = db.collection('communicationOutboundJobs').doc(messageId);
         const job = existing.data()?.origin === 'imodeus' ? await tx.get(jobRef) : null;
-        tx.update(messageRef, { status, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
+        tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId }, { merge: true });
+        tx.update(messageRef, { status, externalId: event.externalId, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
         if (job?.exists && ['accepted', 'delivered', 'read', 'failed'].includes(status)) {
-          tx.update(jobRef, { status, externalId: event.externalId, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
+          const previous = job.data()!;
+          const reservationReleased = previous.reservationReleased ?? previous.budgetSettled ?? false;
+          const settledAmountMicros = previous.settledAmountMicros ?? (previous.budgetSettled && ['delivered', 'read'].includes(previous.status) ? previous.estimate?.amount || 0 : 0);
+          tx.update(jobRef, { status, externalId: event.externalId, reservationReleased, settledAmountMicros,
+            budgetSettled: previous.status === status ? Boolean(previous.budgetSettled) : false, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
         }
       }
       else tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId, pendingStatus: advanceStatus(map.data()?.pendingStatus || 'queued', event.status), ...(event.error ? { pendingError: event.error } : {}) }, { merge: true });
@@ -139,7 +149,8 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
     const message: Message = { id: messageId, conversationId: id, agencyId: connection.agencyId, externalId: event.externalId,
       direction: event.direction, origin: event.direction === 'sent' ? 'native' : 'unknown', text: event.text,
       createdAt: event.createdAt, authorId: null, attachments: event.attachments, imported: Boolean(event.imported),
-      status: event.direction === 'sent' ? advanceStatus('accepted', map.data()?.pendingStatus || 'accepted') : 'received' };
+      status: event.direction === 'sent' ? advanceStatus('accepted', map.data()?.pendingStatus || 'accepted') : 'received',
+      ...(event.direction === 'sent' && map.data()?.pendingStatus === 'failed' && map.data()?.pendingError ? { error: map.data()!.pendingError } : {}) };
     tx.set(ref, { ...row, accessUids: [...new Set([row.assigneeId, ...row.collaboratorIds].filter(Boolean))] }, { merge: true });
     tx.create(messageRef, message);
     tx.set(mapping, { messageId, conversationId: id, connectionId: connection.id }, { merge: true });

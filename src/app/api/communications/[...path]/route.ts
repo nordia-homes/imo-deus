@@ -7,21 +7,22 @@ import { searchMessages } from '@/lib/communications/search';
 import { commentInteraction, createSocialPost, diagnoseSocialPost, postInteraction, propertyImageUrls, publishDraft, removePublishedSocialPost } from '@/lib/communications/social';
 import { stableId } from '@/lib/communications/crypto';
 import { syncConversation } from '@/lib/communications/sync';
-import { bodyParameterCount, listWhatsAppTemplates } from '@/lib/communications/templates';
+import { bodyParameterCount, listWhatsAppTemplates, createWhatsAppTemplate } from '@/lib/communications/templates';
+import { assertWhatsAppAccess, whatsappAppId } from '@/lib/communications/whatsapp-config';
 export const runtime = 'nodejs';
 type RouteContext = { params: Promise<{ path: string[] }> };
 async function handle(request: NextRequest, route: RouteContext) {
   try {
     const { path } = await route.params; const [resource, id, action, commentId, commentAction] = path;
     const isRead = request.method === 'GET';
-    const admin = ['connect', 'assets', 'whatsapp', 'budget', 'posts', 'migrate', 'consent'].includes(resource) || (resource === 'connections' && !isRead);
+    const admin = ['connect', 'assets', 'whatsapp', 'budget', 'posts', 'migrate', 'consent'].includes(resource) || (['connections', 'templates'].includes(resource) && !isRead);
     const actor = await context(request, admin); const db = actor.adminDb;
     const body = isRead ? null : await request.json();
     const params = request.nextUrl.searchParams;
     let result: unknown;
     if (resource === 'dashboard' && isRead) {
       const [connections, budgets] = await Promise.all([connectionList(db, actor.agencyId), agencyCollection(db, actor.agencyId, 'communicationBudgets').get()]);
-      result = { connections, budgets: budgets.docs.map(d => ({ id: d.id, ...d.data() })), config: onboardingConfig(), admin: actor.role === 'admin' };
+      result = { connections, budgets: budgets.docs.map(d => ({ id: d.id, ...d.data() })), config: onboardingConfig(actor), admin: actor.role === 'admin' };
     } else if (resource === 'conversations' && isRead && !id) result = await listConversations(db, actor, params);
     else if (resource === 'conversations' && request.method === 'POST' && !id) result = await startContactConversation(db, actor, body);
     else if (resource === 'conversations' && id && isRead && action === 'messages') result = await listMessages(db, actor, id, params.get('cursor'), params.get('target'));
@@ -38,8 +39,12 @@ async function handle(request: NextRequest, route: RouteContext) {
     else if (resource === 'assets' && request.method === 'POST') result = await selectPage(db, actor, body.pageId);
     else if (resource === 'whatsapp' && request.method === 'POST' && id === 'start') result = await startWhatsAppSignup(db, actor, body);
     else if (resource === 'whatsapp' && request.method === 'POST' && !id) {
-      if (!onboardingConfig().whatsappReady) throw new CommunicationError('Onboardingul WhatsApp și plata directă trebuie configurate pe server.', 503);
       result = await finishWhatsApp(db, actor, body);
+    } else if (resource === 'templates' && id && request.method === 'POST') {
+      assertWhatsAppAccess(actor);
+      const { connection, token } = await connectionToken(db, actor, id, 'templates');
+      if (connection.channel !== 'whatsapp' || connection.appId !== whatsappAppId()) throw new CommunicationError('Reconectează numărul la aplicația WhatsApp curentă.', 409);
+      result = await createWhatsAppTemplate(connection.parentId || '', token, body);
     } else if (resource === 'templates' && id && isRead) {
       const { connection, token } = await connectionToken(db, actor, id, 'templates');
       const templates = await listWhatsAppTemplates(connection.parentId || '', token);

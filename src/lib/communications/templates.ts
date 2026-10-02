@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { CommunicationError } from './server';
 import { graph } from './meta';
 
@@ -8,6 +9,9 @@ export type WhatsAppTemplate = {
 
 export function bodyParameterCount(template: WhatsAppTemplate): number | null {
   const components = template.components || [];
+  // This editor only supports positional BODY variables and static text/buttons.
+  if (components.some(c => /{{(?!\d+}})/.test(c.text || '') || !['BODY', 'HEADER', 'FOOTER', 'BUTTONS'].includes(c.type.toUpperCase()))) return null;
+  if (components.some(c => c.type.toUpperCase() === 'BUTTONS' && c.buttons?.some(b => !['URL', 'PHONE_NUMBER', 'QUICK_REPLY'].includes(b.type.toUpperCase()) || /{{/.test(b.url || '')))) return null;
   for (const component of components) {
     const type = component.type.toUpperCase();
     if (type === 'HEADER' && (component.format?.toUpperCase() !== 'TEXT' || /{{\d+}}/.test(component.text || ''))) return null;
@@ -17,7 +21,7 @@ export function bodyParameterCount(template: WhatsAppTemplate): number | null {
   if (!body) return 0;
   const indexes = [...(body.text || '').matchAll(/{{(\d+)}}/g)].map(match => Number(match[1]));
   const count = Math.max(0, ...indexes);
-  return indexes.every(index => index >= 1 && index <= count) ? count : null;
+  return indexes.every(index => index >= 1) && new Set(indexes).size === count ? count : null;
 }
 
 export function renderTemplateBody(template: WhatsAppTemplate, parameters: string[]): string {
@@ -40,4 +44,19 @@ export async function listWhatsAppTemplates(wabaId: string, token: string, name?
     cursors.add(next); after = next;
   }
   throw new CommunicationError('Lista șabloanelor este prea mare pentru verificare completă.', 409);
+}
+
+export const templateCreationSchema = z.object({
+  name: z.string().regex(/^[a-z][a-z0-9_]{1,99}$/),
+  language: z.enum(['ro', 'en_US']),
+  category: z.enum(['UTILITY', 'MARKETING']),
+  body: z.string().trim().min(1).max(1024).refine(v => !/[{}]/.test(v), 'Acest formular creează șabloane text fără variabile.'),
+});
+export async function createWhatsAppTemplate(wabaId: string, token: string, body: unknown) {
+  if (!/^\d+$/.test(wabaId)) throw new CommunicationError('WABA invalid.');
+  const input = templateCreationSchema.parse(body);
+  const result = await graph<{ id?: string; status?: string; category?: string }>('/' + wabaId + '/message_templates', token,
+    { name: input.name, language: input.language, category: input.category, components: [{ type: 'BODY', text: input.body }] });
+  if (!result.id) throw new CommunicationError('Meta nu a confirmat crearea șablonului.', 502);
+  return { id: result.id, status: result.status || 'PENDING', category: result.category || input.category };
 }

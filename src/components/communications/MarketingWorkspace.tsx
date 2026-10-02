@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Facebook, Instagram, LayoutDashboard, PenLine, CalendarDays, RefreshCw, MessageCircle } from 'lucide-react';
 import { MetaIcon } from '@/components/icons/MetaIcon';
+import WhatsAppTemplates from './WhatsAppTemplates';
 import SocialPostStudio, { type SocialPropertySummary } from './SocialPostStudio';
 import SocialPostHistory, { type SocialPostRecord } from './SocialPostHistory';
 import SocialPostInteractions from './SocialPostInteractions';
@@ -13,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import type { Connection } from '@/lib/communications/model';
 import { useCommunications } from './useCommunications';
 type FBSDK = { init: (config: Record<string, unknown>) => void; login: (callback: (response: { authResponse?: { code?: string } }) => void, options: Record<string, unknown>) => void };
-type Dashboard = { connections: Connection[]; budgets: Array<{ id: string; currency: string; limitMicros?: number; spentMicros?: number; reservedMicros?: number }>; config: { appId: string; version: string; whatsappConfigId: string; whatsappReady: boolean; searchReady: boolean }; admin: boolean };
+type Dashboard = { connections: Connection[]; budgets: Array<{ id: string; currency: string; limitMicros?: number; spentMicros?: number; reservedMicros?: number }>; config: { appId: string; whatsappAppId: string; version: string; whatsappConfigId: string; whatsappReady: boolean; whatsappConfigured: boolean; whatsappProductionReady: boolean; whatsappTestMode: boolean; searchReady: boolean }; admin: boolean };
 const field = 'w-full rounded-lg border border-slate-200 bg-white p-2 text-sm';
 const capabilityLabels: Record<string, string> = { publish: 'Publicare', receive: 'Primire mesaje', send: 'Trimitere mesaje', nativeSync: 'Sincronizare externă', templates: 'Șabloane', comments: 'Comentarii', insights: 'Statistici' };
 const statusLabels: Record<string, string> = { active: 'Activ', configuration_required: 'Necesită configurare', reconnect_required: 'Necesită reconectare', unavailable: 'Indisponibil' };
@@ -25,9 +26,10 @@ export default function MarketingWorkspace({ whatsapp = false }: { whatsapp?: bo
   const [property, setProperty] = useState('');
   const [budget, setBudget] = useState(''); const [currency, setCurrency] = useState('EUR');
   const [templates, setTemplates] = useState<Array<{ name: string; language: string; category: string; status: string; sendable?: boolean }>>([]);
-  const [mode, setMode] = useState('coexistence');
+  const [mode, setMode] = useState('cloud');
+  const [signupBusy, setSignupBusy] = useState(false); const [signupPrepared, setSignupPrepared] = useState(false);
   const [pin, setPin] = useState('');
-  const signup = useRef<{ wabaId?: string; phoneNumberId?: string; code?: string; signupState?: string; active?: boolean }>({});
+  const signup = useRef<{ wabaId?: string; phoneNumberId?: string; code?: string; signupState?: string; active?: boolean; mode?: string; pin?: string; attempt?: string }>({});
   const load = useCallback(async () => {
     const value = await api('dashboard'); setData(value);
     if (!whatsapp && value.admin) { const [assets, props, history] = await Promise.all([api('assets'), api('properties'), api('posts')]); setPages(assets.pages); setProperties(props.properties); setPosts(history.posts); setHistoryUpdatedAt(new Date()); }
@@ -47,34 +49,62 @@ export default function MarketingWorkspace({ whatsapp = false }: { whatsapp?: bo
   }, [tab, whatsapp, refreshHistory]);
 
   async function act(fn: () => Promise<unknown>) { setBusy(true); setError(''); setNotice(''); try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : 'Operația a eșuat.'); } finally { setBusy(false); } }
+  const cancelSignup = useCallback(() => { signup.current = {}; setSignupBusy(false); setSignupPrepared(false); }, []);
   const complete = useCallback(async () => {
-    const s = signup.current;
-    if (!s.active || !s.code || !s.signupState || !s.wabaId || !s.phoneNumberId) return;
-    signup.current = {};
-    try { await api('whatsapp', 'POST', { code: s.code, signupState: s.signupState, wabaId: s.wabaId, phoneNumberId: s.phoneNumberId, mode, ...(mode === 'cloud' ? { pin } : {}) }); setPin(''); setNotice('Numărul a fost conectat. Trimite un mesaj de test pentru verificarea recepției.'); await load(); } catch (e) { setError(e instanceof Error ? e.message : 'Conectarea a eșuat.'); }
-  }, [api, load, mode, pin]);
+    const session = signup.current;
+    if (!session.active || !session.code || !session.signupState || !session.wabaId || !session.phoneNumberId) return;
+    session.active = false; setSignupPrepared(false);
+    try {
+      await api('whatsapp', 'POST', { code: session.code, signupState: session.signupState, wabaId: session.wabaId, phoneNumberId: session.phoneNumberId, mode: session.mode, ...(session.mode === 'cloud' ? { pin: session.pin } : {}) });
+      setPin(''); setNotice('Numărul a fost conectat. Trimite un mesaj de test pentru verificarea recepției.'); await load();
+    } catch(e) { setError(e instanceof Error ? e.message : 'Conectarea a eșuat.'); }
+    finally { if(signup.current === session) cancelSignup(); }
+  }, [api, load, cancelSignup]);
   useEffect(() => {
     const listener = (event: MessageEvent) => {
       if (!['https://www.facebook.com', 'https://web.facebook.com'].includes(event.origin) || !signup.current.active) return;
       try {
         const payload = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-        if (payload.type !== 'WA_EMBEDDED_SIGNUP') return;
-        if (payload.event === 'CANCEL' || payload.event === 'ERROR') { signup.current = {}; setError('Conectarea WhatsApp nu a fost finalizată.'); return; }
-        if (payload.data?.waba_id && payload.data?.phone_number_id) { signup.current.wabaId = payload.data.waba_id; signup.current.phoneNumberId = payload.data.phone_number_id; void complete(); }
-      } catch { /* Ignore messages that are not signup payloads. */ }
+        if (payload?.type !== 'WA_EMBEDDED_SIGNUP') return;
+        if (payload.event === 'CANCEL' || payload.event === 'ERROR') { cancelSignup(); setError('Conectarea WhatsApp nu a fost finalizată.'); return; }
+        if (!['FINISH', 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING'].includes(payload.event)) return;
+        if (!/^\d+$/.test(String(payload.data?.waba_id || '')) || !/^\d+$/.test(String(payload.data?.phone_number_id || ''))) { cancelSignup(); setError('Meta nu a returnat contul și numărul. Reia conectarea.'); return; }
+        signup.current.wabaId = String(payload.data.waba_id); signup.current.phoneNumberId = String(payload.data.phone_number_id); void complete();
+      } catch { /* Ignore unrelated browser messages. */ }
     };
     window.addEventListener('message', listener); return () => window.removeEventListener('message', listener);
-  }, [complete]);
+  }, [complete, cancelSignup]);
+  useEffect(() => { if (!signupBusy) return; const timer = window.setTimeout(() => { cancelSignup(); setError('Sesiunea WhatsApp a expirat. Reia conectarea.'); }, 9 * 60000); return () => window.clearTimeout(timer); }, [signupBusy, cancelSignup]);
   async function connectWhatsApp() {
-    if (!data?.config.whatsappReady) throw new Error('Configurarea WhatsApp și plata directă nu sunt activate pe server.');
+    if (!data?.config.whatsappReady || signupBusy) return;
     if (mode === 'cloud' && !/^\d{6}$/.test(pin)) throw new Error('Setează un PIN din 6 cifre pentru numărul dedicat.');
-    const win = window as unknown as { FB?: FBSDK };
-    if (!win.FB) await new Promise<void>((resolve, reject) => { const script = document.createElement('script'); script.src = 'https://connect.facebook.net/en_US/sdk.js'; script.onload = () => resolve(); script.onerror = () => reject(new Error('SDK-ul Meta nu a putut fi încărcat.')); document.head.appendChild(script); });
-    win.FB!.init({ appId: data.config.appId, version: data.config.version, xfbml: false });
-    const { signupState } = await api('whatsapp/start', 'POST', { mode });
-    signup.current = { active: true, signupState };
-    win.FB!.login(response => { if (response.authResponse?.code) { signup.current.code = response.authResponse.code; void complete(); } else { signup.current = {}; setError('Conectarea a fost anulată.'); } }, { config_id: data.config.whatsappConfigId, response_type: 'code', override_default_response_type: true, extras: { sessionInfoVersion: '3', ...(mode === 'coexistence' ? { featureType: 'whatsapp_business_app_onboarding' } : {}) } });
+    const session = { mode, pin, attempt: crypto.randomUUID() } as typeof signup.current;
+    signup.current = session; setSignupBusy(true);
+    try {
+      const win = window as unknown as { FB?: FBSDK };
+      if (!win.FB) await new Promise<void>((resolve, reject) => { const script = document.createElement('script'); script.src = 'https://connect.facebook.net/en_US/sdk.js'; script.onload = () => resolve(); script.onerror = () => reject(new Error('SDK-ul Meta nu a putut fi încărcat.')); document.head.appendChild(script); });
+      if (!win.FB) throw new Error('SDK-ul Meta nu este disponibil.');
+      if (signup.current !== session) return;
+      win.FB.init({ appId: data.config.whatsappAppId, version: data.config.version, xfbml: false });
+      const { signupState } = await api('whatsapp/start', 'POST', { mode });
+      if (signup.current !== session) return;
+      session.signupState = signupState; setSignupPrepared(true);
+    } catch(e) { if (signup.current === session) { cancelSignup(); throw e; } }
   }
+  function launchWhatsApp() {
+    const session = signup.current;
+    if (!signupPrepared || !session.signupState || !data) return;
+    session.active = true; setSignupPrepared(false);
+    // Launch synchronously from this explicit click to preserve browser popup activation.
+    const win = window as unknown as { FB: FBSDK };
+    try { win.FB.login(response => {
+      if (signup.current !== session || !session.active) return;
+      if (response.authResponse?.code) { session.code = response.authResponse.code; void complete(); }
+      else { cancelSignup(); setError('Conectarea a fost anulată.'); }
+    }, { config_id: data.config.whatsappConfigId, response_type: 'code', override_default_response_type: true, extras: { version: 'v4', sessionInfoVersion: '3', ...(session.mode === 'coexistence' ? { featureType: 'whatsapp_business_app_onboarding' } : {}) } });
+    } catch(e) { cancelSignup(); setError(e instanceof Error ? e.message : 'Fereastra Meta nu a putut fi deschisă.'); }
+  }
+  useEffect(() => () => { signup.current = {}; }, []);
   const connections = data?.connections.filter(c => whatsapp ? c.channel === 'whatsapp' : ['messenger', 'instagram'].includes(c.channel)) || [];
   const tabs = whatsapp ? [['accounts', 'Numere'], ['templates', 'Șabloane'], ['budget', 'Consum']] : [['accounts', 'Conturi'], ['compose', 'Creează postare'], ['history', 'Calendar și istoric']];
   return <div className={whatsapp ? "min-h-screen bg-slate-50 p-4 text-slate-900 lg:p-7" : "tt-design tt-workspace mi-workspace"}>
@@ -84,13 +114,13 @@ export default function MarketingWorkspace({ whatsapp = false }: { whatsapp?: bo
     </>}
     {error && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-amber-900">{error}</p>}{notice && <p role="status" className="mb-4 rounded-lg bg-emerald-50 p-3">{notice}</p>}
     <nav aria-label="Sectiuni marketing" className={whatsapp ? "mb-5 flex flex-wrap gap-2" : "tt-nav mi-nav"}>{tabs.map(([id,label]) => <Button key={id} className={whatsapp ? undefined : "tt-button"} variant={tab === id ? "default" : whatsapp ? "outline" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => setTab(id)}>{!whatsapp && (id === "accounts" ? <LayoutDashboard size={16} /> : id === "compose" ? <PenLine size={16} /> : <CalendarDays size={16} />)}{label}</Button>)}</nav>
-    {tab === 'accounts' && <div className={whatsapp ? "space-y-4" : "mi-account-layout"}><section className={whatsapp ? "rounded-xl border bg-white p-5" : "tt-panel mi-connect-panel"}><h2 className="mb-3 text-lg font-semibold">Conectează contul agenției</h2>{whatsapp ? <><select className={field} value={mode} onChange={e => setMode(e.target.value)}><option value="coexistence">Număr existent în WhatsApp Business App</option><option value="cloud">Număr dedicat Cloud API</option></select>{mode === 'cloud' && <Input className="mt-3" type="password" inputMode="numeric" maxLength={6} value={pin} onChange={e => setPin(e.target.value)} aria-label="PIN de securitate din 6 cifre" placeholder="Setează PIN-ul din 6 cifre pentru numărul dedicat"/>}<p className="my-3 text-sm text-slate-500">Pentru numărul existent folosim Coexistence. Dacă nu este eligibil, poți conecta un număr dedicat; contul existent nu este migrat automat.</p><Button disabled={busy || !data?.admin || !data?.config.whatsappReady} onClick={() => act(connectWhatsApp)}>Conectează WhatsApp</Button>{!data?.config.whatsappReady && <p className="mt-2 text-sm text-amber-800">Necesită configurarea Embedded Signup și a plății directe către Meta.</p>}</> : <><div className="mi-feature-list">{[['publish','Publicare'],['messaging','Mesagerie'],['comments','Comentarii'],['insights','Statistici']].map(([id,label]) => <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={features.includes(id)} onChange={e => setFeatures(prev => e.target.checked ? [...prev,id] : prev.filter(f => f !== id))}/>{label}</label>)}</div><Button disabled={busy || !data?.admin || !features.length} onClick={() => act(async () => { const value = await api('connect', 'POST', { features }); window.location.assign(value.authorizationUrl); })}>Conectează Facebook + Instagram</Button><div className="mi-page-list">{pages.map(page => <div key={page.id} className="flex items-center justify-between gap-3 rounded-lg border p-3"><span>{page.name}</span><Button variant="outline" disabled={busy} onClick={() => act(async () => { await api('assets','POST',{pageId:page.id}); await load(); })}>Selectează pagina</Button></div>)}</div></>}</section>
+    {tab === 'accounts' && <div className={whatsapp ? "space-y-4" : "mi-account-layout"}><section className={whatsapp ? "rounded-xl border bg-white p-5" : "tt-panel mi-connect-panel"}><h2 className="mb-3 text-lg font-semibold">Conectează contul agenției</h2>{whatsapp ? <><select disabled={signupBusy} className={field} value={mode} onChange={e => setMode(e.target.value)}><option value="coexistence">Număr existent în WhatsApp Business App</option><option value="cloud">Număr dedicat Cloud API</option></select>{mode === 'cloud' && <Input className="mt-3" disabled={signupBusy} type="password" inputMode="numeric" maxLength={6} value={pin} onChange={e => setPin(e.target.value)} aria-label="PIN de securitate din 6 cifre" placeholder="Setează PIN-ul din 6 cifre pentru numărul dedicat"/>}<p className="my-3 text-sm text-slate-500">Pentru numărul existent folosim Coexistence. Dacă nu este eligibil, poți conecta un număr dedicat; contul existent nu este migrat automat.</p><Button disabled={busy || signupBusy || !data?.admin || !data?.config.whatsappReady} onClick={() => act(connectWhatsApp)}>Conectează WhatsApp</Button>{signupPrepared && <Button className="ml-2" onClick={launchWhatsApp}>Deschide fereastra Meta</Button>}{signupBusy && <Button variant="outline" className="ml-2" onClick={cancelSignup}>Anulează conectarea</Button>}{data?.config.whatsappTestMode && <p className="mt-2 text-sm text-amber-800">Mod test Meta – disponibil doar utilizatorilor autorizați ai aplicației.</p>}{!data?.config.whatsappReady && <p className="mt-2 text-sm text-amber-800">Conectarea necesită configurația WhatsApp și autorizarea contului pentru pilot.</p>}</> : <><div className="mi-feature-list">{[['publish','Publicare'],['messaging','Mesagerie'],['comments','Comentarii'],['insights','Statistici']].map(([id,label]) => <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={features.includes(id)} onChange={e => setFeatures(prev => e.target.checked ? [...prev,id] : prev.filter(f => f !== id))}/>{label}</label>)}</div><Button disabled={busy || !data?.admin || !features.length} onClick={() => act(async () => { const value = await api('connect', 'POST', { features }); window.location.assign(value.authorizationUrl); })}>Conectează Facebook + Instagram</Button><div className="mi-page-list">{pages.map(page => <div key={page.id} className="flex items-center justify-between gap-3 rounded-lg border p-3"><span>{page.name}</span><Button variant="outline" disabled={busy} onClick={() => act(async () => { await api('assets','POST',{pageId:page.id}); await load(); })}>Selectează pagina</Button></div>)}</div></>}</section>
       {!connections.length && <div className="tt-panel mi-empty">Nu există conturi conectate.</div>}{connections.map(c => <section key={c.id} className={whatsapp ? "rounded-xl border bg-white p-5" : "tt-panel mi-connection"}><div className="flex items-center justify-between mi-connection-header"><div className="mi-connection-identity"><span className={"mi-account-icon mi-account-icon--" + c.channel}>{c.channel === "instagram" ? <Instagram size={22} /> : <Facebook size={22} />}</span><div><h3 className="font-semibold">{c.name}</h3><p className="text-xs text-slate-500">{c.channel} · {c.status === 'connected' ? 'Conectat' : 'Deconectat'}{c.lastSyncAt ? ` · Sincronizat ${new Date(c.lastSyncAt).toLocaleString('ro-RO')}` : ''}</p></div></div>{data?.admin && c.status === 'connected' && <Button variant="outline" disabled={busy} onClick={() => act(async () => { await api(`connections/${c.id}`, 'DELETE', {}); await load(); })}>Deconectează</Button>}</div><div className={whatsapp ? "mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "mi-capability-grid"}>{Object.entries(c.capabilities).map(([key,value]) => <div key={key} className="rounded-lg bg-slate-50 p-3"><strong className="text-sm">{capabilityLabels[key] || key}</strong><p className={`text-sm ${value.status === 'active' ? 'text-emerald-700' : 'text-amber-800'}`}>{statusLabels[value.status]}</p><p className="mt-1 text-xs text-slate-500">{value.reason}</p></div>)}</div></section>)}</div>}
     {tab === 'compose' && <SocialPostStudio properties={properties} connections={connections} initialPropertyId={property} admin={Boolean(data?.admin)} api={api} onSaved={async () => { await load(); setNotice('Postarea a fost salvată. Verifică statusul în Calendar și istoric.'); setTab('history'); }} />}
     {tab === 'history' && <SocialPostHistory posts={posts} connections={connections} refreshing={historyRefreshing} lastUpdated={historyUpdatedAt} refresh={() => void refreshHistory()} busy={busy} publishDraft={id => void act(async () => { await api('posts/' + id + '/publish', 'POST', {}); await refreshHistory(); })} cancel={id => void act(async () => { await api('posts/' + id, 'DELETE', {}); await refreshHistory(); })} deleteFacebook={(postId, connectionId) => { if (!window.confirm('Ștergi definitiv postarea de pe pagina Facebook? Această acțiune nu poate fi anulată.')) return; void act(async () => { await api('posts/' + postId + '/destinations/' + connectionId, 'DELETE', {}); await refreshHistory(); }); }} markRemoved={(postId, connectionId) => { if (!window.confirm('Confirmi că postarea este deja ștearsă din Facebook sau Instagram? Aici se actualizează doar istoricul, fără ștergere pe Meta.')) return; void act(async () => { await api('posts/' + postId + '/destinations/' + connectionId + '/removed', 'POST', {}); await refreshHistory(); }); }} />}
     {tab === 'history' && <SocialPostInteractions posts={posts} connections={connections} api={api} />}
-    {tab === 'templates' && <section className="rounded-xl border bg-white p-5"><h2 className="mb-3 text-lg font-semibold">Șabloane aprobate în Meta</h2><div className="mb-4 flex gap-2">{connections.filter(c => c.status === 'connected').map(c => <Button key={c.id} variant="outline" disabled={busy} onClick={() => act(async () => { const value = await api(`templates/${c.id}`); setTemplates(value.data || []); })}>{c.name}</Button>)}</div>{templates.map(t => <div key={`${t.name}-${t.language}`} className="border-t py-3"><strong>{t.name}</strong><p className="text-sm text-slate-500">{t.language} · {t.category} · {t.status}{t.sendable === false ? " · necesită componente care nu sunt suportate în editor" : ""}</p></div>)}<a className="mt-4 block text-sm text-emerald-700" href="https://business.facebook.com/wa/manage/message-templates/" target="_blank" rel="noreferrer">Gestionează șabloanele în Meta</a></section>}
-    {tab === 'budget' && <section className="max-w-3xl space-y-4 rounded-xl border bg-white p-5"><h2 className="text-lg font-semibold">Consum și plafon lunar</h2><p className="text-sm text-slate-500">Meta facturează direct agenției. Plafonul controlează trimiterile din ImoDeus; factura poate include și trafic din alte aplicații. Sumele sunt estimări, nu facturi.</p>{data?.budgets.map(b => <div key={b.id} className="rounded-lg bg-slate-50 p-3"><strong>{b.id}</strong><p className="text-sm">Plafon: {((b.limitMicros || 0)/1e6).toFixed(2)} · Consumat estimat: {((b.spentMicros || 0)/1e6).toFixed(4)} · Rezervat: {((b.reservedMicros || 0)/1e6).toFixed(4)} {b.currency}</p>{(b.limitMicros || 0) > 0 && ((b.spentMicros || 0)+(b.reservedMicros || 0))/(b.limitMicros || 1) >= .8 && <p className="text-sm text-amber-700">Plafonul este aproape epuizat.</p>}</div>)}<div className="flex gap-2"><Input aria-label="Plafon lunar" type="number" min="0" step="0.01" value={budget} onChange={e => setBudget(e.target.value)} placeholder="Plafon lunar"/><select aria-label="Monedă" className={field} value={currency} onChange={e => setCurrency(e.target.value)}><option>EUR</option><option>RON</option><option>USD</option></select><Button disabled={busy || !data?.admin || budget === ''} onClick={() => act(async () => { await api('budget', 'POST', {limitMicros: Math.round(Number(budget)*1e6),currency}); await load(); setNotice('Plafonul lunii curente a fost salvat.'); })}>Salvează</Button></div><p className="text-xs text-slate-500">Recepția rămâne activă când plafonul este epuizat. Un tarif neconfigurat blochează trimiterile potențial taxabile.</p></section>}
+    {tab === 'templates' && <WhatsAppTemplates connections={connections} allowed={Boolean(data?.admin && data?.config.whatsappReady)} />}
+    {tab === 'budget' && <section className="max-w-3xl space-y-4 rounded-xl border bg-white p-5"><h2 className="text-lg font-semibold">Consum și plafon lunar</h2><p className="text-sm text-slate-500">Facturarea se verifică în contul Meta al agenției. Plafonul controlează trimiterile din ImoDeus; factura poate include și trafic din alte aplicații. Sumele sunt estimări, nu facturi.</p>{data?.budgets.map(b => <div key={b.id} className="rounded-lg bg-slate-50 p-3"><strong>{b.id}</strong><p className="text-sm">Plafon: {((b.limitMicros || 0)/1e6).toFixed(2)} · Consumat estimat: {((b.spentMicros || 0)/1e6).toFixed(4)} · Rezervat: {((b.reservedMicros || 0)/1e6).toFixed(4)} {b.currency}</p>{(b.limitMicros || 0) > 0 && ((b.spentMicros || 0)+(b.reservedMicros || 0))/(b.limitMicros || 1) >= .8 && <p className="text-sm text-amber-700">Plafonul este aproape epuizat.</p>}</div>)}<div className="flex gap-2"><Input aria-label="Plafon lunar" type="number" min="0" step="0.01" value={budget} onChange={e => setBudget(e.target.value)} placeholder="Plafon lunar"/><select aria-label="Monedă" className={field} value={currency} onChange={e => setCurrency(e.target.value)}><option>EUR</option><option>RON</option><option>USD</option></select><Button disabled={busy || !data?.admin || budget === ''} onClick={() => act(async () => { await api('budget', 'POST', {limitMicros: Math.round(Number(budget)*1e6),currency}); await load(); setNotice('Plafonul lunii curente a fost salvat.'); })}>Salvează</Button></div><p className="text-xs text-slate-500">Recepția rămâne activă când plafonul este epuizat. Un tarif neconfigurat blochează trimiterile potențial taxabile.</p></section>}
   </div>;
 }
 

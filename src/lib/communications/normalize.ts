@@ -3,11 +3,12 @@ type ObjectValue = Record<string, any>; // Provider payloads are validated field
 export type IncomingEvent = {
   channel: Channel; accountId: string; participantId: string; externalId: string;
   text: string; name?: string; direction: 'received' | 'sent'; createdAt: string;
-  attachments: Message['attachments']; status?: Message['status']; error?: string; imported?: boolean; nativeEcho?: boolean; socialEcho?: boolean; sourceAppId?: string;
+  attachments: Message['attachments']; status?: Message['status']; error?: string; imported?: boolean; nativeEcho?: boolean; socialEcho?: boolean; sourceAppId?: string; correlation?: string;
 };
 function time(value: unknown, milliseconds = false) {
   const number = Number(value) * (milliseconds ? 1 : 1000);
-  return Number.isFinite(number) && number > 0 ? new Date(number).toISOString() : new Date().toISOString();
+  if (!Number.isFinite(number) || number <= 0 || !Number.isFinite(new Date(number).getTime())) throw new Error('Timestamp webhook invalid.');
+  return new Date(number).toISOString();
 }
 function waMessage(message: ObjectValue, accountId: string, imported = false, echo = false): IncomingEvent | null {
   if (typeof message.id !== 'string') return null;
@@ -36,7 +37,7 @@ export function normalizeWebhook(payload: ObjectValue): IncomingEvent[] {
         if (!['sent', 'delivered', 'read', 'failed'].includes(status.status) || !status.id || !status.recipient_id) continue;
         const failure = status.status === 'failed' ? status.errors?.[0] : null;
         const error = failure ? [failure.code, failure.title || failure.message].filter(Boolean).join(': ').slice(0, 500) : undefined;
-        result.push({ channel: 'whatsapp', accountId: account, participantId: String(status.recipient_id), externalId: String(status.id), text: '', direction: 'sent', createdAt: time(status.timestamp), attachments: [], status: status.status === 'sent' ? 'accepted' : status.status, ...(error ? { error } : {}) });
+        result.push({ channel: 'whatsapp', accountId: account, participantId: String(status.recipient_id), externalId: String(status.id), text: '', direction: 'sent', createdAt: time(status.timestamp), attachments: [], status: status.status === 'sent' ? 'accepted' : status.status, ...(error ? { error } : {}), ...(typeof status.biz_opaque_callback_data === 'string' ? { correlation: status.biz_opaque_callback_data } : {}) });
       }
       for (const history of value.history || []) for (const thread of history.threads || []) for (const message of thread.messages || []) {
         const echo = message.from !== thread.id;
@@ -68,4 +69,30 @@ export function isExternalSocialEcho(event: IncomingEvent, appId: string, mapped
   if (mappedOrigin === 'imodeus') return false;
   if (event.sourceAppId && appId) return event.sourceAppId !== appId;
   return !possibleOutgoing;
+}
+
+// Split provider batches so one malformed message cannot hide later messages or STOP.
+export function normalizeWebhookSafely(payload: unknown): { events: IncomingEvent[]; errors: string[] } {
+  const events: IncomingEvent[] = []; const errors: string[] = [];
+  const parse = (part: ObjectValue) => { try { events.push(...normalizeWebhook(part)); } catch { errors.push('Eveniment webhook invalid.'); } };
+  if (!payload || typeof payload !== 'object' || !Array.isArray((payload as ObjectValue).entry)) return { events, errors: ['Structură webhook invalidă.'] };
+  const p = payload as ObjectValue;
+  for (const entry of p.entry) {
+    if (!entry || typeof entry !== 'object') { errors.push('Intrare webhook invalidă.'); continue; }
+    if (Array.isArray(entry.messaging)) for (const item of entry.messaging) parse({ object: p.object, entry: [{ id: entry.id, messaging: [item] }] });
+    if (Array.isArray(entry.changes)) for (const change of entry.changes) {
+      const value = change?.value;
+      if (!value || typeof value !== 'object') { errors.push('Valoare webhook invalidă.'); continue; }
+      for (const key of ['messages', 'message_echoes', 'statuses', 'history']) {
+        if (value[key] === undefined) continue;
+        if (!Array.isArray(value[key])) { errors.push('Listă webhook invalidă.'); continue; }
+        for (const item of value[key]) {
+          const single: ObjectValue = { metadata: value.metadata, contacts: Array.isArray(value.contacts) ? value.contacts : [], [key]: [item] };
+          if (!single.metadata?.phone_number_id) { errors.push('Identificatorul numărului lipsește din webhook.'); continue; }
+          parse({ object: p.object, entry: [{ id: entry.id, changes: [{ field: change.field, value: single }] }] });
+        }
+      }
+    }
+  }
+  return { events, errors };
 }

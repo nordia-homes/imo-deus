@@ -89,6 +89,36 @@ env:
     availability:
       - RUNTIME
 
+  - variable: META_WHATSAPP_APP_ID
+    value: "2339244290179735"
+    availability:
+      - RUNTIME
+
+  - variable: META_WHATSAPP_APP_SECRET
+    secret: META_WHATSAPP_APP_SECRET
+    availability:
+      - RUNTIME
+
+  - variable: META_WHATSAPP_CONFIG_ID
+    value: "1401889672012663"
+    availability:
+      - RUNTIME
+
+  - variable: WHATSAPP_ONBOARDING_MODE
+    value: "test"
+    availability:
+      - RUNTIME
+
+  - variable: WHATSAPP_TEST_USER_IDS
+    secret: WHATSAPP_TEST_USER_IDS
+    availability:
+      - RUNTIME
+
+  - variable: WHATSAPP_TEST_RECIPIENTS
+    secret: WHATSAPP_TEST_RECIPIENTS
+    availability:
+      - RUNTIME
+
   - variable: META_TOKEN_ENCRYPTION_KEY
     secret: META_TOKEN_ENCRYPTION_KEY
     availability:

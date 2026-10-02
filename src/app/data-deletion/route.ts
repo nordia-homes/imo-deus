@@ -1,38 +1,7 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
+import { randomBytes } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
-
+import { parseMetaSignedRequest } from '@/lib/communications/meta-signed-request';
 export const runtime = 'nodejs';
-
-function getMetaAppSecret() {
-  return (process.env.META_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '').trim();
-}
-
-function base64UrlDecode(value: string) {
-  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=');
-  return Buffer.from(padded, 'base64');
-}
-
-function parseSignedRequest(signedRequest?: string | null) {
-  if (!signedRequest) return null;
-  const [encodedSignature, encodedPayload] = signedRequest.split('.');
-  if (!encodedSignature || !encodedPayload) return null;
-
-  const secret = getMetaAppSecret();
-  if (!secret) return null;
-
-  const expected = createHmac('sha256', secret).update(encodedPayload).digest();
-  const received = base64UrlDecode(encodedSignature);
-  if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
-    return null;
-  }
-
-  const payload = JSON.parse(base64UrlDecode(encodedPayload).toString('utf8')) as {
-    user_id?: string;
-    issued_at?: number;
-  };
-  return payload;
-}
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
@@ -58,16 +27,18 @@ export async function POST(request: NextRequest) {
     ? formData.get('signed_request') as string
     : null;
   let payload;
-  try { payload = parseSignedRequest(signedRequest); } catch { payload = null; }
-  if (!payload?.user_id) return NextResponse.json({ error: 'Invalid signed request' }, { status: 403 });
+  try { payload = parseMetaSignedRequest(signedRequest); } catch { payload = null; }
+  if (!payload?.userId) return NextResponse.json({ error: 'Invalid signed request' }, { status: 403 });
   const confirmationCode = randomBytes(16).toString('hex');
 
-  if (payload?.user_id) {
-    const { disconnectMetaMarketingByMetaUser } = await import('@/lib/meta-marketing');
-    await disconnectMetaMarketingByMetaUser(payload.user_id).catch(() => undefined);
+  if (payload?.userId) {
+    if (!payload.whatsapp) {
+      const { disconnectMetaMarketingByMetaUser } = await import('@/lib/meta-marketing');
+      await disconnectMetaMarketingByMetaUser(payload.userId);
+    }
     const [{ disconnectCommunicationsByMetaUser }, { adminDb }] = await Promise.all([import('@/lib/communications/sync'), import('@/firebase/admin')]);
-    await adminDb.collection('communicationDeletionRequests').doc(confirmationCode).create({ metaUserId: payload.user_id, status: 'pending_review', requestedAt: new Date().toISOString() });
-    await disconnectCommunicationsByMetaUser(adminDb, payload.user_id);
+    await adminDb.collection('communicationDeletionRequests').doc(confirmationCode).create({ metaUserId: payload.userId, appId: payload.appId, status: 'pending_review', requestedAt: new Date().toISOString() });
+    await disconnectCommunicationsByMetaUser(adminDb, payload.userId, payload.appId);
   }
 
   return NextResponse.json({
