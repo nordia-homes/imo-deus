@@ -6,4 +6,4 @@ The fix separates WABA identity validation (still mandatory) from billing metada
 
 Regression coverage exercises pending phone registration without currency, blocked send access, permitted media access, wrong WABA rejection, and verified currency persistence. This does not establish live Meta billing readiness, approval, or successful message delivery.
 
-Deployment status: local correction; production publication must be confirmed separately.
+Deployment confirmed on 2026-10-02: Firebase App Hosting build `build-2026-10-02-001`, source commit `12bac863ae12ef49ec25cb010a57a6ee71e6484b`, state READY, 100% current traffic. Published directly from the pushed GitHub commit after two local archive upload failures. Automatic rollout policy remains `main`; this publication did not merge the branch. Live Embedded Signup still requires a new user authorization to validate the full flow.
