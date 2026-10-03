@@ -137,3 +137,37 @@
 }
 
 .wa-button-editor{margin:22px 0;padding-top:18px;border-top:1px solid #cbdcc4}.wa-button-editor .wa-section-heading{margin-bottom:12px}.wa-button-editor h3{font-size:16px;margin:0}.wa-button-row{padding:14px;background:#fff;border:1px solid #d0e0c7;border-radius:12px;margin-bottom:10px}.wa-button-row-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;color:#476839}.wa-remove-button{padding:8px;border:1px solid #e6d6c8;background:#fff6ed;color:#9b6242;border-radius:8px}.wa-button-row label:last-child{margin-bottom:0}.wa-button-add{display:flex;flex-wrap:wrap;gap:7px}.wa-button-add .wa-btn{font-size:11px;padding:8px 10px;min-height:36px}.wa-preview-buttons:empty{display:none}.wa-preview-buttons>div{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;border-top:1px solid #dfeadb;color:#187c64;font-size:13px;white-space:normal;overflow-wrap:anywhere}.wa-preview-buttons{margin-top:12px}.wa-template-item{flex-wrap:wrap}.wa-template-item>.wa-preview-buttons{flex-basis:100%;background:#f6fbf3;border-radius:9px;margin:0}.wa-template-item>.wa-preview-buttons:empty{display:none}
+
+/* Customer onboarding guide, shared by dedicated and Business App numbers. */
+.wa-connection-guide { margin-top:24px; padding:0; overflow:hidden; }
+.wa-connection-guide-header { display:flex; align-items:flex-start; gap:15px; padding:28px; background:linear-gradient(115deg,#f0f9e8,#fff); border-bottom:1px solid var(--wa-line); }
+.wa-connection-guide-header > .wa-icon { width:48px; height:48px; background:#e0f4d6; color:#32714a; border-color:#cce4c3; }
+.wa-connection-guide-header h2 { margin:9px 0; font-size:25px; line-height:1.2; color:#2c503a; }
+.wa-connection-guide-header p { color:var(--wa-muted); font-size:13px; line-height:1.7; }
+.wa-connection-checklist { display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; padding:18px 28px; background:#fcfdf9; border-bottom:1px solid var(--wa-line); font-size:12px; color:#526b60; }
+.wa-connection-checklist strong { color:#34573f; }
+.wa-connection-checklist span { display:inline-flex; align-items:center; gap:6px; }
+.wa-connection-checklist svg { flex-shrink:0; color:#44805a; }
+.wa-connection-steps { list-style:none; padding:8px 28px; margin:0; }
+.wa-connection-steps > li { display:grid; grid-template-columns:42px minmax(0,1fr); gap:18px; position:relative; padding:24px 0; }
+.wa-connection-steps > li + li { border-top:1px solid #e5eee2; }
+.wa-connection-step-number { display:grid; place-items:center; align-self:start; width:42px; height:42px; background:#eaf6e3; border:1px solid #cfe5c4; border-radius:14px; font-size:15px; font-weight:750; color:#357349; }
+.wa-connection-steps > li:nth-child(3) .wa-connection-step-number,.wa-connection-steps > li:nth-child(4) .wa-connection-step-number,.wa-connection-steps > li:nth-child(5) .wa-connection-step-number { background:#f1eaff; border-color:#dcccf3; color:#7858aa; }
+.wa-connection-step-place { display:block; font-size:10px; letter-spacing:1.2px; font-weight:700; color:#63775f; margin-bottom:7px; }
+.wa-connection-steps h3 { font-size:17px; line-height:1.35; color:#2c503a; margin-bottom:10px; }
+.wa-connection-steps p { font-size:13px; line-height:1.8; color:#526b60; }
+.wa-connection-steps p strong { color:#34573f; font-weight:650; }
+.wa-connection-steps .wa-connection-step-hint { margin-top:12px; padding:10px 13px; border-left:3px solid #d4e5c9; border-radius:0 8px 8px 0; background:#f7faf4; font-size:12px; color:#63775f; }
+.wa-connection-shortcuts { display:flex; flex-wrap:wrap; gap:9px; padding:22px 28px; border-top:1px solid var(--wa-line); background:#fcfdf9; }
+.wa-connection-shortcuts .wa-btn { font-size:12px; min-height:40px; padding:10px 13px; }
+.wa-connection-help { border-top:1px solid var(--wa-line); padding:19px 28px; }
+.wa-connection-help summary { font-size:13px; font-weight:650; color:#526b60; cursor:pointer; }
+.wa-connection-help ul { padding-left:20px; margin:16px 0 0; }
+.wa-connection-help li { color:#526b60; font-size:13px; line-height:1.8; margin-top:10px; }
+.wa-visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media(max-width:700px) {
+ .wa-connection-guide-header { padding:20px 18px; gap:12px; }.wa-connection-guide-header > .wa-icon { width:38px; height:38px; }.wa-connection-guide-header h2 { font-size:21px; }.wa-connection-guide-header .wa-eyebrow { font-size:9px; letter-spacing:1px; }
+ .wa-connection-checklist { padding:16px 18px; gap:12px; }.wa-connection-checklist strong { flex-basis:100%; }
+ .wa-connection-steps { padding:4px 18px; }.wa-connection-steps > li { grid-template-columns:32px minmax(0,1fr); gap:12px; padding:22px 0; }.wa-connection-step-number { width:32px; height:32px; border-radius:10px; font-size:12px; }.wa-connection-steps h3 { font-size:16px; }.wa-connection-step-place { font-size:9px; letter-spacing:.8px; }
+ .wa-connection-shortcuts { padding:18px; }.wa-connection-shortcuts .wa-btn { flex:1 1 160px; }.wa-connection-help { padding:18px; }
+}
