@@ -1,0 +1,15 @@
+'use client';
+import { Plus, Trash2, ExternalLink, Phone, Reply } from 'lucide-react';
+import type { TemplateButton } from '@/lib/communications/template-buttons';
+export function TemplateButtonEditor({ buttons, onChange }: { buttons: TemplateButton[]; onChange: (buttons: TemplateButton[]) => void }) {
+ const quick = buttons.some(b => b.type === 'QUICK_REPLY');
+ const action = buttons.some(b => b.type !== 'QUICK_REPLY');
+ function add(type: TemplateButton['type']) { onChange([...buttons, type === 'URL' ? { type, text: '', url: '' } : type === 'PHONE_NUMBER' ? { type, text: '', phone_number: '' } : { type, text: '' }]); }
+ function update(index: number, value: Partial<TemplateButton>) { onChange(buttons.map((b, i) => i === index ? { ...b, ...value } as TemplateButton : b)); }
+ return <section className="wa-button-editor"><div className="wa-section-heading"><h3>Butoane</h3><span className="wa-pill">Opțional</span></div><p className="wa-field-help">Adaugă până la 3 răspunsuri rapide sau un link și un apel. Linkurile sunt fixe. Răspunsurile ajung în conversație și nu modifică automat datele din CRM.</p>
+ {buttons.map((b,index)=><div className="wa-button-row" key={index}><div className="wa-button-row-heading"><strong>{index+1}. {b.type==='URL'?'Deschide un link':b.type==='PHONE_NUMBER'?'Apelează un număr':'Răspuns rapid'}</strong><button type="button" className="wa-remove-button" aria-label={`Șterge butonul ${index+1}`} onClick={()=>onChange(buttons.filter((_,i)=>i!==index))}><Trash2 size={15}/></button></div><label>Textul butonului<input required maxLength={25} value={b.text} placeholder={b.type==='URL'?'Vezi proprietatea':b.type==='PHONE_NUMBER'?'Sună agentul':'Confirm vizionarea'} onChange={e=>update(index,{text:e.target.value})}/></label>{b.type==='URL'&&<label>Link HTTPS<input required type="url" maxLength={2000} placeholder="https://imodeus.ro/..." value={b.url} onChange={e=>update(index,{url:e.target.value})}/></label>}{b.type==='PHONE_NUMBER'&&<label>Număr de telefon<input required type="tel" maxLength={16} placeholder="+40712345678" value={b.phone_number} onChange={e=>update(index,{phone_number:e.target.value})}/></label>}</div>)}
+ <div className="wa-button-add"><button type="button" className="wa-btn" disabled={action||buttons.length>=3} onClick={()=>add('QUICK_REPLY')}><Plus size={14}/>Răspuns rapid</button><button type="button" className="wa-btn" disabled={quick||buttons.some(b=>b.type==='URL')} onClick={()=>add('URL')}><ExternalLink size={14}/>Link</button><button type="button" className="wa-btn" disabled={quick||buttons.some(b=>b.type==='PHONE_NUMBER')} onClick={()=>add('PHONE_NUMBER')}><Phone size={14}/>Apel</button></div></section>;
+}
+export function TemplateButtonPreview({ buttons }: { buttons: Array<{ type: string; text?: string }> }) {
+ return <div className="wa-preview-buttons">{buttons.map((b,i)=><div key={i}>{b.type==='URL'?<ExternalLink size={14}/>:b.type==='PHONE_NUMBER'?<Phone size={14}/>:<Reply size={14}/>}<span>{b.text||'Textul butonului'}</span></div>)}</div>;
+}

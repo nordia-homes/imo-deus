@@ -5,7 +5,7 @@ import { agencyCollection, CommunicationError, getConversation, nowIso } from '.
 import { connectionToken, graph, MetaGraphError } from './meta';
 import { stableId } from './crypto';
 import { attachmentForSend } from './media';
-import { bodyParameterCount, listWhatsAppTemplates, renderTemplateBody } from './templates';
+import { bodyParameterCount, listWhatsAppTemplates, renderTemplateBody, templateSendComponents } from './templates';
 import { isDeepStrictEqual } from 'node:util';
 import { assertWhatsAppAccess, whatsappAppId } from './whatsapp-config';
 import { receiptCorrelation } from './receipt-correlation';
@@ -18,6 +18,7 @@ export async function estimateSend(db: Firestore, actor: Actor, conversation: Co
   const inWindow = withinResponseWindow(conversation.lastInboundAt);
   let category = 'service';
   let renderedText = input.text;
+  let templateComponents: Array<Record<string, unknown>> = [];
   if (!inWindow && !input.template) throw new CommunicationError('Fereastra de răspuns a expirat. Pentru WhatsApp selectează un șablon aprobat.');
   if (conversation.channel === 'whatsapp') {
     assertWhatsAppAccess(actor);
@@ -41,6 +42,7 @@ export async function estimateSend(db: Firestore, actor: Actor, conversation: Co
     if (expectedParameters === null) throw new CommunicationError('Acest șablon conține componente pe care editorul nu le poate completa.');
     if (input.template.parameters.length !== expectedParameters) throw new CommunicationError(`Șablonul necesită ${expectedParameters} parametri în corpul mesajului.`);
     renderedText = renderTemplateBody(template, input.template.parameters);
+    templateComponents = templateSendComponents(template, input.template.parameters);
     category = template.category.toLowerCase();
     const consent = await agencyCollection(db, actor.agencyId, 'communicationConsents').doc(stableId(conversation.connectionId, conversation.externalParticipantId, category === 'marketing' ? 'marketing' : 'service')).get();
     if (consent.data()?.status !== 'granted') throw new CommunicationError('Nu există consimțământ înregistrat pentru această comunicare.');
@@ -54,7 +56,7 @@ export async function estimateSend(db: Firestore, actor: Actor, conversation: Co
   if (!connection.currency) throw new CommunicationError('Moneda WABA nu este verificată. Reconectează numărul WhatsApp.', 409);
   const rate = rateRows.docs.map(d => ({ ...d.data(), id: d.id })).filter((r: any) => typeof r.prefix === 'string' && conversation.externalParticipantId.startsWith(r.prefix) && r.currency === connection.currency && r.validFrom <= now && r.validUntil > now && (!r.inWindowOnly || inWindow)).sort((a: any, b: any) => b.prefix.length - a.prefix.length || String(b.validFrom).localeCompare(String(a.validFrom)))[0] as any;
   if (!rate || !Number.isSafeInteger(rate.amountMicros) || rate.amountMicros < 0) throw new CommunicationError('Tariful WhatsApp nu este configurat sau a expirat. Trimiterea este blocată; primirea rămâne activă.', 409);
-  const body = input.template ? { messaging_product: 'whatsapp', to: conversation.externalParticipantId, type: 'template', template: { name: input.template.name, language: { code: input.template.language }, ...(input.template.parameters.length ? { components: [{ type: 'body', parameters: input.template.parameters.map(text => ({ type: 'text', text })) }] } : {}) } } : { messaging_product: 'whatsapp', to: conversation.externalParticipantId, type: 'text', text: { body: input.text } };
+  const body = input.template ? { messaging_product: 'whatsapp', to: conversation.externalParticipantId, type: 'template', template: { name: input.template.name, language: { code: input.template.language }, ...(templateComponents.length ? { components: templateComponents } : {}) } } : { messaging_product: 'whatsapp', to: conversation.externalParticipantId, type: 'text', text: { body: input.text } };
   const mediaBody = attachment ? { messaging_product: 'whatsapp', to: conversation.externalParticipantId, type: attachment.type, [attachment.type]: { link: attachment.url, ...(input.text ? { caption: input.text } : {}), ...(attachment.type === 'document' ? { filename: attachment.name } : {}) } } : null;
   return { amount: rate.amountMicros as number, currency: rate.currency as string, category, renderedText, rateId: rate.id as string, body: mediaBody || body };
 }

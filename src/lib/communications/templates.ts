@@ -1,10 +1,11 @@
 import { z } from 'zod';
+import { templateButtonsSchema } from './template-buttons';
 import { CommunicationError } from './server';
 import { graph } from './meta';
 
 export type WhatsAppTemplate = {
   name: string; language: string; status: string; category: string;
-  components?: Array<{ type: string; text?: string; format?: string; buttons?: Array<{ type: string; url?: string }> }>;
+  components?: Array<{ type: string; text?: string; format?: string; buttons?: Array<{ type: string; text?: string; url?: string }> }>;
 };
 
 export function bodyParameterCount(template: WhatsAppTemplate): number | null {
@@ -47,6 +48,7 @@ export async function listWhatsAppTemplates(wabaId: string, token: string, name?
 }
 
 export const templateCreationSchema = z.object({
+  buttons: templateButtonsSchema.default([]),
   name: z.string().regex(/^[a-z][a-z0-9_]{1,99}$/),
   language: z.enum(['ro', 'en_US']),
   category: z.enum(['UTILITY', 'MARKETING']),
@@ -56,7 +58,16 @@ export async function createWhatsAppTemplate(wabaId: string, token: string, body
   if (!/^\d+$/.test(wabaId)) throw new CommunicationError('WABA invalid.');
   const input = templateCreationSchema.parse(body);
   const result = await graph<{ id?: string; status?: string; category?: string }>('/' + wabaId + '/message_templates', token,
-    { name: input.name, language: input.language, category: input.category, components: [{ type: 'BODY', text: input.body }] });
+    { name: input.name, language: input.language, category: input.category, components: [{ type: 'BODY', text: input.body }, ...(input.buttons.length ? [{ type: 'BUTTONS', buttons: input.buttons }] : [])] });
   if (!result.id) throw new CommunicationError('Meta nu a confirmat crearea șablonului.', 502);
   return { id: result.id, status: result.status || 'PENDING', category: result.category || input.category };
+}
+
+// Static CTA buttons are already part of the approved template. Quick replies
+// receive a deterministic payload so the callback remains useful to the Inbox.
+export function templateSendComponents(template: WhatsAppTemplate, parameters: string[]) {
+  const components: Array<Record<string, unknown>> = parameters.length ? [{ type: 'body', parameters: parameters.map(text => ({ type: 'text', text })) }] : [];
+  const buttons = template.components?.find(c => c.type.toUpperCase() === 'BUTTONS')?.buttons || [];
+  buttons.forEach((button, index) => { if (button.type.toUpperCase() === 'QUICK_REPLY') components.push({ type: 'button', sub_type: 'quick_reply', index: String(index), parameters: [{ type: 'payload', payload: button.text || 'reply_' + index }] }); });
+  return components;
 }
