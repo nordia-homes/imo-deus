@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: vi.fn() }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, agencyCollection: (db: any, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
+import { ownerSearchFields } from '@/lib/owner-listings/search-index';
 import { searchProperties, searchMatches } from '../search';
 import { canReadResource, readResource, readRelated, readField, referencesAllowed, type AssistantContext } from '../access';
 import { searchSchema, relatedSchema, fieldSchema } from '../contracts';
@@ -8,9 +9,9 @@ import { searchSchema, relatedSchema, fieldSchema } from '../contracts';
 // In-memory query implementation checks the public pagination contract; no live database.
 function database(rows: Record<string, any>[], unavailableIndex = false) {
   function query(filters: [string, string, any][] = [], after?: string, cap = Infinity): any {
-    return { where: (field: string, op: string, val: unknown) => query([...filters, [field, op, val]], after, cap), orderBy: () => query(filters, after, cap), limit: (n: number) => query(filters, after, n), startAfter: (id: string) => query(filters, id, cap), count: () => ({ get: async () => ({ data: () => ({ count: rows.filter(r => filters.every(([f, op, v]) => op === '==' ? r[f] === v : true)).length }) }) }), get: async () => {
+    return { where: (field: string, op: string, val: unknown) => query([...filters, [field, op, val]], after, cap), orderBy: () => query(filters, after, cap), limit: (n: number) => query(filters, after, n), startAfter: (id: string) => query(filters, id, cap), count: () => ({ get: async () => ({ data: () => ({ count: rows.filter(r => filters.every(([f, op, v]) => op === '==' ? r[f] === v : op === 'array-contains' ? r[f]?.includes(v) : op === '>=' ? r[f]>=v : op === '<=' ? r[f]<=v : true)).length }) }) }), get: async () => {
       if (unavailableIndex && filters.some(([field]) => field === 'searchVersion')) throw Object.assign(new Error('Index is not READY'), { code: 9 });
-      const matches = rows.filter(r => (!after || r.id > after) && filters.every(([f, op, v]) => op === '==' ? r[f] === v : true)).slice(0, cap);
+      const matches = rows.filter(r => (!after || r.id > after) && filters.every(([f, op, v]) => op === '==' ? r[f] === v : op === 'array-contains' ? r[f]?.includes(v) : op === '>=' ? r[f]>=v : op === '<=' ? r[f]<=v : true)).slice(0, cap);
       return { empty: matches.length === 0, size: matches.length, docs: matches.map(r => ({ id: r.id, data: () => r })) };
     }, doc: (id: string) => ({ get: async () => ({ exists: rows.some(r => r.id === id), id, data: () => rows.find(r => r.id === id) }), collection: () => query() }) };
   }
@@ -20,8 +21,13 @@ const context = (rows: Record<string, any>[]) => ({ agencyId: 'a', uid: 'agent',
 const listing = { publicationStatus: 'ready', isCanonical: true, scopeKey: 'bucuresti-ilfov', price: '120.000 €', priceValue: 120000, roomsValue: 2, propertyType: 'apartment', transactionType: 'sale', location: 'București Titan', title: 'Apartament', ownerPhone: 'PRIVATE' };
 
 describe('authorized complete pagination', () => {
+  it('pushes zone, rooms and property type into the index before the scan budget', async()=>{
+    const rows=Array.from({length:6003},(_,i)=>{const source={...listing,location:i<6000?'Militari':'Titan'};return {...source,...ownerSearchFields(source),id:String(i).padStart(5,'0')};});
+    const result=await searchProperties(context(rows),searchSchema.parse({zone:'Titan',rooms:2,propertyType:'apartment',priceMax:130000,limit:3}));
+    expect(result.searchMode).toBe('native_index');expect(result.rows).toHaveLength(3);expect(result.scanned).toBe(3);
+  });
   it('does not omit a newly ingested listing without an indexed projection', async () => {
-    const rows: Record<string, any>[] = [{ ...listing, id: '0001', searchVersion: 1, searchPrice: 120000, searchCurrency: 'EUR' }];
+    const rows: Record<string, any>[] = [{ ...listing, id: '0001', ...ownerSearchFields(listing) }];
     const ctx = context(rows), query = searchSchema.parse({ zone: 'Titan', priceMax: 130000 });
     expect((await searchProperties(ctx, query)).searchMode).toBe('native_index');
     rows.push({ ...listing, id: '0002' });
@@ -30,7 +36,7 @@ describe('authorized complete pagination', () => {
     expect(result.rows.map(row => row.id)).toEqual(['0001', '0002']);
   });
   it('falls back to fresh data when the native index is not READY', async () => {
-    const rows = [{ ...listing, id: '0001', searchVersion: 1, searchPrice: 120000, searchCurrency: 'EUR' }];
+    const rows = [{ ...listing, id: '0001', ...ownerSearchFields(listing) }];
     const ctx = { ...context(rows), adminDb: database(rows, true) } as unknown as AssistantContext;
     const result = await searchProperties(ctx, searchSchema.parse({ zone: 'Titan', priceMax: 130000 }));
     expect(result.searchMode).toBe('live_scan');

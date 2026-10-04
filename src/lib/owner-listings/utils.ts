@@ -462,7 +462,7 @@ export function buildSummary(
     publicationStatus: input.publicationStatus || 'discovered',
     missingFields,
     priceValue,
-    ...ownerSearchFields({ price: input.price, priceValue, location: input.location }),
+    ...ownerSearchFields({ price: input.price, priceValue, location: input.location, propertyType, transactionType, roomsValue }),
     areaValue,
     roomsValue,
     constructionYearValue,

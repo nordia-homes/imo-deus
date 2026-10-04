@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { actionSchema, readSchema, relatedSchema, fieldSchema, searchSchema, idSchema } from './contracts';
+import { actionSchema, readSchema, relatedSchema, fieldSchema, searchSchema, idSchema, queryRecordsSchema } from './contracts';
 import { analysisSchema, datetimeSchema } from './deterministic-contracts';
 const objectOutput = z.record(z.unknown());
 const rowsOutput = z.object({ rows: z.array(z.record(z.unknown())) }).passthrough();
@@ -8,6 +8,7 @@ export const coreToolSchemas = {
   analyze_records: [analysisSchema, rowsOutput, 'Filtrare, sortare și statistici deterministe pe ID-uri autorizate deja identificate. Nu este un total al agenției.'],
   resolve_datetime: [datetimeSchema, objectOutput, 'Dată și oră Europe/Bucharest convertite determinist în ISO; detectează ambiguitatea DST. date sau dayOffset (mâine=1), time HH:mm.'],
   read: [readSchema, rowsOutput, 'Citește înregistrări autorizate, cu paginare.'],
+  query_records: [queryRecordsSchema, rowsOutput, 'Filtrează CRM PE SERVER și numără exact prin agregare. Pentru câte vizionări mâine: resource=viewings, dayOffset=1, mode=count. Nu citi întregul calendar. Pentru liste folosește mode=list. Datele relative sunt calculate în Europe/Bucharest.'],
   read_related: [relatedSchema, rowsOutput, 'Documente, mesaje și audit ale unei resurse autorizate.'],
   read_field: [fieldSchema, objectOutput, 'Citește câmpuri mari în porții, fără secrete.'],
   search_properties: [searchSchema, rowsOutput, 'Caută proprietari implicit sau CRM explicit.'],
@@ -26,3 +27,4 @@ export const coreToolSchemas = {
   mcp_discover: [z.object({ serverId: idSchema }).strict(), objectOutput, 'Descoperă tools externe read-only explicit autorizate agenției.'],
   mcp_read: [z.object({ serverId: idSchema, tool: idSchema, arguments: z.record(z.unknown()).default({}) }).strict(), objectOutput, 'Tool MCP read-only allowlisted; fără URL-uri sau servere din prompt.'],
 } as const;
+export const actionToolSchemas = Object.fromEntries(actionSchema.options.filter(schema => !['existing_operation', 'create_automation'].includes(schema.shape.kind.value)).map(schema => [schema.shape.kind.value, [(schema as z.AnyZodObject).omit({ kind: true }), objectOutput, `Pregătește ${schema.shape.kind.value} în planul confirmabil. Nu execută direct. ID-uri reale sau @step:N:contactId. Nu refuza o acțiune disponibilă.`] as const]));

@@ -14,9 +14,11 @@ const output = path.join(root, '.tmp', 'assistant-ui');
 await fs.mkdir(output, { recursive: true });
 await build({ stdin: { contents: "import React from 'react'; import {createRoot} from 'react-dom/client'; import Page from './src/app/(dashboard)/ai-assistant/page'; createRoot(document.getElementById('root')).render(<Page/>);", resolveDir: root, loader: 'tsx' }, outfile: path.join(output, 'bundle.js'), bundle: true, platform: 'browser', jsx: 'automatic', define: { 'process.env.NODE_ENV': '"development"' }, plugins: [{ name: 'fixture-auth', setup(builder) {
   builder.onLoad({ filter: /context[\\/]AgencyContext\.tsx$/ }, () => ({ contents: "const user={uid:'agent',getIdToken:async()=> 'fixture-token'}; const profile={name:'Mirela Agent'}; export const useAgency=()=>({user,agencyId:'fixture-agency',userProfile:profile});", loader: 'js' }));
+  builder.onResolve({filter:/^next\/image$/},()=>({path:'image',namespace:'fixture'}));
+  builder.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:"import React from 'react';export default function Image({fill,unoptimized,sizes,...props}){return <img {...props}/>}",loader:'jsx',resolveDir:root}));
 } }] });
 const config = loadConfig(path.join(root, 'tailwind.config.ts'));
-config.content = [path.join(root, 'src/app/(dashboard)/ai-assistant/page.tsx'), path.join(root, 'src/components/ui/*.{ts,tsx}')];
+config.content = [path.join(root, 'src/app/(dashboard)/ai-assistant/page.tsx'), path.join(root, 'src/components/ui/*.{ts,tsx}'), path.join(root,'src/components/ai/*.{ts,tsx}')];
 const css = await postcss([tailwindcss(config)]).process(await fs.readFile(path.join(root, 'src/app/globals.css'), 'utf8'), { from: path.join(root, 'src/app/globals.css') });
 await fs.writeFile(path.join(output, 'style.css'), css.css);
 const server = http.createServer(async (request, response) => {
@@ -79,7 +81,7 @@ try {
   await page.getByRole('button', { name: 'Caută proprietăți', exact: true }).click();
   await page.getByText('Apartament Titan proprietar', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Vezi potrivirile din CRM' }).click();
-  await page.getByText('Apartament Titan CRM', { exact: true }).waitFor();
+  await page.getByRole('heading',{name:'Apartament Titan CRM',exact:true}).waitFor();
   await page.getByText('Apartament Titan proprietar', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Confirm acordul WhatsApp', exact: true }).click();
   const dialog = page.getByRole('dialog');

@@ -11,7 +11,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('assistant server-managed 
   afterAll(async () => { await env?.cleanup(); });
   it.each(['agent', 'admin', 'other'])('blocks forged histories, plans, consent, artifacts and jobs for %s', async actor => {
     const db = env.authenticatedContext(actor).firestore();
-    for (const collection of ['assistantSessions', 'assistantPlans', 'assistantExecutions', 'assistantLocks', 'assistantAutomations', 'assistantArtifacts', 'assistantMemory', 'assistantResultSets', 'assistantTelemetry', 'assistantPolicies', 'communicationConsents']) {
+    for (const collection of ['assistantSessions', 'assistantPlans', 'assistantExecutions', 'assistantDeletedRecords', 'assistantLocks', 'assistantAutomations', 'assistantArtifacts', 'assistantMemory', 'assistantResultSets', 'assistantTelemetry', 'assistantPolicies', 'communicationConsents']) {
       await assertFails(setDoc(doc(db, 'agencies', 'a', collection, 'fake'), { ownerId: 'agent', status: 'completed' }));
       await assertFails(getDoc(doc(db, 'agencies', 'a', collection, 'fake')));
     }

@@ -59,7 +59,7 @@ service cloud.firestore {
     }
 
     function isServerManagedAgencyCollection(collectionId) {
-      return collectionId in ['assistantSessions', 'assistantPlans', 'assistantExecutions', 'assistantLocks', 'assistantAutomations', 'assistantArtifacts', 'assistantMemory', 'assistantResultSets', 'assistantTelemetry', 'assistantPolicies', 'channelConnections', 'conversations', 'communicationMedia', 'communicationConsents', 'communicationBudgets', 'socialPosts', 'automationRules', 'contactChannelIdentities'] || collectionId == 'tiktokWorkspaceDrafts' ||
+      return collectionId in ['assistantSessions', 'assistantPlans', 'assistantExecutions', 'assistantDeletedRecords', 'assistantLocks', 'assistantAutomations', 'assistantArtifacts', 'assistantMemory', 'assistantResultSets', 'assistantTelemetry', 'assistantPolicies', 'channelConnections', 'conversations', 'communicationMedia', 'communicationConsents', 'communicationBudgets', 'socialPosts', 'automationRules', 'contactChannelIdentities'] || collectionId == 'tiktokWorkspaceDrafts' ||
              collectionId == 'tiktokStudioProjects' ||
              collectionId == 'tiktokStudioAssets' ||
              collectionId == 'tiktokPostDrafts' ||

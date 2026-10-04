@@ -1,0 +1,186 @@
+{
+  "versions": {
+    "prompt": "jarvis-5",
+    "routing": "luna-first-2",
+    "policy": "tenant-approval-5",
+    "tools": "5",
+    "memory": "1",
+    "skills": "3"
+  },
+  "startedAt": "2026-10-04T20:40:46.700Z",
+  "environment": "synthetic_fixture_live_openai",
+  "maxCostUsd": 1,
+  "results": [
+    {
+      "id": "v5-calendar-count",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "query_records"
+      ],
+      "latencyMs": 5144,
+      "costUsd": 0.000689465,
+      "tokens": 9442,
+      "cachedTokens": 4599
+    },
+    {
+      "id": "v5-reserve",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "propose_actions"
+      ],
+      "latencyMs": 3825,
+      "costUsd": 0.0001475,
+      "tokens": 9366,
+      "cachedTokens": 9190
+    },
+    {
+      "id": "v5-new-client-viewing",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "read",
+        "read",
+        "resolve_datetime",
+        "propose_actions"
+      ],
+      "latencyMs": 13473,
+      "costUsd": 0.0005877249999999999,
+      "tokens": 34583,
+      "cachedTokens": 33600
+    },
+    {
+      "id": "v5-owner-two-rooms",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties"
+      ],
+      "latencyMs": 3940,
+      "costUsd": 0.00017580999999999999,
+      "tokens": 9484,
+      "cachedTokens": 9196
+    },
+    {
+      "id": "v5-task-complete",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "propose_actions"
+      ],
+      "latencyMs": 5953,
+      "costUsd": 0.00021282499999999998,
+      "tokens": 14159,
+      "cachedTokens": 13880
+    },
+    {
+      "id": "v5-property-note",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "propose_actions"
+      ],
+      "latencyMs": 4428,
+      "costUsd": 0.00015420499999999998,
+      "tokens": 9391,
+      "cachedTokens": 9198
+    },
+    {
+      "id": "v5-calendar-count",
+      "model": "gpt-6.1-sol",
+      "pass": true,
+      "toolCalls": [
+        "query_records"
+      ],
+      "latencyMs": 7470,
+      "costUsd": 0.0133294,
+      "tokens": 9442,
+      "cachedTokens": 4599
+    },
+    {
+      "id": "v5-reserve",
+      "model": "gpt-6.1-sol",
+      "pass": true,
+      "toolCalls": [
+        "propose_actions"
+      ],
+      "latencyMs": 7656,
+      "costUsd": 0.0028696,
+      "tokens": 14092,
+      "cachedTokens": 13841
+    },
+    {
+      "id": "v5-new-client-viewing",
+      "model": "gpt-6.1-sol",
+      "pass": true,
+      "toolCalls": [
+        "read",
+        "read",
+        "resolve_datetime",
+        "propose_actions"
+      ],
+      "latencyMs": 19257,
+      "costUsd": 0.0085247,
+      "tokens": 34598,
+      "cachedTokens": 33602
+    },
+    {
+      "id": "v5-owner-two-rooms",
+      "model": "gpt-6.1-sol",
+      "pass": true,
+      "toolCalls": [
+        "search_properties"
+      ],
+      "latencyMs": 6860,
+      "costUsd": 0.0030166,
+      "tokens": 9526,
+      "cachedTokens": 9196
+    },
+    {
+      "id": "v5-task-complete",
+      "model": "gpt-6.1-sol",
+      "pass": true,
+      "toolCalls": [
+        "propose_actions"
+      ],
+      "latencyMs": 9589,
+      "costUsd": 0.003651,
+      "tokens": 18918,
+      "cachedTokens": 18570
+    },
+    {
+      "id": "v5-property-note",
+      "model": "gpt-6.1-sol",
+      "pass": true,
+      "toolCalls": [
+        "propose_actions"
+      ],
+      "latencyMs": 7516,
+      "costUsd": 0.0029337,
+      "tokens": 14118,
+      "cachedTokens": 13857
+    }
+  ],
+  "models": {
+    "gpt-6-luna": {
+      "tasks": 6,
+      "passed": 6,
+      "successPercent": 100,
+      "averageCostUsd": 0.00032792166666666665,
+      "averageLatencyMs": 6127.166666666667,
+      "cachedTokens": 79663
+    },
+    "gpt-6.1-sol": {
+      "tasks": 6,
+      "passed": 6,
+      "successPercent": 100,
+      "averageCostUsd": 0.005720833333333332,
+      "averageLatencyMs": 9724.666666666666,
+      "cachedTokens": 93665
+    }
+  },
+  "errors": [],
+  "totalCostUsd": 0.03629253,
+  "completedAt": "2026-10-04T20:42:21.835Z"
+}

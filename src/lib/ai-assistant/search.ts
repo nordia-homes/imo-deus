@@ -5,7 +5,7 @@ import { resolveAgencyOwnerListingScope, getOwnerListingScope } from '@/lib/owne
 import { parseOptionalNumber } from '@/lib/owner-listings/utils';
 import type { Agency } from '@/lib/types';
 import { CommunicationError } from '@/lib/communications/server';
-import { OWNER_SEARCH_VERSION, ownerPriceCurrency, parseOwnerPrice } from '@/lib/owner-listings/search-index';
+import { OWNER_SEARCH_VERSION, ownerPriceCurrency, parseOwnerPrice, ownerZoneKey } from '@/lib/owner-listings/search-index';
 import { createHash } from 'node:crypto';
 
 export function listingCurrency(price: unknown): 'EUR' | 'RON' | 'unknown' {
@@ -17,7 +17,7 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   if (owners && (row.publicationStatus !== 'ready' || row.isCanonical !== true)) return false;
   const location = normalized(owners ? row.location : `${row.zone || ''} ${row.location || ''} ${row.address || ''}`);
   // A zone mentioned in marketing prose is not evidence of the property's location.
-  if (input.zone && !location.includes(normalized(input.zone))) return false;
+  if (input.zone && !(owners ? ownerZoneKey(row.location).includes(ownerZoneKey(input.zone)) : location.includes(normalized(input.zone)))) return false;
   const rooms = Number(owners ? row.roomsValue ?? parseOptionalNumber(row.rooms) : row.rooms);
   if (input.rooms !== undefined && rooms !== input.rooms) return false;
   const type = normalized(row.propertyType);
@@ -39,7 +39,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
     if (!scope) throw new CommunicationError('Precizează orașul/scopeKey; orașul agenției nu este configurat.');
     base = ctx.adminDb.collection('ownerListings').where('scopeKey', '==', scope.key).where('publicationStatus', '==', 'ready').where('isCanonical', '==', true);
   }
-  const fingerprint = createHash('sha256').update(JSON.stringify([ctx.agencyId, Object.entries(input).filter(([key, value]) => key !== 'cursor' && value !== undefined).sort(([a], [b]) => a.localeCompare(b))])).digest('hex').slice(0, 12);
+  const fingerprint = createHash('sha256').update(JSON.stringify([OWNER_SEARCH_VERSION, ctx.agencyId, Object.entries(input).filter(([key, value]) => key !== 'cursor' && value !== undefined).sort(([a], [b]) => a.localeCompare(b))])).digest('hex').slice(0, 12);
   let indexed = false, cursor = input.cursor, complete = false, scanned = 0, uncertainCurrency = 0;
   let cursorPrice: number | undefined;
   if (cursor?.startsWith('i|')) {
@@ -62,6 +62,10 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
   }
   if (indexed) {
     base = base.where('searchVersion', '==', OWNER_SEARCH_VERSION).where('searchCurrency', '==', 'EUR').where('searchPrice', '>=', input.priceMin ?? 0);
+    base = base.where('searchTransaction', '==', input.transactionType);
+    if (input.zone) base = base.where('searchZones','array-contains',ownerZoneKey(input.zone));
+    if (input.propertyType) base = base.where('searchType','==',input.propertyType);
+    if (input.rooms !== undefined) base = base.where('searchRooms','==',input.rooms);
     if (input.priceMax !== undefined) base = base.where('searchPrice', '<=', input.priceMax);
     // Probe before returning any result, so a missing native index cannot become an empty page.
     try { await base.orderBy('searchPrice').orderBy('__name__').limit(1).get(); }
@@ -85,7 +89,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
       if (indexed) cursorPrice = Number(row.searchPrice);
       if (input.source === 'owners' && listingCurrency(row.price) === 'unknown') uncertainCurrency++;
       if (!searchMatches(row, input)) continue;
-      rows.push({ id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
+      rows.push({ id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
       if (rows.length === input.limit) break;
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }

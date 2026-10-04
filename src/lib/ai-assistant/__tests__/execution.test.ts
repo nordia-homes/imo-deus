@@ -32,6 +32,18 @@ function memory(initial: Record<string, any> = {}) {
   return { records, ctx: { adminDb: db, uid: 'u', agencyId: 'a', role: 'agent' } as unknown as AssistantContext };
 }
 describe('atomic CRM execution', () => {
+  it('reserves a property atomically, records the real instruction and replays once', async () => {
+    const {ctx,records}=memory({'agencies/a/properties/p':{status:'Activ',title:'Apartament'}});
+    const action={kind:'update_property_status' as const,propertyId:'p',status:'Rezervat' as const,notes:''};
+    await executeAction(ctx,action,'reserve-1');await executeAction(ctx,action,'reserve-1');
+    expect(records.get('agencies/a/properties/p').status).toBe('Rezervat');
+    expect(records.get('agencies/a/propertyStatusEvents/reserve-1')).toMatchObject({previousStatus:'Activ',nextStatus:'Rezervat',reason:'agent_instruction',actorId:'u'});
+  });
+  it('requires a real sale price before marking a property sold',async()=>{
+    const {ctx,records}=memory({'agencies/a/properties/p':{status:'Activ'}});
+    await expect(executeAction(ctx,{kind:'update_property_status',propertyId:'p',status:'Vândut',notes:''},'sell-1')).rejects.toThrow();
+    expect(records.get('agencies/a/properties/p').status).toBe('Activ');
+  });
   it('replays a confirmed action without creating a second contact', async () => {
     const { ctx, records } = memory();
     const action = { kind: 'create_contact' as const, name: 'Client', phone: '', email: '', contactType: 'Cumparator' as const };

@@ -1,5 +1,7 @@
 # Jarvis
 
+- [Remedieri acțiuni și carduri — v5](REAL_ACTIONS_V5.md)
+
 - [Publicare în producție — 2026-10-04](PRODUCTION_DEPLOYMENT.md)
 
 - [IMPLEMENTATION_AUDIT.md](IMPLEMENTATION_AUDIT.md)

@@ -57,6 +57,10 @@ export type OwnerListingSummary = {
   searchCurrency?: 'EUR' | 'RON' | 'unknown';
   searchPrice?: number | null;
   searchLocation?: string;
+  searchZones?: string[];
+  searchType?: string;
+  searchTransaction?: string;
+  searchRooms?: number;
   areaValue?: number | null;
   roomsValue?: number | null;
   constructionYearValue?: number | null;

@@ -990,6 +990,7 @@ export type PropertyDeletionEvent = {
 };
 
 export type PropertyStatusChangeReason =
+  | 'agent_instruction'
   | 'reservation_offer_accepted'
   | 'reservation_financing_pending'
   | 'reservation_documents_pending'
@@ -1003,7 +1004,7 @@ export type PropertyStatusEvent = {
   propertyId: string;
   changedAt: string;
   previousStatus?: Property['status'] | null;
-  nextStatus: 'Rezervat' | 'Vândut';
+  nextStatus: 'Activ' | 'Inactiv' | 'Rezervat' | 'Vândut';
   reason: PropertyStatusChangeReason;
   reasonLabel: string;
   agentMessage: string;

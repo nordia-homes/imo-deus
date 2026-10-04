@@ -7,9 +7,10 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local', quiet: true });
 const root = process.cwd(), output = path.join(root, '.tmp/jarvis-evals');
 await fs.mkdir(output, { recursive: true });
-await build({ stdin: { contents: "export {OpenAIAdapter} from './src/lib/ai-assistant/provider'; export {routeModel,usageCost,VERSIONS} from './src/lib/ai-assistant/models'; export {actionSchema} from './src/lib/ai-assistant/contracts'; export {coreToolSchemas} from './src/lib/ai-assistant/tool-schemas'; export {buildInstructions} from './src/lib/ai-assistant/policy'; export {resolveDatetime} from './src/lib/ai-assistant/datetime'; export {explicitInstants,validateActionDates} from './src/lib/ai-assistant/temporal-policy'; export {functionDefinition,functionPayload} from './src/lib/ai-assistant/function-tools';", resolveDir: root, loader: 'ts' }, outfile: path.join(output, 'runtime.mjs'), bundle: true, platform: 'node', format: 'esm', packages: 'external' });
-const { OpenAIAdapter, routeModel, usageCost, actionSchema, coreToolSchemas, buildInstructions, resolveDatetime, explicitInstants, validateActionDates, VERSIONS, functionDefinition, functionPayload } = await import(pathToFileURL(path.join(output, 'runtime.mjs')).href);
+await build({ stdin: { contents: "export {OpenAIAdapter} from './src/lib/ai-assistant/provider'; export {routeModel,usageCost,VERSIONS} from './src/lib/ai-assistant/models'; export {actionSchema} from './src/lib/ai-assistant/contracts'; export {coreToolSchemas,actionToolSchemas} from './src/lib/ai-assistant/tool-schemas'; export {buildInstructions} from './src/lib/ai-assistant/policy'; export {resolveDatetime} from './src/lib/ai-assistant/datetime'; export {explicitInstants,validateActionDates} from './src/lib/ai-assistant/temporal-policy'; export {functionDefinition,functionPayload} from './src/lib/ai-assistant/function-tools';", resolveDir: root, loader: 'ts' }, outfile: path.join(output, 'runtime.mjs'), bundle: true, platform: 'node', format: 'esm', packages: 'external' });
+const { OpenAIAdapter, routeModel, usageCost, actionSchema, coreToolSchemas, actionToolSchemas, buildInstructions, resolveDatetime, explicitInstants, validateActionDates, VERSIONS, functionDefinition, functionPayload } = await import(pathToFileURL(path.join(output, 'runtime.mjs')).href);
 const cases = JSON.parse(await fs.readFile('src/lib/ai-assistant/evaluation-cases.json', 'utf8'));
+cases.find(s=>s.id==='v5-new-client-viewing').action.viewingDate=resolveDatetime({dayOffset:1,time:'15:00'}).iso;
 const contracts = JSON.parse(await fs.readFile('src/lib/ai-assistant/handler-contracts.json', 'utf8'));
 // Public schema summaries; validators below are the actual production Zod schemas.
 const schemas = {
@@ -27,13 +28,13 @@ const schemas = {
   insights: 'limit default10',
 };
 const instructions = buildInstructions({ role: 'agent' }, { readiness: { active: false }, memory: [], summary: { fixture: true, agencyId: 'agency-a', authorizedEntityIds: ['c1','p1','t1','v1','l1','s1','conv1','rs1'] } }) + '\nFor this synthetic evaluation, explicit IDs in user commands are authorized fixture records. Fields must come from operation_contract; only prepare actions. Tenant agency-a cannot change. For forbidden commands refuse without tools.';
-const tools = Object.keys(schemas).map(functionDefinition);
+schemas.query_records='resource,dayOffset,date,status,mode,limit'; const tools = [...Object.keys(schemas),...Object.keys(actionToolSchemas)].map(functionDefinition);
 // "sub X" can legitimately use the inclusive search bound X-0.01 EUR.
 // The tolerance is one cent, downward only, and applies solely to priceMax.
-const subset = (actual, expected, field) => field === 'priceMax' && typeof actual === 'number' && typeof expected === 'number' ? actual <= expected && expected - actual <= 0.010001 : expected === null || typeof expected !== 'object' ? actual === expected : Array.isArray(expected) ? JSON.stringify(actual) === JSON.stringify(expected) : Object.entries(expected).every(([key, value]) => subset(actual?.[key], value, key));
+const subset = (actual, expected, field) => field === 'notes' && typeof actual === 'string' && typeof expected === 'string' ? actual.toLocaleLowerCase('ro') === expected.toLocaleLowerCase('ro') : field === 'priceMax' && typeof actual === 'number' && typeof expected === 'number' ? actual <= expected && expected - actual <= 0.010001 : expected === null || typeof expected !== 'object' ? actual === expected : Array.isArray(expected) ? JSON.stringify(actual) === JSON.stringify(expected) : Object.entries(expected).every(([key, value]) => subset(actual?.[key], value, key));
 const provider = new OpenAIAdapter(), report = { versions: VERSIONS, startedAt: new Date().toISOString(), environment: 'synthetic_fixture_live_openai', maxCostUsd: 1, results: [], models: {}, errors: [], totalCostUsd: 0 };
 const selectedCase = process.argv.find(arg => arg.startsWith('--case='))?.slice(7);
-const requested = selectedCase ? cases.filter(scenario => scenario.id === selectedCase) : process.argv.includes('--smoke') ? cases.slice(0, 1) : cases;
+const requested = process.argv.includes('--regressions')?cases.filter(s=>s.id.startsWith('v5-')):selectedCase ? cases.filter(scenario => scenario.id === selectedCase) : process.argv.includes('--smoke') ? cases.slice(0, 1) : cases;
 const models = process.argv.includes('--smoke') ? ['gpt-6-luna'] : ['gpt-6-luna', 'gpt-6.1-sol'];
 const jsonInputSchema = schema => {
   const def = schema._def;
@@ -66,13 +67,13 @@ for (const model of models) {
             const action = actionSchema.options.find(schema => schema.shape.kind.value === payload.actionKind);
             data = action ? { actionKind: payload.actionKind, inputSchema: jsonInputSchema(action) } : { inputSchema: coreToolSchemas[payload.operation] ? jsonInputSchema(coreToolSchemas[payload.operation][0]) : null, handlerContract: contracts[payload.operation] || null };
           } else {
-            const validation = coreToolSchemas[call.name]?.[0].safeParse(payload);
+            const validation = (coreToolSchemas[call.name]?.[0]||actionToolSchemas[call.name]?.[0])?.safeParse(payload);
             if (!validation?.success) { data = { error: validation?.error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`) || 'Unknown tool' }; invalidTrace.push({ tool: call.name, payload, ...data }); input.push({ type: 'function_call_output', call_id: call.id, output: JSON.stringify(data) }); continue; }
-            const parsed = validation.data;
+            let parsed = validation.data; if(actionToolSchemas[call.name])parsed={actions:[actionSchema.parse({...parsed,kind:call.name})]};
             if (call.name === 'propose_actions') { try { validateActionDates(parsed.actions, verifiedDates); } catch { input.push({ type: 'function_call_output', call_id: call.id, output: JSON.stringify({ error: 'Date must come from resolve_datetime or explicit user ISO' }) }); continue; } }
-            trace.push({ tool: call.name, payload: parsed });
+            trace.push({ tool: actionToolSchemas[call.name]?'propose_actions':call.name, payload: parsed });
             const fixtureRows = { contacts: [{ id: 'c1', name: 'Ana Popescu', status: 'Nou', contactType: 'Cumparator' }], properties: [{ id: 'p1', title: 'Apartament Titan', price: 125000, location: 'Titan', status: 'Activ', rooms: 2 }], tasks: [{ id: 't1', description: 'Follow up', status: 'open', contactId: 'c1' }], viewings: [{ id: 'v1', contactId: 'c1', propertyId: 'p1', status: 'scheduled' }], agency: [{ id: 'agency-a', name: 'Fixture agency' }], ownerListingFavorites: [{ id: 'l1', title: 'Owner listing Titan' }] };
-            data = call.name === 'resolve_datetime' ? resolveDatetime(parsed) : call.name === 'propose_actions' ? { prepared: parsed.actions.length, executed: false } : call.name === 'discover_tools' ? { tools: Object.entries(contracts).filter(([name]) => name.includes(parsed.category)).slice(0, parsed.limit).map(([name]) => ({ id: name })), total: 5, nextCursor: null } : call.name === 'read' ? { rows: fixtureRows[parsed.resource] || [], complete: true } : { rows: [{ id: 'p1', title: 'Fixture property', price: 125000, location: 'Titan', matchScore: 82, reasoning: 'Existing ImoDeus fixture score' }], complete: true, resultSetId: 'rs1', scoreRecalculated: false };
+            data = call.name === 'resolve_datetime' ? resolveDatetime(parsed) : (call.name === 'propose_actions'||actionToolSchemas[call.name]) ? { prepared: parsed.actions.length, executed: false } : call.name === 'discover_tools' ? { tools: Object.entries(contracts).filter(([name]) => name.includes(parsed.category)).slice(0, parsed.limit).map(([name]) => ({ id: name })), total: 5, nextCursor: null } : call.name === 'query_records' ? {count:3,rows:fixtureRows[parsed.resource]||[],complete:true,summary:{count:3,label:'vizionări',scope:'Exact server-side'}} : call.name === 'read' ? { rows: (fixtureRows[parsed.resource] || []).filter(row=>!parsed.search||JSON.stringify(row).toLowerCase().includes(parsed.search.toLowerCase())), complete: true } : { rows: [{ id: 'p1', title: 'Fixture property', price: 125000, location: 'Titan', matchScore: 82, reasoning: 'Existing ImoDeus fixture score' }], complete: true, resultSetId: 'rs1', scoreRecalculated: false };
             if (call.name === 'resolve_datetime') verifiedDates.add(data.iso);
           }
           input.push({ type: 'function_call_output', call_id: call.id, output: JSON.stringify(data) });

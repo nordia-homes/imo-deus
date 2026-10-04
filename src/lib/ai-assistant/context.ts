@@ -21,7 +21,7 @@ export function compressedResult(result: unknown, maxBytes = 14000) {
 export function contextMessages(history: AssistantMessage[], maxBytes = 14000) {
   const messages: { role: string; content: string }[] = []; let bytes = 0;
   for (const row of [...history].reverse()) {
-    const content = row.text.slice(0, 2200) + (row.cards?.length ? '\nRESULT_REFERENCES ' + JSON.stringify(row.cards.map(card => ({ source: card.source, resultSetId: (card as any).resultSetId, ids: card.rows.slice(0, 10).map(r => r.id) }))) : '');
+    const content = row.text.slice(0, 2200) + (row.cards?.length ? '\nRESULT_REFERENCES ' + JSON.stringify(row.cards.slice(-4).map(card => ({ source: card.source, resultSetId: card.resultSetId, entities: card.rows.slice(0, 6).map(r => ({id:r.id,title:r.title||r.name||r.propertyTitle,status:r.status})), ...(card.summary?{summary:card.summary}:{}) }))) : '');
     const size = Buffer.byteLength(content); if (bytes + size > maxBytes) break;
     bytes += size; messages.unshift({ role: row.role, content });
   }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { assistantContext, collectionFor, readResource } from '@/lib/ai-assistant/access';
-import { idSchema, searchSchema, readSchema, actionSchema } from '@/lib/ai-assistant/contracts';
+import { idSchema, searchSchema, readSchema, actionSchema, queryRecordsSchema } from '@/lib/ai-assistant/contracts';
+import { queryRecords } from '@/lib/ai-assistant/record-query';
 import { searchProperties } from '@/lib/ai-assistant/search';
 import { chatTurn, getPlan, runPlan, inspectPlan, sessionHistory, saveAssistantMessage } from '@/lib/ai-assistant/workspace';
 import { operationCatalog } from '@/lib/ai-assistant/operations';
@@ -19,6 +20,7 @@ const schema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('search'), query: searchSchema, sessionId: z.string().uuid().optional(), requestId: z.string().uuid().optional() }).strict(),
   z.object({ kind: z.literal('prepare'), sessionId: z.string().uuid(), requestId: z.string().uuid(), actions: z.array(actionSchema).min(1).max(12) }).strict(),
   z.object({ kind: z.literal('read'), query: readSchema }).strict(),
+  z.object({ kind: z.literal('query'), query: queryRecordsSchema }).strict(),
   z.object({ kind: z.literal('execute'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('execute_background'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('cancel'), planId: z.string().uuid() }).strict(),
@@ -76,6 +78,7 @@ export async function POST(request: NextRequest) {
         result = { ...page, message };
       }
     } else if (input.kind === 'read') result = await readResource(ctx, input.query);
+    else if (input.kind === 'query') result = await queryRecords(ctx, input.query);
     else if (input.kind === 'inspect') result = { plan: await inspectPlan(ctx, input.planId) };
     else result = { plan: await runPlan(ctx, input.planId, input.kind === 'cancel') };
     return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });

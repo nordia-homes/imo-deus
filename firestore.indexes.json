@@ -1,45 +1,207 @@
 {
   "indexes": [
-    { "collectionGroup": "assistantTelemetry", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }, { "fieldPath": "timestamp", "order": "ASCENDING" }] },
-    { "collectionGroup": "assistantAgentJobs", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "ASCENDING" }] },
-    { "collectionGroup": "assistantAgentJobs", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "leaseUntil", "order": "ASCENDING" }] },
-    { "collectionGroup": "ownerListings", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "scopeKey", "order": "ASCENDING" }, { "fieldPath": "publicationStatus", "order": "ASCENDING" }, { "fieldPath": "isCanonical", "order": "ASCENDING" }, { "fieldPath": "searchVersion", "order": "ASCENDING" }, { "fieldPath": "searchPrice", "order": "ASCENDING" }] },
-    { "collectionGroup": "assistantAutomationJobs", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "nextRunAt", "order": "ASCENDING" }] },
-    { "collectionGroup": "assistantAutomationJobs", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "leaseUntil", "order": "ASCENDING" }] },
     {
-      "collectionGroup": "assistantSessions", "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "ownerId", "order": "ASCENDING" }, { "fieldPath": "updatedAt", "order": "DESCENDING" }]
-    },
-    {
-      "collectionGroup": "ownerListings", "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "scopeKey", "order": "ASCENDING" }, { "fieldPath": "publicationStatus", "order": "ASCENDING" }, { "fieldPath": "isCanonical", "order": "ASCENDING" }, { "fieldPath": "searchVersion", "order": "ASCENDING" }]
-    },
-    {
-      "collectionGroup": "ownerListings", "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "scopeKey", "order": "ASCENDING" }, { "fieldPath": "publicationStatus", "order": "ASCENDING" }, { "fieldPath": "isCanonical", "order": "ASCENDING" }, { "fieldPath": "searchVersion", "order": "ASCENDING" }, { "fieldPath": "searchCurrency", "order": "ASCENDING" }, { "fieldPath": "searchPrice", "order": "ASCENDING" }]
-    },
-    {
-      "collectionGroup": "tiktokPostDrafts",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionGroup": "assistantTelemetry",
+      "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assistantAgentJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assistantAgentJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leaseUntil",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assistantAutomationJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextRunAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assistantAutomationJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "leaseUntil",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assistantSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tiktokPostDrafts",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "publishOutcomeUnknown", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "tiktokPostDrafts",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "awaitingPublicId", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "publishOutcomeUnknown",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tiktokPostDrafts",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "awaitingPublicId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
@@ -634,9 +796,18 @@
       "collectionGroup": "conversations",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "assigneeId", "order": "ASCENDING" },
-        { "fieldPath": "lastMessageAt", "order": "DESCENDING" },
-        { "fieldPath": "__name__", "order": "DESCENDING" }
+        {
+          "fieldPath": "assigneeId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastMessageAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
@@ -1004,6 +1175,340 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchZones",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchZones",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "searchType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchRooms",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchZones",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "searchRooms",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchRooms",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "ownerListings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "publicationStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isCanonical",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchVersion",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchCurrency",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchTransaction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchZones",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "searchType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchRooms",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "searchPrice",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tasks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "dueDate",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -1011,8 +1516,14 @@
       "collectionGroup": "tiktokPostDrafts",
       "fieldPath": "status",
       "indexes": [
-        { "order": "ASCENDING", "queryScope": "COLLECTION" },
-        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
       ]
     },
     {

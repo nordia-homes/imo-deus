@@ -5,7 +5,8 @@ import type { AssistantContext } from './access';
 import { automationReadiness } from './readiness';
 import { OpenAIAdapter, ProviderError, type ModelProvider } from './provider';
 import { routeModel, usageCost, VERSIONS } from './models';
-import { AgentBudget, BudgetExceeded } from './budget';
+import { AgentBudget, BudgetExceeded, requestReservation, type InputReservation } from './budget';
+import { actionToolSchemas } from './tool-schemas';
 import { requireTool, coreToolNames, toolRegistry } from './registry';
 import { compressedResult, contextMessages, relevantMemory } from './context';
 import { usageRecord, type UsageRecord, type AgentEvent } from './telemetry';
@@ -30,15 +31,17 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
   const readiness = await automationReadiness(ctx);
   const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: options.allowedTools, summary: options.summary });
-  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const contextHint = (prompt + ' ' + history.slice(-2).map(m=>m.text).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas,name) || /viewing/.test(name) && /vizionar|vizionare|calendar|program/.test(contextHint) || /contact|preferences|interaction|offer|recommend/.test(name) && /client|contact|lead|ofert|telefon|cumparator/.test(contextHint) || /property|owner/.test(name) && /propriet|apartament|casa|teren|rezerv|status|portofol|anunt/.test(contextHint) || /task/.test(name) && /sarcin|task|follow.?up/.test(contextHint) || /automation/.test(name) && /automat|recurent/.test(contextHint) || name==='assign_record' && /atribui|agent/.test(contextHint);
+  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
-  let invalidCalls = 0; const repetitions = new Map<string, number>();
+  let invalidCalls = 0, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
   try {
     for (let turn = 0; turn < (options.child ? 3 : budget.limits.maxSteps); turn++) {
       budget.step(); await emit('planning', 'Interpretez cererea și aleg următorul pas.');
       let decision = routeModel({ invalidCalls, remainingCost: budget.limits.maxCost - budget.cost });
-      const inputBytes = Buffer.byteLength(JSON.stringify(input) + instructions + JSON.stringify(tools));
+      const reservation = requestReservation(instructions,input,tools,previousReservation), inputBytes = reservation.tokens;
       const outputLimit = options.child ? 1200 : budget.limits.maxOutputTokens;
       budget.reserve(decision.model, inputBytes, outputLimit);
       if (options.child && (budget.tokens - initialTokens + inputBytes + outputLimit > 16000 || budget.cost - initialCost + usageCost(decision.model, { inputTokens: inputBytes, outputTokens: outputLimit, cachedTokens: 0, cacheWriteTokens: inputBytes, estimated: true }) > 0.03 || Date.now() - childStarted >= 30000)) throw new BudgetExceeded('buget subagent');
@@ -57,6 +60,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         }
       }
       metrics.models.push(usageRecord(decision, result.usage, usageCost(decision.model, result.usage), result.latencyMs)); budget.record(decision.model, result.usage);
+      previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
       input.push(...result.items);
       if (!result.calls.length) return finish(result.text || 'Răspuns incomplet; nu am executat acțiuni.', result.status === 'incomplete' ? 'partial' : result.intentStatus === 'clarification' ? 'clarification' : result.intentStatus === 'refusal' ? 'refused' : 'success');
       for (const call of result.calls) {
@@ -106,6 +110,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         metrics.tools.push({ name: toolRegistry.has(name) ? name : 'unknown_tool', status, latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
         input.push({ type: 'function_call_output', call_id: call.id, output: compressedResult(data, 7000) });
       }
+      if (actions.length) return finish('Plan pregătit.');
     }
   } catch (error) {
     if (error instanceof BudgetExceeded) return finish(error.message + ' Acțiunile pregătite nu au fost executate.', 'partial');

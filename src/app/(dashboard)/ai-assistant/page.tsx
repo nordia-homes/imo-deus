@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
+import { ActionPreview } from '@/components/ai/ActionPreview';
+import { AssistantResultCard } from '@/components/ai/AssistantResultCard';
 import { Input } from '@/components/ui/input';
 import { Bot, CheckCircle2, ChevronRight, History, Loader2, Plus, Search, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
 import Markdown from 'react-markdown';
@@ -10,7 +12,7 @@ import remarkGfm from 'remark-gfm';
 import type { AssistantAction, AssistantCard, AssistantMessage, AssistantPlan, AssistantSearch } from '@/lib/ai-assistant/contracts';
 
 const prompts = ['Găsește 5 apartamente în Titan sub 130000 euro.', 'Arată-mi vizionările de mâine și sarcinile restante.', 'Găsește proprietățile potrivite pentru un client.', 'Verifică starea conexiunii WhatsApp.'];
-const labels: Record<AssistantAction['kind'], string> = { create_contact: 'Creează contact', archive_contact: 'Arhivează / reactivează contact', assign_record: 'Atribuie unui agent', create_property: 'Creează proprietate', update_contact: 'Actualizează contact', update_preferences: 'Actualizează cerințele clientului', update_property: 'Actualizează proprietate', import_owner_listing: 'Importă anunțul în CRM', activate_property: 'Activează proprietatea', record_offer: 'Înregistrează ofertă', add_interaction: 'Adaugă interacțiune', create_task: 'Creează sarcină', update_task: 'Actualizează sarcină', schedule_viewing: 'Programează vizionare', update_viewing: 'Actualizează vizionare', recommend_properties: 'Adaugă oferte în portal', create_automation: 'Programează automatizare', update_automation: 'Actualizează automatizare', existing_operation: 'Acțiune CRM' };
+const labels: Record<AssistantAction['kind'], string> = { update_property_status: 'Modifică statusul proprietății', add_property_note: 'Adaugă notă la proprietate', set_property_featured: 'Actualizează promovarea pe site', delete_task: 'Șterge sarcina', delete_viewing: 'Șterge vizionarea', create_contact: 'Creează contact', archive_contact: 'Arhivează / reactivează contact', assign_record: 'Atribuie unui agent', create_property: 'Creează proprietate', update_contact: 'Actualizează contact', update_preferences: 'Actualizează cerințele clientului', update_property: 'Actualizează proprietate', import_owner_listing: 'Importă anunțul în CRM', activate_property: 'Activează proprietatea', record_offer: 'Înregistrează ofertă', add_interaction: 'Adaugă interacțiune', create_task: 'Creează sarcină', update_task: 'Actualizează sarcină', schedule_viewing: 'Programează vizionare', update_viewing: 'Actualizează vizionare', recommend_properties: 'Adaugă oferte în portal', create_automation: 'Programează automatizare', update_automation: 'Actualizează automatizare', existing_operation: 'Acțiune CRM' };
 function safeLink(value: unknown) {
   const link = String(value || '');
   if (link.startsWith('/') && !link.startsWith('//')) return link;
@@ -221,26 +223,10 @@ function AiAssistantWorkspace() {
   }
 
   function renderCard(card: AssistantCard, messageId: string, cardIndex: number) {
-    return <div key={cardIndex} className="my-3 rounded-2xl border bg-background p-4">
-      <div className="mb-3 flex items-center justify-between gap-2"><strong>{card.title}</strong><span className="text-xs text-muted-foreground">{card.rows.length} rezultate • {card.source === 'owners' ? 'surse proprietari' : card.source === 'crm' ? 'portofoliu CRM' : 'date CRM'}</span></div>
-      {!card.rows.length && <p className="text-sm text-muted-foreground">Nicio potrivire în segmentul verificat.{card.nextCursor ? ' Continuă căutarea.' : ''}</p>}
-      <div className="space-y-2">{card.rows.map((row, index) => {
-        const href = safeLink(row.link);
-        return <div key={String(row.id || index)} className="rounded-xl border p-3">
-          <div className="flex flex-wrap items-start justify-between gap-2"><div>
-            {href ? <a className="font-medium underline underline-offset-4" href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer">{String(row.title || row.name || row.description || row.id)}</a> : <p className="font-medium">{String(row.title || row.name || row.description || row.id)}</p>}
-            <p className="text-sm text-muted-foreground">{[row.location, row.price != null ? String(row.price) + (typeof row.price === 'number' ? ' EUR' : '') : null, row.rooms ? String(row.rooms) + ' camere' : null].filter(Boolean).join(' • ')}</p>
-            {row.reasoning ? <p className="mt-1 text-sm">{String(row.reasoning)}</p> : null}
-          </div>{card.source === 'owners' && <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busy} onClick={() => prepareActions([{ kind: 'existing_operation', operation: 'owner_prospect', params: {}, query: {}, body: { listingId: row.id, action: 'add' } }])}>Adaugă în prospectare</Button><Button size="sm" variant="outline" disabled={busy} onClick={() => startConsent(row)}><ShieldCheck className="mr-1 h-4 w-4" />Confirm acordul WhatsApp</Button></div>}</div>
-          {row.artifactId ? <Button className="mt-2" size="sm" variant="outline" disabled={busy} onClick={() => downloadArtifact(row)}>Descarcă {String(row.fileName || 'PDF')}</Button> : null}
-          <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Detalii și identificator</summary><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap">{JSON.stringify(row, null, 2)}</pre></details>
-        </div>;
-      })}</div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {card.search && card.nextCursor && <Button size="sm" variant="outline" disabled={busy} onClick={() => search({ ...card.search!, cursor: card.nextCursor! }, messageId, cardIndex)}>Continuă căutarea<ChevronRight className="ml-1 h-4 w-4" /></Button>}
-        {card.source === 'owners' && card.search && <Button size="sm" variant="outline" disabled={busy} onClick={() => { const { cursor: _, ...query } = card.search!; void search({ ...query, source: 'crm' }); }}>Vezi potrivirile din CRM</Button>}
-      </div>
-    </div>;
+    return <AssistantResultCard key={cardIndex} card={card} busy={busy} onPrompt={text => { void send(text); }} onPrepare={actions => { void prepareActions(actions); }} onConsent={row => { void startConsent(row); }} onArtifact={row => { void downloadArtifact(row); }} onContinue={() => {
+      if (card.search) void search({ ...card.search, cursor: card.nextCursor! }, messageId, cardIndex);
+      else if(card.query) void perform(async () => { const result = await api('/api/ai-assistant/workspace', {kind:'query',query:{...card.query,cursor:card.nextCursor}}); setMessages(messages => messages.map(message => message.id===messageId ? {...message,cards:message.cards?.map((old,index)=>index===cardIndex?{...old,...result,rows:[...old.rows,...result.rows]}:old)} : message)); });
+    }} onCrm={() => { if(card.search){const {cursor:_,...query}=card.search;void search({...query,source:'crm'});} }}/>;
   }
 
   return <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-5 p-4 lg:flex-row lg:p-7">
@@ -255,7 +241,7 @@ function AiAssistantWorkspace() {
           <div className="mb-1 text-xs font-medium text-muted-foreground">{message.role === 'user' ? 'Tu' : 'AI Assistant'}</div>
           <div className="prose prose-sm max-w-none dark:prose-invert"><Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown></div>
           {message.cards?.map((card, index) => renderCard(card, message.id, index))}
-          {message.planId && <div className="my-3 rounded-2xl border border-emerald-200 bg-emerald-50/30 p-4"><strong>Plan de acțiune</strong><ol className="my-3 space-y-2">{message.actions?.map((action, index) => <li key={index} className="rounded-xl border bg-background p-3"><p className="text-sm font-medium">{index + 1}. {labels[action.kind]}{action.kind === 'existing_operation' ? ': ' + action.operation : ''}</p><details className="mt-1 text-xs"><summary className="cursor-pointer text-muted-foreground">Verifică datele acțiunii</summary><pre className="mt-2 overflow-auto whitespace-pre-wrap">{JSON.stringify(action, null, 2)}</pre></details></li>)}</ol>
+          {message.planId && <div className="my-3 rounded-2xl border border-emerald-200 bg-emerald-50/30 p-4"><strong>Plan de acțiune</strong><ol className="my-3 space-y-2">{message.actions?.map((action, index) => <li key={index} className="rounded-xl border bg-background p-3"><p className="text-sm font-medium">{index + 1}. {labels[action.kind]}{action.kind === 'existing_operation' ? ': ' + action.operation : ''}</p><ActionPreview action={action} resolveName={id=>{const row=messages.flatMap(m=>m.cards||[]).flatMap(c=>c.rows).find(r=>r.id===id);return String(row?.name||row?.title||id);}}/><details className="mt-1 text-xs"><summary className="cursor-pointer text-muted-foreground">Verifică datele acțiunii</summary><pre className="mt-2 overflow-auto whitespace-pre-wrap">{JSON.stringify(action, null, 2)}</pre></details></li>)}</ol>
             {plans[message.planId]?.risks && <p className="mb-2 text-xs text-muted-foreground">Risc pe pași: {plans[message.planId].risks!.join(', ')}.</p>}
             {plans[message.planId]?.externalCostNote && <p className="mb-3 rounded-xl border border-amber-200 p-3 text-sm">{plans[message.planId].externalCostNote}</p>}
             {(!plans[message.planId] || plans[message.planId].status === 'pending') ? <div className="flex gap-2"><Button disabled={busy || !plans[message.planId]} onClick={() => execute(message.planId!)}><CheckCircle2 className="mr-2 h-4 w-4" />Execută planul</Button><Button disabled={busy || !plans[message.planId]} variant="outline" onClick={() => execute(message.planId!, true)}>Anulează</Button></div> : <div className="text-sm space-y-2">

@@ -2,6 +2,15 @@ import { usageCost, type ModelId, type ModelUsage } from './models';
 export type AgentLimits = { maxSteps: number; maxToolCalls: number; maxTokens: number; maxCost: number; maxExecutionMs: number; maxParallel: number; maxOutputTokens: number };
 export const DEFAULT_LIMITS: AgentLimits = { maxSteps: 12, maxToolCalls: 24, maxTokens: 70000, maxCost: 0.12, maxExecutionMs: 120000, maxParallel: 3, maxOutputTokens: 2200 };
 export class BudgetExceeded extends Error { constructor(public dimension: string) { super(`Limita Jarvis a fost atinsă: ${dimension}. Rezultatele sunt parțiale.`); } }
+export type InputReservation = { plainBytes: number; inputTokens: number; outputTokens: number };
+export function requestReservation(instructions: string, input: unknown[], tools: unknown[], previous?: InputReservation) {
+  // Encrypted reasoning is protocol ciphertext, not its base64 length in billable tokens.
+  // After the first call, use the provider's measured input plus ALL new plaintext bytes
+  // and the entire preceding output, with headroom. Actual usage still enforces the cap.
+  const plainBytes = Buffer.byteLength(instructions + JSON.stringify(tools) + JSON.stringify(input, (key, value) => key === 'encrypted_content' ? undefined : value));
+  const tokens = previous && previous.inputTokens > 0 ? Math.ceil(previous.inputTokens * 1.2) + Math.max(0, plainBytes - previous.plainBytes) + previous.outputTokens : plainBytes;
+  return { plainBytes, tokens };
+}
 export class AgentBudget {
   readonly started = Date.now(); steps = 0; calls = 0; tokens = 0; cost = 0;
   constructor(readonly limits: AgentLimits = DEFAULT_LIMITS) {}

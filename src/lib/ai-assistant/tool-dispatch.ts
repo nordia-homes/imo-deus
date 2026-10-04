@@ -12,18 +12,22 @@ import { getInsights } from './insights';
 import type { AgentOptions } from './planner';
 import { analyzeRecords, resolveDatetime } from './deterministic';
 import { validateActionDates } from './temporal-policy';
+import { queryRecords, decorateRecords } from './record-query';
 export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]; actions: AssistantAction[]; refs: AccessReference[]; childMetrics?: Awaited<ReturnType<typeof import('./planner').planTurn>>['metrics'] };
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
   if (name === 'resolve_datetime') data = resolveDatetime(payload);
+  else if (name === 'query_records') {
+    data = await queryRecords(ctx, payload); cards.push({ type: 'data', title: ({viewings:'Agenda vizionărilor',tasks:'Sarcinile tale',contacts:'Clienți',properties:'Portofoliu CRM'} as Record<string,string>)[payload.resource], source: payload.resource, query: payload, ...data } as AssistantCard);
+  }
   else if (name === 'analyze_records') {
     data = await analyzeRecords(ctx, payload); cards.push({ type: 'data', outputType: 'ANALYTICS_CARD', title: 'Analiză deterministă', source: payload.resource, ...data } as AssistantCard);
     if (['sales', 'conversations', 'socialPosts', 'salesTemplateAudit', 'assistantAutomations'].includes(payload.resource)) refs.push(...payload.ids.map((id: string) => ({ resource: payload.resource, id })));
   } else if (name === 'read' || name === 'read_related' || name === 'read_field') {
     data = name === 'read' ? await readResource(ctx, payload) : name === 'read_related' ? await readRelated(ctx, payload) : await readField(ctx, payload);
     if (['sales', 'conversations', 'socialPosts', 'salesTemplateAudit', 'assistantAutomations'].includes(payload.resource)) refs.push(...(payload.id ? [{ resource: payload.resource, id: payload.id }] : (data.rows || []).map((row: any) => ({ resource: payload.resource, id: row.id }))));
-    if (Array.isArray(data.rows)) cards.push({ type: 'data', title: payload.collection || payload.resource, source: payload.resource, ...data } as AssistantCard);
+    if (Array.isArray(data.rows)) cards.push({ type: 'data', title: payload.collection || payload.resource, source: payload.resource, ...data, rows: await decorateRecords(ctx, payload.resource, data.rows.slice(0, 20)) } as AssistantCard);
   } else if (name === 'search_properties') {
     data = await searchProperties(ctx, payload); cards.push({ type: 'results', title: payload.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', source: payload.source, search: payload, ...data } as AssistantCard);
   } else if (name === 'match_contact' || name === 'match_property') {
@@ -45,6 +49,7 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     for (const row of data.conversations || []) refs.push({ resource: 'conversations', id: row.id }); for (const row of data.results || []) if (row.conversationId) refs.push({ resource: 'conversations', id: row.conversationId });
   } else if (name === 'propose_actions') {
     validateActionDates(payload.actions, options.verifiedDates || new Set());
+    for (const action of payload.actions as AssistantAction[]) if (action.kind === 'update_property_status' && action.status === 'Vândut' && !action.soldPrice) throw new Error('Cere agentului prețul real de vânzare înainte de pregătirea planului.');
     for (const action of payload.actions as AssistantAction[]) if (action.kind === 'existing_operation') { requireTool(action.operation, ctx.role || ''); if (!Object.hasOwn(operations, action.operation) || isReadOperation(action.operation)) throw new Error('Acțiune handler invalidă.'); }
     actions.push(...payload.actions); data = { prepared: actions.length, executed: false };
   } else if (name === 'remember_preference') {

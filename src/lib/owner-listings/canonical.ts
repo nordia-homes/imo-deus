@@ -25,7 +25,7 @@ function mergeDuplicateIntoPrimary(
   duplicate: Partial<OwnerListingSummary>
 ) {
   return stripUndefined({
-    ...ownerSearchFields({ price: preferIncoming(primary.price, duplicate.price), priceValue: parsePriceNumber(preferIncoming(primary.price, duplicate.price)), location: preferIncoming(primary.location, duplicate.location) }),
+    ...ownerSearchFields({ price: preferIncoming(primary.price, duplicate.price), priceValue: parsePriceNumber(preferIncoming(primary.price, duplicate.price)), location: preferIncoming(primary.location, duplicate.location), propertyType: preferIncoming(primary.propertyType, duplicate.propertyType), transactionType: preferIncoming(primary.transactionType, duplicate.transactionType), roomsValue: preferIncoming(primary.roomsValue, duplicate.roomsValue), rooms: preferIncoming(primary.rooms, duplicate.rooms) }),
     title: preferIncoming(primary.title, duplicate.title),
     price: preferIncoming(primary.price, duplicate.price),
     priceValue: preferIncoming(primary.priceValue, duplicate.priceValue),

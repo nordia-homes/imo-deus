@@ -111,6 +111,20 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (!property.title || !property.address || !(property.price > 0) || !(property.squareFootage > 0) || !Array.isArray(property.images) || !property.images.length) throw new CommunicationError('Completează titlul, adresa, prețul, suprafața și imaginile înainte de activare.');
       tx.update(collectionFor(ctx, 'properties').doc(action.propertyId), { status: 'Activ', importNeedsReview: false, updatedAt: now });
       result = { propertyId: action.propertyId, link: `/properties/${action.propertyId}` };
+    } else if (action.kind === 'update_property_status') {
+      const property = await read('properties', action.propertyId);
+      if (action.status === 'Vândut' && !action.soldPrice) throw new CommunicationError('Precizează prețul final de vânzare.');
+      if (action.reason && !(action.status === 'Rezervat' ? action.reason.startsWith('reservation_') : action.status === 'Vândut' && action.reason.startsWith('sale_'))) throw new CommunicationError('Motivul nu corespunde statusului.');
+      const patch = { status: action.status, statusUpdatedAt: now, updatedAt: now, ...(action.status === 'Vândut' ? { soldPrice: action.soldPrice } : {}) };
+      const reasonLabels: Record<string, string> = { reservation_offer_accepted: 'Oferta acceptată', reservation_financing_pending: 'Așteaptă finanțare', reservation_documents_pending: 'Așteaptă acte', sale_completed: 'Tranzacție finalizată', sale_cash: 'Vânzare cash', sale_financed: 'Vânzare prin credit' };
+      tx.update(collectionFor(ctx, 'properties').doc(action.propertyId), patch);
+      tx.create(collectionFor(ctx, 'propertyStatusEvents').doc(key), { id: key, agencyId: ctx.agencyId, propertyId: action.propertyId, actorId: ctx.uid, changedAt: now, previousStatus: property.status || null, nextStatus: action.status, reason: action.reason || 'agent_instruction', reasonLabel: action.reason ? reasonLabels[action.reason] : 'La solicitarea agentului', agentMessage: action.notes || `Status ${action.status} solicitat de agent prin AI Assistant.`, soldPrice: action.soldPrice || null, marketAnalysisEligible: action.status === 'Vândut', propertySnapshot: { ...property, ...patch, id: action.propertyId } });
+      result = { propertyId: action.propertyId, title: property.title || '', previousStatus: property.status, status: action.status, link: `/properties/${action.propertyId}`, note: `Status actualizat: ${action.status}. Sincronizarea portalurilor este separată.` };
+    } else if (action.kind === 'add_property_note' || action.kind === 'set_property_featured') {
+      const property = await read('properties', action.propertyId);
+      const patch = action.kind === 'set_property_featured' ? { featured: action.featured } : { notes: [property.notes || '', action.notes].filter(Boolean).join('\n\n') };
+      tx.update(collectionFor(ctx, 'properties').doc(action.propertyId), { ...patch, updatedAt: now });
+      result = { propertyId: action.propertyId, title: property.title || '', ...patch, link: `/properties/${action.propertyId}` };
     } else if (action.kind === 'update_property') {
       const property = await read('properties', action.propertyId);
       if (!['Activ', 'Inactiv'].includes(property.status)) throw new CommunicationError('Proprietatea nu poate fi editată în această etapă.');
@@ -144,8 +158,16 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { taskId: ref.id, link: '/tasks' };
     } else if (action.kind === 'update_task') {
       await read('tasks', action.taskId);
-      tx.update(collectionFor(ctx, 'tasks').doc(action.taskId), { status: action.status, ...(action.dueDate ? { dueDate: action.dueDate } : {}), updatedAt: now });
+      const {kind: _, taskId: __, ...patch} = action;
+      if (!Object.keys(patch).length) throw new CommunicationError('Precizează modificarea sarcinii.');
+      tx.update(collectionFor(ctx, 'tasks').doc(action.taskId), { ...patch, updatedAt: now });
       result = { taskId: action.taskId, link: '/tasks' };
+    } else if (action.kind === 'delete_task' || action.kind === 'delete_viewing') {
+      const resource = action.kind === 'delete_task' ? 'tasks' : 'viewings', id = action.kind === 'delete_task' ? action.taskId : action.viewingId;
+      const previous = await read(resource, id);
+      tx.delete(collectionFor(ctx, resource).doc(id));
+      tx.create(collectionFor(ctx, 'assistantDeletedRecords').doc(key), { resource, id, previous, actorId: ctx.uid, deletedAt: now });
+      result = { id, deleted: true, link: action.kind === 'delete_task' ? '/tasks' : '/viewings' };
     } else if (action.kind === 'schedule_viewing' || action.kind === 'update_viewing') {
       const old = action.kind === 'update_viewing' ? await read('viewings', action.viewingId) : null;
       const contactId = action.kind === 'schedule_viewing' ? action.contactId : String(old?.contactId);
@@ -157,7 +179,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const agentId = String(old?.agentId || ctx.uid);
       if (status === 'scheduled') {
         if (Date.parse(viewingDate) <= Date.now()) throw new CommunicationError('Vizionarea trebuie programată în viitor.');
-        if (property.status !== 'Activ') throw new CommunicationError('Proprietatea nu este activă.');
+        if (!['Activ', 'Rezervat'].includes(property.status)) throw new CommunicationError('Proprietatea nu este disponibilă pentru vizionare.');
         const nearby = await tx.get(collectionFor(ctx, 'viewings').where('viewingDate', '>=', new Date(Date.parse(viewingDate) - 4 * 3600000).toISOString()).where('viewingDate', '<', new Date(Date.parse(viewingDate) + duration * 60000).toISOString()));
         if (nearby.docs.some(d => d.id !== (action.kind === 'update_viewing' ? action.viewingId : key) && d.data().status === 'scheduled' && (d.data().agentId === agentId || d.data().contactId === contactId || d.data().propertyId === propertyId) && overlaps(viewingDate, duration, d.data().viewingDate, d.data().duration || 60))) throw new CommunicationError('Intervalul se suprapune cu o vizionare a agentului, clientului sau proprietății.', 409);
       }

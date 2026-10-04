@@ -33,7 +33,7 @@ describe('assistant command boundary', () => {
 describe('owner prices and atomic index fields', () => {
   it.each([['130.000 €', 130000], ['130,000 EUR', 130000], ['120000.00 euro', 120000], ['120 000,50 €', 120000.5], ['1.200.000 EUR', 1200000], ['Negociabil', null], ['200 EUR/mp', null]])('parses %s correctly', (value, expected) => { expect(parseOwnerPrice(value)).toBe(expected); });
   it('does not assume unknown currency is EUR', () => {
-    expect(ownerSearchFields({ price: '130000' })).toMatchObject({ searchCurrency: 'unknown', searchPrice: 130000, searchVersion: 1 });
+    expect(ownerSearchFields({ price: '130000' })).toMatchObject({ searchCurrency: 'unknown', searchPrice: 130000, searchVersion: 2 });
     expect(ownerSearchFields({ price: '130000 lei' }).searchCurrency).toBe('RON');
   });
   it('recomputes the projection from changed source, not stale numeric fields', () => {

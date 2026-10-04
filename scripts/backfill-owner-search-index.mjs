@@ -26,7 +26,7 @@ while (true) {
   for (const doc of page.docs) {
     const row = doc.data(); scanned++;
     const patch = { ...ownerSearchFields(row), priceValue: parseOwnerPrice(row.price) };
-    if (Object.entries(patch).every(([key, value]) => row[key] === value)) continue;
+    if (Object.entries(patch).every(([key, value]) => JSON.stringify(row[key]) === JSON.stringify(value))) continue;
     changed++;
     if (apply) {
       try { await doc.ref.update(patch, { lastUpdateTime: doc.updateTime }); }
