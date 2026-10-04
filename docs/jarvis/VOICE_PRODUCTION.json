@@ -1,18 +1,18 @@
 {
-  "verifiedAt": "2026-10-04T23:10:29.664Z",
+  "verifiedAt": "2026-10-04T23:45:19.146Z",
   "project": "studio-652232171-42fb6",
   "traffic": {
     "splits": [
       {
-        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-04-007",
+        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-05-008",
         "percent": 100
       }
     ]
   },
   "build": {
-    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-04-007",
+    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-008",
     "state": "READY",
-    "commit": "8d8448e14db092180b3d301caf8c7e470dfd5897"
+    "commit": "a0cd28cbd32a9bb917b1d22bbc74edae17f32b89"
   },
   "configuration": [
     {
@@ -22,6 +22,10 @@
     {
       "name": "JARVIS_VOICE_NAME",
       "value": "cedar"
+    },
+    {
+      "name": "WS_NO_BUFFER_UTIL",
+      "value": "true"
     }
   ],
   "openAiSecretBound": true,
@@ -66,7 +70,22 @@
   "localBuild": "PASS",
   "automatedTests": 349,
   "rulesTests": 18,
-  "voiceUiChecks": 9,
+  "voiceUiChecks": 10,
+  "voiceRegressionTests": 21,
+  "productionAudioProbe": {
+    "verifiedAt": "2026-10-04T23:43:23.161Z",
+    "status": 200,
+    "anonymousStatus": 403,
+    "build": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-008",
+    "commit": "a0cd28cbd32a9bb917b1d22bbc74edae17f32b89",
+    "bytes": 153600,
+    "nonZeroSamples": 76357,
+    "outputSeconds": 3.2,
+    "firstAudioMs": 1274,
+    "costUsd": 0.0014383999999999998,
+    "syntheticFixedText": true,
+    "crmActionsExecuted": false
+  },
   "textUiChecks": 13,
   "hardwareAcceptance": "Manual microphone/speaker/Safari/Electron acceptance pending; synthetic tests do not certify echo cancellation."
 }
