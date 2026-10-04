@@ -2,6 +2,8 @@
 
 Implementarea este un shell vocal peste Jarvis existent. Benchmarkul a costat **0,05505 USD**: 30 probe TTS→STT și 10 probe live-STT. Nu s-au folosit date sau operații CRM reale pentru benchmark.
 
+Corecție de producție: rutele publice ale atlasului și AudioWorklet au returnat 404 în primul rollout; permisiunea de microfon era acordată, dar încărcarea procesorului audio eșua. Atlasul este acum import static cu hash, iar procesorul este împachetat în shell. Testul UI include încărcarea sa în Web Audio real, pe lângă fixture-ul de conversație. Verificarea HTTP a atlasului livrat este inclusă în raportul de producție.
+
 | # | Cerință | Implementare și dovadă |
 |---|---|---|
 | 1 | Arhitectură | AudioWorklet/VAD → STT server → workspace existent → prezentare → TTS PCM → rig local. [VOICE.md](VOICE.md). |

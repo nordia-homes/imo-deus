@@ -27,6 +27,7 @@ await build({
     {
       name: "fixture-auth",
       setup(builder) {
+        builder.onLoad({filter:/rig-atlas\.png$/},()=>({contents:"export default {src:'/jarvis/rig-atlas.png'};",loader:'js'}));
         builder.onLoad({ filter: /context[\\/]AgencyContext\.tsx$/ }, () => ({
           contents:
             "const user={uid:'agent',getIdToken:async()=>'fixture-token'};export const useAgency=()=>({user,agencyId:'fixture-agency'});",
@@ -90,6 +91,8 @@ try {
   });
   page.on("pageerror", (e) => errors.push(e.message));
   await page.addInitScript(() => {
+    window.nativeAudioContext=window.AudioContext;
+    window.nativeAudioWorkletNode=window.AudioWorkletNode;
     window.stoppedSources = 0;
     window.stoppedTracks = 0;
     const track = {
@@ -319,6 +322,9 @@ try {
     exact: true,
   });
   await dialog.waitFor();
+  const workletCode=(await fs.readFile('src/lib/jarvis-voice/worklet.ts','utf8')).split('`')[1];
+  const realFrames=await page.evaluate(async code=>{const ctx=new window.nativeAudioContext({sampleRate:24000});await ctx.resume();const url=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));await ctx.audioWorklet.addModule(url);URL.revokeObjectURL(url);const node=new window.nativeAudioWorkletNode(ctx,'jarvis-pcm');let frames=0;node.port.onmessage=()=>frames++;const oscillator=ctx.createOscillator();oscillator.connect(node);node.connect(ctx.destination);oscillator.start();await new Promise(r=>setTimeout(r,300));oscillator.stop();node.disconnect();node.port.close();await ctx.close();return frames;},workletCode);
+  assert(realFrames>0,'Bundled worklet must load and capture frames in a real Web Audio context');checks.push('real browser AudioWorklet loads without public-file fetch');
   assert.equal(await dialog.locator("textarea,input").count(), 0);
   checks.push("desktop shortcut opens voice without transcript/composer");
   await page.screenshot({ path: path.join(output, "listening.png") });

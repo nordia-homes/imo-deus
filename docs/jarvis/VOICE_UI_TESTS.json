@@ -11,7 +11,7 @@
     "layered rig renders with independent eye/arm/antenna nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 60.27397260273973,
+  "animationFps": 60.56995333170591,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."

@@ -444,6 +444,7 @@ export function JarvisVoice() {
       if (opened.current) {
         engine.setMicMuted(micMuted);
         engine.speakerMuted = speakerMuted;
+        setError('');
         setState("LISTENING");
       }
     } catch {}

@@ -1,4 +1,5 @@
 import { LocalVad, wavAudio } from "./vad";
+import {PCM_WORKLET} from './worklet';
 export class VoiceAudio {
   context?: AudioContext;
   stream?: MediaStream;
@@ -55,7 +56,8 @@ export class VoiceAudio {
         "devicechange",
         this.deviceChanged,
       );
-      await this.context.audioWorklet.addModule("/jarvis/pcm-worklet.js");
+      const moduleUrl=URL.createObjectURL(new Blob([PCM_WORKLET],{type:'text/javascript'}));
+      try{await this.context.audioWorklet.addModule(moduleUrl);}finally{URL.revokeObjectURL(moduleUrl);}
       if (this.closed) return;
       this.source = this.context.createMediaStreamSource(this.stream);
       this.node = new AudioWorkletNode(this.context, "jarvis-pcm");

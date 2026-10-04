@@ -6,6 +6,7 @@ import type {
   Gesture,
 } from "@/lib/jarvis-voice/presentation";
 import "./character.css";
+import rigAtlas from './rig-atlas.png';
 const parts = {
   body: [0, 0, 390, 390],
   leftArm: [390, 80, 245, 275],
@@ -38,7 +39,7 @@ function Texture({
       data-layer={part}
       className={"jarvis-texture " + (className || "")}
       style={{
-        backgroundImage: "url(/jarvis/rig-atlas.png)",
+        backgroundImage: `url(${rigAtlas.src})`,
         backgroundSize: `${(1254 / w) * 100}% ${(1254 / h) * 100}%`,
         backgroundPosition: `${(x / (1254 - w)) * 100}% ${(y / (1254 - h)) * 100}%`,
       }}
