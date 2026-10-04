@@ -81,4 +81,3 @@ describe('authorized complete pagination', () => {
     expect(await referencesAllowed(context([{ id: 'sale', agentId: 'other' }]), [{ resource: 'sales', id: 'sale' }])).toBe(false);
   });
 });
-
