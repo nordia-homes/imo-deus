@@ -51,6 +51,7 @@ try {
       }
       result = { jobId: 'plan-job', status: 'completed', plan: { ...pendingPlan, status: 'unknown', results: [], error: 'Verifică starea canalului înainte de repetare.' } };
     }
+    else if(request.method()==='GET'&&url.searchParams.has('sessionId')) result={messages:[],nextCursor:null};
     else if (request.method() === 'GET') result = { sessions: [], aiConfigured: true, backgroundConfigured: background, autonomy: { available: true, enabled: autonomyEnabled } };
     else if (new URL(request.url()).pathname.endsWith('owner-consent')) {
       assert.equal(body.confirmedPhoneConsent, true); assert.equal(body.purpose, 'marketing');

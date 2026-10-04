@@ -1,4 +1,5 @@
 'use client';
+import {JarvisVoice} from '@/components/jarvis-voice/JarvisVoice';
 import { AppShell } from '@/components/layout/app-shell';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
@@ -75,7 +76,7 @@ function DashboardRoot({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader />;
     }
 
-    return <AppShell>{children}</AppShell>;
+    return <AppShell>{children}<JarvisVoice/></AppShell>;
 }
 
 

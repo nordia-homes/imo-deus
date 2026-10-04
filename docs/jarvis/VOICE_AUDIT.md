@@ -1,0 +1,11 @@
+# Audit înainte de Jarvis Voice — 5 octombrie 2026
+
+Sursa verificată: commit `add8cb8009735ae49fa45d1f928274cb7c0471cb`, repository actual. Jarvis Text este implementat în pagina dashboard AI Assistant și endpoint-ul `/api/ai-assistant/workspace`. `workspace.chatTurn` gestionează istoricul, lockurile, memoria contextuală, planurile și telemetria; `planner.planTurn` este singurul agent loop. Routerul rămâne Luna/Sol. Registry-ul, matching-ul existent, verificarea proaspătă a membrului și envelope-ul de aprobare sunt în core.
+
+Voice va reutiliza endpoint-ul fără handler-e CRM noi. Confirmarea vocală poate prezenta aprobarea existentă și invoca exact operația `execute`/`cancel`; acordul WhatsApp rămâne butonul explicit existent. Cardurile `AssistantResultCard` și `ActionPreview` sunt reutilizabile. Contextul frontend trebuie legat printr-un ID comun de sesiune, deoarece pagina Text creează acum un ID nou la fiecare montare.
+
+App shell-ul autentificat este `AppShell`, sub `AgencyProvider`. Navigația mobilă are înălțime 64px și offset inferior 8px; launcherul trebuie poziționat deasupra sa și să țină cont de safe area/keyboard. Electron este activ în `desktop/main.cjs` și `desktop/preload.cjs`; pagina este web, cu context isolation. Shortcut-ul în renderer păstrează protecția câmpurilor editabile și nu necesită global shortcut.
+
+Arhitectură: VAD local → STT server → același endpoint Text → prezentare deterministă → TTS server → PCM/Web Audio. Fără agent vocal, registry nou, matching paralel, stocare audio sau servicii avatar cloud. Scenele personajului sunt construite prin transformarea straturilor, fără slideshow de expresii.
+
+Surse oficiale verificate înainte de STT/TTS: [transcriere](https://developers.openai.com/api/docs/guides/speech-to-text), [transcriere live](https://developers.openai.com/api/docs/guides/realtime-transcription), [Realtime Mini](https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini), [deprecări](https://developers.openai.com/api/docs/deprecations). Guide-ul Speech încă arată exemple vechi TTS; anunțul de deprecare indică `gpt-realtime-2.1-mini`. Modelele și endpoint-urile vor fi verificate și prin probe reale înainte de alegerea configurației.

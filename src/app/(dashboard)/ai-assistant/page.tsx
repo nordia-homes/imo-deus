@@ -1,6 +1,8 @@
 'use client';
+import {OwnerConsentDialog, type Consent, loadOwnerConsent, consentPayload} from '@/components/ai/OwnerConsentDialog';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {activeJarvisSession,storeJarvisSession} from '@/lib/jarvis-voice/session';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { ActionPreview } from '@/components/ai/ActionPreview';
@@ -19,7 +21,7 @@ function safeLink(value: unknown) {
   try { const url = new URL(link); return ['http:', 'https:'].includes(url.protocol) ? url.href : undefined; } catch { return undefined; }
 }
 type Session = { id: string; title: string };
-type Consent = { listingId: string; title: string; phone: string; connectionId: string; connections: { id: string; name: string }[]; evidence: string; purpose: 'marketing' | 'service'; confirmed: boolean; calledAt: string };
+
 
 export default function AiAssistantPage() {
   const { user, agencyId, userProfile } = useAgency();
@@ -67,12 +69,13 @@ function AiAssistantWorkspace() {
   useEffect(() => {
     generation.current++;
     queueMicrotask(() => {
-      setSessionId(crypto.randomUUID());
+      if(user&&agencyId){const active=activeJarvisSession(user.uid,agencyId);setSessionId(active.id);if(active.hasHistory)void openSession(active.id);}
       if (user && agencyId) refreshSessions().catch(e => setError(e.message));
     });
   }, [user?.uid, agencyId, refreshSessions, user]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, busy]);
 
+  useEffect(()=>{const refresh=()=>{if(user&&agencyId){const active=activeJarvisSession(user.uid,agencyId);if(active.hasHistory)void openSession(active.id);}};window.addEventListener('jarvis:voice-closed',refresh);return()=>window.removeEventListener('jarvis:voice-closed',refresh);});
   async function perform(work: () => Promise<void>) {
     if (inFlight.current) return;
     inFlight.current = true; setBusy(true); setError('');
@@ -84,7 +87,7 @@ function AiAssistantWorkspace() {
       const version = ++generation.current;
       const data = await api('/api/ai-assistant/workspace?sessionId=' + encodeURIComponent(id));
       if (version !== generation.current) return;
-      setSessionId(id); setMessages(data.messages); setHistoryCursor(data.nextCursor); setPlans({});
+      setSessionId(id); if(user&&agencyId)storeJarvisSession(user.uid,agencyId,id); setMessages(data.messages); setHistoryCursor(data.nextCursor); setPlans({});
       for (const message of data.messages as AssistantMessage[]) {
         if (message.planId) {
           const state = await api('/api/ai-assistant/workspace?planId=' + encodeURIComponent(message.planId));
@@ -95,7 +98,7 @@ function AiAssistantWorkspace() {
   }
   function newSession() {
     if (busy) return;
-    generation.current++; setSessionId(crypto.randomUUID()); setMessages([]); setPlans({}); setHistoryCursor(null); setError('');
+    generation.current++; const id=crypto.randomUUID();setSessionId(id);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,id,false); setMessages([]); setPlans({}); setHistoryCursor(null); setError('');
   }
   async function send(text = input) {
     if (!text.trim() || !sessionId || busy) return;
@@ -131,7 +134,7 @@ function AiAssistantWorkspace() {
       } else data = await api('/api/ai-assistant/workspace', { kind: 'chat', sessionId, requestId, prompt: text.trim() });
       setProgress('');
       if (version !== generation.current) return;
-      setMessages(m => [...m, data.message]);
+      setMessages(m => [...m, data.message]);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,sessionId);
       if (data.message.planId) {
         const state = await api('/api/ai-assistant/workspace?planId=' + encodeURIComponent(data.message.planId));
         if (version === generation.current) setPlans(p => ({ ...p, [data.message.planId]: state.plan }));
@@ -180,20 +183,16 @@ function AiAssistantWorkspace() {
   async function startConsent(row: Record<string, unknown>) {
     await perform(async () => {
       const version = generation.current;
-      const [favorite, connections] = await Promise.all([
-        api('/api/ai-assistant/workspace', { kind: 'read', query: { resource: 'ownerListingFavorites', id: row.id } }),
-        api('/api/ai-assistant/workspace', { kind: 'read', query: { resource: 'channelConnections', limit: 100 } }),
-      ]);
-      if (version !== generation.current) return;
-      const available = connections.rows.filter((c: any) => c.channel === 'whatsapp' && c.status === 'connected');
-      setConsent({ listingId: String(row.id), title: String(row.title || favorite.rows[0].title || 'Proprietar'), phone: favorite.rows[0].ownerPhone || '', connectionId: available[0]?.id || '', connections: available, evidence: '', purpose: 'marketing', confirmed: false, calledAt: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) });
+      const loaded=await loadOwnerConsent(api,row);
+      if(version!==generation.current)return;
+      setConsent(loaded);
     });
   }
   async function saveConsent() {
     if (!consent) return;
     const current = consent;
     await perform(async () => {
-      const result = await api('/api/ai-assistant/owner-consent', { listingId: current.listingId, connectionId: current.connectionId, confirmedPhoneConsent: current.confirmed, purpose: current.purpose, calledAt: new Date(current.calledAt).toISOString(), evidence: current.evidence });
+      const result = await api('/api/ai-assistant/owner-consent', consentPayload(current));
       setConsent(null);
       setMessages(m => [...m, { id: crypto.randomUUID(), role: 'assistant', text: 'Acordul telefonic a fost înregistrat pentru ' + current.phone + '. Conversația: ' + result.conversationId + '. Poți cere trimiterea unui șablon aprobat pentru scopul confirmat.', createdAt: result.recordedAt }]);
       setInput('Verifică șabloanele aprobate și pregătește un mesaj pentru conversația ' + result.conversationId);
@@ -269,6 +268,7 @@ function AiAssistantWorkspace() {
       <section className="rounded-3xl border bg-background p-5"><h2 className="mb-3 flex items-center gap-2 font-semibold"><Search className="h-4 w-4" />Caută în Anunțuri proprietari</h2><form className="space-y-3" onSubmit={e => { e.preventDefault(); void search({ source: 'owners', transactionType: 'sale', propertyType: 'apartment', zone: zone.trim() || undefined, priceMax: Number(priceMax), rooms: rooms ? Number(rooms) : undefined, limit: Number(count) }); }}><label className="block text-sm">Zonă<Input value={zone} onChange={e => setZone(e.target.value)} placeholder="Titan, Pipera…" /></label><label className="block text-sm">Buget maxim EUR<Input type="number" min="1" required value={priceMax} onChange={e => setPriceMax(e.target.value)} /></label><div className="grid grid-cols-2 gap-2"><label className="block text-sm">Camere<Input type="number" min="1" max="30" value={rooms} onChange={e => setRooms(e.target.value)} placeholder="Oricare" /></label><label className="block text-sm">Rezultate<Input type="number" min="1" max="100" required value={count} onChange={e => setCount(e.target.value)} /></label></div><Button className="w-full" type="submit" disabled={busy || !user}>Caută proprietăți</Button></form><p className="mt-3 text-xs text-muted-foreground">Căutarea parcurge datele de pe server. Portofoliul CRM apare separat.</p></section>
       <section className="rounded-3xl border bg-background p-5"><h2 className="mb-3 flex items-center gap-2 font-semibold"><History className="h-4 w-4" />Conversații recente</h2><div className="max-h-80 space-y-1 overflow-auto">{sessions.map(session => <button key={session.id} disabled={busy} onClick={() => openSession(session.id)} className={'w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted ' + (session.id === sessionId ? 'bg-muted font-medium' : '')}>{session.title}</button>)}{!sessions.length && <p className="text-sm text-muted-foreground">Conversațiile cu asistentul se salvează aici.</p>}</div></section>
     </aside>
-    {consent && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="consent-title"><div className="w-full max-w-lg rounded-2xl bg-background p-6 shadow-xl"><div className="flex items-start justify-between"><h2 id="consent-title" className="text-lg font-semibold">Confirm acordul WhatsApp</h2><Button size="icon" variant="ghost" aria-label="Închide" onClick={() => setConsent(null)} disabled={busy}><X className="h-4 w-4" /></Button></div><p className="my-3 text-sm">{consent.title} • {consent.phone || 'Telefon indisponibil'}</p><label className="block text-sm">Număr WhatsApp al agenției<select className="my-2 w-full rounded-md border bg-background p-2" value={consent.connectionId} onChange={e => setConsent(c => c && ({ ...c, connectionId: e.target.value }))}>{consent.connections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="block text-sm">Scop<select className="my-2 w-full rounded-md border bg-background p-2" value={consent.purpose} onChange={e => setConsent(c => c && ({ ...c, purpose: e.target.value as Consent['purpose'] }))}><option value="marketing">Propunere de colaborare / marketing</option><option value="service">Comunicare de serviciu</option></select></label><label className="block text-sm">Data și ora apelului<input type="datetime-local" className="my-2 w-full rounded-md border bg-background p-2" value={consent.calledAt} onChange={e => setConsent(c => c && ({ ...c, calledAt: e.target.value }))} /></label>{!consent.connections.length && <p className="my-2 text-sm text-amber-700">Nu există un număr WhatsApp conectat al agenției.</p>}<label className="block text-sm">Ce a confirmat proprietarul în apel<textarea className="my-2 min-h-24 w-full rounded-md border bg-background p-2" value={consent.evidence} maxLength={2000} onChange={e => setConsent(c => c && ({ ...c, evidence: e.target.value }))} /></label><label className="my-4 flex items-start gap-2 text-sm"><input type="checkbox" checked={consent.confirmed} onChange={e => setConsent(c => c && ({ ...c, confirmed: e.target.checked }))} /><span>Confirm că am obținut în apel acordul proprietarului pentru mesaje WhatsApp cu scopul selectat.</span></label>{error && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}<Button className="w-full" disabled={busy || !consent.confirmed || !consent.connectionId || !consent.phone || !consent.calledAt || consent.evidence.trim().length < 10} onClick={saveConsent}>Înregistrează acordul</Button></div></div>}
+
+    <OwnerConsentDialog consent={consent} setConsent={setConsent} busy={busy} error={error} saveConsent={saveConsent}/>
   </div>;
 }

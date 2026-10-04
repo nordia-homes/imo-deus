@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "checks": [
+    "shortcut ignores editable CRM fields",
+    "desktop shortcut opens voice without transcript/composer",
+    "existing core returns cards and concise speech",
+    "local barge-in stops buffered audio and approval is required",
+    "spoken approval uses existing execute and shared session",
+    "same explicit WhatsApp consent form in voice",
+    "mobile launcher above navigation and safe-area; Esc releases microphone",
+    "layered rig renders with independent eye/arm/antenna nodes"
+  ],
+  "syntheticAudio": true,
+  "animationFps": 60.27397260273973,
+  "bargeInGateMs": 120,
+  "limitations": [
+    "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."
+  ],
+  "screenshots": "D:\\imo-deus\\.tmp\\voice-ui"
+}

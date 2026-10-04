@@ -1,0 +1,305 @@
+.jarvis-character {
+  width: min(440px, 75vw);
+  aspect-ratio: 1;
+  position: relative;
+  --mouth: 0.05;
+  --gaze: 0px;
+  --energy: 0;
+  contain: layout style;
+}
+.jarvis-pose {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 80%;
+  animation: jarvis-breathe 6.7s ease-in-out infinite;
+}
+.jarvis-texture {
+  display: block;
+  position: absolute;
+  background-repeat: no-repeat;
+}
+.jarvis-body {
+  width: 81%;
+  height: 81%;
+  left: 9%;
+  top: 16%;
+}
+.jarvis-foot {
+  width: 15%;
+  height: 9%;
+  top: 91%;
+  z-index: -1;
+}
+.jarvis-foot-left {
+  left: 28%;
+}
+.jarvis-foot-right {
+  left: 59%;
+}
+.jarvis-antenna {
+  width: 31%;
+  height: 27%;
+  top: -2%;
+  left: 43%;
+  transform-origin: 25% 100%;
+  animation: jarvis-antenna-sway 8.3s ease-in-out infinite;
+}
+.jarvis-glow {
+  width: 17%;
+  height: 17%;
+  top: -1%;
+  left: 62%;
+  opacity: 0.15;
+  mix-blend-mode: screen;
+  transition: opacity 0.4s;
+}
+.jarvis-arm {
+  width: 28%;
+  height: 29%;
+  top: 54%;
+  transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.jarvis-arm-left {
+  left: -4%;
+  transform-origin: 85% 70%;
+  transform: rotate(-14deg);
+}
+.jarvis-arm-right {
+  right: -1%;
+  transform-origin: 10% 65%;
+  transform: rotate(10deg);
+}
+.jarvis-eye {
+  position: absolute;
+  width: 29%;
+  height: 30%;
+  top: 35%;
+  overflow: hidden;
+  border-radius: 49%;
+  transform-origin: center;
+  transition: transform 0.15s;
+}
+.jarvis-eye-left {
+  left: 22%;
+  transform: rotate(8deg);
+}
+.jarvis-eye-right {
+  left: 54%;
+  transform: rotate(-8deg);
+}
+.jarvis-eyeball {
+  inset: 0;
+}
+.jarvis-gaze {
+  position: absolute;
+  width: 76%;
+  height: 76%;
+  top: 12%;
+  left: 12%;
+  transform: translateX(var(--gaze));
+  transition: transform 0.65s;
+}
+.jarvis-iris {
+  inset: 0;
+}
+.jarvis-pupil {
+  width: 57%;
+  height: 60%;
+  top: 20%;
+  left: 22%;
+}
+.jarvis-eyelid {
+  width: 110%;
+  height: 62%;
+  left: -5%;
+  top: -62%;
+  transition: top 0.12s;
+  z-index: 2;
+}
+.jarvis-blink .jarvis-eyelid {
+  top: 8%;
+  transform: scaleY(2);
+}
+.jarvis-mouth {
+  width: 15%;
+  height: 12%;
+  top: 66%;
+  left: 43%;
+  transform: scaleY(var(--mouth));
+  transform-origin: 50% 15%;
+  transition: transform 0.08s linear;
+}
+.jarvis-character[data-state="SPEAKING"] .jarvis-body {
+  transform: scale(calc(1 + var(--energy)));
+}
+.jarvis-character[data-state="LISTENING"] .jarvis-pose {
+  transform: scale(1.025);
+}
+.jarvis-character[data-state="LISTENING"] .jarvis-glow {
+  opacity: 0.45;
+}
+.jarvis-character[data-state="PROCESSING"] .jarvis-glow,
+.jarvis-character[data-state="WORKING"] .jarvis-glow {
+  animation: jarvis-pulse 2.5s ease-in-out infinite;
+}
+.jarvis-character[data-gesture="OPEN_HANDS"] .jarvis-arm-left,
+.jarvis-character[data-gesture="HAPPY"] .jarvis-arm-left {
+  transform: rotate(24deg);
+}
+.jarvis-character[data-gesture="OPEN_HANDS"] .jarvis-arm-right,
+.jarvis-character[data-gesture="HAPPY"] .jarvis-arm-right {
+  transform: rotate(-35deg);
+}
+.jarvis-character[data-gesture="POINT"] .jarvis-arm-left,
+.jarvis-character[data-gesture="ONE_HAND_EXPLAIN"] .jarvis-arm-left {
+  transform: rotate(35deg) translateY(-6%);
+}
+.jarvis-character[data-gesture="THINKING"] .jarvis-arm-left {
+  transform: rotate(-35deg) translateX(22%);
+}
+.jarvis-character[data-gesture="CONFIRM"] .jarvis-arm-right {
+  transform: rotate(-22deg);
+}
+.jarvis-character[data-gesture="SUCCESS"] .jarvis-pose {
+  animation:
+    jarvis-success 0.65s ease-out 1,
+    jarvis-breathe 6.7s 0.7s ease-in-out infinite;
+}
+.jarvis-character[data-gesture="SORRY"] .jarvis-arm-left {
+  transform: rotate(-30deg);
+}
+.jarvis-character[data-expression="THOUGHTFUL"] .jarvis-eyelid,
+.jarvis-character[data-expression="CONCERNED"] .jarvis-eyelid {
+  top: -32%;
+}
+.jarvis-character[data-expression="HAPPY"] .jarvis-gaze,
+.jarvis-character[data-expression="SUCCESS"] .jarvis-gaze {
+  transform: translateY(-2px);
+}
+.jarvis-character[data-expression="EXCITED"] .jarvis-gaze {
+  transform: scale(1.06);
+}
+.jarvis-mini {
+  width: 58px;
+}
+.jarvis-mini .jarvis-pose {
+  animation: none;
+}
+.jarvis-mini .jarvis-antenna {
+  animation: none;
+}
+.jarvis-mini .jarvis-mouth {
+  transform: scaleY(0.16);
+}
+@keyframes jarvis-breathe {
+  0%,
+  100% {
+    translate: 0 0;
+    scale: 1 1;
+  }
+  50% {
+    translate: 0 -2px;
+    scale: 1.008 0.997;
+  }
+}
+@keyframes jarvis-antenna-sway {
+  0%,
+  100% {
+    rotate: -1deg;
+  }
+  50% {
+    rotate: 1.5deg;
+  }
+}
+@keyframes jarvis-pulse {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@keyframes jarvis-success {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jarvis-pose,
+  .jarvis-antenna,
+  .jarvis-glow {
+    animation: none !important;
+  }
+  .jarvis-arm,
+  .jarvis-gaze,
+  .jarvis-eyelid {
+    transition: none;
+  }
+  .jarvis-mouth {
+    transition: transform 0.15s;
+  }
+}
+@media print {
+  .jarvis-character {
+    display: none;
+  }
+}
+
+/* Rig alignment keeps the antenna rooted in the crown and the eyes dominant. */
+.jarvis-antenna {
+  width: 33%;
+  height: 30%;
+  top: 2%;
+  left: 43%;
+}
+.jarvis-glow {
+  top: 4%;
+  left: 63%;
+}
+.jarvis-eye {
+  width: 32%;
+  height: 34%;
+  top: 33%;
+}
+.jarvis-eye-left {
+  left: 19%;
+}
+.jarvis-eye-right {
+  left: 53%;
+}
+.jarvis-mouth {
+  height: 8%;
+  top: 68%;
+  transform: scaleY(0.4);
+}
+.jarvis-character[data-state="SPEAKING"] .jarvis-mouth {
+  transform: scaleY(var(--mouth));
+}
+.jarvis-character[data-state="ERROR"] .jarvis-mouth {
+  transform: rotate(180deg) scaleY(0.25);
+}
+
+.jarvis-launcher {
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .jarvis-launcher {
+    bottom: 24px;
+  }
+}
+.jarvis-blink .jarvis-eye-left {
+  transform: rotate(8deg) scaleY(0.12);
+}
+.jarvis-blink .jarvis-eye-right {
+  transform: rotate(-8deg) scaleY(0.12);
+}
+@media (max-width: 767px) {
+  .jarvis-character.jarvis-panel-open {
+    width: min(250px, 64vw);
+  }
+}

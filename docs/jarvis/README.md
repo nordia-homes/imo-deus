@@ -26,3 +26,5 @@
 - [OPERATIONS.md](OPERATIONS.md)
 
 Rapoartele sunt generate din contractele locale și benchmarkul complet prin npm run jarvis:docs.
+
+Jarvis Voice: [arhitectură și operare](VOICE.md), [rig personaj](CHARACTER.md), [raportul complet](VOICE_REPORT.md), [benchmark audio](VOICE_BENCHMARK.json), [UI/FPS](VOICE_UI_TESTS.json).

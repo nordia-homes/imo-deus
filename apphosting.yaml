@@ -333,3 +333,13 @@ env:
     value: "350"
     availability:
       - RUNTIME
+
+  - variable: JARVIS_VOICE_ENABLED
+    value: "true"
+    availability:
+      - RUNTIME
+
+  - variable: JARVIS_VOICE_NAME
+    value: "cedar"
+    availability:
+      - RUNTIME
