@@ -14,7 +14,7 @@ await fs.mkdir(output, { recursive: true });
 await build({
   stdin: {
     contents:
-      "import React from 'react';import{createRoot}from'react-dom/client';import{JarvisVoice}from'./src/components/jarvis-voice/JarvisVoice';createRoot(document.getElementById('root')).render(<><input aria-label='Editor CRM'/><div className='fixed bottom-2 h-16 w-full' data-navigation='mobile'>Navigation</div><JarvisVoice/></>);",
+      "import{VoiceAudio}from'./src/lib/jarvis-voice/audio';window.VoiceAudio=VoiceAudio;import React from 'react';import{createRoot}from'react-dom/client';import{JarvisVoice}from'./src/components/jarvis-voice/JarvisVoice';createRoot(document.getElementById('root')).render(<><input aria-label='Editor CRM'/><div className='fixed bottom-2 h-16 w-full' data-navigation='mobile'>Navigation</div><JarvisVoice/></>);",
     resolveDir: root,
     loader: "tsx",
   },
@@ -353,6 +353,60 @@ try {
     "Bundled worklet must load and capture frames in a real Web Audio context",
   );
   checks.push("real browser AudioWorklet loads without public-file fetch");
+  const playback = await page.evaluate(async () => {
+    const ctx = new OfflineAudioContext(1, 24000, 24000);
+    // Offline rendering starts explicitly below; the production engine still
+    // performs its resume step, which is a no-op in this offline fixture.
+    ctx.resume = async () => {};
+    const engine = new window.VoiceAudio(
+      () => {},
+      () => {},
+      () => {},
+      () => {},
+    );
+    engine.context = ctx;
+    engine.analyser = ctx.createAnalyser();
+    engine.analyser.connect(ctx.destination);
+    const pcm = new Uint8Array(24000),
+      view = new DataView(pcm.buffer);
+    for (let i = 0; i < pcm.length / 2; i++)
+      view.setInt16(
+        i * 2,
+        Math.round(Math.sin((i * 2 * Math.PI * 440) / 24000) * 8192),
+        true,
+      );
+    const response = new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(pcm.slice(0, 101));
+          controller.enqueue(pcm.slice(101));
+          controller.close();
+        },
+      }),
+    );
+    const abort = new AbortController();
+    engine.playbackAbort = abort;
+    const play = engine.play(response, abort, () => {});
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const rendered = await ctx.startRendering();
+    await play;
+    const samples = rendered.getChannelData(0);
+    return {
+      peak: Math.max(...samples),
+      rms: Math.sqrt(
+        samples.reduce((sum, sample) => sum + sample * sample, 0) /
+          samples.length,
+      ),
+      aborted: abort.signal.aborted,
+    };
+  });
+  assert(
+    playback.peak > 0.2 && playback.rms > 0.1 && !playback.aborted,
+    "Production PCM decoder must render non-silent output without aborting its own request",
+  );
+  checks.push(
+    "real browser PCM playback renders non-silent sound across odd chunk boundaries",
+  );
   assert.equal(await dialog.locator("textarea,input").count(), 0);
   checks.push("desktop shortcut opens voice without transcript/composer");
   await page.screenshot({ path: path.join(output, "listening.png") });

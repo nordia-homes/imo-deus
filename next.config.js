@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
-  serverExternalPackages: ['@napi-rs/canvas', '@sparticuz/chromium', 'ffmpeg-static'],
+  serverExternalPackages: ['@napi-rs/canvas', '@sparticuz/chromium', 'ffmpeg-static', 'ws'],
   outputFileTracingIncludes: {
     '/*': [
       'node_modules/@sparticuz/chromium/bin/**/*',

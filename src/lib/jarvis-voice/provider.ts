@@ -118,7 +118,10 @@ export function speechStream(
       };
       socket = new WebSocket(
         "wss://api.openai.com/v1/realtime?model=gpt-realtime-2.1-mini",
-        { headers: { Authorization: "Bearer " + key() } },
+        {
+          headers: { Authorization: "Bearer " + key() },
+          perMessageDeflate: false,
+        },
       );
       timer = setTimeout(fail, 30000);
       signal?.addEventListener("abort", fail, { once: true });

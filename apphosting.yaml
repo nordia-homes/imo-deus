@@ -343,3 +343,8 @@ env:
     value: "cedar"
     availability:
       - RUNTIME
+
+  - variable: WS_NO_BUFFER_UTIL
+    value: "true"
+    availability:
+      - RUNTIME

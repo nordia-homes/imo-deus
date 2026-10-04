@@ -3,11 +3,16 @@ import { adminDb } from '@/firebase/admin';
 import { secretMatches } from '@/lib/communications/crypto';
 import { drainAssistantAutomations } from '@/lib/ai-assistant/automation-worker';
 import { drainAgentJobs } from '@/lib/ai-assistant/jobs';
+import { probeVoiceOutput } from '@/lib/jarvis-voice/health';
 export const runtime = 'nodejs';
 export const maxDuration = 180;
 export async function POST(request: Request) {
   const secret = process.env.AI_ASSISTANT_WORKER_SECRET;
   if (!secret || !secretMatches(request.headers.get('authorization') || '', `Bearer ${secret}`)) return new NextResponse('Forbidden', { status: 403 });
+  if (new URL(request.url).searchParams.get('probe') === 'voice') {
+    try { return NextResponse.json(await probeVoiceOutput(request.signal), { headers: { 'Cache-Control': 'no-store' } }); }
+    catch { return NextResponse.json({ error: 'Proba audio a eșuat.' }, { status: 503 }); }
+  }
   try {
     await adminDb.collection('assistantWorkerState').doc('global').set({ lastAttemptAt: new Date().toISOString() }, { merge: true });
     const jobs = await drainAgentJobs(adminDb, 1);

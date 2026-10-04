@@ -48,6 +48,12 @@ Corecție de producție: rutele publice ale atlasului și AudioWorklet au return
 
 ## Acceptanță și limite
 
+### Corecție redare vocală — 5 octombrie 2026
+
+Logurile runtime au identificat `TypeError: b.mask is not a function` în ruta audio: Next împacheta incorect extensia opțională a bibliotecii `ws`. Biblioteca este acum externă în build, compresia WebSocket este dezactivată pentru PCM, iar `WS_NO_BUFFER_UTIL=true` impune implementarea JavaScript pentru mascarea cadrelor. Buildul verificat include `import("ws")` și dependențele bibliotecii în manifestul standalone.
+
+Verificarea de regresie folosește decoderul PCM real din `VoiceAudio` într-un `OfflineAudioContext` Chromium: semnalul redat are amplitudine și RMS nenule, inclusiv peste limite de chunk impare, fără anularea propriei cereri. Sunt 21 teste Voice trecute și 10 verificări UI. O probă cu text sintetic fix este disponibilă exclusiv prin endpointul worker autentificat; verifică fluxul generat în runtime-ul de producție și nu procesează joburi sau automatizări CRM. Rezultatul și versiunea publicată sunt consemnate în `VOICE_PRODUCTION.json` după rollout.
+
 Implementarea și testele automate sunt livrate; acceptanța auditivă/hardware nu poate fi echivalată cu fixture-uri. Permisiunea efectivă a microfonului, AEC pe difuzoare, latența pe rețeaua telefonului și naturalețea percepută a românei trebuie verificate în utilizare reală. Acțiunile externe păstrează restricțiile actuale Meta și permisiunile CRM; Voice nu le ocolește.
 
 Surse oficiale verificate: [Speech to text](https://developers.openai.com/api/docs/guides/speech-to-text), [Realtime transcription](https://developers.openai.com/api/docs/guides/realtime-transcription), [Realtime Mini](https://developers.openai.com/api/docs/models/gpt-realtime-2.1-mini), [deprecări](https://developers.openai.com/api/docs/deprecations).
