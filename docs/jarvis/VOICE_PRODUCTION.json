@@ -1,0 +1,72 @@
+{
+  "verifiedAt": "2026-10-04T23:10:29.664Z",
+  "project": "studio-652232171-42fb6",
+  "traffic": {
+    "splits": [
+      {
+        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-04-007",
+        "percent": 100
+      }
+    ]
+  },
+  "build": {
+    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-04-007",
+    "state": "READY",
+    "commit": "8d8448e14db092180b3d301caf8c7e470dfd5897"
+  },
+  "configuration": [
+    {
+      "name": "JARVIS_VOICE_ENABLED",
+      "value": "true"
+    },
+    {
+      "name": "JARVIS_VOICE_NAME",
+      "value": "cedar"
+    }
+  ],
+  "openAiSecretBound": true,
+  "voiceIndexes": [
+    {
+      "state": "READY",
+      "fields": [
+        "uid",
+        "at",
+        "__name__"
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "path": "/ai-assistant",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/api/ai-assistant/workspace",
+      "status": 401,
+      "contentType": "application/json"
+    },
+    {
+      "path": "/api/ai-assistant/voice",
+      "status": 401,
+      "contentType": "application/json"
+    },
+    {
+      "path": "/api/ai-assistant/voice/metrics",
+      "status": 401,
+      "contentType": "application/json"
+    },
+    {
+      "path": "/_next/static/media/rig-atlas.d7eb4c2c.png",
+      "status": 200,
+      "contentType": "image/png"
+    }
+  ],
+  "deploymentPath": "Official App Hosting REST API; Firebase CLI Developer Connect token precheck returned 403; project billing enabled.",
+  "localBuild": "PASS",
+  "automatedTests": 349,
+  "rulesTests": 18,
+  "voiceUiChecks": 9,
+  "textUiChecks": 13,
+  "hardwareAcceptance": "Manual microphone/speaker/Safari/Electron acceptance pending; synthetic tests do not certify echo cancellation."
+}
