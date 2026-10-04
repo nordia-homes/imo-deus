@@ -15,7 +15,8 @@ import type {
   OwnerListingSyncResult,
   SourceScrapeOptions,
 } from '@/lib/owner-listings/types';
-import { docIdForListing, stripUndefined } from '@/lib/owner-listings/utils';
+import { docIdForListing, stripUndefined, parsePriceNumber } from '@/lib/owner-listings/utils';
+import { ownerSearchFields } from './search-index';
 
 const DEFAULT_OPTIONS: SourceScrapeOptions = {
   maxPages: null,
@@ -190,6 +191,7 @@ async function storeOwnerListingsBatch(
       docRef,
       stripUndefined({
         ...listing,
+        ...ownerSearchFields({ ...listing, priceValue: parsePriceNumber(listing.price) }),
         updatedAt: new Date().toISOString(),
         syncSource: 'scraper',
         dedupeKey: listing.fingerprint,

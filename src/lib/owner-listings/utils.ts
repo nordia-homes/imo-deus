@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { ownerSearchFields, parseOwnerPrice } from './search-index';
 import type {
   OwnerListingDetail,
   OwnerListingPropertyType,
@@ -106,10 +107,7 @@ export function compareOwnerListingEnrichmentPriority(
 }
 
 export function parsePriceNumber(value: string | null | undefined) {
-  const normalized = normalizeWhitespace(value).replace(/[^\d]/g, '');
-  if (!normalized) return null;
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : null;
+  return parseOwnerPrice(value);
 }
 
 export function parseRooms(value: string | null | undefined) {
@@ -464,6 +462,7 @@ export function buildSummary(
     publicationStatus: input.publicationStatus || 'discovered',
     missingFields,
     priceValue,
+    ...ownerSearchFields({ price: input.price, priceValue, location: input.location }),
     areaValue,
     roomsValue,
     constructionYearValue,

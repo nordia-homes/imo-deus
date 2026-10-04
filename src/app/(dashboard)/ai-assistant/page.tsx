@@ -1,354 +1,288 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { collection, orderBy, query } from 'firebase/firestore';
-import { addDocumentNonBlocking, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import type { Contact, Property, Viewing } from '@/lib/types';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAgency } from '@/context/AgencyContext';
-import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Bot,
-  Loader2,
-  MessageSquareText,
-  Mic,
-  Send,
-  Sparkles,
-  User,
-} from 'lucide-react';
+import { Bot, CheckCircle2, ChevronRight, History, Loader2, Plus, Search, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { AssistantAction, AssistantCard, AssistantMessage, AssistantPlan, AssistantSearch } from '@/lib/ai-assistant/contracts';
 
-type ChatHistoryMessage = { role: 'user' | 'model'; text: string };
-
-const STARTER_PROMPTS = [
-  'Spune-mi primele 3 lead-uri pe care trebuie să le sun azi și de ce.',
-  'Scrie-mi un mesaj WhatsApp care mută lead-ul cel mai bun spre vizionare.',
-  'Arată-mi unde pierdem acum în pipeline și ce fac azi.',
-  'Spune-mi ce proprietăți active trebuie optimizate urgent pentru a genera mai multe vizionări.',
-];
+const prompts = ['Găsește 5 apartamente în Titan sub 130000 euro.', 'Arată-mi vizionările de mâine și sarcinile restante.', 'Găsește proprietățile potrivite pentru un client.', 'Verifică starea conexiunii WhatsApp.'];
+const labels: Record<AssistantAction['kind'], string> = { create_contact: 'Creează contact', archive_contact: 'Arhivează / reactivează contact', assign_record: 'Atribuie unui agent', create_property: 'Creează proprietate', update_contact: 'Actualizează contact', update_preferences: 'Actualizează cerințele clientului', update_property: 'Actualizează proprietate', import_owner_listing: 'Importă anunțul în CRM', activate_property: 'Activează proprietatea', record_offer: 'Înregistrează ofertă', add_interaction: 'Adaugă interacțiune', create_task: 'Creează sarcină', update_task: 'Actualizează sarcină', schedule_viewing: 'Programează vizionare', update_viewing: 'Actualizează vizionare', recommend_properties: 'Adaugă oferte în portal', create_automation: 'Programează automatizare', update_automation: 'Actualizează automatizare', existing_operation: 'Acțiune CRM' };
+function safeLink(value: unknown) {
+  const link = String(value || '');
+  if (link.startsWith('/') && !link.startsWith('//')) return link;
+  try { const url = new URL(link); return ['http:', 'https:'].includes(url.protocol) ? url.href : undefined; } catch { return undefined; }
+}
+type Session = { id: string; title: string };
+type Consent = { listingId: string; title: string; phone: string; connectionId: string; connections: { id: string; name: string }[]; evidence: string; purpose: 'marketing' | 'service'; confirmed: boolean; calledAt: string };
 
 export default function AiAssistantPage() {
-  const { agencyId, agency, userProfile, user } = useAgency();
-  const firestore = useFirestore();
-  const { toast } = useToast();
-
-  const contactsQuery = useMemoFirebase(
-    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'contacts'), orderBy('createdAt', 'desc')) : null),
-    [firestore, agencyId]
-  );
-  const propertiesQuery = useMemoFirebase(
-    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'properties')) : null),
-    [firestore, agencyId]
-  );
-  const viewingsQuery = useMemoFirebase(
-    () => (agencyId ? query(collection(firestore, 'agencies', agencyId, 'viewings'), orderBy('viewingDate', 'desc')) : null),
-    [firestore, agencyId]
-  );
-
-  const { data: contacts } = useCollection<Contact>(contactsQuery);
-  const { data: properties } = useCollection<Property>(propertiesQuery);
-  const { data: viewings } = useCollection<Viewing>(viewingsQuery);
-
-  const [messages, setMessages] = useState<ChatHistoryMessage[]>([]);
+  const { user, agencyId, userProfile } = useAgency();
+  return <AiAssistantWorkspace key={`${user?.uid || 'anonymous'}:${agencyId || 'none'}:${userProfile?.role || 'none'}`} />;
+}
+function AiAssistantWorkspace() {
+  const { user, agencyId, userProfile } = useAgency();
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionId, setSessionId] = useState('');
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null);
+  const [plans, setPlans] = useState<Record<string, AssistantPlan>>({});
   const [input, setInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const [welcome, setWelcome] = useState<{ title: string; subtitle: string; suggestions: string[] } | null>(null);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const welcomeRequestedRef = useRef<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [aiConfigured, setAiConfigured] = useState(true);
+  const [backgroundConfigured, setBackgroundConfigured] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [autonomy, setAutonomy] = useState({ available: false, enabled: false });
+  const [consent, setConsent] = useState<Consent | null>(null);
+  const [zone, setZone] = useState('');
+  const [priceMax, setPriceMax] = useState('130000');
+  const [rooms, setRooms] = useState('');
+  const [count, setCount] = useState('5');
+  const endRef = useRef<HTMLDivElement>(null);
+  const generation = useRef(0);
+  const inFlight = useRef(false);
+
+  const api = useCallback(async (path: string, body?: unknown) => {
+    if (!user) throw new Error('Autentifică-te pentru a folosi asistentul.');
+    const token = await user.getIdToken();
+    const response = await fetch(path, { method: body === undefined ? 'GET' : 'POST', headers: { Authorization: 'Bearer ' + token, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}), cache: 'no-store' });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || result.message || 'Cererea nu a fost confirmată.');
+    return result;
+  }, [user]);
+  const refreshSessions = useCallback(async () => {
+    const version = generation.current;
+    const data = await api('/api/ai-assistant/workspace');
+    if (version !== generation.current) return;
+    setSessions(data.sessions); setAiConfigured(data.aiConfigured); setBackgroundConfigured(data.backgroundConfigured === true);
+    if (data.autonomy) setAutonomy(data.autonomy);
+  }, [api]);
 
   useEffect(() => {
-    const container = chatScrollRef.current;
-    if (!container) return;
-    container.scrollTo({
-      top: container.scrollHeight,
-      behavior: 'smooth',
+    generation.current++;
+    queueMicrotask(() => {
+      setSessionId(crypto.randomUUID());
+      if (user && agencyId) refreshSessions().catch(e => setError(e.message));
     });
-  }, [messages, chatLoading]);
+  }, [user?.uid, agencyId, refreshSessions, user]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, busy]);
 
-  useEffect(() => {
-    if (!agencyId || !contacts || !properties || !viewings) return;
-    if (welcomeRequestedRef.current === agencyId) return;
-
-    welcomeRequestedRef.current = agencyId;
-
-    fetch('/api/ai-assistant/welcome', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contacts,
-        properties,
-        viewings,
-        agency,
-        user: userProfile,
-      }),
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`Welcome route failed with status ${response.status}`);
-        return response.json();
-      })
-      .then((result) => {
-        setWelcome(result);
-      })
-      .catch((error) => {
-        console.error('Assistant welcome generation failed', error);
-      });
-  }, [agency, agencyId, contacts, properties, userProfile, viewings]);
-
-  async function handleSend(promptOverride?: string) {
-    const prompt = (promptOverride || input).trim();
-    if (!prompt) return;
-
-    setMessages((prev) => [...prev, { role: 'user', text: prompt }]);
-    setInput('');
-    setChatLoading(true);
-
-    try {
-      const response = await fetch('/api/ai-assistant/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          history: messages.map((message) => ({
-            role: message.role,
-            content: [{ text: message.text }],
-          })),
-          prompt,
-          contacts: contacts || [],
-          properties: properties || [],
-          viewings: viewings || [],
-          agency,
-          user: userProfile,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`Chat route failed with status ${response.status}`);
-      }
-      const result = await response.json();
-
-      setMessages((prev) => [...prev, { role: 'model', text: result.response }]);
-
-      const actionMatch = result.response.match(/\[ACTION:scheduleViewing\]([\s\S]*?)\[\/ACTION\]/);
-      if (actionMatch?.[1] && agencyId && user) {
-        const params = JSON.parse(actionMatch[1]);
-        const property = properties?.find((item) => item.title === params.propertyTitle);
-        const contact = contacts?.find((item) => item.name === params.contactName);
-
-        if (property && contact) {
-          addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), {
-            propertyId: property.id,
-            propertyTitle: property.title,
-            propertyAddress: property.address,
-            contactId: contact.id,
-            contactName: contact.name,
-            viewingDate: params.isoDateTime,
-            notes: 'Programat din AI Assistant.',
-            status: 'scheduled',
-            agentId: user.uid,
-            agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
-            createdAt: new Date().toISOString(),
-          });
-
-          toast({ title: 'Vizionare programată!' });
+  async function perform(work: () => Promise<void>) {
+    if (inFlight.current) return;
+    inFlight.current = true; setBusy(true); setError('');
+    try { await work(); } catch (e) { setError(e instanceof Error ? e.message : 'Cererea nu a fost confirmată.'); }
+    finally { inFlight.current = false; setBusy(false); setProgress(''); }
+  }
+  async function openSession(id: string) {
+    await perform(async () => {
+      const version = ++generation.current;
+      const data = await api('/api/ai-assistant/workspace?sessionId=' + encodeURIComponent(id));
+      if (version !== generation.current) return;
+      setSessionId(id); setMessages(data.messages); setHistoryCursor(data.nextCursor); setPlans({});
+      for (const message of data.messages as AssistantMessage[]) {
+        if (message.planId) {
+          const state = await api('/api/ai-assistant/workspace?planId=' + encodeURIComponent(message.planId));
+          if (version === generation.current) setPlans(p => ({ ...p, [message.planId!]: state.plan }));
         }
       }
-    } catch (error) {
-      console.error('AI chat failed', error);
-      toast({
-        variant: 'destructive',
-        title: 'Nu am putut comunica cu asistentul AI.',
-      });
-    } finally {
-      setChatLoading(false);
-    }
+    });
+  }
+  function newSession() {
+    if (busy) return;
+    generation.current++; setSessionId(crypto.randomUUID()); setMessages([]); setPlans({}); setHistoryCursor(null); setError('');
+  }
+  async function send(text = input) {
+    if (!text.trim() || !sessionId || busy) return;
+    await perform(async () => {
+      const version = generation.current, requestId = crypto.randomUUID();
+      const message: AssistantMessage = { id: requestId + '-user', role: 'user', text: text.trim(), createdAt: new Date().toISOString() };
+      setMessages(m => [...m, message]); setInput('');
+      let data;
+      if (backgroundConfigured) {
+        const job = await api('/api/ai-assistant/workspace', { kind: 'start', sessionId, requestId, prompt: text.trim() });
+        setProgress('Comanda este salvată și va fi procesată pe server.');
+        const started = Date.now(); let completed = false;
+        while (!completed && version === generation.current && Date.now() - started < 180000) {
+          const token = await user!.getIdToken();
+          const response = await fetch('/api/ai-assistant/workspace?jobId=' + job.jobId + '&stream=1', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' });
+          if (!response.ok || !response.body) throw new Error('Comanda rămâne salvată pe server. Reîncarcă istoricul pentru rezultat.');
+          const reader = response.body.getReader(), decoder = new TextDecoder(); let buffer = '';
+          for (;;) {
+            const chunk = await reader.read(); if (chunk.done) break;
+            buffer += decoder.decode(chunk.value, { stream: true });
+            let boundary;
+            while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+              const line = buffer.slice(0, boundary); buffer = buffer.slice(boundary + 2);
+              if (!line.startsWith('data: ')) continue;
+              const event = JSON.parse(line.slice(6));
+              if (event.type === 'PROGRESS_EVENT') setProgress(event.text);
+              if (event.type === 'ERROR_EVENT') throw new Error(event.text);
+              if (event.type === 'ACTION_RESULT') { if (event.status === 'failed') throw new Error(event.error); data = { message: event.message }; completed = true; }
+            }
+          }
+        }
+        if (!data) throw new Error('Procesarea continuă pe server. Deschide istoricul pentru rezultat.');
+      } else data = await api('/api/ai-assistant/workspace', { kind: 'chat', sessionId, requestId, prompt: text.trim() });
+      setProgress('');
+      if (version !== generation.current) return;
+      setMessages(m => [...m, data.message]);
+      if (data.message.planId) {
+        const state = await api('/api/ai-assistant/workspace?planId=' + encodeURIComponent(data.message.planId));
+        if (version === generation.current) setPlans(p => ({ ...p, [data.message.planId]: state.plan }));
+      }
+      await refreshSessions();
+    });
+  }
+  async function search(query: AssistantSearch, messageId?: string, cardIndex?: number) {
+    await perform(async () => {
+      const version = generation.current;
+      const result = await api('/api/ai-assistant/workspace', { kind: 'search', query, sessionId, requestId: crypto.randomUUID() });
+      if (version !== generation.current) return;
+      const card: AssistantCard = { type: 'results', title: query.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', source: query.source, search: query, ...result };
+      if (messageId !== undefined && cardIndex !== undefined) setMessages(m => m.map(item => item.id === messageId ? { ...item, cards: item.cards?.map((old, index) => index === cardIndex ? { ...card, rows: [...old.rows, ...card.rows].filter((row, i, all) => all.findIndex(r => r.id === row.id) === i) } : old) } : item));
+      else setMessages(m => [...m, result.message]);
+      await refreshSessions();
+    });
+  }
+  async function execute(planId: string, cancel = false) {
+    await perform(async () => {
+      const version = generation.current;
+      let result = await api('/api/ai-assistant/workspace', { kind: cancel ? 'cancel' : backgroundConfigured ? 'execute_background' : 'execute', planId });
+      if (result.jobId) {
+        setProgress('Planul confirmat este executat pe server.');
+        const started = Date.now();
+        for (;;) {
+          result = await api('/api/ai-assistant/workspace?jobId=' + result.jobId);
+          if (result.status === 'failed') throw new Error(result.error);
+          if (result.status === 'completed') break;
+          if (version !== generation.current || Date.now() - started > 180000) throw new Error('Execuția continuă pe server. Verifică starea planului din istoric.');
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+        setProgress('');
+      }
+      if (version !== generation.current) return;
+      setPlans(p => ({ ...p, [planId]: result.plan }));
+    });
+  }
+  async function inspect(planId: string) {
+    await perform(async () => {
+      const version = generation.current;
+      const result = await api('/api/ai-assistant/workspace', { kind: 'inspect', planId });
+      if (version === generation.current) setPlans(p => ({ ...p, [planId]: result.plan }));
+    });
+  }
+  async function startConsent(row: Record<string, unknown>) {
+    await perform(async () => {
+      const version = generation.current;
+      const [favorite, connections] = await Promise.all([
+        api('/api/ai-assistant/workspace', { kind: 'read', query: { resource: 'ownerListingFavorites', id: row.id } }),
+        api('/api/ai-assistant/workspace', { kind: 'read', query: { resource: 'channelConnections', limit: 100 } }),
+      ]);
+      if (version !== generation.current) return;
+      const available = connections.rows.filter((c: any) => c.channel === 'whatsapp' && c.status === 'connected');
+      setConsent({ listingId: String(row.id), title: String(row.title || favorite.rows[0].title || 'Proprietar'), phone: favorite.rows[0].ownerPhone || '', connectionId: available[0]?.id || '', connections: available, evidence: '', purpose: 'marketing', confirmed: false, calledAt: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) });
+    });
+  }
+  async function saveConsent() {
+    if (!consent) return;
+    const current = consent;
+    await perform(async () => {
+      const result = await api('/api/ai-assistant/owner-consent', { listingId: current.listingId, connectionId: current.connectionId, confirmedPhoneConsent: current.confirmed, purpose: current.purpose, calledAt: new Date(current.calledAt).toISOString(), evidence: current.evidence });
+      setConsent(null);
+      setMessages(m => [...m, { id: crypto.randomUUID(), role: 'assistant', text: 'Acordul telefonic a fost înregistrat pentru ' + current.phone + '. Conversația: ' + result.conversationId + '. Poți cere trimiterea unui șablon aprobat pentru scopul confirmat.', createdAt: result.recordedAt }]);
+      setInput('Verifică șabloanele aprobate și pregătește un mesaj pentru conversația ' + result.conversationId);
+    });
   }
 
-  return (
-    <div className="agentfinder-ai-page h-[calc(100vh-4rem)] overflow-hidden bg-[#07111f] text-white lg:h-[calc(100vh-5rem)]">
-      <div className="relative h-full overflow-hidden">
-        <div className="agentfinder-ai-background pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(59,130,246,0.18),transparent_24%),radial-gradient(circle_at_82%_12%,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_50%_100%,rgba(37,99,235,0.16),transparent_34%),linear-gradient(180deg,#12253f_0%,#0c1a30_14%,#081322_34%,#07111f_100%)]" />
-        <div className="pointer-events-none absolute left-[-8rem] top-24 h-80 w-80 rounded-full bg-sky-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-[-10rem] top-16 h-[28rem] w-[28rem] rounded-full bg-blue-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-[-8rem] left-1/2 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+  async function prepareActions(actions: AssistantAction[]) {
+    await perform(async () => {
+      const version = generation.current;
+      const result = await api('/api/ai-assistant/workspace', { kind: 'prepare', sessionId, requestId: crypto.randomUUID(), actions });
+      if (version !== generation.current) return;
+      setMessages(m => [...m, result.message]);
+      const state = await api('/api/ai-assistant/workspace?planId=' + encodeURIComponent(result.message.planId));
+      if (version === generation.current) setPlans(p => ({ ...p, [result.message.planId]: state.plan }));
+      await refreshSessions();
+    });
+  }
+  async function downloadArtifact(row: Record<string, unknown>) {
+    await perform(async () => {
+      if (!user) return;
+      const response = await fetch('/api/ai-assistant/artifacts/' + encodeURIComponent(String(row.artifactId)), { headers: { Authorization: 'Bearer ' + await user.getIdToken() } });
+      if (!response.ok) throw new Error('Fișierul nu poate fi descărcat cu permisiunile actuale.');
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a'); link.href = url; link.download = String(row.fileName || 'document.pdf'); link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  }
 
-        <div className="relative mx-auto flex h-full w-full max-w-[1540px] flex-col px-2 py-2 sm:px-3 sm:py-3 lg:px-6 lg:py-4">
-          <div className="flex h-full min-h-0 flex-1 overflow-hidden">
-            <div className="flex min-w-0 flex-1 flex-col">
-              <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 px-3 pt-3 pb-3 sm:px-3 sm:pt-3 sm:pb-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-5 lg:px-4 lg:pt-4 lg:pb-4">
-                <div className="agentfinder-ai-chat-shell min-h-0 overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.012))]">
-                  <div className="flex min-h-0 h-full flex-col overflow-hidden">
-                    <div className="agentfinder-ai-chat-header flex items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-6">
-                      <div className="agentfinder-ai-eyebrow flex items-center gap-2 text-sky-200/80">
-                        <Bot className="h-4 w-4" />
-                        <span className="text-sm">Asistent AI</span>
-                      </div>
-                    </div>
-                    <div ref={chatScrollRef} className="agentfinder-ai-chat-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 lg:px-6 lg:py-5">
-                      {messages.length === 0 ? (
-                        <div className="mx-auto flex h-full max-h-full max-w-4xl flex-col items-center justify-center overflow-hidden px-3 py-4 text-center sm:px-4 sm:py-6 lg:px-6 lg:py-8">
-                          <div className="agentfinder-ai-orb mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-sky-300/25 bg-sky-300/8 text-sky-300 shadow-[0_0_90px_rgba(56,189,248,0.16)] sm:h-18 sm:w-18 lg:h-20 lg:w-20">
-                            <Sparkles className="h-8 w-8 lg:h-9 lg:w-9" />
-                          </div>
-
-                          <h1 className="max-w-3xl text-balance text-[2rem] font-semibold tracking-tight sm:text-[2.35rem] sm:leading-[1.1] lg:text-[2.75rem] lg:leading-[1.06]">
-                            {welcome?.title || 'Asistentul tău analizează CRM-ul și pregătește direcția zilei.'}
-                          </h1>
-
-                          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55 sm:text-[0.98rem] sm:leading-7 lg:mt-4 lg:text-[1.02rem] lg:leading-8">
-                            {welcome?.subtitle || 'Spune-mi direct ce vrei să prioritizăm, să scriem, să confirmăm sau să împingem mai departe.'}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-5">
-                          {messages.map((message, index) => (
-                            <div key={`${message.role}-${index}`} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                              {message.role === 'model' ? (
-                                <MessageAvatar variant="model">
-                                  <Bot className="h-5 w-5" />
-                                </MessageAvatar>
-                              ) : null}
-
-                              <div
-                                className={`agentfinder-ai-message prose prose-sm max-w-none break-words rounded-[28px] px-4 py-4 shadow-sm sm:px-5 lg:prose-base ${
-                                  message.role === 'model'
-                                    ? 'agentfinder-ai-message-model w-full border border-white/10 bg-transparent text-white shadow-none'
-                                    : 'agentfinder-ai-message-user max-w-[88%] bg-sky-400 text-slate-950'
-                                }`}
-                              >
-                                <Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown>
-                              </div>
-
-                              {message.role === 'user' ? (
-                                <MessageAvatar variant="user">
-                                  <User className="h-5 w-5" />
-                                </MessageAvatar>
-                              ) : null}
-                            </div>
-                          ))}
-
-                          {chatLoading ? (
-                            <div className="flex gap-3">
-                              <MessageAvatar variant="model">
-                                <Bot className="h-5 w-5" />
-                              </MessageAvatar>
-                              <div className="agentfinder-ai-typing rounded-[28px] border border-white/10 bg-white/[0.055] px-5 py-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300" />
-                                  <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300 [animation-delay:0.15s]" />
-                                  <span className="h-2 w-2 animate-bounce rounded-full bg-sky-300 [animation-delay:0.3s]" />
-                                </div>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          <div ref={chatEndRef} />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="px-3 py-3 sm:px-4 sm:py-3 lg:px-6 lg:py-4">
-                      <div className="mx-auto max-w-4xl">
-                        <div className="agentfinder-ai-input-shell rounded-[28px] border border-sky-300/12 bg-[linear-gradient(180deg,rgba(56,189,248,0.06),rgba(255,255,255,0.025))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                          {messages.length === 0 ? (
-                            <div className="grid grid-cols-1 gap-2 border-b border-white/8 px-2 pb-3 pt-1 sm:grid-cols-2">
-                              {STARTER_PROMPTS.map((prompt) => (
-                                <button
-                                  key={prompt}
-                                  type="button"
-                                  onClick={() => setInput(prompt)}
-                                  className="agentfinder-ai-starter truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-left text-xs text-white/72 transition hover:border-sky-300/20 hover:bg-white/10 hover:text-white"
-                                  title={prompt}
-                                >
-                                  <span className="block truncate">{prompt}</span>
-                                </button>
-                              ))}
-                            </div>
-                          ) : null}
-
-                          <div className={`flex items-end gap-2 ${messages.length === 0 ? 'pt-2' : 'pt-0'}`}>
-                            <div className="flex h-14 w-11 shrink-0 items-center justify-center text-white/38 sm:w-12">
-                              <Mic className="h-4 w-4" />
-                            </div>
-
-                            <Input
-                              value={input}
-                              onChange={(event) => setInput(event.target.value)}
-                              onKeyDown={(event) => event.key === 'Enter' && !chatLoading && handleSend()}
-                              placeholder="Start your request, iar asistentul se ocupă de restul..."
-                              className="agentfinder-ai-input h-14 border-0 bg-transparent px-0 text-base text-white placeholder:text-white/35 focus-visible:ring-0 focus-visible:ring-offset-0"
-                              disabled={chatLoading}
-                            />
-
-                            <Button
-                              size="icon"
-                              className="agentfinder-ai-send h-12 w-12 shrink-0 rounded-full bg-sky-400 text-slate-950 hover:bg-sky-300"
-                              onClick={() => handleSend()}
-                              disabled={chatLoading}
-                            >
-                              {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <aside className="agentfinder-ai-suggestions min-h-0 overflow-hidden rounded-[30px] bg-[linear-gradient(180deg,rgba(59,130,246,0.09),rgba(255,255,255,0.02))]">
-                  <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                    <div className="flex items-center justify-between gap-3 px-4 py-3">
-                      <div>
-                        <p className="text-xl font-medium text-white">Sugestii asistent</p>
-                        <p className="mt-1 text-sm text-white/45">Lansează rapid sarcini utile</p>
-                      </div>
-                      <Sparkles className="h-4 w-4 text-sky-200/55" />
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-4 py-4">
-                      <div className="space-y-3">
-                        {(welcome?.suggestions?.length ? welcome.suggestions : STARTER_PROMPTS).map((item) => (
-                          <button
-                            key={item}
-                            type="button"
-                            onClick={() => setInput(item)}
-                            className="agentfinder-ai-suggestion group w-full rounded-[22px] border border-white/10 bg-black/20 px-4 py-4 text-left transition-all duration-200 hover:border-sky-300/18 hover:bg-white/[0.05]"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="agentfinder-ai-suggestion-icon mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70">
-                                <MessageSquareText className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="line-clamp-3 text-sm leading-6 text-white/82">{item}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </aside>
-              </div>
-            </div>
-          </div>
-        </div>
+  function renderCard(card: AssistantCard, messageId: string, cardIndex: number) {
+    return <div key={cardIndex} className="my-3 rounded-2xl border bg-background p-4">
+      <div className="mb-3 flex items-center justify-between gap-2"><strong>{card.title}</strong><span className="text-xs text-muted-foreground">{card.rows.length} rezultate • {card.source === 'owners' ? 'surse proprietari' : card.source === 'crm' ? 'portofoliu CRM' : 'date CRM'}</span></div>
+      {!card.rows.length && <p className="text-sm text-muted-foreground">Nicio potrivire în segmentul verificat.{card.nextCursor ? ' Continuă căutarea.' : ''}</p>}
+      <div className="space-y-2">{card.rows.map((row, index) => {
+        const href = safeLink(row.link);
+        return <div key={String(row.id || index)} className="rounded-xl border p-3">
+          <div className="flex flex-wrap items-start justify-between gap-2"><div>
+            {href ? <a className="font-medium underline underline-offset-4" href={href} target={href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer">{String(row.title || row.name || row.description || row.id)}</a> : <p className="font-medium">{String(row.title || row.name || row.description || row.id)}</p>}
+            <p className="text-sm text-muted-foreground">{[row.location, row.price != null ? String(row.price) + (typeof row.price === 'number' ? ' EUR' : '') : null, row.rooms ? String(row.rooms) + ' camere' : null].filter(Boolean).join(' • ')}</p>
+            {row.reasoning ? <p className="mt-1 text-sm">{String(row.reasoning)}</p> : null}
+          </div>{card.source === 'owners' && <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" disabled={busy} onClick={() => prepareActions([{ kind: 'existing_operation', operation: 'owner_prospect', params: {}, query: {}, body: { listingId: row.id, action: 'add' } }])}>Adaugă în prospectare</Button><Button size="sm" variant="outline" disabled={busy} onClick={() => startConsent(row)}><ShieldCheck className="mr-1 h-4 w-4" />Confirm acordul WhatsApp</Button></div>}</div>
+          {row.artifactId ? <Button className="mt-2" size="sm" variant="outline" disabled={busy} onClick={() => downloadArtifact(row)}>Descarcă {String(row.fileName || 'PDF')}</Button> : null}
+          <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Detalii și identificator</summary><pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap">{JSON.stringify(row, null, 2)}</pre></details>
+        </div>;
+      })}</div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {card.search && card.nextCursor && <Button size="sm" variant="outline" disabled={busy} onClick={() => search({ ...card.search!, cursor: card.nextCursor! }, messageId, cardIndex)}>Continuă căutarea<ChevronRight className="ml-1 h-4 w-4" /></Button>}
+        {card.source === 'owners' && card.search && <Button size="sm" variant="outline" disabled={busy} onClick={() => { const { cursor: _, ...query } = card.search!; void search({ ...query, source: 'crm' }); }}>Vezi potrivirile din CRM</Button>}
       </div>
-    </div>
-  );
-}
+    </div>;
+  }
 
-function MessageAvatar({ children, variant }: { children: ReactNode; variant: 'user' | 'model' }) {
-  return (
-    <div
-      className={`agentfinder-ai-avatar mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-        variant === 'model' ? 'bg-primary/12 text-primary' : 'bg-white/10 text-white'
-      }`}
-    >
-      {children}
-    </div>
-  );
+  return <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-5 p-4 lg:flex-row lg:p-7">
+    <main className="flex min-h-[75vh] min-w-0 flex-1 flex-col rounded-3xl border bg-background/95 shadow-sm lg:h-[calc(100dvh-150px)] lg:min-h-[620px]">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-5"><div className="flex items-center gap-3"><div className="rounded-xl bg-emerald-100 p-3 text-emerald-700"><Bot className="h-6 w-6" /></div><div><h1 className="text-xl font-semibold">AI Assistant</h1><p className="text-sm text-muted-foreground">Date actuale. Acțiuni urmărite. Controlul rămâne la tine.</p></div></div><Button variant="outline" onClick={newSession} disabled={busy}><Plus className="mr-2 h-4 w-4" />Conversație nouă</Button></header>
+      {autonomy.available && <div className="flex flex-wrap items-center gap-2 border-b px-6 py-2 text-xs"><Button size="sm" variant={autonomy.enabled ? 'default' : 'outline'} disabled={busy} aria-pressed={autonomy.enabled} onClick={() => perform(async () => { setAutonomy(await api('/api/ai-assistant/workspace', { kind: 'autonomy', enabled: !autonomy.enabled })); })}>{autonomy.enabled ? 'Oprește pașii safe automați' : 'Autorizează pașii safe'}</Button><span className="text-muted-foreground">30 zile: sarcini, notițe, prospectare, import și recomandări în portal. Mesajele și publicările cer confirmare.</span></div>}
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-6">
+        {historyCursor && <Button variant="ghost" disabled={busy} onClick={() => perform(async () => { const data = await api('/api/ai-assistant/workspace?sessionId=' + sessionId + '&before=' + historyCursor); setMessages(m => [...data.messages, ...m]); setHistoryCursor(data.nextCursor); })}>Încarcă istoricul anterior</Button>}
+        {!messages.length && <div className="mx-auto max-w-2xl py-14 text-center"><Sparkles className="mx-auto mb-5 h-10 w-10 text-emerald-600" /><h2 className="text-3xl font-semibold">{userProfile?.name?.split(' ')[0] || 'Salut'}, ce rezolvăm în CRM?</h2><p className="mt-3 text-muted-foreground">Caută anunțuri, verifică clienți, programează vizionări și pregătește următoarele acțiuni.</p><div className="mt-7 grid gap-3 sm:grid-cols-2">{prompts.map(prompt => <button key={prompt} disabled={busy} onClick={() => send(prompt)} className="rounded-2xl border p-4 text-left text-sm transition hover:bg-muted disabled:opacity-50">{prompt}</button>)}</div></div>}
+        {progress && busy && <p role="status" className="rounded-xl border p-3 text-sm text-muted-foreground">{progress}</p>}
+        {messages.map(message => <article key={message.id} className={message.role === 'user' ? 'ml-auto max-w-[85%] rounded-2xl bg-muted px-4 py-3' : 'max-w-full'}>
+          <div className="mb-1 text-xs font-medium text-muted-foreground">{message.role === 'user' ? 'Tu' : 'AI Assistant'}</div>
+          <div className="prose prose-sm max-w-none dark:prose-invert"><Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown></div>
+          {message.cards?.map((card, index) => renderCard(card, message.id, index))}
+          {message.planId && <div className="my-3 rounded-2xl border border-emerald-200 bg-emerald-50/30 p-4"><strong>Plan de acțiune</strong><ol className="my-3 space-y-2">{message.actions?.map((action, index) => <li key={index} className="rounded-xl border bg-background p-3"><p className="text-sm font-medium">{index + 1}. {labels[action.kind]}{action.kind === 'existing_operation' ? ': ' + action.operation : ''}</p><details className="mt-1 text-xs"><summary className="cursor-pointer text-muted-foreground">Verifică datele acțiunii</summary><pre className="mt-2 overflow-auto whitespace-pre-wrap">{JSON.stringify(action, null, 2)}</pre></details></li>)}</ol>
+            {plans[message.planId]?.risks && <p className="mb-2 text-xs text-muted-foreground">Risc pe pași: {plans[message.planId].risks!.join(', ')}.</p>}
+            {plans[message.planId]?.externalCostNote && <p className="mb-3 rounded-xl border border-amber-200 p-3 text-sm">{plans[message.planId].externalCostNote}</p>}
+            {(!plans[message.planId] || plans[message.planId].status === 'pending') ? <div className="flex gap-2"><Button disabled={busy || !plans[message.planId]} onClick={() => execute(message.planId!)}><CheckCircle2 className="mr-2 h-4 w-4" />Execută planul</Button><Button disabled={busy || !plans[message.planId]} variant="outline" onClick={() => execute(message.planId!, true)}>Anulează</Button></div> : <div className="text-sm space-y-2">
+              <p>Stare: {({ running: 'în execuție', completed: 'finalizat', cancelled: 'anulat', failed: 'oprit cu eroare', unknown: 'rezultat de verificat', pending: 'pregătit' })[plans[message.planId].status]}</p>
+              {plans[message.planId].error && <p className="text-destructive">{plans[message.planId].error}</p>}
+              {plans[message.planId].stoppedStep && <details className="rounded-xl border bg-background p-3"><summary className="cursor-pointer">Starea pasului oprit</summary><pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(plans[message.planId].stoppedStep, null, 2)}</pre></details>}
+              <p>{plans[message.planId].results?.length || 0} pași confirmați.</p>
+              {plans[message.planId].results?.map((step, index) => {
+                const result = step.result as Record<string, unknown>;
+                const link = safeLink(result?.link);
+                return <div key={index} className="rounded-xl border bg-background p-3"><p>{index + 1}. {labels[step.kind as AssistantAction['kind']] || 'Acțiune CRM'} — confirmat</p>{result?.note ? <p className="mt-1 text-muted-foreground">{String(result.note)}</p> : null}{link && <a className="mt-1 inline-block text-emerald-700 underline" href={link} target="_blank" rel="noopener noreferrer">Deschide rezultatul</a>}{result?.artifactId ? <Button className="mt-2" size="sm" variant="outline" disabled={busy} onClick={() => downloadArtifact(result)}>Descarcă {String(result.fileName || 'PDF')}</Button> : null}</div>;
+              })}
+              {plans[message.planId].status === 'failed' && <Button variant="outline" disabled={busy} onClick={() => execute(message.planId!)}>Reia pașii rămași</Button>}
+              {['running', 'unknown'].includes(plans[message.planId].status) && <Button variant="outline" disabled={busy} onClick={() => inspect(message.planId!)}>Verifică execuția</Button>}
+              <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Detaliile rezultatelor</summary><pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap">{JSON.stringify(plans[message.planId].results || [], null, 2)}</pre></details>
+            </div>}
+          </div>}
+        </article>)}
+        {busy && <div role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Verific datele și rezultatul cererii…</div>}
+        <div ref={endRef} />
+      </div>
+      <footer className="border-t p-4">{error && <p role="alert" className="mb-3 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}{!aiConfigured && <p className="mb-3 text-sm text-amber-700">Serviciul AI nu este configurat. Poți folosi căutarea structurată.</p>}<form className="flex gap-2" onSubmit={e => { e.preventDefault(); void send(); }}><Input aria-label="Comandă pentru AI Assistant" placeholder="Scrie ce vrei să rezolvi…" value={input} onChange={e => setInput(e.target.value)} disabled={busy || !user} maxLength={6000} /><Button aria-label="Trimite comanda" type="submit" disabled={busy || !input.trim() || !user}><Send className="h-4 w-4" /></Button></form><p className="mt-2 text-xs text-muted-foreground">Asistentul folosește permisiunile tale. Acțiunile pregătite au rezultat confirmat doar după execuție.</p></footer>
+    </main>
+    <aside className="w-full space-y-4 lg:w-80">
+      <section className="rounded-3xl border bg-background p-5"><h2 className="mb-3 flex items-center gap-2 font-semibold"><Search className="h-4 w-4" />Caută în Anunțuri proprietari</h2><form className="space-y-3" onSubmit={e => { e.preventDefault(); void search({ source: 'owners', transactionType: 'sale', propertyType: 'apartment', zone: zone.trim() || undefined, priceMax: Number(priceMax), rooms: rooms ? Number(rooms) : undefined, limit: Number(count) }); }}><label className="block text-sm">Zonă<Input value={zone} onChange={e => setZone(e.target.value)} placeholder="Titan, Pipera…" /></label><label className="block text-sm">Buget maxim EUR<Input type="number" min="1" required value={priceMax} onChange={e => setPriceMax(e.target.value)} /></label><div className="grid grid-cols-2 gap-2"><label className="block text-sm">Camere<Input type="number" min="1" max="30" value={rooms} onChange={e => setRooms(e.target.value)} placeholder="Oricare" /></label><label className="block text-sm">Rezultate<Input type="number" min="1" max="100" required value={count} onChange={e => setCount(e.target.value)} /></label></div><Button className="w-full" type="submit" disabled={busy || !user}>Caută proprietăți</Button></form><p className="mt-3 text-xs text-muted-foreground">Căutarea parcurge datele de pe server. Portofoliul CRM apare separat.</p></section>
+      <section className="rounded-3xl border bg-background p-5"><h2 className="mb-3 flex items-center gap-2 font-semibold"><History className="h-4 w-4" />Conversații recente</h2><div className="max-h-80 space-y-1 overflow-auto">{sessions.map(session => <button key={session.id} disabled={busy} onClick={() => openSession(session.id)} className={'w-full rounded-xl px-3 py-2 text-left text-sm hover:bg-muted ' + (session.id === sessionId ? 'bg-muted font-medium' : '')}>{session.title}</button>)}{!sessions.length && <p className="text-sm text-muted-foreground">Conversațiile cu asistentul se salvează aici.</p>}</div></section>
+    </aside>
+    {consent && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-labelledby="consent-title"><div className="w-full max-w-lg rounded-2xl bg-background p-6 shadow-xl"><div className="flex items-start justify-between"><h2 id="consent-title" className="text-lg font-semibold">Confirm acordul WhatsApp</h2><Button size="icon" variant="ghost" aria-label="Închide" onClick={() => setConsent(null)} disabled={busy}><X className="h-4 w-4" /></Button></div><p className="my-3 text-sm">{consent.title} • {consent.phone || 'Telefon indisponibil'}</p><label className="block text-sm">Număr WhatsApp al agenției<select className="my-2 w-full rounded-md border bg-background p-2" value={consent.connectionId} onChange={e => setConsent(c => c && ({ ...c, connectionId: e.target.value }))}>{consent.connections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label className="block text-sm">Scop<select className="my-2 w-full rounded-md border bg-background p-2" value={consent.purpose} onChange={e => setConsent(c => c && ({ ...c, purpose: e.target.value as Consent['purpose'] }))}><option value="marketing">Propunere de colaborare / marketing</option><option value="service">Comunicare de serviciu</option></select></label><label className="block text-sm">Data și ora apelului<input type="datetime-local" className="my-2 w-full rounded-md border bg-background p-2" value={consent.calledAt} onChange={e => setConsent(c => c && ({ ...c, calledAt: e.target.value }))} /></label>{!consent.connections.length && <p className="my-2 text-sm text-amber-700">Nu există un număr WhatsApp conectat al agenției.</p>}<label className="block text-sm">Ce a confirmat proprietarul în apel<textarea className="my-2 min-h-24 w-full rounded-md border bg-background p-2" value={consent.evidence} maxLength={2000} onChange={e => setConsent(c => c && ({ ...c, evidence: e.target.value }))} /></label><label className="my-4 flex items-start gap-2 text-sm"><input type="checkbox" checked={consent.confirmed} onChange={e => setConsent(c => c && ({ ...c, confirmed: e.target.checked }))} /><span>Confirm că am obținut în apel acordul proprietarului pentru mesaje WhatsApp cu scopul selectat.</span></label>{error && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}<Button className="w-full" disabled={busy || !consent.confirmed || !consent.connectionId || !consent.phone || !consent.calledAt || consent.evidence.trim().length < 10} onClick={saveConsent}>Înregistrează acordul</Button></div></div>}
+  </div>;
 }

@@ -13,8 +13,8 @@ function load(name) {
   const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
-  const module = { exports: {} };
-  cache.set(name, module.exports);
+  const loadedModule = { exports: {} };
+  cache.set(name, loadedModule.exports);
   const localRequire = specifier => {
     if (specifier === '@/lib/firebase-app-hosting') return { requireAgencyUserFromBearerToken() { throw Error('No live authentication allowed'); } };
     if (specifier === '@/lib/demo/guards') return { isDemoAgencyId: () => false };
@@ -23,9 +23,9 @@ function load(name) {
     if (specifier.startsWith('./')) return load(specifier.slice(2));
     return require(specifier);
   };
-  vm.runInThisContext(`(function(require,module,exports){${output}\n})`, { filename })(localRequire, module, module.exports);
-  cache.set(name, module.exports);
-  return module.exports;
+  vm.runInThisContext(`(function(require,module,exports){${output}\n})`, { filename })(localRequire, loadedModule, loadedModule.exports);
+  cache.set(name, loadedModule.exports);
+  return loadedModule.exports;
 }
 function memoryDb() {
   const values = new Map();

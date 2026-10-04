@@ -7,19 +7,13 @@ import {
 } from '@/lib/owner-listings/search';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
+import { OWNER_SEARCH_VERSION } from '@/lib/owner-listings/search-index';
+import { parseOptionalNumber } from '@/lib/owner-listings/utils';
 
 export const runtime = 'nodejs';
 
 type CursorPayload = { postedAt: number; id: string };
 type SearchCorpusListing = OwnerListingSummary & { id: string };
-type SearchCorpusCacheEntry = {
-  expiresAt: number;
-  lastAccessedAt: number;
-  promise: Promise<SearchCorpusListing[]>;
-};
-
-const SEARCH_CORPUS_TTL_MS = 60_000;
-const SEARCH_CORPUS_MAX_CACHE_ENTRIES = 3;
 const SEARCH_CORPUS_FIELDS = [
   'source',
   'sourceLabel',
@@ -41,7 +35,7 @@ const SEARCH_CORPUS_FIELDS = [
   'postedAt',
   'firstDiscoveredAt',
 ] as const;
-const searchCorpusCache = new Map<string, SearchCorpusCacheEntry>();
+const searchCorpusCache = new Map<string, Promise<SearchCorpusListing[]>>();
 
 function withoutGlobalPhone<T extends OwnerListingSummary & { id: string }>(listing: T) {
   const { ownerPhone: _globalOwnerPhone, ...safeListing } = listing;
@@ -129,43 +123,30 @@ async function loadSearchCorpus(baseQuery: FirebaseFirestore.Query) {
     });
 }
 
-function pruneSearchCorpusCache(now: number) {
-  for (const [key, entry] of searchCorpusCache) {
-    if (entry.expiresAt <= now) searchCorpusCache.delete(key);
-  }
-
-  while (searchCorpusCache.size >= SEARCH_CORPUS_MAX_CACHE_ENTRIES) {
-    const oldestEntry = [...searchCorpusCache.entries()]
-      .sort((left, right) => left[1].lastAccessedAt - right[1].lastAccessedAt)[0];
-    if (!oldestEntry) break;
-    searchCorpusCache.delete(oldestEntry[0]);
-  }
-}
-
-function getSearchCorpus(cacheKey: string, baseQuery: FirebaseFirestore.Query) {
-  const now = Date.now();
+async function getSearchCorpus(cacheKey: string, baseQuery: FirebaseFirestore.Query, params: URLSearchParams) {
+  // Deduplicate only concurrent reads. A subsequent request always observes fresh Firestore data.
   const cached = searchCorpusCache.get(cacheKey);
-  if (cached && cached.expiresAt > now) {
-    cached.lastAccessedAt = now;
-    return cached.promise;
-  }
-
-  if (cached) searchCorpusCache.delete(cacheKey);
-  pruneSearchCorpusCache(now);
-
-  const promise = loadSearchCorpus(baseQuery);
-  const entry: SearchCorpusCacheEntry = {
-    expiresAt: now + SEARCH_CORPUS_TTL_MS,
-    lastAccessedAt: now,
-    promise,
-  };
-  searchCorpusCache.set(cacheKey, entry);
-  promise.catch(() => {
-    if (searchCorpusCache.get(cacheKey) === entry) {
-      searchCorpusCache.delete(cacheKey);
+  if (cached) return cached;
+  const promise = (async () => {
+    let candidates = baseQuery;
+    const min = parseOptionalNumber(params.get('priceMin')), max = parseOptionalNumber(params.get('priceMax'));
+    if (min !== null || max !== null) {
+      try {
+        const [all, covered] = await Promise.all([baseQuery.count().get(), baseQuery.where('searchVersion', '==', OWNER_SEARCH_VERSION).count().get()]);
+        if (all.data().count > 0 && all.data().count === covered.data().count) {
+          candidates = baseQuery.where('searchVersion', '==', OWNER_SEARCH_VERSION).where('searchPrice', '>=', min ?? 0);
+          if (max !== null) candidates = candidates.where('searchPrice', '<=', max);
+          return await loadSearchCorpus(candidates);
+        }
+      } catch (error) {
+        if (Number((error as { code?: unknown }).code) !== 9) throw error;
+      }
     }
-  });
-  return promise;
+    return loadSearchCorpus(baseQuery);
+  })();
+  searchCorpusCache.set(cacheKey, promise);
+  try { return await promise; }
+  finally { if (searchCorpusCache.get(cacheKey) === promise) searchCorpusCache.delete(cacheKey); }
 }
 
 function findPageStartIndex(matches: SearchCorpusListing[], cursor: CursorPayload | null) {
@@ -200,7 +181,7 @@ async function getRefinedListingPage(input: {
     : [];
   const listingsById = new Map(
     snapshots
-      .filter((snapshot) => snapshot.exists)
+      .filter((snapshot) => snapshot.exists && snapshot.data()?.publicationStatus === 'ready' && snapshot.data()?.isCanonical === true)
       .map((snapshot) => [
         snapshot.id,
         withoutGlobalPhone({ ...(snapshot.data() as OwnerListingSummary), id: snapshot.id }),
@@ -234,7 +215,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'scopeKey este obligatoriu.' }, { status: 400 });
     }
 
-    const pageSize = Math.max(1, Math.min(Number(params.get('pageSize') || 100), 100));
+    const requestedSize = Number(params.get('pageSize') || 100);
+    const pageSize = Number.isFinite(requestedSize) ? Math.max(1, Math.min(Math.floor(requestedSize), 100)) : 100;
     const source = params.get('source');
     const cursor = decodeCursor(params.get('cursor'));
     const baseQuery = buildOwnerListingsBaseQuery(authContext.adminDb, scopeKey, source);
@@ -243,8 +225,9 @@ export async function GET(request: NextRequest) {
     if (hasOwnerListingRefinementFilters(params)) {
       const [corpus, prospectingPhones] = await Promise.all([
         getSearchCorpus(
-          `${authContext.runtimeMode}:${scopeKey}:${source || 'all'}`,
+          `${authContext.runtimeMode}:${scopeKey}:${source || 'all'}:${params.get('priceMin') || ''}:${params.get('priceMax') || ''}`,
           baseQuery,
+          params,
         ),
         loadAgencyProspectingPhones(authContext.adminDb, authContext.agencyId),
       ]);

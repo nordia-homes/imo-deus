@@ -1,0 +1,9 @@
+{
+  "version": "openai-standard-2026-10-04",
+  "currency": "USD",
+  "source": "https://developers.openai.com/api/docs/pricing",
+  "models": {
+    "gpt-6-luna": { "input": 0.1, "cachedInput": 0.01, "cacheWrite": 0.125, "output": 0.5 },
+    "gpt-6.1-sol": { "input": 2, "cachedInput": 0.1, "cacheWrite": 2.5, "output": 10 }
+  }
+}

@@ -12,6 +12,7 @@ import type {
 } from '@/lib/owner-listings/types';
 import { compareOwnerListingEnrichmentPriority, getOwnerListingMissingFields, hasMinimumOwnerListingQuality, parseArea, parseExactConstructionYear, parsePriceNumber, parseRooms, stripUndefined } from '@/lib/owner-listings/utils';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
+import { ownerSearchFields } from './search-index';
 
 const ENRICHMENT_COLLECTION = 'ownerListingEnrichmentQueue';
 const PROCESSING_STALE_MS = 15 * 60 * 1000;
@@ -561,6 +562,7 @@ export async function drainNextOwnerListingEnrichmentQueueItem(): Promise<OwnerL
             enrichmentStatus: 'complete' as const,
             enrichmentCompletedAt: Math.floor(Date.now() / 1000),
             priceValue: parsePriceNumber(merged.price),
+            ...ownerSearchFields({ ...merged, priceValue: parsePriceNumber(merged.price) }),
             areaValue: parseArea(merged.area),
             roomsValue: parseRooms(String(merged.rooms ?? '')),
             constructionYearValue:

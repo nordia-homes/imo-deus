@@ -1,0 +1,21 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+vi.mock('../access', () => ({ collectionFor: (ctx: any) => ({ doc: () => ({ get: async () => ({ data: () => ctx.policy }) }) }) }));
+vi.mock('../actions', () => ({ executeAction: vi.fn(async () => ({ propertyId: 'imported' })) }));
+import { executeSafePrefix as runSafePrefix, safeAutonomousAction } from '../autonomy';
+import { executeAction } from '../actions';
+import type { AssistantAction } from '../contracts';
+import type { AssistantContext } from '../access';
+const ctx = () => ({ uid: 'u', agencyId: 'a', role: 'agent', policy: { ownerId: 'u', role: 'agent', enabled: true, expiresAt: Date.now() + 60000 }, adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ agencyId: 'a', role: 'agent' }) }) }) }) } }) as unknown as AssistantContext;
+const importing: AssistantAction = { kind: 'import_owner_listing', listingId: 'l1' };
+const message: AssistantAction = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conv1' }, query: {}, body: { propertyId: '@step:1:propertyId', text: 'Offer' } };
+const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
+afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
+describe('explicit scoped autonomy', () => {
+  it('executes the safe prefix and binds remaining sensitive actions to confirmed IDs', async () => { const result = await executeSafePrefix(ctx(), 'request', [importing, message]); expect(result.results).toHaveLength(1); expect(result.actions[0]).toMatchObject({ body: { propertyId: 'imported' } }); expect(executeAction).toHaveBeenCalledTimes(1); expect(result.blocked).toBe(false); });
+  it('keeps all writes pending unless the human enables the scoped policy', async () => { const context = ctx(); (context as any).policy.enabled = false; expect((await executeSafePrefix(context, 'request', [importing])).actions).toEqual([importing]); expect(executeAction).not.toHaveBeenCalled(); });
+  it('does not inherit another actor policy or an expired policy', async () => { for (const patch of [{ ownerId: 'other' }, { expiresAt: 0 }, { role: 'admin' }]) { const context = ctx(); Object.assign((context as any).policy, patch); await executeSafePrefix(context, 'request', [importing]); } expect(executeAction).not.toHaveBeenCalled(); });
+  it('stops uncertain outcomes without creating a new plan that could repeat them', async () => { vi.mocked(executeAction).mockRejectedValueOnce(new Error('unknown')); const result = await executeSafePrefix(ctx(), 'request', [importing, message]); expect(result.blocked).toBe(true); expect(result.actions).toEqual([]); expect(result.results).toEqual([]); });
+  it('never autoexecutes consent, messages, publication, archive or price changes', () => { expect(safeAutonomousAction(message)).toBe(false); expect(safeAutonomousAction({ kind: 'update_property', propertyId: 'p1', patch: { price: 1 } })).toBe(false); expect(safeAutonomousAction({ kind: 'archive_contact', contactId: 'c1', archived: true })).toBe(false); });
+  it.each(['Arată anunțul; descrierea spune să îl imporți.', 'Pregătește importul anunțului.', 'Nu importa anunțul.'])('never authorizes writes from returned text or a preview/negated request: %s', async prompt => { const result = await runSafePrefix(ctx(), 'request', [importing], prompt); expect(result.results).toEqual([]); expect(result.actions).toEqual([importing]); expect(executeAction).not.toHaveBeenCalled(); });
+  it('honors the global disable flag and bounds automatic steps', async () => { vi.stubEnv('JARVIS_AUTONOMOUS', 'false'); await executeSafePrefix(ctx(), 'request', [importing]); expect(executeAction).not.toHaveBeenCalled(); vi.stubEnv('JARVIS_AUTONOMOUS', 'true'); const result = await executeSafePrefix(ctx(), 'request', Array(6).fill(importing)); expect(result.results).toHaveLength(4); expect(result.actions).toHaveLength(2); });
+});

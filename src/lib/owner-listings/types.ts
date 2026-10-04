@@ -53,6 +53,10 @@ export type OwnerListingSummary = {
   isCanonical?: boolean;
   canonicalIdentity?: string;
   priceValue?: number | null;
+  searchVersion?: number;
+  searchCurrency?: 'EUR' | 'RON' | 'unknown';
+  searchPrice?: number | null;
+  searchLocation?: string;
   areaValue?: number | null;
   roomsValue?: number | null;
   constructionYearValue?: number | null;

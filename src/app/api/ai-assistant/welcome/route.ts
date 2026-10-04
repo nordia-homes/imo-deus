@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
-import { generateAssistantWelcome } from '@/ai/flows/assistant-welcome';
+import { assistantContext } from '@/lib/ai-assistant/access';
+import { assistantError } from '@/lib/ai-assistant/http-error';
 
 export async function POST(request: Request) {
   try {
-    const input = await request.json();
-    const result = await generateAssistantWelcome(input);
-    return NextResponse.json(result);
+    await assistantContext(request);
+    return NextResponse.json({ title: 'Ce vrei să rezolvăm în CRM?', subtitle: 'Caută, verifică și pregătește acțiuni reale dintr-o singură conversație.', suggestions: ['Găsește 5 apartamente în Titan sub 130000 euro.', 'Arată-mi vizionările de mâine și sarcinile restante.', 'Găsește ofertele potrivite unui client.', 'Verifică starea conexiunii WhatsApp.'] }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    console.error('AI Assistant welcome route failed:', error);
-    return NextResponse.json(
-      { error: 'Nu am putut genera introducerea pentru AI Assistant.' },
-      { status: 500 }
-    );
+    return assistantError(error);
   }
 }

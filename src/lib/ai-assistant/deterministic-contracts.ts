@@ -1,0 +1,5 @@
+import { z } from 'zod';
+import { idSchema, resourceNames } from './contracts';
+const field = z.string().min(1).max(80).regex(/^[A-Za-z][A-Za-z0-9_]*$/).refine(value => !/secret|token|password|credential|key|authorization/i.test(value));
+export const analysisSchema = z.object({ resource: z.enum(resourceNames), ids: z.array(idSchema).min(1).max(100), filters: z.array(z.object({ field, operator: z.enum(['eq', 'ne', 'lt', 'lte', 'gt', 'gte', 'contains']), value: z.union([z.string().max(500), z.number().finite(), z.boolean()]) }).strict()).max(6).default([]), sort: z.object({ field, direction: z.enum(['asc', 'desc']).default('asc') }).strict().optional(), numericField: field.optional(), limit: z.number().int().min(1).max(100).default(30) }).strict();
+export const datetimeSchema = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), dayOffset: z.number().int().min(-365).max(365).optional(), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), utcOffsetMinutes: z.number().int().min(-840).max(840).optional() }).strict().refine(value => (value.date !== undefined) !== (value.dayOffset !== undefined), 'Specify exactly one of date or dayOffset');

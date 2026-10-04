@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import { afterAll, beforeAll, describe, it } from 'vitest';
+import { initializeTestEnvironment, assertFails, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('assistant server-managed records', () => {
+  let env: RulesTestEnvironment;
+  beforeAll(async () => {
+    env = await initializeTestEnvironment({ projectId: 'demo-imodeus-ai-assistant', firestore: { rules: fs.readFileSync('src/firestore.rules', 'utf8') } });
+    await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'users', 'agent'), { agencyId: 'a', role: 'agent' }); await setDoc(doc(c.firestore(), 'users', 'admin'), { agencyId: 'a', role: 'admin' }); await setDoc(doc(c.firestore(), 'users', 'other'), { agencyId: 'b', role: 'agent' }); });
+  });
+  afterAll(async () => { await env?.cleanup(); });
+  it.each(['agent', 'admin', 'other'])('blocks forged histories, plans, consent, artifacts and jobs for %s', async actor => {
+    const db = env.authenticatedContext(actor).firestore();
+    for (const collection of ['assistantSessions', 'assistantPlans', 'assistantExecutions', 'assistantLocks', 'assistantAutomations', 'assistantArtifacts', 'assistantMemory', 'assistantResultSets', 'assistantTelemetry', 'assistantPolicies', 'communicationConsents']) {
+      await assertFails(setDoc(doc(db, 'agencies', 'a', collection, 'fake'), { ownerId: 'agent', status: 'completed' }));
+      await assertFails(getDoc(doc(db, 'agencies', 'a', collection, 'fake')));
+    }
+    await assertFails(setDoc(doc(db, 'assistantAutomationJobs', 'fake'), { status: 'active' }));
+    await assertFails(setDoc(doc(db, 'assistantAgentJobs', 'fake'), { status: 'running' }));
+  });
+});

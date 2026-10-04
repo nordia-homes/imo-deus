@@ -227,6 +227,9 @@ async function sleep(ms: number) {
 }
 
 export async function requireAgencyAdminFromBearerToken(authorizationHeader: string | null | undefined): Promise<DecodedTokenContext> {
+  const { assistantPrincipal } = await import('@/lib/ai-assistant/principal');
+  const principal = await assistantPrincipal(authorizationHeader);
+  if (principal) { if (principal.role !== 'admin') throw new AppHostingApiError('Acces administrator necesar.', 403); return principal; }
   if (!authorizationHeader?.startsWith('Bearer ')) {
     throw new AppHostingApiError('Lipseste tokenul de autentificare.', 401);
   }
@@ -255,6 +258,9 @@ export async function requireAgencyAdminFromBearerToken(authorizationHeader: str
 }
 
 export async function requireAgencyUserFromBearerToken(authorizationHeader: string | null | undefined): Promise<DecodedTokenContext> {
+  const { assistantPrincipal } = await import('@/lib/ai-assistant/principal');
+  const principal = await assistantPrincipal(authorizationHeader);
+  if (principal) return principal;
   if (!authorizationHeader?.startsWith('Bearer ')) {
     throw new AppHostingApiError('Lipseste tokenul de autentificare.', 401);
   }

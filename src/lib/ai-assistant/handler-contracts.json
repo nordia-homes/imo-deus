@@ -1,0 +1,751 @@
+{
+  "owner_query": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [
+      "cursor",
+      "pageSize",
+      "priceMax",
+      "priceMin",
+      "scopeKey",
+      "source"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "owner_prospect": {
+    "method": "POST",
+    "validation": "requestSchema = z.object({\n  listingId: z.string().min(1).max(200),\n  action: z.enum(['add', 'remove', 'retry']),\n})",
+    "bodyFields": [
+      "action",
+      "listingId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "owner_import_preview": {
+    "method": "POST",
+    "validation": "importSchema = z.object({\n  source: z.enum(['olx', 'imoradar24', 'publi24']),\n  url: z.string().url('URL-ul anuntului este invalid.'),\n  listingId: z.string().min(1).optional(),\n  ownerPhone: z.string().optional(),\n  sourceDescription: z.string().optional(),\n})",
+    "bodyFields": [
+      "listingId",
+      "source",
+      "sourceDescription",
+      "url"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "conversation_list": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "conversation_messages": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "conversation_search": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "communications_status": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "whatsapp_templates": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "conversation_start": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "message_preview": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "message_send": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "conversation_note": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "conversation_update": {
+    "method": "PATCH",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "social_create": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "connectionId",
+      "cursor",
+      "pageId",
+      "text"
+    ],
+    "queryFields": [
+      "connectionId",
+      "cursor",
+      "page",
+      "q",
+      "target"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "collaboration_read": {
+    "method": "GET",
+    "validation": "publishSchema = z.object({ propertyId: z.string().min(1), terms: z.string().trim().min(5).max(3000), description: z.string().trim().max(10000).optional(), imageUrls: z.array(z.string().url()).max(20).optional() })",
+    "bodyFields": [
+      "acceptedTerms",
+      "action",
+      "caseId",
+      "leadId",
+      "linkId",
+      "listingId",
+      "notificationId",
+      "offerAmount",
+      "offerStatus",
+      "status",
+      "text",
+      "viewingAt"
+    ],
+    "queryFields": [
+      "cursor",
+      "id",
+      "view"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "collaboration_action": {
+    "method": "POST",
+    "validation": "publishSchema = z.object({ propertyId: z.string().min(1), terms: z.string().trim().min(5).max(3000), description: z.string().trim().max(10000).optional(), imageUrls: z.array(z.string().url()).max(20).optional() })",
+    "bodyFields": [
+      "acceptedTerms",
+      "action",
+      "caseId",
+      "leadId",
+      "linkId",
+      "listingId",
+      "notificationId",
+      "offerAmount",
+      "offerStatus",
+      "status",
+      "text",
+      "viewingAt"
+    ],
+    "queryFields": [
+      "cursor",
+      "id",
+      "view"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "property_remove": {
+    "method": "POST",
+    "validation": "removalSchema = z.object({\n  propertyId: z.string().regex(/^[A-Za-z0-9_-]{1,150}$/),\n  reason: z.enum(['not_interesting', 'collaboration_ended', 'sold']),\n  soldDisposition: z.enum(['agency', 'other_agency', 'owner']).optional(),\n  soldPrice: z.number().finite().positive().max(1e12).optional(),\n  agentMessage: z.string().trim().max(4000),\n}).strict().superRefine((value, ctx) => {\n  if (value.reason === 'sold' && (!value.soldDisposition || !value.soldPrice)) {\n    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Completează prețul și autorul vânzării.' });\n  }\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "property_context": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "property_pricing": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "property_nearby": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "video_jobs": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "aiPresenterAvatar",
+      "aiPresenterPosition",
+      "aiPresenterScript",
+      "aiPresenterSize",
+      "aiPresenterVoice",
+      "format",
+      "includeAiPresenter",
+      "includeBranding",
+      "includeMusic",
+      "includeText",
+      "quality",
+      "style",
+      "targetDurationSeconds"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "video_create": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "aiPresenterAvatar",
+      "aiPresenterPosition",
+      "aiPresenterScript",
+      "aiPresenterSize",
+      "aiPresenterVoice",
+      "format",
+      "includeAiPresenter",
+      "includeBranding",
+      "includeMusic",
+      "includeText",
+      "quality",
+      "style",
+      "targetDurationSeconds"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "video_script": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "style",
+      "targetDurationSeconds"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "imobiliare_status": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "imobiliare_publish": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "propertyId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "imobiliare_unpublish": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "propertyId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "imobiliare_reconcile": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "storia_status": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "storia_publish": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "propertyId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "storia_unpublish": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "propertyId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "storia_promotions": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "propertyId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "romimo_status": {
+    "method": "GET",
+    "validation": "settingsSchema = z.object({\n  category: z.number().int().nonnegative(), currency: z.string().max(3),\n  county: z.string().max(150), city: z.string().max(150), area: z.string().max(150),\n  contactName: z.string().max(150), contactEmail: z.string().max(254), contactPhone: z.string().max(40),\n  validFrom: z.string().max(40), validTo: z.string().max(40),\n  fields: z.record(z.string().max(100), z.string().max(2000)).refine(v => Object.keys(v).length <= 100),\n}).strict()\n\npropertyIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)",
+    "bodyFields": [],
+    "queryFields": [
+      "cursor"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "romimo_preview": {
+    "method": "POST",
+    "validation": "settingsSchema = z.object({\n  category: z.number().int().nonnegative(), currency: z.string().max(3),\n  county: z.string().max(150), city: z.string().max(150), area: z.string().max(150),\n  contactName: z.string().max(150), contactEmail: z.string().max(254), contactPhone: z.string().max(40),\n  validFrom: z.string().max(40), validTo: z.string().max(40),\n  fields: z.record(z.string().max(100), z.string().max(2000)).refine(v => Object.keys(v).length <= 100),\n}).strict()\n\npropertyIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)",
+    "bodyFields": [],
+    "queryFields": [
+      "cursor"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "romimo_publish": {
+    "method": "POST",
+    "validation": "settingsSchema = z.object({\n  category: z.number().int().nonnegative(), currency: z.string().max(3),\n  county: z.string().max(150), city: z.string().max(150), area: z.string().max(150),\n  contactName: z.string().max(150), contactEmail: z.string().max(254), contactPhone: z.string().max(40),\n  validFrom: z.string().max(40), validTo: z.string().max(40),\n  fields: z.record(z.string().max(100), z.string().max(2000)).refine(v => Object.keys(v).length <= 100),\n}).strict()\n\npropertyIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)",
+    "bodyFields": [],
+    "queryFields": [
+      "cursor"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "romimo_verify": {
+    "method": "POST",
+    "validation": "settingsSchema = z.object({\n  category: z.number().int().nonnegative(), currency: z.string().max(3),\n  county: z.string().max(150), city: z.string().max(150), area: z.string().max(150),\n  contactName: z.string().max(150), contactEmail: z.string().max(254), contactPhone: z.string().max(40),\n  validFrom: z.string().max(40), validTo: z.string().max(40),\n  fields: z.record(z.string().max(100), z.string().max(2000)).refine(v => Object.keys(v).length <= 100),\n}).strict()\n\npropertyIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)",
+    "bodyFields": [],
+    "queryFields": [
+      "cursor"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "property_presentation": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [
+      "format"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_stage": {
+    "method": "POST",
+    "validation": "stageSchema = z.object({\n  stage: z.enum(['preparing', 'reservation', 'precontract', 'contract', 'completed', 'blocked', 'cancelled']),\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_setup": {
+    "method": "PATCH",
+    "validation": "participantSchema = z.object({\n  id: z.string().min(1).max(200),\n  role: z.enum(['buyer', 'owner', 'notary', 'collaborator']),\n  contactId: z.string().nullable().optional(),\n  name: z.string().trim().max(200),\n  email: z.string().trim().email().or(z.literal('')),\n  phone: z.string().trim().max(50).nullable().optional(),\n  preferredChannel: z.enum(['email', 'phone', 'whatsapp']).optional(),\n})\n\nchecklistSchema = z.object({\n  id: z.string().min(1).max(200),\n  label: z.string().trim().min(1).max(240),\n  participantRole: z.enum(['buyer', 'owner']),\n  stage: z.enum(['reservation', 'precontract', 'contract']).optional(),\n  status: z.enum(['required', 'requested', 'received_needs_review', 'verified', 'rejected', 'expired', 'not_required']),\n  required: z.boolean(),\n}).passthrough()\n\nsetupSchema = z.object({\n  participants: z.array(participantSchema).min(2).max(20),\n  agreedPrice: z.number().positive().max(1_000_000_000).nullable(),\n  reservationAmount: z.number().nonnegative().max(1_000_000_000).nullable().optional().default(null),\n  precontractAmount: z.number().nonnegative().max(1_000_000_000).nullable().optional().default(null),\n  financingType: z.enum(['cash', 'credit', 'unknown']),\n  checklist: z.array(checklistSchema).max(100),\n  notary: z.object({\n    name: z.string().trim().max(200).nullable().optional(),\n    email: z.string().trim().email().or(z.literal('')).nullable().optional(),\n    phone: z.string().trim().max(50).nullable().optional(),\n    address: z.string().trim().max(400).nullable().optional(),\n    appointmentAt: z.string().datetime().nullable().optional(),\n  }).nullable(),\n}).superRefine((value, context) => {\n  if (value.agreedPrice != null && (value.reservationAmount ?? 0) + (value.precontractAmount ?? 0) > value.agreedPrice) {\n    context.addIssue({ code: 'custom', path: ['precontractAmount'], message: 'Rezervarea și antecontractul nu pot depăși prețul de vânzare.' });\n  }\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_requirement": {
+    "method": "POST",
+    "validation": "createRequirementSchema = z.object({\n  label: z.string().trim().min(1).max(240),\n  participantRole: z.enum(['buyer', 'owner']).default('owner'),\n  participantId: z.string().trim().max(200).nullable().optional(),\n  scope: z.enum(['property', 'participant', 'transaction']).optional(),\n  stages: z.array(z.enum(['reservation', 'precontract', 'contract'])).min(1).max(3),\n  required: z.boolean().default(true),\n  notes: z.string().trim().max(1000).nullable().optional(),\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_document_edit": {
+    "method": "PATCH",
+    "validation": "patchDocumentSchema = z.object({\n  label: z.string().trim().min(1).max(240).optional(),\n  participantRole: z.enum(['buyer', 'owner']).optional(),\n  participantId: z.string().trim().max(200).nullable().optional(),\n  scope: z.enum(['property', 'participant', 'transaction']).optional(),\n  stages: z.array(z.enum(['reservation', 'precontract', 'contract'])).min(1).max(3).optional(),\n  required: z.boolean().optional(),\n  notes: z.string().trim().max(1000).nullable().optional(),\n})\n\ndocumentActionSchema = z.object({\n  action: z.enum(['analyze', 'approve', 'reject', 'rotate_link', 'mark_requested', 'not_required', 'require', 'restore_version']).default('analyze'),\n  note: z.string().trim().max(1000).optional(),\n  versionId: z.string().trim().max(200).optional(),\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_document_action": {
+    "method": "POST",
+    "validation": "patchDocumentSchema = z.object({\n  label: z.string().trim().min(1).max(240).optional(),\n  participantRole: z.enum(['buyer', 'owner']).optional(),\n  participantId: z.string().trim().max(200).nullable().optional(),\n  scope: z.enum(['property', 'participant', 'transaction']).optional(),\n  stages: z.array(z.enum(['reservation', 'precontract', 'contract'])).min(1).max(3).optional(),\n  required: z.boolean().optional(),\n  notes: z.string().trim().max(1000).nullable().optional(),\n})\n\ndocumentActionSchema = z.object({\n  action: z.enum(['analyze', 'approve', 'reject', 'rotate_link', 'mark_requested', 'not_required', 'require', 'restore_version']).default('analyze'),\n  note: z.string().trim().max(1000).optional(),\n  versionId: z.string().trim().max(200).optional(),\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_document_remove": {
+    "method": "DELETE",
+    "validation": "patchDocumentSchema = z.object({\n  label: z.string().trim().min(1).max(240).optional(),\n  participantRole: z.enum(['buyer', 'owner']).optional(),\n  participantId: z.string().trim().max(200).nullable().optional(),\n  scope: z.enum(['property', 'participant', 'transaction']).optional(),\n  stages: z.array(z.enum(['reservation', 'precontract', 'contract'])).min(1).max(3).optional(),\n  required: z.boolean().optional(),\n  notes: z.string().trim().max(1000).nullable().optional(),\n})\n\ndocumentActionSchema = z.object({\n  action: z.enum(['analyze', 'approve', 'reject', 'rotate_link', 'mark_requested', 'not_required', 'require', 'restore_version']).default('analyze'),\n  note: z.string().trim().max(1000).optional(),\n  versionId: z.string().trim().max(200).optional(),\n})",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_message_review": {
+    "method": "PATCH",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sale_message_evidence": {
+    "method": "PATCH",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sales_settings_update": {
+    "method": "PATCH",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sales_template_create": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sales_template_update": {
+    "method": "PATCH",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sales_template_action": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "outreach_calls": {
+    "method": "GET",
+    "validation": "callSchema = z.object({\n  ownerListing: z.object({\n    id: z.string().min(1),\n    title: z.string().min(1),\n    price: z.string().optional(),\n    location: z.string().optional(),\n    link: z.string().optional(),\n    ownerPhone: z.string().optional(),\n    description: z.string().optional(),\n  }),\n  scheduledAt: z.string().nullable().optional(),\n})",
+    "bodyFields": [
+      "ownerListing",
+      "scheduledAt"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "contract_generate": {
+    "method": "POST",
+    "validation": "requestSchema = z.object({\n  values: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])),\n  contactId: z.string().nullable().optional(),\n  ownerId: z.string().nullable().optional(),\n  propertyId: z.string().nullable().optional(),\n})",
+    "bodyFields": [
+      "contactId",
+      "propertyId",
+      "values"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "agency_agents": {
+    "method": "GET",
+    "validation": "createAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  email: z.string().email('Adresa de email este invalida.'),\n  phone: z.string().trim().optional(),\n  password: z.string().trim().optional(),\n})",
+    "bodyFields": [
+      "email",
+      "name",
+      "password",
+      "phone"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "agency_agent_detail": {
+    "method": "GET",
+    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n})",
+    "bodyFields": [
+      "name",
+      "phone",
+      "photoUrl"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "billing_summary": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "sales_settings": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "meta_status": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "meta_campaigns": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [
+      "budgetAmount",
+      "budgetType",
+      "durationDays",
+      "objective",
+      "propertyId"
+    ],
+    "queryFields": [
+      "propertyId"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "meta_campaign_draft": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "budgetAmount",
+      "budgetType",
+      "durationDays",
+      "objective",
+      "propertyId"
+    ],
+    "queryFields": [
+      "propertyId"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "meta_campaign_publish": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "meta_campaign_pause": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_status": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_organic_status": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_dashboard": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_post_draft": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "aiGeneratedContent",
+      "assetId",
+      "brandContent",
+      "brandOrganic",
+      "description",
+      "disableComment",
+      "disableDuet",
+      "disableStitch",
+      "hashtags",
+      "privacyLevel",
+      "propertyId",
+      "repurposeVariant",
+      "userConsent"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_post_publish": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "confirm"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_post_schedule": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "confirm",
+      "runAt"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_capabilities": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "tiktok_operations": {
+    "method": "POST",
+    "validation": "",
+    "bodyFields": [
+      "advertiserId",
+      "authorizationToken",
+      "capability",
+      "expectedVersion",
+      "idempotencyKey",
+      "payload",
+      "propertyId"
+    ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  }
+}

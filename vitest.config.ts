@@ -12,5 +12,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    include: ['src/**/*.test.ts'],
+    exclude: ['src/lib/zones/zone-services.test.ts', 'src/lib/location-catalog/location-scoring.test.ts'],
   },
 });

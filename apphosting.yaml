@@ -134,6 +134,11 @@ env:
     availability:
       - RUNTIME
 
+  - variable: AI_ASSISTANT_WORKER_SECRET
+    secret: AI_ASSISTANT_WORKER_SECRET
+    availability:
+      - RUNTIME
+
   - variable: META_WEBHOOK_VERIFY_TOKEN
     secret: META_WEBHOOK_VERIFY_TOKEN
     availability:
@@ -280,7 +285,7 @@ env:
       - RUNTIME
 
   - variable: OPENAI_ASSISTANT_MODEL
-    value: gpt-4.1-mini
+    value: gpt-6-luna
     availability:
       - RUNTIME
 

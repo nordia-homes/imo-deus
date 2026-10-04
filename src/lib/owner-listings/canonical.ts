@@ -3,7 +3,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
 import { getOwnerListingCanonicalIdentity } from '@/lib/owner-listings/canonical-identity';
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
-import { stripUndefined } from '@/lib/owner-listings/utils';
+import { stripUndefined, parsePriceNumber } from '@/lib/owner-listings/utils';
+import { ownerSearchFields } from './search-index';
 
 const CANONICAL_COLLECTION = 'ownerListingCanonicalGroups';
 
@@ -24,6 +25,7 @@ function mergeDuplicateIntoPrimary(
   duplicate: Partial<OwnerListingSummary>
 ) {
   return stripUndefined({
+    ...ownerSearchFields({ price: preferIncoming(primary.price, duplicate.price), priceValue: parsePriceNumber(preferIncoming(primary.price, duplicate.price)), location: preferIncoming(primary.location, duplicate.location) }),
     title: preferIncoming(primary.title, duplicate.title),
     price: preferIncoming(primary.price, duplicate.price),
     priceValue: preferIncoming(primary.priceValue, duplicate.priceValue),

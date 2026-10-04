@@ -1,0 +1,11 @@
+import { describe, expect, it } from 'vitest';
+import { functionDefinition, functionPayload } from '../function-tools';
+import { coreToolSchemas } from '../tool-schemas';
+import { explicitInstants, validateActionDates } from '../temporal-policy';
+describe('strict native Responses tool contracts', () => {
+  it('exposes explicit search filters and optional nullable fields without arbitrary properties', () => { const tool = functionDefinition('search_properties'); const schema = tool.parameters as any; expect(schema.additionalProperties).toBe(false); expect(schema.required).toContain('priceMax'); expect(schema.properties.priceMax.anyOf).toEqual([{ type: 'number' }, { type: 'null' }]); expect(schema.properties.zone).toBeDefined(); expect(schema.properties).not.toHaveProperty('agencyId'); });
+  it('normalizes native nullable fields and applies server defaults', () => { const payload = functionPayload('search_properties', JSON.stringify({ source: null, zone: 'Titan', priceMax: 130000, rooms: null })); expect(coreToolSchemas.search_properties[0].parse(payload)).toMatchObject({ source: 'owners', zone: 'Titan', priceMax: 130000, limit: 5 }); });
+  it('preserves complex action validation behind the strict payload wrapper', () => { const tool = functionDefinition('propose_actions'); expect((tool.parameters as any).properties.payload.type).toBe('string'); expect(() => coreToolSchemas.propose_actions[0].parse(functionPayload('propose_actions', JSON.stringify({ payload: JSON.stringify({ actions: [{ kind: 'grant_whatsapp_consent' }] }) })))).toThrow(); });
+  it('rejects arbitrary tool schemas and malformed argument bodies', () => { expect(() => functionDefinition('attacker')).toThrow(); expect(() => functionPayload('search_properties', 'null')).toThrow(); expect(() => functionPayload('propose_actions', '{}')).toThrow(); });
+  it('requires deterministic provenance for dates, including nested automations', () => { const action = { kind: 'create_task' as const, dueDate: '2026-10-10T11:00:00.000Z', description: 'Follow up' }; expect(() => validateActionDates([action], explicitInstants('10 octombrie la 14:00'))).toThrow('resolve_datetime'); expect(() => validateActionDates([action], explicitInstants('2026-10-10T14:00:00+03:00'))).not.toThrow(); });
+});

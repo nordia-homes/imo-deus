@@ -406,6 +406,12 @@ async function generatePresenterScript(property: Property, job: PropertyVideoTou
   if (!apiKey) return buildFallbackPresenterScript(property, job.style);
 
   try {
+    const { assistantPrincipal, INTERNAL_PRINCIPAL_HEADER } = await import('@/lib/ai-assistant/principal');
+    const jarvis = await assistantPrincipal(INTERNAL_PRINCIPAL_HEADER);
+    if (jarvis) {
+      const { assistantDomainText } = await import('@/lib/ai-assistant/domain-ai');
+      return normalizeScriptForRomanianVoiceover(await assistantDomainText(jarvis, `Scrie un scenariu video imobiliar cursiv în română, cu diacritice, fără exagerări, bullet-uri sau date inventate. Numerele se scriu cu litere. Încheie cu: ${VIDEO_TOUR_SCRIPT_CTA_RO}`, { property, style: job.style, targetDurationSeconds: job.targetDurationSeconds }));
+    }
     const response = await fetchWithTimeout(OPENAI_RESPONSES_API_URL, {
       method: 'POST',
       headers: {

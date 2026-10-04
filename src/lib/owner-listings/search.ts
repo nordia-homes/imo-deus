@@ -1,5 +1,5 @@
 import type { OwnerListingSummary } from '@/lib/owner-listings/types';
-import { parseOptionalNumber } from '@/lib/owner-listings/utils';
+import { parseOptionalNumber, parsePriceNumber } from '@/lib/owner-listings/utils';
 
 export function normalizeOwnerListingSearchValue(value: unknown) {
   return String(value || '')
@@ -51,7 +51,7 @@ export function matchesOwnerListingFilters(listing: OwnerListingSummary, params:
     if (constructionYear === 'after-2000' && year <= 2000) return false;
   }
 
-  const price = parseOptionalNumber(listing.priceValue ?? listing.price);
+  const price = listing.price ? parsePriceNumber(listing.price) : parseOptionalNumber(listing.priceValue);
   const priceMin = parseOptionalNumber(params.get('priceMin'));
   const priceMax = parseOptionalNumber(params.get('priceMax'));
   if (priceMin !== null && (price === null || price < priceMin)) return false;

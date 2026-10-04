@@ -577,6 +577,17 @@ export const propertyVideoTourJobsDrain = onSchedule(
   }
 );
 
+const aiAssistantWorkerSecret = defineSecret('AI_ASSISTANT_WORKER_SECRET');
+export const aiAssistantAutomationsDrain = onSchedule(
+  { schedule: 'every 5 minutes', timeZone: 'Europe/Bucharest', region: 'us-central1', timeoutSeconds: 240, secrets: [ownerListingsAppBaseUrl, aiAssistantWorkerSecret] },
+  async () => {
+    const appBaseUrl = ownerListingsAppBaseUrl.value().replace(/\/+$/, '');
+    const response = await fetch(`${appBaseUrl}/api/ai-assistant/worker`, { method: 'POST', headers: { Authorization: `Bearer ${aiAssistantWorkerSecret.value()}` }, signal: AbortSignal.timeout(200000) });
+    if (!response.ok) throw new Error(`AI Assistant worker failed: ${response.status}`);
+    logger.info('AI Assistant automations drain completed.', { status: response.status });
+  }
+);
+
 const ownerListingsLegacyCycleSync = onSchedule(
   {
     schedule: 'every 24 hours',

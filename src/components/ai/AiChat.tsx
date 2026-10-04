@@ -6,6 +6,7 @@ import { Input } from "../ui/input";
 import { Send, Bot, User } from "lucide-react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { chat } from "@/ai/flows/chat";
+import { useAgency } from '@/context/AgencyContext';
 import { useToast } from "@/hooks/use-toast";
 import type { Contact, Property, Agency, UserProfile, Viewing } from '@/lib/types';
 import Markdown from 'react-markdown';
@@ -34,6 +35,8 @@ interface AiChatProps {
 }
 
 export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contacts, properties, viewings, agency, user }: AiChatProps) {
+    const { user: authenticatedUser } = useAgency();
+    const assistantSessionId = useRef<string>(crypto.randomUUID());
     const { toast } = useToast();
     const [briefing, setBriefing] = useState<string | null>(null);
     const [briefingLoading, setBriefingLoading] = useState(true);
@@ -60,6 +63,8 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contac
             }));
 
             const result = await chat({
+                authorization: 'Bearer ' + (await authenticatedUser?.getIdToken() || ''),
+                sessionId: assistantSessionId.current,
                 history: history,
                 prompt: promptToSend,
                 contacts,
@@ -96,6 +101,8 @@ export function AiChat({ suggestedPrompts, promptsLoading, initialPrompt, contac
             setBriefingLoading(true);
             try {
                 const result = await chat({
+                    authorization: 'Bearer ' + (await authenticatedUser?.getIdToken() || ''),
+                    sessionId: assistantSessionId.current,
                     history: [],
                     prompt: 'Generează briefing-ul pentru astăzi, folosind formatul Markdown specificat în instrucțiunile de sistem.',
                     contacts,
