@@ -171,3 +171,58 @@
  .wa-connection-steps { padding:4px 18px; }.wa-connection-steps > li { grid-template-columns:32px minmax(0,1fr); gap:12px; padding:22px 0; }.wa-connection-step-number { width:32px; height:32px; border-radius:10px; font-size:12px; }.wa-connection-steps h3 { font-size:16px; }.wa-connection-step-place { font-size:9px; letter-spacing:.8px; }
  .wa-connection-shortcuts { padding:18px; }.wa-connection-shortcuts .wa-btn { flex:1 1 160px; }.wa-connection-help { padding:18px; }
 }
+
+/* Overview: align account/actions, followed by full-width notice and guide. */
+.wa-overview-grid { align-items:stretch; }
+.wa-overview-grid > main { min-width:0; }
+.wa-overview-grid > main > .wa-panel:last-child { margin-bottom:0; }
+.wa-overview-grid > .wa-aside { display:flex; min-width:0; }
+.wa-overview-grid .wa-start { flex:1; display:flex; flex-direction:column; margin-bottom:0; }
+.wa-overview-grid .wa-start > a,.wa-overview-grid .wa-start > button { flex:1; }
+.wa-care-notice { display:flex; align-items:center; gap:18px; margin-top:22px; padding:20px 25px; border:1px solid #efdaa1; border-radius:16px; background:#fff3d2; color:#a97516; }
+.wa-care-notice > svg { flex-shrink:0; }
+.wa-care-notice h3 { font-size:16px; color:#8d641b; margin-bottom:5px; }
+.wa-care-notice p { color:#806c3e; font-size:13px; line-height:1.7; }
+.wa-overview > .wa-connection-guide { width:100%; margin-top:22px; }
+.wa-connection-phase-nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:24px 28px 16px; }
+.wa-connection-phase-nav a { display:flex; align-items:center; gap:12px; padding:15px; border:1px solid #dce6da; border-radius:13px; color:#34573f; background:#fcfdf9; text-decoration:none; }
+.wa-connection-phase-nav a:hover { background:#eaf6e3; border-color:#b8d7ab; }
+.wa-connection-phase-nav a > span { color:#44805a; font-size:17px; font-weight:750; }
+.wa-connection-phase-nav strong { display:block; font-size:13px; line-height:1.4; }
+.wa-connection-phase-nav small { display:block; color:#63775f; font-size:11px; margin-top:4px; }
+.wa-connection-access-note { padding:16px 28px; font-size:13px; line-height:1.7; background:#fff7e0; color:#806c3e; border-bottom:1px solid #efdaa1; }
+.wa-connection-guide .wa-connection-resume { padding:0 28px 24px; font-size:13px; line-height:1.7; color:#526b60; }
+.wa-connection-resume a,.wa-connection-source a { color:#087b54; text-decoration:underline; text-underline-offset:3px; }
+.wa-connection-phase > h3 { display:flex; align-items:center; gap:16px; padding:17px 28px; font-size:18px; color:#34573f; border-block:1px solid #dce6da; background:#f4f8ef; scroll-margin-top:110px; }
+.wa-connection-phase > h3 > span { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#63775f; }
+.wa-connection-phase .wa-connection-steps > li { scroll-margin-top:110px; }
+.wa-connection-steps h4 { font-size:18px; line-height:1.4; font-weight:700; color:#2c503a; margin:0 0 16px; }
+.wa-connection-step-layout { display:grid; grid-template-columns:minmax(0,1.85fr) minmax(250px,1fr); gap:28px; align-items:start; }
+.wa-connection-actions { margin:0; padding:0 0 0 20px; font-size:14px; line-height:1.8; color:#526b60; }
+.wa-connection-actions > li { padding-left:5px; margin-bottom:12px; }
+.wa-connection-actions > li:last-child { margin-bottom:0; }
+.wa-connection-actions > li::marker { color:#44805a; font-weight:700; }
+.wa-connection-result { padding:18px; background:#f7faf4; border:1px solid #dde8d6; border-radius:13px; }
+.wa-connection-result > strong { display:flex; align-items:center; gap:7px; font-size:12px; color:#357349; margin-bottom:10px; }
+.wa-connection-result > strong svg { flex-shrink:0; }
+.wa-connection-steps .wa-connection-result p { font-size:13px; line-height:1.75; }
+.wa-connection-steps .wa-connection-result .wa-connection-step-hint { padding:12px 0 0; border:0; border-top:1px solid #dde8d6; border-radius:0; background:transparent; margin-top:13px; font-size:12px; }
+.wa-connection-troubleshooting { padding:25px 28px; border-top:1px solid var(--wa-line); }
+.wa-connection-troubleshooting > h3 { font-size:20px; color:#34573f; margin-bottom:18px; }
+.wa-connection-troubleshooting > div { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+.wa-connection-troubleshooting .wa-connection-help { padding:16px 18px; background:#fcfdf9; border:1px solid var(--wa-line); border-radius:12px; }
+.wa-connection-help p { font-size:13px; line-height:1.8; color:#526b60; margin-top:14px; }
+.wa-connection-guide .wa-connection-source { padding:18px 28px; background:#f7faf4; border-top:1px solid var(--wa-line); color:#63775f; font-size:12px; line-height:1.7; }
+@media(max-width:1100px) {
+ .wa-overview-grid .wa-start > a,.wa-overview-grid .wa-start > button { flex:initial; }
+ .wa-connection-phase-nav { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .wa-connection-step-layout { grid-template-columns:minmax(0,1fr); gap:18px; }
+}
+@media(max-width:700px) {
+ .wa-care-notice { align-items:flex-start; padding:18px; gap:12px; }.wa-care-notice h3 { font-size:15px; }
+ .wa-connection-phase-nav { padding:18px; gap:8px; }.wa-connection-phase-nav a { padding:12px 10px; gap:8px; }.wa-connection-phase-nav strong { font-size:12px; }
+ .wa-connection-access-note { padding:16px 18px; }.wa-connection-guide .wa-connection-resume { padding:0 18px 20px; }
+ .wa-connection-phase > h3 { padding:16px 18px; flex-wrap:wrap; gap:7px 12px; font-size:17px; }.wa-connection-steps h4 { font-size:17px; }
+ .wa-connection-actions { font-size:13px; }.wa-connection-result { padding:14px; }
+ .wa-connection-troubleshooting { padding:20px 18px; }.wa-connection-troubleshooting > div { grid-template-columns:1fr; }.wa-connection-guide .wa-connection-source { padding:16px 18px; }
+}
