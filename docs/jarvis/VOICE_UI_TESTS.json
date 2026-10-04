@@ -2,6 +2,7 @@
   "passed": true,
   "checks": [
     "shortcut ignores editable CRM fields",
+    "real browser AudioWorklet loads without public-file fetch",
     "desktop shortcut opens voice without transcript/composer",
     "existing core returns cards and concise speech",
     "local barge-in stops buffered audio and approval is required",
@@ -11,7 +12,7 @@
     "layered rig renders with independent eye/arm/antenna nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 60.56995333170591,
+  "animationFps": 60.07944389275075,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."
