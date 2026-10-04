@@ -1,50 +1,39 @@
-# Audit ghid WhatsApp și layout — 2026-10-04
+# Audit ghid WhatsApp — 2026-10-04
 
-## Domeniu și dovezi
-Auditul acoperă toate instrucțiunile din ghidul afișat clienților, confruntate cu MarketingWorkspace, WhatsAppStudio, WhatsAppTemplates, InboxWorkspace, whatsapp-config, meta, outbound, model și ruta communications. Nu este un audit complet al integrării backend.
-Ghidul a fost rescris pentru administratorul unei agenții care pornește de la zero; responsabilitățile agentului și administratorului sunt explicite.
+## Revizia pentru agenții
+Ghidul are 14 pași principali, cu acțiuni numerotate individual, denumiri de meniuri/butoane în română și engleză, câmpuri explicite și rezultat de verificat. Numărul dedicat și WhatsApp Business App au instrucțiuni separate expandabile. Layoutul existent, alinierea cardurilor, bara de comunicare și ghidul pe toată lățimea sunt păstrate.
 
-## Probleme găsite și corectate
-| Lipsă / ambiguitate | Corecție |
-| --- | --- |
-| Pregătire vagă | Datele firmei, e-mail, două telefoane, conturi și roluri separate |
-| Portofoliu presupus existent | Selectare/creare, confirmare e-mail când este cerută, evitarea duplicatelor |
-| Confuzie pagină/portofoliu/cont WhatsApp | Definiții în context, control deplin și acces la active |
-| Număr dedicat vs Business App amestecate | Alegere înainte de CRM; instrucțiuni separate la verificare; caz personal/alt furnizor |
-| Un singur click presupus pentru Meta | Cele două butoane exacte din CRM și remediere pop-up |
-| PIN confundabil cu cod SMS | Scopuri separate, șase cifre, numai pentru varianta dedicată |
-| Plata și verificarea firmei într-un singur pas | Pași separați, cont WhatsApp vs cont reclame, acces financiar |
-| Actualizează sugerat ca remediere universală | Reîncarcă datele CRM; moneda se verifică la autorizare/reconectare |
-| Buget fără monedă/lună | Moneda contului, luna curentă, plafon zero, monedă nesuportată |
-| Șabloane fără câmpuri/exemplu | Selector cont, nume, limbă, categorie, text, exemplu condiționat, stări |
-| Test fără acces conversație | Administrator vs agent cu atribuire; destinatar pilot |
-| Acord menționat dar fără procedură | Inbox desktop → Detalii client → Consimțământ WhatsApp → scop, dovadă, Înregistrează |
-| Trimitere fără verificări | Mesaj liber în 24h, șablon, parametri, Verifică trimiterea, confirmare pe telefon |
-| Probleme comune incomplete | Opt cazuri: acces, popup, active, SMS, eligibilitate, monedă, recepție, trimitere |
+## Surse oficiale consultate în browser
+- Crearea portofoliului: https://www.facebook.com/business/help/1710077379203657 — selectorul de sub Home, Create a business portfolio, nume, profil, business email, Create și confirmarea e-mailului.
+- Fluxul Embedded Signup: https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/default-flow — document actualizat 2026-09-03, inclusiv imaginile oficiale pentru selectarea activelor, câmpurile profilului, Verification code / Next, Confirm și verificarea QR.
+- Business App: https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users/ — mesajul oficial Facebook Business, Connect, Connect to the Business Platform, Confirm, Share chats / Don't share chats, Enter Access code / Scan QR code instead și Settings → Account → Business Platform.
+- Verificarea firmei: https://www.facebook.com/business/help/2058515294227817 — Security Center, Start verification, date legale, identificarea firmei, documente, metoda de confirmare și Done; numai dacă este disponibilă/solicitată.
+- Facturare: https://www.facebook.com/business/help/488291839463771 — Settings → Billing & payments → Messaging accounts → Add payment method / View details → Next → card → Save → datele firmei → Save; vizualizarea cardului în Settings.
+- Politica: https://business.whatsapp.com/policy — acord, oprirea mesajelor, șabloane aprobate și intervalul de 24 de ore.
 
-## Limite identificate în implementare
-- Producția configurată în repository folosește WHATSAPP_ONBOARDING_MODE=test; accesul depinde de autorizarea utilizatorului și destinatarului. Publicarea paginii nu activează disponibilitatea generală.
-- Înregistrarea consimțământului există în panoul desktop pentru admin; varianta mobilă a detaliilor nu include acel formular. Ghidul indică desktopul și administratorul.
-- Formularul de plafon permite EUR/RON/USD. Ghidul cere suport pentru altă monedă.
-- Dashboardul citește conexiunile salvate, nu metadatele live de facturare Meta. Reautorizarea aceluiași număr recitește moneda.
-- Șabloanele create în acest editor au corp text fără variabile/atașamente; testul propus respectă această limită.
-- UI solicită ID contact CRM pentru inițiere, nu are selector de contacte în acel formular. Ghidul folosește testul inbound pentru prima conversație și descrie separat formularul real de inițiere.
-- „Trimitere mesaje: Activ” nu garantează o trimitere: tarif, acord, fereastră, buget, pilot și aprobare sunt reverificate.
-- Nu se promite import complet de istoric Coexistence, tarif gratuit, aprobare automată sau durată fixă.
+Ordinea nouă Phone Number First este în curs de introducere de Meta. Ghidul indică explicit revenirea între pașii 6–7 în funcție de titlul ecranului. Varianta anterioară a setărilor de plată este descrisă separat. Nu se pretinde că a fost parcursă o conectare într-un portofoliu autentic de client.
 
-## Verificarea surselor Meta
-Politica oficială accesibilă: https://business.whatsapp.com/policy (redirecționează la https://whatsappbusiness.com/policy/), consultată la 2026-10-04. Confirmă acordul, oprirea comunicării, șabloanele aprobate și fereastra de 24h.
-Paginile Meta Embedded Signup și onboarding-business-app-users au răspuns 429/inaccesibil; paginile business-help despre portofoliu și plăți au cerut autentificare. Nu se pretinde validare vizuală într-un cont Meta live. Rutele meniurilor sunt orientative după funcție, cu denumiri română/engleză și alternative; ordinea ecranelor, eligibilitatea și cerințele finale se citesc din ecranul Meta al clientului.
-Nu au fost folosite instrucțiunile pentru QR WhatsApp Web ca substitut pentru onboardingul Business App.
+## Confruntare cu CRM
+Verificate MarketingWorkspace, WhatsAppStudio, WhatsAppTemplates, InboxWorkspace, meta, outbound și whatsapp-config:
+- Cele două clickuri pentru lansarea Meta; PIN-ul dedicat are exact șase cifre și este separat de codul Meta.
+- Actualizează recitește conexiunile salvate; moneda se recitește la reautorizare, fără deconectare de rutină.
+- Bugetul este pentru luna curentă; monedele oferite sunt EUR/RON/USD.
+- Numele șablonului, limba, categoria, mesajul, aprobarea și parametrii sunt descriși după formularul real.
+- Prima conversație pornește inbound; răspunsul și șablonul sunt verificate înainte de trimitere.
+- Acordul se înregistrează în Inbox desktop de administrator, cu scop, dovadă și minimum zece caractere.
+- Inițierea pentru un contact existent folosește ID contact CRM și selectorul numărului.
+- Nu se promite import de istoric Business App, aprobare automată sau disponibilitate fără verificările de trimitere.
 
-## Layout
-Rândul superior conține numerele și acțiunile rapide, cu baza cardurilor aliniată pe desktop. Bara statică de comunicare urmează pe lățimea întregului conținut, apoi ghidul. Ghidul are patru etape navigabile și 14 pași cu acțiuni și rezultat verificabil. Layoutul devine vertical pe ecrane mici.
+## Prezentare publică
+Eliminate prop-ul pilot și toate etichetele de pilot/mod test din Studio, ghid și formular. Ilustrația și confirmarea conectării au text orientat către agenții. Erorile de indisponibilitate afișate de backend au formulare neutră.
+Condițiile backend privind aprobarea Meta, facturarea, utilizatorii și destinatarii autorizați nu sunt modificate; nicio setare de activare generală nu este schimbată.
 
-
-## Validare locală
-- TypeScript pentru modulul communications: PASS.
-- ESLint pe cele două componente schimbate: PASS.
-- Randare a componentelor reale cu date demonstrative, apoi verificare în Chromium la 1920, 1440, 1100 și 390 px: fără overflow orizontal, 14 pași, ancore valide și ajutor expandabil.
-- La 1920 și 1440 px, diferența dintre bazele cardului numărului și cardului de acțiuni: 0 px. Bara și ghidul au exact lățimea conținutului overview.
-- Starea fără numere, fără rol admin și cu pilot afișează explicațiile de acces și ghidul, fără butonul de conectare rezervat administratorului.
-- Nu a fost efectuată o nouă conectare Meta și nu au fost trimise mesaje către clienți pentru acest audit.
+## Validare
+- TypeScript communications: PASS.
+- ESLint pe ghid, conținut, Studio și modulele backend schimbate: PASS, fără avertismente.
+- MarketingWorkspace are două avertismente preexistente react-hooks/set-state-in-effect la liniile neatinse 38 și 47; schimbarea nu introduce avertismente.
+- Testele existente whatsapp-signup și whatsapp-security: 38/38 PASS.
+- Chromium la 1920, 1440, 1100 și 390 px: fără overflow, 14 pași, ancore valide, ambele variante expandabile și ajutor funcțional.
+- Desktop: bazele cardurilor sunt aliniate cu diferență 0 px; bara și ghidul au lățimea overview.
+- Stare administrator și stare fără numere/fără rol admin: fără etichete de pilot/mod test/demo.
+- Nu au fost trimise mesaje clienților și nu au fost modificate setări într-un cont Meta pentru audit.

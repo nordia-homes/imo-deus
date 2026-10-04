@@ -16,5 +16,5 @@ export function whatsappAccess(actor?: Actor) {
 export function assertWhatsAppAccess(actor: Actor) {
   const access = whatsappAccess(actor);
   if (!access.whatsappConfigured) throw new CommunicationError('Configurația aplicației WhatsApp este incompletă.', 503);
-  if (!access.whatsappReady) throw new CommunicationError('WhatsApp este disponibil numai conturilor pilot autorizate până la activarea producției.', 403);
+  if (!access.whatsappReady) throw new CommunicationError('Conectarea WhatsApp nu este disponibilă pentru acest cont. Contactează suportul ImoDeus.', 403);
 }

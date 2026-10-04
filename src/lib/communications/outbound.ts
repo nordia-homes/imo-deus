@@ -23,7 +23,7 @@ export async function estimateSend(db: Firestore, actor: Actor, conversation: Co
   if (conversation.channel === 'whatsapp') {
     assertWhatsAppAccess(actor);
     if (connection.appId !== whatsappAppId()) throw new CommunicationError('Reconectează numărul la noua aplicație WhatsApp.', 409);
-    if (process.env.WHATSAPP_ONBOARDING_MODE === 'test' && !(process.env.WHATSAPP_TEST_RECIPIENTS || '').split(',').map(v => v.trim().replace(/^\+/, '')).includes(conversation.externalParticipantId)) throw new CommunicationError('Destinatarul nu este autorizat pentru pilot.', 403);
+    if (process.env.WHATSAPP_ONBOARDING_MODE === 'test' && !(process.env.WHATSAPP_TEST_RECIPIENTS || '').split(',').map(v => v.trim().replace(/^\+/, '')).includes(conversation.externalParticipantId)) throw new CommunicationError('Trimiterea către acest destinatar nu este disponibilă. Contactează suportul ImoDeus.', 403);
     const globalConsent = await agencyCollection(db, actor.agencyId, 'communicationConsents')
       .doc(stableId(conversation.connectionId, conversation.externalParticipantId, 'all')).get();
     if (globalConsent.data()?.status === 'revoked') throw new CommunicationError('Contactul a cerut oprirea mesajelor WhatsApp.', 409);

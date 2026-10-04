@@ -226,3 +226,11 @@
  .wa-connection-actions { font-size:13px; }.wa-connection-result { padding:14px; }
  .wa-connection-troubleshooting { padding:20px 18px; }.wa-connection-troubleshooting > div { grid-template-columns:1fr; }.wa-connection-guide .wa-connection-source { padding:16px 18px; }
 }
+
+.wa-connection-actions strong { color:#244e3d; font-weight:650; }
+.wa-connection-branch-intro { font-size:14px; line-height:1.8; color:#526b60; margin:0 0 16px; }
+.wa-connection-branches { display:grid; gap:12px; margin-bottom:24px; }
+.wa-connection-branch { border:1px solid var(--wa-line); border-radius:14px; background:#f8fcf5; padding:18px; }
+.wa-connection-branch summary { color:#244e3d; font-size:14px; font-weight:700; cursor:pointer; line-height:1.6; }
+.wa-connection-branch[open] summary { margin-bottom:20px; }
+.wa-connection-branch summary:focus-visible { outline:2px solid #13966b; outline-offset:5px; border-radius:4px; }
