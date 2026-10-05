@@ -71,3 +71,9 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Costul necunoscut după o întrerupere este marcat incomplet și nu produce o medie inventată de zero.
 - Capabilitate crm_health și API autentificat: heartbeat/model configurat și lag măsurat din eșantionul proiecțiilor autorizate, cu revalidarea accesului la părinții sensibili. Eșantionul nu certifică evenimentele încă neprocesate sau providerii externi.
 - 275 teste AI trecute și typecheck trecut. Verificare producție suplimentară: pregătirea unei sarcini a returnat răspuns și plan cu 1 acțiune, fără executarea sarcinii. Planul integral E0–E7 rămâne în curs.
+
+### Editor automatizări — extensie în curs de publicare
+- Formulare de creare/editare pentru followup_task, owner_watch, matching_watch, insight_report și whatsapp_template, în Text și Voice prin componenta comună.
+- Selecție clienți/conversații prin citiri autentificate, căutare și paginare; sursa proprietarilor implicită, criterii de preț/camere/tip/tranzacție, prag matching și parametri șablon.
+- Programare, limite de execuție și oprire după termen/status/răspuns; configurarea pregătește planul fără a activa automatizarea direct. Orele formularului sunt indicate ca ora dispozitivului; orele originale neatinse sunt păstrate exact.
+- 19 verificări UI Text trecute, incluzând pregătirea celor cinci tipuri; 14 verificări Voice trecute. Probele sunt cu date/integrări simulate și nu trimit mesaje.
