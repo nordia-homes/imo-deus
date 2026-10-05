@@ -737,7 +737,7 @@ export function JarvisVoice() {
             </Button>
           </div>
           <div className="relative flex min-h-0 flex-1">
-            <main
+            <div
               className={
                 "jarvis-voice-main flex min-w-0 flex-1 flex-col items-center px-5 " +
                 (panel
@@ -793,7 +793,7 @@ export function JarvisVoice() {
                   Permite microfonul / Reîncearcă
                 </Button>
               )}
-            </main>
+            </div>
             {panel && (
               <aside
                 aria-label="Rezultate CRM"
@@ -807,14 +807,17 @@ export function JarvisVoice() {
                     <h2>Rezultate &amp; context</h2>
                     <p>Informații din CRM-ul tău</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Restrânge rezultatele"
-                    onClick={() => setPanel(false)}
+                  <span
+                    className="jarvis-context-connection"
+                    data-connected={!context.loading && !context.error}
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
+                    <i />
+                    {context.loading
+                      ? "Încarc…"
+                      : context.error
+                        ? "Indisponibil"
+                        : "Conectat"}
+                  </span>
                 </div>
                 {!cards.length && !plan && (
                   <div className="jarvis-results-empty">
@@ -926,6 +929,7 @@ export function JarvisVoice() {
                   <AssistantResultCard
                     key={i}
                     card={card}
+                    compact
                     busy={state === "PROCESSING" || state === "WORKING"}
                     onPrompt={command}
                     onPrepare={(actions: AssistantAction[]) => {
@@ -1009,6 +1013,7 @@ export function JarvisVoice() {
                   data={context}
                   activities={activities}
                   close={close}
+                  showAgenda={!cards.length}
                 />
               </aside>
             )}

@@ -7,12 +7,8 @@ import type {
 } from "@/lib/jarvis-voice/presentation";
 import "./character-v2.css";
 import rigAtlas from "./rig-atlas-v2.png";
+import blueBody from "./blue-body.png";
 const parts = {
-  body: [0, 0, 390, 390],
-  leftArm: [390, 80, 245, 275],
-  rightArm: [730, 115, 210, 250],
-  leftFoot: [975, 215, 255, 150],
-  rightFoot: [50, 530, 220, 155],
   leftEye: [340, 420, 280, 280],
   rightEye: [620, 420, 290, 280],
   leftIris: [940, 420, 290, 285],
@@ -22,8 +18,6 @@ const parts = {
   leftLid: [0, 990, 340, 240],
   rightLid: [900, 720, 350, 245],
   mouth: [420, 1080, 180, 100],
-  antenna: [635, 975, 343, 279],
-  glow: [970, 960, 280, 280],
 } as const;
 function Texture({
   part,
@@ -140,7 +134,7 @@ export function JarvisCharacter({
     <div
       ref={root}
       role="img"
-      aria-label="Jarvis, personaj pufos alb și cyan"
+      aria-label="Jarvis, ghemotoc pufos albastru"
       data-state={state}
       data-expression={expression}
       data-gesture={gesture}
@@ -151,13 +145,15 @@ export function JarvisCharacter({
       }
     >
       <div className="jarvis-pose">
-        <Texture part="leftFoot" className="jarvis-foot jarvis-foot-left" />
-        <Texture part="rightFoot" className="jarvis-foot jarvis-foot-right" />
-        <Texture part="body" className="jarvis-body" />
-        <Texture part="antenna" className="jarvis-antenna" />
-        <Texture part="glow" className="jarvis-glow" />
-        <Texture part="leftArm" className="jarvis-arm jarvis-arm-left" />
-        <Texture part="rightArm" className="jarvis-arm jarvis-arm-right" />
+        <span
+          aria-hidden="true"
+          data-layer="body"
+          className="jarvis-texture jarvis-body"
+          style={{
+            backgroundImage: `url(${blueBody.src})`,
+            backgroundSize: "100% 100%",
+          }}
+        />
         {(["left", "right"] as const).map((side) => (
           <div key={side} className={"jarvis-eye jarvis-eye-" + side}>
             <Texture

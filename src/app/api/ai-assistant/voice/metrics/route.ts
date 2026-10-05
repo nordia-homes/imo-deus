@@ -29,13 +29,22 @@ export async function GET(req: NextRequest) {
         samples: rows.length,
         complete: snapshot.size <= 1000,
         window: "Cele mai recente 1000 evenimente audio",
-        audioCostUsd: sum("costUsd"),
+        audioCostUsd: rows.some((r) => r.kind === "tts" && r.costUsd === null)
+          ? null
+          : sum("costUsd"),
+        knownAudioCostUsd: sum("costUsd"),
+        unpricedTtsEvents: rows.filter(
+          (r) => r.kind === "tts" && r.costUsd === null,
+        ).length,
+        ttsCharacters: sum("billedCharacters"),
         sttMinutes: sum("durationSeconds") / 60,
         ttsMinutes: sum("outputSeconds") / 60,
         closedSessionMinutes: sum("sessionSeconds") / 60,
-        estimatedAudioCostPer1000ClosedMinutes: sum("sessionSeconds")
-          ? (sum("costUsd") / (sum("sessionSeconds") / 60)) * 1000
-          : null,
+        estimatedAudioCostPer1000ClosedMinutes:
+          sum("sessionSeconds") &&
+          !rows.some((r) => r.kind === "tts" && r.costUsd === null)
+            ? (sum("costUsd") / (sum("sessionSeconds") / 60)) * 1000
+            : null,
         interruptions: sum("interruptions"),
         averageSpokenWords: mean("spokenWords"),
         averageSpokenSeconds: mean("outputSeconds"),

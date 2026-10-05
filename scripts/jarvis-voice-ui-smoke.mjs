@@ -31,6 +31,10 @@ await build({
           contents: "export default {src:'/jarvis/rig-atlas.png'};",
           loader: "js",
         }));
+        builder.onLoad({ filter: /blue-body\.png$/ }, () => ({
+          contents: "export default {src:'/blue-body.png'};",
+          loader: "js",
+        }));
         builder.onLoad({ filter: /office-scene\.png$/ }, () => ({
           contents: "export default {src:'/office-scene.png'};",
           loader: "js",
@@ -44,10 +48,15 @@ await build({
           path: "image",
           namespace: "fixture",
         }));
-        builder.onResolve({ filter: /^next\/link$/ }, () => ({ path: 'link', namespace: 'fixture' }));
+        builder.onResolve({ filter: /^next\/link$/ }, () => ({
+          path: "link",
+          namespace: "fixture",
+        }));
         builder.onLoad({ filter: /.*/, namespace: "fixture" }, (args) => ({
           contents:
-            args.path === 'link' ? "import React from 'react';export default function Link({prefetch,...props}){return <a {...props}/>;}" : "import React from 'react';export default function Image({fill,unoptimized,sizes,...props}){return <img {...props}/>}",
+            args.path === "link"
+              ? "import React from 'react';export default function Link({prefetch,...props}){return <a {...props}/>;}"
+              : "import React from 'react';export default function Image({fill,unoptimized,sizes,...props}){return <img {...props} style={fill?{position:'absolute',inset:0,width:'100%',height:'100%'}:undefined}/>}",
           loader: "jsx",
           resolveDir: root,
         }));
@@ -69,6 +78,11 @@ const css = await postcss([tailwindcss(config)]).process(
 );
 await fs.writeFile(path.join(output, "style.css"), css.css);
 const server = http.createServer(async (req, res) => {
+  if (req.url === "/blue-body.png") {
+    res.setHeader("Content-Type", "image/png");
+    res.end(await fs.readFile("src/components/jarvis-voice/blue-body.png"));
+    return;
+  }
   if (req.url === "/office-scene.png") {
     res.setHeader("Content-Type", "image/png");
     res.end(await fs.readFile("src/components/jarvis-voice/office-scene.png"));
@@ -89,7 +103,7 @@ const server = http.createServer(async (req, res) => {
   res.end(
     file
       ? await fs.readFile(path.join(output, file))
-      : '<html><head><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/bundle.css"></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>',
+      : '<html data-app-theme="agentfinder"><head><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/bundle.css"></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>',
   );
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
@@ -305,6 +319,7 @@ try {
                       {
                         id: "p",
                         title: "Apartament Titan",
+                        imageUrl: "/office-scene.png",
                         price: "129.000 €",
                         location: "Titan",
                         rooms: 2,
@@ -357,6 +372,16 @@ try {
   await dialog.waitFor();
   assert.equal(await dialog.locator("header").count(), 0);
   assert.equal(await dialog.locator(".jarvis-scene").count(), 1);
+  assert.equal(
+    await dialog
+      .locator(".jarvis-voice-main")
+      .evaluate((el) => getComputedStyle(el).backgroundColor),
+    "rgba(0, 0, 0, 0)",
+  );
+  assert.equal(
+    await dialog.locator(".jarvis-arm,.jarvis-foot,.jarvis-antenna").count(),
+    0,
+  );
   await dialog.getByText("Client context fixture", { exact: true }).waitFor();
   await dialog.getByText("Agenda context fixture", { exact: true }).waitFor();
   assert(
@@ -540,6 +565,11 @@ try {
   await page
     .getByRole("heading", { name: "Apartament Titan", exact: true })
     .waitFor();
+  const propertyRow = dialog
+    .locator('section[data-source="owners"] article')
+    .first();
+  assert((await propertyRow.locator("img").count()) === 1);
+  await page.screenshot({ path: path.join(output, "property-results.png") });
   await page
     .getByRole("button", { name: "Confirm acordul WhatsApp", exact: true })
     .click();
@@ -599,8 +629,10 @@ try {
         requestAnimationFrame(frame);
       }),
   );
-  checks.push("layered rig renders with independent eye/arm/antenna nodes");
-  assert.equal(await dialog.locator("[data-layer]").count(), 16);
+  checks.push(
+    "layered rig renders with blue body and preserved independent eye/mouth nodes",
+  );
+  assert.equal(await dialog.locator("[data-layer]").count(), 10);
   assert.deepEqual(errors, []);
   const report = {
     passed: true,

@@ -14,10 +14,10 @@
     "spoken approval uses existing execute and shared session",
     "same explicit WhatsApp consent form in voice",
     "mobile launcher above navigation and safe-area; Esc releases microphone",
-    "layered rig renders with independent eye/arm/antenna nodes"
+    "layered rig renders with blue body and preserved independent eye/mouth nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 51.42029853818528,
+  "animationFps": 43.320221082250455,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."

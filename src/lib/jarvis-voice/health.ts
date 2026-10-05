@@ -1,13 +1,13 @@
-import { speechStream } from "./provider";
+import { speechStream, voiceOutputId, VOICE_MODEL } from "./provider";
 
 // Fixed synthetic speech only. Called exclusively by the authenticated worker.
 export async function probeVoiceOutput(signal?: AbortSignal) {
   let usage:
-    | { outputSeconds: number; firstAudioMs: number; costUsd: number }
+    | { outputSeconds: number; firstAudioMs: number; costUsd: number | null }
     | undefined;
   const stream = speechStream(
     "Jarvis este pregătit. Vocea funcționează.",
-    process.env.JARVIS_VOICE_NAME || "cedar",
+    voiceOutputId(),
     signal,
     (value) => {
       usage = value;
@@ -35,5 +35,12 @@ export async function probeVoiceOutput(signal?: AbortSignal) {
   }
   if (!bytes || !nonZeroSamples || carry !== undefined)
     throw new Error("Fluxul audio nu conține voce validă.");
-  return { bytes, nonZeroSamples, ...usage };
+  return {
+    provider: "elevenlabs",
+    model: VOICE_MODEL,
+    voice: voiceOutputId(),
+    bytes,
+    nonZeroSamples,
+    ...usage,
+  };
 }

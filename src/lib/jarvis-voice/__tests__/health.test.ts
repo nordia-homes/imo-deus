@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 const speech = vi.hoisted(() => vi.fn());
-vi.mock("../provider", () => ({ speechStream: speech }));
+vi.mock("../provider", () => ({
+  speechStream: speech,
+  voiceOutputId: () => "fixture-voice",
+  VOICE_MODEL: "eleven_v3_conversational",
+}));
 import { probeVoiceOutput } from "../health";
 describe("synthetic production speech probe", () => {
   beforeEach(() => {
@@ -19,6 +23,9 @@ describe("synthetic production speech probe", () => {
       return stream([[0], [0, 1], [0]]);
     });
     expect(await probeVoiceOutput()).toEqual({
+      provider: "elevenlabs",
+      model: "eleven_v3_conversational",
+      voice: "fixture-voice",
       bytes: 4,
       nonZeroSamples: 1,
       outputSeconds: 1,

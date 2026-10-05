@@ -23,10 +23,12 @@ export function VoiceContext({
   data,
   activities,
   close,
+  showAgenda = true,
 }: {
   data: VoiceContextData;
   activities: VoiceActivity[];
   close: () => void;
+  showAgenda?: boolean;
 }) {
   return (
     <div className="jarvis-context-sections">
@@ -79,45 +81,47 @@ export function VoiceContext({
           </p>
         )}
       </section>
-      <section>
-        <div className="jarvis-context-title">
-          <h3>
-            <CalendarDays /> Agenda de azi
-          </h3>
-          <Link prefetch={false} href="/viewings" onClick={close}>
-            Vezi toate
-          </Link>
-        </div>
-        {data.viewings.map((row) => (
-          <Link
-            prefetch={false}
-            key={String(row.id)}
-            className="jarvis-context-row"
-            href="/viewings"
-            onClick={close}
-          >
-            <span className="jarvis-context-icon">
-              <CalendarDays />
-            </span>
-            <span>
-              <strong>
-                {String(row.propertyTitle || row.contactName || "Vizionare")}
-              </strong>
-              <small>
-                {[time(row.viewingDate), row.contactName || row.location]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </small>
-            </span>
-            <ChevronRight />
-          </Link>
-        ))}
-        {!data.loading && !data.error && !data.viewings.length && (
-          <p className="jarvis-context-note">
-            Nu sunt vizionări disponibile pentru azi.
-          </p>
-        )}
-      </section>
+      {showAgenda && (
+        <section>
+          <div className="jarvis-context-title">
+            <h3>
+              <CalendarDays /> Agenda de azi
+            </h3>
+            <Link prefetch={false} href="/viewings" onClick={close}>
+              Vezi toate
+            </Link>
+          </div>
+          {data.viewings.map((row) => (
+            <Link
+              prefetch={false}
+              key={String(row.id)}
+              className="jarvis-context-row"
+              href="/viewings"
+              onClick={close}
+            >
+              <span className="jarvis-context-icon">
+                <CalendarDays />
+              </span>
+              <span>
+                <strong>
+                  {String(row.propertyTitle || row.contactName || "Vizionare")}
+                </strong>
+                <small>
+                  {[time(row.viewingDate), row.contactName || row.location]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
+              </span>
+              <ChevronRight />
+            </Link>
+          ))}
+          {!data.loading && !data.error && !data.viewings.length && (
+            <p className="jarvis-context-note">
+              Nu sunt vizionări disponibile pentru azi.
+            </p>
+          )}
+        </section>
+      )}
       <section>
         <div className="jarvis-context-title">
           <h3>

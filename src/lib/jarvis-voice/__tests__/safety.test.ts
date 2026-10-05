@@ -98,7 +98,8 @@ describe("voice lifecycle and isolation", () => {
       "src/lib/jarvis-voice/provider.ts",
       "utf8",
     );
-    expect(provider).toMatch(/tools:\s*\[\]/);
-    expect(provider).toMatch(/conversation:\s*["']none["']/);
+    expect(provider).toContain("text-to-dialogue/stream-input");
+    expect(provider).not.toContain("response.create");
+    expect(provider).not.toMatch(/tools:\s*\[/);
   });
 });

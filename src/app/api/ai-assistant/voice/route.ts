@@ -9,6 +9,8 @@ import {
 } from "@/lib/jarvis-voice/server";
 import {
   speechStream,
+  voiceOutputId,
+  VOICE_MODEL,
   transcribeAudio,
   AUDIO_PRICING,
 } from "@/lib/jarvis-voice/provider";
@@ -25,8 +27,9 @@ export async function GET(req: NextRequest) {
       {
         enabled: ctx.runtimeMode === "real" && voiceEnabled(ctx.agencyId),
         sttModel: "gpt-transcribe",
-        ttsModel: "gpt-realtime-2.1-mini",
-        voice: process.env.JARVIS_VOICE_NAME || "cedar",
+        ttsModel: VOICE_MODEL,
+        ttsProvider: "elevenlabs",
+        voice: voiceOutputId(),
         pricing: AUDIO_PRICING,
       },
       { headers: { "Cache-Control": "no-store" } },
@@ -93,11 +96,7 @@ export async function POST(req: NextRequest) {
       .strict()
       .parse(raw);
     await reserveAudio(ctx);
-    const voice = ["marin", "cedar", "coral"].includes(
-      process.env.JARVIS_VOICE_NAME || "",
-    )
-      ? process.env.JARVIS_VOICE_NAME!
-      : "cedar";
+    const voice = voiceOutputId();
     const telemetry: Record<string, unknown>[] = [];
     after(async () => {
       for (const usage of telemetry) await audioTelemetry(ctx, usage);
@@ -105,12 +104,13 @@ export async function POST(req: NextRequest) {
     const stream = speechStream(input.text, voice, req.signal, (usage) => {
       telemetry.push({
         kind: "tts",
-        model: "gpt-realtime-2.1-mini",
+        model: VOICE_MODEL,
+        provider: "elevenlabs",
         voice,
         voiceSessionId: input.voiceSessionId,
         platform: input.platform,
         ...usage,
-        pricingVersion: AUDIO_PRICING.version,
+        pricingVersion: "elevenlabs-contract-rate-v1",
       });
     });
     return new Response(stream, {

@@ -339,8 +339,13 @@ env:
     availability:
       - RUNTIME
 
-  - variable: JARVIS_VOICE_NAME
-    value: "cedar"
+  - variable: ELEVENLABS_API_KEY
+    secret: ELEVENLABS_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: JARVIS_ELEVENLABS_VOICE_ID
+    value: "bgVGH727uJ1Qj9P9egUj"
     availability:
       - RUNTIME
 

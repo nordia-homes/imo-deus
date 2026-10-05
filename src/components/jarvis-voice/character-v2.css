@@ -27,70 +27,18 @@
   background-repeat: no-repeat;
 }
 .jarvis-body {
-  width: 82%;
-  height: 82%;
-  left: 9%;
-  top: 17%;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
   z-index: 2;
   filter: drop-shadow(0 16px 20px #00000018);
-}
-.jarvis-foot {
-  width: 17%;
-  height: 10%;
-  top: 88%;
-  z-index: 1;
-  animation: jarvis-foot-dangle 4.4s ease-in-out infinite;
-}
-.jarvis-foot-left {
-  left: 25%;
-  transform-origin: 50% 0;
-}
-.jarvis-foot-right {
-  left: 57%;
-  transform-origin: 50% 0;
-  animation-delay: -0.2s;
-}
-.jarvis-antenna {
-  width: 29%;
-  height: 25%;
-  top: 7%;
-  left: 44%;
-  z-index: 1;
-  transform-origin: 20% 100%;
-  animation: jarvis-sway 3.1s ease-in-out infinite;
-}
-.jarvis-glow {
-  width: 14%;
-  height: 14%;
-  top: 7%;
-  left: 61%;
-  z-index: 3;
-  mix-blend-mode: screen;
-  opacity: 0.35;
-  animation: jarvis-glow-breathe 2s ease-in-out infinite;
-}
-.jarvis-arm {
-  width: 25%;
-  height: 27%;
-  top: 54%;
-  z-index: 3;
-  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.jarvis-arm-left {
-  left: 0%;
-  transform-origin: 90% 60%;
-  animation: jarvis-wave 3.6s ease-in-out infinite;
-}
-.jarvis-arm-right {
-  right: 0%;
-  transform-origin: 10% 50%;
-  animation: jarvis-arm-rest 4s ease-in-out infinite;
 }
 .jarvis-eye {
   position: absolute;
   width: 27%;
   height: 28%;
-  top: 39%;
+  top: 32%;
   overflow: hidden;
   border-radius: 50%;
   transform-origin: center;
@@ -98,7 +46,7 @@
   transition: transform 0.18s;
 }
 .jarvis-eye-left {
-  left: 24%;
+  left: 23%;
   transform: rotate(5deg);
 }
 .jarvis-eye-right {
@@ -140,7 +88,7 @@
 .jarvis-mouth {
   width: 15%;
   height: 9%;
-  top: 67%;
+  top: 62%;
   left: 43%;
   z-index: 4;
   transform: scaleY(var(--mouth));
@@ -150,22 +98,9 @@
 .jarvis-character[data-state="LISTENING"] .jarvis-pose {
   animation: jarvis-listen 2.8s ease-in-out infinite;
 }
-.jarvis-character[data-state="LISTENING"] .jarvis-arm-left {
-  animation: jarvis-listen-hand 2.8s ease-in-out infinite;
-}
-.jarvis-character[data-state="LISTENING"] .jarvis-glow {
-  opacity: calc(0.4 + var(--energy) * 0.6);
-  scale: calc(1 + var(--energy) * 0.3);
-}
 .jarvis-character[data-state="SPEAKING"] .jarvis-pose {
   animation: jarvis-talk 1.15s ease-in-out infinite;
   scale: calc(1 + var(--energy) * 0.025);
-}
-.jarvis-character[data-state="SPEAKING"] .jarvis-arm-left {
-  animation: jarvis-explain 0.9s ease-in-out infinite;
-}
-.jarvis-character[data-state="SPEAKING"] .jarvis-arm-right {
-  animation: jarvis-explain 1.3s -0.3s ease-in-out infinite reverse;
 }
 .jarvis-character[data-state="PROCESSING"] .jarvis-pose,
 .jarvis-character[data-state="WORKING"] .jarvis-pose {
@@ -175,26 +110,10 @@
 .jarvis-character[data-state="WORKING"] .jarvis-gaze {
   animation: jarvis-search 2.6s ease-in-out infinite;
 }
-.jarvis-character[data-state="PROCESSING"] .jarvis-arm-left,
-.jarvis-character[data-gesture="THINKING"] .jarvis-arm-left {
-  animation: none;
-  transform: rotate(-32deg) translate(15%, -8%);
-}
-.jarvis-character[data-state="AWAITING_CONFIRMATION"] .jarvis-arm-right {
-  animation: jarvis-offer 2s ease-in-out infinite;
-}
 .jarvis-character[data-state="SUCCESS"] .jarvis-pose {
   animation:
     jarvis-celebrate 0.85s ease-in-out 2,
     jarvis-float 4.4s 1.7s ease-in-out infinite;
-}
-.jarvis-character[data-gesture="OPEN_HANDS"] .jarvis-arm-right,
-.jarvis-character[data-gesture="HAPPY"] .jarvis-arm-right,
-.jarvis-character[data-gesture="SUCCESS"] .jarvis-arm-right {
-  transform: rotate(-28deg);
-}
-.jarvis-character[data-gesture="POINT"] .jarvis-arm-left {
-  transform: rotate(28deg) translateY(-8%);
 }
 .jarvis-character[data-state="ERROR"] .jarvis-pose {
   animation: jarvis-think 5s ease-in-out infinite;
@@ -210,13 +129,6 @@
   width: 58px;
   filter: drop-shadow(0 3px 4px #0891b233);
 }
-.jarvis-mini .jarvis-pose,
-.jarvis-mini .jarvis-arm,
-.jarvis-mini .jarvis-foot,
-.jarvis-mini .jarvis-antenna,
-.jarvis-mini .jarvis-glow {
-  animation: none;
-}
 .jarvis-launcher {
   bottom: calc(88px + env(safe-area-inset-bottom, 0px));
 }
@@ -231,59 +143,6 @@
     rotate: 1.5deg;
   }
 }
-@keyframes jarvis-wave {
-  0%,
-  55%,
-  100% {
-    rotate: -8deg;
-  }
-  15%,
-  35% {
-    rotate: 13deg;
-  }
-  25%,
-  45% {
-    rotate: -17deg;
-  }
-}
-@keyframes jarvis-arm-rest {
-  0%,
-  100% {
-    rotate: 7deg;
-  }
-  50% {
-    rotate: -7deg;
-    translate: 0 -3px;
-  }
-}
-@keyframes jarvis-foot-dangle {
-  0%,
-  100% {
-    rotate: -4deg;
-  }
-  50% {
-    rotate: 5deg;
-    translate: 0 3px;
-  }
-}
-@keyframes jarvis-sway {
-  0%,
-  100% {
-    rotate: -5deg;
-  }
-  50% {
-    rotate: 7deg;
-  }
-}
-@keyframes jarvis-glow-breathe {
-  0%,
-  100% {
-    opacity: 0.25;
-  }
-  50% {
-    opacity: 0.65;
-  }
-}
 @keyframes jarvis-listen {
   0%,
   100% {
@@ -295,16 +154,6 @@
     rotate: 1deg;
   }
 }
-@keyframes jarvis-listen-hand {
-  0%,
-  100% {
-    rotate: -15deg;
-  }
-  50% {
-    rotate: -28deg;
-    translate: 2px -4px;
-  }
-}
 @keyframes jarvis-talk {
   0%,
   100% {
@@ -314,16 +163,6 @@
   50% {
     translate: 0 -13px;
     rotate: 2deg;
-  }
-}
-@keyframes jarvis-explain {
-  0%,
-  100% {
-    rotate: -8deg;
-  }
-  50% {
-    rotate: 18deg;
-    translate: 0 -6px;
   }
 }
 @keyframes jarvis-think {
@@ -344,16 +183,6 @@
   }
   50% {
     translate: 5px 1px;
-  }
-}
-@keyframes jarvis-offer {
-  0%,
-  100% {
-    rotate: -22deg;
-  }
-  50% {
-    rotate: -36deg;
-    translate: 0 -4px;
   }
 }
 @keyframes jarvis-celebrate {
@@ -397,5 +226,27 @@
 @media print {
   .jarvis-character {
     display: none;
+  }
+}
+
+.jarvis-mini .jarvis-pose {
+  animation: none;
+}
+.jarvis-character[data-state="AWAITING_CONFIRMATION"] .jarvis-pose {
+  animation: jarvis-confirm-nod 2s ease-in-out infinite;
+}
+@keyframes jarvis-confirm-nod {
+  0%,
+  100% {
+    translate: 0 -6px;
+    rotate: -2deg;
+  }
+  40% {
+    translate: 0 -12px;
+    rotate: 2deg;
+  }
+  60% {
+    translate: 0 -5px;
+    rotate: 2deg;
   }
 }
