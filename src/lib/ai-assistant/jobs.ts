@@ -6,6 +6,7 @@ import { validateApproval } from './approval';
 import { CommunicationError } from '@/lib/communications/server';
 import { adminAuth } from '@/firebase/admin';
 import type { Firestore } from 'firebase-admin/firestore';
+import { failureCategory } from './failure';
 
 export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string }) {
   if (ctx.runtimeMode === 'demo') throw new CommunicationError('Joburile durabile sunt indisponibile în demo.', 403);
@@ -74,9 +75,13 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
           : { status: 'completed', planStatus: plan.status, confirmedSteps: plan.results?.length || 0, completedAt: new Date().toISOString() };
       } else {
         const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, async event => { events.push(event); await row.ref.update({ events: events.slice(-60) }); });
-        outcome = { status: 'completed', message: result.message, completedAt: new Date().toISOString() };
+        outcome = { status: 'completed', message: result.message, ...(result.message.outputType === 'ERROR_EVENT' ? { planStatus: 'failed' } : {}), completedAt: new Date().toISOString() };
       }
-    } catch { outcome = { status: 'failed', error: 'Comanda nu a fost confirmată. Verifică istoricul înainte de reluare.' }; }
+    } catch (error) {
+      const errorCategory = failureCategory(error);
+      console.error(JSON.stringify({ event: 'jarvis_job_failed', errorCategory }));
+      outcome = { status: 'failed', errorCategory, completedAt: new Date().toISOString(), error: 'Comanda nu a fost confirmată. Verifică istoricul înainte de reluare.' };
+    }
     await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.claimId === claimId && fresh.data()?.status === 'running') tx.update(row.ref, outcome); });
   }
   return { processed };

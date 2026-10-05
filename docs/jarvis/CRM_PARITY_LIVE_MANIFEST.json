@@ -2,6 +2,16 @@
   "version": 1,
   "operations": [
     {
+      "id": "crm_health",
+      "method": "GET",
+      "path": "/api/ai-assistant/health",
+      "handler": "src/app/api/ai-assistant/health/route.ts",
+      "description": "Stare Jarvis: configurarea modelului, heartbeat worker și lag măsurat al proiecțiilor CRM autorizate. Eșantion explicit, fără secrete sau datele altor agenții. Nu certifică providerii externi.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
       "id": "email_template_preferences",
       "method": "GET",
       "path": "/api/email/template-preferences",

@@ -12,6 +12,10 @@ function source(rows: any[]) {
   vi.mocked(collectionFor).mockReturnValue(query); return query;
 }
 describe('PII-free measured observability', () => {
+  it('does not report an unknown failed-turn cost as a zero-cost average', async () => {
+    source([{ userId: 'u', timestamp: '2026-10-04', status: 'failed', usageComplete: false, models: [], tools: [] }]);
+    expect(await usageReport(ctx, '2026-10-01', '2026-11-01')).toMatchObject({ costComplete: false, unknownCostTasks: 1, averageCostPerTask: null });
+  });
   it('measures actual model mix, approval, retry and cost rather than declaring targets achieved', async () => {
     const luna = routeModel(), sol = routeModel({ invalidCalls: 3 });
     const base = { userId: 'u', timestamp: '2026-10-04T12:00:00.000Z', elapsedMs: 100, tools: [{ name: 'read', status: 'success' }] };

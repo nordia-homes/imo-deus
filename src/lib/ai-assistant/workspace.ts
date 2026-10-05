@@ -8,13 +8,14 @@ import { CommunicationError } from '@/lib/communications/server';
 import { resolveAction } from './dependencies';
 import { operations, isReadOperation } from './operations';
 import { approvalEnvelope, validateApproval } from './approval';
-import { telemetryDocument, type AgentEvent } from './telemetry';
+import { telemetryDocument, type AgentEvent, type TurnMetrics } from './telemetry';
 import { VERSIONS } from './models';
 import { sessionSummary } from './context';
 import { executeSafePrefix } from './autonomy';
 import { actionRisk } from './registry';
 import { OperationFailure } from './operation-error';
 import { MAX_PLAN_ACTIONS, PLAN_EXECUTION_MS } from './plan-limits';
+import { failureCategory } from './failure';
 
 export async function requireSession(ctx: AssistantContext, id: string) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(id);
@@ -58,10 +59,13 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     else tx.update(ref, { busyUntil: Date.now() + 180000, turnId: input.requestId });
     tx.set(ref.collection('messages').doc(`${input.requestId}-user`), { role: 'user', text: input.prompt, createdAt: now });
   });
+  let turnMetrics: TurnMetrics | undefined;
+  const started = Date.now();
   try {
     const history = (await sessionHistory(ctx, input.sessionId)).messages.filter(m => m.id !== `${input.requestId}-user`);
     const session = await ref.get();
     const result = await planTurn(ctx, input.prompt, history, { progress, summary: session.data()?.summary });
+    turnMetrics = result.metrics;
     const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, input.prompt) : { actions: result.actions, results: [], blocked: false };
     result.actions = autonomous.actions;
     if (autonomous.results.length || autonomous.blocked) {
@@ -83,11 +87,20 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     });
     return { message };
   } catch (error) {
-    await ctx.adminDb.runTransaction(async tx => {
-      const [fresh, actor] = await Promise.all([tx.get(ref), tx.get(actorLock)]);
+    const category = failureCategory(error);
+    console.error(JSON.stringify({ event: 'jarvis_turn_failed', category }));
+    const failure: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'ERROR_EVENT', text: 'Nu am putut confirma finalizarea comenzii. Verifică istoricul și înregistrările CRM înainte de a repeta o acțiune. Poți solicita din nou o citire.', createdAt: new Date().toISOString() };
+    const saved = await ctx.adminDb.runTransaction(async tx => {
+      const [fresh, actor, member] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
       if (fresh.data()?.turnId === input.requestId) tx.update(ref, { busyUntil: 0 });
       if (actor.data()?.turnId === input.requestId) tx.update(actorLock, { busyUntil: 0 });
+      if (fresh.data()?.turnId !== input.requestId || fresh.data()?.ownerId !== ctx.uid || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) return false;
+      tx.set(reply, failure);
+      tx.update(ref, { updatedAt: failure.createdAt });
+      tx.set(collectionFor(ctx, 'assistantTelemetry').doc(input.requestId), { ...telemetryDocument(ctx, input.requestId, input.sessionId, { ...(turnMetrics || { models: [], tools: [] }), status: 'failed', elapsedMs: Date.now() - started }), usageComplete: Boolean(turnMetrics), errorCategory: category });
+      return true;
     });
+    if (saved) return { message: failure };
     throw error;
   }
 }

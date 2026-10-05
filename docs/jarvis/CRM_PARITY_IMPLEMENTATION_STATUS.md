@@ -64,3 +64,10 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Salvarea manuală din composer și wizard folosește același handler cu expectedUpdatedAt; personalizarea privată email folosește executorul comun.
 - Checklist: metadatele fișierelor/scannerului/versiunilor rămân autoritative; configurarea nu poate fabrica documente primite/verificate sau elimina implicit documente încărcate.
 - 5 teste Sales de concurență, acces, audit și protecție documente trecute; typecheck și build trecute. Restul backlogului rămâne deschis.
+
+### Observabilitate și erori vizibile — validată local, publicare următoare
+- Erorile neașteptate dintr-o comandă începută sunt salvate ca răspuns ERROR_EVENT în conversația autorizată; lock-urile sunt eliberate, nu se repetă efecte. Revocarea accesului împiedică salvarea unui rezultat pentru actor.
+- Worker-ul distinge răspunsul livrat de succesul de business; categoriile fixe de eroare sunt jurnalizate fără conținut CRM/provider.
+- Costul necunoscut după o întrerupere este marcat incomplet și nu produce o medie inventată de zero.
+- Capabilitate crm_health și API autentificat: heartbeat/model configurat și lag măsurat din eșantionul proiecțiilor autorizate, cu revalidarea accesului la părinții sensibili. Eșantionul nu certifică evenimentele încă neprocesate sau providerii externi.
+- 275 teste AI trecute și typecheck trecut. Verificare producție suplimentară: pregătirea unei sarcini a returnat răspuns și plan cu 1 acțiune, fără executarea sarcinii. Planul integral E0–E7 rămâne în curs.

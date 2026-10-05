@@ -8,10 +8,12 @@ export async function usageReport(ctx: AssistantContext, from: string, to: strin
   const models: Record<string, { calls: number; costUsd: number; inputTokens: number; outputTokens: number; cachedTokens: number; reasons: Record<string, number> }> = {};
   let approvalRequired = 0, approved = 0, cancelled = 0, providerCalls = 0, failedProviderCalls = 0, retriedTasks = 0, toolCalls = 0, failedToolCalls = 0;
   const errorCategories: Record<string, number> = {}, executions: Record<string, number> = {};
+  let unknownCostTasks = 0;
   while (scanned < 5000) {
     const page = await (cursor ? base.startAfter(cursor) : base).limit(100).get();
     for (const doc of page.docs) {
       const row = doc.data(), auxiliary = row.sessionId === 'domain_ai'; scanned++;
+      if (row.usageComplete === false) unknownCostTasks++;
       tasks += auxiliary ? 0 : 1; auxiliaryCalls += auxiliary ? 1 : 0; auxiliaryCost += auxiliary ? Number(row.costUsd || 0) : 0;
       successes += !auxiliary && row.status === 'success' ? 1 : 0; cost += Number(row.costUsd || 0); latency += auxiliary ? 0 : Number(row.elapsedMs || 0);
       approvalRequired += row.requiresApproval ? 1 : 0; approved += row.approval === true ? 1 : 0; cancelled += row.approvalStatus === 'cancelled' ? 1 : 0;
@@ -28,5 +30,6 @@ export async function usageReport(ctx: AssistantContext, from: string, to: strin
     }
     if (page.size < 100) { complete = true; break; } cursor = page.docs.at(-1);
   }
-  return { agencyId: ctx.agencyId, scope: ctx.role === 'admin' ? 'agency' : 'user', from, to, tasks, scanned, auxiliaryCalls, auxiliaryCostUsd: auxiliaryCost, successes, lunaSolvedTasks: lunaSolved, solTasks, lunaSolvedPercent: tasks ? 100 * lunaSolved / tasks : null, solEscalatedPercent: tasks ? 100 * solTasks / tasks : null, costUsd: cost, averageCostPerTask: tasks ? cost / tasks : null, averageLatencyMs: tasks ? latency / tasks : null, approvalRequired, approved, cancelled, approvalRatePercent: approvalRequired ? 100 * approved / approvalRequired : null, providerCalls, failedProviderCalls, retryRatePercent: tasks ? 100 * retriedTasks / tasks : null, toolCalls, failedToolCalls, errorCategories, executions, models, groups, complete, cursor: complete ? null : cursor?.id || null };
+  return { agencyId: ctx.agencyId, scope: ctx.role === 'admin' ? 'agency' : 'user', from, to, tasks, scanned, auxiliaryCalls, auxiliaryCostUsd: auxiliaryCost, successes, lunaSolvedTasks: lunaSolved, solTasks, lunaSolvedPercent: tasks ? 100 * lunaSolved / tasks : null, solEscalatedPercent: tasks ? 100 * solTasks / tasks : null, costUsd: cost, costComplete: unknownCostTasks === 0, unknownCostTasks, averageCostPerTask: tasks && !unknownCostTasks ? cost / tasks : null, averageLatencyMs: tasks ? latency / tasks : null, approvalRequired, approved, cancelled, approvalRatePercent: approvalRequired ? 100 * approved / approvalRequired : null, providerCalls, failedProviderCalls, retryRatePercent: tasks ? 100 * retriedTasks / tasks : null, toolCalls, failedToolCalls, errorCategories, executions, models, groups, complete, cursor: complete ? null : cursor?.id || null };
 }
+

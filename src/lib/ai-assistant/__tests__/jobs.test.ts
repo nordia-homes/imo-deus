@@ -20,6 +20,12 @@ function database(initial: Record<string, any> = {}) {
 const input = { sessionId: 'session', requestId: 'request', prompt: 'Read authorized data' };
 afterEach(() => vi.clearAllMocks());
 describe('durable tenant-scoped jobs', () => {
+  it('keeps a delivered failure reply separate from business success', async () => {
+    vi.mocked(chatTurn).mockResolvedValueOnce({ message: { id: 'reply', text: 'Not confirmed', outputType: 'ERROR_EVENT' } } as any);
+    const { ctx, db, rows } = database(); await enqueueTurn(ctx, input); await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/request')).toMatchObject({ status: 'completed', planStatus: 'failed', message: { outputType: 'ERROR_EVENT' } });
+    expect(await readJob(ctx, 'request')).toMatchObject({ status: 'completed', businessStatus: 'failed' });
+  });
   it('enqueues idempotently and stores no bearer tokens', async () => { const { ctx, rows } = database(); await enqueueTurn(ctx, input); await enqueueTurn(ctx, input); expect(rows.get('assistantAgentJobs/request')).toMatchObject({ status: 'pending', userId: 'u', agencyId: 'a', attempts: 0 }); expect(rows.get('assistantAgentJobs/request')).not.toHaveProperty('authorization'); expect(rows.size).toBe(3); });
   it('rejects another owner session and a second pending command', async () => { const { ctx } = database({ 'agencies/a/assistantSessions/other': { ownerId: 'other' } }); await expect(enqueueTurn(ctx, { ...input, sessionId: 'other' })).rejects.toThrow(); await enqueueTurn(ctx, input); await expect(enqueueTurn(ctx, { ...input, requestId: 'second' })).rejects.toThrow('deja'); });
   it('does not expose another actor or tenant job', async () => { const { ctx } = database({ 'assistantAgentJobs/request': { agencyId: 'b', userId: 'u', status: 'pending' } }); await expect(readJob(ctx, 'request')).rejects.toThrow('inaccesibil'); });
