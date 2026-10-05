@@ -3,7 +3,7 @@ import { CommunicationError, agencyCollection } from '@/lib/communications/serve
 import { canReadConversation, type Conversation } from '@/lib/communications/model';
 import { fieldSchema, type AssistantRead, type AccessReference, type AssistantAction, type AssistantRelated } from './contracts';
 import type { z } from 'zod';
-import { normalized, safeData } from './contracts';
+import { normalized, safeData, uniqueReferences } from './contracts';
 import { isStepReference } from './dependencies';
 import { FieldPath } from 'firebase-admin/firestore';
 
@@ -157,10 +157,14 @@ export function actionReferences(actions: AssistantAction[]): AccessReference[] 
     return [];
   });
 }
-export async function referencesAllowed(ctx: AssistantContext, references: AccessReference[] = []) {
-  for (const ref of references) {
+export async function referencesAllowed(ctx: AssistantContext, references: AccessReference[] = [], cache = new Map<string, Promise<unknown>>()) {
+  for (const ref of uniqueReferences(references)) {
     if (isStepReference(ref.id)) continue; // Resolved and reauthorized by the executor.
-    try { await getResource(ctx, ref.resource, ref.id); }
+    try {
+      const key = JSON.stringify([ref.resource, ref.id]);
+      if (!cache.has(key)) cache.set(key, getResource(ctx, ref.resource, ref.id));
+      await cache.get(key);
+    }
     catch (error) { if (error instanceof CommunicationError && [403, 404].includes(error.status)) return false; throw error; }
   }
   return true;

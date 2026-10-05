@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { collectionFor, referencesAllowed, actionReferences, type AssistantContext } from './access';
-import { actionSchema, cardPreview, type AssistantMessage, type AssistantPlan, type AssistantCard } from './contracts';
+import { actionSchema, cardPreview, uniqueReferences, type AssistantMessage, type AssistantPlan, type AssistantCard } from './contracts';
 import { planTurn } from './planner';
 import { executeAction } from './actions';
 import { CommunicationError } from '@/lib/communications/server';
@@ -31,10 +31,13 @@ export async function sessionHistory(ctx: AssistantContext, sessionId: string, b
     query = query.startAfter(anchor);
   }
   const docs = await query.limit(40).get();
+  // Revalidate current access once per distinct resource in this request, including
+  // legacy conversations whose references were copied exponentially between turns.
+  const accessCache = new Map<string, Promise<unknown>>();
   const messages = await Promise.all(docs.docs.map(async d => {
     const row = { ...d.data(), id: d.id } as AssistantMessage;
-    if (!(await referencesAllowed(ctx, row.accessRefs))) return { id: row.id, role: row.role, text: 'Acest răspuns conține resurse la care nu mai ai acces.', createdAt: row.createdAt } as AssistantMessage;
-    return row;
+    if (!(await referencesAllowed(ctx, row.accessRefs, accessCache))) return { id: row.id, role: row.role, text: 'Acest răspuns conține resurse la care nu mai ai acces.', createdAt: row.createdAt } as AssistantMessage;
+    return { ...row, ...(row.accessRefs ? { accessRefs: uniqueReferences(row.accessRefs) } : {}) };
   }));
   return { messages: messages.reverse(), nextCursor: docs.size === 40 ? docs.docs.at(-1)!.id : null };
 }

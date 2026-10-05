@@ -30,6 +30,14 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('does not multiply inherited access references across successive replies', async () => {
+    const history: any[] = [{ role: 'assistant', text: 'Rezultat', accessRefs: Array.from({ length: 6192 }, () => ({ resource: 'sales', id: 's' })) }];
+    for (let turn = 0; turn < 5; turn++) {
+      const result = await planTurn(ctx, 'Salut', history, { provider: scripted(final) });
+      expect(result.accessRefs).toEqual([{ resource: 'sales', id: 's' }]);
+      history.push({ role: 'assistant', text: result.text, accessRefs: result.accessRefs });
+    }
+  });
   it('prepares a validated action without performing CRM writes', async () => {
     const fetch = provider('propose_actions', { actions: [{ kind: 'create_task', description: 'Follow up', dueDate: '2030-01-01T10:00:00+02:00' }] });
     const result = await planTurn(ctx, 'Creează o sarcină de follow up la 2030-01-01T10:00:00+02:00.', []);

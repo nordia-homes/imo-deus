@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { AssistantAction, AssistantCard, AssistantMessage, AccessReference } from './contracts';
 import type { AssistantContext } from './access';
+import { uniqueReferences } from './contracts';
 import { automationReadiness } from './readiness';
 import { OpenAIAdapter, ProviderError, type ModelProvider } from './provider';
 import { routeModel, usageCost, VERSIONS } from './models';
@@ -18,7 +19,7 @@ import { functionDefinition, functionPayload } from './function-tools';
 
 export type AgentOptions = { provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string> };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
-  const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = history.flatMap(message => message.accessRefs || []);
+  const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
   const budget = options.budget || new AgentBudget(), provider = options.provider || new OpenAIAdapter();
   const verifiedDates = options.verifiedDates || explicitInstants(prompt);
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
@@ -27,7 +28,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     metrics.status = status; metrics.elapsedMs = Date.now() - childStarted;
     for (const card of cards) card.outputType ||= card.title.includes('Matching') ? 'PROPERTY_MATCH_LIST' : ['owners', 'crm', 'properties'].includes(card.source) ? 'PROPERTY_LIST' : card.source === 'contacts' ? 'CLIENT_LIST' : card.source === 'viewings' ? 'VIEWING_CARD' : card.source === 'tasks' ? 'TASK_CARD' : card.source === 'insights' ? 'INSIGHT_CARD' : /campaign|meta|tiktok/.test(card.source) ? 'CAMPAIGN_CARD' : 'ANALYTICS_CARD';
     if (actions.length && status === 'success') text = `Am pregătit ${actions.length} acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.`;
-    return { text, cards, actions, accessRefs, metrics };
+    return { text, cards, actions, accessRefs: uniqueReferences(accessRefs), metrics };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');

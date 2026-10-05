@@ -91,6 +91,9 @@ export type AssistantRead = z.infer<typeof readSchema>;
 export type StructuredOutputType = 'TEXT' | 'PROPERTY_CARD' | 'PROPERTY_LIST' | 'PROPERTY_MATCH_LIST' | 'CLIENT_CARD' | 'CLIENT_LIST' | 'VIEWING_CARD' | 'TASK_CARD' | 'CAMPAIGN_CARD' | 'CONFIRMATION_CARD' | 'ACTION_RESULT' | 'PROGRESS_EVENT' | 'ERROR_EVENT' | 'INSIGHT_CARD' | 'ANALYTICS_CARD';
 export type AssistantCard = { note?: string | null; scoreMayBeStale?: boolean; freshness?: string; type: 'results' | 'data'; outputType?: StructuredOutputType; resultSetId?: string; title: string; source: string; rows: Record<string, unknown>[]; nextCursor?: string | null; search?: AssistantSearch; complete?: boolean; summary?: { count: number; label: string; period?: string; scope?: string }; query?: z.infer<typeof queryRecordsSchema>; timeline?: z.infer<typeof import('./timeline').timelineSchema> };
 export type AccessReference = { resource: 'sales' | 'conversations' | 'socialPosts' | 'salesTemplateAudit' | 'assistantAutomations'; id: string };
+export function uniqueReferences(references: AccessReference[]) {
+  return [...new Map(references.map(ref => [JSON.stringify([ref.resource, ref.id]), ref])).values()];
+}
 export type AssistantMessage = { id: string; role: 'user' | 'assistant'; outputType?: StructuredOutputType; text: string; createdAt: string; cards?: AssistantCard[]; planId?: string; actions?: AssistantAction[]; accessRefs?: AccessReference[] };
 export type AssistantPlan = { id: string; outputType?: 'CONFIRMATION_CARD' | 'ACTION_RESULT'; status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'unknown' | 'cancelled'; actions: AssistantAction[]; risks?: string[]; externalCostNote?: string; results?: Record<string, unknown>[]; stoppedStep?: { step: number; result: Record<string, unknown> }; error?: string; createdAt: string };
 
