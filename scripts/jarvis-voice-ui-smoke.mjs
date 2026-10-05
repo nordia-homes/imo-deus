@@ -27,7 +27,7 @@ await build({
     {
       name: "fixture-auth",
       setup(builder) {
-        builder.onLoad({ filter: /rig-atlas\.png$/ }, () => ({
+        builder.onLoad({ filter: /rig-atlas(?:-v2)?\.png$/ }, () => ({
           contents: "export default {src:'/jarvis/rig-atlas.png'};",
           loader: "js",
         }));
@@ -66,7 +66,7 @@ await fs.writeFile(path.join(output, "style.css"), css.css);
 const server = http.createServer(async (req, res) => {
   if (req.url === "/jarvis/rig-atlas.png") {
     res.setHeader("Content-Type", "image/png");
-    res.end(await fs.readFile("public/jarvis/rig-atlas.png"));
+    res.end(await fs.readFile("src/components/jarvis-voice/rig-atlas-v2.png"));
     return;
   }
   const file = ["/bundle.js", "/bundle.css", "/style.css"].includes(req.url)
@@ -325,6 +325,34 @@ try {
     exact: true,
   });
   await dialog.waitFor();
+  assert.equal(await dialog.locator("header").count(), 0);
+  assert.equal(await dialog.locator(".jarvis-scene").count(), 1);
+  checks.push("immersive animated scene has no header");
+  const pose = dialog.locator(".jarvis-pose");
+  const beforeMotion = await pose.evaluate(
+    (node) => getComputedStyle(node).translate,
+  );
+  await page.waitForTimeout(450);
+  assert.notEqual(
+    await pose.evaluate((node) => getComputedStyle(node).translate),
+    beforeMotion,
+  );
+  await page.mouse.move(30, 70);
+  await page.waitForTimeout(100);
+  assert.notEqual(
+    await dialog
+      .locator(".jarvis-character")
+      .evaluate((node) => node.style.getPropertyValue("--look-x")),
+    "0px",
+  );
+  checks.push("mascot moves continuously and eyes react to pointer");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  assert.equal(
+    await pose.evaluate((node) => getComputedStyle(node).animationName),
+    "none",
+  );
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  checks.push("reduced motion disables ambient and character animations");
   const workletCode = (
     await fs.readFile("src/lib/jarvis-voice/worklet.ts", "utf8")
   ).split("`")[1];
@@ -412,7 +440,7 @@ try {
   await page.screenshot({ path: path.join(output, "listening.png") });
   await page.evaluate(() => window.injectSpeech());
   await page.getByText("Agenda de mâine", { exact: true }).waitFor();
-  await page.locator("[data-state=SPEAKING]").waitFor();
+  await page.locator(".jarvis-character[data-state=SPEAKING]").waitFor();
   await page.screenshot({ path: path.join(output, "speaking.png") });
   assert(
     requests.some(

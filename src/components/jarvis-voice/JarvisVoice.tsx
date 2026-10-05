@@ -22,6 +22,7 @@ import {
 } from "@/components/ai/OwnerConsentDialog";
 import { ActionPreview } from "@/components/ai/ActionPreview";
 import { JarvisCharacter } from "./JarvisCharacter";
+import { JarvisScene } from "./JarvisScene";
 import {
   activeJarvisSession,
   storeJarvisSession,
@@ -444,7 +445,7 @@ export function JarvisVoice() {
       if (opened.current) {
         engine.setMicMuted(micMuted);
         engine.speakerMuted = speakerMuted;
-        setError('');
+        setError("");
         setState("LISTENING");
       }
     } catch {}
@@ -600,7 +601,7 @@ export function JarvisVoice() {
           role="dialog"
           aria-modal="true"
           aria-label="Jarvis Voice"
-          className="fixed inset-0 z-[80] flex flex-col bg-[radial-gradient(ellipse_at_40%_30%,#e1fcff_0%,#f7f8ff_45%,#fff4ed_100%)] dark:bg-slate-950"
+          className="jarvis-voice-world fixed inset-0 z-[80] flex flex-col"
           onKeyDown={(e) => {
             if (e.key === "Tab") {
               const nodes = Array.from(
@@ -620,40 +621,33 @@ export function JarvisVoice() {
             }
           }}
         >
-          <header className="flex items-center justify-between px-6 py-5">
-            <div>
-              <p className="font-semibold tracking-tight">Jarvis Voice</p>
-              <p className="text-xs text-slate-500">
-                Voce generată de AI · același Jarvis
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={panel ? "Închide panoul" : "Deschide panoul"}
-                onClick={() => setPanel(!panel)}
-              >
-                {panel ? <PanelRightClose /> : <PanelRightOpen />}
-              </Button>
-              <Button
-                autoFocus
-                variant="ghost"
-                size="icon"
-                aria-label="Închide Jarvis Voice"
-                onClick={close}
-              >
-                <X />
-              </Button>
-            </div>
-          </header>
+          <JarvisScene state={state} audioLevel={level} panelOpen={panel} />
+          <div className="jarvis-floating-actions">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={panel ? "Închide panoul" : "Deschide panoul"}
+              onClick={() => setPanel(!panel)}
+            >
+              {panel ? <PanelRightClose /> : <PanelRightOpen />}
+            </Button>
+            <Button
+              autoFocus
+              variant="ghost"
+              size="icon"
+              aria-label="Închide Jarvis Voice"
+              onClick={close}
+            >
+              <X />
+            </Button>
+          </div>
           <div className="relative flex min-h-0 flex-1">
             <main
               className={
                 "flex min-w-0 flex-1 flex-col items-center px-5 " +
                 (panel
-                  ? "justify-start gap-4 pt-3 md:justify-center md:gap-8 md:pb-20"
-                  : "justify-center gap-8 pb-20")
+                  ? "justify-start gap-4 pt-16 md:justify-center md:gap-8 md:pb-8"
+                  : "justify-center gap-6 pt-12 pb-8")
               }
             >
               <JarvisCharacter
@@ -665,7 +659,7 @@ export function JarvisVoice() {
               />
               <p
                 aria-live="polite"
-                className="max-w-sm text-center text-sm text-slate-600"
+                className="jarvis-voice-status max-w-sm text-center text-sm"
               >
                 {error || (micMuted ? "Microfon oprit." : stateText[state])}
               </p>
@@ -684,7 +678,7 @@ export function JarvisVoice() {
             {panel && (
               <aside
                 aria-label="Rezultate CRM"
-                className="absolute bottom-0 left-0 right-0 z-10 max-h-[48%] overflow-y-auto rounded-t-3xl border bg-white/95 p-4 shadow-2xl backdrop-blur-md md:static md:max-h-none md:w-[390px] md:shrink-0 md:rounded-none md:border-y-0 md:border-r-0"
+                className="jarvis-voice-results absolute bottom-0 left-0 right-0 z-10 max-h-[48%] overflow-y-auto rounded-t-3xl border bg-white/95 p-4 shadow-2xl backdrop-blur-md md:static md:max-h-none md:w-[390px] md:shrink-0 md:rounded-none md:border-y-0 md:border-r-0"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="font-semibold">Rezultate CRM</h2>
@@ -880,45 +874,50 @@ export function JarvisVoice() {
             )}
           </div>
           <footer
-            className="flex shrink-0 items-center justify-center gap-3 border-t bg-white/60 px-4 py-4 backdrop-blur-md"
+            className="jarvis-voice-controls shrink-0"
             style={{
               paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))",
             }}
           >
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label={
-                micMuted ? "Pornește microfonul" : "Oprește microfonul"
-              }
-              onClick={() => {
-                audio.current?.setMicMuted(!micMuted);
-                setMicMuted(!micMuted);
-              }}
-            >
-              {micMuted ? <MicOff /> : <Mic />}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label={speakerMuted ? "Pornește sunetul" : "Oprește sunetul"}
-              onClick={() => {
-                if (audio.current) {
-                  audio.current.speakerMuted = !speakerMuted;
-                  audio.current.interrupt();
+            <div className="jarvis-control-dock">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={
+                  micMuted ? "Pornește microfonul" : "Oprește microfonul"
                 }
-                setSpeakerMuted(!speakerMuted);
-                setState(
-                  pendingPlan.current ? "AWAITING_CONFIRMATION" : "LISTENING",
-                );
-              }}
-            >
-              {speakerMuted ? <VolumeX /> : <Volume2 />}
-            </Button>
-            <Button variant="outline" onClick={close}>
-              <Keyboard className="mr-2 h-4 w-4" />
-              Înapoi la text
-            </Button>
+                onClick={() => {
+                  audio.current?.setMicMuted(!micMuted);
+                  setMicMuted(!micMuted);
+                }}
+              >
+                {micMuted ? <MicOff /> : <Mic />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={
+                  speakerMuted ? "Pornește sunetul" : "Oprește sunetul"
+                }
+                onClick={() => {
+                  if (audio.current) {
+                    audio.current.speakerMuted = !speakerMuted;
+                    audio.current.interrupt();
+                  }
+                  setSpeakerMuted(!speakerMuted);
+                  setState(
+                    pendingPlan.current ? "AWAITING_CONFIRMATION" : "LISTENING",
+                  );
+                }}
+              >
+                {speakerMuted ? <VolumeX /> : <Volume2 />}
+              </Button>
+              <Button variant="outline" onClick={close}>
+                <Keyboard className="mr-2 h-4 w-4" />
+                Înapoi la text
+              </Button>
+            </div>
+            <small>Voce generată de AI</small>
           </footer>
         </div>
       )}

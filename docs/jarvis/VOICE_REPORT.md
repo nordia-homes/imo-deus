@@ -20,12 +20,12 @@ Corecție de producție: rutele publice ale atlasului și AudioWorklet au return
 | 12 | Rig | 2D stratificat, animat din transformări independente, fără slideshow. [CHARACTER.md](CHARACTER.md). |
 | 13 | Straturi | 16: corp, brațe, picioare, ochi, irisuri, pupile, pleoape, gură, antenă, glow. |
 | 14 | Expresii | 8 expresii contractuale; starea alege atenție, procesare, confirmare, succes sau îngrijorare. |
-| 15 | Gesturi | 9 gesturi, pivoturi independente, tranziții lente și bounce discret la succes. |
-| 16 | Ochi | Gaze mic către panou, pupile/irisuri independente și blink la 2,5–6sec. |
+| 15 | Gesturi | 9 gesturi, pivoturi independente, gesturi ritmice și salturi scurte la succes. |
+| 16 | Ochi | Urmărirea cursorului, pupile/irisuri independente și blink la 1,7–4,5sec. |
 | 17 | Gură | Deschidere derivată din RMS audio, nu din text. Update la 20Hz; funcționează și cu microfon mut. |
 | 18 | Antenă | Animație lentă, glow contextual, puls la procesare. |
-| 19 | Audio-reactiv | RMS normalizat/saturat; deformare corp maximum 1,5%; fără dans la fiecare token. |
-| 20 | FPS | Aproximativ **60 FPS** în Chromium headless, măsurare de 2sec. Numărul exact și mediul sunt în [VOICE_UI_TESTS.json](VOICE_UI_TESTS.json). Necesită acceptanță pe dispozitive reale. |
+| 19 | Audio-reactiv | RMS normalizat/saturat; deformare corp maximum 2,5%; halo și antenă reactive. |
+| 20 | FPS | **57,5 FPS** în Chromium headless, măsurare de 2sec. Numărul exact și mediul sunt în [VOICE_UI_TESTS.json](VOICE_UI_TESTS.json). Necesită acceptanță pe dispozitive reale. |
 | 21 | Ctrl+Space | Event în renderer; protecție pentru input/editor/IME/repeat. Test UI trecut. |
 | 22 | Esc | Închidere Voice și eliberare microfon; în acord închide întâi modalul. Test UI trecut. |
 | 23 | Mobile launcher | Mascota compactă, one tap, pe paginile dashboard autentificate; ascunsă la tastatura virtuală. |
@@ -42,7 +42,7 @@ Corecție de producție: rutele publice ale atlasului și AudioWorklet au return
 | 34 | Cost STT | **0,0045 USD/min audio intrare**; live 0,017 USD/min, de 3,78 ori mai mult. |
 | 35 | Cost TTS | Cedar: 0,0135244 USD pentru 28sec, echivalent în acest eșantion **0,02898 USD/min output**. Tariful oficial este per token; normalizarea pe minute nu este tarif fix. |
 | 36 | Cost/1000min sesiune | Exemplu declarat: 20% intrare, 10% ieșire → **3,80 USD audio**. Dacă ieșirea medie este 2,8sec, sunt aproximativ 2143 turnuri: cost core Luna din benchmarkul v5 adaugă aproximativ 0,70 USD, total **4,50 USD**. Dacă toate ar folosi Sol, aproximativ **16,06 USD**. Acestea sunt scenarii sintetice, fără TVA/alte canale; nu promisiuni de facturare. Costurile reale și utilizarea ocupată sunt în metrics. |
-| 37 | Teste | Voice: 21 teste, inclusiv cleanup, resample, WAV fals, upload limitat, rezultate parțiale, izolare, paritate, VAD și confirmări. Verificarea precedentă a suitelor CRM/audio/owners/communications: 349 trecute, 15 teste opționale/emulator/live sărite; 18 teste emulator rules trecute separat. 10 verificări Voice UI, inclusiv procesare în OfflineAudioContext real, și 13 Text UI. |
+| 37 | Teste | Voice: 21 teste, inclusiv cleanup, resample, WAV fals, upload limitat, rezultate parțiale, izolare, paritate, VAD și confirmări. Verificarea precedentă a suitelor CRM/audio/owners/communications: 349 trecute, 15 teste opționale/emulator/live sărite; 18 teste emulator rules trecute separat. 13 verificări Voice UI, inclusiv procesare în OfflineAudioContext real, și 13 Text UI. |
 | 38 | Build/producție | Build local Next/TypeScript este verificat înainte de rollout; starea exactă a commitului/buildului și traficul final sunt în [VOICE_PRODUCTION.json](VOICE_PRODUCTION.json). Reguli și index de metrics publicate. |
 | 39 | Acțiuni manuale | Refresh CRM; permite microfonul. Verifică pe browser/Electron/telefon real: 3 comenzi în română cu nume/ore/bugete, întrerupere cu difuzor deschis, mute/exit, revenire în Text, un plan de test aprobat. Ascultă Cedar și validează pronunția. Nu se cere alt API key sau deploy manual. |
 

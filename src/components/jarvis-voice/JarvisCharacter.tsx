@@ -5,8 +5,8 @@ import type {
   Expression,
   Gesture,
 } from "@/lib/jarvis-voice/presentation";
-import "./character.css";
-import rigAtlas from './rig-atlas.png';
+import "./character-v2.css";
+import rigAtlas from "./rig-atlas-v2.png";
 const parts = {
   body: [0, 0, 390, 390],
   leftArm: [390, 80, 245, 275],
@@ -74,13 +74,13 @@ export function JarvisCharacter({
       root.current?.classList.add("jarvis-blink");
       end = setTimeout(
         () => root.current?.classList.remove("jarvis-blink"),
-        140,
+        180,
       );
       root.current?.style.setProperty(
         "--gaze",
         `${panelOpen ? Math.random() * 4 : Math.random() * 3 - 1.5}px`,
       );
-      timer = setTimeout(blink, 2500 + Math.random() * 3500);
+      timer = setTimeout(blink, 1700 + Math.random() * 2800);
     };
     timer = setTimeout(blink, 3200);
     return () => {
@@ -89,17 +89,51 @@ export function JarvisCharacter({
     };
   }, [mini, panelOpen]);
   useEffect(() => {
+    if (mini || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+    let frame = 0;
+    const look = (event: PointerEvent) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const bounds = root.current?.getBoundingClientRect();
+        if (!bounds) return;
+        const x = Math.max(
+          -1,
+          Math.min(
+            1,
+            (event.clientX - bounds.left - bounds.width / 2) / bounds.width,
+          ),
+        );
+        const y = Math.max(
+          -1,
+          Math.min(
+            1,
+            (event.clientY - bounds.top - bounds.height / 2) / bounds.height,
+          ),
+        );
+        root.current?.style.setProperty("--look-x", `${x * 7}px`);
+        root.current?.style.setProperty("--look-y", `${y * 5}px`);
+        root.current?.style.setProperty("--lean", `${x * 3}deg`);
+      });
+    };
+    window.addEventListener("pointermove", look, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", look);
+    };
+  }, [mini]);
+  useEffect(() => {
     root.current?.style.setProperty(
       "--mouth",
       String(
         state === "SPEAKING"
-          ? Math.max(0.12, Math.min(1, audioLevel * 4))
-          : 0.4,
+          ? Math.max(0.45, Math.min(1.65, 0.45 + audioLevel * 8))
+          : 0.65,
       ),
     );
     root.current?.style.setProperty(
       "--energy",
-      String(Math.min(0.015, audioLevel * 0.025)),
+      String(Math.min(1, audioLevel * 5)),
     );
   }, [state, audioLevel]);
   return (
