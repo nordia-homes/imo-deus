@@ -51,3 +51,16 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 - Etapa a patra activă: `build-2026-10-05-parity-04`, commit `b45c969e1e41c805587087f0390c40d26abfe72c`, READY, trafic 100%. Probe anonime API: 401; pagină: 200; 5 funcții ACTIVE, scheduler ENABLED, heartbeat fără eroare și 72 indexuri READY. Dovadă: CRM_PARITY_PRODUCTION.json. Reguli pe evenimente: etapa a cincea, în curs de validare/publicare.
 
 Nu este încă îndeplinit criteriul „paritate completă”: elementele restante de mai sus rămân parte din implementarea solicitată, nu sunt închise prin simpla înregistrare a unui endpoint.
+
+### Remediere incident răspunsuri — publicată
+- Build `build-2026-10-05-parity-06`, commit `2f14e74f3b58eaf0387a874079f2bf2d941b4aec`, READY, trafic 100%. Include și etapa regulilor pe evenimente din commitul anterior.
+- Cauza confirmată: referințe de acces moștenite repetat între răspunsuri; un mesaj din conversația afectată avea 6.192 referințe. Verificarea istoricului făcea citiri repetate înainte de planificare.
+- Referințele sunt deduplicate la construire și citire; verificările de acces sunt reutilizate doar în aceeași cerere, fără cache între cereri.
+- Probă live în conversația afectată: citirea vizionărilor a salvat răspuns/card; pregătirea sarcinii a salvat plan fără execuție. Probă worker producție: job completed, text prezent, 1 card, 5 referințe, fără eroare.
+- 267 teste AI trecute, 3 probe de reguli rezervate emulatorului; typecheck și build trecute.
+
+### Etapa Sales următoare — validată local, în curs de publicare
+- Configurare dosar cu schemă comună importată de handler, contract AI generat, tranzacție și audit atomic; revalidare membru și acces înaintea scrierii.
+- Salvarea manuală din composer și wizard folosește același handler cu expectedUpdatedAt; personalizarea privată email folosește executorul comun.
+- Checklist: metadatele fișierelor/scannerului/versiunilor rămân autoritative; configurarea nu poate fabrica documente primite/verificate sau elimina implicit documente încărcate.
+- 5 teste Sales de concurență, acces, audit și protecție documente trecute; typecheck și build trecute. Restul backlogului rămâne deschis.

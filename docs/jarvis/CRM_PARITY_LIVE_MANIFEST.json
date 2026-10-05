@@ -2410,27 +2410,22 @@
       "calls": [
         {
           "call": "updateDoc",
-          "line": 389,
-          "sharedExecutor": false
-        },
-        {
-          "call": "updateDoc",
-          "line": 417,
-          "sharedExecutor": false
-        },
-        {
-          "call": "setDoc",
-          "line": 449,
+          "line": 388,
           "sharedExecutor": false
         },
         {
           "call": "executeCrmAction",
-          "line": 609,
+          "line": 441,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 581,
           "sharedExecutor": true
         },
         {
           "call": "updateDoc",
-          "line": 643,
+          "line": 615,
           "sharedExecutor": false
         }
       ],

@@ -7,7 +7,6 @@ import {
   doc,
   orderBy,
   query,
-  setDoc,
   updateDoc,
 } from 'firebase/firestore';
 import {
@@ -413,16 +412,9 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     if (!sale || !agencyId) return;
     setSaving(true);
     try {
-      const now = new Date().toISOString();
-      await updateDoc(doc(firestore, 'agencies', agencyId, 'sales', sale.id), {
-        participants,
-        checklist,
-        notary,
-        nextAction: nextAction.trim() || null,
-        nextActionAt: nextActionAt ? new Date(nextActionAt).toISOString() : null,
-        receivedDocumentCount: checklist.filter((item) => ['received_needs_review', 'verified'].includes(item.status)).length,
-        requiredDocumentCount: checklist.filter((item) => item.required).length,
-        updatedAt: now,
+      await apiRequest(`/api/sales/${sale.id}/setup`, {
+        method: 'PATCH',
+        body: JSON.stringify({ participants, checklist, notary, agreedPrice: sale.agreedPrice ?? null, reservationAmount: sale.reservationAmount ?? null, precontractAmount: sale.precontractAmount ?? null, financingType: sale.financingType || 'unknown', nextAction: nextAction.trim() || null, nextActionAt: nextActionAt ? new Date(nextActionAt).toISOString() : null, expectedUpdatedAt: sale.updatedAt || null }),
       });
       toast({ title: 'Dosarul a fost salvat' });
     } catch (error) {
@@ -446,27 +438,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     try {
       if (editingTemplateId && user) {
         const currentTemplate = templateLibrary.find((template) => template.id === editingTemplateId);
-        await setDoc(
-          doc(firestore, 'users', user.uid, 'emailTemplateOverrides', editingTemplateId),
-          {
-            baseTemplateId: editingTemplateId,
-            baseVersion: currentTemplate?.version || 1,
-            name: customTemplateName.trim(),
-            description: currentTemplate?.description || 'Template personalizat',
-            recipientRole: recipient.role,
-            stage: sale.stage,
-            subject: subject.trim(),
-            body: body.trim(),
-            bodyHtml,
-            defaultCc: ccRecipients,
-            defaultQuestions: questions.map((item) => item.text.trim()).filter(Boolean),
-            signatureMode: 'agent',
-            variables: currentTemplate?.variables || ['recipient.name', 'property.title', 'property.address', 'documents.list', 'notary.summary', 'agent.name'],
-            updatedAt: new Date().toISOString(),
-            updatedByUid: user.uid,
-          } satisfies Omit<SalesEmailTemplateOverride, 'id'>,
-          { merge: false }
-        );
+        await executeCrmAction(user, { kind: 'email_template_preference', templateId: editingTemplateId, action: 'override', data: { name: customTemplateName.trim(), description: currentTemplate?.description || 'Template personalizat', recipientRole: recipient.role, stage: sale.stage, subject: subject.trim(), body: body.trim(), bodyHtml, defaultCc: ccRecipients, defaultQuestions: questions.map(item => item.text.trim()).filter(Boolean) } });
         setTemplateId(editingTemplateId);
         toast({
           title: 'Personalizarea privată a fost salvată',
@@ -952,3 +924,4 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     </Dialog>
   );
 }
+

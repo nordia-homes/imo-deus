@@ -158,6 +158,7 @@ export function SaleSetupWizard({ sale, open, onOpenChange, onSaved }: Props) {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          expectedUpdatedAt: sale.updatedAt || null,
           participants,
           agreedPrice: normalizedPrice > 0 ? normalizedPrice : null,
           reservationAmount: normalizedReservationAmount,

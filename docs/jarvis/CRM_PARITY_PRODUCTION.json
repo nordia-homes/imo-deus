@@ -1,0 +1,69 @@
+{
+  "verifiedAt": "2026-10-05T18:12:46.854Z",
+  "project": "studio-652232171-42fb6",
+  "builds": [
+    {
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-parity-06",
+      "state": "READY",
+      "commit": "2f14e74f3b58eaf0387a874079f2bf2d941b4aec",
+      "percent": 100
+    }
+  ],
+  "probes": [
+    {
+      "path": "/ai-assistant",
+      "status": 200
+    },
+    {
+      "path": "/api/ai-assistant/workspace",
+      "status": 401
+    },
+    {
+      "path": "/api/ai-assistant/metrics",
+      "status": 401
+    },
+    {
+      "path": "/api/crm/actions",
+      "status": 401
+    },
+    {
+      "path": "/api/sales/probe/messages/probe/gmail-session",
+      "status": 401
+    }
+  ],
+  "functions": [
+    {
+      "name": "jarvisCrmChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisUploadRetention",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisUserChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "aiAssistantAutomationsDrain",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisAgencyChangeProjection",
+      "state": "ACTIVE"
+    }
+  ],
+  "scheduler": {
+    "state": "ENABLED",
+    "schedule": "every 5 minutes",
+    "lastAttemptTime": "2026-10-05T18:12:12.769033Z"
+  },
+  "heartbeat": {
+    "lastSuccessAt": "2026-10-05T18:12:12.959Z",
+    "lastError": null
+  },
+  "indexStates": {
+    "READY": 72
+  },
+  "outboundTestMessagesSent": 0
+}
