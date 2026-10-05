@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn() }));
-vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn() }));
+vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn(), canReadResource: (ctx: any, resource: string, row: any) => resource !== 'sales' || ctx.role === 'admin' || row.agentId === ctx.uid || row.collaboratorIds?.includes(ctx.uid) }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
 import { actionSchema } from '../contracts';
 import { executeAction } from '../actions';
@@ -26,6 +26,17 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('prepares a tracked email once, retaining document versions without claiming delivery', async () => {
+    const { ctx, rows } = database({ 'agencies/a/sales/s': { agentId: 'u', trackingCode: 'IMO-123', checklist: [{ id: 'doc', label: 'Act', fileName: 'Act.pdf', downloadUrl: 'https://storage.example/act.pdf', version: 1 }] } });
+    const action = actionSchema.parse({ kind: 'prepare_sale_email', saleId: 's', to: ['owner@example.com'], subject: 'Documente', bodyText: 'Salut', questions: [{ id: 'q', text: 'Confirmi?', required: true }], documentIds: ['doc'] });
+    const result = await executeAction(ctx, action, 'email');
+    expect(result).toMatchObject({ status: 'prepared', messageId: 'email', gmailPrepared: true });
+    expect(rows.get('agencies/a/sales/s/emailMessages/email')).toMatchObject({ subject: 'Documente [IMO-123]', bodyText: 'Salut\n\nÎntrebări pentru confirmare:\n1. Confirmi?', sendEvidence: { level: 'none' }, attachmentRefs: [{ documentId: 'doc', version: 1 }] });
+    expect(await executeAction(ctx, action, 'email')).toEqual(result);
+    rows.set('agencies/a/sales/s', { agentId: 'other', trackingCode: 'IMO-123' });
+    await expect(executeAction(ctx, action, 'email')).rejects.toThrow('revocat');
+    expect(rows.has('agencies/a/sales/s/emailMessages/other')).toBe(false);
+  });
   it('cancels only undispatched calls and protects newer call state and opt-out', async () => {
     const { ctx, rows } = database({ 'agencies/a/aiOutreachCalls/c': { ownerListingId: 'l', status: 'scheduled' }, 'agencies/a/aiOutreachCalls/live': { ownerListingId: 'l', status: 'calling', vapiCallId: 'remote' } });
     await executeAction(ctx, { kind: 'outreach_call_action', callId: 'c', action: 'cancel', reason: 'Agent request' }, 'cancel');

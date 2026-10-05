@@ -17,7 +17,7 @@
     "layered rig renders with blue body and preserved independent eye/mouth nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 55.77133751485939,
+  "animationFps": 59.1804257008626,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."

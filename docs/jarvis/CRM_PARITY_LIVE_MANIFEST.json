@@ -1703,6 +1703,7 @@
     }
   ],
   "actionKinds": [
+    "prepare_sale_email",
     "outreach_call_action",
     "email_template_preference",
     "update_profile",
@@ -2409,27 +2410,27 @@
       "calls": [
         {
           "call": "updateDoc",
-          "line": 385,
+          "line": 389,
           "sharedExecutor": false
         },
         {
           "call": "updateDoc",
-          "line": 413,
+          "line": 417,
           "sharedExecutor": false
         },
         {
           "call": "setDoc",
-          "line": 445,
+          "line": 449,
           "sharedExecutor": false
         },
         {
-          "call": "setDoc",
-          "line": 634,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 609,
+          "sharedExecutor": true
         },
         {
           "call": "updateDoc",
-          "line": 665,
+          "line": 643,
           "sharedExecutor": false
         }
       ],

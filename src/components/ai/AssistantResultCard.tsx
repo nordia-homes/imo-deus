@@ -18,6 +18,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GmailHandoff } from './GmailHandoff';
 import type {
   AssistantCard,
   AssistantAction,
@@ -312,6 +313,7 @@ export function AssistantResultCard({
                       <span>{String(row.phone)}</span>
                     ) : null}
                   </div>
+                  {row.gmailPrepared === true && typeof row.saleId === 'string' && typeof row.messageId === 'string' ? <GmailHandoff saleId={row.saleId} messageId={row.messageId} /> : null}
                   {row.reasoning ? (
                     <p className="mt-3 rounded-xl bg-emerald-50/70 p-2.5 text-xs leading-5 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
                       {String(row.reasoning)}

@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -257,7 +258,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
   const [saving, setSaving] = useState(false);
   const [runnerStatus, setRunnerStatus] = useState<DesktopGmailRunnerStatus | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
-  const activeMessageRef = useRef<{ saleId: string; messageId: string } | null>(null);
+  const activeMessageRef = useRef<{ saleId: string; messageId: string; jobId: string } | null>(null);
 
   const apiRequest = useCallback(async (url: string, init?: RequestInit) => {
     if (!user) throw new Error('Sesiunea a expirat. Autentifică-te din nou.');
@@ -372,14 +373,17 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     return desktop.onGmailRunnerStatusChanged((status) => {
       setRunnerStatus(status);
       const active = activeMessageRef.current;
-      if (!active || !agencyId || status.messageRecordId !== active.messageId) return;
+      if (!active || !agencyId || status.messageRecordId !== active.messageId || status.jobId !== active.jobId) return;
       if (status.state === 'sent_ui_confirmed') {
-        const now = status.sentAt || new Date().toISOString();
+        activeMessageRef.current = null;
         void apiRequest(`/api/sales/${active.saleId}/messages/${active.messageId}/send-evidence`, {
           method: 'PATCH',
-          body: JSON.stringify({ level: 'ui_observed', diagnostics: { completedFields: status.completedFields || [], missingFields: status.missingFields || [], attempt: status.attempt || 1, selectorProfile: status.selectorProfile || null, canRetry: status.canRetry ?? false } }),
+          body: JSON.stringify({ level: 'ui_observed', diagnostics: { jobId: status.jobId, completedFields: status.completedFields || [], missingFields: status.missingFields || [], attempt: status.attempt || 1, selectorProfile: status.selectorProfile || null, canRetry: status.canRetry ?? false } }),
+        }).then(() => {
+          toast({ title: 'Trimitere confirmată', description: 'Mesajul a fost marcat în istoricul tranzacției.' });
+        }).catch((error) => {
+          toast({ variant: 'destructive', title: 'Confirmarea nu a fost salvată', description: error instanceof Error ? error.message : 'Verifică istoricul înainte de a retrimite mesajul.' });
         });
-        toast({ title: 'Trimitere confirmată', description: 'Mesajul a fost marcat în istoricul tranzacției.' });
       }
       if (status.state === 'error') {
         void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', active.saleId, 'emailMessages', active.messageId), { status: 'failed', updatedAt: new Date().toISOString() });
@@ -602,45 +606,19 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     }
     setSaving(true);
     try {
-      const trackingSubject = subject.includes(sale.trackingCode) ? subject : `${subject} [${sale.trackingCode}]`;
-      const questionText = questions.filter((item) => item.text.trim()).length
-        ? `\n\nÎntrebări pentru confirmare:\n${questions.filter((item) => item.text.trim()).map((item, index) => `${index + 1}. ${item.text.trim()}`).join('\n')}`
-        : '';
-      const finalBody = `${body.trim()}${questionText}`;
-      const finalBodyHtml = `${bodyHtml || plainTextToEmailHtml(body.trim())}${questionText ? plainTextToEmailHtml(questionText) : ''}`;
-      const messageRef = doc(collection(firestore, 'agencies', agencyId, 'sales', sale.id, 'emailMessages'));
-      const now = new Date().toISOString();
-      const message: SaleEmailMessage = {
-        id: messageRef.id,
-        saleId: sale.id,
-        agencyId,
-        direction: 'outbound',
-        status: 'prepared',
-        trackingCode: sale.trackingCode,
-        fromName: userProfile?.name || sale.agentName,
-        fromEmail: userProfile?.email || null,
-        to: [recipient.email.trim()],
-        cc: finalCc,
-        subject: trackingSubject,
-        bodyText: finalBody,
-        bodyHtml: finalBodyHtml,
-        questions,
-        attachmentNames: [...localFiles.map((item) => item.name), ...checklist.filter((item) => selectedDocumentIds.includes(item.id) && item.fileName).map((item) => item.fileName as string)],
-        sendEvidence: { level: 'none', source: isDesktop ? 'gmail_runner' : 'web_fallback', observedAt: now, observedByUid: userProfile?.id || null, details: 'Mesaj pregătit; trimiterea nu este încă confirmată.' },
-        createdByUid: userProfile?.id || null,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await setDoc(messageRef, message);
-      activeMessageRef.current = { saleId: sale.id, messageId: messageRef.id };
-      const storedAttachments: GmailRunnerAttachment[] = checklist
-        .filter((item) => selectedDocumentIds.includes(item.id) && item.downloadUrl)
-        .map((item) => ({ name: item.fileName || item.label, url: item.downloadUrl }));
+      const prepared = await executeCrmAction(user, { kind: 'prepare_sale_email', saleId: sale.id, to: [recipient.email.trim()], cc: finalCc, bcc: [], subject, bodyText: body.trim(), bodyHtml, questions: questions.map(item => ({ id: item.id, text: item.text, required: item.required, status: 'pending' as const })), documentIds: selectedDocumentIds, attachmentNames: localFiles.map(item => item.name) });
+      if (typeof prepared.messageId !== 'string') throw new Error('Emailul nu a fost confirmat în CRM.');
+      const messageRef = doc(firestore, 'agencies', agencyId, 'sales', sale.id, 'emailMessages', prepared.messageId);
+      const { payload } = await apiRequest('/api/sales/' + encodeURIComponent(sale.id) + '/messages/' + encodeURIComponent(prepared.messageId) + '/gmail-session');
+      const session = payload.session;
+      activeMessageRef.current = { saleId: sale.id, messageId: prepared.messageId, jobId: session.jobId };
+      const trackingSubject = session.subject, finalBody = session.bodyText, finalBodyHtml = session.bodyHtml;
+      const storedAttachments: GmailRunnerAttachment[] = session.attachments;
 
       if (isDesktop && typeof window.imodeusDesktop?.startGmailRunner === 'function') {
         const status = await window.imodeusDesktop.startGmailRunner({
           session: {
-            jobId: crypto.randomUUID(),
+            jobId: session.jobId,
             saleId: sale.id,
             messageRecordId: messageRef.id,
             trackingCode: sale.trackingCode,

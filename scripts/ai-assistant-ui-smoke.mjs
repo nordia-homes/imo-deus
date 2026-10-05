@@ -32,6 +32,7 @@ const errors = [], requests = [];
 try {
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+  await page.addInitScript(() => { window.imodeusDesktop = { isDesktop: async () => true, startGmailRunner: async ({ session }) => { window.fixtureGmailSession = session; return { state: 'waiting_for_send', message: 'Email pregătit în Gmail; așteaptă trimiterea.' }; }, onGmailRunnerStatusChanged: callback => { window.fixtureGmailStatus = callback; return () => {}; } }; });
   page.on('pageerror', e => errors.push(e.message));
   const planId = 'fdaf7ed4-6102-4227-a969-47c1317654e8';
   const action = { kind: 'schedule_viewing', contactId: 'contact', propertyId: 'property', viewingDate: '2027-01-01T12:00:00+02:00', duration: 60, notes: '' };
@@ -44,7 +45,9 @@ try {
     const body = request.postDataJSON(); requests.push({ path: new URL(request.url()).pathname, body });
     let result;
     const url = new URL(request.url());
-    if (request.method() === 'GET' && url.searchParams.has('planId')) result = { plan: pendingPlan };
+    if (url.pathname.endsWith('/gmail-session')) result = { session: { jobId: 'gmail-job', saleId: 'sale', messageRecordId: 'email', trackingCode: 'IMO', to: ['owner@example.com'], cc: [], subject: 'Ofertă', bodyText: 'Textul verificat', attachments: [] } };
+    else if (url.pathname.endsWith('/send-evidence')) { assert.equal(body.level, 'ui_observed'); result = { ok: true }; }
+    else if (request.method() === 'GET' && url.searchParams.has('planId')) result = { plan: pendingPlan };
     else if (request.method() === 'GET' && url.searchParams.has('jobId')) {
       if (url.searchParams.get('stream') === '1') {
         await route.fulfill({ status: 200, contentType: 'text/event-stream', body: 'data: ' + JSON.stringify({ type: 'PROGRESS_EVENT', text: 'Citesc datele autorizate.' }) + '\n\ndata: ' + JSON.stringify({ type: 'ACTION_RESULT', status: 'completed', message: message('Plan pregătit pe server.', [], { planId, actions: [action] }) }) + '\n\n' }); return;
@@ -60,7 +63,7 @@ try {
     else if (body.kind === 'start') result = { jobId: 'turn-job', status: 'pending' };
     else if (body.kind === 'execute_background') result = { jobId: 'plan-job', status: 'pending' };
     else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
-    else if (body.kind === 'execute') result = { plan: { id: planId, actions: [action], status: 'completed', results: [{ step: 1, result: { viewingId: 'viewing' } }] } };
+    else if (body.kind === 'execute') result = { plan: { id: planId, actions: [action], status: 'completed', results: [{ step: 1, result: { viewingId: 'viewing', gmailPrepared: true, saleId: 'sale', messageId: 'email' } }] } };
     else if (body.kind === 'read') result = { rows: body.query.resource === 'ownerListingFavorites' ? [{ id: 'listing', ownerPhone: '0722123456', title: 'Apartament Titan' }] : [{ id: 'connection', name: 'Agenție WhatsApp', channel: 'whatsapp', status: 'connected' }] };
     else if (body.kind === 'search') {
       const rows = [{ id: body.query.source === 'owners' ? 'listing' : 'property', title: body.query.source === 'owners' ? 'Apartament Titan proprietar' : 'Apartament Titan CRM', price: '120.000 €', location: 'Titan', rooms: 2 }];
@@ -79,6 +82,15 @@ try {
   assert.equal(requests.filter(r => r.body?.kind === 'execute').length, 0, 'Planning must not mutate the CRM');
   await page.getByRole('button', { name: 'Execută planul' }).click();
   await page.getByText('Stare: finalizat', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Deschide în Gmail', exact: true }).click();
+  await page.getByText('Email pregătit în Gmail; așteaptă trimiterea.', { exact: true }).waitFor();
+  assert.equal(requests.filter(r => r.path.endsWith('/send-evidence')).length, 0, 'Preparing Gmail must not fabricate send evidence');
+  assert.equal(await page.evaluate(() => window.fixtureGmailSession.bodyText), 'Textul verificat');
+  await page.evaluate(() => window.fixtureGmailStatus({ state: 'sent_ui_confirmed', message: 'Altă execuție', jobId: 'unrelated-job', saleId: 'sale', messageRecordId: 'email' }));
+  assert.equal(requests.filter(r => r.path.endsWith('/send-evidence')).length, 0, 'An unrelated Gmail runner job must not confirm this email');
+  await page.evaluate(() => window.fixtureGmailStatus({ state: 'sent_ui_confirmed', message: 'Trimis', jobId: 'gmail-job', saleId: 'sale', messageRecordId: 'email' }));
+  await page.getByText('Trimiterea a fost observată în Gmail și consemnată în CRM.', { exact: true }).waitFor();
+  assert.equal(requests.filter(r => r.path.endsWith('/send-evidence')).length, 1);
   await page.getByRole('button', { name: 'Caută proprietăți', exact: true }).click();
   await page.getByText('Apartament Titan proprietar', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Vezi potrivirile din CRM' }).click();
@@ -110,5 +122,5 @@ try {
   await page.getByText('Stare: rezultat de verificat', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Reia pașii rămași' }).count(), 0, 'An uncertain external outcome must not offer replay');
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: true, checks: ['authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
+  console.log(JSON.stringify({ passed: true, checks: ['Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

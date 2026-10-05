@@ -1,4 +1,5 @@
 "use client";
+import { GmailHandoff } from '@/components/ai/GmailHandoff';
 import { AssistantExecutionControls } from '@/components/ai/AssistantExecutionControls';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAgency } from "@/context/AgencyContext";
@@ -904,6 +905,7 @@ export function JarvisVoice() {
                           className="my-2 rounded-xl border bg-white p-3 text-sm"
                         >
                           <p>Pasul {i + 1}: confirmat</p>
+                          {result?.gmailPrepared === true && typeof result.saleId === 'string' && typeof result.messageId === 'string' ? <GmailHandoff saleId={result.saleId} messageId={result.messageId} /> : null}
                           {typeof href === "string" &&
                             href.startsWith("/") &&
                             !href.startsWith("//") && (

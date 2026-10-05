@@ -1,7 +1,7 @@
 import { actionSchema, type AssistantAction } from './contracts';
 
 const reference = /^@step:(\d+):([A-Za-z][A-Za-z0-9]*)$/;
-const identifierKeys = new Set(['contactId', 'propertyId', 'conversationId', 'viewingId', 'taskId', 'automationId', 'templateId', 'campaignId', 'connectionId', 'draftId', 'jobId', 'portalId']);
+const identifierKeys = new Set(['saleId', 'messageId', 'contactId', 'propertyId', 'conversationId', 'viewingId', 'taskId', 'automationId', 'templateId', 'campaignId', 'connectionId', 'draftId', 'jobId', 'portalId']);
 export function isStepReference(value: string) { return reference.test(value); }
 export function resolveAction(action: AssistantAction, previous: Record<string, unknown>[]): AssistantAction {
   function resolve(value: unknown, key = ''): unknown {
@@ -25,5 +25,6 @@ export function resolveAction(action: AssistantAction, previous: Record<string, 
     return value;
   }
   if (action.kind === 'existing_operation' && action.operation === 'message_send' && /@step:\d+:/.test(JSON.stringify({ text: action.body.text, template: action.body.template }))) throw new Error('Mesajul necesită text și parametri concreți pentru previzualizare/aprobare; nu poate trimite referințe la conținut încă negenerat.');
+  if (action.kind === 'prepare_sale_email' && /@step:\d+:/.test(JSON.stringify({ to: action.to, cc: action.cc, bcc: action.bcc, subject: action.subject, bodyText: action.bodyText, bodyHtml: action.bodyHtml, questions: action.questions }))) throw new Error('Emailul necesită destinatari și conținut concret pentru previzualizare.');
   return actionSchema.parse(resolve(action));
 }

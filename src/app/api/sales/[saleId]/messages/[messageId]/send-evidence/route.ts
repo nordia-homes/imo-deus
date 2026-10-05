@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { appendSalesAudit, requireSaleAccess, salesApiErrorResponse, SalesApiError } from '@/lib/sales-server';
 import type { SaleEmailSendEvidence } from '@/lib/types';
+import { assistantPrincipal } from '@/lib/ai-assistant/principal';
 
 export const runtime = 'nodejs';
 
@@ -10,9 +11,11 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ s
     const access = await requireSaleAccess(request, saleId);
     const input = await request.json() as { level?: 'ui_observed' | 'agent_confirmed'; diagnostics?: Record<string, unknown> };
     if (!input.level || !['ui_observed', 'agent_confirmed'].includes(input.level)) throw new SalesApiError('Dovada de trimitere este invalidă.', 400);
+    if (input.level === 'ui_observed' && await assistantPrincipal(request.headers.get('authorization'))) throw new SalesApiError('Observarea interfeței Gmail se înregistrează numai de runner-ul dispozitivului, nu de model.', 403);
     const messageRef = access.saleRef.collection('emailMessages').doc(messageId);
     const snapshot = await messageRef.get();
     if (!snapshot.exists || snapshot.data()?.direction !== 'outbound') throw new SalesApiError('Mesajul outbound nu există.', 404);
+    if (input.level === 'ui_observed' && snapshot.data()?.handoffJobId && input.diagnostics?.jobId !== snapshot.data()?.handoffJobId) throw new SalesApiError('Confirmarea Gmail aparține altei execuții.', 409);
     const now = new Date().toISOString();
     const evidence: SaleEmailSendEvidence = {
       level: input.level,

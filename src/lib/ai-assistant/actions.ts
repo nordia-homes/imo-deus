@@ -4,7 +4,7 @@ import { getConversation } from '@/lib/communications/server';
 import { isDemoAgencyId } from '@/lib/demo/guards';
 import { getDeterministicMatchedProperties, getDeterministicMatchedBuyers } from '@/lib/matching-engine';
 import type { Contact, Property } from '@/lib/types';
-import { collectionFor, getResource, type AssistantContext } from './access';
+import { collectionFor, getResource, canReadResource, type AssistantContext } from './access';
 import { overlaps, safeData, type AssistantAction } from './contracts';
 import { invokeOperation, operations, isReadOperation } from './operations';
 import { toPropertySeed } from '@/lib/owner-listings/utils';
@@ -14,7 +14,7 @@ import { OperationFailure, unconfirmedOperationResult } from './operation-error'
 import { assertPropertyActivation, initialContactPreferences, propertyLifecyclePatch, propertyStatusReasonLabels, type propertyLifecycleSchema } from '@/lib/crm/action-fields';
 import { z } from 'zod';
 import { createSaleFromProperty, DEFAULT_SALES_EMAIL_TEMPLATES } from '@/lib/sales';
-import { sanitizeEmailHtml } from '@/lib/email-compose';
+import { sanitizeEmailHtml, plainTextToEmailHtml } from '@/lib/email-compose';
 import { payloadHash } from './approval';
 import { prospectOwner, prospectPatch } from '@/lib/crm/prospect';
 import { prepareContactIdentity } from '@/lib/crm/contact-identity-server';
@@ -23,6 +23,7 @@ import { shouldAutoArchiveContact } from '@/lib/contact-aging';
 import { matchingRevision } from './matching-revision';
 import { assertCalendarSlot } from '@/lib/crm/calendar';
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/lib/notifications/types';
+import { saleEmailContentHash } from '@/lib/crm/sale-email-hash';
 
 export async function matchContact(ctx: AssistantContext, contactId: string, limit: number) {
   const contact = await getResource(ctx, 'contacts', contactId);
@@ -77,6 +78,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     const prior = await tx.get(ledger);
     const profile = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
     if (profile.data()?.agencyId !== ctx.agencyId || profile.data()?.role !== ctx.role || !['agent', 'admin'].includes(profile.data()?.role)) throw new CommunicationError('Acces revocat.', 403);
+    const protectedSale = action.kind === 'prepare_sale_email' ? await tx.get(collectionFor(ctx, 'sales').doc(action.saleId)) : null;
+    if (protectedSale && (!protectedSale.exists || !canReadResource(ctx, 'sales', protectedSale.data()!))) throw new CommunicationError('Dosarul nu există sau accesul a fost revocat.', 403);
     if (prior.exists) {
       if (prior.data()?.actorId !== ctx.uid || payloadHash([prior.data()?.action]) !== payloadHash([action])) throw new CommunicationError('Identificatorul execuției aparține altei comenzi.', 409);
       return prior.data()?.result;
@@ -96,7 +99,25 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     const statusEvent = (propertyId: string, previous: Record<string, any>, next: Record<string, any>, change: z.infer<typeof propertyLifecycleSchema>) => {
       tx.create(collectionFor(ctx, 'propertyStatusEvents').doc(key), { id: key, agencyId: ctx.agencyId, propertyId, actorId: ctx.uid, changedAt: now, previousStatus: previous.status || null, nextStatus: change.status, reason: change.reason || 'agent_instruction', reasonLabel: change.reason ? propertyStatusReasonLabels[change.reason] : 'La solicitarea agentului', agentMessage: change.notes || `Status ${change.status} solicitat de agent.`, soldPrice: change.soldPrice || null, marketAnalysisEligible: change.status === 'Vândut', propertySnapshot: { ...next, id: propertyId } });
     };
-    if (action.kind === 'outreach_call_action') {
+    if (action.kind === 'prepare_sale_email') {
+      const sale = protectedSale!.data()!;
+      if (!canReadResource(ctx, 'sales', sale)) throw new CommunicationError('Nu ai acces la acest dosar.', 403);
+      const documents = action.documentIds.map(id => (sale.checklist || []).find((row: any) => row.id === id));
+      if (documents.some(row => !row?.downloadUrl)) throw new CommunicationError('Un document selectat nu mai este disponibil în dosar.', 409);
+      const questions = action.questions.filter(row => row.text.trim());
+      const questionText = questions.length ? '\n\nÎntrebări pentru confirmare:\n' + questions.map((row, index) => `${index + 1}. ${row.text.trim()}`).join('\n') : '';
+      const trackingCode = typeof sale.trackingCode === 'string' ? sale.trackingCode : '';
+      if (!trackingCode) throw new CommunicationError('Dosarul nu are un cod de urmărire.', 409);
+      const subject = action.subject.includes(trackingCode) ? action.subject : `${action.subject} [${trackingCode}]`;
+      const messageId = key, jobId = randomUUID();
+      const message = { id: messageId, saleId: action.saleId, agencyId: ctx.agencyId, direction: 'outbound', status: 'prepared', trackingCode, fromName: profile.data()?.name || sale.agentName || '', fromEmail: profile.data()?.email || null, to: action.to, cc: action.cc, bcc: action.bcc, subject, bodyText: action.bodyText + questionText, bodyHtml: sanitizeEmailHtml((action.bodyHtml || plainTextToEmailHtml(action.bodyText)) + plainTextToEmailHtml(questionText)), questions,
+        documentIds: action.documentIds, attachmentRefs: documents.map(row => ({ documentId: row.id, downloadUrl: row.downloadUrl, version: row.version || null })), attachmentNames: [...action.attachmentNames, ...documents.map(row => row.fileName || row.label)], handoffJobId: jobId,
+        sendEvidence: { level: 'none', source: 'gmail_runner', observedAt: now, observedByUid: ctx.uid, details: 'Mesaj pregătit; trimiterea nu este confirmată.' }, createdByUid: ctx.uid, createdAt: now, updatedAt: now };
+      const saleRef = collectionFor(ctx, 'sales').doc(action.saleId);
+      tx.create(saleRef.collection('emailMessages').doc(messageId), message);
+      tx.create(saleRef.collection('audit').doc(key), { agencyId: ctx.agencyId, saleId: action.saleId, actorUid: ctx.uid, actorType: 'agent', action: 'message.prepared', entityType: 'message', entityId: messageId, summary: 'Email pregătit pentru Gmail, fără confirmarea trimiterii.', createdAt: now });
+      result = { saleId: action.saleId, messageId, contentHash: saleEmailContentHash(message), gmailPrepared: true, title: subject, recipients: action.to, status: 'prepared', link: `/sales-management/${action.saleId}`, note: 'Email pregătit. Deschide Gmail din card; trimiterea și evidența sunt pași separați.' };
+    } else if (action.kind === 'outreach_call_action') {
       const call = await read('aiOutreachCalls', action.callId);
       if (typeof call.ownerListingId !== 'string' || !call.ownerListingId || call.ownerListingId.includes('/')) throw new CommunicationError('Apelul nu are un anunț valid.', 409);
       const callRef = collectionFor(ctx, 'aiOutreachCalls').doc(action.callId);

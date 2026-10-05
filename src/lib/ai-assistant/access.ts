@@ -140,6 +140,7 @@ export async function readField(ctx: AssistantContext, input: z.infer<typeof fie
 }
 export function actionReferences(actions: AssistantAction[]): AccessReference[] {
   return actions.flatMap(action => {
+    if (action.kind === 'prepare_sale_email') return [{ resource: 'sales' as const, id: action.saleId }];
     if (action.kind === 'existing_operation') {
       const refs: AccessReference[] = [];
       for (const source of [action.params, action.body]) {
