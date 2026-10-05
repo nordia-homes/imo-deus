@@ -31,6 +31,10 @@ await build({
           contents: "export default {src:'/jarvis/rig-atlas.png'};",
           loader: "js",
         }));
+        builder.onLoad({ filter: /office-scene\.png$/ }, () => ({
+          contents: "export default {src:'/office-scene.png'};",
+          loader: "js",
+        }));
         builder.onLoad({ filter: /context[\\/]AgencyContext\.tsx$/ }, () => ({
           contents:
             "const user={uid:'agent',getIdToken:async()=>'fixture-token'};export const useAgency=()=>({user,agencyId:'fixture-agency'});",
@@ -40,9 +44,10 @@ await build({
           path: "image",
           namespace: "fixture",
         }));
-        builder.onLoad({ filter: /.*/, namespace: "fixture" }, () => ({
+        builder.onResolve({ filter: /^next\/link$/ }, () => ({ path: 'link', namespace: 'fixture' }));
+        builder.onLoad({ filter: /.*/, namespace: "fixture" }, (args) => ({
           contents:
-            "import React from 'react';export default function Image({fill,unoptimized,sizes,...props}){return <img {...props}/>}",
+            args.path === 'link' ? "import React from 'react';export default function Link({prefetch,...props}){return <a {...props}/>;}" : "import React from 'react';export default function Image({fill,unoptimized,sizes,...props}){return <img {...props}/>}",
           loader: "jsx",
           resolveDir: root,
         }));
@@ -64,6 +69,11 @@ const css = await postcss([tailwindcss(config)]).process(
 );
 await fs.writeFile(path.join(output, "style.css"), css.css);
 const server = http.createServer(async (req, res) => {
+  if (req.url === "/office-scene.png") {
+    res.setHeader("Content-Type", "image/png");
+    res.end(await fs.readFile("src/components/jarvis-voice/office-scene.png"));
+    return;
+  }
   if (req.url === "/jarvis/rig-atlas.png") {
     res.setHeader("Content-Type", "image/png");
     res.end(await fs.readFile("src/components/jarvis-voice/rig-atlas-v2.png"));
@@ -245,7 +255,27 @@ try {
     } else if (body.kind === "cancel") {
       plan = { ...plan, status: "cancelled" };
       result = { plan };
-    } else if (body.kind === "read")
+    } else if (body.kind === "query")
+      result = {
+        rows:
+          body.query.resource === "contacts"
+            ? [
+                {
+                  id: "contact-context",
+                  name: "Client context fixture",
+                  contactType: "Cumparator",
+                },
+              ]
+            : [
+                {
+                  id: "viewing-context",
+                  propertyTitle: "Agenda context fixture",
+                  viewingDate: "2026-10-05T10:00:00Z",
+                },
+              ],
+        complete: true,
+      };
+    else if (body.kind === "read")
       result = {
         rows:
           body.query.resource === "ownerListingFavorites"
@@ -327,12 +357,35 @@ try {
   await dialog.waitFor();
   assert.equal(await dialog.locator("header").count(), 0);
   assert.equal(await dialog.locator(".jarvis-scene").count(), 1);
+  await dialog.getByText("Client context fixture", { exact: true }).waitFor();
+  await dialog.getByText("Agenda context fixture", { exact: true }).waitFor();
+  assert(
+    requests.some(
+      (request) =>
+        request.body?.kind === "query" &&
+        request.body.query.resource === "contacts",
+    ),
+  );
+  checks.push(
+    "reference office scene displays authorized CRM context without invented sample data",
+  );
   checks.push("immersive animated scene has no header");
+  await page.evaluate(async () => {
+    const image = new window.Image();
+    image.src = "/office-scene.png";
+    await image.decode();
+  });
   const pose = dialog.locator(".jarvis-pose");
   const beforeMotion = await pose.evaluate(
     (node) => getComputedStyle(node).translate,
   );
-  await page.waitForTimeout(450);
+  await page.waitForFunction(
+    (before) =>
+      getComputedStyle(document.querySelector(".jarvis-pose")).translate !==
+      before,
+    beforeMotion,
+    { timeout: 5000 },
+  );
   assert.notEqual(
     await pose.evaluate((node) => getComputedStyle(node).translate),
     beforeMotion,
@@ -439,7 +492,9 @@ try {
   checks.push("desktop shortcut opens voice without transcript/composer");
   await page.screenshot({ path: path.join(output, "listening.png") });
   await page.evaluate(() => window.injectSpeech());
-  await page.getByText("Agenda de mâine", { exact: true }).waitFor();
+  await page
+    .getByRole("heading", { name: "Agenda de mâine", exact: true })
+    .waitFor();
   await page.locator(".jarvis-character[data-state=SPEAKING]").waitFor();
   await page.screenshot({ path: path.join(output, "speaking.png") });
   assert(

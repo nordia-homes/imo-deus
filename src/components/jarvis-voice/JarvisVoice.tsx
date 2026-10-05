@@ -12,6 +12,8 @@ import {
   PanelRightOpen,
   Keyboard,
   Check,
+  House,
+  AudioLines,
 } from "lucide-react";
 import { AssistantResultCard } from "@/components/ai/AssistantResultCard";
 import {
@@ -23,6 +25,12 @@ import {
 import { ActionPreview } from "@/components/ai/ActionPreview";
 import { JarvisCharacter } from "./JarvisCharacter";
 import { JarvisScene } from "./JarvisScene";
+import {
+  VoiceContext,
+  type VoiceActivity,
+  type VoiceContextData,
+} from "./VoiceContext";
+import { LogoIcon } from "@/components/icons/LogoIcon";
 import {
   activeJarvisSession,
   storeJarvisSession,
@@ -72,6 +80,13 @@ export function JarvisVoice() {
     [keyboard, setKeyboard] = useState(false),
     [consent, setConsent] = useState<Consent | null>(null),
     [consentBusy, setConsentBusy] = useState(false);
+  const [context, setContext] = useState<VoiceContextData>({
+    contacts: [],
+    viewings: [],
+    loading: false,
+    error: "",
+  });
+  const [activities, setActivities] = useState<VoiceActivity[]>([]);
   const audio = useRef<VoiceAudio | null>(null),
     pendingPlan = useRef<AssistantPlan | null>(null),
     opened = useRef(false),
@@ -175,6 +190,40 @@ export function JarvisVoice() {
   useEffect(() => {
     if (open && actor.current !== user?.uid + ":" + agencyId) close();
   }, [user?.uid, agencyId, open, close]);
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    queueMicrotask(() => {
+      if (active)
+        setContext({ contacts: [], viewings: [], loading: true, error: "" });
+    });
+    void Promise.allSettled([
+      api("/api/ai-assistant/workspace", {
+        kind: "query",
+        query: { resource: "contacts", mode: "list", limit: 3 },
+      }),
+      api("/api/ai-assistant/workspace", {
+        kind: "query",
+        query: { resource: "viewings", dayOffset: 0, mode: "list", limit: 2 },
+      }),
+    ]).then(([contacts, viewings]) => {
+      if (!active) return;
+      setContext({
+        contacts:
+          contacts.status === "fulfilled" ? contacts.value.rows || [] : [],
+        viewings:
+          viewings.status === "fulfilled" ? viewings.value.rows || [] : [],
+        loading: false,
+        error:
+          contacts.status === "rejected" || viewings.status === "rejected"
+            ? "O parte din context nu este disponibilă momentan."
+            : "",
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [open, api, agencyId]);
   async function speak(
     message: AssistantMessage,
     p: AssistantPlan | null,
@@ -182,6 +231,17 @@ export function JarvisVoice() {
   ) {
     const result = presentVoice(message, p || undefined);
     setCards(result.visualPayload);
+    if (result.visualPayload.length)
+      setActivities((previous) =>
+        [
+          {
+            id: message.id,
+            title: result.visualPayload[0].title,
+            at: message.createdAt,
+          },
+          ...previous.filter((item) => item.id !== message.id),
+        ].slice(0, 4),
+      );
     if (result.visualPayload.length || p) setPanel(true);
     if (audio.current?.epoch === epoch) {
       setGesture(result.gestureHint);
@@ -466,9 +526,10 @@ export function JarvisVoice() {
     setOpen(true);
     setState("LISTENING");
     setCards([]);
+    setActivities([]);
     setPlan(null);
     pendingPlan.current = null;
-    setPanel(false);
+    setPanel(window.innerWidth >= 1024);
     setError("");
     void api("/api/ai-assistant/workspace")
       .then((r) => {
@@ -489,6 +550,17 @@ export function JarvisVoice() {
             .at(-1);
           if (!recent || (audio.current?.epoch || 0) !== initialEpoch) return;
           lastMessage.current = recent;
+          setActivities(
+            (r.messages as AssistantMessage[])
+              .filter((item) => item.role === "assistant" && item.cards?.length)
+              .slice(-4)
+              .reverse()
+              .map((item) => ({
+                id: item.id,
+                title: item.cards![0].title,
+                at: item.createdAt,
+              })),
+          );
           setCards(recent.cards || []);
           if (recent.planId) {
             const loaded = (
@@ -498,7 +570,10 @@ export function JarvisVoice() {
             setPlan(loaded);
             pendingPlan.current = loaded.status === "pending" ? loaded : null;
           }
-          setPanel(Boolean(recent.cards?.length || recent.planId));
+          setPanel(
+            window.innerWidth >= 1024 ||
+              Boolean(recent.cards?.length || recent.planId),
+          );
         })
         .catch(() => {});
     }
@@ -602,6 +677,7 @@ export function JarvisVoice() {
           aria-modal="true"
           aria-label="Jarvis Voice"
           className="jarvis-voice-world fixed inset-0 z-[80] flex flex-col"
+          data-panel={panel}
           onKeyDown={(e) => {
             if (e.key === "Tab") {
               const nodes = Array.from(
@@ -622,6 +698,25 @@ export function JarvisVoice() {
           }}
         >
           <JarvisScene state={state} audioLevel={level} panelOpen={panel} />
+          <div className="jarvis-brand-chip">
+            <span>
+              <LogoIcon />
+            </span>
+            <strong>imoDeus</strong>
+            <i />
+            <b>Jarvis Voice</b>
+          </div>
+          <div className="jarvis-mode-chip">
+            <span>
+              <AudioLines />
+            </span>
+            <div>
+              <strong>
+                Mod voce activ <i />
+              </strong>
+              <small>Asistent AI pentru imobiliare</small>
+            </div>
+          </div>
           <div className="jarvis-floating-actions">
             <Button
               variant="ghost"
@@ -644,19 +739,43 @@ export function JarvisVoice() {
           <div className="relative flex min-h-0 flex-1">
             <main
               className={
-                "flex min-w-0 flex-1 flex-col items-center px-5 " +
+                "jarvis-voice-main flex min-w-0 flex-1 flex-col items-center px-5 " +
                 (panel
                   ? "justify-start gap-4 pt-16 md:justify-center md:gap-8 md:pb-8"
                   : "justify-center gap-6 pt-12 pb-8")
               }
             >
-              <JarvisCharacter
-                state={state}
-                expression={expression}
-                gesture={gesture}
-                audioLevel={level}
-                panelOpen={panel}
-              />
+              <div className="jarvis-avatar-stage" data-state={state}>
+                <div className="jarvis-audio-halo" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <div
+                  className="jarvis-audio-wave"
+                  aria-hidden="true"
+                  style={{
+                    opacity: micMuted && state !== "SPEAKING" ? 0.25 : 1,
+                  }}
+                >
+                  {Array.from({ length: 36 }, (_, index) => (
+                    <i
+                      key={index}
+                      style={{
+                        height: `${5 + Math.sin(index * 1.9) ** 2 * (12 + Math.min(1, level * 5) * 72)}px`,
+                        animationDelay: `${index * -0.08}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <JarvisCharacter
+                  state={state}
+                  expression={expression}
+                  gesture={gesture}
+                  audioLevel={level}
+                  panelOpen={panel}
+                />
+              </div>
               <p
                 aria-live="polite"
                 className="jarvis-voice-status max-w-sm text-center text-sm"
@@ -680,8 +799,14 @@ export function JarvisVoice() {
                 aria-label="Rezultate CRM"
                 className="jarvis-voice-results absolute bottom-0 left-0 right-0 z-10 max-h-[48%] overflow-y-auto rounded-t-3xl border bg-white/95 p-4 shadow-2xl backdrop-blur-md md:static md:max-h-none md:w-[390px] md:shrink-0 md:rounded-none md:border-y-0 md:border-r-0"
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="font-semibold">Rezultate CRM</h2>
+                <div className="jarvis-results-heading">
+                  <span className="jarvis-results-symbol">
+                    <House />
+                  </span>
+                  <div>
+                    <h2>Rezultate &amp; context</h2>
+                    <p>Informații din CRM-ul tău</p>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -691,6 +816,16 @@ export function JarvisVoice() {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
+                {!cards.length && !plan && (
+                  <div className="jarvis-results-empty">
+                    <House />
+                    <strong>Cu ce te pot ajuta?</strong>
+                    <p>
+                      Cere proprietăți, consultă agenda sau pregătește o acțiune
+                      în CRM.
+                    </p>
+                  </div>
+                )}
                 {plan && (
                   <section className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
                     <h3 className="font-semibold">
@@ -870,6 +1005,11 @@ export function JarvisVoice() {
                     }}
                   />
                 ))}
+                <VoiceContext
+                  data={context}
+                  activities={activities}
+                  close={close}
+                />
               </aside>
             )}
           </div>
@@ -880,38 +1020,46 @@ export function JarvisVoice() {
             }}
           >
             <div className="jarvis-control-dock">
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={
-                  micMuted ? "Pornește microfonul" : "Oprește microfonul"
-                }
-                onClick={() => {
-                  audio.current?.setMicMuted(!micMuted);
-                  setMicMuted(!micMuted);
-                }}
-              >
-                {micMuted ? <MicOff /> : <Mic />}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={
-                  speakerMuted ? "Pornește sunetul" : "Oprește sunetul"
-                }
-                onClick={() => {
-                  if (audio.current) {
-                    audio.current.speakerMuted = !speakerMuted;
-                    audio.current.interrupt();
+              <div className="jarvis-control-group">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={
+                    micMuted ? "Pornește microfonul" : "Oprește microfonul"
                   }
-                  setSpeakerMuted(!speakerMuted);
-                  setState(
-                    pendingPlan.current ? "AWAITING_CONFIRMATION" : "LISTENING",
-                  );
-                }}
-              >
-                {speakerMuted ? <VolumeX /> : <Volume2 />}
-              </Button>
+                  onClick={() => {
+                    audio.current?.setMicMuted(!micMuted);
+                    setMicMuted(!micMuted);
+                  }}
+                >
+                  {micMuted ? <MicOff /> : <Mic />}
+                </Button>
+                <small>{micMuted ? "Microfon oprit" : "Microfon activ"}</small>
+              </div>
+              <div className="jarvis-control-group">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label={
+                    speakerMuted ? "Pornește sunetul" : "Oprește sunetul"
+                  }
+                  onClick={() => {
+                    if (audio.current) {
+                      audio.current.speakerMuted = !speakerMuted;
+                      audio.current.interrupt();
+                    }
+                    setSpeakerMuted(!speakerMuted);
+                    setState(
+                      pendingPlan.current
+                        ? "AWAITING_CONFIRMATION"
+                        : "LISTENING",
+                    );
+                  }}
+                >
+                  {speakerMuted ? <VolumeX /> : <Volume2 />}
+                </Button>
+                <small>{speakerMuted ? "Sunet oprit" : "Difuzor"}</small>
+              </div>
               <Button variant="outline" onClick={close}>
                 <Keyboard className="mr-2 h-4 w-4" />
                 Înapoi la text

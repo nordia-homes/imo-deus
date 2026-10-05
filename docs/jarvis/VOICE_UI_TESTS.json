@@ -2,6 +2,7 @@
   "passed": true,
   "checks": [
     "shortcut ignores editable CRM fields",
+    "reference office scene displays authorized CRM context without invented sample data",
     "immersive animated scene has no header",
     "mascot moves continuously and eyes react to pointer",
     "reduced motion disables ambient and character animations",
@@ -16,7 +17,7 @@
     "layered rig renders with independent eye/arm/antenna nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 57.5,
+  "animationFps": 51.42029853818528,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."

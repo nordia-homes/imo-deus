@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { CharacterState } from "@/lib/jarvis-voice/presentation";
-import "./scene.css";
+import "./office-scene.css";
+import officeScene from "./office-scene.png";
 
 export function JarvisScene({
   state,
@@ -27,9 +28,10 @@ export function JarvisScene({
       data-panel={panelOpen}
       aria-hidden="true"
     >
-      <div className="jarvis-aurora jarvis-aurora-cyan" />
-      <div className="jarvis-aurora jarvis-aurora-violet" />
-      <div className="jarvis-aurora jarvis-aurora-gold" />
+      <div
+        className="jarvis-office-plate"
+        style={{ backgroundImage: `url(${officeScene.src})` }}
+      />
       <div className="jarvis-stage-halo" />
       <div className="jarvis-stage-floor">
         <i />
