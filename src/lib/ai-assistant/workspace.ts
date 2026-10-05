@@ -14,6 +14,7 @@ import { sessionSummary } from './context';
 import { executeSafePrefix } from './autonomy';
 import { actionRisk } from './registry';
 import { OperationFailure } from './operation-error';
+import { MAX_PLAN_ACTIONS, PLAN_EXECUTION_MS } from './plan-limits';
 
 export async function requireSession(ctx: AssistantContext, id: string) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(id);
@@ -114,23 +115,47 @@ export async function saveAssistantMessage(ctx: AssistantContext, sessionId: str
     return message;
   });
 }
-export async function runPlan(ctx: AssistantContext, id: string, cancel = false) {
+export async function runPlan(ctx: AssistantContext, id: string, cancel = false, maxSteps = MAX_PLAN_ACTIONS) {
   const { ref, data } = await getPlan(ctx, id);
   if (data.status === 'completed' || data.status === 'cancelled') return data;
+  if (data.status === 'paused' && !cancel) return data;
+  if (cancel && data.status === 'running') {
+    await ctx.adminDb.runTransaction(async tx => {
+      const fresh = await tx.get(ref);
+      if (fresh.data()?.ownerId !== ctx.uid) throw new CommunicationError('Plan inaccesibil.', 403);
+      if (fresh.data()?.status === 'running') tx.update(ref, { cancelRequestedAt: new Date().toISOString() });
+    });
+    return { ...data, error: 'Oprirea a fost solicitată. Pasul deja pornit trebuie să returneze rezultatul; pașii următori nu vor porni.' };
+  }
   await ctx.adminDb.runTransaction(async tx => {
     const snap = await tx.get(ref);
-    if (snap.data()?.ownerId !== ctx.uid || !['pending', 'failed'].includes(snap.data()?.status)) throw new CommunicationError('Planul este deja în execuție sau necesită verificarea rezultatului. Repetarea automată este blocată.', 409);
+    if (snap.data()?.ownerId !== ctx.uid || !(cancel ? ['pending', 'failed', 'paused'] : ['pending', 'failed']).includes(snap.data()?.status)) throw new CommunicationError('Planul este deja în execuție sau necesită verificarea rezultatului. Repetarea automată este blocată.', 409);
     if (Number(snap.data()?.expiresAt) < Date.now()) throw new CommunicationError('Planul a expirat. Cere un plan nou cu date actuale.', 409);
     if (!cancel) validateApproval(snap.data()?.approval, ctx.uid, ctx.agencyId, id, snap.data()?.actions || []);
     tx.update(ref, { status: cancel ? 'cancelled' : 'running', startedAt: new Date().toISOString(), ...(cancel ? {} : { approvalUsedAt: snap.data()?.approvalUsedAt || new Date().toISOString(), approvedBy: ctx.uid }) });
     if (snap.data()?.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(snap.data()!.telemetryId), { approval: !cancel, approvalStatus: cancel ? 'cancelled' : 'approved', executionStatus: cancel ? 'cancelled' : 'running' }, { merge: true });
   });
   if (cancel) return { ...data, status: 'cancelled' as const };
-  const results: Record<string, unknown>[] = [];
-  const accessRefs = actionReferences(data.actions);
+  const results: Record<string, unknown>[] = [...(data.results || [])];
+  const accessRefs = [...((data as any).accessRefs || []), ...actionReferences(data.actions)];
+  const checkpointStarted = Date.now(), initialCount = results.length;
   try {
-    const actions = z.array(actionSchema).min(1).max(12).parse(data.actions);
+    const actions = z.array(actionSchema).min(1).max(MAX_PLAN_ACTIONS).parse(data.actions);
     for (const [index, action] of actions.entries()) {
+      if (index < initialCount) continue;
+      const fresh = await ref.get();
+      if (fresh.data()?.cancelRequestedAt) {
+        await ref.update({ status: 'cancelled', results, accessRefs, completedAt: new Date().toISOString() });
+        return { ...data, status: 'cancelled' as const, results };
+      }
+      if (fresh.data()?.pauseRequestedAt) {
+        await ref.update({ status: 'paused', results, accessRefs, pausedAt: new Date().toISOString() });
+        return { ...data, status: 'paused' as const, results };
+      }
+      if (results.length - initialCount >= maxSteps || Date.now() - checkpointStarted >= PLAN_EXECUTION_MS) {
+        await ref.update({ status: 'pending', results, accessRefs, checkpointAt: new Date().toISOString() });
+        return { ...data, status: 'pending' as const, results };
+      }
       // Recheck current membership at every step, including existing domain handlers.
       const member = await ctx.adminDb.collection('users').doc(ctx.uid).get();
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Permisiunile s-au schimbat. Planul a fost oprit.', 403);
@@ -157,6 +182,24 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false)
     if ((data as any).telemetryId) await collectionFor(ctx, 'assistantTelemetry').doc((data as any).telemetryId).set({ executionStatus: status, confirmedSteps: results.length }, { merge: true });
     return { ...data, status, results, error: message, ...(stoppedStep ? { stoppedStep } : {}) };
   }
+}
+
+export async function controlPlan(ctx: AssistantContext, id: string, command: 'pause' | 'resume') {
+  const { ref } = await getPlan(ctx, id);
+  await ctx.adminDb.runTransaction(async tx => {
+    const [plan, member] = await Promise.all([tx.get(ref), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
+    const data = plan.data();
+    if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role || data?.ownerId !== ctx.uid) throw new CommunicationError('Acces revocat.', 403);
+    if (command === 'resume') {
+      if (data?.status !== 'paused') throw new CommunicationError('Planul nu este în pauză.', 409);
+      validateApproval(data.approval, ctx.uid, ctx.agencyId, id, data.actions);
+      tx.update(ref, { status: 'pending', pauseRequestedAt: null, pausedAt: null, resumedAt: new Date().toISOString() });
+    } else {
+      if (!['pending', 'running', 'failed', 'paused'].includes(data?.status)) throw new CommunicationError('Planul nu poate fi pus în pauză în această stare.', 409);
+      tx.update(ref, { pauseRequestedAt: new Date().toISOString(), ...(data?.status === 'running' ? {} : { status: 'paused', pausedAt: new Date().toISOString() }) });
+    }
+  });
+  return (await getPlan(ctx, id)).data;
 }
 
 // Reconcile confirmed ledgers after an interrupted HTTP response; never retry a provider.

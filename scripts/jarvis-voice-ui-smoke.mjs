@@ -513,7 +513,8 @@ try {
   checks.push(
     "real browser PCM playback renders non-silent sound across odd chunk boundaries",
   );
-  assert.equal(await dialog.locator("textarea,input").count(), 0);
+  assert.equal(await dialog.locator('textarea,input:not([type="file"])').count(), 0);
+  assert.equal(await dialog.getByRole('button', { name: 'Atașează fișier' }).count(), 1);
   checks.push("desktop shortcut opens voice without transcript/composer");
   await page.screenshot({ path: path.join(output, "listening.png") });
   await page.evaluate(() => window.injectSpeech());

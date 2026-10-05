@@ -86,4 +86,13 @@ describe('authorized complete pagination', () => {
   it('rechecks access to cached historical responses after assignment changes', async () => {
     expect(await referencesAllowed(context([{ id: 'sale', agentId: 'other' }]), [{ resource: 'sales', id: 'sale' }])).toBe(false);
   });
+  it('allows only authorized projection metadata while keeping uploads private to their owner', () => {
+    const ctx = context([]);
+    expect(canReadResource(ctx, 'crmEvents', { visibility: { resource: 'properties', agencyId: 'a' } })).toBe(true);
+    expect(canReadResource(ctx, 'crmEvents', { visibility: { resource: 'conversations', agencyId: 'a', assigneeId: 'other', collaboratorIds: [] } })).toBe(false);
+    expect(canReadResource(ctx, 'crmEvents', { visibility: { resource: 'conversations', agencyId: 'a', assigneeId: 'agent', collaboratorIds: [] } })).toBe(true);
+    expect(canReadResource(ctx, 'crmEvents', { visibility: { resource: 'properties', agencyId: 'b' } })).toBe(false);
+    expect(canReadResource(ctx, 'assistantUploads', { ownerId: 'other', expiresAt: Date.now() + 1000 })).toBe(false);
+    expect(canReadResource(ctx, 'assistantUploads', { ownerId: 'agent', expiresAt: Date.now() - 1 })).toBe(false);
+  });
 });

@@ -5,8 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Property } from "@/lib/types";
 import { useState, useEffect, useRef } from "react";
 import { useAgency } from "@/context/AgencyContext";
-import { useFirestore, updateDocumentNonBlocking } from "@/firebase";
-import { doc } from 'firebase/firestore';
+import { useUser } from "@/firebase";
+import { executeCrmAction } from '@/lib/crm/client-actions';
 import { StickyNote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,7 +22,7 @@ export function PropertyNotesCard({ property, fillAvailableHeight = false }: Pro
     const [notes, setNotes] = useState(property.notes || '');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { agencyId } = useAgency();
-    const firestore = useFirestore();
+    const { user } = useUser();
     const { toast } = useToast();
     const isMobile = useIsMobile();
 
@@ -30,12 +30,11 @@ export function PropertyNotesCard({ property, fillAvailableHeight = false }: Pro
         setNotes(property.notes || '');
     }, [property]);
 
-    const handleBlur = () => {
+    const handleBlur = async () => {
         if (!agencyId) return;
         if (notes !== (property.notes || '')) {
-            const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-            updateDocumentNonBlocking(propertyRef, { notes });
-            toast({ title: 'Notițe salvate!' });
+            try { await executeCrmAction(user, { kind: 'update_property', propertyId: property.id, patch: { notes } }); toast({ title: 'Notițe salvate!' }); }
+            catch (error) { toast({ variant: 'destructive', title: 'Notițele nu au fost salvate', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
         }
     };
 

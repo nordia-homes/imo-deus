@@ -1,4 +1,5 @@
 "use client";
+import { executeCrmAction } from "@/lib/crm/client-actions";
 
 import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
@@ -139,7 +140,7 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
     }
   }, [isOpen, form]);
 
-  function onSubmit(values: z.infer<typeof cumparatorSchema>) {
+  async function onSubmit(values: z.infer<typeof cumparatorSchema>) {
     if (!user || !agency?.id) {
         toast({
             variant: "destructive",
@@ -187,7 +188,8 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
         sourcePropertyId: values.sourcePropertyId === 'none' ? null : values.sourcePropertyId,
     };
 
-    addDocumentNonBlocking(contactsCollection, newCumparatorData);
+    try { await executeCrmAction(user, { kind: 'create_contact', name: values.name, phone: values.phone || '', email: values.email || '', contactType: 'Cumparator', status: values.status as 'Nou', priority: values.priority as 'Medie', tags: [], budget: values.budget, city: values.city, zones: selectedZones, description: values.description || '', source: values.source, sourcePropertyId: newCumparatorData.sourcePropertyId, agentId: finalAgentId }); }
+    catch (error) { toast({ variant: 'destructive', title: 'Cumpărătorul nu a fost salvat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
 
     toast({
         title: "Cumpărător adăugat!",
@@ -205,14 +207,11 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
     }
   };
 
-  const handleUnarchiveDuplicate = () => {
-    if (!agency?.id || !duplicateContact) return;
+  const handleUnarchiveDuplicate = async () => {
+    if (!agency?.id || !user || !duplicateContact) return;
 
-    const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', duplicateContact.id);
-    updateDocumentNonBlocking(contactRef, {
-      archivedAt: null,
-      archivedByAge: false,
-    });
+    try { await executeCrmAction(user, { kind: 'archive_contact', contactId: duplicateContact.id, archived: false }); }
+    catch (error) { toast({ variant: 'destructive', title: 'Dezarhivarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
 
     toast({
       title: 'Cumpărător dezarhivat',

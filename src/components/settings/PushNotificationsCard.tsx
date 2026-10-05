@@ -1,4 +1,5 @@
 "use client";
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useEffect, useMemo, useState } from 'react';
 import { Bell, BellOff, Laptop, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
@@ -87,20 +88,8 @@ export function PushNotificationsCard() {
         : 'disabled';
 
   const updatePreferences = async (update: Partial<NotificationPreferences>) => {
-    if (!preferencesRef) return;
-    await runTransaction(firestore, async (transaction) => {
-      const snapshot = await transaction.get(preferencesRef);
-      const current = snapshot.exists() ? snapshot.data() as Partial<NotificationPreferences> : {};
-      transaction.set(preferencesRef, {
-        pushEnabled: update.pushEnabled ?? current.pushEnabled ?? DEFAULT_NOTIFICATION_PREFERENCES.pushEnabled,
-        categories: {
-          ...DEFAULT_NOTIFICATION_PREFERENCES.categories,
-          ...(current.categories || {}),
-          ...(update.categories || {}),
-        },
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-    });
+    if (!preferencesRef || !user) return;
+    await executeCrmAction(user, { kind: 'update_notification_preferences', patch: { ...(update.pushEnabled !== undefined ? { pushEnabled: update.pushEnabled } : {}), ...(update.categories ? { categories: update.categories } : {}) } });
   };
 
   const handleEnable = async () => {

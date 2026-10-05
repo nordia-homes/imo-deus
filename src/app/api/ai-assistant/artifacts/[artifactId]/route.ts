@@ -13,8 +13,10 @@ export async function GET(request: Request, route: { params: Promise<{ artifactI
     const data = doc.data();
     if (!data || data.ownerId !== ctx.uid || !(await referencesAllowed(ctx, data.accessRefs))) throw new CommunicationError('Fișierul nu este accesibil.', 404);
     const prefix = `agencies/${ctx.agencyId}/privateCommunications/assistant-artifacts/${ctx.uid}/`;
-    if (!String(data.storagePath).startsWith(prefix)) throw new CommunicationError('Fișier invalid.', 403);
+    const relativePath = String(data.storagePath).slice(prefix.length);
+    if (!String(data.storagePath).startsWith(prefix) || !relativePath.startsWith(id + '.') || !/^[a-f0-9-]+\.(pdf|zip|csv|docx|mp3|wav|mp4)$/.test(relativePath)) throw new CommunicationError('Fișier invalid.', 403);
     const [bytes] = await getStorage(ctx.adminAuth.app).bucket().file(data.storagePath).download();
-    return new NextResponse(new Uint8Array(bytes), { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': `attachment; filename="${String(data.fileName).replace(/[^a-zA-Z0-9._-]/g, '_')}"`, 'Cache-Control': 'private, no-store' } });
+    const types = ['audio/mpeg', 'audio/wav', 'video/mp4', 'application/pdf', 'application/zip', 'application/x-zip-compressed', 'text/csv', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    return new NextResponse(new Uint8Array(bytes), { headers: { 'Content-Type': types.includes(data.mimeType) ? data.mimeType : 'application/octet-stream', 'Content-Disposition': `attachment; filename="${String(data.fileName).replace(/[^a-zA-Z0-9._-]/g, '_')}"`, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } });
   } catch (error) { return assistantError(error); }
 }

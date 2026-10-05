@@ -15,9 +15,10 @@ import {
 import { AddPropertyDialog } from '../add-property-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAgency } from '@/context/AgencyContext';
-import { useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { useUser } from '@/firebase';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 import { useToast } from '@/hooks/use-toast';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+
 import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -31,7 +32,7 @@ import {
 
 export function PropertyHeader({ property, onTriggerAddViewing }: { property: Property; onTriggerAddViewing: () => void; }) {
     const { agencyId, agency } = useAgency();
-    const firestore = useFirestore();
+    const { user } = useUser();
     const { toast } = useToast();
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<'Rezervat' | 'Vândut' | null>(null);
@@ -48,21 +49,14 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
         }
     })();
 
-    const persistSimpleStatusChange = (newStatus: Property['status']) => {
-        if (!agencyId || !property) return;
-
-        if (agencyId && firestore) {
-            const propertyDocRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-            updateDocumentNonBlocking(propertyDocRef, {
-                status: newStatus,
-                statusUpdatedAt: new Date().toISOString()
-            });
-        }
-
-        toast({
-            title: "Status actualizat!",
-            description: `Proprietatea este acum: ${newStatus}.`,
-        });
+    const persistSimpleStatusChange = async (newStatus: Property['status']) => {
+        if (!agencyId || !newStatus || isStatusUpdating) return;
+        setIsStatusUpdating(true);
+        try {
+            await executeCrmAction(user, { kind: 'update_property_status', propertyId: property.id, status: newStatus, notes: '' });
+            toast({ title: 'Status actualizat!', description: 'Proprietatea este acum: ' + newStatus });
+        } catch (error) { toast({ variant: 'destructive', title: 'Actualizarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
+        finally { setIsStatusUpdating(false); }
     };
 
     const handleStatusChange = (newStatus: Property['status']) => {
@@ -80,39 +74,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
         setIsStatusUpdating(true);
 
         try {
-            const changedAt = new Date().toISOString();
-            const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-            const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
-            const nextPropertySnapshot: Property = {
-                ...property,
-                status: payload.nextStatus,
-                statusUpdatedAt: changedAt,
-                soldPrice: payload.nextStatus === 'Vândut' ? payload.soldPrice ?? null : property.soldPrice ?? null,
-            };
-
-            const statusEvent: PropertyStatusEvent = {
-                id: statusEventRef.id,
-                agencyId,
-                propertyId: property.id,
-                changedAt,
-                previousStatus: property.status ?? null,
-                nextStatus: payload.nextStatus,
-                reason: payload.reason,
-                reasonLabel: payload.reasonLabel,
-                agentMessage: payload.agentMessage,
-                soldPrice: payload.nextStatus === 'Vândut' ? payload.soldPrice ?? null : null,
-                marketAnalysisEligible: payload.nextStatus === 'Vândut',
-                propertySnapshot: nextPropertySnapshot,
-            };
-
-            const batch = writeBatch(firestore);
-            batch.update(propertyRef, {
-                status: payload.nextStatus,
-                statusUpdatedAt: changedAt,
-                soldPrice: payload.nextStatus === 'Vândut' ? payload.soldPrice ?? null : null,
-            });
-            batch.set(statusEventRef, statusEvent);
-            await batch.commit();
+            await executeCrmAction(user, { kind: 'update_property_status', propertyId: property.id, status: payload.nextStatus, ...(payload.reason !== 'agent_instruction' ? { reason: payload.reason } : {}), notes: payload.agentMessage, ...(payload.soldPrice ? { soldPrice: payload.soldPrice } : {}) });
 
             toast({
                 title: 'Status actualizat!',

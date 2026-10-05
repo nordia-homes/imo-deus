@@ -1,4 +1,5 @@
 "use client";
+import { AssistantExecutionControls } from '@/components/ai/AssistantExecutionControls';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAgency } from "@/context/AgencyContext";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
   AudioLines,
 } from "lucide-react";
 import { AssistantResultCard } from "@/components/ai/AssistantResultCard";
+import { AssistantUploadButton } from "@/components/ai/AssistantUploadButton";
 import {
   OwnerConsentDialog,
   loadOwnerConsent,
@@ -66,6 +68,8 @@ const stateText: Record<CharacterState, string> = {
 };
 export function JarvisVoice() {
   const { user, agencyId } = useAgency();
+  const uploadedFiles = useRef<Record<string, unknown>[]>([]);
+  useEffect(() => { uploadedFiles.current = []; }, [user?.uid, agencyId]);
   const [enabled, setEnabled] = useState(false),
     [open, setOpen] = useState(false),
     [state, setState] = useState<CharacterState>("IDLE"),
@@ -292,6 +296,7 @@ export function JarvisVoice() {
     if (!p || p.status !== "pending") return;
     pendingPlan.current = null;
     setState("WORKING");
+    if (!cancel) setPlan({ ...p, status: "running" });
     try {
       const response = await api("/api/ai-assistant/workspace", {
         kind: cancel ? "cancel" : "execute",
@@ -367,7 +372,7 @@ export function JarvisVoice() {
             {
               sessionId: session.current,
               requestId: crypto.randomUUID(),
-              prompt,
+              prompt: prompt + (uploadedFiles.current.length ? '\nFișiere încărcate privat: ' + JSON.stringify(uploadedFiles.current) : ''),
             },
             background.current,
           );
@@ -420,8 +425,8 @@ export function JarvisVoice() {
                 },
               }
             : {
-                kind: "query",
-                query: { ...card.query, cursor: card.nextCursor },
+                kind: card.timeline ? "timeline" : "query",
+                query: { ...(card.timeline || card.query), cursor: card.nextCursor },
               },
         );
         if (!opened.current || active !== voiceSession.current) return;
@@ -914,11 +919,14 @@ export function JarvisVoice() {
                         </div>
                       );
                     })}
+                    <AssistantExecutionControls plan={plan} user={user} resumeDisabled={state === "WORKING"} onPlan={next => { setPlan(next); pendingPlan.current = next.status === 'pending' ? next : null; }} onResume={() => void approve()} onError={setError} />
                     {plan.status !== "pending" && (
                       <p className="text-sm">
                         {plan.status === "completed"
                           ? "Execuție confirmată."
-                          : plan.status === "cancelled"
+                          : plan.status === "paused"
+                            ? "Plan pus în pauză."
+                            : plan.status === "cancelled"
                             ? "Plan anulat."
                             : "Verifică rezultatul în modul text înainte de repetare."}
                       </p>
@@ -1069,6 +1077,7 @@ export function JarvisVoice() {
                 <Keyboard className="mr-2 h-4 w-4" />
                 Înapoi la text
               </Button>
+              <AssistantUploadButton user={user} disabled={state === 'PROCESSING' || state === 'WORKING'} onError={setError} onUpload={file => { uploadedFiles.current = [...uploadedFiles.current.slice(-4), file]; setError('Fișier încărcat. Spune-i lui Jarvis ce să facă cu el.'); }} />
             </div>
             <small>Voce generată de AI</small>
           </footer>

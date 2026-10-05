@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { coreToolSchemas, actionToolSchemas } from './tool-schemas';
-import { actionSchema } from './contracts';
-const native = new Set(['query_records', 'read', 'read_related', 'read_field', 'search_properties', 'match_contact', 'match_property', 'filter_existing_matches', 'operation_contract', 'discover_tools', 'remember_preference', 'forget_preference', 'insights', 'resolve_datetime', ...Object.keys(actionToolSchemas)]);
+const native = new Set(['data_catalog', 'capability_status', 'query_records', 'read', 'read_related', 'read_field', 'search_properties', 'match_contact', 'match_property', 'filter_existing_matches', 'operation_contract', 'discover_tools', 'remember_preference', 'forget_preference', 'insights', 'resolve_datetime', ...Object.keys(actionToolSchemas)]);
 function strictSchema(schema: z.ZodTypeAny): Record<string, unknown> {
   const def = schema._def;
   if (schema instanceof z.ZodOptional || schema instanceof z.ZodDefault) return { anyOf: [strictSchema(def.innerType), { type: 'null' }] };
@@ -22,19 +21,34 @@ export function functionDefinition(name: string) {
   if (!definition) throw new Error('Unknown core tool');
   return { type: 'function', name, description: definition[2], strict: true, parameters: native.has(name) ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
 }
+function cleanArguments(value: unknown, schema: z.ZodTypeAny): unknown {
+  // Strict function schemas use null for omitted optional fields. Actual nullable
+  // domain fields must retain null (clear a field or remove an assignment).
+  if (value === null) return schema.isNullable() ? null : schema.isOptional() ? undefined : null;
+  if (schema instanceof z.ZodOptional || schema instanceof z.ZodDefault || schema instanceof z.ZodNullable) return cleanArguments(value, schema._def.innerType);
+  if (schema instanceof z.ZodEffects) return cleanArguments(value, schema._def.schema);
+  if (schema instanceof z.ZodDiscriminatedUnion && value && typeof value === 'object') {
+    const discriminator = (value as Record<string, unknown>)[schema.discriminator];
+    const selected = typeof discriminator === 'string' ? schema.optionsMap.get(discriminator) : undefined;
+    return selected ? cleanArguments(value, selected) : value;
+  }
+  if (schema instanceof z.ZodObject && value && typeof value === 'object' && !Array.isArray(value)) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, schema.shape[key] ? cleanArguments(item, schema.shape[key]) : item]).filter(([, item]) => item !== undefined));
+  }
+  if (schema instanceof z.ZodArray && Array.isArray(value)) return value.map(item => cleanArguments(item, schema.element));
+  if (schema instanceof z.ZodRecord && value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, cleanArguments(item, schema._def.valueType)]));
+  return value;
+}
 export function functionPayload(name: string, args: string) {
   const parsed = JSON.parse(args);
   // Recorded compatibility fixtures only; native tool definitions reject payload wrappers.
   if (typeof parsed?.payload === 'string' && Object.keys(parsed).length === 1) {
-    const payload=JSON.parse(parsed.payload);
-    if(name==='propose_actions' && Array.isArray(payload.actions)) payload.actions=payload.actions.map((action:Record<string,unknown>)=>{
-      const schema=actionSchema.options.find(s=>s.shape.kind.value===action.kind);
-      return schema?Object.fromEntries(Object.entries(action).filter(([key,value])=>!(value===null&&(schema.shape as Record<string,z.ZodTypeAny>)[key]?.isOptional()))):action;
-    });
-    return payload;
+    const payload = JSON.parse(parsed.payload);
+    const definition = coreToolSchemas[name as keyof typeof coreToolSchemas] || actionToolSchemas[name];
+    return definition ? cleanArguments(payload, definition[0]) : payload;
   }
   if (!native.has(name)) throw new Error('Instrumentul necesită payload JSON.');
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Argumente invalide.');
-  const clean = (v: unknown): any => Array.isArray(v) ? v.map(clean) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).filter(([, value]) => value !== null).map(([key, value]) => [key, clean(value)])) : v;
-  return clean(parsed);
+  const definition = coreToolSchemas[name as keyof typeof coreToolSchemas] || actionToolSchemas[name];
+  return cleanArguments(parsed, definition[0]);
 }

@@ -1,4 +1,5 @@
 "use client";
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useState, ChangeEvent, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -32,7 +33,7 @@ import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useStorage } from '@/firebase';
-import { collection, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
 import type { FacebookCloudConnection, Property, PropertyStatusEvent, PropertyUploadedVideo } from '@/lib/types';
@@ -1543,7 +1544,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               uploadedVideo = {
                   url: await getDownloadURL(videoRef),
                   fileName: videoSource.name,
-                  mimeType: videoSource.type,
+                  mimeType: videoSource.type || 'video/mp4',
                   sizeBytes: videoSource.size,
                   uploadedAt: new Date().toISOString(),
                   uploadedByUid: user.uid,
@@ -1659,74 +1660,17 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               locationProfile: nextLocationProfile,
           };
       
+          const { status, agentId, agentName, agent, soldPrice, portalProfiles, ...propertyInput } = propertyDataToSave;
+          const editableProperty = { ...propertyInput, portalProfiles: { imobiliare: { locationId: nextPortalProfile.locationId, locationLabel: nextPortalProfile.locationLabel } } };
+          const statusChange = { status, notes: statusPayload?.agentMessage || '', ...(statusPayload?.reason && statusPayload.reason !== 'agent_instruction' ? { reason: statusPayload.reason } : {}), ...(soldPrice ? { soldPrice } : {}) };
           if (isEditMode) {
-              const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', propertyData!.id);
-              if (statusPayload && (statusPayload.nextStatus === 'Rezervat' || statusPayload.nextStatus === 'Vândut')) {
-                  const changedAt = new Date().toISOString();
-                  const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
-                  const statusEvent: PropertyStatusEvent = {
-                      id: statusEventRef.id,
-                      agencyId,
-                      propertyId: propertyData!.id,
-                      changedAt,
-                      previousStatus: propertyData?.status ?? null,
-                      nextStatus: statusPayload.nextStatus,
-                      reason: statusPayload.reason,
-                      reasonLabel: statusPayload.reasonLabel,
-                      agentMessage: statusPayload.agentMessage,
-                      soldPrice: statusPayload.nextStatus === 'Vândut' ? statusPayload.soldPrice ?? null : null,
-                      marketAnalysisEligible: statusPayload.nextStatus === 'Vândut',
-                      propertySnapshot: {
-                        ...propertyDataToSave,
-                        id: propertyData!.id,
-                        createdAt: propertyData?.createdAt,
-                        statusUpdatedAt: changedAt,
-                      } as Property,
-                  };
-
-                  const batch = writeBatch(firestore);
-                  batch.update(propertyRef, { ...propertyDataToSave, statusUpdatedAt: changedAt });
-                  batch.set(statusEventRef, statusEvent);
-                  await batch.commit();
-              } else {
-                  await updateDoc(propertyRef, propertyDataToSave);
-              }
-              toast({ title: 'Proprietate actualizată!', description: `${values.title} a fost actualizată cu succes.` });
+              await executeCrmAction(user, { kind: 'update_property', propertyId, patch: editableProperty, agentId, expectedUpdatedAt: propertyData?.updatedAt || null, ...(status !== propertyData?.status || statusPayload ? { statusChange } : {}) });
+              toast({ title: 'Proprietate actualizată!', description: values.title + ' a fost actualizată cu succes.' });
           } else {
-              const newPropertyRef = doc(firestore, 'agencies', agencyId, 'properties', propertyId);
-              const createdAt = new Date().toISOString();
-              if (statusPayload && (statusPayload.nextStatus === 'Rezervat' || statusPayload.nextStatus === 'Vândut')) {
-                  const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
-                  const statusEvent: PropertyStatusEvent = {
-                      id: statusEventRef.id,
-                      agencyId,
-                      propertyId: newPropertyRef.id,
-                      changedAt: createdAt,
-                      previousStatus: null,
-                      nextStatus: statusPayload.nextStatus,
-                      reason: statusPayload.reason,
-                      reasonLabel: statusPayload.reasonLabel,
-                      agentMessage: statusPayload.agentMessage,
-                      soldPrice: statusPayload.nextStatus === 'Vândut' ? statusPayload.soldPrice ?? null : null,
-                      marketAnalysisEligible: statusPayload.nextStatus === 'Vândut',
-                      propertySnapshot: {
-                        ...propertyDataToSave,
-                        id: newPropertyRef.id,
-                        createdAt,
-                        statusUpdatedAt: createdAt,
-                      } as Property,
-                  };
-
-                  const batch = writeBatch(firestore);
-                  batch.set(newPropertyRef, { ...propertyDataToSave, id: newPropertyRef.id, createdAt, statusUpdatedAt: createdAt });
-                  batch.set(statusEventRef, statusEvent);
-                  await batch.commit();
-              } else {
-                  await setDoc(newPropertyRef, { ...propertyDataToSave, id: newPropertyRef.id, createdAt });
-              }
-              toast({ title: 'Proprietate adăugată!', description: `${values.title} a fost adăugată cu succes.` });
+              await executeCrmAction(user, { kind: 'create_property', propertyId, property: editableProperty, agentId, statusChange });
+              toast({ title: 'Proprietate adăugată!', description: values.title + ' a fost adăugată cu succes.' });
           }
-          
+
           onClose();
 
       } catch (error: any) {

@@ -1,16 +1,18 @@
+import { MAX_PLAN_ACTIONS } from '@/lib/ai-assistant/plan-limits';
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
 import { assistantContext, collectionFor, readResource } from '@/lib/ai-assistant/access';
 import { idSchema, searchSchema, readSchema, actionSchema, queryRecordsSchema } from '@/lib/ai-assistant/contracts';
 import { queryRecords } from '@/lib/ai-assistant/record-query';
 import { searchProperties } from '@/lib/ai-assistant/search';
-import { chatTurn, getPlan, runPlan, inspectPlan, sessionHistory, saveAssistantMessage } from '@/lib/ai-assistant/workspace';
+import { chatTurn, getPlan, runPlan, controlPlan, inspectPlan, sessionHistory, saveAssistantMessage } from '@/lib/ai-assistant/workspace';
 import { operationCatalog } from '@/lib/ai-assistant/operations';
 import { readBoundedText } from '@/lib/romimo/transport';
 import { assistantError } from '@/lib/ai-assistant/http-error';
 import { automationReadiness } from '@/lib/ai-assistant/readiness';
 import { enqueueTurn, enqueuePlan, readJob, drainAgentJobs } from '@/lib/ai-assistant/jobs';
 import { autonomyPolicy, setAutonomy } from '@/lib/ai-assistant/autonomy';
+import { timelineSchema, readTimeline } from '@/lib/ai-assistant/timeline';
 
 export const runtime = 'nodejs';
 export const maxDuration = 180;
@@ -18,12 +20,15 @@ const schema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('chat'), sessionId: z.string().uuid(), requestId: z.string().uuid(), prompt: z.string().trim().min(1).max(6000) }).strict(),
   z.object({ kind: z.literal('start'), sessionId: z.string().uuid(), requestId: z.string().uuid(), prompt: z.string().trim().min(1).max(6000) }).strict(),
   z.object({ kind: z.literal('search'), query: searchSchema, sessionId: z.string().uuid().optional(), requestId: z.string().uuid().optional() }).strict(),
-  z.object({ kind: z.literal('prepare'), sessionId: z.string().uuid(), requestId: z.string().uuid(), actions: z.array(actionSchema).min(1).max(12) }).strict(),
+  z.object({ kind: z.literal('prepare'), sessionId: z.string().uuid(), requestId: z.string().uuid(), actions: z.array(actionSchema).min(1).max(MAX_PLAN_ACTIONS) }).strict(),
   z.object({ kind: z.literal('read'), query: readSchema }).strict(),
   z.object({ kind: z.literal('query'), query: queryRecordsSchema }).strict(),
+  z.object({ kind: z.literal('timeline'), query: timelineSchema }).strict(),
   z.object({ kind: z.literal('execute'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('execute_background'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('cancel'), planId: z.string().uuid() }).strict(),
+  z.object({ kind: z.literal('pause'), planId: z.string().uuid() }).strict(),
+  z.object({ kind: z.literal('resume'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('inspect'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('autonomy'), enabled: z.boolean() }).strict(),
 ]);
@@ -61,8 +66,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const ctx = await assistantContext(request);
-    const text = await readBoundedText(request.body, 40000);
-    if (text.length > 40000) return NextResponse.json({ error: 'Cererea este prea mare.' }, { status: 413 });
+    const text = await readBoundedText(request.body, 128000);
+    if (text.length > 128000) return NextResponse.json({ error: 'Cererea este prea mare.' }, { status: 413 });
     const input = schema.parse(JSON.parse(text));
     let result: unknown;
     if (input.kind === 'autonomy') result = await setAutonomy(ctx, input.enabled);
@@ -79,7 +84,9 @@ export async function POST(request: NextRequest) {
       }
     } else if (input.kind === 'read') result = await readResource(ctx, input.query);
     else if (input.kind === 'query') result = await queryRecords(ctx, input.query);
+    else if (input.kind === 'timeline') result = await readTimeline(ctx, input.query);
     else if (input.kind === 'inspect') result = { plan: await inspectPlan(ctx, input.planId) };
+    else if (input.kind === 'pause' || input.kind === 'resume') result = { plan: await controlPlan(ctx, input.planId, input.kind) };
     else result = { plan: await runPlan(ctx, input.planId, input.kind === 'cancel') };
     return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return assistantError(error); }

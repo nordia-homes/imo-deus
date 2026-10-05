@@ -7,10 +7,11 @@ import { VERSIONS } from './models';
 import type { AssistantContext } from './access';
 import type { AgentOptions } from './planner';
 import type { ToolResult } from './tool-dispatch';
+import { capabilityScore } from './capability-discovery';
 export type RiskLevel = 'READ' | 'SAFE_WRITE' | 'SENSITIVE' | 'CRITICAL';
 export type ToolDefinition = { name: string; version: string; description: string; inputSchema: z.ZodTypeAny; outputSchema: z.ZodTypeAny; handler: (ctx: AssistantContext, payload: unknown, prompt: string, options: AgentOptions) => Promise<ToolResult>; permissions: string[]; riskLevel: RiskLevel; timeoutMs: number; retryPolicy: { maxAttempts: number; retryable: string[] }; idempotencyPolicy: string; auditPolicy: string };
 const objectOutput = z.record(z.unknown());
-const adminOnly = new Set(['assign_record', 'storia_unpublish', 'meta_campaign_publish', 'tiktok_capabilities', 'sales_settings_update']);
+const adminOnly = new Set(['update_agency', 'contract_template_action', 'storia_unpublish', 'meta_campaign_publish', 'sales_settings_update', 'agency_agent_create', 'agency_agent_update', 'agency_agent_remove', 'billing_change_plan', 'billing_change_seats', 'billing_checkout', 'billing_portal', 'social_create', 'social_publish', 'social_comment', 'social_reply', 'social_like', 'social_remove', 'social_destination_remove', 'whatsapp_template_create', 'tiktok_ads_resources', 'tiktok_ads_spend_authorization']);
 
 const operationInput = z.object({ operation: idSchema, params: z.record(z.string().max(180)).default({}), query: z.record(z.string().max(2000)).default({}), body: z.record(z.unknown()).default({}) }).strict();
 
@@ -18,7 +19,8 @@ export const coreToolNames = [...Object.keys(core), ...Object.keys(actionToolSch
 // Schemas are disclosed on demand, rather than injecting all CRM contracts each turn.
 function jsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
   const def = schema._def;
-  if (schema instanceof z.ZodOptional || schema instanceof z.ZodDefault || schema instanceof z.ZodNullable) return jsonSchema(def.innerType);
+  if (schema instanceof z.ZodNullable) return { anyOf: [jsonSchema(def.innerType), { type: 'null' }] };
+  if (schema instanceof z.ZodOptional || schema instanceof z.ZodDefault) return jsonSchema(def.innerType);
   if (schema instanceof z.ZodEffects) return jsonSchema(def.schema);
   if (schema instanceof z.ZodObject) {
     const shape = schema.shape;
@@ -56,16 +58,20 @@ export const toolRegistry: ReadonlyMap<string, ToolDefinition> = new Map([
 export function requireTool(name: string, role: string) {
   const flags = featureFlags();
   if (name === 'remember_preference' && !flags.memory) throw new Error('Memoria este dezactivată.');
+  if (['create_automation', 'update_automation'].includes(name) && !flags.automations) throw new Error('Automatizările sunt dezactivate.');
   if ((name === 'delegate_read' && !flags.subagents) || (name === 'insights' && !flags.proactiveInsights) || (name.startsWith('mcp_') && !flags.mcp)) throw new Error('Capabilitatea este dezactivată.');
   const tool = toolRegistry.get(name);
   if (!tool || !tool.permissions.includes(role) || (process.env.JARVIS_DISABLED_TOOLS || '').split(',').map(x => x.trim()).includes(name)) throw new Error('Tool indisponibil sau neautorizat.');
   return tool;
 }
 export function discoverTools(category = '', cursor = 0, limit = 12, role = 'agent') {
-  const catalog = operationCatalog().filter(op => { try { requireTool(op.id, role); return !category || op.id.includes(category); } catch { return false; } });
+  const catalog = [...operationCatalog(), ...Object.keys(actionToolSchemas).map(id => ({ id, method: 'ACTION', readOnly: false, description: `Acțiune CRM ${id.replaceAll('_', ' ')}`, params: [], external: false }))]
+    .filter(op => { try { requireTool(op.id, role); return true; } catch { return false; } })
+    .map(op => ({ ...op, score: category ? capabilityScore(category, op.id, op.description) : 0 }))
+    .filter(op => !category || op.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
   return { tools: catalog.slice(cursor, cursor + limit), nextCursor: cursor + limit < catalog.length ? cursor + limit : null, total: catalog.length };
 }
 export function actionRisk(action: z.infer<typeof actionSchema>): RiskLevel {
   if (action.kind === 'update_property' && action.patch.price !== undefined) return 'SENSITIVE';
-  return action.kind === 'existing_operation' ? toolRegistry.get(action.operation)?.riskLevel || 'SENSITIVE' : ['delete_task', 'delete_viewing'].includes(action.kind) ? 'CRITICAL' : ['update_property_status', 'set_property_featured', 'archive_contact', 'assign_record', 'activate_property', 'create_automation'].includes(action.kind) ? 'SENSITIVE' : 'SAFE_WRITE';
+  return action.kind === 'existing_operation' ? toolRegistry.get(action.operation)?.riskLevel || 'SENSITIVE' : ['delete_task', 'delete_viewing', 'delete_offer'].includes(action.kind) ? 'CRITICAL' : ['create_property', 'update_property', 'update_property_status', 'set_property_featured', 'archive_contact', 'assign_record', 'activate_property', 'create_automation', 'update_automation', 'update_agency', 'portal_action', 'update_prospect', 'create_sale', 'update_offer'].includes(action.kind) ? 'SENSITIVE' : 'SAFE_WRITE';
 }

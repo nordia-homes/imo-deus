@@ -1,5 +1,6 @@
 
 'use client';
+import { createManualViewing } from '@/lib/crm/client-actions';
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
@@ -167,7 +168,7 @@ export default function PropertyDetailPage() {
             agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
             createdAt: new Date().toISOString(),
         };
-        addDocumentNonBlocking(viewingsCollection, viewingToAdd);
+        await createManualViewing(user, viewingToAdd);
         toast({ title: "Vizionare programată!" });
     };
 
@@ -392,5 +393,3 @@ export default function PropertyDetailPage() {
         </div>
     );
 }
-
-    

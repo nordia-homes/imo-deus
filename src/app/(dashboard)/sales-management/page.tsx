@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -406,7 +407,7 @@ export default function SalesManagementPage() {
     setCreatingPropertyId(property.id);
     try {
       const sale = createSaleFromProperty(property, agencyId, { id: user.uid, name: userProfile?.name || user.displayName || 'Agent' });
-      await setDoc(doc(firestore, 'agencies', agencyId, 'sales', property.id), sale);
+      await executeCrmAction(user, { kind: 'create_sale', propertyId: property.id });
       toast({ title: 'Dosarul de vânzare a fost creat', description: 'Completează cumpărătorul și documentele necesare.' });
       setSelectedSale(null);
       setReturnToComposerAfterSetup(false);

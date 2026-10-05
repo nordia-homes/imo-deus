@@ -138,6 +138,9 @@ export function AssistantResultCard({
           {total} {card.summary?.label || "rezultate"}
         </span>
       </header>
+      {card.note && (
+        <p className="border-b bg-amber-50/70 px-5 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{card.note}</p>
+      )}
       {card.summary && !compact && (
         <div className="flex flex-wrap items-center gap-5 border-b bg-slate-50/60 px-6 py-5 dark:bg-slate-900/30">
           <span className="text-5xl font-semibold tracking-tighter text-slate-900 dark:text-white">
@@ -497,7 +500,7 @@ export function AssistantResultCard({
           </Button>
         )}
         <div className="mt-4 flex flex-wrap gap-2">
-          {card.nextCursor && (card.search || card.query) && (
+          {card.nextCursor && (card.search || card.query || card.timeline) && (
             <Button
               variant="outline"
               size="sm"

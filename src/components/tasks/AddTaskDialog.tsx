@@ -47,7 +47,7 @@ const PREDEFINED_TASKS = [
 
 type TaskFormProps = {
     onClose: () => void;
-    onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
+    onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void | Promise<void>;
     contacts: ContactStub[];
     property?: Property | null;
     properties: Property[];
@@ -100,7 +100,7 @@ function TaskForm({ onClose, onAddTask, contacts, properties, property = null, i
     { value: 90, label: '1.5 ore' },
   ];
 
-  function onSubmit(values: z.infer<typeof taskSchema>) {
+  async function onSubmit(values: z.infer<typeof taskSchema>) {
     const selectedContact = contacts.find(c => c.id === values.contactId);
     const selectedProperty = availableProperties.find(item => item.id === values.propertyId);
     const participantName = values.participantName?.trim();
@@ -123,9 +123,8 @@ function TaskForm({ onClose, onAddTask, contacts, properties, property = null, i
         ...(participantPhone ? { participantPhone } : {}),
     };
 
-    onAddTask(taskData);
-
-    onClose();
+    try { await onAddTask(taskData); onClose(); }
+    catch (error) { form.setError('root', { message: error instanceof Error ? error.message : 'Task-ul nu a fost salvat.' }); }
   }
 
   return (
@@ -290,7 +289,8 @@ function TaskForm({ onClose, onAddTask, contacts, properties, property = null, i
         <DialogFooter className={cn("agentfinder-add-task-dialog__footer shrink-0 border-t p-3 md:py-3 md:px-6 shadow-md", isMobile ? "bg-[#0F1E33] border-white/10" : "bg-background")}>
             <div className="flex justify-end gap-2 w-full">
               <Button type="button" variant="ghost" onClick={onClose} className={cn(isMobile && "text-white/80 hover:bg-white/10 hover:text-white/90")}>Anulează</Button>
-              <Button type="submit">Salvează Task</Button>
+              {form.formState.errors.root && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
+              <Button type="submit" disabled={form.formState.isSubmitting}>Salvează Task</Button>
             </div>
         </DialogFooter>
       </form>
@@ -299,7 +299,7 @@ function TaskForm({ onClose, onAddTask, contacts, properties, property = null, i
 }
 
 type AddTaskDialogProps = {
-    onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void;
+    onAddTask: (task: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => void | Promise<void>;
     contacts: ContactStub[];
     properties?: Property[];
     property?: Property | null;

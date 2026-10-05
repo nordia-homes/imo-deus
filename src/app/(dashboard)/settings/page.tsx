@@ -1,4 +1,6 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
+
 
 import { useEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -209,7 +211,7 @@ export default function SettingsPage() {
       updatedAt: new Date().toISOString(),
     };
 
-    await setDoc(publicAgentProfileRef, nextProfile, { merge: true });
+    await executeCrmAction(user, { kind: 'update_profile', patch: { name: nextProfile.name, email: nextProfile.email, phone: nextProfile.phone, photoUrl: nextProfile.photoUrl } });
   };
   
   const handleProfileSave = async (values: ProfileValues, options?: { silent?: boolean }) => {
@@ -223,7 +225,7 @@ export default function SettingsPage() {
     }
 
     const userDocRef = doc(firestore, 'users', user.uid);
-    await updateDoc(userDocRef, { ...values, email: normalizedEmail });
+    await executeCrmAction(user, { kind: 'update_profile', patch: { ...values, email: normalizedEmail } });
 
     if (user.displayName !== values.name) {
       await updateProfile(user, { displayName: values.name });
@@ -249,11 +251,7 @@ export default function SettingsPage() {
       const credential = EmailAuthProvider.credential(user.email || '', reauthPassword);
       await reauthenticateWithCredential(user, credential);
       await updateEmail(user, pendingEmailValues.email);
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        name: pendingEmailValues.name,
-        email: pendingEmailValues.email,
-        phone: pendingEmailValues.phone || '',
-      });
+      await executeCrmAction(user, { kind: 'update_profile', patch: { name: pendingEmailValues.name, email: pendingEmailValues.email, phone: pendingEmailValues.phone || '' } });
       await syncPublicAgentProfile({
         name: pendingEmailValues.name,
         email: pendingEmailValues.email,
@@ -334,7 +332,7 @@ export default function SettingsPage() {
         await updateProfile(user, { photoURL });
 
         const userDocRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userDocRef, { photoUrl: photoURL });
+        await executeCrmAction(user, { kind: 'update_profile', patch: { photoUrl: photoURL } });
         await syncPublicAgentProfile({ photoUrl: photoURL });
         setProfilePhotoPreview(photoURL);
 
@@ -358,7 +356,7 @@ export default function SettingsPage() {
       await uploadBytes(logoRef, file);
       const logoURL = await getDownloadURL(logoRef);
       agencyForm.setValue('logoUrl', logoURL, { shouldDirty: true, shouldValidate: true });
-      await updateDoc(doc(firestore, 'agencies', agency.id), { logoUrl: logoURL });
+      await executeCrmAction(user, { kind: 'update_agency', patch: { logoUrl: logoURL } });
       toast({ title: 'Logo actualizat', description: 'Logo-ul agenției a fost salvat.' });
     } catch (error) {
       console.error('Logo upload failed:', error);
@@ -409,7 +407,8 @@ export default function SettingsPage() {
 
     try {
       const agencyDocRef = doc(firestore, 'agencies', agency.id);
-      await updateDoc(agencyDocRef, nextValues);
+      const { customDomain: _domain, ...editableValues } = normalizedValues;
+      await executeCrmAction(user, { kind: 'update_agency', patch: editableValues });
 
       if (!options?.silent) {
         toast({ title: 'Setări salvate!', description: 'Setările agenției tale au fost actualizate.' });

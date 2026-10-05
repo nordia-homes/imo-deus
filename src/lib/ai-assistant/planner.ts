@@ -1,3 +1,4 @@
+import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { AssistantAction, AssistantCard, AssistantMessage, AccessReference } from './contracts';
@@ -9,6 +10,7 @@ import { AgentBudget, BudgetExceeded, requestReservation, type InputReservation 
 import { actionToolSchemas } from './tool-schemas';
 import { requireTool, coreToolNames, toolRegistry } from './registry';
 import { compressedResult, contextMessages, relevantMemory } from './context';
+import { selectActionTools } from './capability-discovery';
 import { usageRecord, type UsageRecord, type AgentEvent } from './telemetry';
 import { buildInstructions } from './policy';
 import { explicitInstants } from './temporal-policy';
@@ -32,7 +34,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const readiness = await automationReadiness(ctx);
   const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: options.allowedTools, summary: options.summary });
   const contextHint = (prompt + ' ' + history.slice(-2).map(m=>m.text).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas,name) || /viewing/.test(name) && /vizionar|vizionare|calendar|program/.test(contextHint) || /contact|preferences|interaction|offer|recommend/.test(name) && /client|contact|lead|ofert|telefon|cumparator/.test(contextHint) || /property|owner/.test(name) && /propriet|apartament|casa|teren|rezerv|status|portofol|anunt/.test(contextHint) || /task/.test(name) && /sarcin|task|follow.?up/.test(contextHint) || /automation/.test(name) && /automat|recurent/.test(contextHint) || name==='assign_record' && /atribui|agent/.test(contextHint);
+  // Always keep discovery + propose_actions. Limit native schemas, particularly
+  // the full property form, so an ordinary question cannot exhaust the budget.
+  const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
+  const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
   const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
@@ -96,7 +101,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           finally { if (timer) clearTimeout(timer); }
           definition.outputSchema.parse(response.data);
           if (name === 'resolve_datetime' && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
-          if (actions.length + response.actions.length > 12) throw new Error('Planul depășește 12 acțiuni.');
+          if (actions.length + response.actions.length > MAX_PLAN_ACTIONS) throw new Error(`Planul depășește ${MAX_PLAN_ACTIONS} acțiuni.`);
           cards.push(...response.cards); actions.push(...response.actions); accessRefs.push(...response.refs);
           if (response.childMetrics) { metrics.models.push(...response.childMetrics.models); metrics.tools.push(...response.childMetrics.tools as typeof metrics.tools); }
           data = response.data;

@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction, manualTaskDetails } from '@/lib/crm/client-actions';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from "@/firebase";
@@ -83,7 +84,7 @@ function TaskColumn({
 }
 
 export function TasksBoard() {
-    const { agencyId } = useAgency();
+    const { agencyId, user } = useAgency();
     const { toast } = useToast();
     const firestore = useFirestore();
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -144,22 +145,22 @@ export function TasksBoard() {
 
     }, [tasks]);
 
-    const handleToggleTask = (task: Task) => {
+    const handleToggleTask = async (task: Task) => {
         if (!agencyId) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const nextStatus = task.status === 'completed' ? 'open' : 'completed';
-        updateDocumentNonBlocking(taskRef, { status: nextStatus });
+        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, status: nextStatus }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
         toast({
             title: nextStatus === 'completed' ? 'Task finalizat' : 'Task redeschis',
             description: task.description,
         });
     };
 
-    const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
+    const handleUpdateTask = async (updatedTask: Omit<Task, 'status'>) => {
         if (!agencyId || !editingTask) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
-        updateDocumentNonBlocking(taskRef, dataToUpdate);
+        try { await executeCrmAction(user, { kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
         toast({
             title: "Task actualizat!",
             description: updatedTask.description,

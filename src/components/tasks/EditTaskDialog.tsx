@@ -37,7 +37,7 @@ type EditTaskDialogProps = {
   task: Task | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateTask: (task: Omit<Task, 'status'>) => void;
+  onUpdateTask: (task: Omit<Task, 'status'>) => void | Promise<void>;
   contacts: ContactStub[];
   properties?: Property[];
 };
@@ -87,7 +87,7 @@ export function EditTaskDialog({
     { value: 90, label: '1.5 ore' },
   ];
 
-  function onSubmit(values: z.infer<typeof taskSchema>) {
+  async function onSubmit(values: z.infer<typeof taskSchema>) {
     if (!task) return;
 
     const contactId = !values.contactId || values.contactId === 'unassigned' ? null : values.contactId;
@@ -99,7 +99,7 @@ export function EditTaskDialog({
     const participantName = values.participantName?.trim() || null;
     const participantPhone = values.participantPhone?.trim() || null;
 
-    onUpdateTask({
+    try { await onUpdateTask({
       id: task.id,
       description: values.description,
       dueDate: format(values.dueDate, 'yyyy-MM-dd'),
@@ -118,6 +118,7 @@ export function EditTaskDialog({
     });
 
     onOpenChange(false);
+    } catch (error) { form.setError('root', { message: error instanceof Error ? error.message : 'Task-ul nu a fost salvat.' }); }
   }
 
   if (!isOpen || !task) return null;
@@ -311,7 +312,8 @@ export function EditTaskDialog({
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Anulează</Button>
-              <Button type="submit">Salvează Modificări</Button>
+              {form.formState.errors.root && <p role="alert" className="text-sm text-destructive">{form.formState.errors.root.message}</p>}
+              <Button type="submit" disabled={form.formState.isSubmitting}>Salvează Modificări</Button>
             </DialogFooter>
           </form>
         </Form>

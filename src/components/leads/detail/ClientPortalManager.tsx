@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useState } from 'react';
 import { useFirestore, useUser, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -48,42 +49,12 @@ export function ClientPortalManager({ contact, agency }: ClientPortalManagerProp
     ? `https://wa.me/${sanitizedPhone}?text=${encodeURIComponent(whatsappMessage)}`
     : '';
 
-  const handlePortalAction = (action: 'activate' | 'regenerate' | 'deactivate') => {
-    if (!user) return;
+  const handlePortalAction = async (action: 'activate' | 'regenerate' | 'deactivate') => {
+    if (!user || !contact) return;
     setIsLoading(true);
-
-    const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', contact.id);
-
-    if (action === 'activate' || action === 'regenerate') {
-      if (action === 'regenerate' && contact.portalId) {
-        const oldPortalRef = doc(firestore, 'portals', contact.portalId);
-        deleteDocumentNonBlocking(oldPortalRef);
-      }
-
-      const newPortalToken = crypto.randomUUID();
-      const newPortalRef = doc(firestore, 'portals', newPortalToken);
-      
-      const portalData = {
-        contactId: contact.id,
-        agencyId: agency.id,
-        contactName: contact.name,
-        agentName: user.displayName || user.email,
-        createdAt: new Date().toISOString(),
-      };
-      
-      setDocumentNonBlocking(newPortalRef, portalData, {}); 
-      updateDocumentNonBlocking(contactRef, { portalId: newPortalToken });
-      
-      toast({ title: 'Portal activat!', description: 'Linkul unic pentru client a fost generat.' });
-
-    } else if (action === 'deactivate' && contact.portalId) {
-      const portalRef = doc(firestore, 'portals', contact.portalId);
-      deleteDocumentNonBlocking(portalRef);
-      updateDocumentNonBlocking(contactRef, { portalId: null });
-      toast({ title: 'Portal dezactivat!', variant: 'destructive' });
-    }
-    
-    setIsLoading(false);
+    try { await executeCrmAction(user, { kind: 'portal_action', contactId: contact.id, action }); toast({ title: action === 'deactivate' ? 'Portal dezactivat!' : 'Portal activat!' }); }
+    catch (error) { toast({ variant: 'destructive', title: 'Portalul nu a fost actualizat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
+    finally { setIsLoading(false); }
   };
 
   const handleCopy = () => {

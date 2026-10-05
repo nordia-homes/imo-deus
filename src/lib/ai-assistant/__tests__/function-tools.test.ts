@@ -3,6 +3,11 @@ import { functionDefinition, functionPayload } from '../function-tools';
 import { coreToolSchemas } from '../tool-schemas';
 import { explicitInstants, validateActionDates } from '../temporal-policy';
 describe('strict native Responses tool contracts', () => {
+  it('preserves intentional nulls for unassignment and nested field clearing', () => {
+    expect(functionPayload('assign_record', JSON.stringify({ resource: 'contacts', id: 'contact1', agentId: null }))).toHaveProperty('agentId', null);
+    expect(functionPayload('update_property', JSON.stringify({ propertyId: 'property1', patch: { ownerId: null, notes: 'Actualizat' }, agentId: null }))).toMatchObject({ patch: { ownerId: null }, agentId: null });
+    expect(functionPayload('propose_actions', JSON.stringify({ payload: JSON.stringify({ actions: [{ kind: 'update_property', propertyId: 'property1', patch: { ownerId: null }, agentId: null }] }) }))).toMatchObject({ actions: [{ patch: { ownerId: null }, agentId: null }] });
+  });
   it('exposes explicit search filters and optional nullable fields without arbitrary properties', () => { const tool = functionDefinition('search_properties'); const schema = tool.parameters as any; expect(schema.additionalProperties).toBe(false); expect(schema.required).toContain('priceMax'); expect(schema.properties.priceMax.anyOf).toEqual([{ type: 'number' }, { type: 'null' }]); expect(schema.properties.zone).toBeDefined(); expect(schema.properties).not.toHaveProperty('agencyId'); });
   it('normalizes native nullable fields and applies server defaults', () => { const payload = functionPayload('search_properties', JSON.stringify({ source: null, zone: 'Titan', priceMax: 130000, rooms: null })); expect(coreToolSchemas.search_properties[0].parse(payload)).toMatchObject({ source: 'owners', zone: 'Titan', priceMax: 130000, limit: 5 }); });
   it('preserves complex action validation behind the strict payload wrapper', () => { const tool = functionDefinition('propose_actions'); expect((tool.parameters as any).properties.payload.type).toBe('string'); expect(() => coreToolSchemas.propose_actions[0].parse(functionPayload('propose_actions', JSON.stringify({ payload: JSON.stringify({ actions: [{ kind: 'grant_whatsapp_consent' }] }) })))).toThrow(); });

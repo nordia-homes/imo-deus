@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction, manualTaskDetails } from '@/lib/crm/client-actions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TasksBoard } from "@/components/tasks/TasksBoard";
 import { TasksList } from "@/components/tasks/TasksList";
@@ -62,7 +63,7 @@ export default function TasksPage() {
         };
     }, [tasks]);
 
-    const handleAddTask = (newTask: Omit<Task, 'id' | 'status'>) => {
+    const handleAddTask = async (newTask: Omit<Task, 'id' | 'status'>) => {
         if (!agencyId) return;
         const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
         const taskToAdd = {
@@ -71,7 +72,8 @@ export default function TasksPage() {
             ...(user?.uid ? { agentId: user.uid } : {}),
             ...(user?.displayName || user?.email ? { agentName: user.displayName || user.email } : {}),
         };
-        addDocumentNonBlocking(tasksCollection, taskToAdd);
+        try { await executeCrmAction(user, { kind: 'create_task', ...manualTaskDetails(newTask), description: newTask.description, dueDate: newTask.dueDate, ...(newTask.contactId ? { contactId: newTask.contactId } : {}), ...(newTask.propertyId ? { propertyId: newTask.propertyId } : {}) }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Task-ul nu a fost salvat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
          toast({
             title: "Task adăugat!",
             description: `Task-ul "${newTask.description}" a fost adăugat.`,

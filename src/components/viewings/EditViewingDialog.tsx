@@ -47,7 +47,7 @@ type EditViewingDialogProps = {
     viewing: Viewing | null;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onUpdateViewing: (viewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => void;
+    onUpdateViewing: (viewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => void | Promise<void>;
     properties: PropertyStub[];
     contacts: ContactStub[];
 }
@@ -103,7 +103,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
       { value: 120, label: '2 ore' },
   ]), []);
 
-  function onSubmit(values: z.infer<typeof viewingSchema>) {
+  async function onSubmit(values: z.infer<typeof viewingSchema>) {
     if (!viewing) return;
     setIsSubmitting(true);
     
@@ -119,7 +119,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
     const viewingDateTime = new Date(values.viewingDate);
     viewingDateTime.setHours(hours, minutes);
 
-    onUpdateViewing({
+    try { await onUpdateViewing({
         id: viewing.id,
         propertyId: values.propertyId,
         propertyTitle: selectedProperty.title,
@@ -132,7 +132,8 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
     });
 
     onOpenChange(false);
-    setIsSubmitting(false);
+    } catch (error) { form.setError('root', { message: error instanceof Error ? error.message : 'Vizionarea nu a fost salvată.' }); }
+    finally { setIsSubmitting(false); }
   }
 
   if (!isOpen || !viewing) return null;
@@ -252,6 +253,7 @@ export function EditViewingDialog({ viewing, isOpen, onOpenChange, onUpdateViewi
               <DialogFooter className="shrink-0 border-t border-white/10 bg-[#0F1E33] p-3 shadow-md md:px-6 md:py-3">
                 <div className="flex w-full justify-end gap-2">
                   <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="text-white/80 hover:bg-white/10 hover:text-white/90">Anulează</Button>
+                  {form.formState.errors.root && <p role="alert" className="text-sm text-red-400">{form.formState.errors.root.message}</p>}
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Salvează Modificări

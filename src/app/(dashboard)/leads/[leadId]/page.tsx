@@ -1,5 +1,7 @@
 
 'use client';
+import { executeCrmAction, manualTaskDetails } from '@/lib/crm/client-actions';
+import { createManualViewing } from '@/lib/crm/client-actions';
 
 import { useParams, notFound } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
@@ -290,65 +292,25 @@ export default function LeadDetailPage() {
     }, [properties, contact]);
     
     // --- MUTATION HANDLERS ---
-    const handleUpdateContact = (data: Partial<Omit<Contact, 'id'>>) => {
-        if (!contactDocRef) return;
-        
-        let finalData = { ...data };
-        if (data.preferences && contact?.preferences) {
-            finalData.preferences = { ...contact.preferences, ...data.preferences };
-        }
-        
-        updateDocumentNonBlocking(contactDocRef, finalData);
-        
-        toast({ title: 'Cumpărător actualizat', description: 'Modificările au fost salvate.' });
+    const handleUpdateContact = async (data: Partial<Omit<Contact, 'id'>>) => {
+        if (!contact || !user) return;
+        try {
+            const { preferences, agentId, agentName: _agentName, ...patch } = data;
+            if (agentId !== undefined) await executeCrmAction(user, { kind: 'assign_record', resource: 'contacts', id: contact.id, agentId });
+            if (preferences) await executeCrmAction(user, { kind: 'update_preferences', contactId: contact.id, preferences });
+            if (Object.values(patch).some(value => value !== undefined)) await executeCrmAction(user, { kind: 'update_contact', contactId: contact.id, patch });
+            toast({ title: 'Cumpărător actualizat', description: 'Modificările au fost salvate.' });
+        } catch (error) { toast({ variant: 'destructive', title: 'Modificarea nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
-    
-    const handleUpdateRecommendation = (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => {
-        if (!contact?.portalId || !contactDocRef) return;
-
-        // Also update the live portal for the client
-        const recRef = doc(firestore, 'portals', contact.portalId, 'recommendations', recommendationId);
-        updateDocumentNonBlocking(recRef, data);
-        
-        // Update the historical record on the contact
-        const existingRec = contact.recommendationHistory?.[recommendationId];
-        if (existingRec) {
-            const updatedRec = { ...existingRec, ...data };
-            updateDocumentNonBlocking(contactDocRef, {
-                [`recommendationHistory.${recommendationId}`]: updatedRec
-            });
-        }
+    const handleUpdateRecommendation = async (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => {
+        if (!contact) return;
+        try { await executeCrmAction(user, { kind: 'update_recommendation', contactId: contact.id, propertyId: recommendationId, patch: { ...(data.clientFeedback ? { clientFeedback: data.clientFeedback } : {}), ...(data.clientComment !== undefined ? { clientComment: data.clientComment } : {}) } }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Feedbackul nu a fost salvat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
-    
-    const handleAddRecommendation = (property: Property) => {
-        if (!contact?.portalId || !contactDocRef) {
-            toast({
-                variant: "destructive",
-                title: "Portal neactivat",
-                description: "Activați portalul clientului înainte de a adăuga proprietăți.",
-            });
-            return;
-        }
-
-        const recommendation: Omit<PortalRecommendation, 'id'> = {
-            propertyId: property.id,
-            addedAt: new Date().toISOString(),
-            clientFeedback: 'none',
-        };
-
-        // Add to portal subcollection. The ID is the property ID.
-        const recRef = doc(firestore, 'portals', contact.portalId, 'recommendations', property.id);
-        setDocumentNonBlocking(recRef, recommendation, {});
-
-        // Add to contact's history
-        updateDocumentNonBlocking(contactDocRef, {
-            [`recommendationHistory.${property.id}`]: { ...recommendation, id: property.id },
-        });
-        
-        toast({
-            title: "Proprietate adăugată!",
-            description: `${property.title} a fost adăugată în portalul clientului.`,
-        });
+    const handleAddRecommendation = async (property: Property) => {
+        if (!contact?.portalId) { toast({ variant: 'destructive', title: 'Portal neactivat', description: 'Activează portalul clientului.' }); return; }
+        try { await executeCrmAction(user, { kind: 'recommend_properties', contactId: contact.id, propertyIds: [property.id] }); toast({ title: 'Recomandare adăugată!' }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Recomandarea nu a fost salvată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
 
     const handleRematch = async (preferences: ContactPreferences) => {
@@ -386,7 +348,7 @@ export default function LeadDetailPage() {
         }
     }
 
-    const handleAddTask = (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => {
+    const handleAddTask = async (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName' >) => {
         if (!agency?.id || !user) return;
         const tasksCollection = collection(firestore, 'agencies', agency.id, 'tasks');
         const taskToAdd: Omit<Task, 'id'> = {
@@ -395,7 +357,8 @@ export default function LeadDetailPage() {
             agentId: user.uid,
             agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
         };
-        addDocumentNonBlocking(tasksCollection, taskToAdd);
+        try { await executeCrmAction(user, { kind: 'create_task', ...manualTaskDetails(taskData), description: taskData.description, dueDate: taskData.dueDate, ...(taskData.contactId ? { contactId: taskData.contactId } : {}), ...(taskData.propertyId ? { propertyId: taskData.propertyId } : {}) }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Task-ul nu a fost salvat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
         toast({ title: "Task adăugat!" });
     };
     
@@ -416,7 +379,7 @@ export default function LeadDetailPage() {
         };
 
         try {
-            await addDoc(collection(firestore, 'agencies', agency.id, 'viewings'), viewingToAdd);
+            await createManualViewing(user, viewingToAdd);
             toast({ title: "Vizionare programată!" });
         } catch (error) {
             console.error('Failed to add viewing from lead detail page:', error);
@@ -430,31 +393,12 @@ export default function LeadDetailPage() {
     };
 
     const handleAddInteraction = async (interactionData: Omit<Interaction, 'id' | 'date' | 'agent'>) => {
-        if (!contactDocRef || !user) return Promise.reject("User or contact not available");
-        
-        const newInteraction: Interaction = {
-            ...interactionData,
-            id: crypto.randomUUID(),
-            date: new Date().toISOString(),
-            agent: {
-                name: userProfile?.name || user.displayName || user.email || 'Nespecificat',
-            }
-        };
-        
-        await updateDocumentNonBlocking(contactDocRef, {
-            interactionHistory: arrayUnion(newInteraction)
-        });
+        if (!contact || !user) throw new Error('Contact indisponibil.');
+        await executeCrmAction(user, { kind: 'add_interaction', contactId: contact.id, type: interactionData.type, notes: interactionData.notes });
     };
-
-     const handleToggleTask = (task: Task) => {
-        if (!agency?.id) return;
-        const taskRef = doc(firestore, 'agencies', agency.id, 'tasks', task.id);
-        const newStatus = task.status === 'completed' ? 'open' : 'completed';
-        updateDocumentNonBlocking(taskRef, { status: newStatus });
-        toast({
-            title: `Task ${newStatus === 'completed' ? 'completat' : 'redeschis'}!`,
-            description: `"${task.description}" a fost actualizat.`,
-        });
+    const handleToggleTask = async (task: Task) => {
+        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, status: task.status === 'completed' ? 'open' : 'completed' }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Task-ul nu a fost actualizat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
 
     const similarCumparatori = useMemo(() => {
@@ -484,46 +428,23 @@ export default function LeadDetailPage() {
         }).slice(0, 5);
     }, [contact, allContacts]);
 
-    const handleAddOffer = (offerData: Omit<Offer, 'id' | 'date' | 'status'>) => {
-        if (!contactDocRef) return;
-        const newOffer: Offer = {
-            ...offerData,
-            id: crypto.randomUUID(),
-            date: new Date().toISOString(),
-            status: 'În așteptare',
-        };
-        updateDocumentNonBlocking(contactDocRef, {
-            offers: arrayUnion(newOffer)
-        });
-        toast({ title: 'Ofertă adăugată!' });
+    const persistOffer = async (action: Parameters<typeof executeCrmAction>[1], title: string) => {
+        try { await executeCrmAction(user, action); toast({ title }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Oferta nu a fost salvată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
+    };
+    const handleAddOffer = async (offerData: Omit<Offer, 'id' | 'date' | 'status'>) => {
+        if (!contact) return;
+        await persistOffer({ kind: 'record_offer', contactId: contact.id, propertyId: offerData.propertyId, price: offerData.price }, 'Ofertă adăugată!');
+    };
+    const handleUpdateOffer = async (offerId: string, data: Partial<Omit<Offer, 'id'>>) => {
+        if (!contact) return;
+        await persistOffer({ kind: 'update_offer', contactId: contact.id, offerId, patch: { ...(data.price !== undefined ? { price: data.price } : {}), ...(data.status ? { status: data.status } : {}) } }, 'Ofertă actualizată!');
+    };
+    const handleDeleteOffer = async (offerId: string) => {
+        if (!contact) return;
+        await persistOffer({ kind: 'delete_offer', contactId: contact.id, offerId }, 'Ofertă ștearsă!');
     };
 
-    const handleUpdateOffer = (offerId: string, data: Partial<Omit<Offer, 'id'>>) => {
-        if (!contactDocRef || !contact || !contact.offers) return;
-
-        const updatedOffers = contact.offers.map(offer => {
-            if (offer.id === offerId) {
-                return { ...offer, ...data };
-            }
-            return offer;
-        });
-
-        updateDocumentNonBlocking(contactDocRef, { offers: updatedOffers });
-        toast({ title: 'Status ofertă actualizat!' });
-    };
-
-    const handleDeleteOffer = (offerId: string) => {
-        if (!contactDocRef || !contact || !contact.offers) return;
-
-        const offerToDelete = contact.offers.find(offer => offer.id === offerId);
-        if (offerToDelete) {
-             updateDocumentNonBlocking(contactDocRef, {
-                offers: arrayRemove(offerToDelete)
-            });
-            toast({ title: 'Ofertă ștearsă!', variant: 'destructive' });
-        }
-    };
-    
     const scheduledViewings = useMemo(() => {
         if (!viewings) return [];
         return viewings

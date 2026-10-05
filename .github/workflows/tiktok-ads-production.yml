@@ -77,6 +77,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify Jarvis capability manifest
+        run: npm run jarvis:parity:check
+
+      - name: Run Jarvis deterministic tests
+        run: npm run test:ai-assistant
+
       - name: Run TikTok Ads deterministic tests
         run: npm run test:tiktok-ads -- --reporter=dot
 

@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../planner', () => ({ planTurn: vi.fn() }));
 vi.mock('../actions', () => ({ executeAction: vi.fn() }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: vi.fn() }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.collection(name), referencesAllowed: vi.fn(async () => true), actionReferences: () => [] }));
-import { inspectPlan } from '../workspace';
+import { controlPlan, inspectPlan, runPlan } from '../workspace';
+import { approvalEnvelope } from '../approval';
 import { executeAction } from '../actions';
 import type { AssistantContext } from '../access';
 
@@ -34,5 +35,54 @@ describe('interrupted plan recovery', () => {
     const { ctx } = fixture('unknown', { status: 'unknown' });
     expect((await inspectPlan(ctx, 'p')).status).toBe('unknown');
     expect(executeAction).not.toHaveBeenCalled();
+  });
+});
+
+function executionFixture() {
+  const actions = Array.from({ length: 3 }, (_, index) => ({ kind: 'create_task' as const, description: 'Task ' + index, dueDate: '2027-01-01' }));
+  const plan: any = { ownerId: 'u', sessionId: 's', status: 'pending', actions, expiresAt: Date.now() + 3600000, approval: approvalEnvelope('u', 'a', 'p', actions, Date.now() + 3600000) };
+  const member = { agencyId: 'a', role: 'agent' };
+  const planRef: any = { id: 'p', get: async () => ({ exists: true, id: 'p', data: () => structuredClone(plan) }), update: async (patch: any) => Object.assign(plan, patch) };
+  const sessionRef: any = { get: async () => ({ exists: true, data: () => ({ ownerId: 'u' }) }), collection: () => ({ doc: () => ({}) }) };
+  const db: any = { collection: () => ({ doc: () => ({ get: async () => ({ data: () => member }) }) }),
+    runTransaction: async (work: any) => work({ get: (ref: any) => ref.get(), update: (_: any, patch: any) => Object.assign(plan, patch), set: vi.fn() }),
+    batch: () => ({ update: (_: any, patch: any) => Object.assign(plan, patch), set: vi.fn(), commit: async () => undefined }),
+  };
+  const ctx = { uid: 'u', agencyId: 'a', role: 'agent', adminDb: db, collection: (name: string) => ({ doc: () => name === 'assistantPlans' ? planRef : sessionRef }) } as unknown as AssistantContext;
+  return { ctx, plan };
+}
+afterEach(() => vi.clearAllMocks());
+describe('durable batch checkpoints and controls', () => {
+  it('resumes the next step after a checkpoint without replaying confirmed steps', async () => {
+    const { ctx, plan } = executionFixture();
+    vi.mocked(executeAction).mockImplementation(async (_ctx, _action, key) => ({ taskId: key }));
+    expect((await runPlan(ctx, 'p', false, 1)).status).toBe('pending');
+    expect(plan.results).toHaveLength(1);
+    expect((await runPlan(ctx, 'p', false, 1)).status).toBe('pending');
+    expect((await runPlan(ctx, 'p', false, 1)).status).toBe('completed');
+    expect(vi.mocked(executeAction).mock.calls.map(call => call[2])).toEqual(['p-0', 'p-1', 'p-2']);
+  });
+  it('pauses after the in-flight action and resumes only the remaining actions', async () => {
+    const { ctx, plan } = executionFixture();
+    vi.mocked(executeAction).mockImplementation(async (_ctx, _action, key) => { if (key === 'p-0') await controlPlan(ctx, 'p', 'pause'); return { taskId: key }; });
+    expect((await runPlan(ctx, 'p')).status).toBe('paused');
+    expect(plan.results).toHaveLength(1);
+    expect((await runPlan(ctx, 'p')).status).toBe('paused');
+    await controlPlan(ctx, 'p', 'resume');
+    expect((await runPlan(ctx, 'p')).status).toBe('completed');
+    expect(executeAction).toHaveBeenCalledTimes(3);
+  });
+  it('stops future steps when cancellation arrives during an action', async () => {
+    const { ctx, plan } = executionFixture();
+    vi.mocked(executeAction).mockImplementation(async () => { await runPlan(ctx, 'p', true); return { taskId: 'first' }; });
+    expect((await runPlan(ctx, 'p')).status).toBe('cancelled');
+    expect(plan.results).toHaveLength(1);
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
+  it('refuses resumption after membership revocation', async () => {
+    const { ctx } = executionFixture();
+    await controlPlan(ctx, 'p', 'pause');
+    ctx.role = 'admin';
+    await expect(controlPlan(ctx, 'p', 'resume')).rejects.toThrow('revocat');
   });
 });

@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 import Link from 'next/link';
 import { AddPropertyDialog } from "@/components/properties/add-property-dialog";
 import { PropertyList } from "@/components/properties/PropertyList";
@@ -10,7 +11,7 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import type { Property, PropertyDeletionReason, PropertyStatusEvent, Viewing } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -254,47 +255,14 @@ export default function PropertiesPage() {
   };
 
   const handleReservationConfirm = async () => {
-    if (!agencyId || !reservationProperty || isUpdatingReservation) return;
+    if (!agencyId || !user || !reservationProperty || isUpdatingReservation) return;
 
     setIsUpdatingReservation(true);
     try {
       const changedAt = new Date().toISOString();
       const isReactivating = reservationProperty.status === 'Rezervat';
       const nextStatus: Property['status'] = isReactivating ? 'Activ' : 'Rezervat';
-      const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', reservationProperty.id);
-      const batch = writeBatch(firestore);
-      batch.update(propertyRef, {
-        status: nextStatus,
-        statusUpdatedAt: changedAt,
-        soldPrice: null,
-      });
-
-      if (!isReactivating) {
-        const statusEventRef = doc(collection(firestore, 'agencies', agencyId, 'propertyStatusEvents'));
-        const reservedPropertySnapshot: Property = {
-          ...reservationProperty,
-          status: 'Rezervat',
-          statusUpdatedAt: changedAt,
-          soldPrice: null,
-        };
-        const statusEvent: PropertyStatusEvent = {
-          id: statusEventRef.id,
-          agencyId,
-          propertyId: reservationProperty.id,
-          changedAt,
-          previousStatus: reservationProperty.status ?? null,
-          nextStatus: 'Rezervat',
-          reason: 'reservation_offer_accepted',
-          reasonLabel: 'Oferta de rezervare acceptata',
-          agentMessage: `Marchez "${reservationProperty.title}" ca rezervata in portofoliul agentiei.`,
-          soldPrice: null,
-          marketAnalysisEligible: false,
-          propertySnapshot: reservedPropertySnapshot,
-        };
-        batch.set(statusEventRef, statusEvent);
-      }
-
-      await batch.commit();
+      await executeCrmAction(user, { kind: 'update_property_status', propertyId: reservationProperty.id, status: nextStatus, ...(isReactivating ? {} : { reason: 'reservation_offer_accepted' as const }), notes: isReactivating ? '' : `Marchez proprietatea ca rezervată în portofoliul agenției.` });
 
       toast({
         title: isReactivating ? 'Proprietate reactivata' : 'Proprietate rezervata',

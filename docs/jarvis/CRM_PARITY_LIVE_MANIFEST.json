@@ -1,0 +1,2542 @@
+{
+  "version": 1,
+  "operations": [
+    {
+      "id": "video_voice_preview",
+      "method": "POST",
+      "path": "/api/properties/{propertyId}/video-tour-voice-preview",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-voice-preview/route.ts",
+      "description": "Generează previzualizarea audio a vocii turului video: voice și text. Returnează fișier audio privat.",
+      "readOnly": true,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "file_apply",
+      "method": "POST",
+      "path": "/api/ai-assistant/uploads/{uploadId}/apply",
+      "handler": "src/app/api/ai-assistant/uploads/[uploadId]/apply/route.ts",
+      "description": "Aplică un fișier privat deja atașat: destination sale_document cu saleId/documentId, conversation_attachment cu conversationId identity_ocr, property_image sau property_rlv cu propertyId. Nu inventa uploadId; citește assistantUploads.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_query",
+      "method": "GET",
+      "path": "/api/owner-listings/query",
+      "handler": "src/app/api/owner-listings/query/route.ts",
+      "description": "Anunțuri proprietari: scopeKey, search, rooms, priceMin/Max, cursor.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_prospect",
+      "method": "POST",
+      "path": "/api/owner-listings/prospecting",
+      "handler": "src/app/api/owner-listings/prospecting/route.ts",
+      "description": "Adaugă/scoate anunț din prospectare: listingId, action add/remove/retry.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_import_preview",
+      "method": "POST",
+      "path": "/api/owner-listings/import",
+      "handler": "src/app/api/owner-listings/import/route.ts",
+      "description": "Pregătește importul: source olx/imoradar24/publi24, url, listingId opțional; nu salvează proprietatea.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_list",
+      "method": "GET",
+      "path": "/api/communications/conversations",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Conversații autorizate: contactId, channel, status, cursor.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_messages",
+      "method": "GET",
+      "path": "/api/communications/conversations/{conversationId}/messages",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Mesaje cu cursor; conversationId obligatoriu.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_search",
+      "method": "GET",
+      "path": "/api/communications/search",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Caută mesaje: q, page; păstrează permisiunile conversației.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "communications_status",
+      "method": "GET",
+      "path": "/api/communications/dashboard",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Starea conexiunilor și bugetului de comunicare.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "whatsapp_templates",
+      "method": "GET",
+      "path": "/api/communications/templates/{connectionId}",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Șabloane aprobate și parametri necesari.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_start",
+      "method": "POST",
+      "path": "/api/communications/conversations",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Pornește conversație WhatsApp: contactId, connectionId, propertyId opțional.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "message_preview",
+      "method": "POST",
+      "path": "/api/communications/conversations/{conversationId}/preview",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Verifică eligibilitate/cost: text sau template {name,language,parameters}, requestId UUID.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "message_send",
+      "method": "POST",
+      "path": "/api/communications/conversations/{conversationId}/messages",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Trimite mesaj prin coada existentă. text sau template {name,language,parameters}; requestId injectat de executor.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_note",
+      "method": "POST",
+      "path": "/api/communications/conversations/{conversationId}/notes",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Notă internă: text.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_update",
+      "method": "PATCH",
+      "path": "/api/communications/conversations/{conversationId}",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Modifică status/assigneeId/read/propertyId, version obligatoriu. Reatribuire numai admin.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_create",
+      "method": "POST",
+      "path": "/api/communications/posts",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Publicare socială prin handler-ul existent, cu buget/rol verificate; consultă conexiunile.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "collaboration_read",
+      "method": "GET",
+      "path": "/api/collaboration",
+      "handler": "src/app/api/collaboration/route.ts",
+      "description": "Colaborări: view catalog/me/cases/leads; id/cursor.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "collaboration_action",
+      "method": "POST",
+      "path": "/api/collaboration",
+      "handler": "src/app/api/collaboration/route.ts",
+      "description": "Acțiune colaborare cu schema handler-ului existent; nu inventa acorduri.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "property_remove",
+      "method": "POST",
+      "path": "/api/properties/remove",
+      "handler": "src/app/api/properties/remove/route.ts",
+      "description": "Retragere/vânzare prin lifecycle existent, niciodată delete direct. Necesită motiv și detalii complete.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "property_context",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/sales-recommendation-context",
+      "handler": "src/app/api/properties/[propertyId]/sales-recommendation-context/route.ts",
+      "description": "Context vânzare pentru propertyId.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "property_pricing",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/pricing-analysis",
+      "handler": "src/app/api/properties/[propertyId]/pricing-analysis/route.ts",
+      "description": "Analiză de preț cu comparabile reale pentru propertyId.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "property_nearby",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/nearby-objectives",
+      "handler": "src/app/api/properties/[propertyId]/nearby-objectives/route.ts",
+      "description": "Obiective din apropierea proprietății.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "video_jobs",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/video-tour-jobs",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-jobs/route.ts",
+      "description": "Joburi și rezultate video ale proprietății.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "video_create",
+      "method": "POST",
+      "path": "/api/properties/{propertyId}/video-tour-jobs",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-jobs/route.ts",
+      "description": "Creează job video cu schema existentă. Pentru presenter include aiPresenterScript generat întâi prin video_script; păstrează vocea și randarea existente. Nu pretinde că randarea e finalizată.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "video_script",
+      "method": "POST",
+      "path": "/api/properties/{propertyId}/video-tour-script",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-script/route.ts",
+      "description": "Generează scenariul video din datele proprietății.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_status",
+      "method": "GET",
+      "path": "/api/imobiliare/status",
+      "handler": "src/app/api/imobiliare/status/route.ts",
+      "description": "Starea integrării Imobiliare.ro.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_publish",
+      "method": "POST",
+      "path": "/api/imobiliare/publish",
+      "handler": "src/app/api/imobiliare/publish/route.ts",
+      "description": "Publică/sincronizează proprietatea: propertyId, cu validările portalului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_unpublish",
+      "method": "POST",
+      "path": "/api/imobiliare/unpublish",
+      "handler": "src/app/api/imobiliare/unpublish/route.ts",
+      "description": "Retrage de pe Imobiliare.ro: propertyId.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_reconcile",
+      "method": "POST",
+      "path": "/api/imobiliare/reconcile",
+      "handler": "src/app/api/imobiliare/reconcile/route.ts",
+      "description": "Verifică starea reală a publicării: propertyId.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_status",
+      "method": "GET",
+      "path": "/api/storia/status",
+      "handler": "src/app/api/storia/status/route.ts",
+      "description": "Starea integrării Storia.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_publish",
+      "method": "POST",
+      "path": "/api/storia/publish",
+      "handler": "src/app/api/storia/publish/route.ts",
+      "description": "Publică/sincronizează pe Storia: propertyId.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_unpublish",
+      "method": "POST",
+      "path": "/api/storia/unpublish",
+      "handler": "src/app/api/storia/unpublish/route.ts",
+      "description": "Retrage proprietatea de pe Storia: propertyId, cu rolul cerut de portal.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_promotions",
+      "method": "POST",
+      "path": "/api/storia/property-promotions",
+      "handler": "src/app/api/storia/property-promotions/route.ts",
+      "description": "Promovări disponibile și starea lor: propertyId.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "romimo_status",
+      "method": "GET",
+      "path": "/api/romimo/status",
+      "handler": "src/app/api/romimo/[action]/route.ts",
+      "description": "Starea integrării Romimo.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "romimo_preview",
+      "method": "POST",
+      "path": "/api/romimo/preview",
+      "handler": "src/app/api/romimo/[action]/route.ts",
+      "description": "Previzualizare Romimo: propertyId și setările cerute de portal.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "romimo_publish",
+      "method": "POST",
+      "path": "/api/romimo/publish",
+      "handler": "src/app/api/romimo/[action]/route.ts",
+      "description": "Publică pe Romimo după preview: propertyId, previewHash, settings.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "romimo_verify",
+      "method": "POST",
+      "path": "/api/romimo/verify",
+      "handler": "src/app/api/romimo/[action]/route.ts",
+      "description": "Verifică publicarea Romimo: propertyId.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "property_presentation",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/presentation",
+      "handler": "src/app/api/properties/[propertyId]/presentation/route.ts",
+      "description": "Generează prezentarea PDF. propertyId; fișierul este salvat și poate fi descărcat.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_stage",
+      "method": "POST",
+      "path": "/api/sales/{saleId}/stage",
+      "handler": "src/app/api/sales/[saleId]/stage/route.ts",
+      "description": "Schimbă etapa tranzacției folosind validările și auditul existent.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_setup",
+      "method": "PATCH",
+      "path": "/api/sales/{saleId}/setup",
+      "handler": "src/app/api/sales/[saleId]/setup/route.ts",
+      "description": "Actualizează participanți/checklist/configurare tranzacție prin handler.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_requirement",
+      "method": "POST",
+      "path": "/api/sales/{saleId}/documents",
+      "handler": "src/app/api/sales/[saleId]/documents/route.ts",
+      "description": "Adaugă document necesar: label, participantRole, stages, required.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_document_edit",
+      "method": "PATCH",
+      "path": "/api/sales/{saleId}/documents/{documentId}",
+      "handler": "src/app/api/sales/[saleId]/documents/[documentId]/route.ts",
+      "description": "Actualizează cerința documentară folosind schema și auditul dosarului.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_document_action",
+      "method": "POST",
+      "path": "/api/sales/{saleId}/documents/{documentId}",
+      "handler": "src/app/api/sales/[saleId]/documents/[documentId]/route.ts",
+      "description": "Verifică/respinge/restabilește versiunea unui document numai pe baza datelor reale și a unei instrucțiuni explicite.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_document_remove",
+      "method": "DELETE",
+      "path": "/api/sales/{saleId}/documents/{documentId}",
+      "handler": "src/app/api/sales/[saleId]/documents/[documentId]/route.ts",
+      "description": "Elimină cerința documentară prin handler-ul auditat existent.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_message_review",
+      "method": "PATCH",
+      "path": "/api/sales/{saleId}/messages/{messageId}/review",
+      "handler": "src/app/api/sales/[saleId]/messages/[messageId]/review/route.ts",
+      "description": "Revizuiește mesajul/draftul dosarului cu schema existentă.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_message_evidence",
+      "method": "PATCH",
+      "path": "/api/sales/{saleId}/messages/{messageId}/send-evidence",
+      "handler": "src/app/api/sales/[saleId]/messages/[messageId]/send-evidence/route.ts",
+      "description": "Înregistrează dovada reală a trimiterii; nu inventa livrarea unui email.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sales_settings_update",
+      "method": "PATCH",
+      "path": "/api/sales/settings",
+      "handler": "src/app/api/sales/settings/route.ts",
+      "description": "Administrator: actualizează setările de vânzări prin schema existentă.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sales_template_create",
+      "method": "POST",
+      "path": "/api/sales/templates",
+      "handler": "src/app/api/sales/templates/route.ts",
+      "description": "Administrator: creează șablon email pentru dosare, folosind schema existentă.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sales_template_update",
+      "method": "PATCH",
+      "path": "/api/sales/templates/{templateId}",
+      "handler": "src/app/api/sales/templates/[templateId]/route.ts",
+      "description": "Administrator: editează șablonul email al agenției.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sales_template_action",
+      "method": "POST",
+      "path": "/api/sales/templates/{templateId}",
+      "handler": "src/app/api/sales/templates/[templateId]/route.ts",
+      "description": "Administrator: acțiune/versionare șablon email prin validările existente.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "outreach_calls",
+      "method": "GET",
+      "path": "/api/ai-outreach/calls",
+      "handler": "src/app/api/ai-outreach/calls/route.ts",
+      "description": "Istoricul și starea apelurilor de prospectare accesibile agentului.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "contract_generate",
+      "method": "POST",
+      "path": "/api/contracts/templates/{templateId}/generate",
+      "handler": "src/app/api/contracts/templates/[templateId]/generate/route.ts",
+      "description": "Generează PDF contract: values {câmp:valoare}, contactId/ownerId/propertyId opționale. templateId în params.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "agency_agents",
+      "method": "GET",
+      "path": "/api/agency/agents",
+      "handler": "src/app/api/agency/agents/route.ts",
+      "description": "Lista agenților autorizați din agenție.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "agency_agent_detail",
+      "method": "GET",
+      "path": "/api/agency/agents/{agentId}",
+      "handler": "src/app/api/agency/agents/[agentId]/route.ts",
+      "description": "Statistici agent: acces propriu sau admin.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "billing_summary",
+      "method": "GET",
+      "path": "/api/billing/summary",
+      "handler": "src/app/api/billing/summary/route.ts",
+      "description": "Plan, funcționalități și locuri disponibile.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sales_settings",
+      "method": "GET",
+      "path": "/api/sales/settings",
+      "handler": "src/app/api/sales/settings/route.ts",
+      "description": "Setări vânzări accesibile agentului.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_status",
+      "method": "GET",
+      "path": "/api/marketing/meta/status",
+      "handler": "src/app/api/marketing/meta/status/route.ts",
+      "description": "Starea integrării Meta.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaigns",
+      "method": "GET",
+      "path": "/api/marketing/meta/property-campaigns",
+      "handler": "src/app/api/marketing/meta/property-campaigns/route.ts",
+      "description": "Campanii Meta ale agenției.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaign_draft",
+      "method": "POST",
+      "path": "/api/marketing/meta/property-campaigns",
+      "handler": "src/app/api/marketing/meta/property-campaigns/route.ts",
+      "description": "Creează draft campanie Meta, fără publicare.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaign_publish",
+      "method": "POST",
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}/publish",
+      "handler": "src/app/api/marketing/meta/property-campaigns/[campaignId]/publish/route.ts",
+      "description": "Publică campanie, cu controalele de buget/aprobare ale handler-ului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaign_pause",
+      "method": "POST",
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}/pause",
+      "handler": "src/app/api/marketing/meta/property-campaigns/[campaignId]/pause/route.ts",
+      "description": "Oprește campania.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_status",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/status",
+      "handler": "src/app/api/marketing/tiktok-ads/status/route.ts",
+      "description": "Starea TikTok Ads.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_organic_status",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/status",
+      "handler": "src/app/api/marketing/tiktok/status/route.ts",
+      "description": "Starea conexiunii TikTok organic.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_dashboard",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/dashboard",
+      "handler": "src/app/api/marketing/tiktok/dashboard/route.ts",
+      "description": "Drafturi și publicări TikTok organic.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_post_draft",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/post-drafts",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/route.ts",
+      "description": "Creează draft TikTok prin schema handler-ului existent.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_post_publish",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}/publish",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/[draftId]/publish/route.ts",
+      "description": "Publică draft TikTok cu toate condițiile și aprobările existente.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_post_schedule",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}/schedule",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/[draftId]/schedule/route.ts",
+      "description": "Programează draft TikTok pentru data cerută.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_capabilities",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/capabilities",
+      "handler": "src/app/api/marketing/tiktok-ads/capabilities/route.ts",
+      "description": "Capabilitățile efectiv disponibile TikTok Ads.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_operations",
+      "method": "POST",
+      "path": "/api/marketing/tiktok-ads/operations",
+      "handler": "src/app/api/marketing/tiktok-ads/operations/route.ts",
+      "description": "Execută operație TikTok prin ledger/aprobările existente.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "outreach_start",
+      "method": "POST",
+      "path": "/api/ai-outreach/calls",
+      "handler": "src/app/api/ai-outreach/calls/route.ts",
+      "description": "Inițiază/programează un apel AI real; respectă orarul, limitele și costurile outreach.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "outreach_settings",
+      "method": "GET",
+      "path": "/api/ai-outreach/settings",
+      "handler": "src/app/api/ai-outreach/settings/route.ts",
+      "description": "Consultă configurația și eligibilitatea apelurilor AI.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "outreach_settings_update",
+      "method": "POST",
+      "path": "/api/ai-outreach/settings",
+      "handler": "src/app/api/ai-outreach/settings/route.ts",
+      "description": "Modifică setările outreach prin validarea existentă.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "global_search",
+      "method": "GET",
+      "path": "/api/search",
+      "handler": "src/app/api/search/route.ts",
+      "description": "Căutare globală autorizată în CRM.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "company_lookup",
+      "method": "GET",
+      "path": "/api/company-lookup",
+      "handler": "src/app/api/company-lookup/route.ts",
+      "description": "Consultă datele societății după identificator verificat.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "geocode",
+      "method": "GET",
+      "path": "/api/geocode",
+      "handler": "src/app/api/geocode/route.ts",
+      "description": "Determină coordonatele adresei.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "geocode_search",
+      "method": "GET",
+      "path": "/api/geocode-search",
+      "handler": "src/app/api/geocode-search/route.ts",
+      "description": "Caută sugestii de adresă/localizare.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "building_year",
+      "method": "POST",
+      "path": "/api/building-year-lookup",
+      "handler": "src/app/api/building-year-lookup/route.ts",
+      "description": "Caută anul construcției; păstrează proveniența rezultatului.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "notification_read_all",
+      "method": "POST",
+      "path": "/api/notifications/read-all",
+      "handler": "src/app/api/notifications/read-all/route.ts",
+      "description": "Marchează notificările proprii ca citite.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "agency_agent_create",
+      "method": "POST",
+      "path": "/api/agency/agents",
+      "handler": "src/app/api/agency/agents/route.ts",
+      "description": "Creează/invită agent conform drepturilor administratorului.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "agency_agent_update",
+      "method": "PATCH",
+      "path": "/api/agency/agents/{agentId}",
+      "handler": "src/app/api/agency/agents/[agentId]/route.ts",
+      "description": "Modifică agentul în agenția curentă.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "agency_agent_remove",
+      "method": "DELETE",
+      "path": "/api/agency/agents/{agentId}",
+      "handler": "src/app/api/agency/agents/[agentId]/route.ts",
+      "description": "Elimină agentul conform regulilor existente.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "domain_status",
+      "method": "GET",
+      "path": "/api/custom-domain/status",
+      "handler": "src/app/api/custom-domain/status/route.ts",
+      "description": "Consultă starea domeniului personalizat.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "domain_setup",
+      "method": "POST",
+      "path": "/api/custom-domain/setup",
+      "handler": "src/app/api/custom-domain/setup/route.ts",
+      "description": "Configurează domeniul; returnează pașii DNS necesari.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "billing_change_plan",
+      "method": "POST",
+      "path": "/api/billing/change-plan",
+      "handler": "src/app/api/billing/change-plan/route.ts",
+      "description": "Schimbă abonamentul numai pentru administrator; consultă întâi costul și planul.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "billing_change_seats",
+      "method": "POST",
+      "path": "/api/billing/change-seats",
+      "handler": "src/app/api/billing/change-seats/route.ts",
+      "description": "Schimbă numărul de locuri cu cost și drepturi verificate.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "billing_checkout",
+      "method": "POST",
+      "path": "/api/billing/checkout",
+      "handler": "src/app/api/billing/checkout/route.ts",
+      "description": "Creează sesiune checkout autorizată; plata necesită intervenția utilizatorului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "billing_portal",
+      "method": "POST",
+      "path": "/api/billing/portal",
+      "handler": "src/app/api/billing/portal/route.ts",
+      "description": "Deschide sesiunea de administrare billing; nu pretinde plata efectuată.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "email_forwarding",
+      "method": "GET",
+      "path": "/api/email/forwarding",
+      "handler": "src/app/api/email/forwarding/route.ts",
+      "description": "Consultă adresa/configurația forwarding proprie.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "email_forwarding_setup",
+      "method": "POST",
+      "path": "/api/email/forwarding",
+      "handler": "src/app/api/email/forwarding/route.ts",
+      "description": "Pregătește forwarding-ul email și pașii necesari.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "email_health",
+      "method": "GET",
+      "path": "/api/email/health",
+      "handler": "src/app/api/email/health/route.ts",
+      "description": "Verifică starea infrastructurii email.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "collaboration_team",
+      "method": "GET",
+      "path": "/api/collaboration/team",
+      "handler": "src/app/api/collaboration/team/route.ts",
+      "description": "Consultă echipa de colaborare autorizată.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "collaboration_team_action",
+      "method": "POST",
+      "path": "/api/collaboration/team",
+      "handler": "src/app/api/collaboration/team/route.ts",
+      "description": "Administrează echipa conform contractului existent.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "collaboration_onboarding",
+      "method": "POST",
+      "path": "/api/collaboration/onboarding",
+      "handler": "src/app/api/collaboration/onboarding/route.ts",
+      "description": "Pregătește onboarding colaborare; păstrează acordurile umane.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_phone",
+      "method": "POST",
+      "path": "/api/owner-listings/olx-phone",
+      "handler": "src/app/api/owner-listings/olx-phone/route.ts",
+      "description": "Obține telefonul OLX prin conexiunea și limitele existente.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_olx_status",
+      "method": "GET",
+      "path": "/api/owner-listings/olx-connection",
+      "handler": "src/app/api/owner-listings/olx-connection/route.ts",
+      "description": "Consultă starea conexiunii OLX.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_favorites",
+      "method": "GET",
+      "path": "/api/owner-listings/favorites",
+      "handler": "src/app/api/owner-listings/favorites/route.ts",
+      "description": "Consultă prospectarea agenției.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "owner_sync",
+      "method": "POST",
+      "path": "/api/owner-listings/sync",
+      "handler": "src/app/api/owner-listings/sync/route.ts",
+      "description": "Solicită actualizarea anunțurilor prin fluxul existent.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_assets",
+      "method": "GET",
+      "path": "/api/marketing/meta/assets",
+      "handler": "src/app/api/marketing/meta/assets/route.ts",
+      "description": "Consultă assets Meta autorizate.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_assets_refresh",
+      "method": "POST",
+      "path": "/api/marketing/meta/assets",
+      "handler": "src/app/api/marketing/meta/assets/route.ts",
+      "description": "Actualizează assets prin handlerul existent.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_dashboard",
+      "method": "GET",
+      "path": "/api/marketing/meta/dashboard",
+      "handler": "src/app/api/marketing/meta/dashboard/route.ts",
+      "description": "Consultă raportarea și starea campaniilor Meta.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaign_update",
+      "method": "PATCH",
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}",
+      "handler": "src/app/api/marketing/meta/property-campaigns/[campaignId]/route.ts",
+      "description": "Modifică draftul campaniei Meta.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaign_remove",
+      "method": "DELETE",
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}",
+      "handler": "src/app/api/marketing/meta/property-campaigns/[campaignId]/route.ts",
+      "description": "Șterge campania/draftul conform handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_campaign_ready",
+      "method": "POST",
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}/ready",
+      "handler": "src/app/api/marketing/meta/property-campaigns/[campaignId]/ready/route.ts",
+      "description": "Verifică/pregătește eligibilitatea campaniei pentru publicare.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "meta_property_post",
+      "method": "POST",
+      "path": "/api/marketing/meta/property-posts",
+      "handler": "src/app/api/marketing/meta/property-posts/route.ts",
+      "description": "Pregătește/publică postarea proprietății prin serviciul existent.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_drafts",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/post-drafts",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/route.ts",
+      "description": "Listează drafturile TikTok.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_draft_update",
+      "method": "PATCH",
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/[draftId]/route.ts",
+      "description": "Modifică draftul TikTok, păstrând condițiile de publicare.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_post_status",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}/status",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/[draftId]/status/route.ts",
+      "description": "Verifică rezultatul efectiv al publicării TikTok.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_unschedule",
+      "method": "DELETE",
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}/schedule",
+      "handler": "src/app/api/marketing/tiktok/post-drafts/[draftId]/schedule/route.ts",
+      "description": "Anulează programarea unei postări TikTok.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_creator",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/creator-info",
+      "handler": "src/app/api/marketing/tiktok/creator-info/route.ts",
+      "description": "Consultă eligibilitatea și opțiunile profilului TikTok.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_brief",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/creative-brief",
+      "handler": "src/app/api/marketing/tiktok/creative-brief/route.ts",
+      "description": "Generează brief TikTok din date reale ale proprietății.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_descriptions",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/descriptions",
+      "handler": "src/app/api/marketing/tiktok/descriptions/route.ts",
+      "description": "Generează descrieri pentru TikTok.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_premium_script",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/premium-script",
+      "handler": "src/app/api/marketing/tiktok/premium-script/route.ts",
+      "description": "Generează scenariu TikTok; nu pretinde video finalizat.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_assets",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/studio-assets",
+      "handler": "src/app/api/marketing/tiktok/studio-assets/route.ts",
+      "description": "Listează fișierele Studio autorizate.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_asset_create",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/studio-assets",
+      "handler": "src/app/api/marketing/tiktok/studio-assets/route.ts",
+      "description": "Înregistrează asset existent prin contractul Studio.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_asset_update",
+      "method": "PATCH",
+      "path": "/api/marketing/tiktok/studio-assets",
+      "handler": "src/app/api/marketing/tiktok/studio-assets/route.ts",
+      "description": "Modifică asset Studio.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_asset_remove",
+      "method": "DELETE",
+      "path": "/api/marketing/tiktok/studio-assets",
+      "handler": "src/app/api/marketing/tiktok/studio-assets/route.ts",
+      "description": "Șterge asset Studio conform drepturilor.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_projects",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/studio-projects",
+      "handler": "src/app/api/marketing/tiktok/studio-projects/route.ts",
+      "description": "Listează proiectele Studio.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_project_create",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/studio-projects",
+      "handler": "src/app/api/marketing/tiktok/studio-projects/route.ts",
+      "description": "Creează proiect Studio.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_render",
+      "method": "POST",
+      "path": "/api/marketing/tiktok/studio-projects/{projectId}/render",
+      "handler": "src/app/api/marketing/tiktok/studio-projects/[projectId]/render/route.ts",
+      "description": "Inițiază randarea Studio și returnează jobul.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_studio_voices",
+      "method": "GET",
+      "path": "/api/marketing/tiktok/voices",
+      "handler": "src/app/api/marketing/tiktok/voices/route.ts",
+      "description": "Consultă vocile disponibile Studio.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_workspace",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/workspace",
+      "handler": "src/app/api/marketing/tiktok-ads/workspace/route.ts",
+      "description": "Consultă configurația completă TikTok Ads.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_manager",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/manager",
+      "handler": "src/app/api/marketing/tiktok-ads/manager/route.ts",
+      "description": "Consultă campanii/adgroups/ads din manager.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_reporting",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/reporting",
+      "handler": "src/app/api/marketing/tiktok-ads/reporting/route.ts",
+      "description": "Consultă raportarea TikTok Ads.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_drafts",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/drafts",
+      "handler": "src/app/api/marketing/tiktok-ads/drafts/route.ts",
+      "description": "Listează drafturile Ads.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_draft_create",
+      "method": "PUT",
+      "path": "/api/marketing/tiktok-ads/drafts",
+      "handler": "src/app/api/marketing/tiktok-ads/drafts/route.ts",
+      "description": "Salvează draftul Ads conform contractului existent.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_draft_update",
+      "method": "PATCH",
+      "path": "/api/marketing/tiktok-ads/drafts",
+      "handler": "src/app/api/marketing/tiktok-ads/drafts/route.ts",
+      "description": "Modifică draftul Ads.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_publication",
+      "method": "POST",
+      "path": "/api/marketing/tiktok-ads/drafts/publication",
+      "handler": "src/app/api/marketing/tiktok-ads/drafts/publication/route.ts",
+      "description": "Publică draft Ads cu aprobările și plafonul existente.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_operation_status",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/operations/{operationId}",
+      "handler": "src/app/api/marketing/tiktok-ads/operations/[operationId]/route.ts",
+      "description": "Verifică rezultatul operației Ads înainte de repetare.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_operation_recover",
+      "method": "POST",
+      "path": "/api/marketing/tiktok-ads/operations/{operationId}/recover",
+      "handler": "src/app/api/marketing/tiktok-ads/operations/[operationId]/recover/route.ts",
+      "description": "Reconciliază operația incertă; nu retrimite automat efectul.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_spend_authorization",
+      "method": "POST",
+      "path": "/api/marketing/tiktok-ads/spend-authorization",
+      "handler": "src/app/api/marketing/tiktok-ads/spend-authorization/route.ts",
+      "description": "Pregătește autorizarea exactă de cheltuieli conform handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_advertisers",
+      "method": "GET",
+      "path": "/api/marketing/tiktok-ads/advertisers",
+      "handler": "src/app/api/marketing/tiktok-ads/advertisers/route.ts",
+      "description": "Listează advertiserii autorizați.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_advertiser_select",
+      "method": "POST",
+      "path": "/api/marketing/tiktok-ads/advertisers",
+      "handler": "src/app/api/marketing/tiktok-ads/advertisers/route.ts",
+      "description": "Selectează advertiser autorizat.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "tiktok_ads_resources",
+      "method": "POST",
+      "path": "/api/marketing/tiktok-ads/resources",
+      "handler": "src/app/api/marketing/tiktok-ads/resources/route.ts",
+      "description": "Modifică resurse Ads cu aprobările și bugetul existente.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_connections",
+      "method": "GET",
+      "path": "/api/marketing/facebook-cloud/connections",
+      "handler": "src/app/api/marketing/facebook-cloud/connections/route.ts",
+      "description": "Consultă conexiunile Facebook Cloud.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_connection_update",
+      "method": "PATCH",
+      "path": "/api/marketing/facebook-cloud/connections/{connectionId}",
+      "handler": "src/app/api/marketing/facebook-cloud/connections/[connectionId]/route.ts",
+      "description": "Modifică conexiunea Facebook Cloud.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_connection_remove",
+      "method": "DELETE",
+      "path": "/api/marketing/facebook-cloud/connections/{connectionId}",
+      "handler": "src/app/api/marketing/facebook-cloud/connections/[connectionId]/route.ts",
+      "description": "Elimină conexiunea Cloud.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_jobs",
+      "method": "GET",
+      "path": "/api/marketing/facebook-cloud/jobs",
+      "handler": "src/app/api/marketing/facebook-cloud/jobs/route.ts",
+      "description": "Consultă joburile de publicare în grupuri.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_job_create",
+      "method": "POST",
+      "path": "/api/marketing/facebook-cloud/jobs",
+      "handler": "src/app/api/marketing/facebook-cloud/jobs/route.ts",
+      "description": "Pornește jobul de promovare în grupuri, cu drepturile existente.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_job_update",
+      "method": "PATCH",
+      "path": "/api/marketing/facebook-cloud/jobs/{jobId}",
+      "handler": "src/app/api/marketing/facebook-cloud/jobs/[jobId]/route.ts",
+      "description": "Actualizează/control job de promovare conform handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_job_remove",
+      "method": "DELETE",
+      "path": "/api/marketing/facebook-cloud/jobs/{jobId}",
+      "handler": "src/app/api/marketing/facebook-cloud/jobs/[jobId]/route.ts",
+      "description": "Anulează/elimină jobul de promovare.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "facebook_devices",
+      "method": "GET",
+      "path": "/api/marketing/facebook-local/devices",
+      "handler": "src/app/api/marketing/facebook-local/devices/route.ts",
+      "description": "Verifică dispozitivele/helper-ele de publicare locale.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "video_job",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/video-tour-jobs/{jobId}",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-jobs/[jobId]/route.ts",
+      "description": "Consultă progresul și rezultatul jobului video.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "video_job_action",
+      "method": "POST",
+      "path": "/api/properties/{propertyId}/video-tour-jobs/{jobId}",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-jobs/[jobId]/route.ts",
+      "description": "Controlează jobul video prin acțiunile handlerului existent.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "video_voices",
+      "method": "GET",
+      "path": "/api/properties/{propertyId}/video-tour-voices",
+      "handler": "src/app/api/properties/[propertyId]/video-tour-voices/route.ts",
+      "description": "Listează vocile disponibile pentru video tour.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "pricing_pdf",
+      "method": "POST",
+      "path": "/api/properties/{propertyId}/pricing-analysis/pdf",
+      "handler": "src/app/api/properties/[propertyId]/pricing-analysis/pdf/route.ts",
+      "description": "Generează raportul PDF de preț din date reale.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_export",
+      "method": "GET",
+      "path": "/api/sales/{saleId}/export",
+      "handler": "src/app/api/sales/[saleId]/export/route.ts",
+      "description": "Exportă dosarul de vânzare autorizat.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "sale_document_package",
+      "method": "GET",
+      "path": "/api/sales/{saleId}/documents/package",
+      "handler": "src/app/api/sales/[saleId]/documents/package/route.ts",
+      "description": "Pregătește pachetul de documente autorizat.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_sync",
+      "method": "POST",
+      "path": "/api/communications/conversations/{conversationId}/sync",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Sincronizează conversația autorizată.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "conversation_link",
+      "method": "POST",
+      "path": "/api/communications/conversations/{conversationId}/contact",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Leagă contactul existent de conversație.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_publish",
+      "method": "POST",
+      "path": "/api/communications/posts/{postId}/publish",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Publică draftul social existent.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_comments",
+      "method": "GET",
+      "path": "/api/communications/posts/{postId}/comments",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Consultă comentariile postării.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_comment",
+      "method": "POST",
+      "path": "/api/communications/posts/{postId}/comments",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Publică un comentariu.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_reply",
+      "method": "POST",
+      "path": "/api/communications/posts/{postId}/comments/{commentId}/replies",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Răspunde la comentariul public.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_like",
+      "method": "POST",
+      "path": "/api/communications/posts/{postId}/comments/{commentId}/like",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Apreciază comentariul.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_diagnostics",
+      "method": "GET",
+      "path": "/api/communications/posts/{postId}/diagnostics",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Verifică accesul și starea postării.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_remove",
+      "method": "DELETE",
+      "path": "/api/communications/posts/{postId}",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Șterge postarea prin handlerul existent.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "social_destination_remove",
+      "method": "DELETE",
+      "path": "/api/communications/posts/{postId}/destinations/{connectionId}",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Elimină publicarea din destinația aleasă.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "whatsapp_template_create",
+      "method": "POST",
+      "path": "/api/communications/templates/{connectionId}",
+      "handler": "src/app/api/communications/[...path]/route.ts",
+      "description": "Creează șablon; aprobarea Meta este o stare ulterioară.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_agents_sync",
+      "method": "POST",
+      "path": "/api/imobiliare/agents/sync",
+      "handler": "src/app/api/imobiliare/agents/sync/route.ts",
+      "description": "Operație imobiliare agents_sync: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_categories",
+      "method": "GET",
+      "path": "/api/imobiliare/categories",
+      "handler": "src/app/api/imobiliare/categories/route.ts",
+      "description": "Operație imobiliare categories: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_locations",
+      "method": "GET",
+      "path": "/api/imobiliare/locations",
+      "handler": "src/app/api/imobiliare/locations/route.ts",
+      "description": "Operație imobiliare locations: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_property_link",
+      "method": "POST",
+      "path": "/api/imobiliare/property-link",
+      "handler": "src/app/api/imobiliare/property-link/route.ts",
+      "description": "Operație imobiliare property_link: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_promotion_settings",
+      "method": "POST",
+      "path": "/api/imobiliare/property-promotion-settings",
+      "handler": "src/app/api/imobiliare/property-promotion-settings/route.ts",
+      "description": "Operație imobiliare promotion_settings: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_retry",
+      "method": "POST",
+      "path": "/api/imobiliare/retry",
+      "handler": "src/app/api/imobiliare/retry/route.ts",
+      "description": "Operație imobiliare retry: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "imobiliare_settings_update",
+      "method": "POST",
+      "path": "/api/imobiliare/settings",
+      "handler": "src/app/api/imobiliare/settings/route.ts",
+      "description": "Operație imobiliare settings_update: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_apply_promotions",
+      "method": "POST",
+      "path": "/api/storia/apply-promotions",
+      "handler": "src/app/api/storia/apply-promotions/route.ts",
+      "description": "Operație storia apply_promotions: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_property_link",
+      "method": "POST",
+      "path": "/api/storia/property-link",
+      "handler": "src/app/api/storia/property-link/route.ts",
+      "description": "Operație storia property_link: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_promotion_settings",
+      "method": "POST",
+      "path": "/api/storia/property-promotion-settings",
+      "handler": "src/app/api/storia/property-promotion-settings/route.ts",
+      "description": "Operație storia promotion_settings: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "storia_refresh_link",
+      "method": "POST",
+      "path": "/api/storia/refresh-link",
+      "handler": "src/app/api/storia/refresh-link/route.ts",
+      "description": "Operație storia refresh_link: consultă contractul și păstrează autorizarea și statusurile handlerului.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    }
+  ],
+  "actionKinds": [
+    "update_profile",
+    "update_agency",
+    "update_notification_preferences",
+    "storia_lead_action",
+    "preferences_link_action",
+    "update_recommendation",
+    "contract_template_action",
+    "create_sale",
+    "update_offer",
+    "delete_offer",
+    "update_prospect",
+    "portal_action",
+    "notification_action",
+    "update_property_status",
+    "add_property_note",
+    "set_property_featured",
+    "delete_task",
+    "delete_viewing",
+    "create_contact",
+    "archive_contact",
+    "assign_record",
+    "create_property",
+    "update_contact",
+    "update_preferences",
+    "update_property",
+    "import_owner_listing",
+    "activate_property",
+    "record_offer",
+    "add_interaction",
+    "create_task",
+    "update_task",
+    "schedule_viewing",
+    "update_viewing",
+    "recommend_properties",
+    "create_automation",
+    "update_automation",
+    "existing_operation"
+  ],
+  "manualWrites": [
+    {
+      "file": "src/app/(dashboard)/agenti/page.tsx",
+      "calls": [
+        {
+          "call": "uploadBytes",
+          "line": 168,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/ai-calls/page.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 584,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDoc",
+          "line": 593,
+          "sharedExecutor": false
+        },
+        {
+          "call": "addDoc",
+          "line": 607,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDoc",
+          "line": 659,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDoc",
+          "line": 666,
+          "sharedExecutor": false
+        },
+        {
+          "call": "addDoc",
+          "line": 684,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDoc",
+          "line": 738,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDoc",
+          "line": 744,
+          "sharedExecutor": false
+        },
+        {
+          "call": "addDoc",
+          "line": 759,
+          "sharedExecutor": false
+        },
+        {
+          "call": "addDoc",
+          "line": 792,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/contracts/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 1195,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 1223,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/contracts/[templateId]/edit/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 61,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/custom-domain/page.tsx",
+      "calls": [
+        {
+          "call": "uploadBytes",
+          "line": 362,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDoc",
+          "line": 364,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/dashboard/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 51,
+          "sharedExecutor": true
+        },
+        {
+          "call": "createManualViewing",
+          "line": 78,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/facebook-promotion-runner/page.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 222,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/gmail/page.tsx",
+      "calls": [
+        {
+          "call": "setDoc",
+          "line": 288,
+          "sharedExecutor": false
+        },
+        {
+          "call": "deleteDoc",
+          "line": 353,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDoc",
+          "line": 379,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/inbox/storia/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 102,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 109,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/leads/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 95,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 284,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/leads/[leadId]/page.tsx",
+      "calls": [
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 275,
+          "sharedExecutor": false
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 299,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 300,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 301,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 307,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 312,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 360,
+          "sharedExecutor": true
+        },
+        {
+          "call": "createManualViewing",
+          "line": 382,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 397,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 400,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 432,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/marketing/facebook-groups/page.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 105,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/matching/page.tsx",
+      "calls": [
+        {
+          "call": "addDoc",
+          "line": 154,
+          "sharedExecutor": false
+        },
+        {
+          "call": "addDoc",
+          "line": 181,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/notifications/page.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 35,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/owner-listings/favorite/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 292,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 344,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 349,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 354,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 359,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/owner-listings/page.tsx",
+      "calls": [
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 524,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 724,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDocumentNonBlocking",
+          "line": 728,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/properties/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 265,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/properties/[propertyId]/page.tsx",
+      "calls": [
+        {
+          "call": "createManualViewing",
+          "line": 171,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/sales-management/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 410,
+          "sharedExecutor": true
+        },
+        {
+          "call": "updateDoc",
+          "line": 456,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/settings/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 214,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 228,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 254,
+          "sharedExecutor": true
+        },
+        {
+          "call": "uploadBytes",
+          "line": 329,
+          "sharedExecutor": false
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 335,
+          "sharedExecutor": true
+        },
+        {
+          "call": "uploadBytes",
+          "line": 356,
+          "sharedExecutor": false
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 359,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 411,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/tasks/page.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 75,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/app/(dashboard)/viewings/page.tsx",
+      "calls": [
+        {
+          "call": "createManualViewing",
+          "line": 113,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 133,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 150,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/layout/BottomNavbar.tsx",
+      "calls": [
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 83,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/layout/NotificationBell.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 34,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/leads/AddLeadDialog.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 191,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 213,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/leads/ClientPortalManager.tsx",
+      "calls": [
+        {
+          "call": "deleteDocumentNonBlocking",
+          "line": 60,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDocumentNonBlocking",
+          "line": 74,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 75,
+          "sharedExecutor": false
+        },
+        {
+          "call": "deleteDocumentNonBlocking",
+          "line": 81,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 82,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/leads/detail/ClientPortalManager.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 55,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/leads/detail/MatchedProperties.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 347,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/leads/detail/PreferencesFormCard.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 36,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/marketing/MetaCampaignEditorDialog.tsx",
+      "calls": [
+        {
+          "call": "uploadBytes",
+          "line": 403,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/AdVideoPicker.tsx",
+      "calls": [
+        {
+          "call": "uploadBytes",
+          "line": 33,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/VideoLibrary.tsx",
+      "calls": [
+        {
+          "call": "uploadBytes",
+          "line": 107,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/add-property-dialog.tsx",
+      "calls": [
+        {
+          "call": "uploadBytes",
+          "line": 1530,
+          "sharedExecutor": false
+        },
+        {
+          "call": "uploadBytes",
+          "line": 1543,
+          "sharedExecutor": false
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 1667,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 1670,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/actions/FacebookCloudPublishingCard.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 149,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/actions/FacebookGroupPromotionLauncherCard.tsx",
+      "calls": [
+        {
+          "call": "addDoc",
+          "line": 83,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/actions/FacebookPromotionCard.tsx",
+      "calls": [
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 60,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/actions/PropertyNotesCard.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 36,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/actions/VideoTourCard.tsx",
+      "calls": [
+        {
+          "call": "updateDocumentNonBlocking",
+          "line": 758,
+          "sharedExecutor": false
+        },
+        {
+          "call": "uploadBytes",
+          "line": 987,
+          "sharedExecutor": false
+        },
+        {
+          "call": "uploadBytes",
+          "line": 988,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/actions/WebsiteToggleCard.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 24,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/properties/detail/PropertyHeader.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 56,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 77,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/sales/SalesEmailComposer.tsx",
+      "calls": [
+        {
+          "call": "updateDoc",
+          "line": 385,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDoc",
+          "line": 413,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDoc",
+          "line": 445,
+          "sharedExecutor": false
+        },
+        {
+          "call": "setDoc",
+          "line": 634,
+          "sharedExecutor": false
+        },
+        {
+          "call": "updateDoc",
+          "line": 665,
+          "sharedExecutor": false
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/settings/PushNotificationsCard.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 92,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/tasks/TasksBoard.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 152,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 163,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/tasks/TasksList.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 52,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 59,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 70,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    },
+    {
+      "file": "src/components/viewings/AddViewingDialog.tsx",
+      "calls": [
+        {
+          "call": "executeCrmAction",
+          "line": 184,
+          "sharedExecutor": true
+        }
+      ],
+      "verification": "static_reference_requires_semantic_review"
+    }
+  ],
+  "excluded": [
+    "internal workers",
+    "provider webhooks",
+    "master-admin outside actor permissions",
+    "human-only consent and OAuth steps"
+  ]
+}

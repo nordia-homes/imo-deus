@@ -1,4 +1,6 @@
 'use client';
+import { executeCrmAction, manualTaskDetails } from '@/lib/crm/client-actions';
+import { createManualViewing } from '@/lib/crm/client-actions';
 
 import { useMemo, useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -37,7 +39,7 @@ export default function DashboardPage() {
     const agencyName = agency?.name;
 
     // --- Action Handlers ---
-    const handleAddTask = (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => {
+    const handleAddTask = async (taskData: Omit<Task, 'id' | 'status' | 'agentId' | 'agentName'>) => {
         if (!agencyId || !user) return;
         const tasksCollection = collection(firestore, 'agencies', agencyId, 'tasks');
         const taskToAdd: Omit<Task, 'id'> = {
@@ -46,7 +48,8 @@ export default function DashboardPage() {
             agentId: user.uid,
             agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
         };
-        addDocumentNonBlocking(tasksCollection, taskToAdd);
+        try { await executeCrmAction(user, { kind: 'create_task', ...manualTaskDetails(taskData), description: taskData.description, dueDate: taskData.dueDate, ...(taskData.contactId ? { contactId: taskData.contactId } : {}), ...(taskData.propertyId ? { propertyId: taskData.propertyId } : {}) }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Task-ul nu a fost salvat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
         toast({
             title: "Task adăugat!",
             description: `Task-ul "${taskData.description}" a fost adăugat.`,
@@ -72,7 +75,7 @@ export default function DashboardPage() {
             createdAt: new Date().toISOString(),
         };
         
-        addDocumentNonBlocking(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
+        await createManualViewing(user, viewingToAdd);
 
         toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
     };

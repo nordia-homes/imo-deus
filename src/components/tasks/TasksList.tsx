@@ -1,4 +1,5 @@
 "use client";
+import { executeCrmAction, manualTaskDetails } from "@/lib/crm/client-actions";
 
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -24,7 +25,7 @@ import { useAgency } from '@/context/AgencyContext';
 
 export function TasksList() {
     const { toast } = useToast();
-    const { agencyId } = useAgency();
+    const { agencyId, user } = useAgency();
     const firestore = useFirestore();
 
     const tasksQuery = useMemoFirebase(() => {
@@ -44,18 +45,18 @@ export function TasksList() {
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [deletingTask, setDeletingTask] = useState<Task | null>(null);
 
-    const handleToggleTask = (task: Task) => {
+    const handleToggleTask = async (task: Task) => {
         if (!agencyId) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const newStatus = task.status === 'completed' ? 'open' : 'completed';
-        updateDocumentNonBlocking(taskRef, { status: newStatus });
+        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, status: newStatus }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
     };
     
-    const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
+    const handleUpdateTask = async (updatedTask: Omit<Task, 'status'>) => {
         if (!agencyId || !editingTask) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
-        updateDocumentNonBlocking(taskRef, dataToUpdate);
+        try { await executeCrmAction(user, { kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
         toast({
             title: "Task actualizat!",
             description: `Task-ul a fost actualizat.`,
@@ -63,10 +64,10 @@ export function TasksList() {
         setEditingTask(null);
     };
 
-    const handleDeleteTask = () => {
+    const handleDeleteTask = async () => {
         if (!agencyId || !deletingTask) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
-        deleteDocumentNonBlocking(taskRef);
+        try { await executeCrmAction(user, { kind: 'delete_task', taskId: deletingTask.id }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
         toast({
             variant: 'destructive',
             title: "Task șters!",

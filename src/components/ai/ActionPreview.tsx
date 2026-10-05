@@ -1,7 +1,19 @@
 import type { AssistantAction } from '@/lib/ai-assistant/contracts';
 import { resultDate } from './AssistantResultCard';
-const fieldNames:Record<string,string>={name:'Nume',phone:'Telefon',contactId:'Client',propertyId:'Proprietate',status:'Status',viewingDate:'Data vizionării',dueDate:'Termen',duration:'Durată (minute)',description:'Sarcină',notes:'Notă',soldPrice:'Preț final EUR',featured:'Promovat pe site',taskId:'Sarcină',viewingId:'Vizionare',email:'Email',contactType:'Tip client',operation:'Operațiune',agentId:'Agent'};
+const fieldNames:Record<string,string>={name:'Nume',phone:'Telefon',contactId:'Client',propertyId:'Proprietate',status:'Status',viewingDate:'Data vizionării',dueDate:'Termen',duration:'Durată (minute)',description:'Descriere',notes:'Notă',soldPrice:'Preț final EUR',featured:'Promovat pe site',taskId:'Sarcină',viewingId:'Vizionare',email:'Email',contactType:'Tip client',operation:'Operațiune',agentId:'Agent',patch:'Modificări',body:'Parametri operație',params:'Identificatori',query:'Filtre',property:'Proprietate nouă',preferences:'Preferințe',automation:'Automatizare',template:'Șablon',price:'Preț',budget:'Buget',city:'Oraș',zones:'Zone',text:'Mesaj',action:'Acțiune',content:'Conținut',destination:'Destinație'};
 export function ActionPreview({action,resolveName}:{action:AssistantAction;resolveName:(id:string)=>string}){
- const fields=Object.entries(action).filter(([key,value])=>fieldNames[key]&&value!==undefined&&value!=='');
- return <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">{fields.map(([key,value])=><div key={key} className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900"><dt className="text-xs text-muted-foreground">{fieldNames[key]}</dt><dd className="mt-0.5 break-words font-medium">{key.endsWith('Id')?(String(value).startsWith('@step:')?'Creat în pasul anterior':resolveName(String(value))):['viewingDate','dueDate'].includes(key)?resultDate(value):typeof value==='boolean'?value?'Da':'Nu':String(value)}</dd></div>)}</dl>;
+ function render(value:unknown,key:string,depth=0):React.ReactNode {
+  if(/token|secret|password|credential|authorization|api.?key/i.test(key)) return 'Valoare privată';
+  if(value===null) return 'Elimină valoarea';
+  if(typeof value==='object') {
+   if(depth>8) return '[Valoare prea adâncă]';
+   const entries=Array.isArray(value)?value.map((item,index)=>[String(index+1),item] as const):Object.entries(value as Record<string,unknown>);
+   return <dl className="space-y-2">{entries.filter(([,item])=>item!==undefined).map(([field,item])=><div key={field} className="border-l-2 border-sky-100 pl-3"><dt className="text-xs text-muted-foreground">{fieldNames[field]||field}</dt><dd className="whitespace-pre-wrap break-words">{render(item,field,depth+1)}</dd></div>)}</dl>;
+  }
+  if(key.endsWith('Id')&&typeof value==='string') return value.startsWith('@step:')?`Creat în pasul anterior (${value})`:`${resolveName(value)} (${value})`;
+  if(['viewingDate','dueDate','nextRunAt'].includes(key)) return resultDate(value);
+  return typeof value==='boolean'?value?'Da':'Nu':String(value);
+ }
+ const fields=Object.entries(action).filter(([key,value])=>key!=='kind'&&value!==undefined);
+ return <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">{fields.map(([key,value])=><div key={key} className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900"><dt className="mb-1 text-xs text-muted-foreground">{fieldNames[key]||key}</dt><dd className="max-h-64 overflow-auto whitespace-pre-wrap break-words font-medium">{render(value,key)}</dd></div>)}</dl>;
 }

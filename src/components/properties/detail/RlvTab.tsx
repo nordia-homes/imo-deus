@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { ExternalLink, FileText, ImageIcon, Loader2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { useAgency } from '@/context/AgencyContext';
-import { useFirestore, useStorage } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { useUser } from '@/firebase';
+import { attachPropertyFile } from '@/lib/crm/client-actions';
+
+
 import { useToast } from '@/hooks/use-toast';
 
 interface RlvTabProps {
@@ -30,8 +31,7 @@ export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { agencyId } = useAgency();
-  const firestore = useFirestore();
-  const storage = useStorage();
+  const { user } = useUser();
   const { toast } = useToast();
   const decodedRlvUrl = getDecodedFilePath(property.rlvUrl);
   const isImage = Boolean(
@@ -62,13 +62,13 @@ export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
 
     const isAcceptedType =
       file.type === 'application/pdf' ||
-      file.type.startsWith('image/');
+      ['image/png', 'image/jpeg', 'image/webp'].includes(file.type);
 
     if (!isAcceptedType) {
       toast({
         variant: 'destructive',
         title: 'Fișier neacceptat',
-        description: 'Poți încărca doar imagini sau documente PDF.',
+        description: 'Poți încărca PNG, JPEG, WebP sau PDF (maximum 15 MB).',
       });
       return;
     }
@@ -76,22 +76,7 @@ export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
     try {
       setIsUploading(true);
 
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-      const storageRef = ref(
-        storage,
-        `agencies/${agencyId}/properties/${property.id}/rlv/${Date.now()}-${sanitizedName}`
-      );
-
-      await uploadBytes(storageRef, file, {
-        contentType: file.type || undefined,
-      });
-
-      const downloadUrl = await getDownloadURL(storageRef);
-      const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-      await updateDoc(propertyRef, {
-        rlvUrl: downloadUrl,
-        rlvFileType: file.type,
-      });
+      await attachPropertyFile(user, file, property.id, 'property_rlv');
 
       toast({
         title: 'RLV încărcat',
@@ -102,7 +87,7 @@ export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
       toast({
         variant: 'destructive',
         title: 'Încărcarea a eșuat',
-        description: 'Nu am putut încărca fișierul. Încearcă din nou.',
+        description: error instanceof Error ? error.message : 'Nu am putut încărca fișierul. Încearcă din nou.',
       });
     } finally {
       setIsUploading(false);
@@ -115,7 +100,7 @@ export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
         ref={fileInputRef}
         type="file"
         className="hidden"
-        accept="image/*,.pdf,application/pdf"
+        accept="image/png,image/jpeg,image/webp,.pdf,application/pdf"
         onChange={handleFileChange}
         disabled={isUploading}
       />

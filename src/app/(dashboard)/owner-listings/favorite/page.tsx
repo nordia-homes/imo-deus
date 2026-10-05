@@ -1,4 +1,6 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
+
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -286,16 +288,9 @@ export default function FavoriteOwnerListingsPage() {
     }
   };
 
-  const handleSetCollaborationStatus = (listing: OwnerListing, status: CollaborationStatus | null) => {
-    if (!agencyId) return;
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
-    const timestamp = new Date().toISOString();
-    updateDocumentNonBlocking(favoriteRef, {
-      collaborationStatus: status,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
+  const handleSetCollaborationStatus = async (listing: OwnerListing, status: CollaborationStatus | null) => {
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, patch: { collaborationStatus: status } }); }
+    catch (error) { toast({ title: 'Actualizare eșuată', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
   const handleImport = async (listing: OwnerListing) => {
@@ -345,103 +340,24 @@ export default function FavoriteOwnerListingsPage() {
     }
   };
 
-  const handleSaveFavorite = (listingId: string, updates: Partial<OwnerListingFavorite>) => {
-    if (!agencyId) return;
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
-    updateDocumentNonBlocking(favoriteRef, {
-      ...updates,
-      updatedAt: new Date().toISOString(),
-      updatedBy: user?.uid ?? null,
-    });
+  const handleSaveFavorite = async (listingId: string, updates: Partial<OwnerListingFavorite>) => {
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { ...(updates.notes !== undefined ? { notes: updates.notes } : {}), ...(updates.propertyAddress !== undefined ? { propertyAddress: updates.propertyAddress } : {}), ...(updates.commissionValue !== undefined ? { commissionValue: updates.commissionValue } : {}) } }); }
+    catch (error) { toast({ title: 'Actualizare eșuată', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
-  const handleSetReserved = (listingId: string) => {
-    if (!agencyId) return;
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
-    const timestamp = new Date().toISOString();
-    const existingFavorite = favorites?.find((entry) => entry.ownerListingId === listingId);
-    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
-      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
-      return;
-    }
-    updateDocumentNonBlocking(favoriteRef, {
-      isFavoriteActive: true,
-      wasRemovedFromFavorites: existingFavorite?.wasRemovedFromFavorites ?? false,
-      removedAt: null,
-      removedBy: null,
-      removedByName: null,
-      reservedByAgentId: user?.uid ?? null,
-      reservedByAgentName: currentAgentName,
-      reservedAt: timestamp,
-      takenByAgentId: null,
-      takenByAgentName: null,
-      takenAt: null,
-      contactOutcome: null,
-      contactOutcomeAt: null,
-      contactOutcomeByAgentId: null,
-      contactOutcomeByAgentName: null,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({ title: 'Status actualizat', description: 'Anuntul este marcat ca rezervat.' });
+  const handleSetReserved = async (listingId: string) => {
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { state: 'reserved' } }); toast({ title: 'Anunț rezervat' }); }
+    catch (error) { toast({ title: 'Status blocat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
-  const handleSetTaken = (listingId: string) => {
-    if (!agencyId) return;
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
-    const timestamp = new Date().toISOString();
-    const existingFavorite = favorites?.find((entry) => entry.ownerListingId === listingId);
-    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
-      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
-      return;
-    }
-    updateDocumentNonBlocking(favoriteRef, {
-      isFavoriteActive: true,
-      reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
-      reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
-      reservedAt: existingFavorite?.reservedAt ?? timestamp,
-      takenByAgentId: user?.uid ?? null,
-      takenByAgentName: currentAgentName,
-      takenAt: timestamp,
-      contactOutcome: null,
-      contactOutcomeAt: null,
-      contactOutcomeByAgentId: null,
-      contactOutcomeByAgentName: null,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({ title: 'Lead preluat', description: 'Anuntul este marcat ca preluat de agent.' });
+  const handleSetTaken = async (listingId: string) => {
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { state: 'taken' } }); toast({ title: 'Lead preluat' }); }
+    catch (error) { toast({ title: 'Status blocat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
-  const handleSetOutcome = (listingId: string, outcome: 'negative' | 'follow_up') => {
-    if (!agencyId) return;
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listingId);
-    const timestamp = new Date().toISOString();
-    const existingFavorite = favorites?.find((entry) => entry.ownerListingId === listingId);
-    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
-      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
-      return;
-    }
-    updateDocumentNonBlocking(favoriteRef, {
-      isFavoriteActive: true,
-      takenByAgentId: null,
-      takenByAgentName: null,
-      takenAt: null,
-      contactOutcome: outcome,
-      contactOutcomeAt: timestamp,
-      contactOutcomeByAgentId: user?.uid ?? null,
-      contactOutcomeByAgentName: currentAgentName,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({
-      title: 'Status actualizat',
-      description: outcome === 'negative' ? 'Anuntul a fost marcat negativ.' : 'Anuntul a fost trecut in follow-up.',
-    });
+  const handleSetOutcome = async (listingId: string, outcome: 'negative' | 'follow_up') => {
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { contactOutcome: outcome } }); toast({ title: 'Status actualizat' }); }
+    catch (error) { toast({ title: 'Status blocat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
   if (isAgencyLoading || isFavoriteListingsLoading || isFavoritesLoading) {

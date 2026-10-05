@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -1191,37 +1192,18 @@ export default function ContractsPage() {
 
     try {
       setIsCreating(true);
-      const templateRef = doc(collection(firestore, 'agencies', agencyId, 'contractTemplates'));
-      const now = new Date().toISOString();
-
-      await setDoc(templateRef, {
-        id: templateRef.id,
-        agencyId,
-        name: nextName,
-        category: state.category,
-        description: state.description.trim(),
-        sourceType: 'document',
-        content: state.content,
-        headerMode: 'crm_prefilled',
-        sourceFormat: state.sourceFormat,
-        sourcePdfUrl: '',
-        sourcePdfPath: '',
-        fileName: state.fileName,
-        pageCount: 0,
-        status: 'draft',
-        fields: [],
-        createdAt: now,
-        updatedAt: now,
-        createdBy: user.uid,
-        updatedBy: user.uid,
-      } satisfies ContractTemplate);
+      const created = await executeCrmAction(user, { kind: 'contract_template_action', action: 'create', data: {
+        name: nextName, category: state.category, description: state.description.trim(), content: state.content,
+        sourceFormat: state.sourceFormat, fileName: state.fileName, status: 'draft',
+      } });
+      const templateId = String(created.templateId);
 
       toast({
         title: 'Template creat',
         description: 'Contractul document a fost creat. Deschid editorul vizual.',
       });
       setIsCreateOpen(false);
-      router.push(`/contracts/${templateRef.id}/edit`);
+      router.push(`/contracts/${templateId}/edit`);
     } catch (error) {
       console.error('Failed to create contract template:', error);
       toast({
@@ -1238,7 +1220,7 @@ export default function ContractsPage() {
     if (!agencyId || userProfile?.role !== 'admin') return;
 
     try {
-      await deleteDoc(doc(firestore, 'agencies', agencyId, 'contractTemplates', templateId));
+      await executeCrmAction(user, { kind: 'contract_template_action', action: 'delete', templateId });
       toast({
         title: 'Template sters',
         description: 'Template-ul a fost eliminat.',

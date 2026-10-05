@@ -66,6 +66,10 @@ export function presentVoice(
       gesture = "SUCCESS";
     } else if (plan.status === "cancelled") {
       spokenText = "Planul a fost anulat.";
+    } else if (plan.status === "paused") {
+      spokenText = `Planul este în pauză. ${plan.results?.length || 0} din ${plan.actions.length} pași confirmați. Îl poți relua din panou.`;
+    } else if (plan.status === "running") {
+      spokenText = `Planul este în execuție. ${plan.results?.length || 0} din ${plan.actions.length} pași confirmați.`;
     } else if (["failed", "unknown", "partial"].includes(plan.status)) {
       spokenText = "Execuția necesită verificare. Rezultatul este în panou.";
       state = "ERROR";

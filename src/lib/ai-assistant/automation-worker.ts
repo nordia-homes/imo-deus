@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { automationSchema, safeData } from './contracts';
-import { collectionFor, type AssistantContext } from './access';
+import { collectionFor, getResource, type AssistantContext } from './access';
 import { executeAction, matchContact } from './actions';
 import { getInsights } from './insights';
 import { searchProperties } from './search';
@@ -54,7 +54,10 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       const automation = automationSchema.parse(claim.automation);
       const run = Number(claim.runCount || 0) + 1;
       let result: unknown;
-      if (automation.type === 'followup_task') {
+      const stopReason = automation.stopAfter && Date.parse(automation.stopAfter) <= Date.now() ? 'Termenul de oprire a fost atins.' : 'contactId' in automation && automation.stopOnContactStatuses?.includes((await getResource(ctx, 'contacts', automation.contactId)).status) ? 'Clientul a ajuns într-un status configurat pentru oprire.' : null;
+      if (stopReason) {
+        result = { skipped: true, reason: stopReason };
+      } else if (automation.type === 'followup_task') {
         result = await executeAction(ctx, { kind: 'create_task', contactId: automation.contactId, description: automation.description, dueDate: now }, `${claim.id}-run-${run}`);
       } else if (automation.type === 'whatsapp_template') {
         if (isDemoAgencyId(claim.agencyId)) throw new Error('Mesajele externe sunt indisponibile în demo.');
@@ -101,6 +104,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       const fresh = await tx.get(doc.ref);
       if (fresh.data()?.claimId !== claimId || fresh.data()?.status !== 'running') return;
       tx.update(doc.ref, outcome); tx.update(mirror, outcome);
+      tx.create(mirror.collection('audit').doc(claimId), { id: claimId, action: 'run', actorId: claim.actorId, occurredAt: now, runCount: outcome.runCount || claim.runCount || 0, status: outcome.status, ...(outcome.error ? { error: outcome.error } : {}), ...(outcome.lastResult ? { result: outcome.lastResult } : {}) });
     });
     results.push({ id: doc.id, status: String(outcome.status) });
   }

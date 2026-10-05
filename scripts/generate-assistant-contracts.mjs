@@ -21,8 +21,28 @@ function schemaSnippets(file, depth = 0, visited = new Set()) {
 }
 const definitions = fs.readFileSync('src/lib/ai-assistant/operations.ts', 'utf8');
 const contracts = {};
-for (const match of definitions.matchAll(/(\w+): \{ method: '(\w+)',[^\n]*import\('@\/([^']+)'\)/g)) {
-  const file = path.join(root, 'src', match[3] + '.ts');
+const registry = ts.createSourceFile('operations.ts', definitions, ts.ScriptTarget.Latest, true);
+const entries = [];
+function collect(node) {
+  if (ts.isVariableDeclaration(node) && node.name.getText(registry) === 'operations' && node.initializer && ts.isObjectLiteralExpression(node.initializer)) {
+    for (const property of node.initializer.properties) {
+      if (!ts.isPropertyAssignment(property) || !ts.isObjectLiteralExpression(property.initializer)) continue;
+      const fields = new Map(property.initializer.properties.filter(ts.isPropertyAssignment).map(field => [field.name.getText(registry), field.initializer]));
+      let handler;
+      function findImport(child) {
+        if (ts.isCallExpression(child) && child.expression.kind === ts.SyntaxKind.ImportKeyword && ts.isStringLiteral(child.arguments[0])) handler = child.arguments[0].text;
+        ts.forEachChild(child, findImport);
+      }
+      if (fields.get('load')) findImport(fields.get('load'));
+      if (!handler?.startsWith('@/')) throw new Error(`Missing handler for ${property.name.getText(registry)}`);
+      entries.push({ id: property.name.getText(registry), method: fields.get('method').text, handler: handler.slice(2) });
+    }
+  }
+  ts.forEachChild(node, collect);
+}
+collect(registry);
+for (const entry of entries) {
+  const file = path.join(root, 'src', entry.handler + '.ts');
   const source = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
   const bodyFields = new Set(), queryFields = new Set();
   function visit(node) {
@@ -31,7 +51,7 @@ for (const match of definitions.matchAll(/(\w+): \{ method: '(\w+)',[^\n]*import
     ts.forEachChild(node, visit);
   }
   visit(source);
-  contracts[match[1]] = { method: match[2], validation: schemaSnippets(file).join('\n\n').slice(0, 16000), bodyFields: [...bodyFields].sort(), queryFields: [...queryFields].sort(), note: 'Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă.' };
+  contracts[entry.id] = { method: entry.method, validation: schemaSnippets(file).join('\n\n').slice(0, 16000), bodyFields: [...bodyFields].sort(), queryFields: [...queryFields].sort(), note: 'Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă.' };
 }
 fs.writeFileSync('src/lib/ai-assistant/handler-contracts.json', JSON.stringify(contracts, null, 2) + '\n');
 console.log(`Generated contracts for ${Object.keys(contracts).length} registered handlers.`);

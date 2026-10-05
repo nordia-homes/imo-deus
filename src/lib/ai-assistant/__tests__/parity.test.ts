@@ -1,0 +1,153 @@
+import { describe, expect, it, vi } from 'vitest';
+vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn() }));
+vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn() }));
+vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
+import { actionSchema } from '../contracts';
+import { executeAction } from '../actions';
+import { selectActionTools, capabilityScore } from '../capability-discovery';
+import type { AssistantContext } from '../access';
+
+function database(initial: Record<string, any>) {
+  const rows = new Map<string, Record<string, any>>(Object.entries({ 'users/u': { agencyId: 'a', role: 'agent', name: 'Agent' }, ...initial }));
+  const ref = (path: string): any => {
+    const filters: [string, any][] = [];
+    return { path, id: path.split('/').at(-1), collection: (name: string) => ref(`${path}/${name}`), doc: (id: string) => ref(`${path}/${id}`),
+      where(field: string, _op: string, value: any) { filters.push([field, value]); return this; },
+      get: async () => { const docs = [...rows].filter(([key, value]) => key.startsWith(path + '/') && key.split('/').length === path.split('/').length + 1 && filters.every(([field, wanted]) => value[field] === wanted)).map(([key, value]) => ({ id: key.split('/').at(-1), data: () => value, ref: ref(key) })); return { exists: rows.has(path), data: () => rows.get(path), docs, empty: docs.length === 0, size: docs.length }; },
+    };
+  };
+  const db = { collection: ref, runTransaction: async (work: any) => {
+    const writes: (() => void)[] = [], tx = { get: async (reference: any) => { if (writes.length) throw new Error('Read after write'); return reference.get(); },
+      create: (reference: any, data: any) => writes.push(() => { if (rows.has(reference.path)) throw new Error('Duplicate'); rows.set(reference.path, data); }),
+      update: (reference: any, data: any) => writes.push(() => rows.set(reference.path, { ...rows.get(reference.path), ...data })),
+      set: (reference: any, data: any) => writes.push(() => rows.set(reference.path, data)), delete: (reference: any) => writes.push(() => rows.delete(reference.path)) };
+    const result = await work(tx); writes.forEach(write => write()); return result;
+  } };
+  return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
+}
+describe('CRM parity and command execution', () => {
+  it('updates own profile and public projection without changing membership', async () => {
+    const { ctx, rows } = database({});
+    await executeAction(ctx, { kind: 'update_profile', patch: { name: 'Nume nou', phone: '0722111222' } }, 'profile');
+    expect(rows.get('users/u')).toMatchObject({ agencyId: 'a', role: 'agent', name: 'Nume nou' });
+    expect(rows.get('publicAgentProfiles/u')).toMatchObject({ agencyId: 'a', name: 'Nume nou', phone: '0722111222' });
+    expect(actionSchema.safeParse({ kind: 'update_profile', patch: { role: 'admin' } }).success).toBe(false);
+  });
+  it('merges notification categories and denies agent agency administration', async () => {
+    const { ctx, rows } = database({ 'users/u/notificationPreferences/default': { categories: { inboxMessages: false, taskUpdates: true } } });
+    await executeAction(ctx, { kind: 'update_notification_preferences', patch: { categories: { taskUpdates: false } } }, 'notifications');
+    expect(rows.get('users/u/notificationPreferences/default')?.categories).toMatchObject({ inboxMessages: false, taskUpdates: false });
+    await expect(executeAction(ctx, { kind: 'update_agency', patch: { name: 'Agenție' } }, 'agency')).rejects.toThrow('administratorul');
+  });
+  it('preserves the manual task date and all participant/time fields', async () => {
+    const { ctx, rows } = database({});
+    const action = actionSchema.parse({ kind: 'create_task', description: 'Sună clientul', dueDate: '2026-10-06', startTime: '14:30', duration: 30, participantName: 'Maria', participantPhone: '0722334455' });
+    await executeAction(ctx, action, 'task');
+    expect(rows.get('agencies/a/tasks/task')).toMatchObject({ dueDate: '2026-10-06', startTime: '14:30', duration: 30, participantName: 'Maria', participantPhone: '0722334455' });
+    expect(actionSchema.safeParse({ ...action, dueDate: '2026-02-31' }).success).toBe(false);
+  });
+  it('accepts full property fields but not role/status/ownership injection through a patch', () => {
+    expect(actionSchema.parse({ kind: 'update_property', propertyId: 'p', patch: { floor: '3', constructionYear: 2018, totalFloors: 8, city: 'București', nearMetro: true } }).kind).toBe('update_property');
+    for (const patch of [{ agentId: 'other' }, { status: 'Activ' }, { latitude: 100 }, { constructionYear: 1700 }]) expect(actionSchema.safeParse({ kind: 'update_property', propertyId: 'p', patch }).success).toBe(false);
+  });
+  it('saves the property form and lifecycle atomically, preserves portal metadata and rejects stale changes', async () => {
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { status: 'Activ', title: 'Old', updatedAt: '2026-01-01T00:00:00Z', agentId: 'u', portalProfiles: { imobiliare: { customReference: 'REMOTE', lastPayloadHash: 'original' }, storia: { remoteUuid: 'STORIA' } } } });
+    const action = actionSchema.parse({ kind: 'update_property', propertyId: 'p', expectedUpdatedAt: '2026-01-01T00:00:00Z', patch: { title: 'New', portalProfiles: { imobiliare: { locationId: 100, locationLabel: 'Titan' } } }, statusChange: { status: 'Rezervat', reason: 'reservation_documents_pending' } });
+    await executeAction(ctx, action, 'form');
+    expect(rows.get('agencies/a/properties/p')).toMatchObject({ title: 'New', status: 'Rezervat', portalProfiles: { imobiliare: { customReference: 'REMOTE', lastPayloadHash: 'original', locationId: 100 }, storia: { remoteUuid: 'STORIA' } } });
+    expect(rows.get('agencies/a/propertyStatusEvents/form')?.propertySnapshot.title).toBe('New');
+    await expect(executeAction(ctx, action, 'stale')).rejects.toThrow('între timp');
+  });
+  it('matches manual agency assignment rights while refusing another tenant agent', async () => {
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { title: 'Property' }, 'users/other': { agencyId: 'a', role: 'agent', name: 'Other' }, 'users/outsider': { agencyId: 'b', role: 'agent' } });
+    await executeAction(ctx, { kind: 'assign_record', resource: 'properties', id: 'p', agentId: 'other' }, 'assign');
+    expect(rows.get('agencies/a/properties/p')?.agentId).toBe('other');
+    await expect(executeAction(ctx, { kind: 'assign_record', resource: 'properties', id: 'p', agentId: 'outsider' }, 'bad')).rejects.toThrow('agenției');
+  });
+  it('discovers Romanian field names and destructive verbs with a bounded native catalog', () => {
+    expect(selectActionTools('Schimbă etajul apartamentului', ['update_property', 'create_task', 'schedule_viewing'])).toContain('update_property');
+    expect(selectActionTools('Șterge oferta clientului', ['delete_offer', 'create_property'])).toEqual(['delete_offer']);
+    expect(capabilityScore('telefonează proprietarului', 'outreach_start')).toBeGreaterThan(0);
+  });
+  it('rejects the alternate activation path when mandatory property data is missing', async () => {
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { status: 'Inactiv', title: 'Draft' } });
+    await expect(executeAction(ctx, { kind: 'update_property_status', propertyId: 'p', status: 'Activ', notes: '' }, 'activate')).rejects.toThrow('Completează');
+    expect(rows.get('agencies/a/properties/p')?.status).toBe('Inactiv');
+  });
+  it('creates the same budget defaults as the manual contact form and refuses an existing phone', async () => {
+    const { ctx, rows } = database({});
+    const action = actionSchema.parse({ kind: 'create_contact', name: 'Maria', phone: '0722334455', budget: 100000, city: 'București' });
+    await executeAction(ctx, action, 'contact');
+    expect(rows.get('agencies/a/contacts/contact')?.preferences).toMatchObject({ desiredPriceRangeMin: 80000, desiredPriceRangeMax: 120000, locationPreferences: 'București' });
+    await expect(executeAction(ctx, action, 'other')).rejects.toThrow('există deja');
+    await expect(executeAction(ctx, actionSchema.parse({ ...action, phone: '+40 722 334 455' }), 'formatted')).rejects.toThrow('există deja');
+  });
+  it('releases an old identity only after replacing it and prevents an email collision', async () => {
+    const { ctx, rows } = database({});
+    await executeAction(ctx, actionSchema.parse({ kind: 'create_contact', name: 'Maria', email: 'Maria@EXAMPLE.com' }), 'first');
+    await expect(executeAction(ctx, actionSchema.parse({ kind: 'create_contact', name: 'Second', email: 'maria@example.com' }), 'second')).rejects.toThrow('există deja');
+    await executeAction(ctx, { kind: 'update_contact', contactId: 'first', patch: { email: 'new@example.com' } }, 'replace');
+    await executeAction(ctx, actionSchema.parse({ kind: 'create_contact', name: 'Second', email: 'maria@example.com' }), 'second');
+    expect(rows.get('agencies/a/contacts/first')?.normalizedEmail).toBe('new@example.com');
+  });
+  it('converts a Storia lead once with source metadata and initialized preferences', async () => {
+    const { ctx, rows } = database({ 'agencies/a/storiaInboxLeads/l': { senderName: 'Maria', senderPhone: '0722334455', senderEmail: 'maria@example.com', propertyId: 'p', conversationId: 'remote', latestMessage: 'Vreau o vizionare' }, 'agencies/a/properties/p': { title: 'Apartament', city: 'București', zone: 'Titan' } });
+    await executeAction(ctx, { kind: 'storia_lead_action', action: 'convert', leadId: 'l' }, 'convert');
+    const repeat = await executeAction(ctx, { kind: 'storia_lead_action', action: 'convert', leadId: 'l' }, 'repeat');
+    expect(rows.get('agencies/a/contacts/convert')).toMatchObject({ source: 'Storia', sourceLeadId: 'l', sourcePropertyId: 'p', sourceMetadata: { conversationId: 'remote' }, preferences: { locationPreferences: 'București' }, normalizedPhone: '40722334455' });
+    expect(repeat).toMatchObject({ contactId: 'convert', reused: true });
+    expect(rows.has('agencies/a/contacts/repeat')).toBe(false);
+  });
+  it('links a Storia lead to the existing contact without overwriting its preferences', async () => {
+    const { ctx, rows } = database({ 'agencies/a/storiaInboxLeads/l': { senderName: 'Maria', senderPhone: '+40 722334455' }, 'agencies/a/contacts/c': { phone: '0722334455', normalizedPhone: '40722334455', name: 'Existing', preferences: { desiredRooms: 3 } } });
+    expect(await executeAction(ctx, { kind: 'storia_lead_action', action: 'convert', leadId: 'l' }, 'convert')).toMatchObject({ contactId: 'c', reused: true });
+    expect(rows.get('agencies/a/contacts/c')).toMatchObject({ name: 'Existing', preferences: { desiredRooms: 3 } });
+  });
+  it('allows an unchanged legacy duplicate identity during editing and rejects changing it to another identity', async () => {
+    const { ctx, rows } = database({ 'agencies/a/contacts/c': { phone: '0722334455' }, 'agencies/a/contacts/other': { phone: '0722334455' }, 'agencies/a/contacts/third': { phone: '0733333333', normalizedPhone: '40733333333' } });
+    await executeAction(ctx, { kind: 'update_contact', contactId: 'c', patch: { phone: '0722334455', name: 'Updated' } }, 'edit');
+    expect(rows.get('agencies/a/contacts/c')?.name).toBe('Updated');
+    await expect(executeAction(ctx, { kind: 'update_contact', contactId: 'c', patch: { phone: '+40 733333333' } }, 'bad')).rejects.toThrow('există deja');
+  });
+  it('changes/removes the identified offer and binds replays to the original payload', async () => {
+    const { ctx, rows } = database({ 'agencies/a/contacts/c': { offers: [{ id: 'o', price: 100, status: 'În așteptare' }] } });
+    const action = actionSchema.parse({ kind: 'update_offer', contactId: 'c', offerId: 'o', patch: { status: 'Acceptată' } });
+    await executeAction(ctx, action, 'offer'); await executeAction(ctx, action, 'offer');
+    expect(rows.get('agencies/a/contacts/c')?.offers[0].status).toBe('Acceptată');
+    await expect(executeAction(ctx, { ...action, patch: { price: 200 } } as any, 'offer')).rejects.toThrow('altei comenzi');
+    await executeAction(ctx, { kind: 'delete_offer', contactId: 'c', offerId: 'o' }, 'delete');
+    expect(rows.get('agencies/a/contacts/c')?.offers).toEqual([]);
+  });
+  it('denies prospect modification reserved by another agent', async () => {
+    const { ctx } = database({ 'agencies/a/ownerListingFavorites/l': { reservedByAgentId: 'other', isFavoriteActive: true } });
+    await expect(executeAction(ctx, { kind: 'update_prospect', listingId: 'l', patch: { contactOutcome: 'negative' } }, 'prospect')).rejects.toThrow('alt agent');
+  });
+  it('allows taking an expired reservation and replaces all stale ownership metadata', async () => {
+    const { ctx, rows } = database({ 'agencies/a/ownerListingFavorites/l': { reservedByAgentId: 'other', reservedByAgentName: 'Other', reservedAt: '2020-01-01T00:00:00Z', isFavoriteActive: true, contactOutcomeAt: 'old' } });
+    await executeAction(ctx, { kind: 'update_prospect', listingId: 'l', patch: { state: 'taken' } }, 'take');
+    expect(rows.get('agencies/a/ownerListingFavorites/l')).toMatchObject({ reservedByAgentId: 'u', reservedByAgentName: 'Agent', takenByAgentId: 'u', contactOutcomeAt: null, contactOutcomeByAgentId: null });
+  });
+  it('protects a taken prospect even when its original reservation has expired', async () => {
+    const { ctx } = database({ 'agencies/a/ownerListingFavorites/l': { reservedByAgentId: 'u', reservedAt: '2020-01-01T00:00:00Z', takenByAgentId: 'other', isFavoriteActive: true } });
+    await expect(executeAction(ctx, { kind: 'update_prospect', listingId: 'l', patch: { state: 'reserved' } }, 'take')).rejects.toThrow('alt agent');
+  });
+  it('accepts the rental lifecycle and canonical location fields', async () => {
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { status: 'Activ', title: 'Apartament' } });
+    const action = actionSchema.parse({ kind: 'update_property_status', propertyId: 'p', status: 'Închiriat' });
+    await executeAction(ctx, action, 'rented');
+    expect(rows.get('agencies/a/properties/p')?.status).toBe('Închiriat');
+    expect(actionSchema.safeParse({ kind: 'update_property', propertyId: 'p', patch: { amenities: ['Metrou'], cadastralNumber: '123', locationProfile: { primary: { provider: 'imobiliare', locationId: 100, depth: 3, county: 'București', locality: 'București', zone: 'Titan', display: 'Titan' }, source: 'manual' } } }).success).toBe(true);
+  });
+  it('creates a Sales dossier through the existing constructor and rejects duplicate creation', async () => {
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { title: 'Apartament', address: 'Titan', status: 'Activ', agentId: 'u', price: 130000 } });
+    await executeAction(ctx, { kind: 'create_sale', propertyId: 'p' }, 'sale');
+    expect(rows.get('agencies/a/sales/p')).toMatchObject({ agencyId: 'a', propertyId: 'p', agentId: 'u', agreedPrice: 130000 });
+    await expect(executeAction(ctx, { kind: 'create_sale', propertyId: 'p' }, 'second')).rejects.toThrow('există deja');
+  });
+  it('revalidates membership even for an already completed action', async () => {
+    const { ctx, rows } = database({ 'agencies/a/contacts/c': { offers: [{ id: 'o' }] } });
+    const action = { kind: 'update_offer', contactId: 'c', offerId: 'o', patch: { price: 100 } } as const;
+    await executeAction(ctx, action, 'offer'); rows.set('users/u', { agencyId: 'other', role: 'agent' });
+    await expect(executeAction(ctx, action, 'offer')).rejects.toThrow('revocat');
+  });
+});

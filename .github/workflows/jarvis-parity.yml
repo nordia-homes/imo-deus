@@ -1,0 +1,34 @@
+name: Jarvis CRM parity
+on:
+  pull_request:
+    paths: ['src/lib/ai-assistant/**', 'src/lib/crm/**', 'src/components/ai/**', 'src/components/jarvis-voice/**', 'src/app/api/ai-assistant/**', 'src/app/api/crm/**', 'functions/src/jarvis.ts', 'src/firestore.rules', 'scripts/*assistant*', 'scripts/jarvis-*', 'docs/jarvis/CRM_PARITY_LIVE_MANIFEST.json', 'package*.json', '.github/workflows/jarvis-parity.yml']
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run jarvis:parity:check
+      - run: npm run typecheck
+      - run: npm run test:ai-assistant
+      - run: npx firebase emulators:exec --project demo-imodeus-ai-assistant --only firestore "npx vitest run src/lib/ai-assistant/__tests__/firestore-rules.test.ts"
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:ai-assistant:ui
+      - run: node scripts/jarvis-voice-ui-smoke.mjs
+      - run: npm ci && npm run build
+        working-directory: functions
+      - run: npm run build

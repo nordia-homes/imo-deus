@@ -28,4 +28,12 @@ describe('durable tenant-scoped jobs', () => {
   it('blocks a job after role changes without invoking the model', async () => { const { ctx, db, rows } = database(); await enqueueTurn(ctx, input); rows.set('users/u', { agencyId: 'a', role: 'admin' }); await drainAgentJobs(db as any); expect(chatTurn).not.toHaveBeenCalled(); expect(rows.get('assistantAgentJobs/request').status).toBe('failed'); });
   it('never replays an interrupted confirmed plan automatically', async () => { const { db, rows } = database({ 'assistantAgentJobs/plan': { jobType: 'plan', planId: 'plan', agencyId: 'a', userId: 'u', role: 'agent', status: 'running', leaseUntil: 0, attempts: 1 } }); await drainAgentJobs(db as any); expect(runPlan).not.toHaveBeenCalled(); expect(rows.get('assistantAgentJobs/plan').status).toBe('failed'); });
   it('keeps execution completion separate from uncertain external action status', async () => { const { db, rows } = database({ 'assistantAgentJobs/plan': { jobType: 'plan', planId: 'plan', agencyId: 'a', userId: 'u', role: 'agent', status: 'pending', attempts: 0, createdAt: '' } }); await drainAgentJobs(db as any); expect(rows.get('assistantAgentJobs/plan')).toMatchObject({ status: 'completed', planStatus: 'unknown' }); expect(runPlan).toHaveBeenCalledTimes(1); });
+  it('requeues a checkpoint instead of reporting a partial batch as completed', async () => {
+    vi.mocked(runPlan).mockResolvedValueOnce({ status: 'pending', results: Array.from({ length: 10 }, (_, i) => ({ step: i + 1 })) } as any);
+    const { db, rows } = database({ 'assistantAgentJobs/plan': { jobType: 'plan', planId: 'plan', agencyId: 'a', userId: 'u', role: 'agent', status: 'pending', attempts: 0, createdAt: '' } });
+    await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/plan')).toMatchObject({ status: 'pending', planStatus: 'pending', confirmedSteps: 10 });
+    expect(rows.get('assistantAgentJobs/plan')).not.toHaveProperty('completedAt');
+    expect(runPlan).toHaveBeenCalledWith(expect.anything(), 'plan', false, 10);
+  });
 });

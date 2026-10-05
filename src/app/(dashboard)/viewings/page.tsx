@@ -1,4 +1,5 @@
 'use client';
+import { createManualViewing, executeCrmAction, manualTaskDetails } from '@/lib/crm/client-actions';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -109,7 +110,7 @@ export default function ViewingsPage() {
         };
 
         try {
-            await addDoc(collection(firestore, `agencies/${agencyId}/viewings`), viewingToAdd);
+            await createManualViewing(user, viewingToAdd);
 
             toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
         } catch (error) {
@@ -129,7 +130,7 @@ export default function ViewingsPage() {
         };
 
         try {
-            await addDoc(collection(firestore, 'agencies', agencyId, 'tasks'), taskToAdd);
+            await executeCrmAction(user, { kind: 'create_task', ...manualTaskDetails(taskData), description: taskData.description, dueDate: taskData.dueDate, ...(taskData.contactId ? { contactId: taskData.contactId } : {}), ...(taskData.propertyId ? { propertyId: taskData.propertyId } : {}) });
             toast({
                 title: 'Task adăugat!',
                 description: `Task-ul "${taskData.description}" a fost adăugat în calendar.`,
@@ -141,52 +142,29 @@ export default function ViewingsPage() {
                 title: 'Eroare',
                 description: 'Task-ul nu a putut fi salvat.',
             });
+            throw error;
         }
     };
 
-    const handleUpdateTask = (updatedTask: Omit<Task, 'status'>) => {
+    const persistCalendarAction = async (action: Parameters<typeof executeCrmAction>[1], done: () => void, title: string, propagateError = false) => {
+        try { await executeCrmAction(user, action); done(); toast({ title }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); if (propagateError) throw error; }
+    };
+    const handleUpdateTask = async (updatedTask: Omit<Task, 'status'>) => {
         if (!agencyId || !editingTask) return;
-
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
-        const { id, ...dataToUpdate } = updatedTask;
-        updateDocumentNonBlocking(taskRef, dataToUpdate);
-        toast({
-            title: 'Task actualizat!',
-            description: `Task-ul "${updatedTask.description}" a fost actualizat.`,
-        });
-        setEditingTask(null);
+        await persistCalendarAction({ kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }, () => setEditingTask(null), 'Task actualizat!', true);
     };
-
-    const handleDeleteTask = () => {
+    const handleDeleteTask = async () => {
         if (!agencyId || !deletingTask) return;
-
-        const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
-        deleteDocumentNonBlocking(taskRef);
-        toast({
-            variant: 'destructive',
-            title: 'Task șters!',
-            description: `Task-ul "${deletingTask.description}" a fost șters.`,
-        });
-        setDeletingTask(null);
+        await persistCalendarAction({ kind: 'delete_task', taskId: deletingTask.id }, () => setDeletingTask(null), 'Task șters!');
     };
-    const handleUpdateViewing = (updatedViewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => {
+    const handleUpdateViewing = async (updatedViewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => {
         if (!agencyId || !editingViewing) return;
-        const viewingRef = doc(firestore, 'agencies', agencyId, 'viewings', editingViewing.id);
-        const { id, ...dataToUpdate } = updatedViewing;
-        updateDocumentNonBlocking(viewingRef, dataToUpdate);
-        toast({ title: "Vizionare actualizată!" });
-        setEditingViewing(null);
+        await persistCalendarAction({ kind: 'update_viewing', viewingId: editingViewing.id, contactId: updatedViewing.contactId, propertyId: updatedViewing.propertyId, status: updatedViewing.status, viewingDate: updatedViewing.viewingDate, duration: updatedViewing.duration, notes: updatedViewing.notes || '' }, () => setEditingViewing(null), 'Vizionare actualizată!', true);
     };
-
-    const handleDeleteViewing = () => {
+    const handleDeleteViewing = async () => {
         if (!agencyId || !deletingViewing) return;
-        const viewingRef = doc(firestore, 'agencies', agencyId, 'viewings', deletingViewing.id);
-        deleteDocumentNonBlocking(viewingRef);
-        toast({
-            variant: 'destructive',
-            title: "Vizionare ștearsă!",
-        });
-        setDeletingViewing(null);
+        await persistCalendarAction({ kind: 'delete_viewing', viewingId: deletingViewing.id }, () => setDeletingViewing(null), 'Vizionare ștearsă!');
     };
 
     const isLoading = arePropertiesLoading || areContactsLoading || areViewingsLoading || areTasksLoading || areAgentsLoading;

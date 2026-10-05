@@ -1,4 +1,5 @@
 "use client";
+import { executeCrmAction } from "@/lib/crm/client-actions";
 
 import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -180,8 +181,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                 city: selectedProperty?.city,
                 zones: selectedProperty?.zone ? [selectedProperty.zone] : [],
             };
-            const newContactRef = await addDoc(contactsCollection, newContactData);
-            contactIdToUse = newContactRef.id;
+            const created = await executeCrmAction(user, { kind: 'create_contact', name: values.newContactName, phone: values.newContactPhone, email: values.newContactEmail, contactType: 'Cumparator', source: 'Contact direct', description: newContactData.description, budget: newContactData.budget, city: newContactData.city, zones: newContactData.zones, sourcePropertyId: selectedProperty?.id });
+            contactIdToUse = String(created.contactId);
             contactNameToUse = values.newContactName;
             toast({ title: "Client nou creat!", description: `${values.newContactName} a fost adăugat în CRM.` });
         } else {

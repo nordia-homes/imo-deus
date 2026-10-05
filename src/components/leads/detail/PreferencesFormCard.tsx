@@ -1,4 +1,6 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
+import { useUser } from '@/firebase';
 
 import { useState } from 'react';
 import { useFirestore } from '@/firebase';
@@ -19,6 +21,7 @@ interface PreferencesFormCardProps {
 export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -30,20 +33,8 @@ export function PreferencesFormCard({ contact, agency }: PreferencesFormCardProp
     const contactRef = doc(firestore, 'agencies', agency.id, 'contacts', contact.id);
 
     try {
-      const batch = writeBatch(firestore);
-      const newLinkId = crypto.randomUUID();
-      const newLinkRef = doc(firestore, 'buyer-preferences-links', newLinkId);
-      
-      const linkData = {
-        contactId: contact.id,
-        agencyId: agency.id,
-        createdAt: new Date().toISOString(),
-      };
-      
-      batch.set(newLinkRef, linkData);
-      batch.update(contactRef, { preferencesLinkId: newLinkId });
+      await executeCrmAction(user, { kind: 'preferences_link_action', contactId: contact.id, action: contact.preferencesLinkId ? 'regenerate' : 'create' });
 
-      await batch.commit();
       
       toast({ title: 'Link generat!', description: 'Acum poți copia linkul și să-l trimiți clientului.' });
 

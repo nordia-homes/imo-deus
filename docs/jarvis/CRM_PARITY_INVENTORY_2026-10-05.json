@@ -1,0 +1,4302 @@
+{
+  "generatedAt": "2026-10-05T10:22:32.750Z",
+  "operations": [
+    {
+      "id": "owner_query",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/owner-listings/query",
+      "description": "Anunțuri proprietari: scopeKey, search, rooms, priceMin/Max, cursor.",
+      "handler": "@/app/api/owner-listings/query/route",
+      "external": false
+    },
+    {
+      "id": "owner_prospect",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/owner-listings/prospecting",
+      "description": "Adaugă/scoate anunț din prospectare: listingId, action add/remove/retry.",
+      "handler": "@/app/api/owner-listings/prospecting/route",
+      "external": false
+    },
+    {
+      "id": "owner_import_preview",
+      "method": "POST",
+      "readOnly": true,
+      "path": "/api/owner-listings/import",
+      "description": "Pregătește importul: source olx/imoradar24/publi24, url, listingId opțional; nu salvează proprietatea.",
+      "handler": "@/app/api/owner-listings/import/route",
+      "external": false
+    },
+    {
+      "id": "conversation_list",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/communications/conversations",
+      "description": "Conversații autorizate: contactId, channel, status, cursor.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "conversation_messages",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/communications/conversations/{conversationId}/messages",
+      "description": "Mesaje cu cursor; conversationId obligatoriu.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "conversation_search",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/communications/search",
+      "description": "Caută mesaje: q, page; păstrează permisiunile conversației.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "communications_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/communications/dashboard",
+      "description": "Starea conexiunilor și bugetului de comunicare.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "whatsapp_templates",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/communications/templates/{connectionId}",
+      "description": "Șabloane aprobate și parametri necesari.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "conversation_start",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/communications/conversations",
+      "description": "Pornește conversație WhatsApp: contactId, connectionId, propertyId opțional.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": true
+    },
+    {
+      "id": "message_preview",
+      "method": "POST",
+      "readOnly": true,
+      "path": "/api/communications/conversations/{conversationId}/preview",
+      "description": "Verifică eligibilitate/cost: text sau template {name,language,parameters}, requestId UUID.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "message_send",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/communications/conversations/{conversationId}/messages",
+      "description": "Trimite mesaj prin coada existentă. text sau template {name,language,parameters}; requestId injectat de executor.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": true
+    },
+    {
+      "id": "conversation_note",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/communications/conversations/{conversationId}/notes",
+      "description": "Notă internă: text.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "conversation_update",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/communications/conversations/{conversationId}",
+      "description": "Modifică status/assigneeId/read/propertyId, version obligatoriu. Reatribuire numai admin.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": false
+    },
+    {
+      "id": "social_create",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/communications/posts",
+      "description": "Publicare socială prin handler-ul existent, cu buget/rol verificate; consultă conexiunile.",
+      "handler": "@/app/api/communications/[...path]/route",
+      "external": true
+    },
+    {
+      "id": "collaboration_read",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/collaboration",
+      "description": "Colaborări: view catalog/me/cases/leads; id/cursor.",
+      "handler": "@/app/api/collaboration/route",
+      "external": false
+    },
+    {
+      "id": "collaboration_action",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/collaboration",
+      "description": "Acțiune colaborare cu schema handler-ului existent; nu inventa acorduri.",
+      "handler": "@/app/api/collaboration/route",
+      "external": true
+    },
+    {
+      "id": "property_remove",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/properties/remove",
+      "description": "Retragere/vânzare prin lifecycle existent, niciodată delete direct. Necesită motiv și detalii complete.",
+      "handler": "@/app/api/properties/remove/route",
+      "external": true
+    },
+    {
+      "id": "property_context",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/properties/{propertyId}/sales-recommendation-context",
+      "description": "Context vânzare pentru propertyId.",
+      "handler": "@/app/api/properties/[propertyId]/sales-recommendation-context/route",
+      "external": false
+    },
+    {
+      "id": "property_pricing",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/properties/{propertyId}/pricing-analysis",
+      "description": "Analiză de preț cu comparabile reale pentru propertyId.",
+      "handler": "@/app/api/properties/[propertyId]/pricing-analysis/route",
+      "external": false
+    },
+    {
+      "id": "property_nearby",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/properties/{propertyId}/nearby-objectives",
+      "description": "Obiective din apropierea proprietății.",
+      "handler": "@/app/api/properties/[propertyId]/nearby-objectives/route",
+      "external": false
+    },
+    {
+      "id": "video_jobs",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/properties/{propertyId}/video-tour-jobs",
+      "description": "Joburi și rezultate video ale proprietății.",
+      "handler": "@/app/api/properties/[propertyId]/video-tour-jobs/route",
+      "external": false
+    },
+    {
+      "id": "video_create",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/properties/{propertyId}/video-tour-jobs",
+      "description": "Creează job video cu schema existentă. Pentru presenter include aiPresenterScript generat întâi prin video_script; păstrează vocea și randarea existente. Nu pretinde că randarea e finalizată.",
+      "handler": "@/app/api/properties/[propertyId]/video-tour-jobs/route",
+      "external": false
+    },
+    {
+      "id": "video_script",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/properties/{propertyId}/video-tour-script",
+      "description": "Generează scenariul video din datele proprietății.",
+      "handler": "@/app/api/properties/[propertyId]/video-tour-script/route",
+      "external": false
+    },
+    {
+      "id": "imobiliare_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/imobiliare/status",
+      "description": "Starea integrării Imobiliare.ro.",
+      "handler": "@/app/api/imobiliare/status/route",
+      "external": false
+    },
+    {
+      "id": "imobiliare_publish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/imobiliare/publish",
+      "description": "Publică/sincronizează proprietatea: propertyId, cu validările portalului.",
+      "handler": "@/app/api/imobiliare/publish/route",
+      "external": true
+    },
+    {
+      "id": "imobiliare_unpublish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/imobiliare/unpublish",
+      "description": "Retrage de pe Imobiliare.ro: propertyId.",
+      "handler": "@/app/api/imobiliare/unpublish/route",
+      "external": true
+    },
+    {
+      "id": "imobiliare_reconcile",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/imobiliare/reconcile",
+      "description": "Verifică starea reală a publicării: propertyId.",
+      "handler": "@/app/api/imobiliare/reconcile/route",
+      "external": false
+    },
+    {
+      "id": "storia_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/storia/status",
+      "description": "Starea integrării Storia.",
+      "handler": "@/app/api/storia/status/route",
+      "external": false
+    },
+    {
+      "id": "storia_publish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/storia/publish",
+      "description": "Publică/sincronizează pe Storia: propertyId.",
+      "handler": "@/app/api/storia/publish/route",
+      "external": true
+    },
+    {
+      "id": "storia_unpublish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/storia/unpublish",
+      "description": "Retrage proprietatea de pe Storia: propertyId, cu rolul cerut de portal.",
+      "handler": "@/app/api/storia/unpublish/route",
+      "external": true
+    },
+    {
+      "id": "storia_promotions",
+      "method": "POST",
+      "readOnly": true,
+      "path": "/api/storia/property-promotions",
+      "description": "Promovări disponibile și starea lor: propertyId.",
+      "handler": "@/app/api/storia/property-promotions/route",
+      "external": false
+    },
+    {
+      "id": "romimo_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/romimo/status",
+      "description": "Starea integrării Romimo.",
+      "handler": "@/app/api/romimo/[action]/route",
+      "external": false
+    },
+    {
+      "id": "romimo_preview",
+      "method": "POST",
+      "readOnly": true,
+      "path": "/api/romimo/preview",
+      "description": "Previzualizare Romimo: propertyId și setările cerute de portal.",
+      "handler": "@/app/api/romimo/[action]/route",
+      "external": false
+    },
+    {
+      "id": "romimo_publish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/romimo/publish",
+      "description": "Publică pe Romimo după preview: propertyId, previewHash, settings.",
+      "handler": "@/app/api/romimo/[action]/route",
+      "external": true
+    },
+    {
+      "id": "romimo_verify",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/romimo/verify",
+      "description": "Verifică publicarea Romimo: propertyId.",
+      "handler": "@/app/api/romimo/[action]/route",
+      "external": false
+    },
+    {
+      "id": "property_presentation",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/properties/{propertyId}/presentation",
+      "description": "Generează prezentarea PDF. propertyId; fișierul este salvat și poate fi descărcat.",
+      "handler": "@/app/api/properties/[propertyId]/presentation/route",
+      "external": false
+    },
+    {
+      "id": "sale_stage",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/stage",
+      "description": "Schimbă etapa tranzacției folosind validările și auditul existent.",
+      "handler": "@/app/api/sales/[saleId]/stage/route",
+      "external": false
+    },
+    {
+      "id": "sale_setup",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/setup",
+      "description": "Actualizează participanți/checklist/configurare tranzacție prin handler.",
+      "handler": "@/app/api/sales/[saleId]/setup/route",
+      "external": false
+    },
+    {
+      "id": "sale_requirement",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/documents",
+      "description": "Adaugă document necesar: label, participantRole, stages, required.",
+      "handler": "@/app/api/sales/[saleId]/documents/route",
+      "external": false
+    },
+    {
+      "id": "sale_document_edit",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/documents/{documentId}",
+      "description": "Actualizează cerința documentară folosind schema și auditul dosarului.",
+      "handler": "@/app/api/sales/[saleId]/documents/[documentId]/route",
+      "external": false
+    },
+    {
+      "id": "sale_document_action",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/documents/{documentId}",
+      "description": "Verifică/respinge/restabilește versiunea unui document numai pe baza datelor reale și a unei instrucțiuni explicite.",
+      "handler": "@/app/api/sales/[saleId]/documents/[documentId]/route",
+      "external": false
+    },
+    {
+      "id": "sale_document_remove",
+      "method": "DELETE",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/documents/{documentId}",
+      "description": "Elimină cerința documentară prin handler-ul auditat existent.",
+      "handler": "@/app/api/sales/[saleId]/documents/[documentId]/route",
+      "external": false
+    },
+    {
+      "id": "sale_message_review",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/messages/{messageId}/review",
+      "description": "Revizuiește mesajul/draftul dosarului cu schema existentă.",
+      "handler": "@/app/api/sales/[saleId]/messages/[messageId]/review/route",
+      "external": false
+    },
+    {
+      "id": "sale_message_evidence",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/sales/{saleId}/messages/{messageId}/send-evidence",
+      "description": "Înregistrează dovada reală a trimiterii; nu inventa livrarea unui email.",
+      "handler": "@/app/api/sales/[saleId]/messages/[messageId]/send-evidence/route",
+      "external": false
+    },
+    {
+      "id": "sales_settings_update",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/sales/settings",
+      "description": "Administrator: actualizează setările de vânzări prin schema existentă.",
+      "handler": "@/app/api/sales/settings/route",
+      "external": false
+    },
+    {
+      "id": "sales_template_create",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/sales/templates",
+      "description": "Administrator: creează șablon email pentru dosare, folosind schema existentă.",
+      "handler": "@/app/api/sales/templates/route",
+      "external": false
+    },
+    {
+      "id": "sales_template_update",
+      "method": "PATCH",
+      "readOnly": false,
+      "path": "/api/sales/templates/{templateId}",
+      "description": "Administrator: editează șablonul email al agenției.",
+      "handler": "@/app/api/sales/templates/[templateId]/route",
+      "external": false
+    },
+    {
+      "id": "sales_template_action",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/sales/templates/{templateId}",
+      "description": "Administrator: acțiune/versionare șablon email prin validările existente.",
+      "handler": "@/app/api/sales/templates/[templateId]/route",
+      "external": false
+    },
+    {
+      "id": "outreach_calls",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/ai-outreach/calls",
+      "description": "Istoricul și starea apelurilor de prospectare accesibile agentului.",
+      "handler": "@/app/api/ai-outreach/calls/route",
+      "external": false
+    },
+    {
+      "id": "contract_generate",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/contracts/templates/{templateId}/generate",
+      "description": "Generează PDF contract: values {câmp:valoare}, contactId/ownerId/propertyId opționale. templateId în params.",
+      "handler": "@/app/api/contracts/templates/[templateId]/generate/route",
+      "external": false
+    },
+    {
+      "id": "agency_agents",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/agency/agents",
+      "description": "Lista agenților autorizați din agenție.",
+      "handler": "@/app/api/agency/agents/route",
+      "external": false
+    },
+    {
+      "id": "agency_agent_detail",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/agency/agents/{agentId}",
+      "description": "Statistici agent: acces propriu sau admin.",
+      "handler": "@/app/api/agency/agents/[agentId]/route",
+      "external": false
+    },
+    {
+      "id": "billing_summary",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/billing/summary",
+      "description": "Plan, funcționalități și locuri disponibile.",
+      "handler": "@/app/api/billing/summary/route",
+      "external": false
+    },
+    {
+      "id": "sales_settings",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/sales/settings",
+      "description": "Setări vânzări accesibile agentului.",
+      "handler": "@/app/api/sales/settings/route",
+      "external": false
+    },
+    {
+      "id": "meta_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/marketing/meta/status",
+      "description": "Starea integrării Meta.",
+      "handler": "@/app/api/marketing/meta/status/route",
+      "external": false
+    },
+    {
+      "id": "meta_campaigns",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/marketing/meta/property-campaigns",
+      "description": "Campanii Meta ale agenției.",
+      "handler": "@/app/api/marketing/meta/property-campaigns/route",
+      "external": false
+    },
+    {
+      "id": "meta_campaign_draft",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/meta/property-campaigns",
+      "description": "Creează draft campanie Meta, fără publicare.",
+      "handler": "@/app/api/marketing/meta/property-campaigns/route",
+      "external": false
+    },
+    {
+      "id": "meta_campaign_publish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}/publish",
+      "description": "Publică campanie, cu controalele de buget/aprobare ale handler-ului.",
+      "handler": "@/app/api/marketing/meta/property-campaigns/[campaignId]/publish/route",
+      "external": true
+    },
+    {
+      "id": "meta_campaign_pause",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}/pause",
+      "description": "Oprește campania.",
+      "handler": "@/app/api/marketing/meta/property-campaigns/[campaignId]/pause/route",
+      "external": true
+    },
+    {
+      "id": "tiktok_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/marketing/tiktok-ads/status",
+      "description": "Starea TikTok Ads.",
+      "handler": "@/app/api/marketing/tiktok-ads/status/route",
+      "external": false
+    },
+    {
+      "id": "tiktok_organic_status",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/marketing/tiktok/status",
+      "description": "Starea conexiunii TikTok organic.",
+      "handler": "@/app/api/marketing/tiktok/status/route",
+      "external": false
+    },
+    {
+      "id": "tiktok_dashboard",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/marketing/tiktok/dashboard",
+      "description": "Drafturi și publicări TikTok organic.",
+      "handler": "@/app/api/marketing/tiktok/dashboard/route",
+      "external": false
+    },
+    {
+      "id": "tiktok_post_draft",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/tiktok/post-drafts",
+      "description": "Creează draft TikTok prin schema handler-ului existent.",
+      "handler": "@/app/api/marketing/tiktok/post-drafts/route",
+      "external": false
+    },
+    {
+      "id": "tiktok_post_publish",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}/publish",
+      "description": "Publică draft TikTok cu toate condițiile și aprobările existente.",
+      "handler": "@/app/api/marketing/tiktok/post-drafts/[draftId]/publish/route",
+      "external": true
+    },
+    {
+      "id": "tiktok_post_schedule",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/tiktok/post-drafts/{draftId}/schedule",
+      "description": "Programează draft TikTok pentru data cerută.",
+      "handler": "@/app/api/marketing/tiktok/post-drafts/[draftId]/schedule/route",
+      "external": true
+    },
+    {
+      "id": "tiktok_capabilities",
+      "method": "GET",
+      "readOnly": true,
+      "path": "/api/marketing/tiktok-ads/capabilities",
+      "description": "Capabilitățile efectiv disponibile TikTok Ads.",
+      "handler": "@/app/api/marketing/tiktok-ads/capabilities/route",
+      "external": false
+    },
+    {
+      "id": "tiktok_operations",
+      "method": "POST",
+      "readOnly": false,
+      "path": "/api/marketing/tiktok-ads/operations",
+      "description": "Execută operație TikTok prin ledger/aprobările existente.",
+      "handler": "@/app/api/marketing/tiktok-ads/operations/route",
+      "external": true
+    }
+  ],
+  "routes": [
+    {
+      "file": "src/app/api/account/membership/route.ts",
+      "path": "/api/account/membership",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/agency/agents/route.ts",
+      "path": "/api/agency/agents",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "agency_agents",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/agency/agents/[agentId]/route.ts",
+      "path": "/api/agency/agents/[agentId]",
+      "methods": [
+        "GET",
+        "PATCH",
+        "DELETE"
+      ],
+      "registered": [
+        {
+          "id": "agency_agent_detail",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": [
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/artifacts/[artifactId]/route.ts",
+      "path": "/api/ai-assistant/artifacts/[artifactId]",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/chat/route.ts",
+      "path": "/api/ai-assistant/chat",
+      "methods": [],
+      "registered": [],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/ai-assistant/metrics/route.ts",
+      "path": "/api/ai-assistant/metrics",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/owner-consent/route.ts",
+      "path": "/api/ai-assistant/owner-consent",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/voice/metrics/route.ts",
+      "path": "/api/ai-assistant/voice/metrics",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/voice/route.ts",
+      "path": "/api/ai-assistant/voice",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/welcome/route.ts",
+      "path": "/api/ai-assistant/welcome",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/worker/route.ts",
+      "path": "/api/ai-assistant/worker",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-assistant/workspace/route.ts",
+      "path": "/api/ai-assistant/workspace",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-outreach/calls/drain-scheduled/route.ts",
+      "path": "/api/ai-outreach/calls/drain-scheduled",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST",
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-outreach/calls/route.ts",
+      "path": "/api/ai-outreach/calls",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "outreach_calls",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-outreach/settings/route.ts",
+      "path": "/api/ai-outreach/settings",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/ai-outreach/vapi/webhook/route.ts",
+      "path": "/api/ai-outreach/vapi/webhook",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/billing/change-plan/route.ts",
+      "path": "/api/billing/change-plan",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/billing/change-seats/route.ts",
+      "path": "/api/billing/change-seats",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/billing/checkout/route.ts",
+      "path": "/api/billing/checkout",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/billing/portal/route.ts",
+      "path": "/api/billing/portal",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/billing/summary/route.ts",
+      "path": "/api/billing/summary",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "billing_summary",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/building-year-lookup/route.ts",
+      "path": "/api/building-year-lookup",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/client-portal/[portalId]/feedback/route.ts",
+      "path": "/api/client-portal/[portalId]/feedback",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/collaboration/onboarding/route.ts",
+      "path": "/api/collaboration/onboarding",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/collaboration/public/[token]/route.ts",
+      "path": "/api/collaboration/public/[token]",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/collaboration/route.ts",
+      "path": "/api/collaboration",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "collaboration_read",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "collaboration_action",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/collaboration/team/route.ts",
+      "path": "/api/collaboration/team",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/communications/[...path]/route.ts",
+      "path": "/api/communications/[...path]",
+      "methods": [
+        "GET",
+        "POST",
+        "PATCH",
+        "DELETE"
+      ],
+      "registered": [
+        {
+          "id": "conversation_list",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "conversation_messages",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "conversation_search",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "communications_status",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "whatsapp_templates",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "conversation_start",
+          "method": "POST",
+          "readOnly": false
+        },
+        {
+          "id": "message_preview",
+          "method": "POST",
+          "readOnly": true
+        },
+        {
+          "id": "message_send",
+          "method": "POST",
+          "readOnly": false
+        },
+        {
+          "id": "conversation_note",
+          "method": "POST",
+          "readOnly": false
+        },
+        {
+          "id": "conversation_update",
+          "method": "PATCH",
+          "readOnly": false
+        },
+        {
+          "id": "social_create",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": [
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/communications-media/route.ts",
+      "path": "/api/communications-media",
+      "methods": [
+        "POST",
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST",
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/communications-worker/route.ts",
+      "path": "/api/communications-worker",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/company-lookup/route.ts",
+      "path": "/api/company-lookup",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/contracts/ocr-id/route.ts",
+      "path": "/api/contracts/ocr-id",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/contracts/templates/[templateId]/generate/route.ts",
+      "path": "/api/contracts/templates/[templateId]/generate",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "contract_generate",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/custom-domain/setup/route.ts",
+      "path": "/api/custom-domain/setup",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/custom-domain/status/route.ts",
+      "path": "/api/custom-domain/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/demo/provision/route.ts",
+      "path": "/api/demo/provision",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/email/forwarding/route.ts",
+      "path": "/api/email/forwarding",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/email/health/route.ts",
+      "path": "/api/email/health",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/email/inbound/route.ts",
+      "path": "/api/email/inbound",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/enhance-property-image/route.ts",
+      "path": "/api/enhance-property-image",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/geocode/route.ts",
+      "path": "/api/geocode",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/geocode-search/route.ts",
+      "path": "/api/geocode-search",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/health/route.ts",
+      "path": "/api/health",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/agents/sync/route.ts",
+      "path": "/api/imobiliare/agents/sync",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/categories/route.ts",
+      "path": "/api/imobiliare/categories",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/connect/route.ts",
+      "path": "/api/imobiliare/connect",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/disconnect/route.ts",
+      "path": "/api/imobiliare/disconnect",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/locations/route.ts",
+      "path": "/api/imobiliare/locations",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/property-link/route.ts",
+      "path": "/api/imobiliare/property-link",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/property-promotion-settings/route.ts",
+      "path": "/api/imobiliare/property-promotion-settings",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/publish/route.ts",
+      "path": "/api/imobiliare/publish",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "imobiliare_publish",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/imobiliare/reconcile/route.ts",
+      "path": "/api/imobiliare/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "imobiliare_reconcile",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/imobiliare/retry/route.ts",
+      "path": "/api/imobiliare/retry",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/settings/route.ts",
+      "path": "/api/imobiliare/settings",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/imobiliare/status/route.ts",
+      "path": "/api/imobiliare/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "imobiliare_status",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/imobiliare/unpublish/route.ts",
+      "path": "/api/imobiliare/unpublish",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "imobiliare_unpublish",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/maps/browser-key/route.ts",
+      "path": "/api/maps/browser-key",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/connections/route.ts",
+      "path": "/api/marketing/facebook-cloud/connections",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/connections/[connectionId]/input/route.ts",
+      "path": "/api/marketing/facebook-cloud/connections/[connectionId]/input",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/connections/[connectionId]/route.ts",
+      "path": "/api/marketing/facebook-cloud/connections/[connectionId]",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/connections/[connectionId]/session/route.ts",
+      "path": "/api/marketing/facebook-cloud/connections/[connectionId]/session",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/connections/[connectionId]/snapshot/route.ts",
+      "path": "/api/marketing/facebook-cloud/connections/[connectionId]/snapshot",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/internal/events/route.ts",
+      "path": "/api/marketing/facebook-cloud/internal/events",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/jobs/route.ts",
+      "path": "/api/marketing/facebook-cloud/jobs",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-cloud/jobs/[jobId]/route.ts",
+      "path": "/api/marketing/facebook-cloud/jobs/[jobId]",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-local/devices/route.ts",
+      "path": "/api/marketing/facebook-local/devices",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-local/runner/claim/route.ts",
+      "path": "/api/marketing/facebook-local/runner/claim",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-local/runner/connections/[connectionId]/route.ts",
+      "path": "/api/marketing/facebook-local/runner/connections/[connectionId]",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-local/runner/heartbeat/route.ts",
+      "path": "/api/marketing/facebook-local/runner/heartbeat",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/facebook-local/runner/progress/route.ts",
+      "path": "/api/marketing/facebook-local/runner/progress",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/assets/route.ts",
+      "path": "/api/marketing/meta/assets",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/connect/route.ts",
+      "path": "/api/marketing/meta/connect",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/dashboard/route.ts",
+      "path": "/api/marketing/meta/dashboard",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/disconnect/route.ts",
+      "path": "/api/marketing/meta/disconnect",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/property-campaigns/route.ts",
+      "path": "/api/marketing/meta/property-campaigns",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "meta_campaigns",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "meta_campaign_draft",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/meta/property-campaigns/[campaignId]/pause/route.ts",
+      "path": "/api/marketing/meta/property-campaigns/[campaignId]/pause",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "meta_campaign_pause",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/meta/property-campaigns/[campaignId]/publish/route.ts",
+      "path": "/api/marketing/meta/property-campaigns/[campaignId]/publish",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "meta_campaign_publish",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/meta/property-campaigns/[campaignId]/ready/route.ts",
+      "path": "/api/marketing/meta/property-campaigns/[campaignId]/ready",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/property-campaigns/[campaignId]/route.ts",
+      "path": "/api/marketing/meta/property-campaigns/[campaignId]",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "PATCH",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/property-posts/route.ts",
+      "path": "/api/marketing/meta/property-posts",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/meta/status/route.ts",
+      "path": "/api/marketing/meta/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "meta_status",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/connect/route.ts",
+      "path": "/api/marketing/tiktok/connect",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/creative-brief/route.ts",
+      "path": "/api/marketing/tiktok/creative-brief",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/creator-info/route.ts",
+      "path": "/api/marketing/tiktok/creator-info",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/dashboard/route.ts",
+      "path": "/api/marketing/tiktok/dashboard",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_dashboard",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/descriptions/route.ts",
+      "path": "/api/marketing/tiktok/descriptions",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/disconnect/route.ts",
+      "path": "/api/marketing/tiktok/disconnect",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/post-drafts/route.ts",
+      "path": "/api/marketing/tiktok/post-drafts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_post_draft",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/post-drafts/[draftId]/publish/route.ts",
+      "path": "/api/marketing/tiktok/post-drafts/[draftId]/publish",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_post_publish",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/post-drafts/[draftId]/route.ts",
+      "path": "/api/marketing/tiktok/post-drafts/[draftId]",
+      "methods": [
+        "PATCH"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "PATCH"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/post-drafts/[draftId]/schedule/route.ts",
+      "path": "/api/marketing/tiktok/post-drafts/[draftId]/schedule",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_post_schedule",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": [
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/post-drafts/[draftId]/status/route.ts",
+      "path": "/api/marketing/tiktok/post-drafts/[draftId]/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/premium-script/route.ts",
+      "path": "/api/marketing/tiktok/premium-script",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/status/route.ts",
+      "path": "/api/marketing/tiktok/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_organic_status",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/studio-assets/reconcile/route.ts",
+      "path": "/api/marketing/tiktok/studio-assets/reconcile",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/studio-assets/route.ts",
+      "path": "/api/marketing/tiktok/studio-assets",
+      "methods": [
+        "PATCH",
+        "GET",
+        "POST",
+        "DELETE"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "PATCH",
+        "GET",
+        "POST",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/studio-projects/route.ts",
+      "path": "/api/marketing/tiktok/studio-projects",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/studio-projects/[projectId]/render/route.ts",
+      "path": "/api/marketing/tiktok/studio-projects/[projectId]/render",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok/voices/route.ts",
+      "path": "/api/marketing/tiktok/voices",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/advertisers/route.ts",
+      "path": "/api/marketing/tiktok-ads/advertisers",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/capabilities/route.ts",
+      "path": "/api/marketing/tiktok-ads/capabilities",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_capabilities",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/connect/route.ts",
+      "path": "/api/marketing/tiktok-ads/connect",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/disconnect/route.ts",
+      "path": "/api/marketing/tiktok-ads/disconnect",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/drafts/publication/route.ts",
+      "path": "/api/marketing/tiktok-ads/drafts/publication",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/drafts/route.ts",
+      "path": "/api/marketing/tiktok-ads/drafts",
+      "methods": [
+        "GET",
+        "PUT",
+        "PATCH"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "PUT",
+        "PATCH"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/jobs/route.ts",
+      "path": "/api/marketing/tiktok-ads/jobs",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/leads/[leadId]/route.ts",
+      "path": "/api/marketing/tiktok-ads/leads/[leadId]",
+      "methods": [
+        "GET",
+        "DELETE"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/manager/route.ts",
+      "path": "/api/marketing/tiktok-ads/manager",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/operations/route.ts",
+      "path": "/api/marketing/tiktok-ads/operations",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_operations",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/operations/[operationId]/recover/route.ts",
+      "path": "/api/marketing/tiktok-ads/operations/[operationId]/recover",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/operations/[operationId]/route.ts",
+      "path": "/api/marketing/tiktok-ads/operations/[operationId]",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/reporting/route.ts",
+      "path": "/api/marketing/tiktok-ads/reporting",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/resources/route.ts",
+      "path": "/api/marketing/tiktok-ads/resources",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/spend-authorization/route.ts",
+      "path": "/api/marketing/tiktok-ads/spend-authorization",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/status/route.ts",
+      "path": "/api/marketing/tiktok-ads/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "tiktok_status",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/worker/route.ts",
+      "path": "/api/marketing/tiktok-ads/worker",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/marketing/tiktok-ads/workspace/route.ts",
+      "path": "/api/marketing/tiktok-ads/workspace",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/agencies/route.ts",
+      "path": "/api/master-admin/agencies",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/agencies/[agencyId]/route.ts",
+      "path": "/api/master-admin/agencies/[agencyId]",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/leads/route.ts",
+      "path": "/api/master-admin/leads",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/overview/route.ts",
+      "path": "/api/master-admin/overview",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/properties/route.ts",
+      "path": "/api/master-admin/properties",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/scraping/actions/route.ts",
+      "path": "/api/master-admin/scraping/actions",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/scraping/route.ts",
+      "path": "/api/master-admin/scraping",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/master-admin/users/route.ts",
+      "path": "/api/master-admin/users",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/notifications/read-all/route.ts",
+      "path": "/api/notifications/read-all",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/notifications/registrations/route.ts",
+      "path": "/api/notifications/registrations",
+      "methods": [
+        "POST",
+        "DELETE"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST",
+        "DELETE"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/enrichment-drain/route.ts",
+      "path": "/api/owner-listings/enrichment-drain",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/favorites/route.ts",
+      "path": "/api/owner-listings/favorites",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/import/route.ts",
+      "path": "/api/owner-listings/import",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "owner_import_preview",
+          "method": "POST",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/owner-listings/olx-connection/route.ts",
+      "path": "/api/owner-listings/olx-connection",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/olx-phone/route.ts",
+      "path": "/api/owner-listings/olx-phone",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/olx-phone-drain/route.ts",
+      "path": "/api/owner-listings/olx-phone-drain",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/prospecting/route.ts",
+      "path": "/api/owner-listings/prospecting",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "owner_prospect",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/owner-listings/query/route.ts",
+      "path": "/api/owner-listings/query",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "owner_query",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/owner-listings/route.ts",
+      "path": "/api/owner-listings",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/sync/background/route.ts",
+      "path": "/api/owner-listings/sync/background",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/sync/fresh-radar/route.ts",
+      "path": "/api/owner-listings/sync/fresh-radar",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/sync/frontier/route.ts",
+      "path": "/api/owner-listings/sync/frontier",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/owner-listings/sync/route.ts",
+      "path": "/api/owner-listings/sync",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/properties/remove/route.ts",
+      "path": "/api/properties/remove",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "property_remove",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/nearby-objectives/route.ts",
+      "path": "/api/properties/[propertyId]/nearby-objectives",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "property_nearby",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/presentation/route.ts",
+      "path": "/api/properties/[propertyId]/presentation",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "property_presentation",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/pricing-analysis/pdf/route.ts",
+      "path": "/api/properties/[propertyId]/pricing-analysis/pdf",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/pricing-analysis/route.ts",
+      "path": "/api/properties/[propertyId]/pricing-analysis",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "property_pricing",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/sales-recommendation-context/route.ts",
+      "path": "/api/properties/[propertyId]/sales-recommendation-context",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "property_context",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/video-tour-jobs/route.ts",
+      "path": "/api/properties/[propertyId]/video-tour-jobs",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "video_jobs",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "video_create",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/video-tour-jobs/[jobId]/route.ts",
+      "path": "/api/properties/[propertyId]/video-tour-jobs/[jobId]",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/video-tour-jobs/[jobId]/run/route.ts",
+      "path": "/api/properties/[propertyId]/video-tour-jobs/[jobId]/run",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/video-tour-script/route.ts",
+      "path": "/api/properties/[propertyId]/video-tour-script",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "video_script",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/video-tour-voice-preview/route.ts",
+      "path": "/api/properties/[propertyId]/video-tour-voice-preview",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/properties/[propertyId]/video-tour-voices/route.ts",
+      "path": "/api/properties/[propertyId]/video-tour-voices",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/property-video-tours/drain/route.ts",
+      "path": "/api/property-video-tours/drain",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/public-agent/route.ts",
+      "path": "/api/public-agent",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/public-property-image/route.ts",
+      "path": "/api/public-property-image",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/public-property-stats/route.ts",
+      "path": "/api/public-property-stats",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/request-debug/route.ts",
+      "path": "/api/request-debug",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/romimo/[action]/route.ts",
+      "path": "/api/romimo/[action]",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "romimo_status",
+          "method": "GET",
+          "readOnly": true
+        },
+        {
+          "id": "romimo_preview",
+          "method": "POST",
+          "readOnly": true
+        },
+        {
+          "id": "romimo_publish",
+          "method": "POST",
+          "readOnly": false
+        },
+        {
+          "id": "romimo_verify",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/settings/route.ts",
+      "path": "/api/sales/settings",
+      "methods": [
+        "GET",
+        "PATCH"
+      ],
+      "registered": [
+        {
+          "id": "sales_settings_update",
+          "method": "PATCH",
+          "readOnly": false
+        },
+        {
+          "id": "sales_settings",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/templates/route.ts",
+      "path": "/api/sales/templates",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "sales_template_create",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/templates/[templateId]/route.ts",
+      "path": "/api/sales/templates/[templateId]",
+      "methods": [
+        "PATCH",
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "sales_template_update",
+          "method": "PATCH",
+          "readOnly": false
+        },
+        {
+          "id": "sales_template_action",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/documents/package/route.ts",
+      "path": "/api/sales/[saleId]/documents/package",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/documents/route.ts",
+      "path": "/api/sales/[saleId]/documents",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "sale_requirement",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/documents/[documentId]/route.ts",
+      "path": "/api/sales/[saleId]/documents/[documentId]",
+      "methods": [
+        "PUT",
+        "PATCH",
+        "POST",
+        "DELETE"
+      ],
+      "registered": [
+        {
+          "id": "sale_document_edit",
+          "method": "PATCH",
+          "readOnly": false
+        },
+        {
+          "id": "sale_document_action",
+          "method": "POST",
+          "readOnly": false
+        },
+        {
+          "id": "sale_document_remove",
+          "method": "DELETE",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": [
+        "PUT"
+      ]
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/export/route.ts",
+      "path": "/api/sales/[saleId]/export",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/messages/[messageId]/review/route.ts",
+      "path": "/api/sales/[saleId]/messages/[messageId]/review",
+      "methods": [
+        "PATCH"
+      ],
+      "registered": [
+        {
+          "id": "sale_message_review",
+          "method": "PATCH",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/messages/[messageId]/send-evidence/route.ts",
+      "path": "/api/sales/[saleId]/messages/[messageId]/send-evidence",
+      "methods": [
+        "PATCH"
+      ],
+      "registered": [
+        {
+          "id": "sale_message_evidence",
+          "method": "PATCH",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/setup/route.ts",
+      "path": "/api/sales/[saleId]/setup",
+      "methods": [
+        "PATCH"
+      ],
+      "registered": [
+        {
+          "id": "sale_setup",
+          "method": "PATCH",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/sales/[saleId]/stage/route.ts",
+      "path": "/api/sales/[saleId]/stage",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "sale_stage",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/search/route.ts",
+      "path": "/api/search",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/apply-promotions/route.ts",
+      "path": "/api/storia/apply-promotions",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/connect/route.ts",
+      "path": "/api/storia/connect",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/disconnect/route.ts",
+      "path": "/api/storia/disconnect",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/oauth/callback/route.ts",
+      "path": "/api/storia/oauth/callback",
+      "methods": [
+        "GET"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/property-link/route.ts",
+      "path": "/api/storia/property-link",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/property-promotion-settings/route.ts",
+      "path": "/api/storia/property-promotion-settings",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/property-promotions/route.ts",
+      "path": "/api/storia/property-promotions",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "storia_promotions",
+          "method": "POST",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/storia/publish/route.ts",
+      "path": "/api/storia/publish",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "storia_publish",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/storia/refresh-link/route.ts",
+      "path": "/api/storia/refresh-link",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/storia/status/route.ts",
+      "path": "/api/storia/status",
+      "methods": [
+        "GET"
+      ],
+      "registered": [
+        {
+          "id": "storia_status",
+          "method": "GET",
+          "readOnly": true
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/storia/unpublish/route.ts",
+      "path": "/api/storia/unpublish",
+      "methods": [
+        "POST"
+      ],
+      "registered": [
+        {
+          "id": "storia_unpublish",
+          "method": "POST",
+          "readOnly": false
+        }
+      ],
+      "missingMethods": []
+    },
+    {
+      "file": "src/app/api/storia/webhook/route.ts",
+      "path": "/api/storia/webhook",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/stripe/webhook/route.ts",
+      "path": "/api/stripe/webhook",
+      "methods": [
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/webhooks/meta/route.ts",
+      "path": "/api/webhooks/meta",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    },
+    {
+      "file": "src/app/api/webhooks/whatsapp/route.ts",
+      "path": "/api/webhooks/whatsapp",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "registered": [],
+      "missingMethods": [
+        "GET",
+        "POST"
+      ]
+    }
+  ],
+  "manualUi": [
+    {
+      "file": "src/app/(dashboard)/agenti/page.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 168
+        }
+      ],
+      "urls": [
+        "/api/agency/agents",
+        "/api/agency/agents/${editingAgent.id}",
+        "/api/agency/agents/${deletingAgent.id}"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/agenti/[agentId]/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/agency/agents/${agentId}"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/ai-assistant/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/ai-assistant/workspace",
+        "/api/ai-assistant/workspace?sessionId=",
+        "/api/ai-assistant/workspace?planId=",
+        "/api/ai-assistant/workspace?jobId=",
+        "/api/ai-assistant/owner-consent",
+        "/api/ai-assistant/artifacts/"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/ai-calls/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 584
+        },
+        {
+          "kind": "setDoc",
+          "line": 593
+        },
+        {
+          "kind": "addDoc",
+          "line": 607
+        },
+        {
+          "kind": "updateDoc",
+          "line": 659
+        },
+        {
+          "kind": "setDoc",
+          "line": 666
+        },
+        {
+          "kind": "addDoc",
+          "line": 684
+        },
+        {
+          "kind": "updateDoc",
+          "line": 738
+        },
+        {
+          "kind": "setDoc",
+          "line": 744
+        },
+        {
+          "kind": "addDoc",
+          "line": 759
+        },
+        {
+          "kind": "addDoc",
+          "line": 792
+        }
+      ],
+      "urls": [
+        "/api/ai-outreach/settings",
+        "/api/ai-outreach/calls"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/billing/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/billing/summary"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/contracts/page.tsx",
+      "calls": [
+        {
+          "kind": "setDoc",
+          "line": 1197
+        },
+        {
+          "kind": "deleteDoc",
+          "line": 1241
+        }
+      ],
+      "urls": [
+        "/api/contracts/templates/${template.id}/generate",
+        "/api/contracts/ocr-id"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/contracts/[templateId]/edit/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 60
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/custom-domain/page.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 362
+        },
+        {
+          "kind": "updateDoc",
+          "line": 364
+        }
+      ],
+      "urls": [
+        "/api/custom-domain/setup",
+        "/api/custom-domain/status?domain=${encodeURIComponent(normalizedCustomDomain)}"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/dashboard/page.tsx",
+      "calls": [
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 49
+        },
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 75
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/facebook-promotion-runner/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 222
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/gmail/page.tsx",
+      "calls": [
+        {
+          "kind": "setDoc",
+          "line": 288
+        },
+        {
+          "kind": "deleteDoc",
+          "line": 353
+        },
+        {
+          "kind": "setDoc",
+          "line": 379
+        }
+      ],
+      "urls": [
+        "/api/sales/templates",
+        "/api/sales/templates/"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/inbox/storia/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 100
+        },
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 129
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/leads/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 92
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 285
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/leads/[leadId]/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 273
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 301
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 311
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 317
+        },
+        {
+          "kind": "setDocumentNonBlocking",
+          "line": 341
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 344
+        },
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 398
+        },
+        {
+          "kind": "addDoc",
+          "line": 419
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 444
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 453
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 495
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 511
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 520
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/marketing/facebook-accounts/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/facebook-cloud/connections",
+        "/api/marketing/facebook-cloud/connections/${connection.id}",
+        "/api/marketing/facebook-cloud/connections/${editingConnection.id}",
+        "/api/marketing/facebook-cloud/connections/"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/marketing/facebook-accounts/[connectionId]/connect/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/facebook-cloud/connections/${connectionId}/input",
+        "/api/marketing/facebook-cloud/connections",
+        "/api/marketing/facebook-cloud/connections/",
+        "/api/marketing/facebook-cloud/connections/${connectionId}/snapshot",
+        "/api/marketing/facebook-cloud/connections/${connectionId}/session"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/marketing/facebook-groups/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 105
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/marketing/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/meta/dashboard",
+        "/api/marketing/meta/assets",
+        "/api/marketing/meta/connect",
+        "/api/marketing/meta/disconnect",
+        "/api/marketing/meta/property-campaigns/${campaign.id}/pause",
+        "/api/marketing/meta/property-campaigns/${campaign.id}"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/matching/page.tsx",
+      "calls": [
+        {
+          "kind": "addDoc",
+          "line": 154
+        },
+        {
+          "kind": "addDoc",
+          "line": 181
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/notifications/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 35
+        }
+      ],
+      "urls": [
+        "/api/notifications/read-all"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/owner-listings/favorite/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 294
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 352
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 369
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 401
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 429
+        }
+      ],
+      "urls": [
+        "/api/owner-listings/favorites?${params.toString()}",
+        "/api/owner-listings/prospecting",
+        "/api/owner-listings/favorites",
+        "/api/owner-listings/import"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/owner-listings/favorites/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/owner-listings/favorites?${params.toString()}",
+        "/api/owner-listings/favorites",
+        "/api/owner-listings/prospecting",
+        "/api/owner-listings/import"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/owner-listings/page.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 524
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 724
+        },
+        {
+          "kind": "setDocumentNonBlocking",
+          "line": 728
+        }
+      ],
+      "urls": [
+        "/api/owner-listings/query?${params.toString()}",
+        "/api/owner-listings/favorites?${params.toString()}",
+        "/api/owner-listings/import",
+        "/api/owner-listings/olx-phone",
+        "/api/owner-listings/prospecting",
+        "/api/owner-listings/favorites"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/properties/page.tsx",
+      "calls": [
+        {
+          "kind": "writeBatch",
+          "line": 265
+        }
+      ],
+      "urls": [
+        "/api/properties/remove"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/properties/[propertyId]/analiza-pret/page.tsx",
+      "calls": [],
+      "urls": [
+        "/api/properties/${propertyId}/pricing-analysis",
+        "/api/properties/${propertyId}/pricing-analysis/pdf"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/properties/[propertyId]/page.tsx",
+      "calls": [
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 170
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/sales-management/page.tsx",
+      "calls": [
+        {
+          "kind": "setDoc",
+          "line": 409
+        },
+        {
+          "kind": "updateDoc",
+          "line": 455
+        }
+      ],
+      "urls": [
+        "/api/sales/${sale.id}/stage"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/settings/page.tsx",
+      "calls": [
+        {
+          "kind": "setDoc",
+          "line": 212
+        },
+        {
+          "kind": "updateDoc",
+          "line": 226
+        },
+        {
+          "kind": "updateDoc",
+          "line": 252
+        },
+        {
+          "kind": "uploadBytes",
+          "line": 331
+        },
+        {
+          "kind": "updateDoc",
+          "line": 337
+        },
+        {
+          "kind": "uploadBytes",
+          "line": 358
+        },
+        {
+          "kind": "updateDoc",
+          "line": 361
+        },
+        {
+          "kind": "updateDoc",
+          "line": 412
+        }
+      ],
+      "urls": [
+        "/api/account/membership"
+      ]
+    },
+    {
+      "file": "src/app/(dashboard)/tasks/page.tsx",
+      "calls": [
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 74
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/app/(dashboard)/viewings/page.tsx",
+      "calls": [
+        {
+          "kind": "addDoc",
+          "line": 112
+        },
+        {
+          "kind": "addDoc",
+          "line": 132
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 152
+        },
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 164
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 176
+        },
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 184
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/ai/OwnerConsentDialog.tsx",
+      "calls": [],
+      "urls": [
+        "/api/ai-assistant/workspace"
+      ]
+    },
+    {
+      "file": "src/components/ai-outreach/ai-outreach-call-modal.tsx",
+      "calls": [],
+      "urls": [
+        "/api/ai-outreach/calls"
+      ]
+    },
+    {
+      "file": "src/components/collaboration/CollaborationBuyerPage.tsx",
+      "calls": [],
+      "urls": [
+        "/api/collaboration/public/${encodeURIComponent(token)}"
+      ]
+    },
+    {
+      "file": "src/components/collaboration/CollaborationPublishCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/collaboration?view=my-listing&id=${encodeURIComponent(property.id)}",
+        "/api/collaboration"
+      ]
+    },
+    {
+      "file": "src/components/communications/InboxWorkspace.tsx",
+      "calls": [],
+      "urls": [
+        "/api/communications-media",
+        "/api/communications-media?conversationId=${selected.id}&messageId=${messageId}&index=${index}"
+      ]
+    },
+    {
+      "file": "src/components/communications/useCommunications.ts",
+      "calls": [],
+      "urls": [
+        "/api/communications/${path}"
+      ]
+    },
+    {
+      "file": "src/components/jarvis-voice/JarvisVoice.tsx",
+      "calls": [],
+      "urls": [
+        "/api/ai-assistant/voice",
+        "/api/ai-assistant/workspace",
+        "/api/ai-assistant/workspace?planId=",
+        "/api/ai-assistant/workspace?sessionId=",
+        "/api/ai-assistant/artifacts/",
+        "/api/ai-assistant/owner-consent"
+      ]
+    },
+    {
+      "file": "src/components/layout/BottomNavbar.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 83
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/layout/NotificationBell.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 34
+        }
+      ],
+      "urls": [
+        "/api/notifications/read-all"
+      ]
+    },
+    {
+      "file": "src/components/leads/AddLeadDialog.tsx",
+      "calls": [
+        {
+          "kind": "addDocumentNonBlocking",
+          "line": 190
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 212
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/leads/ClientPortalManager.tsx",
+      "calls": [
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 60
+        },
+        {
+          "kind": "setDocumentNonBlocking",
+          "line": 74
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 75
+        },
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 81
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 82
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/leads/detail/ClientPortalManager.tsx",
+      "calls": [
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 60
+        },
+        {
+          "kind": "setDocumentNonBlocking",
+          "line": 74
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 75
+        },
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 81
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 82
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/leads/detail/ImobiliareLocationPreferencePicker.tsx",
+      "calls": [],
+      "urls": [
+        "/api/imobiliare/locations"
+      ]
+    },
+    {
+      "file": "src/components/leads/detail/MatchedProperties.tsx",
+      "calls": [
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 352
+        },
+        {
+          "kind": "setDocumentNonBlocking",
+          "line": 366
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 367
+        },
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 373
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 374
+        }
+      ],
+      "urls": [
+        "/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}"
+      ]
+    },
+    {
+      "file": "src/components/leads/detail/MatchedPropertyCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}"
+      ]
+    },
+    {
+      "file": "src/components/leads/detail/PreferencesFormCard.tsx",
+      "calls": [
+        {
+          "kind": "writeBatch",
+          "line": 33
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/map/useGoogleMapsApi.ts",
+      "calls": [],
+      "urls": [
+        "/api/maps/browser-key"
+      ]
+    },
+    {
+      "file": "src/components/marketing/MetaCampaignEditorDialog.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 403
+        }
+      ],
+      "urls": [
+        "/api/marketing/meta/property-campaigns/${campaign.id}",
+        "/api/marketing/meta/property-campaigns/${campaignId}/ready",
+        "/api/marketing/meta/property-campaigns/${campaignId}/publish"
+      ]
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/AccountDiagnostics.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/tiktok/status",
+        "/api/marketing/tiktok/disconnect",
+        "/api/marketing/tiktok-ads/disconnect"
+      ]
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/AdComposer.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/tiktok-ads/drafts",
+        "/api/marketing/tiktok-ads/manager?${params}",
+        "/api/marketing/tiktok-ads/drafts/publication"
+      ]
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/AdVideoPicker.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 33
+        }
+      ],
+      "urls": [
+        "/api/marketing/tiktok/studio-assets"
+      ]
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/HierarchyComposer.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/tiktok-ads/manager?advertiserId=${encodeURIComponent(advertiserId)}&kind=campaign",
+        "/api/marketing/tiktok-ads/operations"
+      ]
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/TikTokWorkspace.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/tiktok-ads/drafts?advertiserId=${encodeURIComponent(advertiserId)}",
+        "/api/marketing/tiktok-ads/advertisers",
+        "/api/marketing/tiktok-ads/operations",
+        "/api/marketing/tiktok/connect",
+        "/api/marketing/tiktok-ads/connect?returnTo=/marketing/tiktok-ads",
+        "/api/marketing/tiktok-ads/resources",
+        "/api/marketing/tiktok-ads/capabilities"
+      ]
+    },
+    {
+      "file": "src/components/marketing/tiktok-ads/VideoLibrary.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 107
+        }
+      ],
+      "urls": [
+        "/api/marketing/tiktok/dashboard",
+        "/api/marketing/tiktok/studio-assets/reconcile",
+        "/api/marketing/tiktok/post-drafts/${post.id}/status",
+        "/api/marketing/tiktok/studio-projects",
+        "/api/marketing/tiktok/voices",
+        "/api/marketing/tiktok/studio-assets",
+        "/api/marketing/tiktok/creator-info",
+        "/api/marketing/tiktok/creative-brief",
+        "/api/marketing/tiktok/post-drafts",
+        "/api/marketing/tiktok/studio-projects/${project.id}/render",
+        "/api/marketing/tiktok/post-drafts/${draft.id}/schedule",
+        "/api/marketing/tiktok/post-drafts/${draft.id}/status",
+        "/api/marketing/tiktok/studio-projects/${editor.id}/render"
+      ]
+    },
+    {
+      "file": "src/components/owner-listings/olx-connection-banner.tsx",
+      "calls": [],
+      "urls": [
+        "/api/owner-listings/olx-connection"
+      ]
+    },
+    {
+      "file": "src/components/portal/ImobiliareIntegrationCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/imobiliare/status",
+        "/api/imobiliare/connect",
+        "/api/imobiliare/disconnect",
+        "/api/imobiliare/settings",
+        "/api/imobiliare/reconcile",
+        "/api/imobiliare/retry",
+        "/api/imobiliare/agents/sync"
+      ]
+    },
+    {
+      "file": "src/components/portal/RecommendedPropertyCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}",
+        "/api/client-portal/${encodeURIComponent(portalId)}/feedback"
+      ]
+    },
+    {
+      "file": "src/components/portal/StoriaIntegrationCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/storia/status",
+        "/api/storia/connect",
+        "/api/storia/disconnect"
+      ]
+    },
+    {
+      "file": "src/components/properties/add-property-dialog.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 1529
+        },
+        {
+          "kind": "uploadBytes",
+          "line": 1542
+        },
+        {
+          "kind": "writeBatch",
+          "line": 1687
+        },
+        {
+          "kind": "updateDoc",
+          "line": 1692
+        },
+        {
+          "kind": "writeBatch",
+          "line": 1720
+        },
+        {
+          "kind": "setDoc",
+          "line": 1725
+        }
+      ],
+      "urls": [
+        "/api/marketing/facebook-cloud/connections",
+        "/api/imobiliare/locations",
+        "/api/geocode-search",
+        "/api/enhance-property-image",
+        "/api/geocode"
+      ]
+    },
+    {
+      "file": "src/components/properties/building-year-lookup-dialog.tsx",
+      "calls": [],
+      "urls": [
+        "/api/building-year-lookup"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/FacebookCloudPublishingCard.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 149
+        }
+      ],
+      "urls": [
+        "/api/marketing/facebook-cloud/connections",
+        "/api/marketing/facebook-cloud/jobs?propertyId=${encodeURIComponent(property.id)}",
+        "/api/marketing/facebook-cloud/jobs/${latestJob.id}"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/FacebookGroupPromotionLauncherCard.tsx",
+      "calls": [
+        {
+          "kind": "addDoc",
+          "line": 83
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/properties/detail/actions/FacebookPromotionCard.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 60
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/properties/detail/actions/MetaAdsCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/meta/property-campaigns?propertyId=${encodeURIComponent(property.id)}",
+        "/api/marketing/meta/property-campaigns"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/NearbyObjectivesCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/properties/${encodeURIComponent(property.id)}/nearby-objectives"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/PropertyAdCostsCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/meta/property-campaigns?propertyId=${encodeURIComponent(property.id)}"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/PropertyNotesCard.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 37
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/properties/detail/actions/PropertyPublicStatsCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/public-property-stats?propertyId=${encodeURIComponent(property.id)}"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/PropertySalesRecommendationsCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/properties/${encodeURIComponent(property.id)}/sales-recommendation-context"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/PublishCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/storia/refresh-link",
+        "/api/imobiliare/publish",
+        "/api/imobiliare/unpublish",
+        "/api/storia/unpublish",
+        "/api/storia/property-promotion-settings",
+        "/api/storia/publish",
+        "/api/imobiliare/property-promotion-settings",
+        "/api/imobiliare/property-link",
+        "/api/storia/property-link",
+        "/api/storia/property-promotions",
+        "/api/storia/apply-promotions"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/TikTokAdsCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/tiktok-ads/status",
+        "/api/marketing/tiktok-ads/connect?returnTo=${encodeURIComponent(returnTo)}"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/TikTokOrganicPublishingCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/tiktok/status",
+        "/api/marketing/tiktok/post-drafts"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/VideoTourCard.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 758
+        },
+        {
+          "kind": "uploadBytes",
+          "line": 987
+        },
+        {
+          "kind": "uploadBytes",
+          "line": 988
+        }
+      ],
+      "urls": [
+        "/api/properties/${property.id}/video-tour-voices",
+        "/api/properties/${property.id}/video-tour-script",
+        "/api/properties/${property.id}/video-tour-voice-preview",
+        "/api/properties/${property.id}/video-tour-jobs",
+        "/api/properties/${property.id}/video-tour-jobs/${jobId}?wait=1",
+        "/api/properties/${property.id}/video-tour-jobs/${jobId}",
+        "/api/marketing/meta/property-posts"
+      ]
+    },
+    {
+      "file": "src/components/properties/detail/actions/WebsiteToggleCard.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 22
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/properties/detail/PropertyHeader.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 56
+        },
+        {
+          "kind": "writeBatch",
+          "line": 108
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/properties/detail/RlvTab.tsx",
+      "calls": [
+        {
+          "kind": "uploadBytes",
+          "line": 85
+        },
+        {
+          "kind": "updateDoc",
+          "line": 91
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/properties/FacebookCloudPublishDialog.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/facebook-cloud/connections",
+        "/api/marketing/facebook-cloud/jobs/${existingJob.id}",
+        "/api/marketing/facebook-cloud/jobs"
+      ]
+    },
+    {
+      "file": "src/components/properties/PropertyCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}"
+      ]
+    },
+    {
+      "file": "src/components/properties/PropertyList.tsx",
+      "calls": [],
+      "urls": [
+        "/api/marketing/facebook-cloud/jobs"
+      ]
+    },
+    {
+      "file": "src/components/public/PublicPropertyCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/public-property-image?agencyId=${encodeURIComponent(agencyId)}&propertyId=${encodeURIComponent(property.id)}"
+      ]
+    },
+    {
+      "file": "src/components/sales/GmailForwardingSetup.tsx",
+      "calls": [],
+      "urls": [
+        "/api/email/forwarding"
+      ]
+    },
+    {
+      "file": "src/components/sales/SalesDocumentWorkspace.tsx",
+      "calls": [],
+      "urls": [
+        "/api/sales/"
+      ]
+    },
+    {
+      "file": "src/components/sales/SalesEmailComposer.tsx",
+      "calls": [
+        {
+          "kind": "updateDoc",
+          "line": 385
+        },
+        {
+          "kind": "updateDoc",
+          "line": 413
+        },
+        {
+          "kind": "setDoc",
+          "line": 445
+        },
+        {
+          "kind": "setDoc",
+          "line": 634
+        },
+        {
+          "kind": "updateDoc",
+          "line": 665
+        }
+      ],
+      "urls": [
+        "/api/email/forwarding",
+        "/api/sales/${active.saleId}/messages/${active.messageId}/send-evidence",
+        "/api/sales/templates",
+        "/api/sales/templates/${template.id}",
+        "/api/sales/${sale.id}/messages/${message.id}/review",
+        "/api/sales/${sale.id}/messages/${message.id}/send-evidence",
+        "/api/sales/${sale.id}/export"
+      ]
+    },
+    {
+      "file": "src/components/sales/SaleSetupWizard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/sales/${sale.id}/setup"
+      ]
+    },
+    {
+      "file": "src/components/sales/SalesOperationsPanel.tsx",
+      "calls": [],
+      "urls": [
+        "/api/email/health",
+        "/api/sales/settings"
+      ]
+    },
+    {
+      "file": "src/components/settings/AgentManagementCard.tsx",
+      "calls": [],
+      "urls": [
+        "/api/agency/agents"
+      ]
+    },
+    {
+      "file": "src/components/settings/PushNotificationsCard.tsx",
+      "calls": [
+        {
+          "kind": "runTransaction",
+          "line": 91
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/tasks/TasksBoard.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 151
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 162
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/tasks/TasksList.tsx",
+      "calls": [
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 51
+        },
+        {
+          "kind": "updateDocumentNonBlocking",
+          "line": 58
+        },
+        {
+          "kind": "deleteDocumentNonBlocking",
+          "line": 69
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/components/viewings/AddViewingDialog.tsx",
+      "calls": [
+        {
+          "kind": "addDoc",
+          "line": 183
+        }
+      ],
+      "urls": []
+    },
+    {
+      "file": "src/hooks/use-agency-agents.ts",
+      "calls": [],
+      "urls": [
+        "/api/agency/agents"
+      ]
+    },
+    {
+      "file": "src/hooks/use-property-presentation.ts",
+      "calls": [],
+      "urls": [
+        "/api/properties/${property.id}/presentation"
+      ]
+    }
+  ],
+  "actionKinds": [
+    "update_property_status",
+    "add_property_note",
+    "set_property_featured",
+    "delete_task",
+    "delete_viewing",
+    "create_contact",
+    "archive_contact",
+    "assign_record",
+    "create_property",
+    "update_contact",
+    "update_preferences",
+    "update_property",
+    "import_owner_listing",
+    "activate_property",
+    "record_offer",
+    "add_interaction",
+    "create_task",
+    "update_task",
+    "schedule_viewing",
+    "update_viewing",
+    "recommend_properties",
+    "create_automation",
+    "update_automation",
+    "existing_operation"
+  ],
+  "automationTypes": [
+    "followup_task",
+    "owner_watch",
+    "insight_report",
+    "matching_watch",
+    "whatsapp_template"
+  ]
+}

@@ -3,6 +3,13 @@ import { operationResult } from '../operation-result';
 import { resolveAction } from '../dependencies';
 import { actionSchema } from '../contracts';
 describe('confirmed domain result binding', () => {
+  it('distinguishes queued requests, drafts, observed reads and verified final state', () => {
+    expect(operationResult('video_create', { job: { status: 'queued' } })).toMatchObject({ executionState: 'queued' });
+    expect(operationResult('meta_campaign_draft', { draft: { status: 'ready' } })).toMatchObject({ executionState: 'draft' });
+    expect(operationResult('message_send', { status: 'delivered' })).toMatchObject({ executionState: 'succeeded', businessStatus: 'delivered' });
+    expect(operationResult('read', { rows: [] }, true)).toMatchObject({ executionState: 'observed' });
+    expect(operationResult('write', { ok: true })).toMatchObject({ executionState: 'accepted_unverified' });
+  });
   it.each([['meta_campaign_draft', 'campaign', 'campaignId'], ['tiktok_post_draft', 'draft', 'draftId'], ['video_create', 'job', 'jobId'], ['sales_template_create', 'template', 'templateId']])('binds only an actual returned ID for %s', (operation, source, alias) => {
     const result = operationResult(operation, { [source]: { id: 'confirmed', accessToken: 'secret' } });
     expect(result[alias]).toBe('confirmed'); expect(result[source]).toEqual({ id: 'confirmed' });

@@ -1,4 +1,6 @@
 'use client';
+import { useToast } from '@/hooks/use-toast';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -64,7 +66,8 @@ function getWhatsAppUrl(value?: string | number | null) {
 }
 
 export default function StoriaInboxPage() {
-  const { agencyId } = useAgency();
+  const { toast } = useToast();
+  const { agencyId, user } = useAgency();
   const firestore = useFirestore();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileLeadId, setMobileLeadId] = useState<string | null>(null);
@@ -95,55 +98,18 @@ export default function StoriaInboxPage() {
     return { unread, open, total: sortedLeads.length };
   }, [sortedLeads]);
 
-  const updateLead = (lead: StoriaInboxLead, data: Partial<Pick<StoriaInboxLead, 'status' | 'unread'>>) => {
-    if (!agencyId) return;
-    updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'storiaInboxLeads', lead.id), {
-      ...data,
-      updatedAt: new Date().toISOString(),
-    });
+  const updateLead = async (lead: StoriaInboxLead, data: Partial<Pick<StoriaInboxLead, 'status' | 'unread'>>) => {
+    try { await executeCrmAction(user, { kind: 'storia_lead_action', action: 'update', leadId: lead.id, patch: data }); }
+    catch (error) { toast({ variant: 'destructive', title: 'Actualizarea nu a fost salvată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
   };
 
   const addLeadToApp = async (lead: StoriaInboxLead) => {
     if (!agencyId || addedLeadIds.has(lead.id)) return;
-    const now = new Date().toISOString();
-    const phone = lead.senderPhone ? String(lead.senderPhone) : '';
-    const email = lead.senderEmail || '';
-    let sourceProperty: Property | null = null;
-
-    if (lead.propertyId) {
-      const propertySnapshot = await getDoc(doc(firestore, 'agencies', agencyId, 'properties', lead.propertyId));
-      sourceProperty = propertySnapshot.exists() ? ({ id: propertySnapshot.id, ...propertySnapshot.data() } as Property) : null;
-    }
-
-    const propertyCity = sourceProperty?.city?.trim() || '';
-    const propertyZone = sourceProperty?.zone?.trim() || '';
-    const description = [
-      lead.latestMessage ? `Mesaj Storia: ${lead.latestMessage}` : null,
-      lead.propertyTitle ? `Proprietate: ${lead.propertyTitle}` : null,
-      propertyCity ? `Localitate: ${propertyCity}` : null,
-      propertyZone ? `Zona: ${propertyZone}` : null,
-      lead.remoteAdId ? `Remote ad: ${lead.remoteAdId}` : null,
-      lead.conversationId ? `Conversatie Storia: ${lead.conversationId}` : null,
-    ].filter(Boolean).join('\n');
-
-    await addDocumentNonBlocking(collection(firestore, 'agencies', agencyId, 'contacts'), {
-      name: lead.senderName || 'Lead Storia',
-      phone,
-      email,
-      source: 'Storia',
-      status: 'Nou',
-      contactType: 'Cumparator',
-      description,
-      city: propertyCity || null,
-      zones: propertyZone ? [propertyZone] : [],
-      locationPreferences: propertyCity || '',
-      sourcePropertyId: lead.propertyId || null,
-      createdAt: now,
-      tags: ['Storia'],
-    });
-
-    setAddedLeadIds((current) => new Set(current).add(lead.id));
-    updateLead(lead, { unread: false, status: 'in_lucru' });
+    try {
+      const result = await executeCrmAction(user, { kind: 'storia_lead_action', action: 'convert', leadId: lead.id });
+      setAddedLeadIds(current => new Set(current).add(lead.id));
+      toast({ title: result.reused ? 'Contact existent găsit' : 'Contact creat', description: result.note });
+    } catch (error) { toast({ variant: 'destructive', title: 'Conversia nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
   };
 
   return (

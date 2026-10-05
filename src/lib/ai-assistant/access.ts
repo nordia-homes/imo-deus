@@ -21,17 +21,39 @@ export function canReadResource(ctx: Pick<AssistantContext, 'uid' | 'role' | 'ag
   if (resource === 'sales') return ctx.role === 'admin' || row.agentId === ctx.uid || (Array.isArray(row.collaboratorIds) && row.collaboratorIds.includes(ctx.uid));
   if (resource === 'conversations') return canReadConversation(ctx, { ...row, collaboratorIds: Array.isArray(row.collaboratorIds) ? row.collaboratorIds : [] } as Conversation);
   if (resource === 'socialPosts') return ctx.role === 'admin';
+  if (resource === 'crmEvents') {
+    if (ctx.role === 'admin' || row.actorId === ctx.uid) return true;
+    const visibility = row.visibility;
+    const publicMetadata = ['contacts', 'properties', 'tasks', 'viewings', 'ownerListingFavorites', 'storiaInboxLeads', 'metaCampaignDrafts', 'tiktokPostDrafts', 'tiktokStudioProjects', 'tiktokStudioAssets', 'generatedContracts'];
+    if (!visibility || visibility.agencyId !== ctx.agencyId) return false;
+    if (['notificationPreferences', 'notifications', 'messagingRegistrations'].includes(visibility.resource)) return visibility.ownerId === ctx.uid;
+    if (publicMetadata.includes(visibility.resource)) return true;
+    if (['sales', 'conversations'].includes(visibility.resource)) return canReadResource(ctx, visibility.resource, visibility);
+    return false;
+  }
+  if (resource === 'assistantUploads') return row.ownerId === ctx.uid && Number(row.expiresAt) > Date.now();
   return true;
 }
-export async function getResource(ctx: AssistantContext, resource: string, id: string) {
-  const doc = await collectionFor(ctx, resource).doc(id).get();
+export async function getResource(ctx: AssistantContext, resource: string, id: string): Promise<Record<string, any>> {
+  if (resource === 'profile' || resource === 'notificationPreferences') {
+    if (id !== ctx.uid && !(resource === 'notificationPreferences' && id === 'default')) throw new CommunicationError('Acces permis numai la preferințele și profilul propriu.', 403);
+    const ref = ctx.adminDb.collection('users').doc(ctx.uid);
+    const doc = await (resource === 'profile' ? ref : ref.collection('notificationPreferences').doc('default')).get();
+    if (!doc.exists) return { id: resource === 'profile' ? ctx.uid : 'default' };
+    return safeData({ ...doc.data(), id: doc.id });
+  }
+  const ref = resource === 'portals' ? ctx.adminDb.collection('portals').doc(id) : collectionFor(ctx, resource).doc(id);
+  const doc = await ref.get();
   if (!doc.exists) throw new CommunicationError('Înregistrarea nu există.', 404);
-  const row = { ...doc.data(), id: doc.id };
+  const row: Record<string, any> = { ...doc.data(), id: doc.id };
+  if (resource === 'portals' && row.agencyId !== ctx.agencyId) throw new CommunicationError('Portal inaccesibil.', 403);
   if (!canReadResource(ctx, resource, row)) throw new CommunicationError('Nu ai acces la această înregistrare.', 403);
+  if (resource === 'crmEvents' && !(await eventReferencesAllowed(ctx, row))) throw new CommunicationError('Acces revocat la entitatea din istoric.', 403);
   if (resource === 'assistantAutomations' && (row as Record<string, any>).automation?.type === 'whatsapp_template') await getResource(ctx, 'conversations', (row as Record<string, any>).automation.conversationId);
   return row as Record<string, any>;
 }
 export async function readResource(ctx: AssistantContext, input: AssistantRead) {
+  if (input.resource === 'profile' || input.resource === 'notificationPreferences') return { rows: [await getResource(ctx, input.resource, input.id || ctx.uid)], complete: true, nextCursor: null };
   if (input.resource === 'agency') {
     const doc = await ctx.adminDb.collection('agencies').doc(ctx.agencyId).get();
     return { rows: doc.exists ? [safeData({ ...doc.data(), id: ctx.agencyId })] : [], nextCursor: null, complete: true };
@@ -61,6 +83,7 @@ export async function readResource(ctx: AssistantContext, input: AssistantRead) 
       cursor = doc.id; scanned++;
       const row = { ...doc.data(), id: doc.id };
       if (!canReadResource(ctx, input.resource, row)) continue;
+      if (input.resource === 'crmEvents' && !(await eventReferencesAllowed(ctx, row))) continue;
       if (input.resource === 'assistantAutomations' && (row as Record<string, any>).automation?.type === 'whatsapp_template' && !(await referencesAllowed(ctx, [{ resource: 'conversations', id: (row as Record<string, any>).automation.conversationId }]))) continue;
       const safe = safeData(row);
       if (input.search && !normalized(JSON.stringify(safe)).includes(normalized(input.search))) continue;
@@ -73,23 +96,27 @@ export async function readResource(ctx: AssistantContext, input: AssistantRead) 
 }
 export async function readRelated(ctx: AssistantContext, input: AssistantRelated) {
   const parent = await getResource(ctx, input.resource, input.id);
-  const allowed = input.resource === 'sales' ? ['documents', 'emailMessages', 'audit'] : ['messages', 'notes'];
+  const allowed = relatedCollections(input.resource);
   if (!allowed.includes(input.collection)) throw new CommunicationError('Colecție asociată indisponibilă.');
   if (input.resource === 'sales' && input.collection === 'documents') {
     const documents = (Array.isArray(parent.checklist) ? parent.checklist : []).filter((row: any) => typeof row.id === 'string' && (!input.cursor || row.id > input.cursor)).sort((a: any, b: any) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     return { rows: documents.slice(0, input.limit).map(row => safeData(row)), nextCursor: documents.length > input.limit ? documents[input.limit - 1].id : null, complete: documents.length <= input.limit };
   }
-  let query = collectionFor(ctx, input.resource).doc(input.id).collection(input.collection).orderBy('__name__').limit(input.limit + 1);
+  const root = input.resource === 'portals' ? ctx.adminDb.collection('portals') : collectionFor(ctx, input.resource);
+  let query = root.doc(input.id).collection(input.collection).orderBy('__name__').limit(input.limit + 1);
   if (input.cursor) query = query.startAfter(input.cursor);
   const snapshot = await query.get();
   return { rows: snapshot.docs.slice(0, input.limit).map(d => safeData({ ...d.data(), id: d.id })), nextCursor: snapshot.size > input.limit ? snapshot.docs[input.limit - 1].id : null, complete: snapshot.size <= input.limit };
+}
+function relatedCollections(resource: string) {
+  return resource === 'assistantAutomations' ? ['audit'] : resource === 'sales' ? ['documents', 'emailMessages', 'audit'] : resource === 'portals' ? ['recommendations'] : resource === 'aiOutreachCalls' ? ['audit', 'messages'] : ['messages', 'notes'];
 }
 export async function readField(ctx: AssistantContext, input: z.infer<typeof fieldSchema>) {
   if (['agency', 'agents', 'notifications', 'portals'].includes(input.resource)) throw new CommunicationError('Folosește read pentru această resursă.');
   let value: any = safeData(await getResource(ctx, input.resource, input.id));
   if (input.collection || input.documentId || input.versionId) {
-    if (!input.collection || !input.documentId || !['sales', 'conversations'].includes(input.resource)) throw new CommunicationError('Resursă asociată invalidă.');
-    const allowed = input.resource === 'sales' ? ['documents', 'emailMessages', 'audit'] : ['messages', 'notes'];
+    if (!input.collection || !input.documentId || !['sales', 'conversations', 'aiOutreachCalls'].includes(input.resource)) throw new CommunicationError('Resursă asociată invalidă.');
+    const allowed = relatedCollections(input.resource);
     if (!allowed.includes(input.collection)) throw new CommunicationError('Colecție asociată invalidă.');
     if (input.resource === 'sales' && input.collection === 'documents') {
       value = (Array.isArray(value.checklist) ? value.checklist : []).find((row: any) => row.id === input.documentId);
@@ -112,13 +139,36 @@ export async function readField(ctx: AssistantContext, input: z.infer<typeof fie
   return { value: slice, offset: input.offset, nextOffset: input.offset + limit < entries.length ? input.offset + limit : null, total: entries.length, complete: input.offset + limit >= entries.length };
 }
 export function actionReferences(actions: AssistantAction[]): AccessReference[] {
-  return actions.flatMap(action => action.kind === 'existing_operation' ? [action.params.saleId ? { resource: 'sales' as const, id: action.params.saleId } : null, action.params.conversationId ? { resource: 'conversations' as const, id: action.params.conversationId } : null].filter(r => r !== null) : action.kind === 'create_automation' && action.automation.type === 'whatsapp_template' ? [{ resource: 'conversations' as const, id: action.automation.conversationId }] : []);
+  return actions.flatMap(action => {
+    if (action.kind === 'existing_operation') {
+      const refs: AccessReference[] = [];
+      for (const source of [action.params, action.body]) {
+        for (const [field, resource] of [['saleId', 'sales'], ['conversationId', 'conversations']] as const) {
+          if (typeof source[field] === 'string') refs.push({ resource, id: source[field] });
+        }
+      }
+      return refs;
+    }
+    return action.kind === 'create_automation' && action.automation.type === 'whatsapp_template' ? [{ resource: 'conversations' as const, id: action.automation.conversationId }] : [];
+  });
 }
 export async function referencesAllowed(ctx: AssistantContext, references: AccessReference[] = []) {
   for (const ref of references) {
     if (isStepReference(ref.id)) continue; // Resolved and reauthorized by the executor.
     try { await getResource(ctx, ref.resource, ref.id); }
     catch (error) { if (error instanceof CommunicationError && [403, 404].includes(error.status)) return false; throw error; }
+  }
+  return true;
+}
+async function eventReferencesAllowed(ctx: AssistantContext, row: Record<string, any>) {
+  if (ctx.role === 'admin') return true;
+  const map: Record<string, string> = { saleId: 'sales', conversationId: 'conversations' };
+  for (const [field, resource] of Object.entries(map)) {
+    const id = row.entities?.[field];
+    if (typeof id === 'string') {
+      try { await getResource(ctx, resource, id); }
+      catch (error) { if (error instanceof CommunicationError && [403, 404].includes(error.status)) return false; throw error; }
+    }
   }
   return true;
 }

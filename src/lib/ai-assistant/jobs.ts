@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { PLAN_WORKER_STEPS } from './plan-limits';
 import { collectionFor, referencesAllowed, type AssistantContext } from './access';
 import { chatTurn, getPlan, runPlan } from './workspace';
 import { validateApproval } from './approval';
@@ -30,7 +31,7 @@ export async function enqueuePlan(ctx: AssistantContext, planId: string) {
     const job = await tx.get(ref);
     if (job.exists) {
       if (job.data()?.userId !== ctx.uid || job.data()?.agencyId !== ctx.agencyId) throw new CommunicationError('Job inaccesibil.', 403);
-      if (job.data()?.status !== 'failed' || data.status !== 'failed') return;
+      if (!(job.data()?.status === 'failed' && data.status === 'failed') && !(job.data()?.status === 'completed' && job.data()?.planStatus === 'paused' && data.status === 'pending')) return;
     }
     if (!['pending', 'failed'].includes(data.status)) throw new CommunicationError('Planul necesită verificarea stării.', 409);
     tx.set(ref, { jobType: 'plan', planId, sessionId: data.sessionId, agencyId: ctx.agencyId, userId: ctx.uid, role: ctx.role, status: 'pending', attempts: 0, approvedAt: new Date().toISOString(), createdAt: new Date().toISOString(), events: [] });
@@ -44,7 +45,7 @@ export async function readJob(ctx: AssistantContext, id: string) {
   if (!data || data.userId !== ctx.uid || data.agencyId !== ctx.agencyId) throw new CommunicationError('Job inaccesibil.', 404);
   if (data.message && !(await referencesAllowed(ctx, data.message.accessRefs))) throw new CommunicationError('Acces revocat la rezultat.', 403);
   const plan = data.planId ? (await getPlan(ctx, data.planId)).data : null;
-  return { jobId: id, status: data.status, events: data.events || [], message: data.message || null, plan, error: data.error || null };
+  return { jobId: id, status: data.status, businessStatus: data.planStatus || plan?.status || data.status, events: data.events || [], message: data.message || null, plan, error: data.error || null };
 }
 export async function drainAgentJobs(db: Firestore, limit = 1) {
   const jobs = db.collection('assistantAgentJobs');
@@ -67,8 +68,10 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
     try {
       if (job.jobType === 'plan') {
         await row.ref.update({ events: [{ type: 'PROGRESS_EVENT', stage: 'executing_plan', text: 'Execut planul confirmat pe server.', step: 0, at: new Date().toISOString() }] });
-        const plan = await runPlan(ctx, job.planId);
-        outcome = { status: 'completed', planStatus: plan.status, completedAt: new Date().toISOString() };
+        const plan = await runPlan(ctx, job.planId, false, PLAN_WORKER_STEPS);
+        outcome = plan.status === 'pending'
+          ? { status: 'pending', planStatus: 'pending', confirmedSteps: plan.results?.length || 0, createdAt: new Date().toISOString() }
+          : { status: 'completed', planStatus: plan.status, confirmedSteps: plan.results?.length || 0, completedAt: new Date().toISOString() };
       } else {
         const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, async event => { events.push(event); await row.ref.update({ events: events.slice(-60) }); });
         outcome = { status: 'completed', message: result.message, completedAt: new Date().toISOString() };

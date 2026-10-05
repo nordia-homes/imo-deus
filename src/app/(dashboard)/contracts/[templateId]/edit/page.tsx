@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -57,17 +58,9 @@ export default function EditContractTemplatePage() {
 
     try {
       setIsSaving(true);
-      await updateDoc(doc(firestore, 'agencies', agencyId, 'contractTemplates', template.id), {
-        name: name.trim(),
-        description: description.trim(),
-        category,
-        status: nextStatus || status,
-        content,
-        headerMode: 'crm_prefilled',
-        sourceType: 'document',
-        updatedAt: new Date().toISOString(),
-        updatedBy: user.uid,
-      });
+      await executeCrmAction(user, { kind: 'contract_template_action', action: 'update', templateId: template.id, data: {
+        name: name.trim(), description: description.trim(), category, status: nextStatus || status, content,
+      } });
 
       if (nextStatus) {
         setStatus(nextStatus);

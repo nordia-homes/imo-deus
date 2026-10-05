@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { executeCrmAction } from '@/lib/crm/client-actions';
+import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'next/navigation';
 import { AddLeadDialog } from '@/components/leads/AddLeadDialog';
 import { LeadList } from '@/components/leads/LeadList';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { Users, Target, BarChart, PlusCircle, Filter, Archive, ArchiveRestore, ArrowUpDown, Search, X, ArrowRight } from 'lucide-react';
-import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import type { Contact, Property } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
@@ -48,7 +50,8 @@ const REPORT_PRESET_LABELS: Record<string, string> = {
 };
 
 export default function LeadsPage() {
-    const { agencyId } = useAgency();
+    const { agencyId, user } = useAgency();
+    const { toast } = useToast();
     const firestore = useFirestore();
     const searchParams = useSearchParams();
     const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
@@ -80,21 +83,18 @@ export default function LeadsPage() {
     );
 
     useEffect(() => {
-        if (!agencyId || !buyerContacts) return;
+        if (!agencyId || !user || !buyerContacts) return;
 
-        const nowIso = new Date().toISOString();
+
 
         buyerContacts.forEach((contact) => {
             if (!contact.id || archivedInSessionRef.current.has(contact.id)) return;
             if (!shouldAutoArchiveContact(contact)) return;
 
             archivedInSessionRef.current.add(contact.id);
-            updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'contacts', contact.id), {
-                archivedAt: nowIso,
-                archivedByAge: true,
-            });
+            void executeCrmAction(user, { kind: 'archive_contact', contactId: contact.id, archived: true, byAge: true }).catch(() => { archivedInSessionRef.current.delete(contact.id); });
         });
-    }, [agencyId, buyerContacts, firestore]);
+    }, [agencyId, buyerContacts, user]);
 
     const activeContacts = useMemo(
         () => buyerContacts.filter((contact) => !isArchivedContact(contact)),
@@ -279,13 +279,10 @@ export default function LeadsPage() {
         });
     }, [activeContacts, ageSortBucket, archivedContacts, filters, normalizedLeadSearch, searchParams, showArchived]);
 
-    const handleUnarchive = (contact: Contact) => {
-        if (!agencyId) return;
-
-        updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'contacts', contact.id), {
-            archivedAt: null,
-            archivedByAge: false,
-        });
+    const handleUnarchive = async (contact: Contact) => {
+        if (!agencyId || !user) return;
+        try { await executeCrmAction(user, { kind: 'archive_contact', contactId: contact.id, archived: false }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Dezarhivarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
 
     const formatBudget = (num: number) => {

@@ -883,6 +883,7 @@ export type PropertyUploadedVideo = {
 
 export type Property = {
   id: string;
+  updatedAt?: string;
   title: string;
   address: string;
   location: string;

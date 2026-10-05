@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name) }));
+vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn() }));
 vi.mock('../actions', () => ({ executeAction: vi.fn(async () => ({ taskId: 'task' })), matchContact: vi.fn() }));
 vi.mock('../insights', () => ({ getInsights: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
@@ -9,6 +9,7 @@ import { drainAssistantAutomations } from '../automation-worker';
 import { executeAction } from '../actions';
 import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
+import { getResource } from '../access';
 function database(automation: any, patch: any = {}) {
   const job = { id: 'job', agencyId: 'a', actorId: 'u', actorRole: 'agent', createdAt: '2026-01-01T00:00:00.000Z', status: 'active', nextRunAt: '2026-01-01T00:00:00.000Z', automation, ...patch };
   const rows = new Map<string, any>([['assistantAutomationJobs/job', job], ['agencies/a/assistantAutomations/job', { ...job }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
@@ -22,6 +23,17 @@ const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z',
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('approved automation execution', () => {
+  it('stops on deadline or contact status and records the skipped run', async () => {
+    vi.mocked(getResource).mockResolvedValue({ status: 'Câștigat' });
+    const { db, rows } = database({ ...followup, stopOnContactStatuses: ['Câștigat'] });
+    await drainAssistantAutomations(db as any);
+    expect(executeAction).not.toHaveBeenCalled();
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', lastResult: { skipped: true } });
+    expect([...rows.keys()].some(key => key.startsWith('agencies/a/assistantAutomations/job/audit/'))).toBe(true);
+    const expired = database({ ...followup, stopAfter: '2026-01-01T00:00:00.000Z' });
+    await drainAssistantAutomations(expired.db as any);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('runs one follow-up through the existing idempotent action and never repeats a completed run', async () => {
     const { db, rows } = database(followup); await drainAssistantAutomations(db as any); await drainAssistantAutomations(db as any);
     expect(executeAction).toHaveBeenCalledTimes(1); expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', runCount: 1 });

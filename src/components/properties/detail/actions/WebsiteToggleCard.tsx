@@ -4,8 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import type { Property } from "@/lib/types";
-import { updateDocumentNonBlocking, useFirestore } from "@/firebase";
-import { doc } from 'firebase/firestore';
+import { useUser } from "@/firebase";
+import { executeCrmAction } from '@/lib/crm/client-actions';
+import { useState } from 'react';
 import { useAgency } from "@/context/AgencyContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -13,17 +14,17 @@ import { ACTION_CARD_CLASSNAME, ACTION_INPUT_CLASSNAME } from "./cardStyles";
 
 export function WebsiteToggleCard({ property }: { property: Property }) {
     const { agencyId } = useAgency();
-    const firestore = useFirestore();
+    const { user } = useUser();
+    const [isSaving, setIsSaving] = useState(false);
     const isMobile = useIsMobile();
 
-    const handleToggle = (isFeatured: boolean) => {
-        if (!agencyId) return;
-        const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-        updateDocumentNonBlocking(propertyRef, { featured: isFeatured });
-        toast({
-            title: `Proprietate ${isFeatured ? 'marcată ca recomandată' : 'scoasă de la recomandate'}`,
-        });
-    }
+    const handleToggle = async (isFeatured: boolean) => {
+        if (!agencyId || isSaving) return;
+        setIsSaving(true);
+        try { await executeCrmAction(user, { kind: 'set_property_featured', propertyId: property.id, featured: isFeatured }); toast({ title: isFeatured ? 'Proprietate recomandată' : 'Proprietate scoasă de la recomandate' }); }
+        catch (error) { toast({ variant: 'destructive', title: 'Actualizarea nu a fost salvată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
+        finally { setIsSaving(false); }
+    };
 
     return (
         <Card className={ACTION_CARD_CLASSNAME}>
@@ -38,6 +39,7 @@ export function WebsiteToggleCard({ property }: { property: Property }) {
                     <Switch
                         id="website-public-toggle"
                         checked={property.featured}
+                        disabled={isSaving}
                         onCheckedChange={handleToggle}
                     />
                 </div>

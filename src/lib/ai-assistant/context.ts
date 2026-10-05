@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { normalized, safeData, type AssistantMessage, type AccessReference } from './contracts';
 import { collectionFor, referencesAllowed, getResource, type AssistantContext } from './access';
+import { matchingRevision } from './matching-revision';
 
 export function compressedResult(result: unknown, maxBytes = 14000) {
   const safe = safeData(result), serialized = JSON.stringify(safe);
@@ -48,9 +49,10 @@ export function sessionSummary(messages: AssistantMessage[]) {
   const entities = [...new Set(messages.flatMap(message => message.cards || []).flatMap(card => card.rows).map(row => row.id).filter(value => typeof value === 'string'))].slice(-20);
   return { version: '1', resultSetIds, entities, pendingPlanIds: messages.map(message => message.planId).filter(Boolean).slice(-3), source: 'validated_server_messages' };
 }
-export async function saveResultSet(ctx: AssistantContext, rows: Record<string, unknown>[], contactId?: string, accessRefs: AccessReference[] = []) {
+export async function saveResultSet(ctx: AssistantContext, rows: Record<string, unknown>[], contactId?: string, accessRefs: AccessReference[] = [], sourceContactRevision?: string) {
   const id = randomUUID();
-  await collectionFor(ctx, 'assistantResultSets').doc(id).create({ ownerId: ctx.uid, kind: 'existing_matches', contactId: contactId || null, rows: safeData(rows), accessRefs, createdAt: new Date().toISOString(), expiresAt: Date.now() + 3600000 });
+  const contactRevision = sourceContactRevision || (typeof rows[0]?.sourceContactRevision === 'string' ? rows[0].sourceContactRevision : undefined) || (contactId ? matchingRevision(await getResource(ctx, 'contacts', contactId)) : null);
+  await collectionFor(ctx, 'assistantResultSets').doc(id).create({ ownerId: ctx.uid, kind: 'existing_matches', contactId: contactId || null, contactRevision, rows: safeData(rows), accessRefs, createdAt: new Date().toISOString(), expiresAt: Date.now() + 3600000 });
   return id;
 }
 export function filterMatches(rows: Record<string, any>[], input: { priceMax?: number; zone?: string; limit: number; sortBy?: 'existing_order' | 'score' | 'price' }) {
@@ -63,8 +65,10 @@ export async function filterResultSet(ctx: AssistantContext, input: { resultSetI
   const doc = await collectionFor(ctx, 'assistantResultSets').doc(input.resultSetId).get(), record = doc.data();
   if (!record || record.ownerId !== ctx.uid || record.expiresAt < Date.now() || !(await referencesAllowed(ctx, record.accessRefs))) throw new Error('Setul contextual a expirat sau nu este accesibil.');
   // Refresh existence/status/current price without recalculating any stored matching score.
-  const eligible = await Promise.all((record.rows || []).map(async (row: any) => { try { const property = await getResource(ctx, 'properties', row.id); return property.status === 'Activ' ? { ...row, price: property.price, location: property.location } : null; } catch (error: any) { if ([403, 404].includes(error.status)) return null; throw error; } }));
+  const contactChanged = record.contactId ? record.contactRevision !== matchingRevision(await getResource(ctx, 'contacts', record.contactId)) : false;
+  const eligible = await Promise.all((record.rows || []).map(async (row: any) => { try { const property = await getResource(ctx, 'properties', row.id); return property.status === 'Activ' ? { ...row, price: property.price, location: property.location, scoreMayBeStale: contactChanged || row.matchingRevision !== matchingRevision(property) } : null; } catch (error: any) { if ([403, 404].includes(error.status)) return null; throw error; } }));
   const rows = filterMatches(eligible.filter(Boolean), input);
-  const resultSetId = await saveResultSet(ctx, rows, record.contactId, record.accessRefs);
-  return { rows, resultSetId, contactId: record.contactId, complete: true, scoringSource: 'existing_imodeus_matching', scoreRecalculated: false };
+  const resultSetId = await saveResultSet(ctx, rows, record.contactId, record.accessRefs, record.contactRevision);
+  const stale = rows.some(row => row.scoreMayBeStale);
+  return { rows, resultSetId, contactId: record.contactId, complete: true, scoringSource: 'existing_imodeus_matching', scoreRecalculated: false, scoreMayBeStale: stale, note: stale ? 'Datele clientului sau proprietăților s-au schimbat. Scorurile păstrează calculul anterior; cere matching nou pentru scoruri actuale.' : null };
 }

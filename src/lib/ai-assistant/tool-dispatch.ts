@@ -13,11 +13,19 @@ import type { AgentOptions } from './planner';
 import { analyzeRecords, resolveDatetime } from './deterministic';
 import { validateActionDates } from './temporal-policy';
 import { queryRecords, decorateRecords } from './record-query';
+import { operationCards } from './operation-cards';
+import { dataCatalog, capabilityStatus } from './catalog';
 export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]; actions: AssistantAction[]; refs: AccessReference[]; childMetrics?: Awaited<ReturnType<typeof import('./planner').planTurn>>['metrics'] };
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'resolve_datetime') data = resolveDatetime(payload);
+  if (name === 'data_catalog') data = dataCatalog(payload.category);
+  else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
+  else if (name === 'timeline') {
+    const { readTimeline } = await import('./timeline'); data = await readTimeline(ctx, payload);
+    cards.push({ type: 'data', title: 'Istoric CRM verificat', source: 'timeline', timeline: payload, ...data } as AssistantCard);
+    refs.push({ resource: payload.resource, id: payload.id });
+  } else if (name === 'resolve_datetime') data = resolveDatetime(payload);
   else if (name === 'query_records') {
     data = await queryRecords(ctx, payload); cards.push({ type: 'data', title: ({viewings:'Agenda vizionărilor',tasks:'Sarcinile tale',contacts:'Clienți',properties:'Portofoliu CRM'} as Record<string,string>)[payload.resource], source: payload.resource, query: payload, ...data } as AssistantCard);
   }
@@ -44,7 +52,7 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
   }
   else if (name === 'existing_read') {
     requireTool(payload.operation, ctx.role || ''); data = await invokeOperation({ ...ctx, agentBudget: options.budget }, payload, true);
-    cards.push({ type: 'data', title: payload.operation, source: payload.operation, rows: [data] });
+    cards.push(...operationCards(payload.operation, operations[payload.operation].description, data));
     if (payload.params.saleId) refs.push({ resource: 'sales', id: payload.params.saleId }); if (payload.params.conversationId) refs.push({ resource: 'conversations', id: payload.params.conversationId });
     for (const row of data.conversations || []) refs.push({ resource: 'conversations', id: row.id }); for (const row of data.results || []) if (row.conversationId) refs.push({ resource: 'conversations', id: row.conversationId });
   } else if (name === 'propose_actions') {
