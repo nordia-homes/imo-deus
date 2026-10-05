@@ -1,18 +1,18 @@
 {
-  "verifiedAt": "2026-10-04T23:45:19.146Z",
+  "verifiedAt": "2026-10-05T09:58:37.073Z",
   "project": "studio-652232171-42fb6",
   "traffic": {
     "splits": [
       {
-        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-05-008",
+        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-05-012",
         "percent": 100
       }
     ]
   },
   "build": {
-    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-008",
+    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-012",
     "state": "READY",
-    "commit": "a0cd28cbd32a9bb917b1d22bbc74edae17f32b89"
+    "commit": "b6b479f172b1a8e10610fadb7e031ee02532eca8"
   },
   "configuration": [
     {
@@ -20,14 +20,15 @@
       "value": "true"
     },
     {
-      "name": "JARVIS_VOICE_NAME",
-      "value": "cedar"
+      "name": "JARVIS_ELEVENLABS_VOICE_ID",
+      "value": "bgVGH727uJ1Qj9P9egUj"
     },
     {
       "name": "WS_NO_BUFFER_UTIL",
       "value": "true"
     }
   ],
+  "elevenLabsSecretBound": true,
   "openAiSecretBound": true,
   "voiceIndexes": [
     {
@@ -61,31 +62,49 @@
       "contentType": "application/json"
     },
     {
-      "path": "/_next/static/media/rig-atlas.d7eb4c2c.png",
+      "path": "/_next/static/media/rig-atlas-v2.258a0741.png",
+      "status": 200,
+      "contentType": "image/png"
+    },
+    {
+      "path": "/_next/static/media/office-scene.8d33d4bc.png",
+      "status": 200,
+      "contentType": "image/png"
+    },
+    {
+      "path": "/_next/static/media/blue-body.b51b2cdb.png",
       "status": 200,
       "contentType": "image/png"
     }
   ],
   "deploymentPath": "Official App Hosting REST API; Firebase CLI Developer Connect token precheck returned 403; project billing enabled.",
   "localBuild": "PASS",
-  "automatedTests": 349,
+  "automatedTests": 223,
   "rulesTests": 18,
-  "voiceUiChecks": 10,
-  "voiceRegressionTests": 21,
+  "voiceUiChecks": 14,
+  "voiceRegressionTests": 26,
   "productionAudioProbe": {
-    "verifiedAt": "2026-10-04T23:43:23.161Z",
+    "verifiedAt": "2026-10-05T09:58:31.900Z",
     "status": 200,
     "anonymousStatus": 403,
-    "build": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-008",
-    "commit": "a0cd28cbd32a9bb917b1d22bbc74edae17f32b89",
+    "build": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-05-012",
+    "commit": "b6b479f172b1a8e10610fadb7e031ee02532eca8",
+    "provider": "elevenlabs",
+    "model": "eleven_v3_conversational",
+    "voice": "bgVGH727uJ1Qj9P9egUj",
     "bytes": 153600,
-    "nonZeroSamples": 76357,
+    "nonZeroSamples": 69820,
     "outputSeconds": 3.2,
-    "firstAudioMs": 1274,
-    "costUsd": 0.0014383999999999998,
+    "firstAudioMs": 268,
+    "costUsd": null,
+    "billedCharacters": 41,
+    "pricingKnown": false,
+    "estimated": true,
+    "interrupted": false,
     "syntheticFixedText": true,
     "crmActionsExecuted": false
   },
   "textUiChecks": 13,
-  "hardwareAcceptance": "Manual microphone/speaker/Safari/Electron acceptance pending; synthetic tests do not certify echo cancellation."
+  "hardwareAcceptance": "Manual microphone/speaker/Safari/Electron acceptance pending; synthetic tests do not certify echo cancellation.",
+  "rulesTestsScope": "Historical verification; rules unchanged in this migration."
 }

@@ -65,3 +65,5 @@ Surse oficiale verificate: [Speech to text](https://developers.openai.com/api/do
 Protocolul este verificat cu [documentația oficială ElevenLabs](https://elevenlabs.io/docs/api-reference/text-to-dialogue/ttd-websocket): o singură voce, header xi-api-key numai server, inputs și close_socket pentru flush. PCM permite delimitarea completă a turei. Anularea și erorile nu declanșează fallback la alt model. STT și executorii CRM existenți rămân comuni.
 
 Tariful ElevenLabs variază cu contractul. Fără JARVIS_ELEVENLABS_USD_PER_1000_CHARACTERS configurat, costUsd este null, caracterele sunt contorizate, iar metrics expune explicit evenimentele fără preț; nu raportează cost zero fals.
+
+Deployment verificat: build-2026-10-05-012, commit b6b479f1, READY și 100% trafic. Proba ElevenLabs din producție: HTTP 200, model eleven_v3_conversational, 153600 bytes PCM, 69820 eșantioane nenule, 3,2 secunde audio, primul audio după 268ms în această singură probă. Apelul fără autentificare: HTTP 403. Textura blue-body.b51b2cdb.png și decorul office-scene.8d33d4bc.png: HTTP 200.
