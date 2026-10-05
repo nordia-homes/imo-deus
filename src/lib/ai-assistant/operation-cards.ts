@@ -1,7 +1,7 @@
 import type { AssistantCard } from './contracts';
 import { safeData } from './contracts';
 
-const arrays = ['rows', 'data', 'results', 'conversations', 'messages', 'posts', 'leads', 'contacts', 'properties', 'tasks', 'viewings', 'jobs', 'connections', 'drafts', 'assets', 'projects', 'templates', 'agents', 'advertisers'];
+const arrays = ['rows', 'data', 'results', 'conversations', 'messages', 'posts', 'leads', 'contacts', 'properties', 'tasks', 'viewings', 'calls', 'jobs', 'connections', 'drafts', 'assets', 'projects', 'templates', 'overrides', 'agents', 'advertisers'];
 const objects = ['sale', 'job', 'call', 'draft', 'project', 'asset', 'template', 'campaign', 'connection', 'report'];
 export function operationCards(operation: string, description: string, raw: Record<string, any>): AssistantCard[] {
   const data = safeData(raw), list = arrays.find(key => Array.isArray(data[key])), object = objects.find(key => data[key] && typeof data[key] === 'object' && !Array.isArray(data[key]));

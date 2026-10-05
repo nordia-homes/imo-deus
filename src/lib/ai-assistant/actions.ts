@@ -13,7 +13,8 @@ import type { OwnerListingDetail } from '@/lib/owner-listings/types';
 import { OperationFailure, unconfirmedOperationResult } from './operation-error';
 import { assertPropertyActivation, initialContactPreferences, propertyLifecyclePatch, propertyStatusReasonLabels, type propertyLifecycleSchema } from '@/lib/crm/action-fields';
 import { z } from 'zod';
-import { createSaleFromProperty } from '@/lib/sales';
+import { createSaleFromProperty, DEFAULT_SALES_EMAIL_TEMPLATES } from '@/lib/sales';
+import { sanitizeEmailHtml } from '@/lib/email-compose';
 import { payloadHash } from './approval';
 import { prospectOwner, prospectPatch } from '@/lib/crm/prospect';
 import { prepareContactIdentity } from '@/lib/crm/contact-identity-server';
@@ -95,7 +96,40 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     const statusEvent = (propertyId: string, previous: Record<string, any>, next: Record<string, any>, change: z.infer<typeof propertyLifecycleSchema>) => {
       tx.create(collectionFor(ctx, 'propertyStatusEvents').doc(key), { id: key, agencyId: ctx.agencyId, propertyId, actorId: ctx.uid, changedAt: now, previousStatus: previous.status || null, nextStatus: change.status, reason: change.reason || 'agent_instruction', reasonLabel: change.reason ? propertyStatusReasonLabels[change.reason] : 'La solicitarea agentului', agentMessage: change.notes || `Status ${change.status} solicitat de agent.`, soldPrice: change.soldPrice || null, marketAnalysisEligible: change.status === 'Vândut', propertySnapshot: { ...next, id: propertyId } });
     };
-    if (action.kind === 'update_profile') {
+    if (action.kind === 'outreach_call_action') {
+      const call = await read('aiOutreachCalls', action.callId);
+      if (typeof call.ownerListingId !== 'string' || !call.ownerListingId || call.ownerListingId.includes('/')) throw new CommunicationError('Apelul nu are un anunț valid.', 409);
+      const callRef = collectionFor(ctx, 'aiOutreachCalls').doc(action.callId);
+      const statusRef = collectionFor(ctx, 'aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
+      const ownerStatus = (await tx.get(statusRef)).data();
+      if (ownerStatus?.latestAiCallId && ownerStatus.latestAiCallId !== action.callId) throw new CommunicationError('Există un apel mai nou pentru acest anunț. Actualizează acel apel.', 409);
+      if (call.status === 'calling' || (action.action === 'cancel' && (call.vapiCallId || !['queued', 'scheduled', 'uncalled'].includes(call.status)))) throw new CommunicationError('Apelul a ajuns la furnizor sau este finalizat. Anularea locală nu poate opri convorbirea; verifică starea furnizorului.', 409);
+      if (action.action === 'manual_outcome' && !action.outcome) throw new CommunicationError('Precizează rezultatul apelului.');
+      if (action.action === 'revoke_do_not_call' && call.outcome !== 'do_not_call' && ownerStatus?.aiDoNotCall !== true) throw new CommunicationError('Apelul nu are o restricție DNC de revocat.', 409);
+      const outcome = action.action === 'manual_outcome' ? action.outcome! : 'uncalled';
+      const status = action.action === 'cancel' ? 'canceled' : 'completed';
+      const collaborationStatus = ['collaborates', 'verbal_agreement', 'negotiation_success'].includes(outcome) ? 'yes' : outcome === 'does_not_collaborate' ? 'no' : outcome === 'call_later' ? 'call_later' : 'unknown';
+      const source = { manualOutcomeSource: 'agent_instruction', manualOutcomeByUid: ctx.uid, manualOutcomeReason: action.reason, manualOutcomeAt: now };
+      tx.update(callRef, { status, outcome, updatedAt: now, ...source, ...(action.action === 'cancel' ? { endedAt: now, endedReason: 'canceled_by_user', providerErrorMessage: null } : { endedAt: call.endedAt || now }) });
+      tx.set(statusRef, { agencyId: ctx.agencyId, ownerListingId: call.ownerListingId, latestAiCallId: action.action === 'manual_outcome' ? action.callId : null, aiOutreachStatus: action.action === 'manual_outcome' ? 'completed' : 'uncalled', aiOutreachOutcome: outcome, aiOutreachUpdatedAt: now, updatedAt: now, ...source,
+        ...(action.action === 'manual_outcome' ? { aiDoNotCall: outcome === 'do_not_call' || ownerStatus?.aiDoNotCall === true, aiCollaborationStatus: collaborationStatus, aiAcceptedCommissionValue: call.result?.acceptedCommissionValue || null, aiNextFollowUpAt: outcome === 'call_later' ? now : null } : action.action === 'revoke_do_not_call' ? { aiDoNotCall: false } : {}) }, { merge: true });
+      tx.create(callRef.collection('audit').doc(key), { agencyId: ctx.agencyId, callId: action.callId, action: action.action, actorUid: ctx.uid, actorType: 'agent', summary: action.reason, outcome, createdAt: now });
+      result = { callId: action.callId, listingId: call.ownerListingId, action: action.action, status, outcome, source: 'agent_instruction', link: '/ai-calls', note: 'Modificare CRM consemnată la solicitarea agentului; nu reprezintă o confirmare nouă primită de la furnizor.' };
+    } else if (action.kind === 'email_template_preference') {
+      const base = DEFAULT_SALES_EMAIL_TEMPLATES.find(row => row.id === action.templateId) || (await tx.get(collectionFor(ctx, 'salesEmailTemplates').doc(action.templateId))).data();
+      if (!base) throw new CommunicationError('Șablonul email nu există în biblioteca accesibilă.', 404);
+      const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('emailTemplateOverrides').doc(action.templateId);
+      if (action.action === 'reset') tx.delete(ref);
+      else if (action.action === 'override') {
+        if (!action.data) throw new CommunicationError('Precizează conținutul personalizării.');
+        tx.set(ref, { ...action.data, bodyHtml: sanitizeEmailHtml(action.data.bodyHtml), baseTemplateId: action.templateId, baseVersion: base.version || 1, signatureMode: 'agent', variables: base.variables || [], updatedAt: now, updatedByUid: ctx.uid });
+      } else {
+        const enabled = new Set<string>(profile.data()?.enabledSalesEmailTemplateIds || []);
+        if (action.action === 'enable') enabled.add(action.templateId); else enabled.delete(action.templateId);
+        tx.update(ctx.adminDb.collection('users').doc(ctx.uid), { enabledSalesEmailTemplateIds: [...enabled], salesEmailTemplatePreferencesUpdatedAt: now, updatedAt: now });
+      }
+      result = { templateId: action.templateId, action: action.action, link: '/gmail', note: 'Preferința șablonului este salvată numai pentru agentul curent.' };
+    } else if (action.kind === 'update_profile') {
       if (!Object.keys(action.patch).length) throw new CommunicationError('Precizează modificarea profilului.');
       if (action.patch.email && action.patch.email.toLowerCase() !== String(profile.data()?.email || '').toLowerCase()) {
         const { getAuth } = await import('firebase-admin/auth');

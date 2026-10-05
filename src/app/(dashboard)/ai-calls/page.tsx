@@ -572,48 +572,7 @@ export default function AiCallsPage() {
     setIsCancellingCallId(call.id);
 
     try {
-      const timestamp = new Date().toISOString();
-      const callRef = doc(firestore, 'agencies', agencyId, 'aiOutreachCalls', call.id);
-      const statusRef = doc(
-        firestore,
-        'agencies',
-        agencyId,
-        'aiOutreachOwnerListingStatuses',
-        call.ownerListingId,
-      );
-
-      await updateDoc(callRef, {
-        status: 'canceled',
-        outcome: 'uncalled',
-        endedAt: timestamp,
-        endedReason: 'canceled_by_user',
-        providerErrorMessage: null,
-        updatedAt: timestamp,
-      });
-
-      await setDoc(
-        statusRef,
-        {
-          agencyId,
-          ownerListingId: call.ownerListingId,
-          latestAiCallId: null,
-          aiOutreachStatus: 'uncalled',
-          aiOutreachOutcome: 'uncalled',
-          aiOutreachUpdatedAt: timestamp,
-          updatedAt: timestamp,
-        },
-        { merge: true },
-      );
-
-      await addDoc(collection(callRef, 'audit'), {
-        agencyId,
-        callId: call.id,
-        action: 'canceled_by_user',
-        actorUid: user?.uid || null,
-        actorType: 'agent',
-        summary: 'Apel AI anulat din pagina Apeluri AI.',
-        createdAt: timestamp,
-      });
+      await executeCrmAction(user, { kind: 'outreach_call_action', callId: call.id, action: 'cancel', reason: 'Anulare solicitată și confirmată de agent din pagina Apeluri AI.' });
 
       toast({
         title: 'Apel anulat',
@@ -633,64 +592,11 @@ export default function AiCallsPage() {
   };
 
   const saveManualOutcome = async (call: AiOutreachCall) => {
-    if (!agencyId || !manualOutcome) return;
+    if (!agencyId || !manualOutcome || manualOutcome === 'queued' || manualOutcome === 'calling') return;
     setIsSavingManualOutcome(true);
 
     try {
-      const timestamp = new Date().toISOString();
-      const callRef = doc(firestore, 'agencies', agencyId, 'aiOutreachCalls', call.id);
-      const statusRef = doc(
-        firestore,
-        'agencies',
-        agencyId,
-        'aiOutreachOwnerListingStatuses',
-        call.ownerListingId,
-      );
-      const collaborationStatus =
-        manualOutcome === 'collaborates' ||
-        manualOutcome === 'verbal_agreement' ||
-        manualOutcome === 'negotiation_success'
-          ? 'yes'
-          : manualOutcome === 'does_not_collaborate'
-            ? 'no'
-            : manualOutcome === 'call_later'
-              ? 'call_later'
-              : 'unknown';
-
-      await updateDoc(callRef, {
-        status: 'completed',
-        outcome: manualOutcome,
-        endedAt: call.endedAt || timestamp,
-        updatedAt: timestamp,
-      });
-
-      await setDoc(
-        statusRef,
-        {
-          agencyId,
-          ownerListingId: call.ownerListingId,
-          latestAiCallId: call.id,
-          aiOutreachStatus: 'completed',
-          aiOutreachOutcome: manualOutcome,
-          aiOutreachUpdatedAt: timestamp,
-          aiDoNotCall: manualOutcome === 'do_not_call',
-          aiCollaborationStatus: collaborationStatus,
-          aiAcceptedCommissionValue: call.result?.acceptedCommissionValue || null,
-          aiNextFollowUpAt: manualOutcome === 'call_later' ? timestamp : null,
-          updatedAt: timestamp,
-        },
-        { merge: true },
-      );
-
-      await addDoc(collection(callRef, 'audit'), {
-        agencyId,
-        callId: call.id,
-        action: 'manual_outcome_updated',
-        actorUid: user?.uid || null,
-        actorType: 'agent',
-        summary: `Rezultat marcat manual: ${AI_OUTREACH_OUTCOME_META[manualOutcome].label}.`,
-        createdAt: timestamp,
-      });
+      await executeCrmAction(user, { kind: 'outreach_call_action', callId: call.id, action: 'manual_outcome', outcome: manualOutcome, reason: 'Rezultat declarat manual de agent din pagina Apeluri AI.' });
 
       toast({
         title: 'Rezultat actualizat',
@@ -726,46 +632,7 @@ export default function AiCallsPage() {
     if (!agencyId) return;
 
     try {
-      const timestamp = new Date().toISOString();
-      const callRef = doc(firestore, 'agencies', agencyId, 'aiOutreachCalls', call.id);
-      const statusRef = doc(
-        firestore,
-        'agencies',
-        agencyId,
-        'aiOutreachOwnerListingStatuses',
-        call.ownerListingId,
-      );
-
-      await updateDoc(callRef, {
-        status: 'completed',
-        outcome: 'uncalled',
-        updatedAt: timestamp,
-      });
-
-      await setDoc(
-        statusRef,
-        {
-          agencyId,
-          ownerListingId: call.ownerListingId,
-          latestAiCallId: null,
-          aiOutreachStatus: 'uncalled',
-          aiOutreachOutcome: 'uncalled',
-          aiOutreachUpdatedAt: timestamp,
-          aiDoNotCall: false,
-          updatedAt: timestamp,
-        },
-        { merge: true },
-      );
-
-      await addDoc(collection(callRef, 'audit'), {
-        agencyId,
-        callId: call.id,
-        action: 'do_not_call_revoked',
-        actorUid: user?.uid || null,
-        actorType: 'agent',
-        summary: 'Restricția Do Not Call a fost revocată.',
-        createdAt: timestamp,
-      });
+      await executeCrmAction(user, { kind: 'outreach_call_action', callId: call.id, action: 'revoke_do_not_call', reason: 'Revocare DNC solicitată explicit de agent din pagina Apeluri AI.' });
 
       toast({
         title: 'Do Not Call revocat',

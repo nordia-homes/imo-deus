@@ -18,6 +18,10 @@ type VapiOutboundCallResult =
       message: string;
     };
 
+export class VapiDispatchError extends Error {
+  constructor(message: string, public definitivelyRejected = false) { super(message); }
+}
+
 function buildAssistantOverrides(input: CreateVapiOutboundCallInput) {
   const { call, settings, agencyName } = input;
   const commissionUnit = settings.commissionType === 'percent' ? '%' : 'EUR';
@@ -59,6 +63,7 @@ export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput)
   }
 
   const response = await fetch('https://api.vapi.ai/call/phone', {
+    signal: AbortSignal.timeout(30000),
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -83,10 +88,11 @@ export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput)
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(
+    throw new VapiDispatchError(
       typeof payload === 'object' && payload && 'message' in payload && typeof payload.message === 'string'
         ? payload.message
         : `Vapi a raspuns cu ${response.status}.`,
+      response.status >= 400 && response.status < 500 && ![408, 429].includes(response.status),
     );
   }
 
@@ -96,7 +102,7 @@ export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput)
       : null;
 
   if (!vapiCallId) {
-    throw new Error('Vapi nu a returnat un ID de apel.');
+    throw new VapiDispatchError('Vapi nu a returnat un ID de apel.');
   }
 
   return {

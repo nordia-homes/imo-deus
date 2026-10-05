@@ -2,6 +2,16 @@
   "version": 1,
   "operations": [
     {
+      "id": "email_template_preferences",
+      "method": "GET",
+      "path": "/api/email/template-preferences",
+      "handler": "src/app/api/email/template-preferences/route.ts",
+      "description": "Șabloane email activate și personalizări proprii ale agentului. Paginare cursor; nu modifică biblioteca agenției.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
       "id": "video_voice_preview",
       "method": "POST",
       "path": "/api/properties/{propertyId}/video-tour-voice-preview",
@@ -1693,6 +1703,8 @@
     }
   ],
   "actionKinds": [
+    "outreach_call_action",
+    "email_template_preference",
     "update_profile",
     "update_agency",
     "update_notification_preferences",
@@ -1747,53 +1759,23 @@
       "file": "src/app/(dashboard)/ai-calls/page.tsx",
       "calls": [
         {
-          "call": "updateDoc",
-          "line": 585,
-          "sharedExecutor": false
-        },
-        {
-          "call": "setDoc",
-          "line": 594,
-          "sharedExecutor": false
-        },
-        {
-          "call": "addDoc",
-          "line": 608,
-          "sharedExecutor": false
-        },
-        {
-          "call": "updateDoc",
-          "line": 660,
-          "sharedExecutor": false
-        },
-        {
-          "call": "setDoc",
-          "line": 667,
-          "sharedExecutor": false
-        },
-        {
-          "call": "addDoc",
-          "line": 685,
-          "sharedExecutor": false
-        },
-        {
-          "call": "updateDoc",
-          "line": 739,
-          "sharedExecutor": false
-        },
-        {
-          "call": "setDoc",
-          "line": 745,
-          "sharedExecutor": false
-        },
-        {
-          "call": "addDoc",
-          "line": 760,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 575,
+          "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 793,
+          "line": 599,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 635,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 660,
           "sharedExecutor": true
         }
       ],
@@ -1873,19 +1855,19 @@
       "file": "src/app/(dashboard)/gmail/page.tsx",
       "calls": [
         {
-          "call": "setDoc",
-          "line": 288,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 289,
+          "sharedExecutor": true
         },
         {
-          "call": "deleteDoc",
-          "line": 353,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 342,
+          "sharedExecutor": true
         },
         {
-          "call": "setDoc",
-          "line": 379,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 368,
+          "sharedExecutor": true
         }
       ],
       "verification": "static_reference_requires_semantic_review"

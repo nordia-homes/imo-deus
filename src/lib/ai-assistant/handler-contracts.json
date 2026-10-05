@@ -1,4 +1,13 @@
 {
+  "email_template_preferences": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [
+      "cursor"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
   "video_voice_preview": {
     "method": "POST",
     "validation": "",

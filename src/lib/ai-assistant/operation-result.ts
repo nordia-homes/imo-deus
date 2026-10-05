@@ -17,10 +17,14 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
   const key = String(state || '').toLowerCase();
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };
   result.executionState = Object.entries(groups).find(([, values]) => values.includes(key))?.[0] || (readOnly ? 'observed' : 'accepted_unverified');
+  if (result.call?.providerErrorCode === 'vapi_create_unknown') {
+    result.executionState = 'unknown';
+    result.note = 'Rezultatul lansării apelului este incert. Verifică furnizorul; apelul nu trebuie retrimis automat.';
+  }
   result.verifiedAt = new Date().toISOString();
   result.evidenceSource = 'domain_handler';
   if (result.executionState === 'accepted_unverified') result.note = 'Handlerul a acceptat comanda. Nu a furnizat o stare finală de business; verifică resursa înainte de a declara un efect extern finalizat.';
-  if (['queued', 'pending', 'scheduled', 'running', 'processing', 'calling'].includes(String(state).toLowerCase())) result.note = 'Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.';
+  if (result.executionState !== 'unknown' && ['queued', 'pending', 'scheduled', 'running', 'processing', 'calling'].includes(String(state).toLowerCase())) result.note = 'Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.';
   if (!alias) return result;
   const id = result[alias[0]]?.id;
   return typeof id === 'string' && /^[A-Za-z0-9_.:-]{1,180}$/.test(id) ? { ...result, [alias[1]]: id } : result;

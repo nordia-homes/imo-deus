@@ -4,7 +4,7 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Etapa curentă
 
-- Catalog: 169 handler-e existente, 37 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți.
+- Catalog curent: 170 handler-e existente, 39 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
 - Executor comun manual/AI pentru contacte, proprietăți, calendar, prospectare, oferte, portaluri, dosare, contracte și setări. Migrarea UI include dashboard, liste, detalii, dialogs și inbox Storia.
 - Câmpuri complete ale formularelor de bază, assignment în aceeași agenție, lifecycle cu motive și istoric, verificare concurentă la editarea proprietăților.
 - Normalizare telefon/email și locks de identitate. Migrare producție: 468 contacte, 0 conflicte; verificare ulterioară: 0 modificări restante. Cele 386 identități repetate existente sunt păstrate pentru revizuire, fără merge automat.
@@ -15,6 +15,7 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 - Timeline autorizat, citiri asociate și proiecții de modificări CRM/agenție/notificări. Evenimentele fără actor verificabil nu inventează autorul schimbării.
 - Carduri comune Text/Voice, detalii de plan, continuări, linkuri de handoff și separarea draft/queued/running/succeeded/failed/unknown.
 - Etapa următoare: prospectare direct din lista generală prin executor comun; autofill contact cu verificare de versiune; Matching și follow-up apeluri folosesc serviciul comun de calendar; fotografie de profil și siglă prin fișiere private, cu validări, roluri și retenție pentru upload-uri nefinalizate.
+- Gmail: activare/ascundere, personalizare și resetare șablon pentru agentul propriu, HTML sanitizat și citire paginată. Apeluri AI: anulare înainte de dispatch, rezultat manual/audit și revocare DNC explicită; rezultatul manual nu elimină implicit opt-out. Lansarea provider este rezervată tranzacțional, rezultatele incerte nu se retrimit, iar webhook-ul terminal nu este suprascris de răspunsul de lansare.
 
 ## Urmărirea backlogului
 
@@ -38,10 +39,11 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Validări efectuate
 
-- 241 teste deterministe AI trecute; 3 teste de reguli rulează separat în emulator.
+- 249 teste deterministe AI trecute; 3 teste de reguli rulează separat în emulator.
 - 18 teste de reguli Firestore trecute în emulator (5 suite).
 - 13 verificări UI Text și 14 verificări UI Voice trecute.
 - Build Next.js și build Functions trecute. Testele headless Voice folosesc microfon/audio simulate; nu certifică ecoul pe hardware real.
 - Producție verificată: build `build-2026-10-05-parity-01`, commit `4cc3402fb2f5eb55e2c20aa5272a5a47fb46999c`, READY, trafic 100%; worker ACTIVE, scheduler ENABLED și heartbeat fără eroare. Regulile/indexurile și cele patru funcții de proiecție/retenție sunt publicate. Modificările din etapa următoare se publică separat după validare.
+- Etapa a doua activă ulterior: `build-2026-10-05-parity-02`, commit `4a479b5b8a47bf7bdde88f477489967cf908bd73`, READY, trafic 100%; funcția de retenție pentru branding actualizată. Etapa Gmail/apeluri se validează și publică separat.
 
 Nu este încă îndeplinit criteriul „paritate completă”: elementele restante de mai sus rămân parte din implementarea solicitată, nu sunt închise prin simpla înregistrare a unui endpoint.

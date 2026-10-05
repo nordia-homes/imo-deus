@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { operationResult } from '../operation-result';
 import { resolveAction } from '../dependencies';
 import { actionSchema } from '../contracts';
+import { unconfirmedOperationResult } from '../operation-error';
 describe('confirmed domain result binding', () => {
+  it('blocks an ambiguous outreach dispatch and a nested failed job', () => {
+    const result = operationResult('outreach_start', { call: { id: 'c', status: 'calling', providerErrorCode: 'vapi_create_unknown' } });
+    expect(result.executionState).toBe('unknown');
+    expect(result.note).toContain('incert');
+    expect(unconfirmedOperationResult(result)).toBe(true);
+    expect(unconfirmedOperationResult(operationResult('video_create', { job: { status: 'failed' } }))).toBe(true);
+  });
   it('distinguishes queued requests, drafts, observed reads and verified final state', () => {
     expect(operationResult('video_create', { job: { status: 'queued' } })).toMatchObject({ executionState: 'queued' });
     expect(operationResult('meta_campaign_draft', { draft: { status: 'ready' } })).toMatchObject({ executionState: 'draft' });

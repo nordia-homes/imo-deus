@@ -26,6 +26,33 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('cancels only undispatched calls and protects newer call state and opt-out', async () => {
+    const { ctx, rows } = database({ 'agencies/a/aiOutreachCalls/c': { ownerListingId: 'l', status: 'scheduled' }, 'agencies/a/aiOutreachCalls/live': { ownerListingId: 'l', status: 'calling', vapiCallId: 'remote' } });
+    await executeAction(ctx, { kind: 'outreach_call_action', callId: 'c', action: 'cancel', reason: 'Agent request' }, 'cancel');
+    expect(rows.get('agencies/a/aiOutreachCalls/c')?.status).toBe('canceled');
+    await expect(executeAction(ctx, { kind: 'outreach_call_action', callId: 'live', action: 'cancel', reason: 'Agent request' }, 'cancel-live')).rejects.toThrow('furnizor');
+    rows.set('agencies/a/aiOutreachOwnerListingStatuses/l', { latestAiCallId: 'newer' });
+    await expect(executeAction(ctx, { kind: 'outreach_call_action', callId: 'c', action: 'manual_outcome', outcome: 'collaborates', reason: 'Owner confirmed' }, 'old')).rejects.toThrow('mai nou');
+    rows.set('agencies/a/aiOutreachOwnerListingStatuses/l', { latestAiCallId: 'c', aiDoNotCall: true });
+    await executeAction(ctx, { kind: 'outreach_call_action', callId: 'c', action: 'manual_outcome', outcome: 'collaborates', reason: 'Owner confirmed' }, 'outcome');
+    expect(rows.get('agencies/a/aiOutreachOwnerListingStatuses/l')?.aiDoNotCall).toBe(true);
+    await executeAction(ctx, { kind: 'outreach_call_action', callId: 'c', action: 'revoke_do_not_call', reason: 'Agent explicitly confirms revocation' }, 'revoke');
+    expect(rows.get('agencies/a/aiOutreachOwnerListingStatuses/l')?.aiDoNotCall).toBe(false);
+  });
+  it('keeps email overrides and enabled templates private to the requesting agent', async () => {
+    const { ctx, rows } = database({ 'agencies/a/salesEmailTemplates/t': { version: 2, variables: ['agent.name'] }, 'users/other': { agencyId: 'a', role: 'agent', enabledSalesEmailTemplateIds: ['other'] } });
+    await executeAction(ctx, { kind: 'email_template_preference', templateId: 't', action: 'enable' }, 'enable');
+    expect(rows.get('users/u')?.enabledSalesEmailTemplateIds).toEqual(['t']);
+    const data = { name: 'Personal', description: '', recipientRole: 'buyer' as const, stage: 'any' as const, subject: 'Salut', body: 'Mesaj', bodyHtml: '<p>Mesaj</p><script>alert(1)</script>', defaultCc: [], defaultQuestions: [] };
+    await executeAction(ctx, { kind: 'email_template_preference', templateId: 't', action: 'override', data }, 'override');
+    expect(rows.get('users/u/emailTemplateOverrides/t')).toMatchObject({ baseTemplateId: 't', baseVersion: 2, updatedByUid: 'u' });
+    expect(rows.get('users/u/emailTemplateOverrides/t')?.bodyHtml).not.toContain('<script');
+    expect(rows.get('users/other')?.enabledSalesEmailTemplateIds).toEqual(['other']);
+    await executeAction(ctx, { kind: 'email_template_preference', templateId: 't', action: 'reset' }, 'reset');
+    expect(rows.has('users/u/emailTemplateOverrides/t')).toBe(false);
+    expect(rows.get('users/u')?.enabledSalesEmailTemplateIds).toEqual(['t']);
+    await expect(executeAction(ctx, { kind: 'email_template_preference', templateId: 'missing', action: 'enable' }, 'missing-template')).rejects.toThrow('biblioteca');
+  });
   it('rejects stale contact edits without committing a ledger or changing the client', async () => {
     const { ctx, rows } = database({ 'agencies/a/contacts/c': { name: 'Recent', updatedAt: '2026-10-05T10:00:00Z' } });
     await expect(executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: null, patch: { name: 'Old' } }, 'stale')).rejects.toThrow('modificat');

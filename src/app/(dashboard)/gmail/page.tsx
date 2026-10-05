@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { arrayRemove, arrayUnion, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
@@ -285,19 +286,7 @@ export default function GmailPage() {
     setSaving(true);
     try {
       if (editingTemplate && user) {
-        await setDoc(
-          doc(firestore, 'users', user.uid, 'emailTemplateOverrides', editingTemplate.id),
-          {
-            baseTemplateId: editingTemplate.id,
-            baseVersion: editingTemplate.version || 1,
-            ...draft,
-            signatureMode: 'agent',
-            variables: editingTemplate.variables || ['recipient.name', 'property.title', 'property.address', 'documents.list', 'notary.summary', 'agent.name'],
-            updatedAt: new Date().toISOString(),
-            updatedByUid: user.uid,
-          } satisfies Omit<SalesEmailTemplateOverride, 'id'>,
-          { merge: false }
-        );
+        await executeCrmAction(user, { kind: 'email_template_preference', templateId: editingTemplate.id, action: 'override', data: draft });
         toast({
           title: 'Personalizarea a fost salvată',
           description: 'Template-ul păstrează același loc în bibliotecă și este vizibil numai pentru tine.',
@@ -350,7 +339,7 @@ export default function GmailPage() {
 
     setUpdatingTemplateIds((current) => new Set(current).add(template.id));
     try {
-      await deleteDoc(doc(firestore, 'users', user.uid, 'emailTemplateOverrides', template.id));
+      await executeCrmAction(user, { kind: 'email_template_preference', templateId: template.id, action: 'reset' });
       toast({
         title: 'Template readus la versiunea standard',
         description: 'Personalizarea ta a fost eliminată. Vizibilitatea în pagina de email nu s-a schimbat.',
@@ -376,14 +365,7 @@ export default function GmailPage() {
     }
     setUpdatingTemplateIds((current) => new Set(current).add(templateId));
     try {
-      await setDoc(
-        doc(firestore, 'users', user.uid),
-        {
-          enabledSalesEmailTemplateIds: enabled ? arrayUnion(templateId) : arrayRemove(templateId),
-          salesEmailTemplatePreferencesUpdatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
+      await executeCrmAction(user, { kind: 'email_template_preference', templateId, action: enabled ? 'enable' : 'disable' });
       toast({
         title: enabled ? 'Template activat în pagina de email' : 'Template ascuns din pagina de email',
         description: enabled

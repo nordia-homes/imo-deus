@@ -1,6 +1,6 @@
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
-import { createVapiOutboundCall } from '@/lib/ai-outreach/vapi';
+import { createVapiOutboundCall, VapiDispatchError } from '@/lib/ai-outreach/vapi';
 import type { AiOutreachCall, AiOutreachSettings, AiOwnerListingSnapshot } from '@/lib/ai-outreach/types';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
@@ -259,6 +259,35 @@ export async function updateAiOutreachOwnerListingStatus(
 export async function launchAiOutreachCall(input: LaunchCallInput) {
   const { adminDb, callRef, call, settings, agencyName } = input;
 
+  const claimed = await adminDb.runTransaction(async tx => {
+    const current = await tx.get(callRef);
+    const ownerRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
+    const owner = await tx.get(ownerRef);
+    const actorId = call.createdBy || call.agentId;
+    const actor = actorId ? await tx.get(adminDb.collection('users').doc(actorId)) : null;
+    if (!current.exists || !['queued', 'scheduled'].includes(current.data()?.status) || current.data()?.providerDispatchStartedAt || current.data()?.vapiCallId) return false;
+    if (owner.data()?.aiDoNotCall === true) throw new Error('Proprietarul are restricție Do Not Call.');
+    if (!actor || actor.data()?.agencyId !== call.agencyId || !['agent', 'admin'].includes(actor.data()?.role)) throw new Error('Agentul nu mai are acces la agenție.');
+    const now = new Date().toISOString();
+    tx.update(callRef, { status: 'calling', outcome: 'calling', providerDispatchStartedAt: now, updatedAt: now });
+    tx.set(ownerRef, { agencyId: call.agencyId, ownerListingId: call.ownerListingId, latestAiCallId: call.id, aiOutreachStatus: 'calling', aiOutreachOutcome: 'calling', aiOutreachUpdatedAt: now, updatedAt: now }, { merge: true });
+    return true;
+  });
+  if (!claimed) {
+    const current = await callRef.get();
+    return { call: { ...call, ...current.data() } as AiOutreachCall, warning: 'Apelul este deja lansat, anulat sau preluat de altă execuție. Nu a fost retrimis.' };
+  }
+  const persistProviderResult = async (patch: Record<string, unknown>) => adminDb.runTransaction(async tx => {
+    const ownerRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
+    const [current, owner] = await Promise.all([tx.get(callRef), tx.get(ownerRef)]);
+    // An end-of-call webhook can beat the HTTP create response. Its terminal
+    // status is authoritative and must not be overwritten with "calling".
+    if (current.data()?.status !== 'calling') return { ...call, ...current.data() } as AiOutreachCall;
+    tx.set(callRef, patch, { merge: true });
+    if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: patch.status, aiOutreachOutcome: patch.outcome, aiOutreachUpdatedAt: patch.updatedAt, updatedAt: patch.updatedAt }, { merge: true });
+    return { ...call, ...current.data(), ...patch } as AiOutreachCall;
+  });
+
   try {
     const vapiResult = await createVapiOutboundCall({ call, settings, agencyName });
 
@@ -271,14 +300,7 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
         endedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      await callRef.set(failedUpdate, { merge: true });
-      await updateAiOutreachOwnerListingStatus(adminDb, call.agencyId, call.ownerListingId, {
-        latestAiCallId: call.id,
-        aiOutreachStatus: failedUpdate.status,
-        aiOutreachOutcome: failedUpdate.outcome,
-        aiOutreachUpdatedAt: failedUpdate.updatedAt,
-      });
-      return { call: { ...call, ...failedUpdate }, warning: vapiResult.message };
+      return { call: await persistProviderResult(failedUpdate), warning: vapiResult.message };
     }
 
     const liveUpdate = {
@@ -289,37 +311,17 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
       startedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await callRef.set(
-      {
-        ...liveUpdate,
-        providerRawCreateResponse: vapiResult.raw,
-      },
-      { merge: true },
-    );
-    await updateAiOutreachOwnerListingStatus(adminDb, call.agencyId, call.ownerListingId, {
-      latestAiCallId: call.id,
-      aiOutreachStatus: liveUpdate.status,
-      aiOutreachOutcome: liveUpdate.outcome,
-      aiOutreachUpdatedAt: liveUpdate.updatedAt,
-    });
-
-    return { call: { ...call, ...liveUpdate } };
+    return { call: await persistProviderResult({ ...liveUpdate, providerRawCreateResponse: vapiResult.raw }) };
   } catch (providerError) {
+    const rejected = providerError instanceof VapiDispatchError && providerError.definitivelyRejected;
     const failedUpdate = {
-      status: 'failed' as const,
-      outcome: 'failed' as const,
-      providerErrorCode: 'vapi_create_failed',
+      status: rejected ? 'failed' as const : 'calling' as const,
+      outcome: rejected ? 'failed' as const : 'needs_human_review' as const,
+      providerErrorCode: rejected ? 'vapi_create_failed' : 'vapi_create_unknown',
       providerErrorMessage: providerError instanceof Error ? providerError.message : 'Vapi call create failed.',
-      endedAt: new Date().toISOString(),
+      endedAt: rejected ? new Date().toISOString() : null,
       updatedAt: new Date().toISOString(),
     };
-    await callRef.set(failedUpdate, { merge: true });
-    await updateAiOutreachOwnerListingStatus(adminDb, call.agencyId, call.ownerListingId, {
-      latestAiCallId: call.id,
-      aiOutreachStatus: failedUpdate.status,
-      aiOutreachOutcome: failedUpdate.outcome,
-      aiOutreachUpdatedAt: failedUpdate.updatedAt,
-    });
-    return { call: { ...call, ...failedUpdate }, message: failedUpdate.providerErrorMessage };
+    return { call: await persistProviderResult(failedUpdate), message: failedUpdate.providerErrorMessage };
   }
 }

@@ -27,22 +27,26 @@ function getAgencyIdFromCallDoc(callRefPath: string) {
 
 async function failScheduledCall(call: AiOutreachCall, message: string) {
   const timestamp = new Date().toISOString();
-  await adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachCalls').doc(call.id).set(
-    {
+  await adminDb.runTransaction(async tx => {
+    const callRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachCalls').doc(call.id);
+    const statusRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
+    const [current, status] = await Promise.all([tx.get(callRef), tx.get(statusRef)]);
+    if (current.data()?.status !== 'scheduled' || current.data()?.providerDispatchStartedAt) return;
+    tx.update(callRef, {
       status: 'failed',
       outcome: 'failed',
       providerErrorCode: 'scheduled_guard_failed',
       providerErrorMessage: message,
       endedAt: timestamp,
       updatedAt: timestamp,
-    },
-    { merge: true },
-  );
-  await updateAiOutreachOwnerListingStatus(adminDb, call.agencyId, call.ownerListingId, {
+    });
+    if (!status.data()?.latestAiCallId || status.data()?.latestAiCallId === call.id) tx.set(statusRef, {
+    agencyId: call.agencyId, ownerListingId: call.ownerListingId,
     latestAiCallId: call.id,
     aiOutreachStatus: 'failed',
     aiOutreachOutcome: 'failed',
     aiOutreachUpdatedAt: timestamp,
+    }, { merge: true });
   });
 }
 
