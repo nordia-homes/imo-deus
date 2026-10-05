@@ -228,10 +228,19 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       tx.update(collectionFor(ctx, 'contacts').doc(action.contactId), { offers: action.kind === 'delete_offer' ? offers.filter((offer: any) => offer.id !== action.offerId) : offers.map((offer: any) => offer.id === action.offerId ? { ...offer, ...action.patch } : offer), updatedAt: now });
       result = { contactId: action.contactId, offerId: action.offerId, deleted: action.kind === 'delete_offer', link: `/leads/${action.contactId}` };
     } else if (action.kind === 'update_prospect') {
-      const favorite = await read('ownerListingFavorites', action.listingId);
+      const ref = collectionFor(ctx, 'ownerListingFavorites').doc(action.listingId);
+      const snapshot = await tx.get(ref);
+      const favorite = snapshot.data() || {};
+      if (!snapshot.exists) {
+        if (!action.patch.state && !action.patch.contactOutcome) throw new CommunicationError('Adaugă anunțul în prospectare înainte de editarea detaliilor.', 409);
+        const listing = await tx.get(ctx.adminDb.collection('ownerListings').doc(action.listingId));
+        if (!listing.exists || listing.data()?.publicationStatus !== 'ready' || listing.data()?.isCanonical !== true) throw new CommunicationError('Anunțul nu mai este disponibil pentru prospectare.', 409);
+      }
       const owner = prospectOwner(favorite, Date.parse(now));
-      if (favorite.isFavoriteActive === false || (ctx.role !== 'admin' && owner && owner !== ctx.uid)) throw new CommunicationError('Anunțul este lucrat de alt agent sau nu este activ.', 403);
-      tx.update(collectionFor(ctx, 'ownerListingFavorites').doc(action.listingId), prospectPatch(favorite, action.patch, ctx.uid, profile.data()?.name || '', now));
+      if ((favorite.isFavoriteActive === false && !action.patch.state) || (ctx.role !== 'admin' && owner && owner !== ctx.uid)) throw new CommunicationError('Anunțul este lucrat de alt agent sau nu este activ.', 403);
+      const patch = prospectPatch(favorite, action.patch, ctx.uid, profile.data()?.name || '', now);
+      if (snapshot.exists) tx.update(ref, patch);
+      else tx.create(ref, { ownerListingId: action.listingId, isFavoriteActive: true, collaborationStatus: null, commissionValue: '', propertyAddress: '', notes: '', createdAt: now, createdBy: ctx.uid, ...patch });
       result = { listingId: action.listingId, link: '/owner-listings/favorite' };
     } else if (action.kind === 'portal_action') {
       const contact = await read('contacts', action.contactId);
@@ -354,6 +363,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const contact = await read('contacts', action.contactId);
       const ref = collectionFor(ctx, 'contacts').doc(action.contactId);
       if (action.kind === 'update_contact') {
+        if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Contactul a fost modificat între timp. Reîncarcă datele înainte de editare.', 409);
         if (action.patch.sourcePropertyId) await read('properties', action.patch.sourcePropertyId);
         const identity = action.patch.phone !== undefined || action.patch.email !== undefined ? await prepareContactIdentity(ctx, tx, action.contactId, { ...contact, ...action.patch }, contact) : null;
         identity?.write();
@@ -366,8 +376,10 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const property = action.propertyId ? await read('properties', action.propertyId) : null;
       const ref = collectionFor(ctx, 'tasks').doc(key);
       const { kind: _, ...taskData } = action;
-      await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId: ctx.uid });
-      tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId: ctx.uid, agentName: profile.data()?.name || '', createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
+      const agentId = action.agentId === undefined ? ctx.uid : action.agentId;
+      const assignment = await propertyAssignment(agentId);
+      await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId });
+      tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId, agentName: assignment.agentName, createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
       result = { taskId: ref.id, link: '/tasks' };
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);

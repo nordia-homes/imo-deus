@@ -1393,6 +1393,7 @@ export type SalesEmailTemplate = {
 
 export type Contact = {
     id: string;
+    updatedAt?: string;
     name: string;
     phone: string;
     email: string;

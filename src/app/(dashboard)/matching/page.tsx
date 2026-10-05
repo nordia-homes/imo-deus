@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useMemo, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -151,18 +152,7 @@ export default function MatchingPage() {
         try {
             const dueDate = new Date();
             dueDate.setDate(dueDate.getDate() + 1);
-            await addDoc(collection(firestore, 'agencies', agencyId, 'tasks'), {
-                description: `Contactează ${selectedContact.name} despre ${property.title}`,
-                dueDate: dueDate.toISOString(),
-                status: 'open',
-                agentId: user.uid,
-                agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
-                contactId: selectedContact.id,
-                contactName: selectedContact.name,
-                propertyId: property.id,
-                propertyTitle: property.title,
-                createdAt: new Date().toISOString(),
-            });
+            await executeCrmAction(user, { kind: 'create_task', description: `Contactează ${selectedContact.name} despre ${property.title}`, dueDate: dueDate.toISOString(), contactId: selectedContact.id, propertyId: property.id });
             toast({ title: 'Task creat', description: 'Task-ul a fost adăugat în calendarul agenției.' });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Task-ul nu a putut fi creat', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
@@ -178,18 +168,7 @@ export default function MatchingPage() {
             const viewingDate = new Date();
             viewingDate.setDate(viewingDate.getDate() + 1);
             viewingDate.setHours(11, 0, 0, 0);
-            await addDoc(collection(firestore, 'agencies', agencyId, 'viewings'), {
-                propertyId: property.id,
-                propertyTitle: property.title,
-                propertyAddress: property.location || '',
-                contactId: selectedContact.id,
-                contactName: selectedContact.name,
-                agentId: user.uid,
-                agentName: userProfile?.name || user.displayName || 'Agent neatribuit',
-                viewingDate: viewingDate.toISOString(),
-                status: 'scheduled',
-                createdAt: new Date().toISOString(),
-            });
+            await executeCrmAction(user, { kind: 'schedule_viewing', viewingDate: viewingDate.toISOString(), contactId: selectedContact.id, propertyId: property.id, duration: 60, notes: '' });
             toast({ title: 'Vizionare programată', description: 'Vizionarea a fost adăugată în calendar.' });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Vizionarea nu a putut fi programată', description: error instanceof Error ? error.message : 'Încearcă din nou.' });

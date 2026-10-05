@@ -14,6 +14,7 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 - Automatizări: creare, editare, pauză/reluare, istoric de execuție, oprire la termen/status client și la răspuns WhatsApp. Matching păstrează motorul existent și avertizează când datele sursă s-au schimbat.
 - Timeline autorizat, citiri asociate și proiecții de modificări CRM/agenție/notificări. Evenimentele fără actor verificabil nu inventează autorul schimbării.
 - Carduri comune Text/Voice, detalii de plan, continuări, linkuri de handoff și separarea draft/queued/running/succeeded/failed/unknown.
+- Etapa următoare: prospectare direct din lista generală prin executor comun; autofill contact cu verificare de versiune; Matching și follow-up apeluri folosesc serviciul comun de calendar; fotografie de profil și siglă prin fișiere private, cu validări, roluri și retenție pentru upload-uri nefinalizate.
 
 ## Urmărirea backlogului
 
@@ -37,10 +38,10 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Validări efectuate
 
-- 236 teste deterministe AI trecute; 3 teste de reguli rulează separat în emulator.
+- 241 teste deterministe AI trecute; 3 teste de reguli rulează separat în emulator.
 - 18 teste de reguli Firestore trecute în emulator (5 suite).
 - 13 verificări UI Text și 14 verificări UI Voice trecute.
 - Build Next.js și build Functions trecute. Testele headless Voice folosesc microfon/audio simulate; nu certifică ecoul pe hardware real.
-- Deploy-ul etapei și probele live se consemnează separat după verificarea commitului activ și traficului.
+- Producție verificată: build `build-2026-10-05-parity-01`, commit `4cc3402fb2f5eb55e2c20aa5272a5a47fb46999c`, READY, trafic 100%; worker ACTIVE, scheduler ENABLED și heartbeat fără eroare. Regulile/indexurile și cele patru funcții de proiecție/retenție sunt publicate. Modificările din etapa următoare se publică separat după validare.
 
 Nu este încă îndeplinit criteriul „paritate completă”: elementele restante de mai sus rămân parte din implementarea solicitată, nu sunt închise prin simpla înregistrare a unui endpoint.

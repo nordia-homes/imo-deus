@@ -1,5 +1,5 @@
 'use client';
-import { executeCrmAction } from '@/lib/crm/client-actions';
+import { executeCrmAction, attachBrandFile } from '@/lib/crm/client-actions';
 
 
 import { useEffect, useRef, useState } from 'react';
@@ -302,38 +302,9 @@ export default function SettingsPage() {
     toast({ title: 'Încărcare fotografie...', description: 'Acest proces poate dura câteva momente.' });
 
     try {
-        const resizedBlob = await new Promise<Blob>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.createElement('img');
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 512;
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scaleSize;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return reject(new Error('Could not get canvas context'));
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    canvas.toBlob((blob) => {
-                        if (blob) resolve(blob);
-                        else reject(new Error('Canvas to blob failed'));
-                    }, 'image/jpeg', 0.8);
-                };
-                img.src = e.target?.result as string;
-            };
-            reader.readAsDataURL(file);
-        });
-
-        const photoRef = ref(storage, `users/${user.uid}/profile.jpg`);
-        await uploadBytes(photoRef, resizedBlob);
-        const photoURL = await getDownloadURL(photoRef);
-
+        const { imageUrl: photoURL } = await attachBrandFile(user, file, 'profile_photo');
         await updateProfile(user, { photoURL });
 
-        const userDocRef = doc(firestore, 'users', user.uid);
-        await executeCrmAction(user, { kind: 'update_profile', patch: { photoUrl: photoURL } });
-        await syncPublicAgentProfile({ photoUrl: photoURL });
         setProfilePhotoPreview(photoURL);
 
         toast({ title: 'Fotografie actualizată!', description: 'Noua ta fotografie de profil a fost salvată.' });
@@ -352,11 +323,8 @@ export default function SettingsPage() {
     setIsLogoUploading(true);
 
     try {
-      const logoRef = ref(storage, `agencies/${agency.id}/logo`);
-      await uploadBytes(logoRef, file);
-      const logoURL = await getDownloadURL(logoRef);
+      const { imageUrl: logoURL } = await attachBrandFile(user, file, 'agency_logo');
       agencyForm.setValue('logoUrl', logoURL, { shouldDirty: true, shouldValidate: true });
-      await executeCrmAction(user, { kind: 'update_agency', patch: { logoUrl: logoURL } });
       toast({ title: 'Logo actualizat', description: 'Logo-ul agenției a fost salvat.' });
     } catch (error) {
       console.error('Logo upload failed:', error);

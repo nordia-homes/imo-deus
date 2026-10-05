@@ -1,4 +1,5 @@
 'use client';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -789,17 +790,7 @@ export default function AiCallsPage() {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 1);
 
-      await addDoc(collection(firestore, 'agencies', agencyId, 'tasks'), {
-        description: `Follow-up proprietar: ${call.ownerListingTitle || call.ownerListingId}`,
-        dueDate: dueDate.toISOString(),
-        status: 'open',
-        agentId: call.agentId || user.uid,
-        agentName: call.agentName || null,
-        propertyTitle: call.ownerListingTitle || null,
-        participantName: call.ownerListingTitle || null,
-        participantPhone: call.ownerPhone || null,
-        createdAt: new Date().toISOString(),
-      });
+      await executeCrmAction(user, { kind: 'create_task', description: `Follow-up proprietar: ${call.ownerListingTitle || call.ownerListingId}`, dueDate: dueDate.toISOString(), agentId: call.agentId || user.uid, participantName: call.ownerListingTitle || null, participantPhone: call.ownerPhone || null });
 
       toast({
         title: 'Task creat',

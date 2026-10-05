@@ -11,6 +11,8 @@ import { executeAction } from '@/lib/ai-assistant/actions';
 export const runtime = 'nodejs';
 const id = z.string().min(1).max(180).regex(/^[^/]+$/);
 const schema = z.discriminatedUnion('destination', [
+  z.object({ destination: z.literal('profile_photo') }).strict(),
+  z.object({ destination: z.literal('agency_logo') }).strict(),
   z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),
   z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),
   z.object({ destination: z.literal('identity_ocr') }).strict(),
@@ -28,6 +30,10 @@ export async function POST(request: NextRequest, route: { params: Promise<{ uplo
     if (!upload || upload.ownerId !== ctx.uid || upload.expiresAt <= Date.now() || upload.storagePath !== prefix + uploadId) throw new CommunicationError('Fișierul nu este accesibil sau a expirat.', 404);
     const [bytes] = await getStorage(ctx.adminAuth.app).bucket().file(upload.storagePath).download();
     if (bytes.length > 15 * 1024 * 1024) throw new CommunicationError('Fișier prea mare.', 413);
+    if (input.destination === 'profile_photo' || input.destination === 'agency_logo') {
+      const { applyBrandAsset } = await import('@/lib/crm/brand-assets');
+      return NextResponse.json(await applyBrandAsset(ctx, uploadId, input.destination, upload, bytes), { headers: { 'Cache-Control': 'no-store' } });
+    }
     if (input.destination === 'contract_template') {
       if (ctx.role !== 'admin') throw new CommunicationError('Administrarea șabloanelor necesită administratorul.', 403);
       if (upload.mimeType !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') throw new CommunicationError('Selectează documentul DOCX.', 415);

@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 import { useToast } from '@/hooks/use-toast';
 import { getAgencyThemePreset } from '@/lib/theme';
 import { listOwnerListingScopes, resolveAgencyOwnerListingScope } from '@/lib/owner-listings/scope';
@@ -520,14 +520,8 @@ export default function OwnerListingsPage() {
           ownerPhone: localOwnerPhone,
         };
 
-        if (agencyId && localOwnerPhone !== normalizeRomanianPhone(existingFavorite?.ownerPhone)) {
-          updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id), {
-            ownerPhone: localOwnerPhone,
-            phoneExtractionStatus: 'available',
-            phoneExtractionMessage: 'Numarul proprietarului a fost preluat.',
-            phoneExtractionCompletedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+        if (agencyId && existingFavorite && existingFavorite.isFavoriteActive !== false && localOwnerPhone !== normalizeRomanianPhone(existingFavorite.ownerPhone)) {
+          await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, patch: { ownerPhone: localOwnerPhone } });
         }
 
         setSelectedAiListing(enrichedListing);
@@ -710,156 +704,16 @@ export default function OwnerListingsPage() {
     }
   };
 
-  const upsertFavoriteBase = (listing: OwnerListing) => {
-    if (!agencyId) return;
-
-    const favoriteRef = doc(firestore, 'agencies', agencyId, 'ownerListingFavorites', listing.id);
-    const timestamp = new Date().toISOString();
-    const existingFavorite = favoritesByListingId.get(listing.id);
-    return { favoriteRef, timestamp, existingFavorite };
+  const changeProspect = async (listing: OwnerListing, patch: { state?: 'reserved' | 'taken'; contactOutcome?: 'negative' | 'follow_up' }) => {
+    if (!agencyId || !user) return;
+    try {
+      await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, patch });
+      toast({ title: 'Status actualizat', description: patch.state === 'reserved' ? 'Anunțul este rezervat.' : patch.state === 'taken' ? 'Anunțul este preluat.' : patch.contactOutcome === 'negative' ? 'Anunțul este marcat negativ.' : 'Anunțul este trecut în follow-up.' });
+    } catch (error) { toast({ variant: 'destructive', title: 'Actualizarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
   };
-
-  const writeFavoriteStatus = (favoriteRef: ReturnType<typeof doc>, existingFavorite: OwnerListingFavorite | undefined, data: Record<string, unknown>) => {
-    if (existingFavorite) {
-      updateDocumentNonBlocking(favoriteRef, data);
-      return;
-    }
-
-    setDocumentNonBlocking(
-      favoriteRef,
-      {
-        ownerListingId: String(data.ownerListingId ?? ''),
-        collaborationStatus: null,
-        commissionValue: '',
-        propertyAddress: '',
-        notes: '',
-        createdAt: String(data.createdAt ?? new Date().toISOString()),
-        createdBy: data.createdBy ?? user?.uid ?? null,
-        updatedAt: String(data.updatedAt ?? new Date().toISOString()),
-        updatedBy: data.updatedBy ?? user?.uid ?? null,
-        ...data,
-      },
-      {},
-    );
-  };
-
-  const canCurrentAgentUpdateStatus = (favorite?: OwnerListingFavorite | null) => {
-    if (!favorite) return true;
-
-    const now = Date.now();
-    const reservationExpiresAt = favorite.reservedAt ? new Date(favorite.reservedAt).getTime() + RESERVATION_TTL_MS : null;
-    const reservationExpired = Boolean(
-      favorite.reservedByAgentId && !favorite.takenByAgentId && !favorite.contactOutcome && reservationExpiresAt && now >= reservationExpiresAt,
-    );
-
-    if (reservationExpired) return true;
-    if (favorite.takenByAgentId) return favorite.takenByAgentId === user?.uid;
-    if (favorite.contactOutcomeByAgentId && favorite.contactOutcome) return favorite.contactOutcomeByAgentId === user?.uid;
-    if (favorite.reservedByAgentId) return favorite.reservedByAgentId === user?.uid;
-    return true;
-  };
-
-  const handleSetReserved = (listing: OwnerListing) => {
-    const base = upsertFavoriteBase(listing);
-    if (!base) return;
-
-    const { favoriteRef, timestamp, existingFavorite } = base;
-    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
-      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
-      return;
-    }
-    writeFavoriteStatus(favoriteRef, existingFavorite, {
-      ownerListingId: listing.id,
-      reservedByAgentId: user?.uid ?? null,
-      reservedByAgentName: currentAgentName,
-      reservedAt: timestamp,
-      takenByAgentId: null,
-      takenByAgentName: null,
-      takenAt: null,
-      contactOutcome: null,
-      contactOutcomeAt: null,
-      contactOutcomeByAgentId: null,
-      contactOutcomeByAgentName: null,
-      collaborationStatus: existingFavorite?.collaborationStatus ?? null,
-      commissionValue: existingFavorite?.commissionValue ?? '',
-      propertyAddress: existingFavorite?.propertyAddress ?? '',
-      notes: existingFavorite?.notes ?? '',
-      createdAt: existingFavorite?.createdAt ?? timestamp,
-      createdBy: existingFavorite?.createdBy ?? user?.uid ?? null,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({ title: 'Status actualizat', description: 'Anuntul este marcat ca rezervat.' });
-  };
-
-  const handleSetTaken = (listing: OwnerListing) => {
-    const base = upsertFavoriteBase(listing);
-    if (!base) return;
-
-    const { favoriteRef, timestamp, existingFavorite } = base;
-    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
-      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
-      return;
-    }
-    writeFavoriteStatus(favoriteRef, existingFavorite, {
-      ownerListingId: listing.id,
-      reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
-      reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
-      reservedAt: existingFavorite?.reservedAt ?? timestamp,
-      takenByAgentId: user?.uid ?? null,
-      takenByAgentName: currentAgentName,
-      takenAt: timestamp,
-      contactOutcome: null,
-      contactOutcomeAt: null,
-      contactOutcomeByAgentId: null,
-      contactOutcomeByAgentName: null,
-      collaborationStatus: existingFavorite?.collaborationStatus ?? null,
-      commissionValue: existingFavorite?.commissionValue ?? '',
-      propertyAddress: existingFavorite?.propertyAddress ?? '',
-      notes: existingFavorite?.notes ?? '',
-      createdAt: existingFavorite?.createdAt ?? timestamp,
-      createdBy: existingFavorite?.createdBy ?? user?.uid ?? null,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({ title: 'Lead preluat', description: 'Anuntul este marcat ca preluat de agent.' });
-  };
-
-  const handleSetOutcome = (listing: OwnerListing, outcome: 'negative' | 'follow_up') => {
-    const base = upsertFavoriteBase(listing);
-    if (!base) return;
-
-    const { favoriteRef, timestamp, existingFavorite } = base;
-    if (!canCurrentAgentUpdateStatus(existingFavorite)) {
-      toast({ title: 'Status blocat', description: 'Acest anunt este deja lucrat de alt agent din agentie.', variant: 'destructive' });
-      return;
-    }
-    writeFavoriteStatus(favoriteRef, existingFavorite, {
-      ownerListingId: listing.id,
-      reservedByAgentId: existingFavorite?.reservedByAgentId ?? user?.uid ?? null,
-      reservedByAgentName: existingFavorite?.reservedByAgentName ?? currentAgentName,
-      reservedAt: existingFavorite?.reservedAt ?? timestamp,
-      takenByAgentId: null,
-      takenByAgentName: null,
-      takenAt: null,
-      contactOutcome: outcome,
-      contactOutcomeAt: timestamp,
-      contactOutcomeByAgentId: user?.uid ?? null,
-      contactOutcomeByAgentName: currentAgentName,
-      collaborationStatus: existingFavorite?.collaborationStatus ?? null,
-      commissionValue: existingFavorite?.commissionValue ?? '',
-      propertyAddress: existingFavorite?.propertyAddress ?? '',
-      notes: existingFavorite?.notes ?? '',
-      createdAt: existingFavorite?.createdAt ?? timestamp,
-      createdBy: existingFavorite?.createdBy ?? user?.uid ?? null,
-      updatedAt: timestamp,
-      updatedBy: user?.uid ?? null,
-    });
-    toast({
-      title: 'Status actualizat',
-      description: outcome === 'negative' ? 'Anuntul a fost marcat negativ.' : 'Anuntul a fost trecut in follow-up.',
-    });
-  };
+  const handleSetReserved = (listing: OwnerListing) => changeProspect(listing, { state: 'reserved' });
+  const handleSetTaken = (listing: OwnerListing) => changeProspect(listing, { state: 'taken' });
+  const handleSetOutcome = (listing: OwnerListing, outcome: 'negative' | 'follow_up') => changeProspect(listing, { contactOutcome: outcome });
 
   const mobileFilterControls = (
     <div className="flex flex-col gap-6">

@@ -20,7 +20,8 @@ export async function POST(request: NextRequest) {
       updated += snapshot.size;
       if (snapshot.size < 400) break;
     }
-    return NextResponse.json({ ok: true, updated });
+    const remaining = await notifications.where('isRead', '==', false).limit(1).get();
+    return NextResponse.json({ ok: true, updated, complete: remaining.empty, ...(remaining.empty ? {} : { note: 'Au fost actualizate maximum 4000 notificări. Repetă operația pentru continuare.' }) });
   } catch (error) {
     const status = error && typeof error === 'object' && 'status' in error && typeof error.status === 'number'
       ? error.status

@@ -16,7 +16,7 @@
       "method": "POST",
       "path": "/api/ai-assistant/uploads/{uploadId}/apply",
       "handler": "src/app/api/ai-assistant/uploads/[uploadId]/apply/route.ts",
-      "description": "Aplică un fișier privat deja atașat: destination sale_document cu saleId/documentId, conversation_attachment cu conversationId identity_ocr, property_image sau property_rlv cu propertyId. Nu inventa uploadId; citește assistantUploads.",
+      "description": "Aplică un fișier privat deja atașat: destination sale_document cu saleId/documentId, conversation_attachment cu conversationId identity_ocr, property_image sau property_rlv cu propertyId, profile_photo (profil propriu), agency_logo (administrator). Nu inventa uploadId; citește assistantUploads.",
       "readOnly": false,
       "externallySensitive": false,
       "verification": "registered_handler_not_provider_certification"
@@ -1748,53 +1748,53 @@
       "calls": [
         {
           "call": "updateDoc",
-          "line": 584,
+          "line": 585,
           "sharedExecutor": false
         },
         {
           "call": "setDoc",
-          "line": 593,
+          "line": 594,
           "sharedExecutor": false
         },
         {
           "call": "addDoc",
-          "line": 607,
+          "line": 608,
           "sharedExecutor": false
         },
         {
           "call": "updateDoc",
-          "line": 659,
+          "line": 660,
           "sharedExecutor": false
         },
         {
           "call": "setDoc",
-          "line": 666,
+          "line": 667,
           "sharedExecutor": false
         },
         {
           "call": "addDoc",
-          "line": 684,
+          "line": 685,
           "sharedExecutor": false
         },
         {
           "call": "updateDoc",
-          "line": 738,
+          "line": 739,
           "sharedExecutor": false
         },
         {
           "call": "setDoc",
-          "line": 744,
+          "line": 745,
           "sharedExecutor": false
         },
         {
           "call": "addDoc",
-          "line": 759,
+          "line": 760,
           "sharedExecutor": false
         },
         {
-          "call": "addDoc",
-          "line": 792,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 793,
+          "sharedExecutor": true
         }
       ],
       "verification": "static_reference_requires_semantic_review"
@@ -1926,18 +1926,8 @@
       "file": "src/app/(dashboard)/leads/[leadId]/page.tsx",
       "calls": [
         {
-          "call": "updateDocumentNonBlocking",
+          "call": "executeCrmAction",
           "line": 275,
-          "sharedExecutor": false
-        },
-        {
-          "call": "executeCrmAction",
-          "line": 299,
-          "sharedExecutor": true
-        },
-        {
-          "call": "executeCrmAction",
-          "line": 300,
           "sharedExecutor": true
         },
         {
@@ -1947,37 +1937,47 @@
         },
         {
           "call": "executeCrmAction",
-          "line": 307,
+          "line": 302,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 312,
+          "line": 303,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 360,
+          "line": 309,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 314,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 362,
           "sharedExecutor": true
         },
         {
           "call": "createManualViewing",
-          "line": 382,
+          "line": 384,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 397,
+          "line": 399,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 400,
+          "line": 402,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 432,
+          "line": 434,
           "sharedExecutor": true
         }
       ],
@@ -1998,14 +1998,14 @@
       "file": "src/app/(dashboard)/matching/page.tsx",
       "calls": [
         {
-          "call": "addDoc",
-          "line": 154,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 155,
+          "sharedExecutor": true
         },
         {
-          "call": "addDoc",
-          "line": 181,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 171,
+          "sharedExecutor": true
         }
       ],
       "verification": "static_reference_requires_semantic_review"
@@ -2014,9 +2014,14 @@
       "file": "src/app/(dashboard)/notifications/page.tsx",
       "calls": [
         {
-          "call": "updateDoc",
-          "line": 35,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 39,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 50,
+          "sharedExecutor": true
         }
       ],
       "verification": "static_reference_requires_semantic_review"
@@ -2056,19 +2061,14 @@
       "file": "src/app/(dashboard)/owner-listings/page.tsx",
       "calls": [
         {
-          "call": "updateDocumentNonBlocking",
+          "call": "executeCrmAction",
           "line": 524,
-          "sharedExecutor": false
+          "sharedExecutor": true
         },
         {
-          "call": "updateDocumentNonBlocking",
-          "line": 724,
-          "sharedExecutor": false
-        },
-        {
-          "call": "setDocumentNonBlocking",
-          "line": 728,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 710,
+          "sharedExecutor": true
         }
       ],
       "verification": "static_reference_requires_semantic_review"
@@ -2130,28 +2130,8 @@
           "sharedExecutor": true
         },
         {
-          "call": "uploadBytes",
-          "line": 329,
-          "sharedExecutor": false
-        },
-        {
           "call": "executeCrmAction",
-          "line": 335,
-          "sharedExecutor": true
-        },
-        {
-          "call": "uploadBytes",
-          "line": 356,
-          "sharedExecutor": false
-        },
-        {
-          "call": "executeCrmAction",
-          "line": 359,
-          "sharedExecutor": true
-        },
-        {
-          "call": "executeCrmAction",
-          "line": 411,
+          "line": 379,
           "sharedExecutor": true
         }
       ],

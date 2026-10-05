@@ -40,3 +40,12 @@ export async function attachPropertyFile(user: { getIdToken(): Promise<string> }
   if (!response.ok) throw new Error(result.error || result.message || 'Atașarea nu a fost confirmată.');
   return result;
 }
+
+export async function attachBrandFile(user: { getIdToken(): Promise<string> } | null, file: File, destination: 'profile_photo' | 'agency_logo') {
+  if (!user) throw new Error('Autentificare necesară.');
+  const upload = await uploadCrmFile(user, file);
+  const response = await fetch(`/api/ai-assistant/uploads/${upload.uploadId}/apply`, { method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ destination }) });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || result.message || 'Atașarea nu a fost confirmată.');
+  return result as { imageUrl: string };
+}

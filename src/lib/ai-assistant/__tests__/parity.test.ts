@@ -26,6 +26,22 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('rejects stale contact edits without committing a ledger or changing the client', async () => {
+    const { ctx, rows } = database({ 'agencies/a/contacts/c': { name: 'Recent', updatedAt: '2026-10-05T10:00:00Z' } });
+    await expect(executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: null, patch: { name: 'Old' } }, 'stale')).rejects.toThrow('modificat');
+    expect(rows.get('agencies/a/contacts/c')?.name).toBe('Recent');
+    expect(rows.has('agencies/a/assistantExecutions/stale')).toBe(false);
+    await executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: '2026-10-05T10:00:00Z', patch: { name: 'Accepted' } }, 'current');
+    expect(rows.get('agencies/a/contacts/c')?.name).toBe('Accepted');
+  });
+  it('initializes prospecting only from an available canonical owner listing', async () => {
+    const { ctx, rows } = database({ 'ownerListings/l': { publicationStatus: 'ready', isCanonical: true }, 'ownerListings/hidden': { publicationStatus: 'ready', isCanonical: false } });
+    await executeAction(ctx, { kind: 'update_prospect', listingId: 'l', patch: { state: 'reserved' } }, 'reserve-new');
+    expect(rows.get('agencies/a/ownerListingFavorites/l')).toMatchObject({ ownerListingId: 'l', isFavoriteActive: true, reservedByAgentId: 'u' });
+    await expect(executeAction(ctx, { kind: 'update_prospect', listingId: 'hidden', patch: { state: 'taken' } }, 'hidden')).rejects.toThrow('disponibil');
+    await expect(executeAction(ctx, { kind: 'update_prospect', listingId: 'missing', patch: { ownerPhone: '0722334455' } }, 'missing')).rejects.toThrow('prospectare');
+    expect(rows.has('agencies/a/ownerListingFavorites/hidden')).toBe(false);
+  });
   it('updates own profile and public projection without changing membership', async () => {
     const { ctx, rows } = database({});
     await executeAction(ctx, { kind: 'update_profile', patch: { name: 'Nume nou', phone: '0722111222' } }, 'profile');
@@ -45,6 +61,14 @@ describe('CRM parity and command execution', () => {
     await executeAction(ctx, action, 'task');
     expect(rows.get('agencies/a/tasks/task')).toMatchObject({ dueDate: '2026-10-06', startTime: '14:30', duration: 30, participantName: 'Maria', participantPhone: '0722334455' });
     expect(actionSchema.safeParse({ ...action, dueDate: '2026-02-31' }).success).toBe(false);
+  });
+  it('validates assigned task agents within the agency and supports unassigned tasks', async () => {
+    const { ctx, rows } = database({ 'users/peer': { agencyId: 'a', role: 'agent', name: 'Peer' }, 'users/foreign': { agencyId: 'other', role: 'agent' } });
+    await executeAction(ctx, { kind: 'create_task', description: 'Follow-up', dueDate: '2026-10-06', agentId: 'peer' }, 'assigned');
+    expect(rows.get('agencies/a/tasks/assigned')).toMatchObject({ agentId: 'peer', agentName: 'Peer' });
+    await expect(executeAction(ctx, { kind: 'create_task', description: 'Follow-up', dueDate: '2026-10-06', agentId: 'foreign' }, 'invalid')).rejects.toThrow('Agent invalid');
+    await executeAction(ctx, { kind: 'create_task', description: 'Follow-up', dueDate: '2026-10-06', agentId: null }, 'unassigned');
+    expect(rows.get('agencies/a/tasks/unassigned')?.agentId).toBeNull();
   });
   it('accepts full property fields but not role/status/ownership injection through a patch', () => {
     expect(actionSchema.parse({ kind: 'update_property', propertyId: 'p', patch: { floor: '3', constructionYear: 2018, totalFloors: 8, city: 'București', nearMetro: true } }).kind).toBe('update_property');

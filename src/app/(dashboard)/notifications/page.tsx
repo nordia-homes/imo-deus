@@ -1,8 +1,10 @@
 "use client";
+import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useState } from 'react';
 import { BellRing, CheckCheck, Filter, Inbox, Sparkles } from 'lucide-react';
-import { collection, doc, limit, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, limit, orderBy, query } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +18,7 @@ export default function NotificationsPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [pageSize, setPageSize] = useState(100);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
@@ -32,9 +35,11 @@ export default function NotificationsPage() {
 
   const open = async (item: AppNotification) => {
     if (!user) return;
-    if (!item.isRead) await updateDoc(doc(firestore, 'users', user.uid, 'notifications', item.id), {
-      isRead: true, readAt: serverTimestamp(),
-    });
+    try {
+      if (!item.isRead) await executeCrmAction(user, { kind: 'notification_action', action: 'read', notificationId: item.id });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Notificarea nu a fost marcată ca citită', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
+    }
     router.push(item.actionUrl || '/dashboard');
   };
 
@@ -42,8 +47,10 @@ export default function NotificationsPage() {
     if (!user) return;
     setIsMarkingAll(true);
     try {
-      const token = await user.getIdToken();
-      await fetch('/api/notifications/read-all', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const result = await executeCrmAction(user, { kind: 'existing_operation', operation: 'notification_read_all', body: {}, params: {}, query: {} });
+      if (result.complete === false) toast({ title: 'Actualizare parțială', description: 'Mai există notificări necitite. Apasă din nou pentru continuare.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Notificările nu au fost actualizate', description: error instanceof Error ? error.message : 'Încearcă din nou.' });
     } finally {
       setIsMarkingAll(false);
     }

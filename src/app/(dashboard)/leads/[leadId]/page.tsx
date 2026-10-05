@@ -230,14 +230,14 @@ export default function LeadDetailPage() {
     }, [agentsError, toast]);
 
     useEffect(() => {
-        if (!contactDocRef || !contact || !properties || viewings.length === 0) {
+        if (!user || !contactDocRef || !contact || !properties || viewings.length === 0) {
             return;
         }
 
         const sortedViewings = [...viewings].sort((a, b) => parseISO(a.viewingDate).getTime() - parseISO(b.viewingDate).getTime());
         const firstViewing = sortedViewings[0];
         const firstViewingProperty = properties.find((property) => property.id === firstViewing.propertyId);
-        const updates: Partial<Omit<Contact, 'id'>> = {};
+        const updates: { sourcePropertyId?: string; budget?: number; city?: string; zones?: string[]; description?: string } = {};
 
         if (!contact.sourcePropertyId && firstViewing.propertyId) {
             updates.sourcePropertyId = firstViewing.propertyId;
@@ -272,9 +272,11 @@ export default function LeadDetailPage() {
         }
 
         if (Object.keys(updates).length > 0) {
-            updateDocumentNonBlocking(contactDocRef, updates);
+            void executeCrmAction(user, { kind: 'update_contact', contactId: contact.id, expectedUpdatedAt: contact.updatedAt ?? null, patch: updates }).catch((error) => {
+                toast({ variant: 'destructive', title: 'Datele clientului nu au fost completate', description: error instanceof Error ? error.message : 'Reîncarcă datele și încearcă din nou.' });
+            });
         }
-    }, [contactDocRef, contact, properties, viewings]);
+    }, [user, contactDocRef, contact, properties, viewings, toast]);
 
     useEffect(() => {
         if (!properties || !contact) {
