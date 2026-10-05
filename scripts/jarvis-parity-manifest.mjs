@@ -29,7 +29,20 @@ for (const file of [...files('src/app/(dashboard)'), ...files('src/components'),
   if (calls.length) manualWrites.push({ file: file.replaceAll('\\', '/'), calls, verification: 'static_reference_requires_semantic_review' });
 }
 const contracts = fs.readFileSync('src/lib/ai-assistant/contracts.ts', 'utf8');
-const manifest = { version: 1, operations, actionKinds: [...contracts.matchAll(/kind:\s*z\.literal\(\s*['"]([^'"]+)['"]\s*\)/g)].map(match => match[1]), manualWrites, excluded: ['internal workers', 'provider webhooks', 'master-admin outside actor permissions', 'human-only consent and OAuth steps'] };
+const contractSource = ts.createSourceFile('contracts.ts', contracts, ts.ScriptTarget.Latest, true);
+const actionKinds = [];
+for (const statement of contractSource.statements) if (ts.isVariableStatement(statement)) for (const variable of statement.declarationList.declarations) {
+  if (variable.name.getText(contractSource) !== 'actionSchema' || !ts.isCallExpression(variable.initializer)) continue;
+  const options = variable.initializer.arguments[1];
+  if (!ts.isArrayLiteralExpression(options)) throw new Error('actionSchema must declare explicit top-level options.');
+  for (const option of options.elements) {
+    const kind = option.getText(contractSource).match(/kind:\s*z\.literal\(\s*['"]([^'"]+)['"]\s*\)/)?.[1];
+    if (!kind || actionKinds.includes(kind)) throw new Error('Missing or duplicate native action discriminator.');
+    actionKinds.push(kind);
+  }
+}
+if (!actionKinds.length) throw new Error('No native action contract found.');
+const manifest = { version: 1, operations, actionKinds, manualWrites, excluded: ['internal workers', 'provider webhooks', 'master-admin outside actor permissions', 'human-only consent and OAuth steps'] };
 const output = JSON.stringify(manifest, null, 2) + '\n';
 if (process.argv.includes('--check')) {
   if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== output) throw new Error('Parity manifest drift: run npm run jarvis:parity.');

@@ -6,7 +6,7 @@ import { automationReadiness } from './readiness';
 import type { AssistantContext } from './access';
 
 export function dataCatalog(category = '') {
-  const related: Record<string, string[]> = { sales: ['documents', 'emailMessages', 'audit'], conversations: ['messages', 'notes'], portals: ['recommendations'], aiOutreachCalls: ['audit', 'messages'], assistantAutomations: ['audit'] };
+  const related: Record<string, string[]> = { sales: ['documents', 'emailMessages', 'audit'], conversations: ['messages', 'notes'], portals: ['recommendations'], aiOutreachCalls: ['audit', 'messages'], assistantAutomations: ['audit', 'events'] };
   return { resources: resourceNames.filter(name => !category || capabilityScore(category, name) > 0).map(name => ({ name, reads: ['read', 'read_field'], related: related[name] || [], authority: 'live_firestore', scope: ['profile', 'notificationPreferences', 'notifications', 'assistantAutomations', 'assistantUploads'].includes(name) ? 'authenticated_actor' : 'agency_and_entity_permissions' })), aggregateResources: ['contacts', 'properties', 'tasks', 'viewings'], propertySearch: { defaultSource: 'owners', crmSeparate: true, independentOfUiPagination: true }, timeline: ['contacts', 'properties', 'sales', 'conversations', 'aiOutreachCalls'], notes: ['Istoricul proiecțiilor este eventual consistent; entitățile sunt recitite înainte de execuție.', 'La complete=false folosește continuarea. Nu prezenta un segment drept toate datele.', 'Providerii și joburile au citiri dedicate în discover_tools. Documentele mari se citesc prin read_field.'] };
 }
 export async function capabilityStatus(ctx: AssistantContext, operation: string) {

@@ -17,6 +17,7 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 - Prospectare direct din lista generală prin executor comun; autofill contact cu verificare de versiune; Matching și follow-up apeluri folosesc serviciul comun de calendar; fotografie de profil și siglă prin fișiere private, cu validări, roluri și retenție pentru upload-uri nefinalizate.
 - Gmail: activare/ascundere, personalizare și resetare șablon pentru agentul propriu, HTML sanitizat și citire paginată. Apeluri AI: anulare înainte de dispatch, rezultat manual/audit și revocare DNC explicită; rezultatul manual nu elimină implicit opt-out. Lansarea provider este rezervată tranzacțional, rezultatele incerte nu se retrimit, iar webhook-ul terminal nu este suprascris de răspunsul de lansare.
 - Pregătire email Sales comună manual/AI: destinatari și conținut validate, documente autorizate și snapshot de versiune, card Deschide Gmail în Text/Voice. Modificarea ulterioară a mesajului/atașamentelor invalidează handoff-ul. Callback-ul runner-ului este corelat cu jobul; modelul nu poate declara ui_observed. Notificările read-all sunt permise explicit în adaptorul manual.
+- Reguli CRM pe evenimente: contacte, proprietăți, vizionări, dosare și prospectare; filtre de schimbare/status/câmp/entitate, sarcini legate de client/proprietate și notificări proprii. Cursor după recordedAt și ID, revalidare acces/status, receipts și chei deterministe, maxEvents/maxRuns/termen. Editorul Text/Voice pregătește planul, cu pauză/reluare și istoric paginat; nu permite trimitere externă, acorduri sau recursie arbitrară.
 
 ## Urmărirea backlogului
 
@@ -35,17 +36,18 @@ Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 | B35–B41 | Handler-e Imobiliare/Storia/Romimo/Meta/TikTok/Cloud/Video înregistrate cu contracte | Probe funcționale de provider, job controls și disponibilitate per entitate |
 | B42–B45 | Profile/agency/preferences comune, avatar/logo private, agents/domain/billing/collaboration handlers, handoff links | Acceptanță OAuth/plată/push pe dispozitiv și onboarding complet |
 | B46–B47 | Discovery compact, resolver date, buget, checkpoints/pause/cancel | Probe UI pentru pauză/reluare și loturi mari în producție |
-| B48 | Automatizări editabile, istoric și condiții de oprire | Reguli generale declanșate de evenimente, editor complet și dedup la evenimente concurente |
+| B48 | Automatizări editabile, istoric, condiții de oprire și reguli CRM pe evenimente cu effects interne/receipts/cursor; editor Text/Voice | Extinderea editorului vizual la toate configurațiile existente și scenarii de evenimente concurente integrate; efecte externe prin aprobări dedicate |
 | B49–B50 | Carduri comune, manifest CI, teste unitare/rules/UI/build | Verificare de release, observabilitate și probe end-to-end pentru fiecare modul |
 
 ## Validări efectuate
 
-- 259 teste deterministe AI trecute (256 în suita completă și 3 probe dedicate originii/corelării dovezii Gmail); 3 teste de reguli rulează separat în emulator.
+- 264 teste deterministe AI trecute, plus o probă ulterioară pentru checkpoint/limita regulilor în worker; 3 teste de reguli rulează separat în emulator.
 - 18 teste de reguli Firestore trecute în emulator (5 suite).
-- 15 verificări UI Text și 14 verificări UI Voice trecute; Gmail handoff și lipsa dovezii înainte de callback verificate cu bridge simulat.
+- 18 verificări UI Text și 14 verificări UI Voice trecute; editorul pregătește planul, păstrează atribuirile și filtrele neatinse și citește istoricul; Gmail handoff și lipsa dovezii înainte de callback verificate cu bridge simulat.
 - Build Next.js și build Functions trecute. Testele headless Voice folosesc microfon/audio simulate; nu certifică ecoul pe hardware real.
 - Producție verificată: build `build-2026-10-05-parity-01`, commit `4cc3402fb2f5eb55e2c20aa5272a5a47fb46999c`, READY, trafic 100%; worker ACTIVE, scheduler ENABLED și heartbeat fără eroare. Regulile/indexurile și cele patru funcții de proiecție/retenție sunt publicate. Modificările din etapa următoare se publică separat după validare.
 - Etapa a doua activă ulterior: `build-2026-10-05-parity-02`, commit `4a479b5b8a47bf7bdde88f477489967cf908bd73`, READY, trafic 100%; funcția de retenție pentru branding actualizată. Etapa Gmail/apeluri se validează și publică separat.
 - Etapa a treia activă: `build-2026-10-05-parity-03`, commit `b1a6433bf3c18e3713b804b06bfcee6be5096ef7`, READY, trafic 100%; preferințele Gmail și controlul apelurilor sunt publicate. Pregătirea emailului și handoff-ul sunt etapa a patra, publicată după verificarea build-ului.
+- Etapa a patra activă: `build-2026-10-05-parity-04`, commit `b45c969e1e41c805587087f0390c40d26abfe72c`, READY, trafic 100%. Probe anonime API: 401; pagină: 200; 5 funcții ACTIVE, scheduler ENABLED, heartbeat fără eroare și 72 indexuri READY. Dovadă: CRM_PARITY_PRODUCTION.json. Reguli pe evenimente: etapa a cincea, în curs de validare/publicare.
 
 Nu este încă îndeplinit criteriul „paritate completă”: elementele restante de mai sus rămân parte din implementarea solicitată, nu sunt închise prin simpla înregistrare a unui endpoint.

@@ -109,7 +109,7 @@ export async function readRelated(ctx: AssistantContext, input: AssistantRelated
   return { rows: snapshot.docs.slice(0, input.limit).map(d => safeData({ ...d.data(), id: d.id })), nextCursor: snapshot.size > input.limit ? snapshot.docs[input.limit - 1].id : null, complete: snapshot.size <= input.limit };
 }
 function relatedCollections(resource: string) {
-  return resource === 'assistantAutomations' ? ['audit'] : resource === 'sales' ? ['documents', 'emailMessages', 'audit'] : resource === 'portals' ? ['recommendations'] : resource === 'aiOutreachCalls' ? ['audit', 'messages'] : ['messages', 'notes'];
+  return resource === 'assistantAutomations' ? ['audit', 'events'] : resource === 'sales' ? ['documents', 'emailMessages', 'audit'] : resource === 'portals' ? ['recommendations'] : resource === 'aiOutreachCalls' ? ['audit', 'messages'] : ['messages', 'notes'];
 }
 export async function readField(ctx: AssistantContext, input: z.infer<typeof fieldSchema>) {
   if (['agency', 'agents', 'notifications', 'portals'].includes(input.resource)) throw new CommunicationError('Folosește read pentru această resursă.');
@@ -150,7 +150,11 @@ export function actionReferences(actions: AssistantAction[]): AccessReference[] 
       }
       return refs;
     }
-    return action.kind === 'create_automation' && action.automation.type === 'whatsapp_template' ? [{ resource: 'conversations' as const, id: action.automation.conversationId }] : [];
+    if ((action.kind === 'create_automation' || action.kind === 'update_automation') && action.automation) {
+      if (action.automation.type === 'whatsapp_template') return [{ resource: 'conversations' as const, id: action.automation.conversationId }];
+      if (action.automation.type === 'event_rule' && action.automation.trigger.resource === 'sales' && action.automation.trigger.recordId) return [{ resource: 'sales' as const, id: action.automation.trigger.recordId }];
+    }
+    return [];
   });
 }
 export async function referencesAllowed(ctx: AssistantContext, references: AccessReference[] = []) {

@@ -1,4 +1,5 @@
 "use client";
+import { AutomationsPanel } from '@/components/ai/AutomationsPanel';
 import { GmailHandoff } from '@/components/ai/GmailHandoff';
 import { AssistantExecutionControls } from '@/components/ai/AssistantExecutionControls';
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -290,6 +291,20 @@ export function JarvisVoice() {
     });
     if (opened.current && audio.current?.epoch === epoch)
       setState(p && p.status === "pending" ? "AWAITING_CONFIRMATION" : "IDLE");
+  }
+  async function prepareActions(actions: AssistantAction[]) {
+    const active = voiceSession.current;
+    queue.current = queue.current.then(async () => {
+      if (!opened.current || active !== voiceSession.current) return;
+      const r = await api('/api/ai-assistant/workspace', { kind: 'prepare', sessionId: session.current, requestId: crypto.randomUUID(), actions });
+      if (!opened.current || active !== voiceSession.current) return;
+      storeJarvisSession(user!.uid, agencyId!, session.current);
+      lastMessage.current = r.message;
+      const p = (await api('/api/ai-assistant/workspace?planId=' + r.message.planId)).plan;
+      pendingPlan.current = p; setPlan(p);
+      if (audio.current) await speak(r.message, p, audio.current.epoch);
+    });
+    try { await queue.current; } catch (e) { queue.current = Promise.resolve(); setError(e instanceof Error ? e.message : 'Planul nu a putut fi pregătit.'); throw e; }
   }
   async function approve(cancel = false) {
     const p = pendingPlan.current,
@@ -835,6 +850,7 @@ export function JarvisVoice() {
                     </p>
                   </div>
                 )}
+                <AutomationsPanel busy={state === 'PROCESSING' || state === 'WORKING'} onPrepare={prepareActions} />
                 {plan && (
                   <section className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
                     <h3 className="font-semibold">

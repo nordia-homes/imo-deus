@@ -9,6 +9,7 @@ import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
 import { isDemoAgencyId } from '@/lib/demo/guards';
 import { featureFlags } from './skills';
+import { runEventRule } from './event-rules';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -57,6 +58,11 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       const stopReason = automation.stopAfter && Date.parse(automation.stopAfter) <= Date.now() ? 'Termenul de oprire a fost atins.' : 'contactId' in automation && automation.stopOnContactStatuses?.includes((await getResource(ctx, 'contacts', automation.contactId)).status) ? 'Clientul a ajuns într-un status configurat pentru oprire.' : null;
       if (stopReason) {
         result = { skipped: true, reason: stopReason };
+      } else if (automation.type === 'event_rule') {
+        result = await runEventRule(ctx, claim, automation, executeAction, async () => {
+          const fresh = (await doc.ref.get()).data();
+          if (fresh?.claimId !== claimId || fresh.status !== 'running' || fresh.leaseUntil <= Date.now()) throw new Error('Execuția regulii nu mai deține lease-ul.');
+        });
       } else if (automation.type === 'followup_task') {
         result = await executeAction(ctx, { kind: 'create_task', contactId: automation.contactId, description: automation.description, dueDate: now }, `${claim.id}-run-${run}`);
       } else if (automation.type === 'whatsapp_template') {
@@ -94,8 +100,9 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         if (page.nextCursor) result = { ...page, partial: true, note: 'Monitorizarea a verificat o pagină de rezultate; continuarea este disponibilă în AI Assistant.' };
       }
       const skipped = Boolean((result as { skipped?: boolean })?.skipped);
-      const nextRun = !skipped && automation.intervalMinutes && run < automation.maxRuns ? new Date(Date.now() + automation.intervalMinutes * 60000).toISOString() : null;
-      outcome = { status: nextRun ? 'active' : 'completed', runCount: run, nextRunAt: nextRun, lastRunAt: now, lastResult: safeData(result), scanCursor: automation.type === 'owner_watch' ? (result as { nextCursor?: string }).nextCursor || null : null, requestId: null, error: null };
+      const eventResult = automation.type === 'event_rule' ? result as Awaited<ReturnType<typeof runEventRule>> : null;
+      const nextRun = !skipped && !eventResult?.limitReached && automation.intervalMinutes && run < automation.maxRuns ? new Date(Date.now() + automation.intervalMinutes * 60000).toISOString() : null;
+      outcome = { status: nextRun ? 'active' : 'completed', runCount: run, nextRunAt: nextRun, lastRunAt: now, lastResult: safeData(result), scanCursor: automation.type === 'owner_watch' ? (result as { nextCursor?: string }).nextCursor || null : null, ...(eventResult ? { eventCursor: eventResult.eventCursor, eventCount: eventResult.eventCount } : {}), requestId: null, error: null };
       if (automation.type === 'whatsapp_template' && ['unknown', 'failed'].includes(String((result as { status?: string }).status))) outcome.status = (result as { status: string }).status === 'unknown' ? 'unknown' : 'blocked';
     } catch (error) {
       outcome = { status: 'blocked', lastRunAt: now, error: error instanceof Error ? error.message : 'Automatizarea a fost oprită.' };

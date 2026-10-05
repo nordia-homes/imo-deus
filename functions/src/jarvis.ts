@@ -20,10 +20,12 @@ export const jarvisCrmChangeProjection = onDocumentWritten({ document: 'agencies
   const entities: Record<string, string> = { [idFields[resource]]: recordId };
   for (const field of ['contactId', 'propertyId', 'conversationId', 'saleId']) if (typeof row[field] === 'string' && row[field]) entities[field] = row[field];
   const ref = db.collection('agencies').doc(agencyId).collection('crmEvents').doc(id);
+  const ruleState = (value: Record<string, unknown> | undefined) => Object.fromEntries(['status', 'stage', 'agentId', 'collaborationStatus', 'contactOutcome', 'viewingDate', 'price', 'budget', 'financingType'].filter(field => typeof value?.[field] === 'string' || typeof value?.[field] === 'number' || value?.[field] === null).map(field => [field, value?.[field]]));
   await db.runTransaction(async tx => {
     if ((await tx.get(ref)).exists) return;
     tx.create(ref, { id, agencyId, source: 'firestore_change', capability: resource + '.' + (!before ? 'created' : !after ? 'deleted' : 'updated'),
       occurredAt: event.time, recordedAt: new Date().toISOString(), providerEventId: event.id, entities, changedFields: changedFields.slice(0, 120),
+      ruleState: { before: ruleState(before), after: ruleState(after) },
       actorId: null, actorEvidence: 'not_recorded_by_source',
       visibility: { resource, agencyId, agentId: row.agentId || null, assigneeId: row.assigneeId || null, collaboratorIds: Array.isArray(row.collaboratorIds) ? row.collaboratorIds : [] } });
   });

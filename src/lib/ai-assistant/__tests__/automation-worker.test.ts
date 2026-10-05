@@ -5,11 +5,13 @@ vi.mock('../insights', () => ({ getInsights: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
 vi.mock('@/lib/communications/server', () => ({ getConversation: vi.fn() }));
 vi.mock('@/lib/communications/outbound', () => ({ queueMessage: vi.fn() }));
+vi.mock('../event-rules', () => ({ runEventRule: vi.fn() }));
 import { drainAssistantAutomations } from '../automation-worker';
 import { executeAction } from '../actions';
 import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
 import { getResource } from '../access';
+import { runEventRule } from '../event-rules';
 function database(automation: any, patch: any = {}) {
   const job = { id: 'job', agencyId: 'a', actorId: 'u', actorRole: 'agent', createdAt: '2026-01-01T00:00:00.000Z', status: 'active', nextRunAt: '2026-01-01T00:00:00.000Z', automation, ...patch };
   const rows = new Map<string, any>([['assistantAutomationJobs/job', job], ['agencies/a/assistantAutomations/job', { ...job }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
@@ -23,6 +25,13 @@ const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z',
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('approved automation execution', () => {
+  it('persists event-rule cursor and stops at the event limit', async () => {
+    const { db, rows } = database({ type: 'event_rule', nextRunAt: '2026-01-01T00:00:00.000Z', intervalMinutes: 30, maxRuns: 10, trigger: { resource: 'contacts', change: 'updated' }, effects: [{ kind: 'notify', title: 'Client actualizat' }] });
+    vi.mocked(runEventRule).mockImplementationOnce(async (_ctx, _claim, _rule, _execute, assertLease) => { await assertLease(); return { eventCursor: { recordedAt: '2026-01-01T00:01:00Z', id: 'e' }, eventCount: 100, limitReached: true, handled: 100, inaccessible: 0, scanned: 100, complete: false, note: '' }; });
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', nextRunAt: null, eventCount: 100, eventCursor: { id: 'e' } });
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('stops on deadline or contact status and records the skipped run', async () => {
     vi.mocked(getResource).mockResolvedValue({ status: 'Câștigat' });
     const { db, rows } = database({ ...followup, stopOnContactStatuses: ['Câștigat'] });

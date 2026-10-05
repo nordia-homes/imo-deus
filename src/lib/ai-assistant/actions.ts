@@ -501,12 +501,16 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (Date.parse(automation.nextRunAt) <= Date.now()) throw new CommunicationError('Prima execuție trebuie să fie în viitor.');
       if (automation.maxRuns > 1 && !automation.intervalMinutes) throw new CommunicationError('Precizează intervalul pentru execuții repetate.');
       if (automation.type === 'followup_task' || automation.type === 'matching_watch') await read('contacts', automation.contactId);
+      if (automation.type === 'event_rule') {
+        if (automation.trigger.recordId) await read(automation.trigger.resource, automation.trigger.recordId);
+        for (const effect of automation.effects) if (effect.kind === 'create_task' && effect.agentId) await propertyAssignment(effect.agentId);
+      }
       if (process.env.JARVIS_AUTOMATIONS === 'false') throw new CommunicationError('Automatizările sunt dezactivate.', 403);
       if (automation.type === 'whatsapp_template') {
         if (isDemoAgencyId(ctx.agencyId)) throw new CommunicationError('Mesajele externe sunt indisponibile în demo.', 403);
         await getConversation(ctx.adminDb, ctx, automation.conversationId);
       }
-      const record = { id: key, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: ctx.role, automation, status: 'active', nextRunAt: automation.nextRunAt, createdAt: now, runCount: 0 };
+      const record = { id: key, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: ctx.role, automation, status: 'active', nextRunAt: automation.nextRunAt, createdAt: now, runCount: 0, ...(automation.type === 'event_rule' ? { ruleStartedAt: now, eventCount: 0, eventCursor: null } : {}) };
       tx.create(collectionFor(ctx, 'assistantAutomations').doc(key), record);
       tx.create(ctx.adminDb.collection('assistantAutomationJobs').doc(`${ctx.agencyId}-${key}`), record);
       result = { automationId: key, nextRunAt: automation.nextRunAt, link: '/ai-assistant' };
@@ -524,9 +528,13 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         if (action.automation.maxRuns <= Number(record.runCount || 0)) throw new CommunicationError('Limita de execuții trebuie să depășească execuțiile deja efectuate.');
         if (action.automation.maxRuns > 1 && !action.automation.intervalMinutes) throw new CommunicationError('Precizează intervalul execuțiilor repetate.');
         if ('contactId' in action.automation) await read('contacts', action.automation.contactId);
+        if (action.automation.type === 'event_rule') {
+          if (action.automation.trigger.recordId) await read(action.automation.trigger.resource, action.automation.trigger.recordId);
+          for (const effect of action.automation.effects) if (effect.kind === 'create_task' && effect.agentId) await propertyAssignment(effect.agentId);
+        }
         if (action.automation.type === 'whatsapp_template') await getConversation(ctx.adminDb, ctx, action.automation.conversationId);
       }
-      const patch = { ...(action.status ? { status: action.status } : {}), ...(action.automation ? { automation: action.automation, nextRunAt: action.automation.nextRunAt, scanCursor: null, requestId: null } : {}), updatedAt: now };
+      const patch = { ...(action.status ? { status: action.status } : {}), ...(action.automation ? { automation: action.automation, nextRunAt: action.automation.nextRunAt, scanCursor: null, requestId: null, ruleStartedAt: now, eventCount: 0, eventCursor: null } : {}), updatedAt: now };
       tx.update(collectionFor(ctx, 'assistantAutomations').doc(action.automationId), patch);
       tx.update(job, patch);
       tx.create(collectionFor(ctx, 'assistantAutomations').doc(action.automationId).collection('audit').doc(key), { id: key, actorId: ctx.uid, occurredAt: now, action: 'updated', previous: { status: record.status, automation: record.automation }, changes: patch });
