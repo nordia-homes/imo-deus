@@ -20,6 +20,30 @@ function database(initial: Record<string, any> = {}) {
 const input = { sessionId: 'session', requestId: 'request', prompt: 'Read authorized data' };
 afterEach(() => vi.clearAllMocks());
 describe('durable tenant-scoped jobs', () => {
+  it('does not let a replaced worker overwrite progress or the new claim result', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { ctx, db, rows } = database(); await enqueueTurn(ctx, input);
+    vi.mocked(chatTurn).mockImplementationOnce(async (_ctx, _input, progress) => {
+      rows.set('assistantAgentJobs/request', { ...rows.get('assistantAgentJobs/request'), claimId: 'replacement', events: ['new worker'], leaseUntil: 9999999999999 });
+      await progress!({ type: 'PROGRESS_EVENT', stage: 'planning', text: 'old worker' } as any);
+      throw new Error('must not continue');
+    });
+    await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/request')).toMatchObject({ claimId: 'replacement', status: 'running', events: ['new worker'], leaseUntil: 9999999999999 });
+    expect(rows.has('agencies/a/assistantSessions/session/messages/request-assistant')).toBe(false);
+    log.mockRestore();
+  });
+  it('renews the current lease when publishing progress', async () => {
+    const { ctx, db, rows } = database(); await enqueueTurn(ctx, input);
+    vi.mocked(chatTurn).mockImplementationOnce(async (_ctx, _input, progress) => {
+      rows.set('assistantAgentJobs/request', { ...rows.get('assistantAgentJobs/request'), leaseUntil: Date.now() + 100 });
+      await progress!({ type: 'PROGRESS_EVENT', stage: 'planning', text: 'current worker' } as any);
+      expect(rows.get('assistantAgentJobs/request').leaseUntil).toBeGreaterThan(Date.now() + 290000);
+      return { message: { id: 'reply', text: 'confirmed', accessRefs: [] } } as any;
+    });
+    await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/request').status).toBe('completed');
+  });
   it('delivers an early turn exception as a conversation error while the job stays failed', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(chatTurn).mockRejectedValueOnce(new Error('private provider payload'));

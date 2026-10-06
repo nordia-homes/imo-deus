@@ -66,16 +66,21 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
     if (!job) continue; processed++;
     const ctx = { uid: job.userId, agencyId: job.agencyId, role: job.role, adminDb: db, adminAuth, runtimeMode: 'real', authorization: '', appOrigin: process.env.APP_BASE_URL } as AssistantContext;
     const events: unknown[] = [];
+    const publishProgress = async (progress: unknown[]) => db.runTransaction(async tx => {
+      const fresh = await tx.get(row.ref);
+      if (fresh.data()?.claimId !== claimId || fresh.data()?.status !== 'running') throw new CommunicationError('Execuția workerului a fost înlocuită. Verifică istoricul.', 409);
+      tx.update(row.ref, { events: progress, leaseUntil: Date.now() + 300000 });
+    });
     let outcome: Record<string, unknown>;
     try {
       if (job.jobType === 'plan') {
-        await row.ref.update({ events: [{ type: 'PROGRESS_EVENT', stage: 'executing_plan', text: 'Execut planul confirmat pe server.', step: 0, at: new Date().toISOString() }] });
+        await publishProgress([{ type: 'PROGRESS_EVENT', stage: 'executing_plan', text: 'Execut planul confirmat pe server.', step: 0, at: new Date().toISOString() }]);
         const plan = await runPlan(ctx, job.planId, false, PLAN_WORKER_STEPS);
         outcome = plan.status === 'pending'
           ? { status: 'pending', planStatus: 'pending', confirmedSteps: plan.results?.length || 0, createdAt: new Date().toISOString() }
           : { status: 'completed', planStatus: plan.status, confirmedSteps: plan.results?.length || 0, completedAt: new Date().toISOString() };
       } else {
-        const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, async event => { events.push(event); await row.ref.update({ events: events.slice(-60) }); });
+        const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, async event => { events.push(event); await publishProgress(events.slice(-60)); });
         outcome = { status: 'completed', message: result.message, ...(result.message.outputType === 'ERROR_EVENT' ? { planStatus: 'failed' } : {}), completedAt: new Date().toISOString() };
       }
     } catch (error) {

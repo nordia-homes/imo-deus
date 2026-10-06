@@ -185,3 +185,10 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - 320 teste AI trecute, 9 probe rezervate emulatorului; 17 teste țintite, cu 4 noi pentru aceste cazuri. Typecheck, build Next.js, contracte și manifest trecute. Prompt/tool 19. Publicarea este în curs; recuperarea worker-elor cu lease expirat și acceptanța providerilor rămân distincte.
 - Probă read-only în conversația reală: TEXT, success, card properties, job completed, fără eroare și fără plan executat. Nu s-au trimis mesaje externe.
 
+### Progres worker protejat de claim — validat local
+- Publicarea progresului verifică claim-ul și statusul în tranzacție, apoi reînnoiește lease-ul. Un worker înlocuit nu poate suprascrie evenimentele, lease-ul sau rezultatul celui nou. Începerea planului confirmat folosește aceeași verificare.
+- 322 teste AI trecute, 9 probe rezervate emulatorului înaintea adăugării suitei worker; două teste worker suplimentare rulează numai pe emulator. Typecheck și build Next.js trecute pentru modificarea runtime.
+- 26 teste de acces/concurență trecute în 7 suite pe Firestore local real. Două worker-e simultane invocă o singură dată turn-ul; după expirarea și preluarea lease-ului, progresul vechi este refuzat și rezultatul nou rămâne intact.
+- Aceste probe folosesc planificator simulat și tranzacții reale. Nu certifică anularea unui apel provider deja în curs, fencing-ul tuturor efectelor autonome sau heartbeat-ul unei operații fără evenimente timp de peste 5 minute. Planurile întrerupte nu se reexecută automat.
+- Release parity-22: READY, trafic 100%, verificat la 12:16 UTC; include paginarea și totalurile. Etapele worker parity-23/24 sunt în publicare.
+
