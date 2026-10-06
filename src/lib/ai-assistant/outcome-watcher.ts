@@ -4,10 +4,12 @@ import { CommunicationError } from '@/lib/communications/server';
 import { getPlan } from './workspace';
 import { readPlanOutcomes } from './plan-outcomes';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
+import { createHash } from 'node:crypto';
 
 // Uses the existing durable queue; these jobs only read domain evidence.
 export async function enqueueOutcomeWatch(ctx: AssistantContext, planId: string) {
-  const ref = ctx.adminDb.collection('assistantAgentJobs').doc(`verify-${planId}`);
+  const identity = createHash('sha256').update(JSON.stringify([ctx.agencyId, ctx.uid, planId])).digest('hex');
+  const ref = ctx.adminDb.collection('assistantAgentJobs').doc(`verify-${identity}`);
   const plan = (await getPlan(ctx, planId)).data;
   await ctx.adminDb.runTransaction(async tx => {
     const [prior, member] = await Promise.all([tx.get(ref), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
@@ -23,12 +25,21 @@ export async function verifyPlanOutcome(ctx: AssistantContext, planId: string, d
     ? { ...verification.outcome, state: 'BLOCKED' as const, note: 'Verificarea automată a ajuns la termen. Efectul nu se repetă; verifică starea în modulul dedicat.' }
     : verification.outcome;
   const plan = collectionFor(ctx, 'assistantPlans').doc(planId);
-  await ctx.adminDb.runTransaction(async tx => {
+  const persisted = await ctx.adminDb.runTransaction(async tx => {
     await assertAutomationFence(ctx.adminDb, tx, ctx);
     const [fresh, member] = await Promise.all([tx.get(plan), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
     if (fresh.data()?.ownerId !== ctx.uid || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
-    // Do not overwrite a concurrent pause/cancel/continuation with an old read.
-    if (fresh.data()?.status === verification.executionStatus) tx.update(plan, { outcome });
+    // Status alone is insufficient: pause/resume or another reconciliation can
+    // return to the same status while this provider read was in flight.
+    const revision = fresh.updateTime ? `${fresh.updateTime.seconds}:${fresh.updateTime.nanoseconds}` : null;
+    if (!revision || revision !== verification.planRevision || fresh.data()?.status !== verification.executionStatus) return { saved: false, status: fresh.data()?.status };
+    tx.update(plan, { outcome });
+    return { saved: true, status: fresh.data()?.status };
   });
+  if (!persisted.saved) {
+    const stopped = ['paused', 'cancelled'].includes(persisted.status);
+    const expired = Date.now() >= deadline;
+    return { status: stopped || expired ? 'completed' : 'pending', planStatus: stopped ? persisted.status.toUpperCase() : expired ? 'BLOCKED' : 'RUNNING', notBefore: stopped || expired ? 0 : Date.now() + 15000, createdAt: new Date().toISOString(), ...(expired && !stopped ? { note: 'Verificarea a expirat în timpul unei modificări concurente. Planul curent nu a fost suprascris; verifică starea în modulul dedicat.' } : {}) };
+  }
   return { status: keepWatching ? 'pending' : 'completed', planStatus: outcome.state, notBefore: keepWatching ? Date.now() + verification.pollAfterMs! : 0, createdAt: new Date().toISOString(), outcome };
 }

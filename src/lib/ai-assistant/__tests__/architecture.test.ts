@@ -3,6 +3,12 @@ import { allowedModel, routeModel, usageCost, MODEL_IDS } from '../models';
 import { AgentBudget, BudgetExceeded, DEFAULT_LIMITS } from '../budget';
 import { payloadHash, approvalEnvelope, validateApproval } from '../approval';
 import { filterMatches, compressedResult, contextMessages } from '../context';
+it('retains year and CRM comparison uncertainty when large owner results are compressed', () => {
+  const value = compressedResult({ rows: [{ id: 'owner', constructionYear: null, constructionYearEvidenceKind: 'declared_interval', constructionYearLowerBound: 1977, constructionYearUpperBound: 1990, yearFilterSatisfied: false, description: 'x'.repeat(20000) }], crmComparison: { mode: 'exact_references', semanticDuplicateDetection: false } }, 1500);
+  const result = JSON.parse(value);
+  expect(result).toMatchObject({ complete: false, crmComparison: { semanticDuplicateDetection: false }, rows: [{ yearFilterSatisfied: false, constructionYearEvidenceKind: 'declared_interval', constructionYearLowerBound: 1977 }] });
+  expect(Buffer.byteLength(value)).toBeLessThanOrEqual(1500);
+});
 import { configuredMcpServers, publicAddress, validateMcpArguments } from '../mcp';
 import type { AssistantAction, AssistantMessage } from '../contracts';
 afterEach(() => { vi.unstubAllEnvs(); });

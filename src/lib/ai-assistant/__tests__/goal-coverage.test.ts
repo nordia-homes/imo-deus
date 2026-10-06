@@ -17,3 +17,9 @@ it('does not call the whole request completed when an explicit requirement remai
   expect(goalCoverageOutcome(completed, { requirements: [requirement] }, rows, true).state).toBe('COMPLETED');
   expect(goalCoverageOutcome(completed, undefined, rows, false).state).toBe('COMPLETED');
 });
+it.each(['WAITING_PROVIDER','RUNNING','AWAITING_APPROVAL','BLOCKED','FAILED'] as const)('preserves %s when another requirement is unsupported', state => {
+  const outcome = { ...summarizeOutcome('running', 1, []), state };
+  const coverage = { requirements: [{ ...requirement, resolution: 'unsupported' as const, steps: [] }] };
+  expect(goalCoverageOutcome(outcome, coverage, [], true).state).toBe(state);
+  expect(goalCoverageOutcome(outcome, coverage, [], true).note).toContain('Cerințe neacoperite');
+});

@@ -66,10 +66,15 @@ try {
     else if (body.kind === 'start') result = { jobId: 'turn-job', status: 'pending' };
     else if (body.kind === 'execute_background') result = { jobId: 'plan-job', status: 'pending' };
     else if (body.kind === 'chat' && body.prompt?.includes('dosare Sales')) result = { message: message('Un dosar autorizat.', [{ type: 'data', source: 'sales', title: 'Dosare Sales', complete: true, summary: { count: 1, label: 'dosare Sales', scope: 'Dosare autorizate' }, rows: [{ id: 'sale', trackingCode: 'IMO-123', propertyTitle: 'Apartament verificat', stage: 'contract', agreedPrice: 130000, agentName: 'Mirela Agent', nextAction: 'Confirmă programarea notarului' }] }]) };
-    else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
     else if (body.kind === 'prepare') result = { message: message('Plan pregătit pentru confirmare.', [], { planId, actions: body.actions }) };
     else if (body.kind === 'execute') result = { plan: { id: planId, actions: [action], status: 'completed', results: [{ step: 1, result: { viewingId: 'viewing', gmailPrepared: true, saleId: 'sale', messageId: 'email' } }] } };
     else if (body.kind === 'read') result = { rows: body.query.resource === 'ownerListingFavorites' ? [{ id: 'listing', ownerPhone: '0722123456', title: 'Apartament Titan' }] : [{ id: 'connection', name: 'Agenție WhatsApp', channel: 'whatsapp', status: 'connected' }] };
+    else if (body.kind === 'chat' && body.prompt === 'Verifică anii declarați.') result = { message: message('Rezultatele păstrează nivelul dovezii.', [{ type: 'results', source: 'owners', title: 'Anunțuri proprietari', complete: true, crmComparison: { mode: 'exact_references', checked: true, excludedOnThisPage: 1, semanticDuplicateDetection: false }, rows: [
+      { id: 'exact', title: 'An exact', constructionYearEvidenceKind: 'exact', constructionYear: 1988, yearFilterSatisfied: true },
+      { id: 'interval', title: 'Interval', constructionYearEvidenceKind: 'declared_interval', constructionYearLabel: '1977-1990', constructionYear: null, yearFilterSatisfied: false },
+      { id: 'unknown', title: 'An necunoscut', constructionYearEvidenceKind: 'unknown', constructionYear: null, yearFilterSatisfied: false },
+    ] }]) };
+    else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
     else if (body.kind === 'search') {
       const rows = [{ id: body.query.source === 'owners' ? 'listing' : 'property', title: body.query.source === 'owners' ? 'Apartament Titan proprietar' : 'Apartament Titan CRM', price: '120.000 €', location: 'Titan', rooms: 2 }];
       const card = { type: 'results', source: body.query.source, title: body.query.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', search: body.query, rows, complete: true };
@@ -220,6 +225,15 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'Mobile layout must not overflow horizontally');
   await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });
+  await page.getByLabel('Comandă pentru AI Assistant').fill('Verifică anii declarați.');
+  await page.getByRole('button', { name: 'Trimite comanda' }).click();
+  const yearCard = page.locator('[data-source="owners"]').last();
+  await yearCard.getByText('An construcție declarat: 1988', { exact: true }).waitFor();
+  await yearCard.getByText('Interval declarat: 1977-1990 · anul exact nu este precizat · nu confirmă filtrul de an', { exact: true }).waitFor();
+  await yearCard.getByText('An construcție necunoscut · nu confirmă filtrul de an', { exact: true }).waitFor();
+  await yearCard.getByText('Importurile CRM cu același ID sau URL au fost excluse. Anunțurile duplicate fără această legătură necesită verificare.', { exact: true }).waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+  await page.screenshot({ path: path.join(output, 'year-evidence-mobile.png'), fullPage: true });
   background = true; await page.reload();
   await page.getByRole('heading', { name: 'AI Assistant', exact: true }).waitFor();
   await page.getByLabel('Comandă pentru AI Assistant').fill('Pregătește o vizionare pe server.');

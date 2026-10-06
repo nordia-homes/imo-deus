@@ -7,7 +7,8 @@ import type { Agency } from '@/lib/types';
 import { CommunicationError } from '@/lib/communications/server';
 import { OWNER_SEARCH_VERSION, ownerPriceCurrency, parseOwnerPrice, ownerZoneKey } from '@/lib/owner-listings/search-index';
 import { createHash } from 'node:crypto';
-import { constructionYearEvidence, matchesConstructionYear, validateSearchCriteria } from './search-criteria';
+import { constructionYearEvidence, constructionYearFilterSatisfied, matchesConstructionYear, validateSearchCriteria } from './search-criteria';
+import { importedListingIds } from './imported-listings';
 
 export function listingCurrency(price: unknown): 'EUR' | 'RON' | 'unknown' {
   return ownerPriceCurrency(price);
@@ -47,7 +48,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
     base = ctx.adminDb.collection('ownerListings').where('scopeKey', '==', scope.key).where('publicationStatus', '==', 'ready').where('isCanonical', '==', true);
   }
   const fingerprint = createHash('sha256').update(JSON.stringify([OWNER_SEARCH_VERSION, ctx.agencyId, ctx.uid, ctx.role, resolvedScope, Object.entries(input).filter(([key, value]) => key !== 'cursor' && value !== undefined).sort(([a], [b]) => a.localeCompare(b))])).digest('hex').slice(0, 12);
-  let indexed = false, cursor = input.cursor, complete = false, scanned = 0, uncertainCurrency = 0;
+  let indexed = false, cursor = input.cursor, complete = false, scanned = 0, uncertainCurrency = 0, excludedImported = 0;
   let cursorPrice: number | undefined;
   if (cursor?.startsWith('i|')) {
     const [, hash, price, id] = cursor.split('|');
@@ -92,16 +93,18 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
     if (cursor) query = indexed ? query.startAfter(cursorPrice, cursor) : query.startAfter(cursor);
     const snapshot = await query.get();
     if (snapshot.empty) { complete = true; break; }
+    const imported = input.excludeImported ? await importedListingIds(ctx, snapshot.docs.filter(doc => searchMatches(doc.data(), input)).map(doc => ({ id: doc.id, row: doc.data() }))) : new Set<string>();
     for (const doc of snapshot.docs) {
       cursor = doc.id; scanned++;
       const row = doc.data();
       if (indexed) cursorPrice = Number(row.searchPrice);
       if (input.source === 'owners' && listingCurrency(row.price) === 'unknown') uncertainCurrency++;
       if (!searchMatches(row, input)) continue;
-      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearEvidence(row).constructionYearKnown : null, id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
+      if (imported.has(doc.id)) { excludedImported++; continue; }
+      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearFilterSatisfied(row, input) === true : null, id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
       if (rows.length === input.limit) break;
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }
   }
-  return { rows, nextCursor: complete || !cursor ? null : indexed ? `i|${fingerprint}|${cursorPrice}|${cursor}` : `s|${fingerprint}|${cursor}`, complete, scanned, uncertainCurrency, freshness: 'live_firestore', observedAt: new Date().toISOString(), paginationConsistency: 'live_cursor', searchMode: indexed ? 'native_index' : 'live_scan', note: [uncertainCurrency ? `${uncertainCurrency} anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR.` : '', input.cursor ? 'Continuare din datele actuale. Anunțurile adăugate sau mutate înaintea cursorului apar la reluarea căutării de la început.' : 'Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.'].filter(Boolean).join(' ') };
+  return { rows, nextCursor: complete || !cursor ? null : indexed ? `i|${fingerprint}|${cursorPrice}|${cursor}` : `s|${fingerprint}|${cursor}`, complete, scanned, uncertainCurrency, ...(input.excludeImported ? { crmComparison: { mode: 'exact_references' as const, checked: true, excludedOnThisPage: excludedImported, semanticDuplicateDetection: false as const, note: 'Excluse importurile cu același ownerListingId sau URL sursă exact. Alte anunțuri ale aceleiași proprietăți pot necesita verificare.' } } : {}), freshness: 'live_firestore', observedAt: new Date().toISOString(), paginationConsistency: 'live_cursor', searchMode: indexed ? 'native_index' : 'live_scan', note: [uncertainCurrency ? `${uncertainCurrency} anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR.` : '', input.cursor ? 'Continuare din datele actuale. Anunțurile adăugate sau mutate înaintea cursorului apar la reluarea căutării de la început.' : 'Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.'].filter(Boolean).join(' ') };
 }

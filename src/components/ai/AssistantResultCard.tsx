@@ -143,6 +143,11 @@ export function AssistantResultCard({
       {card.note && (
         <p className="border-b bg-amber-50/70 px-5 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{card.note}</p>
       )}
+      {card.crmComparison?.mode === 'exact_references' && (
+        <p className="border-b px-5 py-3 text-xs text-muted-foreground">
+          Importurile CRM cu același ID sau URL au fost excluse. Anunțurile duplicate fără această legătură necesită verificare.
+        </p>
+      )}
       {card.summary && !compact && (
         <div className="flex flex-wrap items-center gap-5 border-b bg-slate-50/60 px-6 py-5 dark:bg-slate-900/30">
           <span className="text-5xl font-semibold tracking-tighter text-slate-900 dark:text-white">
@@ -325,6 +330,16 @@ export function AssistantResultCard({
                     ) : null}
                   </div>
                   {row.gmailPrepared === true && typeof row.saleId === 'string' && typeof row.messageId === 'string' ? <GmailHandoff saleId={row.saleId} messageId={row.messageId} /> : null}
+                  {property && typeof row.constructionYearEvidenceKind === 'string' && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {row.constructionYearEvidenceKind === 'exact'
+                        ? `An construcție declarat: ${String(row.constructionYear)}`
+                        : row.constructionYearEvidenceKind === 'declared_interval'
+                          ? `Interval declarat: ${String(row.constructionYearLabel)} · anul exact nu este precizat`
+                          : 'An construcție necunoscut'}
+                      {row.yearFilterSatisfied === false && ' · nu confirmă filtrul de an'}
+                    </p>
+                  )}
                   {row.reasoning ? (
                     <p className="mt-3 rounded-xl bg-emerald-50/70 p-2.5 text-xs leading-5 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
                       {String(row.reasoning)}

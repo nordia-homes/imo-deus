@@ -23,9 +23,9 @@ export function compressedResult(result: unknown, maxBytes = 14000) {
     return result();
   }
   const rows = Array.isArray(safe?.rows) ? safe.rows : [];
-  const overview = rows.slice(0, 100).map((row: any) => ({ ...Object.fromEntries(['id', 'name', 'title', 'status', 'price', 'matchScore', 'contactId', 'propertyId', 'viewingDate', 'dueDate'].filter(key => row[key] !== undefined).map(key => [key, typeof row[key] === 'string' ? row[key].slice(0, 150) : row[key]])), availableFields: Object.keys(row).slice(0, 30) }));
+  const overview = rows.slice(0, 100).map((row: any) => ({ ...Object.fromEntries(['id', 'name', 'title', 'status', 'price', 'constructionYear', 'constructionYearLabel', 'constructionYearKnown', 'constructionYearEvidenceKind', 'constructionYearLowerBound', 'constructionYearUpperBound', 'yearFilterSatisfied', 'matchScore', 'contactId', 'propertyId', 'viewingDate', 'dueDate'].filter(key => row[key] !== undefined).map(key => [key, typeof row[key] === 'string' ? row[key].slice(0, 150) : row[key]])), availableFields: Object.keys(row).slice(0, 30) }));
   const selected = overview.slice(0, 40);
-  const preview = () => JSON.stringify({ truncated: true, rows: selected, resultSetId: safe?.resultSetId || null, nextCursor: safe?.nextCursor || null, complete: false, warning: 'Previzualizare incompletă; folosește read_field/read cu limită mai mică.' });
+  const preview = () => JSON.stringify({ truncated: true, rows: selected, ...(safe?.crmComparison?.mode === 'exact_references' ? { crmComparison: { mode: 'exact_references', semanticDuplicateDetection: false } } : {}), resultSetId: safe?.resultSetId || null, nextCursor: safe?.nextCursor || null, complete: false, warning: 'Previzualizare incompletă; folosește read_field/read cu limită mai mică.' });
   while (selected.length && Buffer.byteLength(preview()) > maxBytes) selected.pop();
   return preview();
 }
@@ -64,7 +64,7 @@ export async function forgetPreference(ctx: AssistantContext, key: string) {
 export function sessionSummary(messages: AssistantMessage[]) {
   const resultSetIds = [...new Set(messages.flatMap(message => message.cards || []).map(card => card.resultSetId).filter(Boolean))].slice(-8);
   const entities = [...new Set(messages.flatMap(message => message.cards || []).flatMap(card => card.rows).map(row => row.id).filter(value => typeof value === 'string'))].slice(-20);
-  const selections = messages.flatMap(message => (message.cards || []).map(card => ({ messageId: message.id, source: card.source, resultSetId: card.resultSetId || null, orderedIds: card.rows.map(row => row.id).filter(id => typeof id === 'string').slice(0, 100) }))).slice(-8);
+  const selections = messages.flatMap(message => (message.cards || []).map(card => ({ messageId: message.id, source: card.source, search: card.search || null, resultSetId: card.resultSetId || null, orderedIds: card.rows.map(row => row.id).filter(id => typeof id === 'string').slice(0, 100) }))).slice(-8);
   return { version: '2', resultSetIds, entities, selections, pendingPlanIds: messages.map(message => message.planId).filter(Boolean).slice(-3), source: 'validated_server_messages' };
 }
 export async function saveResultSet(ctx: AssistantContext, rows: Record<string, unknown>[], contactId?: string, accessRefs: AccessReference[] = [], sourceContactRevision?: string) {

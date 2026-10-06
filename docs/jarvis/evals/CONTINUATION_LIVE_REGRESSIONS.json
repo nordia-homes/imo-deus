@@ -1,0 +1,103 @@
+{
+  "verifiedAt": "2026-10-06T20:36:20.8183340Z",
+  "scope": "Targeted reruns after prompt correction; synthetic live planning only. Does not replace the full 60/62 baseline or certify semantic/business completion.",
+  "baseline": "MASTER_ACCEPTANCE.json",
+  "versions": {
+    "prompt": "jarvis-27",
+    "routing": "luna-first-2",
+    "policy": "tenant-approval-6",
+    "tools": "26",
+    "memory": "2",
+    "skills": "3"
+  },
+  "totalCases": 2,
+  "passedCases": 2,
+  "totalCostUsd": 0.00490093,
+  "results": [
+    {
+      "id": "master-0208",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties"
+      ],
+      "latencyMs": 17873,
+      "costUsd": 0.002517235,
+      "tokens": 46851,
+      "cachedTokens": 30146,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "transactionType": "sale",
+            "limit": 20
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit o primă pagină cu **20 de proprietăți de la proprietari** în Drumul Taberei: apartamente de vânzare, cu 1–3 camere. Prețurile din rezultate sunt 70.000 EUR (1 cameră), 90.000 EUR (2 camere) și 110.000 EUR (3 camere). Anul construcției variază: sunt listări cu ani exacți, intervale declarate și unele fără an precizat.\n\nLista este parțială; mai sunt rezultate disponibile. Spune-mi dacă vrei să continui sau să restrâng căutarea după numărul de camere, buget ori anul construcției."
+    },
+    {
+      "id": "master-0248",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 15795,
+      "costUsd": 0.0023836950000000003,
+      "tokens": 44086,
+      "cachedTokens": 28667,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Berceni",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "excludeImported": true,
+            "priceMax": 100000,
+            "limit": 10
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "req1",
+                "sourceQuote": "Găsește două camere în Berceni sub 100.000 €",
+                "description": "Caută apartamente de vânzare cu două camere în Berceni sub 100.000 EUR",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_y58qF88p8l3SNO0ZVzrYbdqo"
+                ]
+              },
+              {
+                "id": "req2",
+                "sourceQuote": "verifică duplicatele",
+                "description": "Verifică duplicatele disponibile prin potrivirea exactă a referințelor CRM/importurilor și raportează limita verificării semantice/manuale",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_y58qF88p8l3SNO0ZVzrYbdqo"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 6 apartamente cu două camere în Berceni, de vânzare, la 90.000 EUR fiecare (sub 100.000 EUR):\n\n- Construit în 1977\n- Construit în 2005\n- Construit în 2018\n- Anul construcției necunoscut\n- Anul declarat „după 1977” (interval, nu an exact)\n- Anul declarat „1977–1990” (interval, nu an exact)\n\nAm exclus anunțurile care corespund unor importuri CRM prin referință exactă. Nu pot confirma absența duplicatelor introduse manual sau a unor dubluri semantice."
+    }
+  ]
+}

@@ -80,7 +80,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       metrics.models.push(usageRecord(decision, result.usage, usageCost(decision.model, result.usage), result.latencyMs)); budget.record(decision.model, result.usage);
       previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
       input.push(...result.items);
-      if (!result.calls.length) return finish(result.text || 'Răspuns incomplet; nu am executat acțiuni.', result.status === 'incomplete' ? 'partial' : result.intentStatus === 'clarification' ? 'clarification' : result.intentStatus === 'refusal' ? 'refused' : 'success');
+      if (!result.calls.length) return finish(result.text?.trim() || 'Răspuns incomplet; nu am executat acțiuni.', !result.text?.trim() || result.status === 'incomplete' ? 'partial' : result.intentStatus === 'clarification' ? 'clarification' : result.intentStatus === 'refusal' ? 'refused' : 'success');
       for (const call of result.calls) {
         budget.tool(); const started = Date.now(); let name = call.name, status = 'success', data: unknown;
         try {

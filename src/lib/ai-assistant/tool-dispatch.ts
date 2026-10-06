@@ -37,7 +37,7 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
   }
   else if (name === 'select_context') {
     const { selectContext } = await import('./context-selection'); data = await selectContext(ctx, options.summary, payload);
-    refs.push(...data.rows.map((row: any) => ({ resource: data.resource, id: row.id })));
+    if (data.resource !== 'owners') refs.push(...data.rows.map((row: any) => ({ resource: data.resource, id: row.id })));
     cards.push({ type: 'results', title: 'Selecția din lista anterioară', source: data.resource, ...data } as AssistantCard);
   }
   else if (name === 'goal_coverage') data = { received: true }; // Validated against this turn by the planner.

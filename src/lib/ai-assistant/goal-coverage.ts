@@ -34,7 +34,13 @@ export function goalCoverageOutcome(outcome: GoalOutcome, coverage: GoalCoverage
   if (!required || ['CANCELLED', 'PAUSED'].includes(outcome.state)) return outcome;
   if (!coverage) return { ...outcome, state: outcome.state === 'AWAITING_APPROVAL' ? outcome.state : 'BLOCKED', note: 'Acoperirea întregii cereri nu a fost verificată. Rezultatele pașilor sunt afișate separat.' };
   const missing = coverage.requirements.filter(row => ['needs_clarification', 'unsupported'].includes(row.resolution));
-  if (missing.length) return { ...outcome, state: missing.some(row => row.resolution === 'needs_clarification') ? 'NEEDS_CLARIFICATION' : 'PARTIALLY_COMPLETED', note: `Cerințe neacoperite: ${missing.map(row => row.description).join('; ').slice(0, 1000)}. Pașii confirmați nu încheie întregul obiectiv.` };
+  if (missing.length) {
+    // Preserve pending approvals, provider waits and failures. A limitation in one
+    // requirement is not evidence that the rest has already finished.
+    const settled = outcome.state === 'COMPLETED' || outcome.state === 'PARTIALLY_COMPLETED';
+    const state = settled ? missing.some(row => row.resolution === 'needs_clarification') ? 'NEEDS_CLARIFICATION' : outcome.confirmed > 0 ? 'PARTIALLY_COMPLETED' : 'BLOCKED' : outcome.state;
+    return { ...outcome, state, note: `${outcome.note} Cerințe neacoperite: ${missing.map(row => row.description).join('; ').slice(0, 1000)}. Pașii confirmați nu încheie întregul obiectiv.` };
+  }
   const evidence = new Map(rows.map(row => [row.step, row]));
   if (outcome.state === 'COMPLETED' && coverage.requirements.some(requirement => requirement.resolution === 'planned' && requirement.steps.some(step => !evidence.has(step)))) return { ...outcome, state: 'BLOCKED', note: 'Lipsește dovada pentru o cerință planificată.' };
   return outcome;

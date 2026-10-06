@@ -17,3 +17,10 @@ it('rejects duplicate/out-of-range counts and preserves cancellation', () => {
   expect(summarizeOutcome('cancelled', 1, [success]).state).toBe('CANCELLED');
   expect(summarizeOutcome('completed', 1, [{ ...success, completionSatisfied: false }]).state).toBe('BLOCKED');
 });
+it('does not choose a successful receipt over contradictory evidence for the same step', () => {
+  const success = { step: 1, executionState: 'succeeded', completionSatisfied: true };
+  const failure = { step: 1, executionState: 'failed' };
+  for (const rows of [[success, failure], [failure, success]]) {
+    expect(summarizeOutcome('completed', 1, rows)).toMatchObject({ state: 'BLOCKED', confirmed: 0, uncertain: 1 });
+  }
+});

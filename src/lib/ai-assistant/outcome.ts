@@ -8,10 +8,18 @@ export type GoalOutcome = { schemaVersion: 1; state: GoalState; confirmed: numbe
 
 // Pure reducer: a finished executor is NOT evidence of a finished business goal.
 export function summarizeOutcome(status: string, total: number, rows: OutcomeEvidence[], now = new Date().toISOString()): GoalOutcome {
-  const unique = new Map(rows.filter(row => Number.isInteger(row.step) && row.step > 0 && row.step <= total).map(row => [row.step, row]));
+  const unique = new Map<number, OutcomeEvidence>();
+  const conflicts = new Set<number>();
+  const signature = (row: OutcomeEvidence) => JSON.stringify([row.executionState, row.businessStatus ?? null, row.evidenceSource ?? null, row.watchable ?? false, row.completionSatisfied ?? null]);
+  for (const row of rows.filter(row => Number.isInteger(row.step) && row.step > 0 && row.step <= total)) {
+    const previous = unique.get(row.step);
+    if (previous && signature(previous) !== signature(row)) conflicts.add(row.step);
+    unique.set(row.step, row);
+  }
   let confirmed = 0, pending = 0, uncertain = 0, failed = 0;
   for (const row of unique.values()) {
-    if (row.completionSatisfied === true) confirmed++;
+    if (conflicts.has(row.step)) uncertain++;
+    else if (row.completionSatisfied === true) confirmed++;
     else if (['failed', 'cancelled', 'unavailable'].includes(row.executionState)) failed++;
     else if (['queued', 'running'].includes(row.executionState) && row.watchable) pending++;
     else if (row.executionState === 'succeeded' && row.evidenceSource && row.completionSatisfied !== false) confirmed++;

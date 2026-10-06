@@ -5,6 +5,7 @@ vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn(), agencyCollection: (db: Firestore, agencyId: string, name: string) => db.collection('agencies').doc(agencyId).collection(name) }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
 vi.mock('../legal-source', () => ({ readOfficialSource: vi.fn() }));
+vi.mock('../plan-outcomes', () => ({ readPlanOutcomes: vi.fn() }));
 import { assertCalendarSlot } from '@/lib/crm/calendar';
 import { executeAction } from '../actions';
 import { continuePlanRevision } from '../plan-revisions';
@@ -15,6 +16,10 @@ import { deliverDailyBrief } from '../daily-brief';
 import { briefSettingsSchema } from '../daily-brief-contract';
 import { watchOfficialSources } from '../legal-source-watch';
 import { readOfficialSource } from '../legal-source';
+import { searchProperties } from '../search';
+import { searchSchema } from '../contracts';
+import { readPlanOutcomes } from '../plan-outcomes';
+import { verifyPlanOutcome, enqueueOutcomeWatch } from '../outcome-watcher';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -36,6 +41,60 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       return id;
     });
   }
+  it('rejects a stale outcome on real Firestore updateTime and uses tenant-bound watch identities', async () => {
+    const ctx = context(), second = context();
+    const profiles = [ctx, second].map(c => db.collection('users').doc(c.uid));
+    const plans = [ctx, second].map(c => db.collection('agencies').doc(c.agencyId).collection('assistantPlans').doc('same-plan-id'));
+    const watchIds: string[] = [];
+    try {
+      for (const [i, c] of [ctx, second].entries()) {
+        await profiles[i].set({ agencyId: c.agencyId, role: 'agent' });
+        await plans[i].set({ ownerId: c.uid, sessionId: 'session', status: 'completed', actions: [], results: [], outcome: { state: 'WAITING_PROVIDER' } });
+        await enqueueOutcomeWatch(c, 'same-plan-id');
+        const jobs = await db.collection('assistantAgentJobs').where('agencyId', '==', c.agencyId).get();
+        expect(jobs.size).toBe(1); watchIds.push(jobs.docs[0].id);
+      }
+      expect(new Set(watchIds).size).toBe(2);
+      const old = await plans[0].get();
+      await plans[0].update({ sameStatusConcurrentChange: true });
+      const outcome = { schemaVersion: 1 as const, state: 'COMPLETED' as const, confirmed: 1, total: 1, pending: 0, uncertain: 0, failed: 0, checkedAt: new Date().toISOString(), note: 'Synthetic provider evidence' };
+      vi.mocked(readPlanOutcomes).mockResolvedValue({ planId: 'same-plan-id', planRevision: `${old.updateTime!.seconds}:${old.updateTime!.nanoseconds}`, executionStatus: 'completed', pollAfterMs: null, outcome, rows: [], checkedAt: outcome.checkedAt, note: '' });
+      expect(await verifyPlanOutcome(ctx, 'same-plan-id', Date.now() + 60000)).toMatchObject({ status: 'pending' });
+      expect((await plans[0].get()).data()?.outcome.state).toBe('WAITING_PROVIDER');
+      const fresh = await plans[0].get();
+      vi.mocked(readPlanOutcomes).mockResolvedValue({ planId: 'same-plan-id', planRevision: `${fresh.updateTime!.seconds}:${fresh.updateTime!.nanoseconds}`, executionStatus: 'completed', pollAfterMs: null, outcome, rows: [], checkedAt: outcome.checkedAt, note: '' });
+      expect(await verifyPlanOutcome(ctx, 'same-plan-id', Date.now() + 60000)).toMatchObject({ status: 'completed', planStatus: 'COMPLETED' });
+      expect((await plans[0].get()).data()?.outcome.state).toBe('COMPLETED');
+    } finally {
+      await Promise.all(profiles.map(profile => profile.delete()));
+      await Promise.all(watchIds.map(id => db.collection('assistantAgentJobs').doc(id).delete()));
+    }
+  }, 30000);
+  it('excludes exact CRM imports across query chunks and pages without leaking another agency', async () => {
+    const ctx = context(), other = context(), agency = db.collection('agencies').doc(ctx.agencyId);
+    await agency.set({ city: 'Bucuresti' });
+    const ids = Array.from({ length: 35 }, (_, i) => `${ctx.uid}-${String(i).padStart(3, '0')}`);
+    const batch = db.batch();
+    for (const [i, id] of ids.entries()) {
+      batch.set(db.collection('ownerListings').doc(id), { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: 'Titan', transactionType: 'sale', propertyType: 'apartment', roomsValue: 2, constructionYear: 1988, price: '120000 EUR', link: `https://source.example/${id}` });
+      if (i < 31) batch.set(agency.collection('properties').doc(`import-${i}`), { ownerListingId: id, status: 'Inactiv' });
+    }
+    batch.set(agency.collection('properties').doc('url-import'), { ownerListingUrl: `https://source.example/${ids[31]}` });
+    batch.set(db.collection('agencies').doc(other.agencyId).collection('properties').doc('foreign'), { ownerListingId: ids[33] });
+    await batch.commit();
+    try {
+      const query = searchSchema.parse({ source: 'owners', zone: 'Titan', rooms: 2, yearMin: 1978, excludeImported: true, limit: 2 });
+      const first = await searchProperties(ctx, query);
+      expect(first.rows.map(row => row.id)).toEqual(ids.slice(32, 34));
+      expect(first.crmComparison).toMatchObject({ mode: 'exact_references', excludedOnThisPage: 32, semanticDuplicateDetection: false });
+      expect(first.complete).toBe(false);
+      const second = await searchProperties(ctx, { ...query, cursor: first.nextCursor! });
+      expect(second.rows.map(row => row.id)).toEqual(ids.slice(34)); expect(second.complete).toBe(true);
+      await expect(searchProperties(ctx, { ...query, excludeImported: false, cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
+      await agency.collection('properties').doc('new-import').set({ ownerListingId: ids[32] });
+      expect((await searchProperties(ctx, query)).rows.map(row => row.id)).toEqual(ids.slice(33));
+    } finally { await Promise.all(ids.map(id => db.collection('ownerListings').doc(id).delete())); }
+  }, 30000);
   it('delivers one daily brief under simultaneous real transactions', async () => {
     const ctx = context(), profile = db.collection('users').doc(ctx.uid), agency = db.collection('agencies').doc(ctx.agencyId);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });

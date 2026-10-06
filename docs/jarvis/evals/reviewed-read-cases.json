@@ -510,6 +510,73 @@
     "readOnly": true
   },
   {
+    "id": "master-0243",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "yearLabel": "after_1977"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0245",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "excludeImported": true
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0246",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Floreasca",
+      "rooms": 3,
+      "excludeImported": true
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0247",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Pipera",
+      "priceMax": 200000,
+      "excludeImported": true
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0248",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Berceni",
+      "rooms": 2,
+      "priceMax": 100000,
+      "excludeImported": true
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0250",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "priceMax": 130000,
+      "yearMin": 1978,
+      "excludeImported": true
+    },
+    "readOnly": true
+  },
+  {
     "id": "master-0351",
     "tool": "existing_read",
     "subset": {

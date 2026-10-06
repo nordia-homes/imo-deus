@@ -30,6 +30,12 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('does not mark an empty final model response as successful', async () => {
+    const result = await planTurn(ctx, 'Arată rezultatele.', [], { provider: scripted({ ...final, text: '   ' }) });
+    expect(result.metrics.status).toBe('partial');
+    expect(result.text).toContain('Răspuns incomplet');
+    expect(result.actions).toEqual([]);
+  });
   it('retains server-validated requirement coverage and invalidates it after another proposal', async () => {
     const proposal = () => call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });
     const coverage = () => call('goal_coverage', { requirements: [{ id: 'task', sourceQuote: 'Creează', description: 'Sarcina cerută', resolution: 'planned', steps: [1], evidenceCallIds: [] }] });
