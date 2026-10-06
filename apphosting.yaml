@@ -8,6 +8,16 @@ runConfig:
   maxInstances: 10
 
 env:
+  - variable: TYPESAFE_API_KEY
+    secret: TYPESAFE_API_KEY
+    availability:
+      - RUNTIME
+
+  - variable: JARVIS_JEV_MODE
+    value: "shadow"
+    availability:
+      - RUNTIME
+
   - variable: OLX_PHONE_BROWSER_URL
     value: "https://olx-phone-browser-lz5qfusjya-uc.a.run.app"
     availability:

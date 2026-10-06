@@ -7,7 +7,7 @@ import { searchProperties } from './search';
 import { matchContact, matchProperty } from './actions';
 import { invokeOperation, operations, isReadOperation, operationContract } from './operations';
 import { discoverTools, requireTool, inputContract } from './registry';
-import { rememberPreference, forgetPreference, saveResultSet, filterResultSet } from './context';
+import { rememberPreference, forgetPreference, saveResultSet, filterResultSet, preferredTimezone } from './context';
 import { getInsights } from './insights';
 import type { AgentOptions } from './planner';
 import { analyzeRecords, resolveDatetime } from './deterministic';
@@ -22,13 +22,39 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'data_catalog') data = dataCatalog(payload.category);
+  if (name === 'integration_status') {
+    const operation = ({ facebook_groups: 'facebook_connections', meta_ads: 'meta_status', tiktok_ads: 'tiktok_status', tiktok_organic: 'tiktok_organic_status', imobiliare: 'imobiliare_status', storia: 'storia_status', romimo: 'romimo_status', communications: 'communications_status' } as Record<string, string>)[payload.provider];
+    requireTool(operation, ctx.role || '');
+    data = await invokeOperation(ctx, { operation, params: {}, query: {}, body: {} }, true);
+    cards.push(...operationCards(operation, `Conexiune ${payload.provider}`, data));
+  }
+  else if (name === 'search_global') {
+    requireTool('global_search', ctx.role || '');
+    data = await invokeOperation(ctx, { operation: 'global_search', params: {}, query: { q: payload.query }, body: {} }, true);
+    data.complete = ['contacts', 'properties', 'tasks'].every(source => Array.isArray(data[source]) && data[source].length < 5);
+    data.note = 'Căutarea globală afișează maximum cinci rezultate din fiecare categorie. Pentru toate rezultatele folosește citirea paginată a categoriei.';
+    for (const source of ['contacts', 'properties', 'tasks']) if (Array.isArray(data[source])) cards.push({ type: 'results', title: 'Căutare globală · ' + source, source, rows: data[source], complete: data[source].length < 5, note: data.note });
+  }
+  else if (name === 'select_context') {
+    const { selectContext } = await import('./context-selection'); data = await selectContext(ctx, options.summary, payload);
+    refs.push(...data.rows.map((row: any) => ({ resource: data.resource, id: row.id })));
+    cards.push({ type: 'results', title: 'Selecția din lista anterioară', source: data.resource, ...data } as AssistantCard);
+  }
+  else if (name === 'goal_coverage') data = { received: true }; // Validated against this turn by the planner.
+  else if (name === 'knowledge_search') {
+    const { searchPlaybooks } = await import('./knowledge'); data = searchPlaybooks(payload.query, payload.limit);
+  } else if (name === 'legal_source_search') {
+    const { searchOfficialSources } = await import('./legal-source'); data = await searchOfficialSources(ctx, payload.query, payload.cursor);
+  } else if (name === 'legal_source_read') {
+    const { readOfficialSource } = await import('./legal-source'); data = await readOfficialSource(ctx, payload.url, payload.offset, payload.snapshotId);
+    cards.push({ type: 'data', title: 'Sursă oficială consultată', source: 'legal', rows: [{ sourceUrl: data.sourceUrl, authority: data.authority, retrievedAt: data.retrievedAt, contentHash: data.contentHash, temporalValidityVerified: false }], note: data.note });
+  } else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
   else if (name === 'timeline') {
     const { readTimeline } = await import('./timeline'); data = await readTimeline(ctx, payload);
     cards.push({ type: 'data', title: 'Istoric CRM verificat', source: 'timeline', timeline: payload, ...data } as AssistantCard);
     refs.push({ resource: payload.resource, id: payload.id });
-  } else if (name === 'resolve_datetime') data = resolveDatetime(payload);
+  } else if (name === 'resolve_datetime') data = resolveDatetime({ ...payload, timezone: payload.timezone || await preferredTimezone(ctx) });
   else if (name === 'query_records') {
     data = await queryRecords(ctx, payload); cards.push({ type: 'data', title: ({viewings:'Agenda vizionărilor',tasks:'Sarcinile tale',contacts:'Clienți',properties:'Portofoliu CRM',sales:'Dosare Sales'} as Record<string,string>)[payload.resource], source: payload.resource, query: payload, ...data } as AssistantCard);
     if (payload.resource === 'sales') refs.push(...data.rows.map((row: any) => ({ resource: 'sales' as const, id: row.id })));
@@ -72,6 +98,10 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     data = await forgetPreference(ctx, payload.key);
   } else if (name === 'insights') {
     data = await getInsights(ctx, payload.limit); cards.push({ type: 'data', title: 'Insight-uri CRM', source: 'insights', ...data } as AssistantCard);
+    for (const row of data.rows) {
+      if (row.saleId) refs.push({ resource: 'sales', id: row.saleId });
+      if (row.conversationId) refs.push({ resource: 'conversations', id: row.conversationId });
+    }
   } else if (name === 'delegate_read') {
     if (options.child) throw new Error('Delegarea recursivă este interzisă.');
     const { planTurn } = await import('./planner'); const child = await planTurn(ctx, payload.goal, [], { ...options, allowedTools: [...payload.tools, 'operation_contract'], summary: payload.resultSetId ? { resultSetId: payload.resultSetId } : undefined, child: true });

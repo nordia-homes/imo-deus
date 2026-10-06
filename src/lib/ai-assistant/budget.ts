@@ -23,5 +23,6 @@ export class AgentBudget {
     if (this.cost + usageCost(model, { inputTokens: inputBytes, outputTokens: output, cachedTokens: 0, cacheWriteTokens: inputBytes, estimated: true }) > this.limits.maxCost) throw new BudgetExceeded('cost');
   }
   record(model: ModelId, usage: ModelUsage) { this.tokens += usage.inputTokens + usage.outputTokens; this.cost += usageCost(model, usage); this.check(); }
+  recordAuxiliary(costUsd: number, tokens: number) { this.cost += Math.max(0, costUsd); this.tokens += Math.max(0, tokens); this.check(); }
   snapshot() { return { steps: this.steps, toolCalls: this.calls, tokens: this.tokens, costUsd: this.cost, elapsedMs: Date.now() - this.started }; }
 }

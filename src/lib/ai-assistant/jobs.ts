@@ -68,6 +68,7 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
     const claimId = randomUUID();
     const job = await db.runTransaction(async tx => {
       const fresh = await tx.get(row.ref), data = fresh.data(); if (!data || data.status !== 'pending') return null;
+      if (Number(data.notBefore || 0) > Date.now()) { tx.update(row.ref, { createdAt: new Date().toISOString() }); return null; }
       const member = await tx.get(db.collection('users').doc(data.userId));
       if (member.data()?.agencyId !== data.agencyId || member.data()?.role !== data.role || !['agent', 'admin'].includes(data.role)) { tx.update(row.ref, { status: 'failed', error: 'Acces revocat.' }); return null; }
       tx.update(row.ref, { status: 'running', claimId, leaseUntil: Date.now() + 300000, attempts: data.attempts + 1 }); return data;
@@ -89,11 +90,14 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
     }, 60000);
     heartbeat.unref();
     try {
-      if (job.jobType === 'plan') {
+      if (job.jobType === 'verification') {
+        const { verifyPlanOutcome } = await import('./outcome-watcher');
+        outcome = await verifyPlanOutcome(ctx, job.planId, Number(job.deadline || 0));
+      } else if (job.jobType === 'plan') {
         await publishProgress([{ type: 'PROGRESS_EVENT', stage: 'executing_plan', text: 'Execut planul confirmat pe server.', step: 0, at: new Date().toISOString() }]);
         const plan = await runPlan(ctx, job.planId, false, PLAN_WORKER_STEPS);
         outcome = plan.status === 'pending'
-          ? { status: 'pending', planStatus: 'pending', confirmedSteps: plan.results?.length || 0, createdAt: new Date().toISOString() }
+          ? { status: 'pending', planStatus: 'pending', notBefore: plan.waitUntil || 0, confirmedSteps: plan.results?.length || 0, createdAt: new Date().toISOString() }
           : { status: 'completed', planStatus: plan.status, confirmedSteps: plan.results?.length || 0, completedAt: new Date().toISOString() };
       } else {
         const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, async event => { events.push(event); await publishProgress(events.slice(-60)); });
@@ -103,7 +107,7 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
       const errorCategory = failureCategory(error);
       console.error(JSON.stringify({ event: 'jarvis_job_failed', errorCategory }));
       outcome = { status: 'failed', errorCategory, completedAt: new Date().toISOString(), error: 'Comanda nu a fost confirmată. Verifică istoricul înainte de reluare.' };
-      if (job.jobType !== 'plan') {
+      if (job.jobType !== 'plan' && job.jobType !== 'verification') {
         try {
           const message = await saveWorkerTurnFailure(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, claimId);
           if (message) outcome = { ...outcome, message, planStatus: 'failed' };

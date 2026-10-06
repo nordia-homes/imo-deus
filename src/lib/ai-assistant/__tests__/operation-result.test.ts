@@ -27,6 +27,16 @@ describe('confirmed domain result binding', () => {
     const action = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_post_publish', params: { draftId: '@step:1:draftId' }, body: {}, query: {} });
     expect(resolveAction(action, [{ result: operationResult('tiktok_post_draft', { draft: { id: 'draft' } }) }])).toMatchObject({ params: { draftId: 'draft' } });
   });
+  it('binds confirmed Studio assets and projects across import, project and render steps', () => {
+    const asset = { result: operationResult('tiktok_studio_asset_create', { asset: { id: 'asset' } }) };
+    const project = { result: operationResult('tiktok_studio_project_create', { project: { id: 'project' } }) };
+    const create = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_studio_project_create', params: {}, query: {}, body: { sourceAssetIds: ['@step:1:assetId'] } });
+    expect(resolveAction(create, [asset])).toMatchObject({ body: { sourceAssetIds: ['asset'] } });
+    const render = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_studio_render', params: { projectId: '@step:2:projectId' }, body: {}, query: {} });
+    expect(resolveAction(render, [asset, project])).toMatchObject({ params: { projectId: 'project' } });
+    expect(() => resolveAction(render, [asset])).toThrow();
+    expect(() => resolveAction(create, [{ result: { assetId: 'agency/other' } }])).toThrow();
+  });
   it('reports a committed property attachment without treating arbitrary acceptance as success', () => {
     expect(operationResult('file_apply', { status: 'attached', mutationRevision: { resource: 'properties', id: 'p', before: null, after: 'now' } })).toMatchObject({ executionState: 'succeeded', businessStatus: 'attached' });
     expect(operationResult('file_apply', { status: 'attached' }).executionState).toBe('accepted_unverified');

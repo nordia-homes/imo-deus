@@ -1,0 +1,246 @@
+[
+  {
+    "id": "master-0051",
+    "tool": "read",
+    "subset": {
+      "resource": "contacts"
+    },
+    "alternatives": [
+      {
+        "tool": "query_records",
+        "subset": {
+          "resource": "contacts"
+        }
+      }
+    ],
+    "readOnly": true
+  },
+  {
+    "id": "master-0101",
+    "tool": "match_contact",
+    "subset": {
+      "contactId": "c1"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0151",
+    "tool": "query_records",
+    "subset": {
+      "resource": "viewings",
+      "dayOffset": 0,
+      "mode": "count",
+      "agentId": "fixture-eval"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0152",
+    "tool": "query_records",
+    "subset": {
+      "resource": "viewings",
+      "dayOffset": 1,
+      "mode": "count",
+      "agentId": "fixture-eval"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0201",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0202",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0203",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 3
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0204",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Cișmigiu"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0205",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Floreasca"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0206",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Pipera"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0351",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "facebook_connections"
+    },
+    "readOnly": true,
+    "alternatives": [
+      {
+        "tool": "integration_status",
+        "subset": {
+          "provider": "facebook_groups"
+        }
+      }
+    ]
+  },
+  {
+    "id": "master-0401",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "meta_status"
+    },
+    "readOnly": true,
+    "alternatives": [
+      {
+        "tool": "integration_status",
+        "subset": {
+          "provider": "meta_ads"
+        }
+      }
+    ]
+  },
+  {
+    "id": "master-0451",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "tiktok_organic_status"
+    },
+    "readOnly": true,
+    "alternatives": [
+      {
+        "tool": "integration_status",
+        "subset": {
+          "provider": "tiktok_organic"
+        }
+      }
+    ]
+  },
+  {
+    "id": "master-0453",
+    "tool": "read",
+    "subset": {
+      "resource": "tiktokPostDrafts"
+    },
+    "alternatives": [
+      {
+        "tool": "existing_read",
+        "subset": {
+          "operation": "tiktok_drafts"
+        }
+      }
+    ],
+    "readOnly": true
+  },
+  {
+    "id": "master-0501",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "tiktok_capabilities"
+    },
+    "readOnly": true,
+    "alternatives": [
+      {
+        "tool": "existing_read",
+        "subset": {
+          "operation": "tiktok_status"
+        }
+      },
+      {
+        "tool": "integration_status",
+        "subset": {
+          "provider": "tiktok_ads"
+        }
+      }
+    ]
+  },
+  {
+    "id": "master-0502",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "tiktok_capabilities"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0551",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "imobiliare_status"
+    },
+    "readOnly": true,
+    "alternatives": [
+      {
+        "tool": "integration_status",
+        "subset": {
+          "provider": "imobiliare"
+        }
+      }
+    ]
+  },
+  {
+    "id": "master-0651",
+    "tool": "read",
+    "subset": {
+      "resource": "contractTemplates"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0701",
+    "tool": "read",
+    "subset": {
+      "resource": "agents"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0751",
+    "tool": "existing_read",
+    "subset": {
+      "operation": "global_search"
+    },
+    "readOnly": true,
+    "alternatives": [
+      {
+        "tool": "search_global",
+        "subset": {
+          "query": "Andrei Popescu"
+        }
+      }
+    ]
+  }
+]

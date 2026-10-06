@@ -4,14 +4,15 @@ import { Filter } from 'firebase-admin/firestore';
 import { normalized, safeData, queryRecordsSchema } from './contracts';
 import { resolveDatetime } from './datetime';
 import { createHash } from 'node:crypto';
+import { preferredTimezone } from './context';
 
 export function recordDateRange(input: z.infer<typeof queryRecordsSchema>, now = new Date()) {
   if ((input.date !== undefined || input.dayOffset !== undefined) && (input.dateFrom || input.dateTo)) throw new Error('Folosește ziua sau intervalul, nu ambele.');
   if (input.date !== undefined || input.dayOffset !== undefined) {
-    const start = resolveDatetime({ ...(input.date ? { date: input.date } : { dayOffset: input.dayOffset }), time: '00:00' }, now);
+    const start = resolveDatetime({ ...(input.date ? { date: input.date } : { dayOffset: input.dayOffset }), time: '00:00', timezone: input.timezone }, now);
     const date = start.local.slice(0, 10);
     const next = new Date(Date.parse(date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
-    return { from: start.iso, to: resolveDatetime({ date: next, time: '00:00' }, now).iso, label: date };
+    return { from: start.iso, to: resolveDatetime({ date: next, time: '00:00', timezone: input.timezone }, now).iso, label: date };
   }
   const from = input.dateFrom ? new Date(input.dateFrom).toISOString() : undefined, to = input.dateTo ? new Date(input.dateTo).toISOString() : undefined;
   if (from && to && from >= to) throw new Error('Interval calendaristic invalid.');
@@ -29,6 +30,7 @@ export async function decorateRecords(ctx: AssistantContext, resource: string, r
   return result;
 }
 export async function queryRecords(ctx: AssistantContext, input: z.infer<typeof queryRecordsSchema>) {
+  input = { ...input, timezone: input.timezone || await preferredTimezone(ctx) };
   if (input.stage && input.resource !== 'sales') throw new Error('Filtrul stage este disponibil numai pentru dosare Sales.');
   if (input.resource === 'sales' && (input.status || input.contactId)) throw new Error('Dosarele Sales folosesc stage, iar participanții se citesc din dosarul autorizat.');
   if (input.resource === 'sales' && !['admin', 'agent'].includes(ctx.role || '')) throw new Error('Acces Sales indisponibil.');

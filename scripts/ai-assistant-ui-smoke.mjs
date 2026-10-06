@@ -163,7 +163,7 @@ try {
   assert.equal(ruleRequest.body.actions[0].automation.effects[1].dueAfterMinutes, 120);
   assert.equal(ruleRequest.body.actions[0].automation.effects[2].body, 'Verifică documentele');
   assert.equal(requests.some(r => r.path === '/api/crm/actions' && r.body?.action?.kind === 'create_automation'), false, 'Editor must prepare an approved plan rather than bypass execution approval');
-  for (const kind of ['followup_task', 'owner_watch', 'matching_watch', 'insight_report', 'whatsapp_template']) {
+  for (const kind of ['followup_task', 'owner_watch', 'matching_watch', 'insight_report', 'whatsapp_template', 'legal_source_watch']) {
     await page.getByRole('button', { name: 'Automatizare nouă', exact: true }).click();
     await page.getByLabel('Tip automatizare', { exact: true }).selectOption(kind);
     if (['followup_task', 'matching_watch'].includes(kind)) {
@@ -172,6 +172,7 @@ try {
       await page.getByLabel('Câștigat', { exact: true }).check();
     }
     if (kind === 'followup_task') await page.getByLabel('Sarcina de follow-up').fill('Recontactează clientul');
+    if (kind === 'legal_source_watch') await page.getByLabel('Surse oficiale', { exact: false }).fill('https://www.ancpi.ro/fixture.pdf');
     if (kind === 'owner_watch') { await page.getByLabel('Zona căutării').fill('Titan'); await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Buget maxim EUR').fill('130000'); }
     if (kind === 'matching_watch') await page.getByLabel('Scor minim matching').fill('75');
     if (kind === 'whatsapp_template') {
@@ -185,11 +186,26 @@ try {
     await page.getByText('Planul automatizării este pregătit pentru confirmare.', { exact: false }).waitFor();
     const prepared = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.automation?.type === kind).at(-1)?.body.actions[0];
     assert.equal(prepared?.kind, 'create_automation'); assert.equal(prepared.automation.type, kind);
+    if (kind === 'legal_source_watch') { assert.deepEqual(prepared.automation.sourceUrls, ['https://www.ancpi.ro/fixture.pdf']); assert.equal(prepared.automation.intervalMinutes, 1440); }
     if (kind === 'owner_watch') { assert.equal(prepared.automation.search.source, 'owners'); assert.equal(prepared.automation.search.priceMax, 130000); }
     if (kind === 'matching_watch') assert.equal(prepared.automation.threshold, 75);
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }
+  await page.getByRole('button', { name: 'Automatizare nouă', exact: true }).click();
+  await page.getByLabel('Tip automatizare', { exact: true }).selectOption('daily_sales_brief');
+  const briefForm = page.getByRole('form', { name: 'Prioritățile zilei', exact: true });
+  await briefForm.getByLabel('Ora livrării', { exact: true }).fill('09:15');
+  await briefForm.getByLabel('Maximum priorități', { exact: true }).fill('3');
+  await page.screenshot({ path: path.join(output, 'daily-brief.png'), fullPage: true });
+  await briefForm.getByRole('button', { name: 'Pregătește brief-ul', exact: true }).click();
+  await briefForm.waitFor({ state: 'detached' });
+  const briefRequest = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.automation?.type === 'daily_sales_brief').at(-1);
+  assert.equal(briefRequest.body.actions[0].automation.deliveryTime, '09:15');
+  assert.equal(briefRequest.body.actions[0].automation.maxItems, 3);
+  assert.equal(briefRequest.body.actions[0].automation.timezone, 'Europe/Bucharest');
+  assert.equal(briefRequest.body.actions[0].automation.deliveryChannel, 'app');
+  assert.equal(requests.some(r => r.path === '/api/crm/actions' && r.body?.action?.automation?.type === 'daily_sales_brief'), false);
   await page.reload();
   await page.getByRole('heading', { name: 'AI Assistant', exact: true }).waitFor();
   await page.getByLabel('Comandă pentru AI Assistant').fill('Arată dosare Sales.');

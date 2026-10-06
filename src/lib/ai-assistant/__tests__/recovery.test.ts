@@ -1,12 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../planner', () => ({ planTurn: vi.fn() }));
 vi.mock('../actions', () => ({ executeAction: vi.fn() }));
+vi.mock('../plan-outcomes', () => ({ readPlanOutcomes: vi.fn() }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: vi.fn() }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.collection(name), referencesAllowed: vi.fn(async () => true), actionReferences: () => [] }));
 import { controlPlan, inspectPlan, runPlan } from '../workspace';
 import { approvalEnvelope } from '../approval';
 import { executeAction } from '../actions';
+import { readPlanOutcomes } from '../plan-outcomes';
+import { summarizeOutcome } from '../outcome';
 import type { AssistantContext } from '../access';
 
 function fixture(status: string, ledger?: Record<string, unknown>, recent = false) {
@@ -53,6 +56,45 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it('resumes render-to-draft with the verified asset without rerendering or rewriting its receipt', async () => {
+    const { ctx, plan } = executionFixture();
+    plan.goal = { schemaVersion: 1 };
+    plan.actions = [
+      { kind: 'existing_operation', operation: 'tiktok_studio_render', params: { projectId: 'project' }, query: {}, body: {} },
+      { kind: 'existing_operation', operation: 'tiktok_post_draft', params: {}, query: {}, body: { assetId: '@step:1:assetId' } },
+    ];
+    plan.approval = approvalEnvelope('u', 'a', 'p', plan.actions, plan.expiresAt);
+    vi.mocked(executeAction).mockResolvedValueOnce({ jobId: 'render', executionState: 'queued' }).mockResolvedValueOnce({ draftId: 'draft' });
+    vi.mocked(readPlanOutcomes).mockResolvedValueOnce({ outcome: summarizeOutcome('running', 2, [{ step: 1, executionState: 'queued', watchable: true }]), pollAfterMs: 15000 } as any);
+    expect((await runPlan(ctx, 'p')).status).toBe('pending');
+    const rows = [{ step: 1, executionState: 'succeeded', completionSatisfied: true, outputs: { assetId: 'rendered-asset' } }];
+    plan.waitUntil = Date.now() - 1;
+    vi.mocked(readPlanOutcomes).mockResolvedValue({ rows, outcome: summarizeOutcome('running', 2, rows), pollAfterMs: null } as any);
+    expect((await runPlan(ctx, 'p')).status).toBe('completed');
+    expect(executeAction).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(executeAction).mock.calls[1][1]).toMatchObject({ body: { assetId: 'rendered-asset' } });
+    expect(plan.results[0]).toMatchObject({ result: { jobId: 'render', executionState: 'queued' }, outputs: { assetId: 'rendered-asset' } });
+    expect(plan.actions[1].body.assetId).toBe('@step:1:assetId');
+  });
+  it('waits for a provider result before executing the next approved step', async () => {
+    const { ctx, plan } = executionFixture();
+    plan.goal = { schemaVersion: 1 };
+    vi.mocked(executeAction).mockResolvedValue({ jobId: 'render', executionState: 'queued' });
+    vi.mocked(readPlanOutcomes).mockResolvedValue({ outcome: summarizeOutcome('running', 3, [{ step: 1, executionState: 'queued', watchable: true }]), pollAfterMs: 15000 } as any);
+    const result = await runPlan(ctx, 'p');
+    expect(result).toMatchObject({ status: 'pending', outcome: { state: 'WAITING_PROVIDER' } });
+    expect(executeAction).toHaveBeenCalledTimes(1);
+    await runPlan(ctx, 'p');
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
+  it('blocks continuation when evidence cannot be reconciled safely', async () => {
+    const { ctx, plan } = executionFixture();
+    plan.goal = { schemaVersion: 1 };
+    vi.mocked(executeAction).mockResolvedValue({ executionState: 'unknown' });
+    vi.mocked(readPlanOutcomes).mockResolvedValue({ outcome: summarizeOutcome('running', 3, [{ step: 1, executionState: 'unknown' }]), pollAfterMs: null } as any);
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status: 'unknown', outcome: { state: 'BLOCKED' } });
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
   it('continues the approved revision from persisted receipts after a checkpoint', async () => {
     const { ctx, plan } = executionFixture();
     const revision = '2026-10-06T10:00:00Z', next = '2026-10-06T10:01:00Z';

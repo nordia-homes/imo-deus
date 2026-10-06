@@ -15,12 +15,14 @@ describe('existing handler adapters', () => {
     expect(checked).toBe(Object.keys(operations).length);
   });
   it('rejects URLs and path traversal in route parameters', () => {
+    expect(() => operationPath(operations.global_search, { q: 'Andrei' })).toThrow('query');
     expect(() => operationPath(operations.message_send, { conversationId: '../consent' })).toThrow();
     expect(() => operationPath(operations.message_send, { conversationId: 'https://attacker.test' })).toThrow();
     expect(operationPath(operations.message_send, { conversationId: 'conversation' })).toBe('/api/communications/conversations/conversation/messages');
   });
   it('rejects mutation through a read tool and unknown operation names', async () => {
     const ctx = { agencyId: 'a', runtimeMode: 'real' } as AssistantContext;
+    await expect(invokeOperation(ctx, { operation: 'global_search', params: {}, query: {}, body: {} }, true)).rejects.toThrow('query.q');
     await expect(invokeOperation(ctx, { operation: 'message_send', params: {}, query: {}, body: {} }, true)).rejects.toThrow();
     await expect(invokeOperation(ctx, { operation: 'fetch_any_url', params: {}, query: {}, body: {} })).rejects.toThrow();
   });

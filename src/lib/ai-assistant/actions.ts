@@ -1,4 +1,5 @@
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
+import { briefSettingsSchema, validateBriefSettings } from './daily-brief-contract';
 import { authProfileOutbox, pendingAuthProfile } from '@/lib/crm/profile-auth';
 import { randomUUID, createHash } from 'node:crypto';
 import { CommunicationError } from '@/lib/communications/server';
@@ -537,7 +538,11 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (!Number.isFinite(heartbeatAge) || heartbeatAge < 0 || heartbeatAge >= 15 * 60000) throw new CommunicationError('Automatizările programate nu sunt active. Administratorul trebuie să verifice serviciul de execuție.', 503);
       const automation = action.automation;
       if (Date.parse(automation.nextRunAt) <= Date.now()) throw new CommunicationError('Prima execuție trebuie să fie în viitor.');
-      if (automation.maxRuns > 1 && !automation.intervalMinutes) throw new CommunicationError('Precizează intervalul pentru execuții repetate.');
+        if (automation.maxRuns > 1 && !automation.intervalMinutes && automation.type !== 'daily_sales_brief') throw new CommunicationError('Precizează intervalul pentru execuții repetate.');
+        if (automation.type === 'daily_sales_brief') {
+          validateBriefSettings(briefSettingsSchema.strip().parse(automation));
+          if (automation.deliveryChannel === 'whatsapp') await read('conversations', automation.conversationId!);
+        }
       if (automation.type === 'followup_task' || automation.type === 'matching_watch') await read('contacts', automation.contactId);
       if (automation.type === 'event_rule') {
         if (automation.trigger.recordId) await read(automation.trigger.resource, automation.trigger.recordId);
@@ -564,7 +569,11 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (action.automation) {
         if (Date.parse(action.automation.nextRunAt) <= Date.now()) throw new CommunicationError('Următoarea execuție trebuie să fie în viitor.');
         if (action.automation.maxRuns <= Number(record.runCount || 0)) throw new CommunicationError('Limita de execuții trebuie să depășească execuțiile deja efectuate.');
-        if (action.automation.maxRuns > 1 && !action.automation.intervalMinutes) throw new CommunicationError('Precizează intervalul execuțiilor repetate.');
+          if (action.automation.maxRuns > 1 && !action.automation.intervalMinutes && action.automation.type !== 'daily_sales_brief') throw new CommunicationError('Precizează intervalul execuțiilor repetate.');
+          if (action.automation.type === 'daily_sales_brief') {
+            validateBriefSettings(briefSettingsSchema.strip().parse(action.automation));
+            if (action.automation.deliveryChannel === 'whatsapp') await read('conversations', action.automation.conversationId!);
+          }
         if ('contactId' in action.automation) await read('contacts', action.automation.contactId);
         if (action.automation.type === 'event_rule') {
           if (action.automation.trigger.recordId) await read(action.automation.trigger.resource, action.automation.trigger.recordId);

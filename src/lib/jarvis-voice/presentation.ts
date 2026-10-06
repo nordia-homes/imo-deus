@@ -60,7 +60,9 @@ export function presentVoice(
     state: CharacterState = "IDLE",
     gesture: Gesture = "ONE_HAND_EXPLAIN";
   if (plan) {
-    if (plan.status === "completed") {
+    if (plan.outcome && plan.outcome.state !== 'COMPLETED' && plan.status === 'completed') {
+      spokenText = plan.outcome.note;
+    } else if (plan.status === "completed") {
       spokenText = `Gata. ${plan.results?.length || plan.actions.length} ${plan.actions.length === 1 ? "acțiune confirmată" : "acțiuni confirmate"}.`;
       state = "SUCCESS";
       gesture = "SUCCESS";

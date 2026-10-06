@@ -24,8 +24,13 @@ export function AssistantExecutionControls({ plan, user, onPlan, onResume, onErr
     finally { setBusy(false); }
   }
   const controllable = ['running', 'paused'].includes(plan.status) || plan.status === 'pending' && !!plan.results?.length;
-  if (!controllable && !plan.results?.length && !plan.stoppedStep) return null;
+  if (!controllable && !plan.results?.length && !plan.stoppedStep && !plan.goal?.coverageRequired) return null;
   return <div className="mt-3 space-y-2">
+    {plan.goal?.coverageRequired && <details className="rounded-xl border p-3 text-sm" open={!plan.goal.coverage || plan.goal.coverage.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))}>
+      <summary>Cerințele acoperite de plan</summary>
+      {plan.goal.coverage ? <ul className="mt-2 list-disc space-y-1 pl-4">{plan.goal.coverage.requirements.map(row => <li key={row.id}>{row.description} · {row.resolution === 'planned' ? `Pașii ${row.steps.join(', ')}` : row.resolution === 'answered' ? 'Citire efectuată' : row.resolution === 'needs_clarification' ? 'Necesită clarificare' : 'Nesuportat de acest plan'}</li>)}</ul> : <p className="mt-2">Acoperirea întregii cereri nu a fost verificată. Confirmarea execută numai pașii enumerați.</p>}
+    </details>}
+    {(outcomes?.outcome || plan.outcome) && <p role="status" className="text-sm">{(outcomes?.outcome || plan.outcome).note}</p>}
     <p role="status" className="text-sm">{plan.results?.length || 0} / {plan.actions.length} pași confirmați{plan.status === 'paused' ? ' · În pauză' : ''}</p>
     <progress className="h-2 w-full accent-emerald-500" value={plan.results?.length || 0} max={plan.actions.length} aria-label="Progresul execuției" />
     <div className="flex flex-wrap gap-2">

@@ -16,19 +16,24 @@ import { usageRecord, type UsageRecord, type AgentEvent } from './telemetry';
 import { buildInstructions } from './policy';
 import { explicitInstants } from './temporal-policy';
 import { functionDefinition, functionPayload } from './function-tools';
+import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation } from './jev';
+import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
 
 export type AgentOptions = { provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string> };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
+  let goalCoverage: GoalCoverage | undefined;
+  const successfulReads = new Set<string>();
   const budget = options.budget || new AgentBudget(), provider = options.provider || new OpenAIAdapter();
   const verifiedDates = options.verifiedDates || explicitInstants(prompt);
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
-  const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0 };
+  const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation }) };
   const finish = (text: string, status = 'success') => {
     metrics.status = status; metrics.elapsedMs = Date.now() - childStarted;
     for (const card of cards) card.outputType ||= card.title.includes('Matching') ? 'PROPERTY_MATCH_LIST' : ['owners', 'crm', 'properties'].includes(card.source) ? 'PROPERTY_LIST' : card.source === 'contacts' ? 'CLIENT_LIST' : card.source === 'viewings' ? 'VIEWING_CARD' : card.source === 'tasks' ? 'TASK_CARD' : card.source === 'insights' ? 'INSIGHT_CARD' : /campaign|meta|tiktok/.test(card.source) ? 'CAMPAIGN_CARD' : 'ANALYTICS_CARD';
     if (actions.length && status === 'success') text = `Am pregătit ${actions.length} acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.`;
-    return { text, cards, actions, accessRefs: uniqueReferences(accessRefs), metrics };
+    if (goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) text += '\nCerințe încă neacoperite: ' + goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.description).join('; ');
+    return { text, cards, actions, accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
@@ -44,6 +49,13 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
   let invalidCalls = 0, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
   try {
+    // Shadow calls never alter the approved execution path. Skip injected test
+    // providers and child planners; reserve conservatively before network I/O.
+    const jevTokens = Buffer.byteLength(JSON.stringify(jevRequest(prompt, available)));
+    if (!options.provider && !options.child && budget.cost + jevTokens * JEV_INPUT_USD_PER_MILLION / 1e6 < budget.limits.maxCost && budget.tokens + jevTokens < budget.limits.maxTokens) {
+      const observation = await observeJev(prompt, available);
+      if (observation) { metrics.jev = observation; budget.recordAuxiliary(observation.costUsd, observation.inputTokens + observation.outputTokens); }
+    }
     for (let turn = 0; turn < (options.child ? 3 : budget.limits.maxSteps); turn++) {
       budget.step(); await emit('planning', 'Interpretez cererea și aleg următorul pas.');
       let decision = routeModel({ invalidCalls, remainingCost: budget.limits.maxCost - budget.cost });
@@ -101,6 +113,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           try { response = await Promise.race([invoke(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Tool timeout; rezultatul nu este confirmat.')), Math.min(definition.timeoutMs, Math.max(1, budget.limits.maxExecutionMs - (Date.now() - budget.started)))); })]); }
           finally { if (timer) clearTimeout(timer); }
           definition.outputSchema.parse(response.data);
+          if (name === 'goal_coverage') {
+            goalCoverage = validateGoalCoverage(payload, prompt, actions.length, successfulReads);
+            response.data = { accepted: true, requirements: goalCoverage.requirements.length, unresolved: goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.id) };
+          }
+          if (response.actions.length) goalCoverage = undefined;
+          if (definition.riskLevel === 'READ' && name !== 'goal_coverage' && !response.actions.length && response.data.complete !== false) {
+            successfulReads.add(call.id);
+            response.data = { ...response.data, evidenceCallId: call.id };
+          }
           if (name === 'resolve_datetime' && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
           if (actions.length + response.actions.length > MAX_PLAN_ACTIONS) throw new Error(`Planul depășește ${MAX_PLAN_ACTIONS} acțiuni.`);
           cards.push(...response.cards); actions.push(...response.actions); accessRefs.push(...response.refs);
@@ -116,7 +137,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         metrics.tools.push({ name: toolRegistry.has(name) ? name : 'unknown_tool', status, latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
         input.push({ type: 'function_call_output', call_id: call.id, output: compressedResult(data, 7000) });
       }
-      if (actions.length) return finish('Plan pregătit.');
+      // Let the model finish composing the requested workflow after an initial
+      // proposal. Proposals are inert until the resulting plan is approved.
     }
   } catch (error) {
     if (error instanceof BudgetExceeded) return finish(error.message + ' Acțiunile pregătite nu au fost executate.', 'partial');

@@ -9,6 +9,7 @@ const aliases: Record<string, [string, string]> = {
   outreach_start: ['call', 'callId'],
   facebook_job_create: ['job', 'jobId'],
   tiktok_studio_project_create: ['project', 'projectId'],
+  tiktok_studio_asset_create: ['asset', 'assetId'],
 };
 export function operationResult(operation: string, raw: Record<string, any>, readOnly = false) {
   const result = safeData(raw), alias = aliases[operation];

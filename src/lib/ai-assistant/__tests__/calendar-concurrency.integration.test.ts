@@ -4,12 +4,17 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn(), agencyCollection: (db: Firestore, agencyId: string, name: string) => db.collection('agencies').doc(agencyId).collection(name) }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
+vi.mock('../legal-source', () => ({ readOfficialSource: vi.fn() }));
 import { assertCalendarSlot } from '@/lib/crm/calendar';
 import { executeAction } from '../actions';
 import { continuePlanRevision } from '../plan-revisions';
 import type { AssistantContext } from '../access';
 import { automationSchema } from '../contracts';
 import { runEventRule, type EventRule } from '../event-rules';
+import { deliverDailyBrief } from '../daily-brief';
+import { briefSettingsSchema } from '../daily-brief-contract';
+import { watchOfficialSources } from '../legal-source-watch';
+import { readOfficialSource } from '../legal-source';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -31,6 +36,39 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       return id;
     });
   }
+  it('delivers one daily brief under simultaneous real transactions', async () => {
+    const ctx = context(), profile = db.collection('users').doc(ctx.uid), agency = db.collection('agencies').doc(ctx.agencyId);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('tasks').doc('overdue').set({ description: 'Sarcină de test', agentId: ctx.uid, status: 'open', dueDate: '2020-01-01' });
+    const settings = briefSettingsSchema.parse({ timezone: 'Europe/Bucharest', deliveryTime: '08:30', daysOfWeek: [1, 2, 3, 4, 5] });
+    try {
+      const results = await Promise.all([1, 2].map(() => deliverDailyBrief(ctx, settings, new Date('2026-10-06T06:00:00Z'))));
+      expect(results.filter(row => 'status' in row && row.status === 'delivered')).toHaveLength(1);
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      expect((await agency.collection('assistantArtifacts').get()).size).toBe(1);
+      await deliverDailyBrief(ctx, settings, new Date('2026-10-06T07:00:00Z'));
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it('notifies once for a changed official source and blocks a stale automation lease', async () => {
+    const ctx = context(), profile = db.collection('users').doc(ctx.uid), job = db.collection('assistantAutomationJobs').doc(ctx.uid);
+    ctx.automationFence = { jobId: ctx.uid, claimId: 'claim' };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await job.set({ agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: 'agent', claimId: 'claim', status: 'running', leaseUntil: Date.now() + 60000 });
+    const urls = ['https://www.ancpi.ro/fixture.pdf'];
+    try {
+      vi.mocked(readOfficialSource).mockResolvedValue({ snapshotId: 'version-1', authority: 'Fixture authority' });
+      const baseline = await watchOfficialSources(ctx, ctx.uid, urls);
+      expect((await profile.collection('notifications').get()).size).toBe(0);
+      vi.mocked(readOfficialSource).mockResolvedValue({ snapshotId: 'version-2', authority: 'Fixture authority' });
+      await Promise.all([1, 2].map(() => watchOfficialSources(ctx, ctx.uid, urls, baseline.versions)));
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      await job.update({ status: 'paused' });
+      vi.mocked(readOfficialSource).mockResolvedValue({ snapshotId: 'version-3', authority: 'Fixture authority' });
+      await expect(watchOfficialSources(ctx, ctx.uid, urls, baseline.versions)).rejects.toThrow('oprită');
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+    } finally { await db.recursiveDelete(profile); await job.delete(); }
+  }, 20000);
   it('commits only one simultaneous task/viewing sharing an agent', async () => {
     const ctx = context();
     const results = await Promise.allSettled([

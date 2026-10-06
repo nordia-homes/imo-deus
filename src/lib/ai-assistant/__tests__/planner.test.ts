@@ -30,6 +30,25 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('retains server-validated requirement coverage and invalidates it after another proposal', async () => {
+    const proposal = () => call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });
+    const coverage = () => call('goal_coverage', { requirements: [{ id: 'task', sourceQuote: 'Creează', description: 'Sarcina cerută', resolution: 'planned', steps: [1], evidenceCallIds: [] }] });
+    const prompt = 'Creează o sarcină la 2030-01-01T10:00:00Z.';
+    const result = await planTurn(ctx, prompt, [], { provider: scripted(proposal(), coverage(), final) });
+    expect(result.goalCoverage?.requirements[0].steps).toEqual([1]);
+    const changed = await planTurn(ctx, prompt, [], { provider: scripted(proposal(), coverage(), proposal(), final) });
+    expect(changed.goalCoverage).toBeUndefined();
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it('finishes composing a multi-action workflow after the first proposal', async () => {
+    const model = scripted(
+      call('propose_actions', { actions: [{ kind: 'create_task', description: 'Primul pas', dueDate: '2030-01-01T10:00:00.000Z' }] }),
+      call('propose_actions', { actions: [{ kind: 'create_task', description: 'Al doilea pas', dueDate: '2030-01-01T10:00:00.000Z' }] }), final);
+    const result = await planTurn(ctx, 'Creează două sarcini pentru 2030-01-01T10:00:00Z.', [], { provider: model });
+    expect(result.actions).toHaveLength(2);
+    expect(model.respond).toHaveBeenCalledTimes(3);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('does not multiply inherited access references across successive replies', async () => {
     const history: any[] = [{ role: 'assistant', text: 'Rezultat', accessRefs: Array.from({ length: 6192 }, () => ({ resource: 'sales', id: 's' })) }];
     for (let turn = 0; turn < 5; turn++) {
@@ -74,7 +93,8 @@ describe('Responses tool planning', () => {
   });
   it('retries one provider outage on Luna and records its cost/error without escalating', async () => {
     const model = scripted(new ProviderError('temporary', true), final);
-    const result = await planTurn(ctx, 'Salut', [], { provider: model });
+    // Isolate routing from schema byte growth; budget limits have a separate test.
+    const result = await planTurn(ctx, 'Salut', [], { provider: model, budget: new AgentBudget({ ...DEFAULT_LIMITS, maxTokens: 120000 }) });
     expect(model.respond.mock.calls.map(([request]) => request.decision.model)).toEqual(['gpt-6-luna', 'gpt-6-luna']);
     expect(result.metrics.models[0]).toMatchObject({ outcome: 'failed', errorCategory: 'temporary', usage: { estimated: true } });
     expect(result.metrics.models[0].costUsd).toBeGreaterThan(0);
@@ -93,7 +113,7 @@ describe('Responses tool planning', () => {
   });
   it('uses Sol only after repeated invalid provider output, not the first failure', async () => {
     const model = scripted(new ProviderError('invalid_output', false), new ProviderError('invalid_output', false), final);
-    const result = await planTurn(ctx, 'Salut', [], { provider: model });
+    const result = await planTurn(ctx, 'Salut', [], { provider: model, budget: new AgentBudget({ ...DEFAULT_LIMITS, maxTokens: 120000 }) });
     expect(model.respond.mock.calls.map(([request]) => request.decision.model), result.text).toEqual(['gpt-6-luna', 'gpt-6-luna', 'gpt-6.1-sol']);
     expect(result.metrics.status).toBe('success');
   });

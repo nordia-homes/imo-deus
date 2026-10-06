@@ -6,6 +6,7 @@ import { planTurn } from './planner';
 import { executeAction } from './actions';
 import { CommunicationError } from '@/lib/communications/server';
 import { resolveAction } from './dependencies';
+import { bindVerifiedOutputs } from './verified-outputs';
 import { operations, isReadOperation } from './operations';
 import { approvalEnvelope, validateApproval } from './approval';
 import { telemetryDocument, type AgentEvent, type TurnMetrics } from './telemetry';
@@ -20,6 +21,12 @@ import { bindCalendarRevisions } from './calendar-revisions';
 import { bindAgencyRevisions } from './agency-revisions';
 import { bindBusinessRevisions } from './business-revisions';
 import { continuePlanRevision } from './plan-revisions';
+import { summarizeOutcome, type GoalContract } from './outcome';
+import type { GoalCoverage } from './goal-coverage';
+
+function planGoal(request: string, actions: z.infer<typeof actionSchema>[], coverage?: GoalCoverage, coverageRequired = false): GoalContract {
+  return { schemaVersion: 1, request: request.slice(0, 12000), requiredOutcome: request.slice(0, 2000), constraints: [], coverageRequired, ...(coverage ? { coverage } : {}), completionCriteria: actions.map((action, index) => ({ step: index + 1, description: action.kind === 'existing_operation' ? action.operation : action.kind })) };
+}
 
 export async function requireSession(ctx: AssistantContext, id: string) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(id);
@@ -72,6 +79,14 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     turnMetrics = result.metrics;
     const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, input.prompt) : { actions: result.actions, results: [], blocked: false };
     result.actions = autonomous.actions;
+    if (result.goalCoverage && autonomous.results.length) {
+      const consumed = autonomous.results.length;
+      result.goalCoverage = { requirements: result.goalCoverage.requirements.map(row => {
+        if (row.resolution !== 'planned') return row;
+        const remaining = row.steps.filter(step => step > consumed).map(step => step - consumed);
+        return remaining.length ? { ...row, steps: remaining } : { ...row, resolution: 'answered' as const, steps: [], evidenceCallIds: [`autonomy:${input.requestId}`] };
+      }) };
+    }
     if (autonomous.results.length || autonomous.blocked) {
       result.text = `Pași safe confirmați: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Execuție autonomă autorizată', source: 'autonomy', rows: autonomous.results });
@@ -83,7 +98,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       const [fresh, actor, member] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
       if (fresh.data()?.turnId !== input.requestId) throw new CommunicationError('Cererea a expirat. Reîncarcă istoricul.', 409);
-      if (planId) tx.create(collectionFor(ctx, 'assistantPlans').doc(planId), { ownerId: ctx.uid, sessionId: input.sessionId, telemetryId: input.requestId, actions: result.actions, accessRefs: message.accessRefs, status: 'pending', createdAt: message.createdAt, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, planId, result.actions, Date.now() + 3600000), versions: VERSIONS });
+      if (planId) tx.create(collectionFor(ctx, 'assistantPlans').doc(planId), { ownerId: ctx.uid, sessionId: input.sessionId, telemetryId: input.requestId, actions: result.actions, goal: planGoal(input.prompt, result.actions, result.goalCoverage, true), outcome: summarizeOutcome('pending', result.actions.length, []), accessRefs: message.accessRefs, status: 'pending', createdAt: message.createdAt, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, planId, result.actions, Date.now() + 3600000), versions: VERSIONS });
       tx.set(reply, message);
       tx.set(collectionFor(ctx, 'assistantTelemetry').doc(input.requestId), telemetryDocument(ctx, input.requestId, input.sessionId, { ...result.metrics, requiresApproval: Boolean(planId) }));
       tx.update(ref, { busyUntil: 0, updatedAt: message.createdAt, summary: sessionSummary([...history, message]) });
@@ -131,7 +146,7 @@ export async function saveAssistantMessage(ctx: AssistantContext, sessionId: str
     if (Number(previous.data()?.busyUntil || 0) > Date.now()) throw new CommunicationError('O comandă este în curs.', 409);
     if (!previous.exists) tx.create(session, { ownerId: ctx.uid, title: text.slice(0, 100), createdAt: now, updatedAt: now });
     else tx.update(session, { updatedAt: now });
-    if (actions.length) tx.create(collectionFor(ctx, 'assistantPlans').doc(messageId), { ownerId: ctx.uid, sessionId, actions, status: 'pending', createdAt: now, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, messageId, actions, Date.now() + 3600000), versions: VERSIONS });
+    if (actions.length) tx.create(collectionFor(ctx, 'assistantPlans').doc(messageId), { ownerId: ctx.uid, sessionId, actions, goal: planGoal(text, actions), outcome: summarizeOutcome('pending', actions.length, []), status: 'pending', createdAt: now, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, messageId, actions, Date.now() + 3600000), versions: VERSIONS });
     tx.create(messageRef, message);
     return message;
   });
@@ -140,6 +155,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
   const { ref, data } = await getPlan(ctx, id);
   if (data.status === 'completed' || data.status === 'cancelled') return data;
   if (data.status === 'paused' && !cancel) return data;
+  if (!cancel && data.waitUntil && data.waitUntil > Date.now()) return data;
   if (cancel && data.status === 'running') {
     await ctx.adminDb.runTransaction(async tx => {
       const fresh = await tx.get(ref);
@@ -157,7 +173,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
     if (snap.data()?.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(snap.data()!.telemetryId), { approval: !cancel, approvalStatus: cancel ? 'cancelled' : 'approved', executionStatus: cancel ? 'cancelled' : 'running' }, { merge: true });
   });
   if (cancel) return { ...data, status: 'cancelled' as const };
-  const results: Record<string, unknown>[] = [...(data.results || [])];
+  let results: Record<string, unknown>[] = [...(data.results || [])];
   const accessRefs = [...((data as any).accessRefs || []), ...actionReferences(data.actions)];
   const checkpointStarted = Date.now(), initialCount = results.length;
   try {
@@ -177,6 +193,24 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
         await ref.update({ status: 'pending', results, accessRefs, checkpointAt: new Date().toISOString() });
         return { ...data, status: 'pending' as const, results };
       }
+      // New plans verify committed asynchronous effects before advancing. Legacy
+      // plans retain their original execution semantics; no implicit migration.
+      if (data.goal?.schemaVersion === 1 && results.length) {
+        const { readPlanOutcomes } = await import('./plan-outcomes');
+        const verification = await readPlanOutcomes(ctx, id);
+        const outcome = verification.outcome;
+        if (outcome.pending || outcome.uncertain || outcome.failed) {
+          const deadline = data.verificationDeadline || Date.now() + 30 * 60000;
+          const canWait = Boolean(verification.pollAfterMs) && !outcome.failed && Date.now() < deadline;
+          const patch = { status: canWait ? 'pending' as const : 'unknown' as const, outcome,
+            waitUntil: canWait ? Date.now() + verification.pollAfterMs! : 0, verificationDeadline: deadline,
+            error: canWait ? 'Aștept verificarea rezultatului înaintea pasului următor.' : 'Rezultatul anterior necesită reconciliere. Pașii următori nu au pornit.' };
+          await ref.update(patch);
+          return { ...data, ...patch, results };
+        }
+        results = bindVerifiedOutputs(results, verification.rows || []);
+        await ref.update({ results });
+      }
       // Recheck current membership at every step, including existing domain handlers.
       const member = await ctx.adminDb.collection('users').doc(ctx.uid).get();
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Permisiunile s-au schimbat. Planul a fost oprit.', 403);
@@ -191,9 +225,23 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
     const batch = ctx.adminDb.batch();
     batch.update(ref, { status: 'completed', completedAt: new Date().toISOString() });
     if ((data as any).telemetryId) batch.set(collectionFor(ctx, 'assistantTelemetry').doc((data as any).telemetryId), { executionStatus: 'completed', confirmedSteps: results.length }, { merge: true });
-    batch.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: `Plan executat: ${results.length} pași confirmați. Rezultatele și înregistrările sunt disponibile în planul de acțiune.`, createdAt: new Date().toISOString() });
+    batch.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`, createdAt: new Date().toISOString() });
     await batch.commit();
-    return { ...data, status: 'completed' as const, results };
+    let outcome = data.outcome;
+    if (data.goal?.schemaVersion === 1) {
+      const { readPlanOutcomes } = await import('./plan-outcomes');
+      try {
+        const verification = await readPlanOutcomes(ctx, id);
+        outcome = verification.outcome;
+        if (verification.pollAfterMs) {
+          const { enqueueOutcomeWatch } = await import('./outcome-watcher');
+          await enqueueOutcomeWatch(ctx, id);
+        }
+      }
+      catch { outcome = summarizeOutcome('completed', data.actions.length, []); }
+      await ref.update({ outcome, waitUntil: 0 });
+    }
+    return { ...data, status: 'completed' as const, results, ...(outcome ? { outcome } : {}) };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Execuția nu a fost confirmată.';
     const externalStep = data.actions[results.length]?.kind === 'existing_operation';

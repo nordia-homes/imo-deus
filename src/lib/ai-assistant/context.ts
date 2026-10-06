@@ -2,6 +2,16 @@ import { createHash, randomUUID } from 'node:crypto';
 import { normalized, safeData, type AssistantMessage, type AccessReference } from './contracts';
 import { collectionFor, referencesAllowed, getResource, type AssistantContext } from './access';
 import { matchingRevision } from './matching-revision';
+import { preferenceKeys, validatePreference } from './preferences';
+import { DEFAULT_TIMEZONE, timezoneSchema } from './timezone';
+
+export async function preferredTimezone(ctx: AssistantContext) {
+  if (!ctx.adminDb || process.env.JARVIS_MEMORY === 'false') return DEFAULT_TIMEZONE;
+  const id = createHash('sha256').update(`${ctx.uid}:timezone`).digest('hex').slice(0, 32);
+  const row = (await collectionFor(ctx, 'assistantMemory').doc(id).get()).data();
+  const parsed = timezoneSchema.safeParse(row?.value);
+  return row?.ownerId === ctx.uid && row?.expiresAt > Date.now() && parsed.success ? parsed.data : DEFAULT_TIMEZONE;
+}
 
 export function compressedResult(result: unknown, maxBytes = 14000) {
   const safe = safeData(result), serialized = JSON.stringify(safe);
@@ -29,15 +39,22 @@ export function contextMessages(history: AssistantMessage[], maxBytes = 14000) {
   return messages;
 }
 export async function rememberPreference(ctx: AssistantContext, key: string, value: string) {
+  value = validatePreference(key, value);
   const id = createHash('sha256').update(`${ctx.uid}:${key}`).digest('hex').slice(0, 32);
-  const record = { ownerId: ctx.uid, key, value, importance: 1, version: '1', source: 'explicit_user_preference', updatedAt: new Date().toISOString(), expiresAt: Date.now() + 180 * 86400000 };
-  await collectionFor(ctx, 'assistantMemory').doc(id).set(record);
+  const ref = collectionFor(ctx, 'assistantMemory').doc(id);
+  const record = { ownerId: ctx.uid, key, value, importance: 1, version: '2', source: 'explicit_user_preference', updatedAt: new Date().toISOString(), expiresAt: Date.now() + 180 * 86400000 };
+  await ctx.adminDb.runTransaction(async tx => {
+    const existing = await tx.get(ref);
+    tx.set(ref, { ...record, createdAt: existing.data()?.createdAt || record.updatedAt });
+  });
   return { saved: true, key };
 }
 export async function relevantMemory(ctx: AssistantContext) {
   if (process.env.JARVIS_MEMORY === 'false') return [];
-  const docs = await collectionFor(ctx, 'assistantMemory').where('ownerId', '==', ctx.uid).limit(20).get();
-  return docs.docs.map(doc => doc.data()).filter(row => row.expiresAt > Date.now()).map(row => ({ key: row.key, value: row.value }));
+  // The vocabulary is bounded; exact reads cannot let expired/arbitrary rows
+  // crowd a valid preference out of the first query page.
+  const rows = await Promise.all(preferenceKeys.map(key => collectionFor(ctx, 'assistantMemory').doc(createHash('sha256').update(`${ctx.uid}:${key}`).digest('hex').slice(0, 32)).get()));
+  return rows.map(doc => doc.data()).filter(row => row?.ownerId === ctx.uid && row.expiresAt > Date.now()).map(row => ({ key: row!.key, value: row!.value }));
 }
 export async function forgetPreference(ctx: AssistantContext, key: string) {
   const id = createHash('sha256').update(`${ctx.uid}:${key}`).digest('hex').slice(0, 32);
@@ -47,7 +64,8 @@ export async function forgetPreference(ctx: AssistantContext, key: string) {
 export function sessionSummary(messages: AssistantMessage[]) {
   const resultSetIds = [...new Set(messages.flatMap(message => message.cards || []).map(card => card.resultSetId).filter(Boolean))].slice(-8);
   const entities = [...new Set(messages.flatMap(message => message.cards || []).flatMap(card => card.rows).map(row => row.id).filter(value => typeof value === 'string'))].slice(-20);
-  return { version: '1', resultSetIds, entities, pendingPlanIds: messages.map(message => message.planId).filter(Boolean).slice(-3), source: 'validated_server_messages' };
+  const selections = messages.flatMap(message => (message.cards || []).map(card => ({ messageId: message.id, source: card.source, resultSetId: card.resultSetId || null, orderedIds: card.rows.map(row => row.id).filter(id => typeof id === 'string').slice(0, 100) }))).slice(-8);
+  return { version: '2', resultSetIds, entities, selections, pendingPlanIds: messages.map(message => message.planId).filter(Boolean).slice(-3), source: 'validated_server_messages' };
 }
 export async function saveResultSet(ctx: AssistantContext, rows: Record<string, unknown>[], contactId?: string, accessRefs: AccessReference[] = [], sourceContactRevision?: string) {
   const id = randomUUID();

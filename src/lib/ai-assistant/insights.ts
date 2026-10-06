@@ -1,10 +1,11 @@
 import { readResource, type AssistantContext } from './access';
 import { overlaps } from './contracts';
 
-async function inspect(ctx: AssistantContext, resource: 'contacts' | 'tasks' | 'viewings') {
+export const insightSources = ['contacts', 'tasks', 'viewings', 'sales', 'conversations', 'metaCampaignDrafts', 'tiktokPostDrafts', 'aiOutreachCalls'] as const;
+async function inspect(ctx: AssistantContext, resource: typeof insightSources[number], deadline: number) {
   const rows: Record<string, any>[] = [];
   let cursor: string | undefined, complete = false;
-  while (rows.length < 5000) {
+  while (rows.length < 5000 && Date.now() < deadline) {
     const page = await readResource(ctx, { resource, limit: 100, ...(cursor ? { cursor } : {}) });
     rows.push(...page.rows);
     if (page.complete) { complete = true; cursor = undefined; break; }
@@ -14,10 +15,14 @@ async function inspect(ctx: AssistantContext, resource: 'contacts' | 'tasks' | '
   return { rows, complete, cursor: cursor || null };
 }
 export async function getInsights(ctx: AssistantContext, limit = 10) {
-  const [contacts, tasks, viewings] = await Promise.all(['contacts', 'tasks', 'viewings'].map(resource => inspect(ctx, resource as 'contacts' | 'tasks' | 'viewings')));
+  const pages = new Map<string, Awaited<ReturnType<typeof inspect>>>(), deadline = Date.now() + 12000;
+  for (let i = 0; i < insightSources.length; i += 3) {
+    await Promise.all(insightSources.slice(i, i + 3).map(async resource => { pages.set(resource, await inspect(ctx, resource, deadline)); }));
+  }
+  const contacts = pages.get('contacts')!, tasks = pages.get('tasks')!, viewings = pages.get('viewings')!;
   const now = Date.now(), rows: Record<string, unknown>[] = [];
   let actionableCount = 0;
-  const add = (row: Record<string, unknown>) => { actionableCount++; if (rows.length < limit) rows.push(row); };
+  const add = (row: Record<string, unknown>) => { actionableCount++; rows.push(row); };
   for (const contact of contacts.rows) if (contact.status === 'Nou' && !contact.archivedAt && Date.parse(String(contact.createdAt)) <= now - 48 * 3600000 && !contact.interactionHistory?.length) add({ id: `lead-${contact.id}`, type: 'INSIGHT_CARD', title: 'Lead necontactat de peste 48 de ore', contactId: contact.id, name: contact.name, link: `/leads/${contact.id}` });
   for (const task of tasks.rows) if (task.status === 'open' && task.agentId === ctx.uid && Date.parse(String(task.dueDate)) < now) add({ id: `task-${task.id}`, type: 'TASK_CARD', title: 'Sarcină restantă', taskId: task.id, description: task.description, dueDate: task.dueDate, link: '/tasks' });
   const upcoming = viewings.rows.filter(row => row.status === 'scheduled' && Date.parse(String(row.viewingDate)) > now).sort((a, b) => Date.parse(String(a.viewingDate)) - Date.parse(String(b.viewingDate)));
@@ -36,9 +41,30 @@ export async function getInsights(ctx: AssistantContext, limit = 10) {
       active.push(b); windows.set(key, active);
     }
   }
-  const inspectionComplete = [contacts, tasks, viewings].every(page => page.complete), complete = inspectionComplete && analysisComplete;
-  return { rows, complete, inspectionComplete, analysisComplete, actionableCount, resultLimitReached: actionableCount > rows.length,
-    inspectedRecords: contacts.rows.length + tasks.rows.length + viewings.rows.length, checkedAt: new Date().toISOString(),
-    continuations: { contacts: contacts.cursor, tasks: tasks.cursor, viewings: viewings.cursor },
+  for (const sale of pages.get('sales')!.rows) {
+    if (['completed', 'cancelled'].includes(sale.stage)) continue;
+    if (sale.stage === 'blocked' || Date.parse(String(sale.nextActionAt)) < now) add({ id: `sale-${sale.id}`, type: 'INSIGHT_CARD', title: sale.stage === 'blocked' ? 'Dosar Sales blocat' : 'Pas Sales restant', description: sale.nextAction || 'Verifică blocajul din dosar.', saleId: sale.id, priority: 95, reason: 'Etapa sau termenul următoarei acțiuni din dosarul autorizat.', link: `/sales-management/${sale.id}` });
+  }
+  for (const conversation of pages.get('conversations')!.rows) {
+    if (conversation.status === 'closed' || !conversation.needsReply || Date.parse(String(conversation.lastInboundAt)) > now - 24 * 3600000) continue;
+    // Require actual timestamps as well as the projection flag; stale flags do not create alerts.
+    if (Number.isFinite(Date.parse(String(conversation.lastInboundAt))) && (!conversation.lastOutboundAt || Date.parse(conversation.lastInboundAt) > Date.parse(conversation.lastOutboundAt))) add({ id: `reply-${conversation.id}`, type: 'INSIGHT_CARD', title: 'Conversație fără răspuns de peste 24 de ore', conversationId: conversation.id, priority: 85, reason: 'Ultimul mesaj primit este mai nou decât ultimul răspuns trimis.', link: '/inbox' });
+  }
+  for (const source of ['metaCampaignDrafts', 'tiktokPostDrafts'] as const) for (const draft of pages.get(source)!.rows) {
+    if (['error', 'failed'].includes(draft.status) || draft.publishOutcomeUnknown || draft.manualReviewRequired) add({ id: `${source}-${draft.id}`, type: 'INSIGHT_CARD', title: 'Promovare care necesită verificare', draftId: draft.id, source, priority: 90, reason: 'Eroare sau rezultat extern incert; verifică înainte de orice retrimitere.', link: source === 'metaCampaignDrafts' ? '/marketing/meta-advertising' : '/marketing/tiktok-studio' });
+  }
+  for (const call of pages.get('aiOutreachCalls')!.rows) if (call.providerErrorCode === 'vapi_create_unknown') add({ id: `call-${call.id}`, type: 'INSIGHT_CARD', title: 'Apel cu rezultat extern incert', callId: call.id, priority: 90, reason: 'Furnizorul nu a confirmat crearea; verifică fără reapelare automată.', link: '/ai-calls' });
+  for (const row of rows) {
+    row.priority ||= String(row.id).startsWith('conflict-') ? 100 : String(row.id).startsWith('task-') ? 80 : 70;
+    row.reason ||= String(row.id).startsWith('conflict-') ? 'Intervale suprapuse pentru aceeași persoană sau proprietate.' : String(row.id).startsWith('task-') ? 'Sarcină deschisă, atribuită ție, cu termen depășit.' : 'Lead nou, fără interacțiuni înregistrate, mai vechi de 48 de ore.';
+  }
+  rows.sort((a, b) => Number(b.priority) - Number(a.priority) || String(a.id).localeCompare(String(b.id)));
+  const selected = rows.slice(0, limit);
+  const inspectionComplete = [...pages.values()].every(page => page.complete), complete = inspectionComplete && analysisComplete;
+  return { rows: selected, complete, inspectionComplete, analysisComplete, actionableCount, resultLimitReached: actionableCount > selected.length,
+    sources: [...insightSources], coverage: Object.fromEntries([...pages].map(([source, page]) => [source, { complete: page.complete, inspected: page.rows.length }])),
+    ranking: 'Reguli deterministe de urgență operațională; nu scoruri de matching sau impact financiar estimat.',
+    inspectedRecords: [...pages.values()].reduce((sum, page) => sum + page.rows.length, 0), checkedAt: new Date().toISOString(),
+    continuations: Object.fromEntries([...pages].map(([source, page]) => [source, page.cursor])),
     note: complete ? 'Analiză din toate paginile citite pe server, independent de paginarea interfeței. Date observate în timpul verificării; nu reprezintă un snapshot tranzacțional al agenției.' : 'Analiză parțială la limita de citire/calcul. Folosește query_records/read cu continuarea pentru raportul complet; numărul afișat nu este totalul agenției.' };
 }

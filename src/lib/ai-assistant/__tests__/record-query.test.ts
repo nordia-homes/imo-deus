@@ -10,6 +10,12 @@ function database(rows:any[], filters:any[]=[] ,after?:string,limit=Infinity):an
  return {where:(f:any,op?:string,v?:any)=>database(rows,[...filters,typeof f==='object'?f:[f,op,v]],after,limit),orderBy:()=>database(rows,filters,after,limit),limit:(n:number)=>database(rows,filters,after,n),startAfter:(...v:string[])=>database(rows,filters,v.at(-1),limit),count:()=>({get:async()=>({data:()=>({count:matching().length})})}),get:async()=>{const data=matching().slice(0,limit);return {empty:!data.length,size:data.length,docs:data.map(r=>({id:r.id,data:()=>r}))};}};
 }
 describe('filtered calendar and measured token budget',()=>{
+ it('uses the requested timezone for local days and 23-hour DST boundaries',()=>{
+  const range=recordDateRange(queryRecordsSchema.parse({resource:'viewings',date:'2026-03-08',timezone:'America/New_York'}));
+  expect(range.from).toBe('2026-03-08T05:00:00.000Z'); expect(range.to).toBe('2026-03-09T04:00:00.000Z');
+  const relative=recordDateRange(queryRecordsSchema.parse({resource:'viewings',dayOffset:0,timezone:'America/New_York'}),new Date('2026-10-06T01:00:00Z'));
+  expect(relative.label).toBe('2026-10-05');
+ });
  it('counts owner and collaborator Sales visibility once, and restricts search fallback too',async()=>{
   const rows=[{id:'1',agentId:'u',collaboratorIds:['u'],stage:'contract',propertyTitle:'Apartament'},{id:'2',agentId:'other',collaboratorIds:['u'],stage:'contract',propertyTitle:'Apartament'},{id:'3',agentId:'other',stage:'contract',propertyTitle:'Apartament'},{id:'4',agentId:'u',stage:'blocked',propertyTitle:'Apartament'}];
   const ctx={agencyId:'a',uid:'u',role:'agent',query:database(rows)} as any;

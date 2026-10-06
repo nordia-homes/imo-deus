@@ -202,6 +202,8 @@ export function operationContract(operation: string) {
 }
 export function operationCatalog() { return Object.entries(operations).map(([id, o]) => ({ id, method: o.method, readOnly: isReadOperation(id), description: o.description, params: [...o.path.matchAll(/\{(\w+)\}/g)].map(m => m[1]), external: Boolean(o.external) })); }
 export function operationPath(operation: Operation, params: Record<string, string>) {
+  const allowed = new Set([...operation.path.matchAll(/\{(\w+)\}/g)].map(match => match[1]));
+  if (Object.keys(params).some(key => !allowed.has(key))) throw new CommunicationError('params acceptă numai identificatorii din cale; filtrele se trimit în query.');
   return operation.path.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = params[key];
     if (!value || !/^[a-zA-Z0-9_.:-]+$/.test(value) || value === '..') throw new CommunicationError(`Parametru invalid: ${key}.`);
@@ -214,6 +216,7 @@ export async function invokeOperation(ctx: AssistantContext, input: { operation:
   if (ctx.runtimeMode === 'demo' && input.operation !== 'owner_query') throw new CommunicationError('Acest handler nu este disponibil prin asistent în demo.', 403);
   if (op.external && isDemoAgencyId(ctx.agencyId)) throw new CommunicationError('Integrările externe nu sunt disponibile în demo.', 403);
   const path = operationPath(op, input.params);
+  if (input.operation === 'global_search' && String(input.query.q || '').trim().length < 2) throw new CommunicationError('Căutarea globală necesită query.q cu minimum două caractere.');
   if (input.operation === 'video_create' && input.body.includeAiPresenter !== false && !String(input.body.aiPresenterScript || '').trim()) throw new CommunicationError('Generează întâi scenariul prin video_script și include aiPresenterScript în planul video. Workerul nu trebuie să lanseze un model text în afara politicii Jarvis.');
   if (input.operation === 'owner_import_preview') {
     const url = new URL(String(input.body.url || ''));

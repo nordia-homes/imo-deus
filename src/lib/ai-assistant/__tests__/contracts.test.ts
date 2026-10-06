@@ -3,6 +3,13 @@ import { actionSchema, searchSchema, safeData, overlaps, automationSchema } from
 import { ownerSearchFields, parseOwnerPrice } from '@/lib/owner-listings/search-index';
 
 describe('assistant command boundary', () => {
+  it('bounds official-source watches to explicit allowed URLs and an hourly-or-slower interval', () => {
+    const input = { type: 'legal_source_watch', nextRunAt: '2030-01-01T12:00:00Z', sourceUrls: ['https://www.ancpi.ro/document.pdf'] };
+    expect(automationSchema.parse(input)).toMatchObject({ intervalMinutes: 1440 });
+    expect(automationSchema.safeParse({ ...input, sourceUrls: ['https://attacker.example/x'] }).success).toBe(false);
+    expect(automationSchema.safeParse({ ...input, intervalMinutes: 30 }).success).toBe(false);
+    expect(automationSchema.safeParse({ ...input, sourceUrls: Array(4).fill(input.sourceUrls[0]) }).success).toBe(false);
+  });
   it('defaults property search to owners', () => { expect(searchSchema.parse({}).source).toBe('owners'); });
   it('rejects model-granted consent and arbitrary role edits', () => {
     expect(actionSchema.safeParse({ kind: 'grant_consent', confirmed: true }).success).toBe(false);
