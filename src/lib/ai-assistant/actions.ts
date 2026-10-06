@@ -438,7 +438,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { taskId: ref.id, link: '/tasks' };
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);
-      const {kind: _, taskId: __, ...patch} = action;
+      if (action.expectedUpdatedAt !== undefined && (oldTask.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Sarcina s-a modificat între timp. Reîncarcă datele înainte de salvare.', 409);
+      const {kind: _, taskId: __, expectedUpdatedAt: ___, ...patch} = action;
       if (!Object.keys(patch).length) throw new CommunicationError('Precizează modificarea sarcinii.');
       const contact = action.contactId ? await read('contacts', action.contactId) : null;
       const property = action.propertyId ? await read('properties', action.propertyId) : null;
@@ -450,11 +451,13 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     } else if (action.kind === 'delete_task' || action.kind === 'delete_viewing') {
       const resource = action.kind === 'delete_task' ? 'tasks' : 'viewings', id = action.kind === 'delete_task' ? action.taskId : action.viewingId;
       const previous = await read(resource, id);
+      if (action.expectedUpdatedAt !== undefined && (previous.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Înregistrarea s-a modificat între timp. Reîncarcă datele înainte de ștergere.', 409);
       tx.delete(collectionFor(ctx, resource).doc(id));
       tx.create(collectionFor(ctx, 'assistantDeletedRecords').doc(key), { resource, id, previous, actorId: ctx.uid, deletedAt: now });
       result = { id, deleted: true, link: action.kind === 'delete_task' ? '/tasks' : '/viewings' };
     } else if (action.kind === 'schedule_viewing' || action.kind === 'update_viewing') {
       const old = action.kind === 'update_viewing' ? await read('viewings', action.viewingId) : null;
+      if (action.kind === 'update_viewing' && action.expectedUpdatedAt !== undefined && (old?.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Vizionarea s-a modificat între timp. Reîncarcă datele înainte de salvare.', 409);
       const contactId = action.contactId || String(old?.contactId);
       const propertyId = action.propertyId || String(old?.propertyId);
       const [contact, property] = await Promise.all([read('contacts', contactId), read('properties', propertyId)]);

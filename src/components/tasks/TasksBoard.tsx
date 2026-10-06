@@ -149,7 +149,7 @@ export function TasksBoard() {
         if (!agencyId) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const nextStatus = task.status === 'completed' ? 'open' : 'completed';
-        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, status: nextStatus }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
+        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, expectedUpdatedAt: task.updatedAt || null, status: nextStatus }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
         toast({
             title: nextStatus === 'completed' ? 'Task finalizat' : 'Task redeschis',
             description: task.description,
@@ -160,7 +160,7 @@ export function TasksBoard() {
         if (!agencyId || !editingTask) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
-        try { await executeCrmAction(user, { kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
+        try { await executeCrmAction(user, { kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, expectedUpdatedAt: editingTask.updatedAt || null, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
         toast({
             title: "Task actualizat!",
             description: updatedTask.description,

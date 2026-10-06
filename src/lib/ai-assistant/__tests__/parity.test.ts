@@ -26,6 +26,32 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('rejects stale calendar edits/deletions atomically and permits a current edit only once', async () => {
+    const revision = '2026-10-06T08:00:00Z';
+    const { ctx, rows } = database({
+      'agencies/a/tasks/t': { description: 'Current', status: 'completed', updatedAt: revision },
+      'agencies/a/viewings/v': { status: 'scheduled', updatedAt: revision },
+    });
+    const staleActions = [
+      { kind: 'update_task', taskId: 't', expectedUpdatedAt: null, description: 'Stale' },
+      { kind: 'delete_task', taskId: 't', expectedUpdatedAt: null },
+      { kind: 'update_viewing', viewingId: 'v', expectedUpdatedAt: null, status: 'cancelled' },
+      { kind: 'delete_viewing', viewingId: 'v', expectedUpdatedAt: null },
+    ];
+    for (const [index, input] of staleActions.entries()) {
+      await expect(executeAction(ctx, actionSchema.parse(input), `stale-calendar-${index}`)).rejects.toMatchObject({ status: 409 });
+      expect(rows.has(`agencies/a/assistantExecutions/stale-calendar-${index}`)).toBe(false);
+    }
+    expect(rows.get('agencies/a/tasks/t')?.description).toBe('Current');
+    expect(rows.get('agencies/a/viewings/v')?.status).toBe('scheduled');
+    const action = actionSchema.parse({ kind: 'update_task', taskId: 't', expectedUpdatedAt: revision, description: 'Accepted' });
+    await executeAction(ctx, action, 'current-calendar');
+    expect(rows.get('agencies/a/tasks/t')).toMatchObject({ description: 'Accepted' });
+    expect(rows.get('agencies/a/tasks/t')).not.toHaveProperty('expectedUpdatedAt');
+    await expect(executeAction(ctx, { kind: 'delete_task', taskId: 't', expectedUpdatedAt: revision }, 'second-calendar')).rejects.toMatchObject({ status: 409 });
+    await executeAction(ctx, action, 'current-calendar'); // Idempotent retry returns its ledger.
+    expect(rows.get('agencies/a/tasks/t')?.description).toBe('Accepted');
+  });
   it('prepares a tracked email once, retaining document versions without claiming delivery', async () => {
     const { ctx, rows } = database({ 'agencies/a/sales/s': { agentId: 'u', trackingCode: 'IMO-123', checklist: [{ id: 'doc', label: 'Act', fileName: 'Act.pdf', downloadUrl: 'https://storage.example/act.pdf', version: 1 }] } });
     const action = actionSchema.parse({ kind: 'prepare_sale_email', saleId: 's', to: ['owner@example.com'], subject: 'Documente', bodyText: 'Salut', questions: [{ id: 'q', text: 'Confirmi?', required: true }], documentIds: ['doc'] });

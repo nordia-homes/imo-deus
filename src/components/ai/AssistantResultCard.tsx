@@ -463,6 +463,7 @@ export function AssistantResultCard({
                             {
                               kind: "update_task",
                               taskId: String(row.id),
+                              ...(typeof row.updatedAt === 'string' ? { expectedUpdatedAt: row.updatedAt } : {}),
                               status: "completed",
                             },
                           ])

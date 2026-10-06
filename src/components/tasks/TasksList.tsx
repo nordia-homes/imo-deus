@@ -49,14 +49,14 @@ export function TasksList() {
         if (!agencyId) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', task.id);
         const newStatus = task.status === 'completed' ? 'open' : 'completed';
-        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, status: newStatus }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
+        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, expectedUpdatedAt: task.updatedAt || null, status: newStatus }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
     };
     
     const handleUpdateTask = async (updatedTask: Omit<Task, 'status'>) => {
         if (!agencyId || !editingTask) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', editingTask.id);
         const { id, ...dataToUpdate } = updatedTask;
-        try { await executeCrmAction(user, { kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
+        try { await executeCrmAction(user, { kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, expectedUpdatedAt: editingTask.updatedAt || null, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); throw error; }
         toast({
             title: "Task actualizat!",
             description: `Task-ul a fost actualizat.`,
@@ -67,7 +67,7 @@ export function TasksList() {
     const handleDeleteTask = async () => {
         if (!agencyId || !deletingTask) return;
         const taskRef = doc(firestore, 'agencies', agencyId, 'tasks', deletingTask.id);
-        try { await executeCrmAction(user, { kind: 'delete_task', taskId: deletingTask.id }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
+        try { await executeCrmAction(user, { kind: 'delete_task', taskId: deletingTask.id, expectedUpdatedAt: deletingTask.updatedAt || null }); } catch (error) { toast({ variant: 'destructive', title: 'Operația nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
         toast({
             variant: 'destructive',
             title: "Task șters!",

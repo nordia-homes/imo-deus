@@ -399,7 +399,7 @@ export default function LeadDetailPage() {
         await executeCrmAction(user, { kind: 'add_interaction', contactId: contact.id, type: interactionData.type, notes: interactionData.notes });
     };
     const handleToggleTask = async (task: Task) => {
-        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, status: task.status === 'completed' ? 'open' : 'completed' }); }
+        try { await executeCrmAction(user, { kind: 'update_task', taskId: task.id, expectedUpdatedAt: task.updatedAt || null, status: task.status === 'completed' ? 'open' : 'completed' }); }
         catch (error) { toast({ variant: 'destructive', title: 'Task-ul nu a fost actualizat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
 

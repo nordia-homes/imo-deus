@@ -1,10 +1,10 @@
 # Implementare Jarvis CRM — progres verificabil
 
-Actualizat: 5 octombrie 2026. Implementarea completă E0–E7 este în curs. Această pagină separă implementarea din cod de acceptanța pe furnizori și de deploy. Auditul inițial este un baseline, nu o descriere a noilor capabilități.
+Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Această pagină separă implementarea din cod de acceptanța pe furnizori și de deploy. Auditul inițial este un baseline, nu o descriere a noilor capabilități.
 
 ## Etapa curentă
 
-- Catalog curent: 170 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
+- Catalog curent: 171 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
 - Executor comun manual/AI pentru contacte, proprietăți, calendar, prospectare, oferte, portaluri, dosare, contracte și setări. Migrarea UI include dashboard, liste, detalii, dialogs și inbox Storia.
 - Câmpuri complete ale formularelor de bază, assignment în aceeași agenție, lifecycle cu motive și istoric, verificare concurentă la editarea proprietăților.
 - Normalizare telefon/email și locks de identitate. Migrare producție: 468 contacte, 0 conflicte; verificare ulterioară: 0 modificări restante. Cele 386 identități repetate existente sunt păstrate pentru revizuire, fără merge automat.
@@ -59,21 +59,27 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Probă live în conversația afectată: citirea vizionărilor a salvat răspuns/card; pregătirea sarcinii a salvat plan fără execuție. Probă worker producție: job completed, text prezent, 1 card, 5 referințe, fără eroare.
 - 267 teste AI trecute, 3 probe de reguli rezervate emulatorului; typecheck și build trecute.
 
-### Etapa Sales următoare — validată local, în curs de publicare
+### Etapa Sales — publicată în parity-07
 - Configurare dosar cu schemă comună importată de handler, contract AI generat, tranzacție și audit atomic; revalidare membru și acces înaintea scrierii.
 - Salvarea manuală din composer și wizard folosește același handler cu expectedUpdatedAt; personalizarea privată email folosește executorul comun.
 - Checklist: metadatele fișierelor/scannerului/versiunilor rămân autoritative; configurarea nu poate fabrica documente primite/verificate sau elimina implicit documente încărcate.
 - 5 teste Sales de concurență, acces, audit și protecție documente trecute; typecheck și build trecute. Restul backlogului rămâne deschis.
 
-### Observabilitate și erori vizibile — validată local, publicare următoare
+### Observabilitate și erori vizibile — publicată în parity-08
 - Erorile neașteptate dintr-o comandă începută sunt salvate ca răspuns ERROR_EVENT în conversația autorizată; lock-urile sunt eliberate, nu se repetă efecte. Revocarea accesului împiedică salvarea unui rezultat pentru actor.
 - Worker-ul distinge răspunsul livrat de succesul de business; categoriile fixe de eroare sunt jurnalizate fără conținut CRM/provider.
 - Costul necunoscut după o întrerupere este marcat incomplet și nu produce o medie inventată de zero.
 - Capabilitate crm_health și API autentificat: heartbeat/model configurat și lag măsurat din eșantionul proiecțiilor autorizate, cu revalidarea accesului la părinții sensibili. Eșantionul nu certifică evenimentele încă neprocesate sau providerii externi.
 - 275 teste AI trecute și typecheck trecut. Verificare producție suplimentară: pregătirea unei sarcini a returnat răspuns și plan cu 1 acțiune, fără executarea sarcinii. Planul integral E0–E7 rămâne în curs.
 
-### Editor automatizări — extensie în curs de publicare
+### Editor automatizări — publicat în parity-09
 - Formulare de creare/editare pentru followup_task, owner_watch, matching_watch, insight_report și whatsapp_template, în Text și Voice prin componenta comună.
 - Selecție clienți/conversații prin citiri autentificate, căutare și paginare; sursa proprietarilor implicită, criterii de preț/camere/tip/tranzacție, prag matching și parametri șablon.
 - Programare, limite de execuție și oprire după termen/status/răspuns; configurarea pregătește planul fără a activa automatizarea direct. Orele formularului sunt indicate ca ora dispozitivului; orele originale neatinse sunt păstrate exact.
 - 19 verificări UI Text trecute, incluzând pregătirea celor cinci tipuri; 14 verificări Voice trecute. Probele sunt cu date/integrări simulate și nu trimit mesaje.
+
+### Protecție revizii calendar — în validare
+- update/delete pentru sarcini și vizionări verifică expectedUpdatedAt tranzacțional înainte de scrieri; conflictele returnează 409 fără ledger sau ștergere.
+- Formularele manuale trimit revizia afișată. Pregătirea planurilor Jarvis fixează revizia curentă dacă lipsește, inclusiv cardurile Text/Voice; o revizie furnizată nu este înlocuită automat. Referințele la pași care creează înregistrări sunt rezolvate la execuție.
+- Etapa automatizărilor: build-2026-10-05-parity-09 READY, commit 100eea057f0fafceb78027181be7d85dc333a4e5, trafic 100%, verificat la 6 octombrie. Dovada producției este actualizată.
+- Fluxurile cu mai multe editări ale aceleiași înregistrări pot cere replanificare după primul pas; revizia veche nu este ignorată pentru a forța execuția.

@@ -152,19 +152,19 @@ export default function ViewingsPage() {
     };
     const handleUpdateTask = async (updatedTask: Omit<Task, 'status'>) => {
         if (!agencyId || !editingTask) return;
-        await persistCalendarAction({ kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }, () => setEditingTask(null), 'Task actualizat!', true);
+        await persistCalendarAction({ kind: 'update_task', ...manualTaskDetails(updatedTask), taskId: editingTask.id, expectedUpdatedAt: editingTask.updatedAt || null, description: updatedTask.description, dueDate: updatedTask.dueDate, contactId: updatedTask.contactId || null, propertyId: updatedTask.propertyId || null }, () => setEditingTask(null), 'Task actualizat!', true);
     };
     const handleDeleteTask = async () => {
         if (!agencyId || !deletingTask) return;
-        await persistCalendarAction({ kind: 'delete_task', taskId: deletingTask.id }, () => setDeletingTask(null), 'Task șters!');
+        await persistCalendarAction({ kind: 'delete_task', taskId: deletingTask.id, expectedUpdatedAt: deletingTask.updatedAt || null }, () => setDeletingTask(null), 'Task șters!');
     };
     const handleUpdateViewing = async (updatedViewing: Omit<Viewing, 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress'>) => {
         if (!agencyId || !editingViewing) return;
-        await persistCalendarAction({ kind: 'update_viewing', viewingId: editingViewing.id, contactId: updatedViewing.contactId, propertyId: updatedViewing.propertyId, status: updatedViewing.status, viewingDate: updatedViewing.viewingDate, duration: updatedViewing.duration, notes: updatedViewing.notes || '' }, () => setEditingViewing(null), 'Vizionare actualizată!', true);
+        await persistCalendarAction({ kind: 'update_viewing', viewingId: editingViewing.id, expectedUpdatedAt: editingViewing.updatedAt || null, contactId: updatedViewing.contactId, propertyId: updatedViewing.propertyId, status: updatedViewing.status, viewingDate: updatedViewing.viewingDate, duration: updatedViewing.duration, notes: updatedViewing.notes || '' }, () => setEditingViewing(null), 'Vizionare actualizată!', true);
     };
     const handleDeleteViewing = async () => {
         if (!agencyId || !deletingViewing) return;
-        await persistCalendarAction({ kind: 'delete_viewing', viewingId: deletingViewing.id }, () => setDeletingViewing(null), 'Vizionare ștearsă!');
+        await persistCalendarAction({ kind: 'delete_viewing', viewingId: deletingViewing.id, expectedUpdatedAt: deletingViewing.updatedAt || null }, () => setDeletingViewing(null), 'Vizionare ștearsă!');
     };
 
     const isLoading = arePropertiesLoading || areContactsLoading || areViewingsLoading || areTasksLoading || areAgentsLoading;

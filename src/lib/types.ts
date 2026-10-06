@@ -1467,6 +1467,7 @@ export type ActiveBuyersEvolutionData = {
 
 export type Task = {
   id: string;
+  updatedAt?: string;
   description: string;
   dueDate: string;
   status: 'open' | 'completed';
@@ -1741,6 +1742,7 @@ export type PortalRecommendation = {
 
 export type Viewing = {
   id: string;
+  updatedAt?: string;
   propertyId: string;
   propertyTitle: string;
   propertyAddress: string;
