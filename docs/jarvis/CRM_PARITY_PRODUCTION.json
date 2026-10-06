@@ -1,11 +1,11 @@
 {
-  "verifiedAt": "2026-10-06T09:48:54.722Z",
+  "verifiedAt": "2026-10-06T10:16:15.329Z",
   "project": "studio-652232171-42fb6",
   "builds": [
     {
-      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-16",
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-17",
       "state": "READY",
-      "commit": "b116bc243282e15540b6ffddd96976a80cf16e76",
+      "commit": "bc087ef75183995233292f69a1a5d9abccfd00ed",
       "percent": 100
     }
   ],
@@ -23,7 +23,15 @@
       "status": 401
     },
     {
+      "path": "/api/ai-assistant/health",
+      "status": 401
+    },
+    {
       "path": "/api/crm/actions",
+      "status": 401
+    },
+    {
+      "path": "/api/sales/probe/read",
       "status": 401
     },
     {
@@ -56,10 +64,10 @@
   "scheduler": {
     "state": "ENABLED",
     "schedule": "every 5 minutes",
-    "lastAttemptTime": "2026-10-06T09:47:02.160912Z"
+    "lastAttemptTime": "2026-10-06T10:12:08.632856Z"
   },
   "heartbeat": {
-    "lastSuccessAt": "2026-10-06T09:47:02.393Z",
+    "lastSuccessAt": "2026-10-06T10:12:08.849Z",
     "lastError": null
   },
   "indexStates": {
