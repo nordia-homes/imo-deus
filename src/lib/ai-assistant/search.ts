@@ -33,13 +33,15 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
 }
 export async function searchProperties(ctx: AssistantContext, input: AssistantSearch) {
   let base: FirebaseFirestore.Query = collectionFor(ctx, 'properties');
+  let resolvedScope: string | null = null;
   if (input.source === 'owners') {
     const agency = await ctx.adminDb.collection('agencies').doc(ctx.agencyId).get();
     const scope = input.scopeKey ? getOwnerListingScope(input.scopeKey) : resolveAgencyOwnerListingScope(agency.data() as Agency);
     if (!scope) throw new CommunicationError('Precizează orașul/scopeKey; orașul agenției nu este configurat.');
+    resolvedScope = scope.key;
     base = ctx.adminDb.collection('ownerListings').where('scopeKey', '==', scope.key).where('publicationStatus', '==', 'ready').where('isCanonical', '==', true);
   }
-  const fingerprint = createHash('sha256').update(JSON.stringify([OWNER_SEARCH_VERSION, ctx.agencyId, Object.entries(input).filter(([key, value]) => key !== 'cursor' && value !== undefined).sort(([a], [b]) => a.localeCompare(b))])).digest('hex').slice(0, 12);
+  const fingerprint = createHash('sha256').update(JSON.stringify([OWNER_SEARCH_VERSION, ctx.agencyId, ctx.uid, ctx.role, resolvedScope, Object.entries(input).filter(([key, value]) => key !== 'cursor' && value !== undefined).sort(([a], [b]) => a.localeCompare(b))])).digest('hex').slice(0, 12);
   let indexed = false, cursor = input.cursor, complete = false, scanned = 0, uncertainCurrency = 0;
   let cursorPrice: number | undefined;
   if (cursor?.startsWith('i|')) {
@@ -51,10 +53,12 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
     if (hash !== fingerprint) throw new CommunicationError('Cursorul nu aparține acestei căutări.');
     cursor = id || undefined;
   } else if (cursor) throw new CommunicationError('Cursor de căutare invalid.');
-  if (input.source === 'owners' && !input.cursor && (input.priceMin !== undefined || input.priceMax !== undefined)) {
+  if (input.source === 'owners' && (indexed || !input.cursor && (input.priceMin !== undefined || input.priceMax !== undefined))) {
     try {
       const [all, covered] = await Promise.all([base.count().get(), base.where('searchVersion', '==', OWNER_SEARCH_VERSION).count().get()]);
-      indexed = all.data().count > 0 && all.data().count === covered.data().count;
+      const coverageComplete = all.data().count > 0 && all.data().count === covered.data().count;
+      if (indexed && !coverageComplete) throw new CommunicationError('Corpusul s-a schimbat și include anunțuri fără câmpuri de căutare. Reia căutarea de la început pentru rezultatele actuale.', 409);
+      indexed = coverageComplete;
     } catch (error) {
       if (Number((error as { code?: unknown }).code) !== 9) throw error;
       // Index not deployed/READY: use fresh paginated reads with full coverage.
@@ -94,5 +98,5 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }
   }
-  return { rows, nextCursor: complete || !cursor ? null : indexed ? `i|${fingerprint}|${cursorPrice}|${cursor}` : `s|${fingerprint}|${cursor}`, complete, scanned, uncertainCurrency, freshness: 'live_firestore', searchMode: indexed ? 'native_index' : 'live_scan', note: uncertainCurrency ? `${uncertainCurrency} anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR.` : null };
+  return { rows, nextCursor: complete || !cursor ? null : indexed ? `i|${fingerprint}|${cursorPrice}|${cursor}` : `s|${fingerprint}|${cursor}`, complete, scanned, uncertainCurrency, freshness: 'live_firestore', observedAt: new Date().toISOString(), paginationConsistency: 'live_cursor', searchMode: indexed ? 'native_index' : 'live_scan', note: [uncertainCurrency ? `${uncertainCurrency} anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR.` : '', input.cursor ? 'Continuare din datele actuale. Anunțurile adăugate sau mutate înaintea cursorului apar la reluarea căutării de la început.' : 'Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.'].filter(Boolean).join(' ') };
 }

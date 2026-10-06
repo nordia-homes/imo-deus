@@ -4,7 +4,7 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Etapa curentă
 
-- Catalog curent: 173 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
+- Catalog curent: 180 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
 - Executor comun manual/AI pentru contacte, proprietăți, calendar, prospectare, oferte, portaluri, dosare, contracte și setări. Migrarea UI include dashboard, liste, detalii, dialogs și inbox Storia.
 - Câmpuri complete ale formularelor de bază, assignment în aceeași agenție, lifecycle cu motive și istoric, verificare concurentă la editarea proprietăților.
 - Normalizare telefon/email și locks de identitate. Migrare producție: 468 contacte, 0 conflicte; verificare ulterioară: 0 modificări restante. Cele 386 identități repetate existente sunt păstrate pentru revizuire, fără merge automat.
@@ -199,4 +199,16 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - 324 teste AI trecute, 13 probe rezervate emulatorului; 28 teste Firestore reale trecute în 8 suite. Cele două probe Sales verifică agregarea, rolul de colaborator, fallback-ul textual și revocarea accesului. 21 verificări UI Text trecute, inclusiv etapa/prețul/linkul Sales. Typecheck și buildul Next.js final după modificarea cardului au trecut. Prompt/tool 20.
 - Release parity-23 (erori vizibile): READY, trafic 100%, verificat la 12:33 UTC. Release parity-24 (progres protejat): READY, trafic 100%, verificat la 12:43 UTC. Nu s-au trimis mesaje externe în probe.
 
-
+### Lot comun — 6 octombrie, pregătit pentru publicare
+- Migrare a celor șase fluxuri montate rămase: media proprietăți/Meta/TikTok, generator video browser și helper Facebook. Inventarul static nu mai găsește scrieri directe nemigrate în fișierele montate identificate; aceasta nu certifică fiecare câmp sau furnizor.
+- Video MP4/WebM/MOV până la 500 MB: sesiune privată cu cale exactă, rol și cote, transfer controlat, generație fixată și validare server prin decodarea primului cadru. Materialele pregătite au URL cu token; salvarea formularului rămâne distinctă. Retenția păstrează materialele reutilizate între module și refuză ștergerea după o scanare incompletă.
+- Callback video browser autorizat, runId/owner/revizie, salvare atomică și anulare explicită; durata este raportată de browser. Helper Facebook marchează publicarea ca declarație umană, fără a inventa receipt de furnizor.
+- Revizii pentru RLV, oferte, arhivare, atribuire, lifecycle, prospectare, portal și șabloane; formularele corespunzătoare trimit revizia observată. Două RLV concurente: un succes, un conflict și un singur ledger.
+- Auth are cozi durabile pentru sincronizarea profilului și ștergerea conturilor. Ștergerea CRM/seat/audit este atomică, iar repetarea nu scade din nou locurile. Eșecurile Auth rămân pending pentru recuperare.
+- Efectele native ale automatizărilor verifică claim-ul, lease-ul și accesul în tranzacție. Workerul reînnoiește lease-ul și fără evenimente de progres; claim-ul înlocuit nu poate salva progres sau mutații native. Nu se certifică anularea apelurilor externe deja pornite.
+- Reconciliere paginată cu checkpoint pe versiunea Firestore exactă; snapshots sunt diferențiate de acțiunile istorice și nu declanșează reguli CRM. Nu se inventează autorul sau evenimentele lipsă.
+- Insights parcurge paginile sursă, deduplică suprapunerile și separă limita rezultatelor de analiza incompletă. Reports și Jarvis folosesc același calculator; rapoartele incomplete nu prezintă un segment drept total. Comparația folosește 30 zile; forecasturile rămân estimări.
+- Verificarea rezultatelor planului recitește domeniile video/outreach/Meta/TikTok/Ads și mesajul exact, fără repetarea efectului. Domeniile fără adaptor de verificare expun receipt-ul inițial și cer modulul dedicat.
+- Căutarea verifică acoperirea indexului și la continuare. Datele sunt live: anunțurile adăugate sau mutate înaintea cursorului apar la o căutare nouă. Cursorul este legat și de actor/rol/scope rezolvat. Nu se pretinde un snapshot imuabil al corpusului.
+- Validare: 351 teste AI și 94 comunicare trecute; 37 teste pe emulatoare Firestore/Storage reale; 21 scenarii Text (plus verificarea queued după executor completed), 14 Voice cu audio simulat, typecheck și build Functions trecute. Buildul Next.js final și rolloutul lotului sunt în curs.
+- Restante de acceptanță ale planului: verificare semantică exhaustivă câmp cu câmp, providerii și dispozitivele reale, urmărire automată terminală pentru toate domeniile și invalidare globală a corpusului între pagini. Lotul nu reprezintă închiderea globală E0–E7. Publicarea este grupată, la solicitarea utilizatorului.

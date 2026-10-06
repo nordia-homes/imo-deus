@@ -1,3 +1,4 @@
+import { authProfileOutbox, pendingAuthProfile, syncAuthProfile, deleteAuthAccount } from '@/lib/crm/profile-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { randomUUID } from 'node:crypto';
@@ -312,11 +313,12 @@ export async function PATCH(
 
     const auditId = randomUUID();
     await adminDb.runTransaction(async tx => {
-      const [member, target, photoReceipt] = await Promise.all([tx.get(adminDb.collection('users').doc(auth.uid)), tx.get(userRef), photo ? tx.get(photo.ledger) : Promise.resolve(null)]);
+      const [member, target, photoReceipt, authOutbox] = await Promise.all([tx.get(adminDb.collection('users').doc(auth.uid)), tx.get(userRef), photo ? tx.get(photo.ledger) : Promise.resolve(null), tx.get(authProfileOutbox(auth as AssistantContext, agentId))]);
       if (member.data()?.agencyId !== agencyId || member.data()?.role !== 'admin' || target.data()?.agencyId !== agencyId || target.data()?.role !== 'agent') throw Object.assign(new Error('Accesul la editarea agentului a fost revocat.'), { status: 403 });
       const expected = body.expectedUpdatedAt === undefined ? userSnapshot.data()?.updatedAt || null : body.expectedUpdatedAt;
       if ((target.data()?.updatedAt || null) !== expected) throw Object.assign(new Error('Profilul agentului a fost modificat între timp. Reîncarcă datele.'), { status: 409 });
       tx.set(userRef, updatePayload, { merge: true });
+      tx.set(authProfileOutbox(auth as AssistantContext, agentId), pendingAuthProfile(auth as AssistantContext, agentId, updatePayload.updatedAt, authOutbox.data()));
       tx.set(adminDb.collection('publicAgentProfiles').doc(agentId), {
         agencyId,
         name: updatePayload.name,
@@ -328,12 +330,11 @@ export async function PATCH(
       if (photo && !photoReceipt?.exists) tx.create(photo.ledger, { actorId: auth.uid, operation: 'agent_photo', status: 'completed', completedAt: updatePayload.updatedAt, result: { imageUrl: photo.imageUrl, agentId, uploadId: photo.uploadId } });
       tx.create(adminDb.collection('agencies').doc(agencyId).collection('crmEvents').doc(auditId), { id: auditId, actorId: auth.uid, agencyId, source: 'agent_edit', capability: 'agents.updated', occurredAt: updatePayload.updatedAt, recordedAt: updatePayload.updatedAt, entities: { userId: agentId }, result: { photoApplied: Boolean(photo) } });
     });
-    await adminAuth.updateUser(agentId, {
-      displayName: updatePayload.name,
-    });
+    const authSyncStatus = await syncAuthProfile(auth as AssistantContext, agentId).catch(() => 'pending');
 
     return NextResponse.json(
       {
+        authSyncStatus,
         agent: {
           id: agentId,
           ...userData,
@@ -362,48 +363,34 @@ export async function DELETE(
   context: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const { agencyId, adminDb, adminAuth } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const auth = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, adminDb } = auth;
     const { agentId } = await context.params;
     if (!agencyId) {
       return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
     }
 
     const userRef = adminDb.collection('users').doc(agentId);
-    const userSnapshot = await userRef.get();
+    const deletionRef = adminDb.collection('authAccountDeletions').doc(agentId), auditId = randomUUID();
+    await adminDb.runTransaction(async tx => {
+      const agencyRef = adminDb.collection('agencies').doc(agencyId);
+      const [member, target, agency, previousDeletion] = await Promise.all([tx.get(adminDb.collection('users').doc(auth.uid)), tx.get(userRef), tx.get(agencyRef), tx.get(deletionRef)]);
+      if (member.data()?.agencyId !== agencyId || member.data()?.role !== 'admin') throw Object.assign(new Error('Accesul la ștergerea agentului a fost revocat.'), { status: 403 });
+      if (!target.exists) {
+        if (previousDeletion.data()?.agencyId === agencyId) return;
+        throw Object.assign(new Error('Agentul nu a fost găsit.'), { status: 404 });
+      }
+      if (target.data()?.agencyId !== agencyId || target.data()?.role !== 'agent') throw Object.assign(new Error('Poți șterge doar agenții din agenția ta.'), { status: 403 });
+      if (!agency.exists) throw Object.assign(new Error('Agenția nu mai există.'), { status: 404 });
+      const now = new Date().toISOString();
+      tx.delete(userRef); tx.delete(adminDb.collection('publicAgentProfiles').doc(agentId)); tx.delete(authProfileOutbox(auth as AssistantContext, agentId));
+      tx.set(agencyRef, { agentIds: FieldValue.arrayRemove(agentId), seatUsageCount: Math.max(0, Number(agency.data()?.seatUsageCount || 0) - 1) }, { merge: true });
+      tx.set(deletionRef, { userId: agentId, agencyId, requestedBy: auth.uid, status: 'pending', createdAt: now });
+      tx.create(adminDb.collection('agencies').doc(agencyId).collection('crmEvents').doc(auditId), { id: auditId, actorId: auth.uid, agencyId, source: 'agent_remove', capability: 'agents.deleted', occurredAt: now, recordedAt: now, entities: { userId: agentId }, result: { crmRemoved: true, authDeletionQueued: true } });
+    });
+    const authDeletionStatus = await deleteAuthAccount(auth as AssistantContext, agentId).catch(() => 'pending');
 
-    if (!userSnapshot.exists) {
-      return NextResponse.json({ message: 'Agentul nu a fost gasit.' }, { status: 404 });
-    }
-
-    const userData = userSnapshot.data() as {
-      agencyId?: string;
-      role?: 'admin' | 'agent';
-    } | undefined;
-
-    if (userData?.agencyId !== agencyId || userData?.role !== 'agent') {
-      return NextResponse.json(
-        { message: 'Poti sterge doar agentii din agentia ta.' },
-        { status: 403 }
-      );
-    }
-
-    const batch = adminDb.batch();
-    batch.delete(userRef);
-    batch.delete(adminDb.collection('publicAgentProfiles').doc(agentId));
-    batch.set(
-      adminDb.collection('agencies').doc(agencyId),
-      {
-        agentIds: FieldValue.arrayRemove(agentId),
-        seatUsageCount: FieldValue.increment(-1),
-      },
-      { merge: true }
-    );
-
-    await batch.commit();
-
-    await adminAuth.deleteUser(agentId);
-
-    return NextResponse.json({ success: true, agentId }, { status: 200 });
+    return NextResponse.json({ success: true, agentId, authDeletionStatus, note: authDeletionStatus === 'completed' ? 'Agent eliminat din CRM și Firebase Auth.' : 'Agent eliminat din CRM; ștergerea contului Auth este în recuperare automată.' }, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);
     return NextResponse.json({ message: formatted.message }, { status: formatted.status });

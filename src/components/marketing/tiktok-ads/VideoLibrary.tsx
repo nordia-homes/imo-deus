@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { useStorage, useUser } from '@/firebase';
+import { prepareCrmMedia } from '@/lib/crm/client-actions';
+import { useUser } from '@/firebase';
 import { Button, StudioEyebrow } from './StudioPrimitives';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Clapperboard, Images, Mic2, Sparkles, RefreshCw, Film, WandSparkles } from 'lucide-react';
@@ -32,7 +32,7 @@ export function VideoLibrary({ api, onAd, initialPropertyId = '' }: { api: Api; 
   const [saved, setSaved] = useState('');
   const [page, setPage] = useState(1);
   const [publishing, setPublishing] = useState<{ asset: TikTokStudioAsset; creator: Creator; text: string; privacy: string; schedule: string; comments: boolean; duet: boolean; stitch: boolean; commercial: boolean; brandOrganic: boolean; brandContent: boolean; consent: boolean; draftId?: string } | null>(null);
-  const storage = useStorage(); const { user } = useUser();
+  const { user } = useUser();
   const saveChain = useRef<Promise<unknown>>(Promise.resolve());
   const versions = useRef(new Map<string, number>());
   const savedEditors = useRef(new Map<string, string>());
@@ -103,9 +103,9 @@ export function VideoLibrary({ api, onAd, initialPropertyId = '' }: { api: Api; 
     if (!user || !propertyId) throw new Error('Selectează proprietatea înainte de import.');
     for (const file of files) {
       if (!/^video\//.test(file.type) || file.size > 500 * 1024 * 1024) throw new Error('Folosește videoclipuri de maximum 500 MB.');
-      const target = ref(storage, `users/${user.uid}/tiktok-studio/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`);
-      await uploadBytes(target, file, { contentType: file.type }); const url = await getDownloadURL(target);
-      await api('/api/marketing/tiktok/studio-assets', { method: 'POST', body: JSON.stringify({ propertyId, type: file.type.startsWith('video') ? 'video' : 'image', name: file.name, url, mimeType: file.type, sizeBytes: file.size, source: 'upload' }) });
+      const media = await prepareCrmMedia(user, file, 'tiktok_media', propertyId);
+      const url = media.url;
+      await api('/api/marketing/tiktok/studio-assets', { method: 'POST', body: JSON.stringify({ propertyId, type: file.type.startsWith('video') ? 'video' : 'image', name: file.name, url, mimeType: media.mimeType, sizeBytes: media.sizeBytes, source: 'upload' }) });
     }
     await load(); setMessage('Materialele au fost importate.');
   }

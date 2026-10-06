@@ -439,11 +439,11 @@ export default function LeadDetailPage() {
     };
     const handleUpdateOffer = async (offerId: string, data: Partial<Omit<Offer, 'id'>>) => {
         if (!contact) return;
-        await persistOffer({ kind: 'update_offer', contactId: contact.id, offerId, patch: { ...(data.price !== undefined ? { price: data.price } : {}), ...(data.status ? { status: data.status } : {}) } }, 'Ofertă actualizată!');
+        await persistOffer({ kind: 'update_offer', contactId: contact.id, expectedUpdatedAt: contact.updatedAt || null, offerId, patch: { ...(data.price !== undefined ? { price: data.price } : {}), ...(data.status ? { status: data.status } : {}) } }, 'Ofertă actualizată!');
     };
     const handleDeleteOffer = async (offerId: string) => {
         if (!contact) return;
-        await persistOffer({ kind: 'delete_offer', contactId: contact.id, offerId }, 'Ofertă ștearsă!');
+        await persistOffer({ kind: 'delete_offer', contactId: contact.id, expectedUpdatedAt: contact.updatedAt || null, offerId }, 'Ofertă ștearsă!');
     };
 
     const scheduledViewings = useMemo(() => {

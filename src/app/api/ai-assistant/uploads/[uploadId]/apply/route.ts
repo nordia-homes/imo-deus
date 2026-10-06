@@ -19,7 +19,7 @@ const schema = z.discriminatedUnion('destination', [
   z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),
   z.object({ destination: z.literal('identity_ocr') }).strict(),
   z.object({ destination: z.literal('property_image'), propertyId: id }).strict(),
-  z.object({ destination: z.literal('property_rlv'), propertyId: id }).strict(),
+  z.object({ destination: z.literal('property_rlv'), propertyId: id, expectedUpdatedAt: z.string().datetime({ offset: true }).nullable().optional() }).strict(),
   z.object({ destination: z.literal('contract_template'), name: z.string().trim().min(1).max(300), category: z.enum(['reservation', 'collaboration', 'exclusivity', 'custom']), description: z.string().max(10000).default('') }).strict(),
   z.object({ destination: z.literal('electronic_identity_ocr'), addressProofUploadId: z.string().uuid() }).strict(),
 ]);
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, route: { params: Promise<{ uplo
     }
     if (input.destination === 'property_image' || input.destination === 'property_rlv') {
       const { applyPropertyAsset } = await import('@/lib/crm/property-assets');
-      return NextResponse.json(await applyPropertyAsset(ctx, uploadId, input.propertyId, input.destination, upload, bytes), { headers: { 'Cache-Control': 'no-store' } });
+      return NextResponse.json(await applyPropertyAsset(ctx, uploadId, input.propertyId, input.destination, upload, bytes, input.destination === 'property_rlv' ? input.expectedUpdatedAt : undefined), { headers: { 'Cache-Control': 'no-store' } });
     }
     const form = new FormData(); form.set('file', new File([new Uint8Array(bytes)], upload.name, { type: upload.mimeType }));
     if (input.destination === 'electronic_identity_ocr') {

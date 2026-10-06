@@ -1,3 +1,4 @@
+import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { automationSchema, safeData } from './contracts';
@@ -51,7 +52,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
     try {
       const user = await db.collection('users').doc(claim.actorId).get();
       if (user.data()?.agencyId !== claim.agencyId || user.data()?.role !== claim.actorRole || !['agent', 'admin'].includes(user.data()?.role)) throw new Error('Permisiunile agentului au fost revocate sau schimbate.');
-      const ctx = { uid: claim.actorId, agencyId: claim.agencyId, role: claim.actorRole, adminDb: db, authorization: '', runtimeMode: 'real' } as AssistantContext;
+      const ctx = { uid: claim.actorId, agencyId: claim.agencyId, role: claim.actorRole, adminDb: db, authorization: '', automationFence: { jobId: doc.id, claimId }, runtimeMode: 'real' } as AssistantContext;
       const automation = automationSchema.parse(claim.automation);
       const run = Number(claim.runCount || 0) + 1;
       let result: unknown;
@@ -73,7 +74,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         } else {
           // requestId is persisted BEFORE provider interaction, reused if the queue is inspected.
           let requestId = claim.requestId as string | undefined;
-          if (!requestId) { requestId = randomUUID(); await doc.ref.update({ requestId }); }
+          if (!requestId) { requestId = randomUUID(); await db.runTransaction(async tx => { await assertAutomationFence(db, tx, ctx); tx.update(doc.ref, { requestId }); }); }
           result = await queueMessage(db, ctx, automation.conversationId, { template: automation.template, requestId });
         }
       } else if (automation.type === 'insight_report' || automation.type === 'matching_watch') {
@@ -82,7 +83,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         for (const row of report.rows) {
           const id = automation.type === 'matching_watch' ? `${claim.id}-${row.id}` : `${claim.id}-run-${run}-${row.id}`;
           const notification = db.collection('users').doc(ctx.uid).collection('notifications').doc(id);
-          await db.runTransaction(async tx => { if ((await tx.get(notification)).exists) return; tx.create(notification, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: automation.type === 'matching_watch' ? 'Potrivire ImoDeus peste pragul configurat' : String(row.title), body: automation.type === 'matching_watch' ? String(row.title) : 'Verifică insight-ul în AI Assistant.', actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: now }); });
+          await db.runTransaction(async tx => { await assertAutomationFence(db, tx, ctx); if ((await tx.get(notification)).exists) return; tx.create(notification, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: automation.type === 'matching_watch' ? 'Potrivire ImoDeus peste pragul configurat' : String(row.title), body: automation.type === 'matching_watch' ? String(row.title) : 'Verifică insight-ul în AI Assistant.', actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: now }); });
         }
       } else {
         const search = { ...automation.search, source: 'owners' as const, cursor: claim.scanCursor || undefined, limit: 100 };
@@ -92,6 +93,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         for (const row of page.rows) {
           const ref = notifications.doc(`${claim.id}-${String(row.id)}`);
           await db.runTransaction(async tx => {
+            await assertAutomationFence(db, tx, ctx);
             if ((await tx.get(ref)).exists) return;
             tx.create(ref, { eventId: ref.id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: 'Anunț potrivit căutării salvate', body: String(row.title), actionUrl: '/owner-listings', entityType: 'ownerListing', entityId: row.id, isRead: false, createdAt: now });
           });

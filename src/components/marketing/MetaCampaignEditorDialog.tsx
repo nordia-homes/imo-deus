@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { signOut } from 'firebase/auth';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { prepareCrmMedia } from '@/lib/crm/client-actions';
 import { Eye, ImageIcon, Images, Loader2, MessageCircle, PhoneCall, Play, Save, Share2, ShieldCheck, ThumbsUp, Upload } from 'lucide-react';
 import type { MetaMarketingCampaignDraft } from '@/lib/types';
-import { useAuth, useStorage, useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -252,7 +252,8 @@ export function MetaCampaignEditorDialog({
 }: Props) {
   const { user } = useUser();
   const auth = useAuth();
-  const storage = useStorage();
+  const mediaContext = useRef({ campaignId: campaign?.id, open });
+  mediaContext.current = { campaignId: campaign?.id, open };
   const { toast } = useToast();
   const [form, setForm] = useState<CampaignForm | null>(campaign ? buildFormFromCampaign(campaign) : null);
   const [isSaving, setIsSaving] = useState(false);
@@ -393,23 +394,17 @@ export function MetaCampaignEditorDialog({
 
   async function handleMediaUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files || []);
-    if (!files.length || !campaign) return;
+    if (!files.length || !campaign || !user) return;
+    const targetCampaign = campaign.id;
 
     setIsUploadingMedia(true);
     try {
-      const uploaded = await Promise.all(files.map(async (file) => {
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
-        const mediaRef = ref(storage, `agencies/${campaign.agencyId}/meta-campaigns/${campaign.id}/${Date.now()}-${safeName}`);
-        await uploadBytes(mediaRef, file, { contentType: file.type });
-        const url = await getDownloadURL(mediaRef);
-        return {
-          url,
-          type: file.type.startsWith('video/') ? 'video' as const : 'image' as const,
-          alt: file.name,
-          name: file.name,
-          source: 'upload' as const,
-        };
-      }));
+      const uploaded: Array<{ url: string; type: 'image' | 'video'; alt: string; name: string; source: 'upload' }> = [];
+      for (const file of files.slice(0, Math.max(0, 10 - (form?.mediaItems.length || 0)))) {
+        const media = await prepareCrmMedia(user, file, 'meta_media', targetCampaign);
+        uploaded.push({ url: media.url, type: media.type, alt: file.name, name: file.name, source: 'upload' });
+      }
+      if (!mediaContext.current.open || mediaContext.current.campaignId !== targetCampaign) return;
 
       setForm((current) => {
         if (!current) return current;

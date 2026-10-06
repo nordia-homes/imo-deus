@@ -22,6 +22,25 @@ function fixture() {
 const upload = { name: 'plan.png', mimeType: 'image/png' }, bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 afterEach(() => vi.clearAllMocks());
 describe('property assets attached by the common server service', () => {
+  it('rejects a stale displayed floor-plan revision before storing the replacement', async () => {
+    const { ctx, rows } = fixture();
+    rows.set('agencies/a/properties/p', { updatedAt: '2026-10-06T12:00:00Z', rlvUrl: 'newer-plan', images: [] });
+    mocks.resource.mockResolvedValueOnce({ updatedAt: '2026-10-06T12:00:00Z' });
+    await expect(applyPropertyAsset(ctx, 'upload', 'p', 'property_rlv', upload, bytes, '2020-01-01T10:00:00Z')).rejects.toMatchObject({ status: 409 });
+    expect(rows.get('agencies/a/properties/p').rlvUrl).toBe('newer-plan');
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
+  it('rejects a floor-plan edit during recoding without a ledger or partial property write', async () => {
+    const { ctx, rows } = fixture();
+    const revision = '2026-10-06T10:00:00Z';
+    rows.set('agencies/a/properties/p', { updatedAt: revision, rlvUrl: 'original', images: [] });
+    mocks.resource.mockResolvedValueOnce({ updatedAt: revision });
+    mocks.encode.mockImplementationOnce(async input => { rows.set('agencies/a/properties/p', { updatedAt: '2026-10-06T12:00:00Z', rlvUrl: 'concurrent', images: [] }); return input; });
+    await expect(applyPropertyAsset(ctx, 'upload', 'p', 'property_rlv', upload, bytes, revision)).rejects.toMatchObject({ status: 409 });
+    expect(rows.get('agencies/a/properties/p').rlvUrl).toBe('concurrent');
+    expect([...rows.keys()].some(key => key.startsWith('agencies/a/assistantExecutions/'))).toBe(false);
+    expect(rows.get('agencies/a/assistantUploads/upload')).toBeDefined();
+  });
   it('prepares a private agent photo without applying it before dialog confirmation', async () => {
     const { ctx, rows } = fixture(); ctx.role = 'admin';
     rows.set('users/u', { agencyId: 'a', role: 'admin', photoUrl: 'admin-original' });

@@ -1,3 +1,5 @@
+import { assertAutomationFence } from '@/lib/crm/automation-fence';
+import { authProfileOutbox, pendingAuthProfile } from '@/lib/crm/profile-auth';
 import { randomUUID, createHash } from 'node:crypto';
 import { CommunicationError } from '@/lib/communications/server';
 import { getConversation } from '@/lib/communications/server';
@@ -47,6 +49,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     const op = Object.hasOwn(operations, action.operation) ? operations[action.operation] : undefined;
     if (!op || isReadOperation(action.operation)) throw new CommunicationError('Folosește citirea pentru această operație.');
     const claim = await ctx.adminDb.runTransaction(async tx => {
+      await assertAutomationFence(ctx.adminDb, tx, ctx);
       const previous = await tx.get(ledger);
       const profile = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
       if (profile.data()?.agencyId !== ctx.agencyId || profile.data()?.role !== ctx.role || !['agent', 'admin'].includes(profile.data()?.role)) throw new CommunicationError('Acces revocat.', 403);
@@ -75,6 +78,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
   }
   const now = new Date().toISOString();
   return ctx.adminDb.runTransaction(async tx => {
+    await assertAutomationFence(ctx.adminDb, tx, ctx);
     const prior = await tx.get(ledger);
     const profile = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
     if (profile.data()?.agencyId !== ctx.agencyId || profile.data()?.role !== ctx.role || !['agent', 'admin'].includes(profile.data()?.role)) throw new CommunicationError('Acces revocat.', 403);
@@ -164,7 +168,9 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         if (account.email?.toLowerCase() !== action.patch.email.toLowerCase()) throw new CommunicationError('Schimbarea emailului necesită reautentificare din Setări. Finalizează pasul uman înainte de sincronizarea profilului.', 409);
       }
       const next = { ...profile.data(), ...action.patch };
+      const authOutbox = action.patch.name !== undefined ? await tx.get(authProfileOutbox(ctx, ctx.uid)) : null;
       tx.update(ctx.adminDb.collection('users').doc(ctx.uid), { ...action.patch, updatedAt: now });
+      if (action.patch.name !== undefined) tx.set(authProfileOutbox(ctx, ctx.uid), pendingAuthProfile(ctx, ctx.uid, now, authOutbox?.data()));
       tx.set(ctx.adminDb.collection('publicAgentProfiles').doc(ctx.uid), { agencyId: ctx.agencyId, name: next.name || '', email: next.email || '', phone: next.phone || '', photoUrl: next.photoUrl || '', updatedAt: now }, { merge: true });
       result = { userId: ctx.uid, changedFields: Object.keys(action.patch), link: '/settings' };
     } else if (action.kind === 'update_agency') {
@@ -254,7 +260,10 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const templateId = action.action === 'create' ? key : action.templateId;
       if (!templateId) throw new CommunicationError('Precizează șablonul.');
       const ref = collectionFor(ctx, 'contractTemplates').doc(templateId);
-      if (action.action !== 'create') await read('contractTemplates', templateId);
+      if (action.action !== 'create') {
+        const previousTemplate = await read('contractTemplates', templateId);
+        if (action.expectedUpdatedAt !== undefined && (previousTemplate.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Șablonul s-a modificat. Reîncarcă înainte de salvare sau ștergere.', 409);
+      }
       if (action.action === 'delete') tx.delete(ref);
       else {
         if (!action.data || !Object.keys(action.data).length) throw new CommunicationError('Precizează conținutul sau modificările șablonului.');
@@ -286,6 +295,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { saleId: ref.id, propertyId: action.propertyId, link: '/sales-management' };
     } else if (action.kind === 'update_offer' || action.kind === 'delete_offer') {
       const contact = await read('contacts', action.contactId);
+      if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Contactul s-a modificat. Reîncarcă datele înainte de executare.', 409);
       const offers = Array.isArray(contact.offers) ? contact.offers : [];
       if (!offers.some((offer: any) => offer.id === action.offerId)) throw new CommunicationError('Oferta nu există.', 404);
       tx.update(collectionFor(ctx, 'contacts').doc(action.contactId), { offers: action.kind === 'delete_offer' ? offers.filter((offer: any) => offer.id !== action.offerId) : offers.map((offer: any) => offer.id === action.offerId ? { ...offer, ...action.patch } : offer), updatedAt: now });
@@ -294,6 +304,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const ref = collectionFor(ctx, 'ownerListingFavorites').doc(action.listingId);
       const snapshot = await tx.get(ref);
       const favorite = snapshot.data() || {};
+      if (action.expectedUpdatedAt !== undefined && (favorite.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Prospectarea s-a modificat. Reîncarcă datele.', 409);
       if (!snapshot.exists) {
         if (!action.patch.state && !action.patch.contactOutcome) throw new CommunicationError('Adaugă anunțul în prospectare înainte de editarea detaliilor.', 409);
         const listing = await tx.get(ctx.adminDb.collection('ownerListings').doc(action.listingId));
@@ -307,6 +318,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { listingId: action.listingId, link: '/owner-listings/favorite' };
     } else if (action.kind === 'portal_action') {
       const contact = await read('contacts', action.contactId);
+      if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Contactul s-a modificat. Reîncarcă datele înainte de executare.', 409);
       const oldId = contact.portalId;
       const oldRef = oldId ? ctx.adminDb.collection('portals').doc(oldId) : null;
       const previous = oldRef ? await tx.get(oldRef) : null;
@@ -354,15 +366,17 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { propertyId: ref.id, status: next.status, link: `/properties/${ref.id}`, note: `Proprietate creată: ${next.status}.` };
     } else if (action.kind === 'archive_contact') {
       const contact = await read('contacts', action.contactId);
+      if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Contactul s-a modificat. Reîncarcă datele înainte de executare.', 409);
       if (action.byAge && (!action.archived || !shouldAutoArchiveContact(contact as Contact))) throw new CommunicationError('Contactul nu îndeplinește condițiile arhivării automate.', 409);
       tx.update(collectionFor(ctx, 'contacts').doc(action.contactId), { archivedAt: action.archived ? now : null, archivedByAge: Boolean(action.archived && action.byAge), updatedAt: now });
       result = { contactId: action.contactId, archived: action.archived, link: `/leads/${action.contactId}` };
     } else if (action.kind === 'assign_record') {
       const previousRecord = await read(action.resource, action.id);
+      if (action.expectedUpdatedAt !== undefined && (previousRecord.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Înregistrarea s-a modificat. Reîncarcă înainte de atribuire.', 409);
       const agent = action.agentId ? await tx.get(ctx.adminDb.collection('users').doc(action.agentId)) : null;
       if (agent && (agent.data()?.agencyId !== ctx.agencyId || !['admin', 'agent'].includes(agent.data()?.role))) throw new CommunicationError('Agentul nu aparține agenției.');
       if (action.resource === 'tasks') await assertCalendarSlot(ctx, tx, 'tasks', action.id, { ...previousRecord, agentId: action.agentId });
-      tx.update(collectionFor(ctx, action.resource).doc(action.id), { agentId: action.agentId, agentName: agent?.data()?.name || null, updatedAt: now });
+      tx.update(collectionFor(ctx, action.resource).doc(action.id), { agentId: action.agentId, agentName: agent?.data()?.name || null, ...(action.resource === 'properties' ? { agent: agent ? { name: agent.data()?.name || '', avatarUrl: agent.data()?.photoUrl || '' } : null } : {}), updatedAt: now });
       result = { id: action.id, agentId: action.agentId };
     } else if (action.kind === 'import_owner_listing') {
       const favorite = await read('ownerListingFavorites', action.listingId);
@@ -383,6 +397,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { propertyId: ref.id, link: `/properties/${ref.id}`, note: 'Import salvat ca Inactiv. Verifică datele și activează proprietatea înainte de ofertare/publicare.' };
     } else if (action.kind === 'activate_property') {
       const property = await read('properties', action.propertyId);
+      if (action.expectedUpdatedAt !== undefined && (property.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Proprietatea s-a modificat. Reîncarcă înainte de schimbarea statusului.', 409);
       if (property.status !== 'Inactiv') throw new CommunicationError('Doar proprietățile inactive pot fi activate.');
       assertPropertyActivation(property);
       const patch = propertyLifecyclePatch(property, { status: 'Activ', notes: '' }, now);
@@ -391,6 +406,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { propertyId: action.propertyId, link: `/properties/${action.propertyId}` };
     } else if (action.kind === 'update_property_status') {
       const property = await read('properties', action.propertyId);
+      if (action.expectedUpdatedAt !== undefined && (property.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Proprietatea s-a modificat. Reîncarcă înainte de schimbarea statusului.', 409);
       const patch = propertyLifecyclePatch(property, action, now);
       tx.update(collectionFor(ctx, 'properties').doc(action.propertyId), patch);
       statusEvent(action.propertyId, property, { ...property, ...patch }, action);

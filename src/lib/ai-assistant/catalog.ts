@@ -21,4 +21,3 @@ export async function capabilityStatus(ctx: AssistantContext, operation: string)
   const external = operations[operation]?.external || provider !== null;
   return { operation, checkedAt, status: external ? 'needs_provider_check' : 'available', executable: !external, preconditionsChecked: ['role', 'flags'], entityEligibilityChecked: false, ...(provider ? { nextRead: provider } : {}), ...(operation === 'message_send' ? { mandatoryPreview: 'message_preview', humanConsentTool: false } : {}), note: 'Disponibilitatea entității, costul, quota și versiunea se verifică prin serviciul domeniului înainte de mutație. OAuth și permisiunile dispozitivului necesită pașii umani din modulul CRM.' };
 }
-

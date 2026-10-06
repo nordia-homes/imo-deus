@@ -5,8 +5,8 @@ import { collectionFor, getResource, type AssistantContext } from '@/lib/ai-assi
 import { CommunicationError } from '@/lib/communications/server';
 import { validateUploadBytes } from '@/lib/ai-assistant/upload-validation';
 
-export async function applyPropertyAsset(ctx: AssistantContext, uploadId: string, propertyId: string, destination: 'property_image' | 'property_rlv', upload: Record<string, any>, bytes: Buffer) {
-  await getResource(ctx, 'properties', propertyId);
+export async function applyPropertyAsset(ctx: AssistantContext, uploadId: string, propertyId: string, destination: 'property_image' | 'property_rlv', upload: Record<string, any>, bytes: Buffer, expectedUpdatedAt?: string | null) {
+  const displayed = await getResource(ctx, 'properties', propertyId);
   const membership = await ctx.adminDb.collection('users').doc(ctx.uid).get();
   if (membership.data()?.agencyId !== ctx.agencyId || membership.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
   const image = ['image/png', 'image/jpeg', 'image/webp'].includes(upload.mimeType);
@@ -16,6 +16,8 @@ export async function applyPropertyAsset(ctx: AssistantContext, uploadId: string
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   const prior = await ledger.get();
   if (prior.exists) return prior.data()?.result;
+  const revision = expectedUpdatedAt === undefined ? displayed?.updatedAt || null : expectedUpdatedAt;
+  if (destination === 'property_rlv' && (displayed?.updatedAt || null) !== revision) throw new CommunicationError('Proprietatea s-a modificat. Reîncarcă înainte de înlocuirea releveului.', 409);
   const encoded = image ? await sharp(bytes, { limitInputPixels: 40000000 }).rotate().resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true }).webp({ quality: 88 }).toBuffer() : bytes;
   const mime = image ? 'image/webp' : 'application/pdf';
   const bucket = getStorage(ctx.adminAuth.app).bucket(), path = `agencies/${ctx.agencyId}/properties/${propertyId}/${destination}/${key}.${image ? 'webp' : 'pdf'}`;
@@ -41,6 +43,7 @@ export async function applyPropertyAsset(ctx: AssistantContext, uploadId: string
     if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
     if (!property.exists) throw new CommunicationError('Proprietatea nu mai există.', 404);
     if (previous.exists) return previous.data()?.result;
+    if (destination === 'property_rlv' && (property.data()?.updatedAt || null) !== revision) throw new CommunicationError('Proprietatea s-a modificat. Reîncarcă înainte de înlocuirea releveului.', 409);
     const now = new Date().toISOString();
     const images = Array.isArray(property.data()?.images) ? property.data()!.images : [];
     if (destination === 'property_image' && images.length >= 40) throw new CommunicationError('Proprietatea are deja 40 de imagini.');

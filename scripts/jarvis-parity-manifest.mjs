@@ -27,7 +27,7 @@ const manualWrites = [];
 const reachability = dashboardReachability();
 for (const file of [...files('src/app/(dashboard)'), ...files('src/components'), ...files('src/hooks')].filter(file => /\.tsx?$/.test(file))) {
   const value = fs.readFileSync(file, 'utf8');
-  const calls = [...value.matchAll(/\b(addDoc|updateDoc|setDoc|deleteDoc|writeBatch|uploadBytes|runTransaction|\w+DocumentNonBlocking|executeCrmAction|createManualViewing)\s*\(/g)].map(match => ({ call: match[1], line: value.slice(0, match.index).split('\n').length, sharedExecutor: ['executeCrmAction', 'createManualViewing'].includes(match[1]) }));
+  const calls = [...value.matchAll(/\b(addDoc|updateDoc|setDoc|deleteDoc|writeBatch|uploadBytes|runTransaction|\w+DocumentNonBlocking|executeCrmAction|createManualViewing|prepareCrmMedia|attachPropertyFile|attachBrandFile|previewContractFile|uploadCrmFile)\s*\(/g)].map(match => ({ call: match[1], line: value.slice(0, match.index).split('\n').length, sharedExecutor: ['executeCrmAction', 'createManualViewing', 'prepareCrmMedia', 'attachPropertyFile', 'attachBrandFile', 'previewContractFile', 'uploadCrmFile'].includes(match[1]) }));
   if (calls.length) { const sourceFile = file.replaceAll('\\', '/'); manualWrites.push({ file: sourceFile, calls, reachability: reachability(sourceFile), verification: 'static_reference_requires_semantic_review' }); }
 }
 const contracts = fs.readFileSync('src/lib/ai-assistant/contracts.ts', 'utf8');

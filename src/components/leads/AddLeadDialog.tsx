@@ -210,7 +210,7 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
   const handleUnarchiveDuplicate = async () => {
     if (!agency?.id || !user || !duplicateContact) return;
 
-    try { await executeCrmAction(user, { kind: 'archive_contact', contactId: duplicateContact.id, archived: false }); }
+    try { await executeCrmAction(user, { kind: 'archive_contact', contactId: duplicateContact.id, expectedUpdatedAt: duplicateContact.updatedAt || null, archived: false }); }
     catch (error) { toast({ variant: 'destructive', title: 'Dezarhivarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return; }
 
     toast({

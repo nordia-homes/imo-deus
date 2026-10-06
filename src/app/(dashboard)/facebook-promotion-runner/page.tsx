@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -24,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useAgency } from '@/context/AgencyContext';
-import { useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { DesktopFacebookRunnerStatus } from '@/lib/desktop/facebook-promotion';
 import type { FacebookPromotionSession } from '@/lib/types';
@@ -33,7 +32,7 @@ const SESSION_STORAGE_KEY = 'imodeus:facebookPromotionSession';
 
 export default function FacebookPromotionRunnerPage() {
   const router = useRouter();
-  const firestore = useFirestore();
+  const { user } = useUser();
   const { agencyId } = useAgency();
   const { toast } = useToast();
   const [session, setSession] = useState<FacebookPromotionSession | null>(null);
@@ -213,18 +212,12 @@ export default function FacebookPromotionRunnerPage() {
       return;
     }
 
-    const finalStatus = nextSession.groups.every((group) => group.status === 'posted' || group.status === 'skipped')
-      ? 'completed'
-      : nextSession.groups.some((group) => group.status === 'opened')
-        ? 'in_progress'
-        : 'pending';
+    if (!user || !session || !jobStatus) throw new Error('Sesiune sau autentificare indisponibilă.');
+    const response = await fetch(`/api/marketing/facebook-runner/${nextSession.jobId}/report`, { method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ groupIndex: session.currentGroupIndex, expectedStatus: session.groups[session.currentGroupIndex]?.status, status: jobStatus }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || result.message || 'Salvarea stării grupului nu a fost confirmată.');
+    nextSession = { ...nextSession, groups: result.groups };
 
-    await updateDoc(doc(firestore, 'agencies', agencyId, 'facebookPromotionJobs', nextSession.jobId), {
-      groups: nextSession.groups,
-      status: finalStatus,
-      lastUpdatedAt: new Date().toISOString(),
-      lastAction: jobStatus || null,
-    });
     persistSession(nextSession);
   };
 

@@ -35,6 +35,15 @@ describe('authorized complete pagination', () => {
     expect(result.searchMode).toBe('live_scan');
     expect(result.rows.map(row => row.id)).toEqual(['0001', '0002']);
   });
+  it('refuses indexed continuation when newly ingested rows no longer have full search coverage', async () => {
+    const rows: Record<string, any>[] = ['0001', '0002'].map(id => ({ ...listing, ...ownerSearchFields(listing), id }));
+    const ctx = context(rows), input = searchSchema.parse({ zone: 'Titan', priceMax: 130000, limit: 1 });
+    const first = await searchProperties(ctx, input);
+    expect(first.nextCursor).toMatch(/^i\|/);
+    rows.push({ ...listing, id: '0003' });
+    await expect(searchProperties(ctx, { ...input, cursor: first.nextCursor! })).rejects.toMatchObject({ status: 409 });
+    expect((await searchProperties(ctx, input)).searchMode).toBe('live_scan');
+  });
   it('falls back to fresh data when the native index is not READY', async () => {
     const rows = [{ ...listing, id: '0001', ...ownerSearchFields(listing) }];
     const ctx = { ...context(rows), adminDb: database(rows, true) } as unknown as AssistantContext;

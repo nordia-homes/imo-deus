@@ -1,3 +1,4 @@
+import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import type { Firestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { advanceStatus, budgetReservation, canReadConversation, withinResponseWindow, type Actor, type Conversation, type Message } from './model';
@@ -79,6 +80,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(id);
   const budgetRef = agencyCollection(db, actor.agencyId, 'communicationBudgets').doc(`${nowIso().slice(0, 7)}-${estimate.currency}`);
   await db.runTransaction(async tx => {
+    await assertAutomationFence(db, tx, actor);
     const [existing, fresh, budget] = await Promise.all([tx.get(job), tx.get(conversationRef), tx.get(budgetRef)]);
     if (existing.exists) {
       if (existing.data()?.conversationId !== id || !isDeepStrictEqual(existing.data()?.input, input)) throw new CommunicationError('Cheia de trimitere a fost deja utilizată pentru alt mesaj.', 409);

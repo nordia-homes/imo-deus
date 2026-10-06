@@ -7,7 +7,7 @@ import { normalized, safeData, uniqueReferences } from './contracts';
 import { isStepReference } from './dependencies';
 import { FieldPath } from 'firebase-admin/firestore';
 
-export type AssistantContext = Awaited<ReturnType<typeof requireAgencyUserFromBearerToken>> & { authorization: string; appOrigin?: string; agentBudget?: import('./budget').AgentBudget };
+export type AssistantContext = Awaited<ReturnType<typeof requireAgencyUserFromBearerToken>> & { authorization: string; agentJobFence?: import('@/lib/crm/automation-fence').AutomationFence; automationFence?: import('@/lib/crm/automation-fence').AutomationFence; appOrigin?: string; agentBudget?: import('./budget').AgentBudget };
 export async function assistantContext(request: Request): Promise<AssistantContext> {
   const authorization = request.headers.get('authorization') || '';
   const context = await requireAgencyUserFromBearerToken(authorization);

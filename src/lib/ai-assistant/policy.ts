@@ -32,5 +32,3 @@ export function buildInstructions(ctx: AssistantContext, dynamic: { readiness: u
     JSON.stringify({ time: new Date().toISOString(), timezone: 'Europe/Bucharest', role: ctx.role, actorId: ctx.uid, ...runtimeContext }),
   ].join('\n');
 }
-
-

@@ -26,6 +26,22 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('rejects stale offers, archiving, assignment, portal and lifecycle changes without partial writes', async () => {
+    const revision = '2026-10-06T10:00:00Z';
+    const { ctx, rows } = database({ 'agencies/a/contacts/c': { updatedAt: revision, offers: [{ id: 'o', price: 100 }] }, 'agencies/a/properties/p': { updatedAt: revision, status: 'Activ' } });
+    const actions = [
+      { kind: 'update_offer', contactId: 'c', offerId: 'o', expectedUpdatedAt: null, patch: { price: 200 } },
+      { kind: 'delete_offer', contactId: 'c', offerId: 'o', expectedUpdatedAt: null },
+      { kind: 'archive_contact', contactId: 'c', archived: true, expectedUpdatedAt: null },
+      { kind: 'assign_record', resource: 'contacts', id: 'c', agentId: null, expectedUpdatedAt: null },
+      { kind: 'portal_action', contactId: 'c', action: 'deactivate', expectedUpdatedAt: null },
+      { kind: 'update_property_status', propertyId: 'p', status: 'Inactiv', notes: '', expectedUpdatedAt: null },
+    ];
+    for (const [index, action] of actions.entries()) await expect(executeAction(ctx, actionSchema.parse(action), 'stale-' + index)).rejects.toMatchObject({ status: 409 });
+    expect(rows.get('agencies/a/contacts/c')!.offers[0].price).toBe(100);
+    expect(rows.get('agencies/a/properties/p')!.status).toBe('Activ');
+    expect([...rows.keys()].some(key => key.includes('/assistantExecutions/'))).toBe(false);
+  });
   it('guards agency revisions and permits Facebook group configuration only for current administrators', async () => {
     expect(selectActionTools('Schimbă tema agenției și grupurile Facebook', ['update_agency', 'update_property', 'update_contact'])).toContain('update_agency');
     const revision = '2026-10-06T10:00:00.000Z';

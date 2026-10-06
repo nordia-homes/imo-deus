@@ -262,7 +262,7 @@ export default function PropertiesPage() {
       const changedAt = new Date().toISOString();
       const isReactivating = reservationProperty.status === 'Rezervat';
       const nextStatus: Property['status'] = isReactivating ? 'Activ' : 'Rezervat';
-      await executeCrmAction(user, { kind: 'update_property_status', propertyId: reservationProperty.id, status: nextStatus, ...(isReactivating ? {} : { reason: 'reservation_offer_accepted' as const }), notes: isReactivating ? '' : `Marchez proprietatea ca rezervată în portofoliul agenției.` });
+      await executeCrmAction(user, { kind: 'update_property_status', propertyId: reservationProperty.id, expectedUpdatedAt: reservationProperty.updatedAt || null, status: nextStatus, ...(isReactivating ? {} : { reason: 'reservation_offer_accepted' as const }), notes: isReactivating ? '' : `Marchez proprietatea ca rezervată în portofoliul agenției.` });
 
       toast({
         title: isReactivating ? 'Proprietate reactivata' : 'Proprietate rezervata',

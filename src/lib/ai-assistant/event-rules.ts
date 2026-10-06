@@ -1,3 +1,4 @@
+import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { createHash } from 'node:crypto';
 import { FieldPath } from 'firebase-admin/firestore';
 import { collectionFor, canReadResource, getResource, type AssistantContext } from './access';
@@ -54,6 +55,7 @@ export async function runEventRule(ctx: AssistantContext, claim: Record<string, 
               } else {
                 const notification = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(key);
                 await ctx.adminDb.runTransaction(async tx => {
+                  await assertAutomationFence(ctx.adminDb, tx, ctx);
                   const member = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid)), existing = await tx.get(notification), entity = await tx.get(collectionFor(ctx, rule.trigger.resource).doc(targetId));
                   if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Permisiunile automatizării au fost revocate.');
                   if (!entity.exists || !canReadResource(ctx, rule.trigger.resource, entity.data()!)) throw new Error('Accesul la entitatea regulii a fost revocat.');
@@ -62,7 +64,7 @@ export async function runEventRule(ctx: AssistantContext, claim: Record<string, 
                 results.push({ notificationId: key });
               }
             }
-            await ctx.adminDb.runTransaction(async tx => { if (!(await tx.get(receipt)).exists) tx.create(receipt, { id: receiptId, sourceEventId: doc.id, occurredAt: event.occurredAt, completedAt: new Date().toISOString(), effects: safeData(results), actorId: ctx.uid }); });
+            await ctx.adminDb.runTransaction(async tx => { await assertAutomationFence(ctx.adminDb, tx, ctx); if (!(await tx.get(receipt)).exists) tx.create(receipt, { id: receiptId, sourceEventId: doc.id, occurredAt: event.occurredAt, completedAt: new Date().toISOString(), effects: safeData(results), actorId: ctx.uid }); });
             handled++;
           }
           // Completed receipts also count after recovery, avoiding exceeding maxEvents.

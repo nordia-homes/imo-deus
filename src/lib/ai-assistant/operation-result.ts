@@ -12,7 +12,7 @@ const aliases: Record<string, [string, string]> = {
 };
 export function operationResult(operation: string, raw: Record<string, any>, readOnly = false) {
   const result = safeData(raw), alias = aliases[operation];
-  const state = result.status || result.job?.status || result.call?.status || result.draft?.status || result.operation?.status || result.operation?.state;
+  const state = result.status || result.job?.status || result.call?.status || result.draft?.status || result.campaign?.status || result.operation?.status || result.operation?.state;
   if (typeof state === 'string') result.businessStatus = state;
   const key = String(state || '').toLowerCase();
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };

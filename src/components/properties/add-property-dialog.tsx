@@ -1,5 +1,5 @@
 "use client";
-import { executeCrmAction } from '@/lib/crm/client-actions';
+import { executeCrmAction, prepareCrmMedia } from '@/lib/crm/client-actions';
 
 import { useState, ChangeEvent, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -32,7 +32,7 @@ import { generatePropertyDescription } from '@/ai/flows/property-description-gen
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useStorage } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useAgency } from '@/context/AgencyContext';
 import { Checkbox } from '../ui/checkbox';
@@ -43,7 +43,6 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '../ui/card';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
 import { PropertiesMap } from '../map/PropertiesMap';
 import { useAgencyAgents } from '@/hooks/use-agency-agents';
@@ -815,7 +814,6 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
     const { user } = useUser();
     const { agency, agencyId } = useAgency();
     const firestore = useFirestore();
-    const storage = useStorage();
     const { agents, error: agentsError } = useAgencyAgents();
     const [facebookConnections, setFacebookConnections] = useState<FacebookCloudConnection[]>([]);
     
@@ -1525,11 +1523,8 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               
               const uploadPromises = newImageFiles.map(async (file, index) => {
                   const resizedBlob = await resizeAndGetBlob(file);
-                  const imageName = `${crypto.randomUUID()}.jpg`;
-                  const imageRef = ref(storage, `agencies/${agencyId}/properties/${propertyId}/${imageName}`);
-                  await uploadBytes(imageRef, resizedBlob);
-                  const downloadURL = await getDownloadURL(imageRef);
-                  return { url: downloadURL, alt: `${values.title} - imagine ${index + 1}` };
+                  const media = await prepareCrmMedia(user, new File([resizedBlob], file.name + '.jpg', { type: 'image/jpeg' }), 'property_media', propertyId, !isEditMode);
+                  return { url: media.url, alt: `${values.title} - imagine ${index + 1}` };
               });
               uploadedImageUrls = await Promise.all(uploadPromises);
           }
@@ -1538,14 +1533,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
           let uploadedVideo: PropertyUploadedVideo | null = videoSource && !(videoSource instanceof File) ? videoSource : null;
           if (videoSource instanceof File) {
               toast({ title: 'Încărcare video...', description: 'Videoclipul proprietății este încărcat în siguranță.' });
-              const extension = videoSource.name.split('.').pop()?.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'mp4';
-              const videoRef = ref(storage, `agencies/${agencyId}/properties/${propertyId}/videos/${crypto.randomUUID()}.${extension}`);
-              await uploadBytes(videoRef, videoSource, { contentType: videoSource.type });
+              const media = await prepareCrmMedia(user, videoSource, 'property_media', propertyId, !isEditMode);
               uploadedVideo = {
-                  url: await getDownloadURL(videoRef),
+                  url: media.url,
                   fileName: videoSource.name,
-                  mimeType: videoSource.type || 'video/mp4',
-                  sizeBytes: videoSource.size,
+                  mimeType: media.mimeType,
+                  sizeBytes: media.sizeBytes,
                   uploadedAt: new Date().toISOString(),
                   uploadedByUid: user.uid,
               };

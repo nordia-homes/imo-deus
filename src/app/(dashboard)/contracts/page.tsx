@@ -1230,7 +1230,7 @@ export default function ContractsPage() {
     if (!agencyId || userProfile?.role !== 'admin') return;
 
     try {
-      await executeCrmAction(user, { kind: 'contract_template_action', action: 'delete', templateId });
+      await executeCrmAction(user, { kind: 'contract_template_action', action: 'delete', templateId, expectedUpdatedAt: templates?.find(row => row.id === templateId)?.updatedAt || null });
       toast({
         title: 'Template sters',
         description: 'Template-ul a fost eliminat.',

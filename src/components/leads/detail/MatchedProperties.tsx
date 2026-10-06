@@ -344,7 +344,7 @@ export function MatchedProperties({ properties, onAddRecommendation, agency, con
   const handlePortalAction = async (action: 'activate' | 'regenerate' | 'deactivate') => {
     if (!user || !contact) return;
     setIsLoadingPortal(true);
-    try { await executeCrmAction(user, { kind: 'portal_action', contactId: contact.id, action }); toast({ title: action === 'deactivate' ? 'Portal dezactivat!' : 'Portal activat!' }); }
+    try { await executeCrmAction(user, { kind: 'portal_action', contactId: contact.id, action, expectedUpdatedAt: contact.updatedAt || null }); toast({ title: action === 'deactivate' ? 'Portal dezactivat!' : 'Portal activat!' }); }
     catch (error) { toast({ variant: 'destructive', title: 'Portalul nu a fost actualizat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     finally { setIsLoadingPortal(false); }
   };

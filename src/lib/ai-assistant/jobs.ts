@@ -8,6 +8,15 @@ import { adminAuth } from '@/firebase/admin';
 import type { Firestore } from 'firebase-admin/firestore';
 import { failureCategory } from './failure';
 import { saveWorkerTurnFailure } from './worker-failure';
+import { assertAutomationFence } from '@/lib/crm/automation-fence';
+
+export async function renewAgentJobLease(db: Firestore, ctx: AssistantContext) {
+  if (!ctx.agentJobFence) throw new CommunicationError('Claim worker necesar.', 409);
+  return db.runTransaction(async tx => {
+    await assertAutomationFence(db, tx, ctx);
+    tx.update(db.collection('assistantAgentJobs').doc(ctx.agentJobFence!.jobId), { leaseUntil: Date.now() + 300000, heartbeatAt: new Date().toISOString() });
+  });
+}
 
 export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string }) {
   if (ctx.runtimeMode === 'demo') throw new CommunicationError('Joburile durabile sunt indisponibile în demo.', 403);
@@ -64,14 +73,21 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
       tx.update(row.ref, { status: 'running', claimId, leaseUntil: Date.now() + 300000, attempts: data.attempts + 1 }); return data;
     });
     if (!job) continue; processed++;
-    const ctx = { uid: job.userId, agencyId: job.agencyId, role: job.role, adminDb: db, adminAuth, runtimeMode: 'real', authorization: '', appOrigin: process.env.APP_BASE_URL } as AssistantContext;
+    const ctx = { uid: job.userId, agencyId: job.agencyId, role: job.role, adminDb: db, adminAuth, runtimeMode: 'real', authorization: '', appOrigin: process.env.APP_BASE_URL, agentJobFence: { jobId: row.id, claimId } } as AssistantContext;
     const events: unknown[] = [];
     const publishProgress = async (progress: unknown[]) => db.runTransaction(async tx => {
+      await assertAutomationFence(db, tx, ctx);
       const fresh = await tx.get(row.ref);
       if (fresh.data()?.claimId !== claimId || fresh.data()?.status !== 'running') throw new CommunicationError('Execuția workerului a fost înlocuită. Verifică istoricul.', 409);
       tx.update(row.ref, { events: progress, leaseUntil: Date.now() + 300000 });
     });
     let outcome: Record<string, unknown>;
+    let renewing: Promise<void> | null = null;
+    const heartbeat = setInterval(() => {
+      if (renewing) return;
+      renewing = renewAgentJobLease(db, ctx).catch(() => { clearInterval(heartbeat); }).finally(() => { renewing = null; });
+    }, 60000);
+    heartbeat.unref();
     try {
       if (job.jobType === 'plan') {
         await publishProgress([{ type: 'PROGRESS_EVENT', stage: 'executing_plan', text: 'Execut planul confirmat pe server.', step: 0, at: new Date().toISOString() }]);
@@ -94,6 +110,8 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
         } catch (saveError) { console.error(JSON.stringify({ event: 'jarvis_failure_reply_unavailable', errorCategory: failureCategory(saveError) })); }
       }
     }
+    clearInterval(heartbeat);
+    if (renewing) await renewing;
     await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.claimId === claimId && fresh.data()?.status === 'running') tx.update(row.ref, outcome); });
   }
   return { processed };

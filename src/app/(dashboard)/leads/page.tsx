@@ -92,7 +92,7 @@ export default function LeadsPage() {
             if (!shouldAutoArchiveContact(contact)) return;
 
             archivedInSessionRef.current.add(contact.id);
-            void executeCrmAction(user, { kind: 'archive_contact', contactId: contact.id, archived: true, byAge: true }).catch(() => { archivedInSessionRef.current.delete(contact.id); });
+            void executeCrmAction(user, { kind: 'archive_contact', contactId: contact.id, expectedUpdatedAt: contact.updatedAt || null, archived: true, byAge: true }).catch(() => { archivedInSessionRef.current.delete(contact.id); });
         });
     }, [agencyId, buyerContacts, user]);
 
@@ -281,7 +281,7 @@ export default function LeadsPage() {
 
     const handleUnarchive = async (contact: Contact) => {
         if (!agencyId || !user) return;
-        try { await executeCrmAction(user, { kind: 'archive_contact', contactId: contact.id, archived: false }); }
+        try { await executeCrmAction(user, { kind: 'archive_contact', contactId: contact.id, expectedUpdatedAt: contact.updatedAt || null, archived: false }); }
         catch (error) { toast({ variant: 'destructive', title: 'Dezarhivarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
     };
 

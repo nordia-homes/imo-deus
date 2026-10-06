@@ -1,13 +1,13 @@
 'use client';
 import { useState } from 'react';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { useStorage, useUser } from '@/firebase';
+import { prepareCrmMedia } from '@/lib/crm/client-actions';
+import { useUser } from '@/firebase';
 import { Upload, Film } from 'lucide-react';
 import { inputClass, type Api, type Workspace } from './workspace-types';
 export type AdVideo = Workspace['assets'][number] & { requiresImport?: boolean; mimeType?: string | null; sizeBytes?: number | null; source?: string };
 
 export function AdVideoPicker({ api, videos, propertyId, value, disabled, onSelected, onBusy }: { api: Api; videos: AdVideo[]; propertyId: string; value: string; disabled: boolean; onSelected: (asset: AdVideo) => void; onBusy: (busy: boolean) => void }) {
-  const storage = useStorage(); const { user } = useUser();
+  const { user } = useUser();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const choices = videos.filter(video => video.propertyId === propertyId);
@@ -27,12 +27,11 @@ export function AdVideoPicker({ api, videos, propertyId, value, disabled, onSele
   }
   async function upload(file: File) {
     await run(async () => {
-      if (!propertyId || !user || !storage) throw new Error('Selectează proprietatea și verifică autentificarea înainte de încărcare.');
+      if (!propertyId || !user) throw new Error('Selectează proprietatea și verifică autentificarea înainte de încărcare.');
       if (!file.type.startsWith('video/') || file.size === 0 || file.size > 500 * 1024 * 1024) throw new Error('Alege un videoclip de maximum 500 MB.');
-      const target = ref(storage, `users/${user.uid}/tiktok-studio/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`);
-      await uploadBytes(target, file, { contentType: file.type });
-      const url = await getDownloadURL(target);
-      return (await api<{ asset: AdVideo }>('/api/marketing/tiktok/studio-assets', { method: 'POST', body: JSON.stringify({ propertyId, type: 'video', name: file.name, url, mimeType: file.type, sizeBytes: file.size, source: 'upload' }) })).asset;
+      const media = await prepareCrmMedia(user, file, 'tiktok_media', propertyId);
+      const url = media.url;
+      return (await api<{ asset: AdVideo }>('/api/marketing/tiktok/studio-assets', { method: 'POST', body: JSON.stringify({ propertyId, type: 'video', name: file.name, url, mimeType: media.mimeType, sizeBytes: media.sizeBytes, source: 'upload' }) })).asset;
     });
   }
   return <div className="space-y-3"><label className="tt-field"><span>Videoclipul proprietății</span><select className={inputClass} value={value} disabled={disabled || loading || !propertyId} onChange={event => void select(event.target.value)}><option value="">Selectează un videoclip</option>{choices.map(video => <option key={video.id} value={video.id}>{video.name}</option>)}</select></label>

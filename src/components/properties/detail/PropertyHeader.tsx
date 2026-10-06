@@ -53,7 +53,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
         if (!agencyId || !newStatus || isStatusUpdating) return;
         setIsStatusUpdating(true);
         try {
-            await executeCrmAction(user, { kind: 'update_property_status', propertyId: property.id, status: newStatus, notes: '' });
+            await executeCrmAction(user, { kind: 'update_property_status', propertyId: property.id, expectedUpdatedAt: property.updatedAt || null, status: newStatus, notes: '' });
             toast({ title: 'Status actualizat!', description: 'Proprietatea este acum: ' + newStatus });
         } catch (error) { toast({ variant: 'destructive', title: 'Actualizarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
         finally { setIsStatusUpdating(false); }
@@ -74,7 +74,7 @@ export function PropertyHeader({ property, onTriggerAddViewing }: { property: Pr
         setIsStatusUpdating(true);
 
         try {
-            await executeCrmAction(user, { kind: 'update_property_status', propertyId: property.id, status: payload.nextStatus, ...(payload.reason !== 'agent_instruction' ? { reason: payload.reason } : {}), notes: payload.agentMessage, ...(payload.soldPrice ? { soldPrice: payload.soldPrice } : {}) });
+            await executeCrmAction(user, { kind: 'update_property_status', propertyId: property.id, expectedUpdatedAt: property.updatedAt || null, status: payload.nextStatus, ...(payload.reason !== 'agent_instruction' ? { reason: payload.reason } : {}), notes: payload.agentMessage, ...(payload.soldPrice ? { soldPrice: payload.soldPrice } : {}) });
 
             toast({
                 title: 'Status actualizat!',

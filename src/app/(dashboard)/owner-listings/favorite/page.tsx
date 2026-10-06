@@ -289,7 +289,7 @@ export default function FavoriteOwnerListingsPage() {
   };
 
   const handleSetCollaborationStatus = async (listing: OwnerListing, status: CollaborationStatus | null) => {
-    try { await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, patch: { collaborationStatus: status } }); }
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, expectedUpdatedAt: activeFavorites.find(row => (row.ownerListingId || row.id) === listing.id)?.updatedAt || null, patch: { collaborationStatus: status } }); }
     catch (error) { toast({ title: 'Actualizare eșuată', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
@@ -341,22 +341,22 @@ export default function FavoriteOwnerListingsPage() {
   };
 
   const handleSaveFavorite = async (listingId: string, updates: Partial<OwnerListingFavorite>) => {
-    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { ...(updates.notes !== undefined ? { notes: updates.notes } : {}), ...(updates.propertyAddress !== undefined ? { propertyAddress: updates.propertyAddress } : {}), ...(updates.commissionValue !== undefined ? { commissionValue: updates.commissionValue } : {}) } }); }
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, expectedUpdatedAt: activeFavorites.find(row => (row.ownerListingId || row.id) === listingId)?.updatedAt || null, patch: { ...(updates.notes !== undefined ? { notes: updates.notes } : {}), ...(updates.propertyAddress !== undefined ? { propertyAddress: updates.propertyAddress } : {}), ...(updates.commissionValue !== undefined ? { commissionValue: updates.commissionValue } : {}) } }); }
     catch (error) { toast({ title: 'Actualizare eșuată', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
   const handleSetReserved = async (listingId: string) => {
-    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { state: 'reserved' } }); toast({ title: 'Anunț rezervat' }); }
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, expectedUpdatedAt: activeFavorites.find(row => (row.ownerListingId || row.id) === listingId)?.updatedAt || null, patch: { state: 'reserved' } }); toast({ title: 'Anunț rezervat' }); }
     catch (error) { toast({ title: 'Status blocat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
   const handleSetTaken = async (listingId: string) => {
-    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { state: 'taken' } }); toast({ title: 'Lead preluat' }); }
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, expectedUpdatedAt: activeFavorites.find(row => (row.ownerListingId || row.id) === listingId)?.updatedAt || null, patch: { state: 'taken' } }); toast({ title: 'Lead preluat' }); }
     catch (error) { toast({ title: 'Status blocat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 
   const handleSetOutcome = async (listingId: string, outcome: 'negative' | 'follow_up') => {
-    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, patch: { contactOutcome: outcome } }); toast({ title: 'Status actualizat' }); }
+    try { await executeCrmAction(user, { kind: 'update_prospect', listingId, expectedUpdatedAt: activeFavorites.find(row => (row.ownerListingId || row.id) === listingId)?.updatedAt || null, patch: { contactOutcome: outcome } }); toast({ title: 'Status actualizat' }); }
     catch (error) { toast({ title: 'Status blocat', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' }); }
   };
 

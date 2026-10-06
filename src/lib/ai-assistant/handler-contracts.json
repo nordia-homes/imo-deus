@@ -1,4 +1,34 @@
 {
+  "crm_report": {
+    "method": "GET",
+    "validation": "reportSchema = z.object({ section: z.enum(['summary', 'pipeline', 'portfolio', 'quality', 'forecast', 'sources', 'all']).default('summary'), scope: z.enum(['agency', 'mine']).default('agency') }).strict()",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "plan_outcomes": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [
+      "planId"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "file_prepare_media": {
+    "method": "POST",
+    "validation": "largeUploadSchema = z.object({ name: z.string().min(1).max(120), mimeType: z.enum(['video/mp4', 'video/webm', 'video/quicktime']), size: z.number().int().min(1).max(500 * 1024 * 1024) }).strict()\n\nmediaPreparationSchema = z.object({ purpose: z.enum(['property_media', 'meta_media', 'tiktok_media', 'video_tour']), targetId: z.string().min(1).max(180).regex(/^[^/]+$/).optional(), createTarget: z.boolean().default(false) }).strict()",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "crm_reconcile": {
+    "method": "POST",
+    "validation": "reconciliationSchema = z.object({ resource: z.enum(resources), cursor: z.string().max(2000).optional(), limit: z.number().int().min(1).max(50).default(20) }).strict()",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
   "crm_health": {
     "method": "GET",
     "validation": "",
@@ -27,7 +57,7 @@
   },
   "file_apply": {
     "method": "POST",
-    "validation": "schema = z.discriminatedUnion('destination', [\n  z.object({ destination: z.literal('profile_photo') }).strict(),\n  z.object({ destination: z.literal('agency_logo') }).strict(),\n  z.object({ destination: z.literal('agency_share_image') }).strict(),\n  z.object({ destination: z.literal('agent_photo'), agentId: id }).strict(),\n  z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),\n  z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),\n  z.object({ destination: z.literal('identity_ocr') }).strict(),\n  z.object({ destination: z.literal('property_image'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('property_rlv'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('contract_template'), name: z.string().trim().min(1).max(300), category: z.enum(['reservation', 'collaboration', 'exclusivity', 'custom']), description: z.string().max(10000).default('') }).strict(),\n  z.object({ destination: z.literal('electronic_identity_ocr'), addressProofUploadId: z.string().uuid() }).strict(),\n])",
+    "validation": "schema = z.discriminatedUnion('destination', [\n  z.object({ destination: z.literal('profile_photo') }).strict(),\n  z.object({ destination: z.literal('agency_logo') }).strict(),\n  z.object({ destination: z.literal('agency_share_image') }).strict(),\n  z.object({ destination: z.literal('agent_photo'), agentId: id }).strict(),\n  z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),\n  z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),\n  z.object({ destination: z.literal('identity_ocr') }).strict(),\n  z.object({ destination: z.literal('property_image'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('property_rlv'), propertyId: id, expectedUpdatedAt: z.string().datetime({ offset: true }).nullable().optional() }).strict(),\n  z.object({ destination: z.literal('contract_template'), name: z.string().trim().min(1).max(300), category: z.enum(['reservation', 'collaboration', 'exclusivity', 'custom']), description: z.string().max(10000).default('') }).strict(),\n  z.object({ destination: z.literal('electronic_identity_ocr'), addressProofUploadId: z.string().uuid() }).strict(),\n])",
     "bodyFields": [],
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
@@ -370,6 +400,13 @@
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
   },
+  "browser_video_cancel": {
+    "method": "POST",
+    "validation": "cancelSchema = z.object({ runId: z.string().uuid() }).strict()",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
   "video_create": {
     "method": "POST",
     "validation": "",
@@ -638,7 +675,7 @@
   },
   "agency_agent_detail": {
     "method": "GET",
-    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n  photoUploadId: z.string().uuid().optional(),\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
+    "validation": "updateAgentSchema = z.object({\r\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\r\n  phone: z.string().trim().optional(),\r\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\r\n  photoUploadId: z.string().uuid().optional(),\r\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\r\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
     "bodyFields": [
       "expectedUpdatedAt",
       "name",
@@ -889,7 +926,7 @@
   },
   "agency_agent_update": {
     "method": "PATCH",
-    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n  photoUploadId: z.string().uuid().optional(),\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
+    "validation": "updateAgentSchema = z.object({\r\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\r\n  phone: z.string().trim().optional(),\r\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\r\n  photoUploadId: z.string().uuid().optional(),\r\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\r\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
     "bodyFields": [
       "expectedUpdatedAt",
       "name",
@@ -902,7 +939,7 @@
   },
   "agency_agent_remove": {
     "method": "DELETE",
-    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n  photoUploadId: z.string().uuid().optional(),\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
+    "validation": "updateAgentSchema = z.object({\r\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\r\n  phone: z.string().trim().optional(),\r\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\r\n  photoUploadId: z.string().uuid().optional(),\r\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\r\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
     "bodyFields": [
       "expectedUpdatedAt",
       "name",
@@ -1603,6 +1640,20 @@
       "groupUrls",
       "scheduledAt"
     ],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "facebook_runner_read": {
+    "method": "GET",
+    "validation": "runnerGroupSchema = z.object({ groupIndex: z.number().int().min(0).max(499), expectedStatus: z.enum(['pending', 'opened', 'posted', 'skipped']), status: z.enum(['opened', 'posted', 'skipped']) }).strict()\n\nrunnerSkipSchema = runnerGroupSchema.extend({ status: z.literal('skipped') })",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "facebook_runner_skip": {
+    "method": "POST",
+    "validation": "runnerGroupSchema = z.object({ groupIndex: z.number().int().min(0).max(499), expectedStatus: z.enum(['pending', 'opened', 'posted', 'skipped']), status: z.enum(['opened', 'posted', 'skipped']) }).strict()\n\nrunnerSkipSchema = runnerGroupSchema.extend({ status: z.literal('skipped') })",
+    "bodyFields": [],
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
   },

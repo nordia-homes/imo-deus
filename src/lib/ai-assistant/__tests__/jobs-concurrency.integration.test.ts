@@ -6,7 +6,7 @@ vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extend
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), referencesAllowed: async () => true }));
 vi.mock('../workspace', () => ({ chatTurn: vi.fn(), runPlan: vi.fn(), getPlan: vi.fn() }));
 import { chatTurn } from '../workspace';
-import { drainAgentJobs, enqueueTurn } from '../jobs';
+import { drainAgentJobs, enqueueTurn, renewAgentJobLease } from '../jobs';
 import type { AssistantContext } from '../access';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
@@ -40,6 +40,17 @@ describe.skipIf(!host)('worker claims on actual Firestore transactions', () => {
     await Promise.all([drainAgentJobs(db as any), drainAgentJobs(db as any)]);
     expect(chatTurn).toHaveBeenCalledTimes(1);
     expect((await db.collection('assistantAgentJobs').doc(row.requestId).get()).data()?.status).toBe('completed');
+  }, 20000);
+  it('renews a silent operation without changing progress and refuses a replacement claim', async () => {
+    const row = await fixture(), ref = db.collection('assistantAgentJobs').doc(row.requestId);
+    await ref.update({ status: 'running', claimId: 'active', leaseUntil: Date.now() + 5000, events: [{ text: 'preserve' }] });
+    const ctx = { uid: row.uid, role: 'agent', agencyId: row.agencyId, agentJobFence: { jobId: row.requestId, claimId: 'active' } } as AssistantContext;
+    await renewAgentJobLease(db as any, ctx);
+    const updated = (await ref.get()).data()!;
+    expect(updated.leaseUntil).toBeGreaterThan(Date.now() + 250000); expect(updated.events).toEqual([{ text: 'preserve' }]);
+    await ref.update({ claimId: 'replacement', leaseUntil: Date.now() + 60000 });
+    await expect(renewAgentJobLease(db as any, ctx)).rejects.toMatchObject({ status: 409 });
+    expect((await ref.get()).data()?.claimId).toBe('replacement');
   }, 20000);
   it('rejects old progress after lease takeover without changing the new result', async () => {
     vi.mocked(chatTurn).mockReset();

@@ -8,9 +8,10 @@ export function AssistantUploadButton({ user, disabled, onUpload, onError }: {
   onUpload: (file: { uploadId: string; name: string }) => void; onError: (message: string) => void;
 }) {
   const input = useRef<HTMLInputElement>(null), [busy, setBusy] = useState(false);
-  return <><input ref={input} type="file" hidden accept=".pdf,.docx,.csv,.png,.jpg,.jpeg,.webp" onChange={async event => {
+  return <><input ref={input} type="file" hidden accept=".pdf,.docx,.csv,.png,.jpg,.jpeg,.webp,.mp4,.webm,.mov" onChange={async event => {
     const file = event.target.files?.[0]; event.target.value = ''; if (!file || !user) return;
-    if (file.size > 15 * 1024 * 1024) { onError('Limita fișierului este 15 MB.'); return; }
+    const video = ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type);
+    if (file.size > (video ? 500 : 15) * 1024 * 1024) { onError(video ? 'Limita videoclipului este 500 MB.' : 'Limita fișierului este 15 MB.'); return; }
     setBusy(true);
     try {
       onUpload(await uploadCrmFile(user, file));

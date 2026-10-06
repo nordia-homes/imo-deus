@@ -521,7 +521,7 @@ export default function OwnerListingsPage() {
         };
 
         if (agencyId && existingFavorite && existingFavorite.isFavoriteActive !== false && localOwnerPhone !== normalizeRomanianPhone(existingFavorite.ownerPhone)) {
-          await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, patch: { ownerPhone: localOwnerPhone } });
+          await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, expectedUpdatedAt: existingFavorite.updatedAt || null, patch: { ownerPhone: localOwnerPhone } });
         }
 
         setSelectedAiListing(enrichedListing);
@@ -707,7 +707,7 @@ export default function OwnerListingsPage() {
   const changeProspect = async (listing: OwnerListing, patch: { state?: 'reserved' | 'taken'; contactOutcome?: 'negative' | 'follow_up' }) => {
     if (!agencyId || !user) return;
     try {
-      await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, patch });
+      await executeCrmAction(user, { kind: 'update_prospect', listingId: listing.id, expectedUpdatedAt: favoritesByListingId.get(listing.id)?.updatedAt || null, patch });
       toast({ title: 'Status actualizat', description: patch.state === 'reserved' ? 'Anunțul este rezervat.' : patch.state === 'taken' ? 'Anunțul este preluat.' : patch.contactOutcome === 'negative' ? 'Anunțul este marcat negativ.' : 'Anunțul este trecut în follow-up.' });
     } catch (error) { toast({ variant: 'destructive', title: 'Actualizarea a eșuat', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
   };

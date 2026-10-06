@@ -5,7 +5,7 @@ export const MODEL_IDS = ['gpt-6-luna', 'gpt-6.1-sol'] as const;
 export type ModelId = typeof MODEL_IDS[number];
 export type LogicalModel = 'LUNA' | 'SOL';
 export type ReasoningEffort = 'none' | 'low' | 'medium' | 'high';
-export const VERSIONS = { prompt: 'jarvis-20', routing: 'luna-first-2', policy: 'tenant-approval-6', tools: '20', memory: '1', skills: '3' } as const;
+export const VERSIONS = { prompt: 'jarvis-22', routing: 'luna-first-2', policy: 'tenant-approval-6', tools: '22', memory: '1', skills: '3' } as const;
 export function allowedModel(id: string): ModelId { return z.enum(MODEL_IDS).parse(id); }
 export type RoutingSignals = { dependencyDepth?: number; estimatedTools?: number; planningFailures?: number; invalidCalls?: number; ambiguity?: boolean; risk?: 'READ' | 'SAFE_WRITE' | 'SENSITIVE' | 'CRITICAL'; elapsedMs?: number; remainingCost?: number; evaluationRequiresSol?: boolean; infrastructureFailure?: boolean };
 export type RoutingDecision = { logical: LogicalModel; model: ModelId; effort: ReasoningEffort; reason: string; version: string };
@@ -35,4 +35,3 @@ export function usageCost(model: ModelId, usage: ModelUsage) {
 export type ModelCapabilities = { tools: boolean; structuredOutput: boolean; reasoning: ReasoningEffort[]; streaming: boolean };
 export type ModelDefinition = { logical: LogicalModel; id: ModelId; provider: string; capabilities: ModelCapabilities };
 export const modelDefinitions: ModelDefinition[] = MODEL_IDS.map((id, i) => ({ logical: i ? 'SOL' : 'LUNA', id, provider: 'openai', capabilities: { tools: true, structuredOutput: true, streaming: true, reasoning: i ? ['low', 'medium', 'high'] : ['none', 'low', 'medium', 'high'] } }));
-

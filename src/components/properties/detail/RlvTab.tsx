@@ -76,7 +76,7 @@ export function RlvTab({ property, showPdfPreview = false }: RlvTabProps) {
     try {
       setIsUploading(true);
 
-      await attachPropertyFile(user, file, property.id, 'property_rlv');
+      await attachPropertyFile(user, file, property.id, 'property_rlv', property.updatedAt || null);
 
       toast({
         title: 'RLV încărcat',

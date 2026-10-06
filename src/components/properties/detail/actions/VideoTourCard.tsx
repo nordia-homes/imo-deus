@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { prepareCrmMedia } from '@/lib/crm/client-actions';
 import {
   CheckCircle2,
   Download,
@@ -20,7 +19,7 @@ import {
 } from 'lucide-react';
 import type { Property, PropertyVideoTour } from '@/lib/types';
 import { useAgency } from '@/context/AgencyContext';
-import { updateDocumentNonBlocking, useFirestore, useStorage, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -641,8 +640,6 @@ export function VideoTourCard({
   const { agencyId, agency } = useAgency();
   const router = useRouter();
   const { user } = useUser();
-  const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const scriptTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -752,10 +749,12 @@ export function VideoTourCard({
     };
   }, [isOpen, includeAiPresenter, user, property.id, aiPresenterVoice]);
 
-  const persistVideoTour = (payload: PropertyVideoTour) => {
-    if (!agencyId || !property.id) return;
-    const propertyRef = doc(firestore, 'agencies', agencyId, 'properties', property.id);
-    updateDocumentNonBlocking(propertyRef, { videoTour: payload });
+  const persistVideoTour = async (runId: string, payload: PropertyVideoTour, uploads?: { videoUploadId: string; thumbnailUploadId: string }) => {
+    const { engine, generatedAt, generatedByUid, url, thumbnailUrl, fileName, mimeType, ...settings } = payload;
+    const response = await authorizedFetch(`/api/properties/${property.id}/browser-video`, { method: 'POST', body: JSON.stringify({ runId, ...settings, ...uploads, ...(payload.status === 'processing' ? { expectedUpdatedAt: property.updatedAt || null } : {}) }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || result.message || 'Salvarea turului video nu a fost confirmată.');
+    return result;
   };
 
   const authorizedFetch = async (input: RequestInfo, init?: RequestInit) => {
@@ -866,7 +865,10 @@ export function VideoTourCard({
     setIsGenerating(true);
     setProgress(2);
     let musicBed: ReturnType<typeof createMusicBed> = null;
-    persistVideoTour({
+    const runId = crypto.randomUUID();
+    let started = false;
+    try {
+    await persistVideoTour(runId, {
       status: 'processing',
       format,
       style,
@@ -879,8 +881,7 @@ export function VideoTourCard({
       generatedByUid: user?.uid || null,
       imageCount: images.length,
     });
-
-    try {
+    started = true;
       const preset = selectedPreset;
       canvas.width = preset.width;
       canvas.height = preset.height;
@@ -979,23 +980,14 @@ export function VideoTourCard({
       const extension = getFileExtension(mimeType);
       const fileName = `${sanitizeFileName(property.title)}-${Date.now()}.${extension}`;
       const thumbnailName = `${sanitizeFileName(property.title)}-${Date.now()}-thumb.jpg`;
-      const videoRef = ref(storage, `agencies/${agencyId}/properties/${property.id}/video-tours/${fileName}`);
-      const thumbnailRef = ref(storage, `agencies/${agencyId}/properties/${property.id}/video-tours/${thumbnailName}`);
-
       setProgress(86);
-      await Promise.all([
-        uploadBytes(videoRef, blob, { contentType: mimeType }),
-        uploadBytes(thumbnailRef, thumbnailBlob, { contentType: 'image/jpeg' }),
+      const [videoMedia, thumbnailMedia] = await Promise.all([
+        prepareCrmMedia(user, new File([blob], fileName, { type: mimeType.split(';')[0] }), 'video_tour', property.id),
+        prepareCrmMedia(user, new File([thumbnailBlob], thumbnailName, { type: 'image/jpeg' }), 'video_tour', property.id),
       ]);
-      const [downloadUrl, thumbnailUrl] = await Promise.all([
-        getDownloadURL(videoRef),
-        getDownloadURL(thumbnailRef),
-      ]);
+      const downloadUrl = videoMedia.url, thumbnailUrl = thumbnailMedia.url;
 
-      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
-      setLocalPreviewUrl(URL.createObjectURL(blob));
-      setGeneratedVideoUrl(downloadUrl);
-      persistVideoTour({
+      await persistVideoTour(runId, {
         status: 'ready',
         url: downloadUrl,
         thumbnailUrl,
@@ -1012,7 +1004,10 @@ export function VideoTourCard({
         imageCount: images.length,
         generatedAt: new Date().toISOString(),
         generatedByUid: user?.uid || null,
-      });
+      }, { videoUploadId: videoMedia.uploadId, thumbnailUploadId: thumbnailMedia.uploadId });
+      if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
+      setLocalPreviewUrl(URL.createObjectURL(blob));
+      setGeneratedVideoUrl(downloadUrl);
       setProgress(100);
       toast({
         title: 'Video generat',
@@ -1021,7 +1016,7 @@ export function VideoTourCard({
     } catch (error) {
       musicBed?.close();
       const message = error instanceof Error ? error.message : 'Nu am putut genera video-ul.';
-      persistVideoTour({
+      if (started) await persistVideoTour(runId, {
         status: 'error',
         format,
         style,
@@ -1033,8 +1028,8 @@ export function VideoTourCard({
         generatedAt: new Date().toISOString(),
         generatedByUid: user?.uid || null,
         imageCount: images.length,
-        errorMessage: message,
-      });
+        errorMessage: message.slice(0, 500),
+      }).catch(() => undefined);
       toast({
         variant: 'destructive',
         title: 'Generare video esuata',

@@ -7,7 +7,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 export { communicationStoriaProjection, communicationMessageSearchProjection, communicationsMinuteTick } from './communications';
 export { collaborationPropertyWritten, collaborationRateLimitCleanup } from './collaboration';
-export { jarvisCrmChangeProjection, jarvisAgencyChangeProjection, jarvisUserChangeProjection, jarvisUploadRetention } from './jarvis';
+export { jarvisCrmChangeProjection, jarvisAgencyChangeProjection, jarvisUserChangeProjection, jarvisUploadRetention, jarvisAuthProfileSync } from './jarvis';
 
 export {
   notificationDeliveriesCreated,
