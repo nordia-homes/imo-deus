@@ -28,8 +28,8 @@ export async function decorateRecords(ctx: AssistantContext, resource: string, r
   return result;
 }
 export async function queryRecords(ctx: AssistantContext, input: z.infer<typeof queryRecordsSchema>) {
-  const fingerprint = createHash('sha256').update(JSON.stringify([ctx.agencyId, ctx.uid, {...input,cursor:undefined}])).digest('hex').slice(0,12);
   const range = recordDateRange(input), field = input.resource === 'viewings' ? 'viewingDate' : input.resource === 'tasks' ? 'dueDate' : 'createdAt';
+  const fingerprint = createHash('sha256').update(JSON.stringify([ctx.agencyId, ctx.uid, ctx.role, range, {...input,cursor:undefined}])).digest('hex').slice(0,12);
   const base = collectionFor(ctx, input.resource);
   let dated: FirebaseFirestore.Query = base;
   if (range.from) dated = dated.where(field, '>=', range.from);
@@ -47,20 +47,22 @@ export async function queryRecords(ctx: AssistantContext, input: z.infer<typeof 
     if (cursor) { const c = JSON.parse(Buffer.from(cursor, 'base64url').toString()) as { hash: string; id: string; value?: string }; if (c.hash !== fingerprint) throw new Error('Cursor invalid pentru această căutare.'); q = range.from || range.to ? q.startAfter(c.value, c.id) : q.startAfter(c.id); }
     const page = await q.get();
     if (page.empty) { complete = true; break; }
+    let lastConsumedId: string | undefined;
     for (const doc of page.docs) {
       const row = safeData({ ...doc.data(), id: doc.id }); scanned++;
       if (indexed && rows.length === input.limit) break;
+      lastConsumedId = doc.id;
       cursor = Buffer.from(JSON.stringify({ hash: fingerprint, id: doc.id, value: range.from || range.to ? row[field] : undefined })).toString('base64url');
       if (!clauses.every(([key, value]) => row[key] === value) || input.search && !normalized(JSON.stringify(row)).includes(normalized(input.search))) continue;
       if (!indexed) count = (count || 0) + 1;
       if (rows.length < input.limit) rows.push(row);
       if (input.mode === 'list' && rows.length === input.limit) break;
     }
-    complete = page.size < (indexed ? input.limit + 1 : 250) || indexed && count !== null && count <= rows.length;
+    complete = (page.size < (indexed ? input.limit + 1 : 250) && lastConsumedId === page.docs.at(-1)?.id) || (indexed && count !== null && count <= rows.length);
     if (indexed || input.mode === 'list' && rows.length >= input.limit) break;
   } while (!complete && scanned < 10000 && Date.now() - started < 15000);
   // An aggregate can be exact while its display is just a preview.
-  const exact = indexed || complete;
+  const exact = indexed || (complete && !input.cursor);
   const labels = { contacts: 'clienți', properties: 'proprietăți', viewings: 'vizionări', tasks: 'sarcini' };
-  return { rows: await decorateRecords(ctx, input.resource, rows), count: count ?? rows.length, complete: input.mode === 'count' ? exact : complete, nextCursor: complete ? null : cursor || null, scanned, summary: { count: count ?? rows.length, label: labels[input.resource], ...(range.label ? {period: range.label} : {}), scope: exact ? 'Datele agenției · filtrate pe server' : 'Rezultate parțiale · continuare disponibilă' } };
+  return { rows: await decorateRecords(ctx, input.resource, rows), count: count ?? rows.length, countScope: exact ? 'query' : 'segment', complete: input.mode === 'count' ? exact : complete, nextCursor: complete ? null : cursor || null, scanned, summary: { count: count ?? rows.length, label: labels[input.resource], ...(range.label ? {period: range.label} : {}), scope: exact ? 'Datele agenției · filtrate pe server' : complete ? 'Totalul segmentului final · nu totalul agenției' : 'Rezultate parțiale · continuare disponibilă' } };
 }

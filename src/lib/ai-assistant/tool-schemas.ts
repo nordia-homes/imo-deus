@@ -13,7 +13,7 @@ export const coreToolSchemas = {
   analyze_records: [analysisSchema, rowsOutput, 'Filtrare, sortare și statistici deterministe pe ID-uri autorizate deja identificate. Nu este un total al agenției.'],
   resolve_datetime: [datetimeSchema, objectOutput, 'Dată și oră Europe/Bucharest convertite determinist în ISO; detectează ambiguitatea DST. date sau dayOffset (mâine=1), time HH:mm.'],
   read: [readSchema, rowsOutput, 'Citește înregistrări autorizate, cu paginare.'],
-  query_records: [queryRecordsSchema, rowsOutput, 'Filtrează CRM PE SERVER și numără exact prin agregare. Pentru câte vizionări mâine: resource=viewings, dayOffset=1, mode=count. Nu citi întregul calendar. Pentru liste folosește mode=list. Datele relative sunt calculate în Europe/Bucharest.'],
+  query_records: [queryRecordsSchema, rowsOutput, 'Filtrează CRM PE SERVER și numără prin agregare. countScope=query indică totalul interogării; countScope=segment este numărul din porțiunea scanată, nu totalul agenției. Nu prezenta un count segment drept total chiar dacă nextCursor=null. Pentru câte vizionări mâine: resource=viewings, dayOffset=1, mode=count. Pentru liste folosește mode=list și nextCursor până la final. Datele relative sunt calculate în Europe/Bucharest; cursorul expiră când ziua relativă sau rolul se schimbă.'],
   read_related: [relatedSchema, rowsOutput, 'Documente, mesaje și audit ale unei resurse autorizate.'],
   read_field: [fieldSchema, objectOutput, 'Citește câmpuri mari în porții, fără secrete.'],
   search_properties: [searchSchema, rowsOutput, 'Caută proprietari implicit sau CRM explicit.'],
