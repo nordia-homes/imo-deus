@@ -92,7 +92,8 @@ export function AssistantResultCard({
   const property = ["owners", "crm", "properties"].includes(card.source),
     calendar = card.source === "viewings",
     task = card.source === "tasks",
-    client = card.source === "contacts";
+    client = card.source === "contacts",
+    sale = card.source === "sales";
   const Icon = property
     ? Building2
     : calendar
@@ -213,7 +214,9 @@ export function AssistantResultCard({
                     ? "/viewings"
                     : task
                       ? "/tasks"
-                      : null);
+                      : sale && row.id
+                        ? `/sales-management/${encodeURIComponent(String(row.id))}`
+                        : null);
             const image = resultLink(
               row.imageUrl ||
                 row.image ||
@@ -270,9 +273,9 @@ export function AssistantResultCard({
                         </p>
                       ) : null}
                     </div>
-                    {!property && row.status ? (
+                    {!property && (row.status || sale && row.stage) ? (
                       <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950">
-                        {statusLabels[String(row.status)] || String(row.status)}
+                        {sale ? ({ preparing: 'În pregătire', reservation: 'Rezervare', precontract: 'Antecontract', contract: 'Contract', completed: 'Finalizat', blocked: 'Blocat', cancelled: 'Anulat' } as Record<string, string>)[String(row.stage)] || String(row.stage || row.status) : statusLabels[String(row.status)] || String(row.status)}
                       </span>
                     ) : null}
                   </div>
@@ -280,6 +283,14 @@ export function AssistantResultCard({
                     <p className="mt-3 text-xl font-semibold tracking-tight">
                       {price(row.price)}
                     </p>
+                  )}
+                  {sale && (
+                    <div className="mt-3 space-y-2">
+                      {row.trackingCode ? <p className="text-xs text-muted-foreground">Dosar {String(row.trackingCode)}</p> : null}
+                      {row.agreedPrice != null ? <p className="text-xl font-semibold tracking-tight">{price(row.agreedPrice)}</p> : null}
+                      {row.agentName ? <p className="flex items-center gap-1.5 text-sm text-muted-foreground"><Users className="h-3.5 w-3.5" />{String(row.agentName)}</p> : null}
+                      {row.nextAction ? <p className="rounded-xl bg-sky-50 p-2.5 text-sm text-sky-900 dark:bg-sky-950 dark:text-sky-100">{String(row.nextAction)}</p> : null}
+                    </div>
                   )}
                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     {row.location ? (
@@ -319,7 +330,7 @@ export function AssistantResultCard({
                       {String(row.reasoning)}
                     </p>
                   ) : null}
-                  {!property && !calendar && !task && !client && (
+                  {!property && !calendar && !task && !client && !sale && (
                     <div className="mt-3 space-y-2">
                       {Object.entries(row)
                         .filter(

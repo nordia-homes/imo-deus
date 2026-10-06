@@ -13,7 +13,7 @@ export const coreToolSchemas = {
   analyze_records: [analysisSchema, rowsOutput, 'Filtrare, sortare și statistici deterministe pe ID-uri autorizate deja identificate. Nu este un total al agenției.'],
   resolve_datetime: [datetimeSchema, objectOutput, 'Dată și oră Europe/Bucharest convertite determinist în ISO; detectează ambiguitatea DST. date sau dayOffset (mâine=1), time HH:mm.'],
   read: [readSchema, rowsOutput, 'Citește înregistrări autorizate, cu paginare.'],
-  query_records: [queryRecordsSchema, rowsOutput, 'Filtrează CRM PE SERVER și numără prin agregare. countScope=query indică totalul interogării; countScope=segment este numărul din porțiunea scanată, nu totalul agenției. Nu prezenta un count segment drept total chiar dacă nextCursor=null. Pentru câte vizionări mâine: resource=viewings, dayOffset=1, mode=count. Pentru liste folosește mode=list și nextCursor până la final. Datele relative sunt calculate în Europe/Bucharest; cursorul expiră când ziua relativă sau rolul se schimbă.'],
+  query_records: [queryRecordsSchema, rowsOutput, 'Filtrează CRM PE SERVER și numără prin agregare. sales numără numai dosarele autorizate ca agent/colaborator sau administrator; filtrează etapa cu stage, nu status; datele Sales folosesc createdAt. countScope=query indică totalul interogării; countScope=segment este numărul din porțiunea scanată, nu totalul agenției. Nu prezenta un count segment drept total chiar dacă nextCursor=null. Pentru câte vizionări mâine: resource=viewings, dayOffset=1, mode=count. Pentru liste folosește mode=list și nextCursor până la final. Datele relative sunt calculate în Europe/Bucharest; cursorul expiră când ziua relativă sau rolul se schimbă.'],
   read_related: [relatedSchema, rowsOutput, 'Documente, mesaje și audit ale unei resurse autorizate.'],
   read_field: [fieldSchema, objectOutput, 'Citește câmpuri mari în porții, fără secrete.'],
   search_properties: [searchSchema, rowsOutput, 'Caută proprietari implicit sau CRM explicit.'],
@@ -33,3 +33,4 @@ export const coreToolSchemas = {
   mcp_read: [z.object({ serverId: idSchema, tool: idSchema, arguments: z.record(z.unknown()).default({}) }).strict(), objectOutput, 'Tool MCP read-only allowlisted; fără URL-uri sau servere din prompt.'],
 } as const;
 export const actionToolSchemas = Object.fromEntries(actionSchema.options.filter(schema => !['existing_operation'].includes(schema.shape.kind.value)).map(schema => [schema.shape.kind.value, [(schema as z.AnyZodObject).omit({ kind: true }), objectOutput, `Pregătește ${schema.shape.kind.value} în planul confirmabil. Nu execută direct. ID-uri reale sau @step:N:contactId. Nu refuza o acțiune disponibilă.`] as const]));
+

@@ -64,6 +64,7 @@ try {
     } else if (body.kind === 'autonomy') { autonomyEnabled = body.enabled; result = { available: true, enabled: autonomyEnabled }; }
     else if (body.kind === 'start') result = { jobId: 'turn-job', status: 'pending' };
     else if (body.kind === 'execute_background') result = { jobId: 'plan-job', status: 'pending' };
+    else if (body.kind === 'chat' && body.prompt?.includes('dosare Sales')) result = { message: message('Un dosar autorizat.', [{ type: 'data', source: 'sales', title: 'Dosare Sales', complete: true, summary: { count: 1, label: 'dosare Sales', scope: 'Dosare autorizate' }, rows: [{ id: 'sale', trackingCode: 'IMO-123', propertyTitle: 'Apartament verificat', stage: 'contract', agreedPrice: 130000, agentName: 'Mirela Agent', nextAction: 'Confirmă programarea notarului' }] }]) };
     else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
     else if (body.kind === 'prepare') result = { message: message('Plan pregătit pentru confirmare.', [], { planId, actions: body.actions }) };
     else if (body.kind === 'execute') result = { plan: { id: planId, actions: [action], status: 'completed', results: [{ step: 1, result: { viewingId: 'viewing', gmailPrepared: true, saleId: 'sale', messageId: 'email' } }] } };
@@ -170,6 +171,16 @@ try {
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }
+  await page.reload();
+  await page.getByRole('heading', { name: 'AI Assistant', exact: true }).waitFor();
+  await page.getByLabel('Comandă pentru AI Assistant').fill('Arată dosare Sales.');
+  await page.getByRole('button', { name: 'Trimite comanda' }).click();
+  const saleCard = page.locator('[data-source="sales"]');
+  await saleCard.getByText('Contract', { exact: true }).waitFor();
+  await saleCard.getByText('Dosar IMO-123', { exact: true }).waitFor();
+  assert.equal(await saleCard.getByRole('link', { name: 'Deschide' }).getAttribute('href'), '/sales-management/sale');
+  assert.match(await saleCard.innerText(), /130[.\s]000/);
+  await saleCard.getByText('Confirmă programarea notarului', { exact: true }).waitFor();
   await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'Mobile layout must not overflow horizontally');
@@ -183,8 +194,9 @@ try {
   await page.getByText('Stare: rezultat de verificat', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Reia pașii rămași' }).count(), 0, 'An uncertain external outcome must not offer replay');
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: true, checks: ['event rule editor preserves exact schedule and prepares multiple editable effects', 'all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
+  console.log(JSON.stringify({ passed: true, checks: ['Sales card stage, price, next action and dossier link', 'event rule editor preserves exact schedule and prepares multiple editable effects', 'all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }
+
 
 
 

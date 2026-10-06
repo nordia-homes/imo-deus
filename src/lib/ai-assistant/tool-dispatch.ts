@@ -30,7 +30,8 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     refs.push({ resource: payload.resource, id: payload.id });
   } else if (name === 'resolve_datetime') data = resolveDatetime(payload);
   else if (name === 'query_records') {
-    data = await queryRecords(ctx, payload); cards.push({ type: 'data', title: ({viewings:'Agenda vizionărilor',tasks:'Sarcinile tale',contacts:'Clienți',properties:'Portofoliu CRM'} as Record<string,string>)[payload.resource], source: payload.resource, query: payload, ...data } as AssistantCard);
+    data = await queryRecords(ctx, payload); cards.push({ type: 'data', title: ({viewings:'Agenda vizionărilor',tasks:'Sarcinile tale',contacts:'Clienți',properties:'Portofoliu CRM',sales:'Dosare Sales'} as Record<string,string>)[payload.resource], source: payload.resource, query: payload, ...data } as AssistantCard);
+    if (payload.resource === 'sales') refs.push(...data.rows.map((row: any) => ({ resource: 'sales' as const, id: row.id })));
   }
   else if (name === 'analyze_records') {
     data = await analyzeRecords(ctx, payload); cards.push({ type: 'data', outputType: 'ANALYTICS_CARD', title: 'Analiză deterministă', source: payload.resource, ...data } as AssistantCard);

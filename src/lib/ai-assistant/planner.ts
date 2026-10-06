@@ -33,13 +33,13 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
   const readiness = await automationReadiness(ctx);
-  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: options.allowedTools, summary: options.summary });
   const contextHint = (prompt + ' ' + history.slice(-2).map(m=>m.text).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   // Always keep discovery + propose_actions. Limit native schemas, particularly
   // the full property form, so an ordinary question cannot exhaust the budget.
   const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
   const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
   let invalidCalls = 0, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();

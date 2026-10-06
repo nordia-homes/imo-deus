@@ -94,7 +94,7 @@ describe('Responses tool planning', () => {
   it('uses Sol only after repeated invalid provider output, not the first failure', async () => {
     const model = scripted(new ProviderError('invalid_output', false), new ProviderError('invalid_output', false), final);
     const result = await planTurn(ctx, 'Salut', [], { provider: model });
-    expect(model.respond.mock.calls.map(([request]) => request.decision.model)).toEqual(['gpt-6-luna', 'gpt-6-luna', 'gpt-6.1-sol']);
+    expect(model.respond.mock.calls.map(([request]) => request.decision.model), result.text).toEqual(['gpt-6-luna', 'gpt-6-luna', 'gpt-6.1-sol']);
     expect(result.metrics.status).toBe('success');
   });
   it('blocks a model call before exceeding the token budget', async () => {

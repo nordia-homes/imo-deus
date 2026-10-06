@@ -192,3 +192,11 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Aceste probe folosesc planificator simulat și tranzacții reale. Nu certifică anularea unui apel provider deja în curs, fencing-ul tuturor efectelor autonome sau heartbeat-ul unei operații fără evenimente timp de peste 5 minute. Planurile întrerupte nu se reexecută automat.
 - Release parity-22: READY, trafic 100%, verificat la 12:16 UTC; include paginarea și totalurile. Etapele worker parity-23/24 sunt în publicare.
 
+### Totaluri și carduri Sales autorizate — validare pentru publicare
+- query_records include sales, filtrul stage și intervalul createdAt. Agregarea agentului folosește agentId sau collaboratorIds pe server, fără dublarea dosarului în care are ambele roluri; administratorul poate număra agenția. Fallback-ul textual sau pentru index indisponibil filtrează fiecare dosar prin aceeași politică de acces. Nu tratează status/contactId ca filtre Sales valide.
+- Cardurile păstrează referințele Sales pentru verificarea accesului la recitire și afișează etapa în română, prețul convenit, codul dosarului, agentul, următoarea acțiune și linkul către dosar. Nu execută modificări din simpla citire.
+- Catalogul și schema tool-ului descriu totalurile autorizate. Promptul enumeră numai uneltele disponibile în turn și nu repetă lista în contextul dinamic; instrucțiunile pentru fișiere trimit la contractul destinației. Limitele de tokens/cost și politica de escaladare sunt păstrate; regresia celor două răspunsuri invalide înainte de Sol trece din nou.
+- 324 teste AI trecute, 13 probe rezervate emulatorului; 28 teste Firestore reale trecute în 8 suite. Cele două probe Sales verifică agregarea, rolul de colaborator, fallback-ul textual și revocarea accesului. 21 verificări UI Text trecute, inclusiv etapa/prețul/linkul Sales. Typecheck și buildul Next.js final după modificarea cardului au trecut. Prompt/tool 20.
+- Release parity-23 (erori vizibile): READY, trafic 100%, verificat la 12:33 UTC. Release parity-24 (progres protejat): READY, trafic 100%, verificat la 12:43 UTC. Nu s-au trimis mesaje externe în probe.
+
+

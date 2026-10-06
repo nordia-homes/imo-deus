@@ -1,13 +1,30 @@
 import { describe, it, expect, vi } from 'vitest';
-vi.mock('../access', () => ({ collectionFor: (ctx:any)=>ctx.query, getResource:vi.fn() }));
+vi.mock('../access', () => ({ collectionFor: (ctx:any)=>ctx.query, getResource:vi.fn(), canReadResource: (ctx:any,resource:string,row:any) => resource !== 'sales' || ctx.role === 'admin' || row.agentId === ctx.uid || row.collaboratorIds?.includes(ctx.uid) }));
+vi.mock('firebase-admin/firestore', () => ({ Filter: { where: (field:string,op:string,value:any) => [field,op,value], or: (...any:any[]) => ({ any }) } }));
 import { queryRecords, recordDateRange } from '../record-query';
 import { queryRecordsSchema } from '../contracts';
 import { requestReservation, AgentBudget } from '../budget';
 function database(rows:any[], filters:any[]=[] ,after?:string,limit=Infinity):any {
- const matching=()=>rows.filter(r=>(!after||r.id>after)&&filters.every(([f,op,v])=>op==='=='?r[f]===v:op==='>='?r[f]>=v:r[f]<v));
- return {where:(f:string,op:string,v:any)=>database(rows,[...filters,[f,op,v]],after,limit),orderBy:()=>database(rows,filters,after,limit),limit:(n:number)=>database(rows,filters,after,n),startAfter:(...v:string[])=>database(rows,filters,v.at(-1),limit),count:()=>({get:async()=>({data:()=>({count:matching().length})})}),get:async()=>{const data=matching().slice(0,limit);return {empty:!data.length,size:data.length,docs:data.map(r=>({id:r.id,data:()=>r}))};}};
+ const test=(r:any,filter:any):boolean=>filter.any ? filter.any.some((part:any)=>test(r,part)) : filter[1]==='=='?r[filter[0]]===filter[2]:filter[1]==='array-contains'?r[filter[0]]?.includes(filter[2]):filter[1]==='>='?r[filter[0]]>=filter[2]:r[filter[0]]<filter[2];
+ const matching=()=>rows.filter(r=>(!after||r.id>after)&&filters.every(filter=>test(r,filter)));
+ return {where:(f:any,op?:string,v?:any)=>database(rows,[...filters,typeof f==='object'?f:[f,op,v]],after,limit),orderBy:()=>database(rows,filters,after,limit),limit:(n:number)=>database(rows,filters,after,n),startAfter:(...v:string[])=>database(rows,filters,v.at(-1),limit),count:()=>({get:async()=>({data:()=>({count:matching().length})})}),get:async()=>{const data=matching().slice(0,limit);return {empty:!data.length,size:data.length,docs:data.map(r=>({id:r.id,data:()=>r}))};}};
 }
 describe('filtered calendar and measured token budget',()=>{
+ it('counts owner and collaborator Sales visibility once, and restricts search fallback too',async()=>{
+  const rows=[{id:'1',agentId:'u',collaboratorIds:['u'],stage:'contract',propertyTitle:'Apartament'},{id:'2',agentId:'other',collaboratorIds:['u'],stage:'contract',propertyTitle:'Apartament'},{id:'3',agentId:'other',stage:'contract',propertyTitle:'Apartament'},{id:'4',agentId:'u',stage:'blocked',propertyTitle:'Apartament'}];
+  const ctx={agencyId:'a',uid:'u',role:'agent',query:database(rows)} as any;
+  const input=queryRecordsSchema.parse({resource:'sales',mode:'count',stage:'contract'});
+  const own=await queryRecords(ctx,input);expect(own.count).toBe(2);expect(own.rows.map(r=>r.id)).toEqual(['1','2']);expect(own.countScope).toBe('query');
+  expect((await queryRecords({...ctx,role:'admin'},input)).count).toBe(3);
+  const fallback=await queryRecords(ctx,{...input,search:'Apartament'});expect(fallback.count).toBe(2);expect(fallback.rows.map(r=>r.id)).toEqual(['1','2']);
+  expect((await queryRecords({...ctx,uid:'stranger'},input)).count).toBe(0);
+ });
+ it('does not mistake Sales stage or participant filters for generic status/contactId',async()=>{
+  const ctx={agencyId:'a',uid:'u',role:'agent',query:database([])} as any;
+  await expect(queryRecords(ctx,queryRecordsSchema.parse({resource:'contacts',stage:'contract'}))).rejects.toThrow('numai');
+  await expect(queryRecords(ctx,queryRecordsSchema.parse({resource:'sales',status:'contract'}))).rejects.toThrow('stage');
+  await expect(queryRecords({...ctx,role:'collaborator'},queryRecordsSchema.parse({resource:'sales'}))).rejects.toThrow('Acces');
+ });
  it('preserves search continuation when the display fills before a small backend page is consumed',async()=>{
   const ctx={agencyId:'a',uid:'u',role:'agent',query:database(Array.from({length:7},(_,i)=>({id:String(i),name:'Client'})))} as any;
   const input=queryRecordsSchema.parse({resource:'contacts',search:'Client',limit:3});

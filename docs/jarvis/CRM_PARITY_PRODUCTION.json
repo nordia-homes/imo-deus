@@ -1,11 +1,11 @@
 {
-  "verifiedAt": "2026-10-06T12:16:57.102Z",
+  "verifiedAt": "2026-10-06T12:43:33.729Z",
   "project": "studio-652232171-42fb6",
   "builds": [
     {
-      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-22",
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-24",
       "state": "READY",
-      "commit": "5f33f28d63da47c375d22291682aa8eb33a64c9c",
+      "commit": "e6d9b08f445ae09ae9960de7ea528b90c5b7bcdc",
       "percent": 100
     }
   ],
@@ -64,10 +64,10 @@
   "scheduler": {
     "state": "ENABLED",
     "schedule": "every 5 minutes",
-    "lastAttemptTime": "2026-10-06T12:12:02.146024Z"
+    "lastAttemptTime": "2026-10-06T12:42:02.737849Z"
   },
   "heartbeat": {
-    "lastSuccessAt": "2026-10-06T12:12:02.390Z",
+    "lastSuccessAt": "2026-10-06T12:42:03.003Z",
     "lastError": null
   },
   "indexStates": {
