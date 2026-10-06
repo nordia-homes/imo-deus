@@ -13,6 +13,7 @@ const id = z.string().min(1).max(180).regex(/^[^/]+$/);
 const schema = z.discriminatedUnion('destination', [
   z.object({ destination: z.literal('profile_photo') }).strict(),
   z.object({ destination: z.literal('agency_logo') }).strict(),
+  z.object({ destination: z.literal('agency_share_image') }).strict(),
   z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),
   z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),
   z.object({ destination: z.literal('identity_ocr') }).strict(),
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest, route: { params: Promise<{ uplo
     if (!upload || upload.ownerId !== ctx.uid || upload.expiresAt <= Date.now() || upload.storagePath !== prefix + uploadId) throw new CommunicationError('Fișierul nu este accesibil sau a expirat.', 404);
     const [bytes] = await getStorage(ctx.adminAuth.app).bucket().file(upload.storagePath).download();
     if (bytes.length > 15 * 1024 * 1024) throw new CommunicationError('Fișier prea mare.', 413);
-    if (input.destination === 'profile_photo' || input.destination === 'agency_logo') {
+    if (input.destination === 'profile_photo' || input.destination === 'agency_logo' || input.destination === 'agency_share_image') {
       const { applyBrandAsset } = await import('@/lib/crm/brand-assets');
       return NextResponse.json(await applyBrandAsset(ctx, uploadId, input.destination, upload, bytes), { headers: { 'Cache-Control': 'no-store' } });
     }

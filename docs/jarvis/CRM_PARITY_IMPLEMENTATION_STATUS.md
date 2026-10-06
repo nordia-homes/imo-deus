@@ -41,7 +41,7 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Validări efectuate
 
-- 296 teste deterministe AI trecute; 8 probe de integrare rulează separat în emulator.
+- 297 teste deterministe AI trecute; 8 probe de integrare rulează separat în emulator.
 - 23 teste Firestore trecute în emulator (6 suite): reguli de acces, concurență calendar și recuperare/dedup pentru reguli CRM.
 - 20 verificări UI Text și 14 verificări UI Voice trecute în etapa editorului extins; editorul pregătește planul, păstrează atribuirile și filtrele neatinse și citește istoricul; Gmail handoff și lipsa dovezii înainte de callback verificate cu bridge simulat.
 - Build Next.js și build Functions trecute. Testele headless Voice folosesc microfon/audio simulate; nu certifică ecoul pe hardware real.
@@ -140,3 +140,9 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Inventarul static găsește încă 8 fișiere montate cu upload/scriere directă: avatarul din lista agenților, imaginea share din custom-domain, stările helper-ului Facebook, assets Meta, biblioteca și selectorul video TikTok Ads, upload-urile din crearea proprietății și generatorul VideoTour din browser.
 - Urmează extinderea upload/apply pentru aceste destinații, cu aceeași autorizare și validare a fișierelor; pentru video mare este necesar transfer direct controlat în Storage, fără a crește arbitrar limita request-ului App Hosting. Generatorul browser-canvas trebuie tratat ca handoff pe dispozitiv sau înlocuit cu un serviciu echivalent verificat; un job AI nu poate pretinde că a randat un video în browser.
 - După aceste migrări rămân criteriile din matrice: concurență pe restul entităților, reconciliere/corpus/istoric și acceptanța providerilor/dispozitivelor. Acestea nu sunt închise prin existența handler-elor din catalog.
+
+### Imagine de distribuire site — upload comun
+- Destinația agency_share_image din file_apply și pagina custom-domain folosesc același serviciu de branding. Upload-ul rămâne privat până la aplicare; PNG/JPEG/WebP sunt validate și recodate; numai administratorul curent poate modifica imaginea agenției. Fotografia profilului și sigla nu sunt înlocuite.
+- Idempotency și audit folosesc ledger-ul existent. Revocarea membrului este verificată și la repetare, iar fișierele orfane sunt recunoscute de retenție. Nu se schimbă limita generală de 15 MB a upload-urilor.
+- 297 teste AI trecute, inclusiv proba rolului, destinației, protejării avatarului/siglei și repetării; typecheck trecut. Build Functions trecut; deploy-ul retenției și build-ul backend sunt etape distincte.
+- Rămân 7 fișiere montate cu scrieri/upload-uri directe. Fotografia agentului din dialog trebuie să păstreze aplicarea după confirmarea editării; simpla selectare a fișierului nu trebuie să modifice profilul.

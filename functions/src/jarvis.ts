@@ -65,7 +65,7 @@ export const jarvisUploadRetention = onSchedule({ schedule: 'every 24 hours', ti
       const prefix = `agencies/${agencyId}/properties/`;
       const brandingPrefix = `agencies/${agencyId}/branding/${row.ownerId}/`;
       const propertyAsset = target.storagePath.startsWith(prefix) && /^[^/]+\/(property_image|property_rlv)\/asset-[a-f0-9]{64}\.(webp|pdf)$/.test(target.storagePath.slice(prefix.length));
-      const brandAsset = target.storagePath.startsWith(brandingPrefix) && /^(profile_photo|agency_logo)\/asset-[a-f0-9]{64}\.webp$/.test(target.storagePath.slice(brandingPrefix.length));
+      const brandAsset = target.storagePath.startsWith(brandingPrefix) && /^(profile_photo|agency_logo|agency_share_image)\/asset-[a-f0-9]{64}\.webp$/.test(target.storagePath.slice(brandingPrefix.length));
       if (!propertyAsset && !brandAsset) continue;
       const ledger = await db.collection('agencies').doc(agencyId).collection('assistantExecutions').doc(key).get();
       if (ledger.data()?.status !== 'completed') await getStorage().bucket().file(target.storagePath).delete({ ignoreNotFound: true });

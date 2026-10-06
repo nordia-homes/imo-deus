@@ -36,7 +36,7 @@
       "method": "POST",
       "path": "/api/ai-assistant/uploads/{uploadId}/apply",
       "handler": "src/app/api/ai-assistant/uploads/[uploadId]/apply/route.ts",
-      "description": "Aplică un fișier privat deja atașat: destination sale_document cu saleId/documentId, conversation_attachment cu conversationId identity_ocr, property_image sau property_rlv cu propertyId, profile_photo (profil propriu), agency_logo (administrator). Nu inventa uploadId; citește assistantUploads.",
+      "description": "Aplică un fișier privat deja atașat: destination sale_document cu saleId/documentId, conversation_attachment cu conversationId identity_ocr, property_image sau property_rlv cu propertyId, profile_photo (profil propriu), agency_logo sau agency_share_image (administrator, imagine distribuire site). Nu inventa uploadId; citește assistantUploads.",
       "readOnly": false,
       "externallySensitive": false,
       "verification": "registered_handler_not_provider_certification"
@@ -1852,29 +1852,6 @@
         "staticallyReachable": true,
         "entrypoints": [
           "src/app/(dashboard)/contracts/[templateId]/edit/page.tsx"
-        ],
-        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
-      },
-      "verification": "static_reference_requires_semantic_review"
-    },
-    {
-      "file": "src/app/(dashboard)/custom-domain/page.tsx",
-      "calls": [
-        {
-          "call": "uploadBytes",
-          "line": 362,
-          "sharedExecutor": false
-        },
-        {
-          "call": "updateDoc",
-          "line": 364,
-          "sharedExecutor": false
-        }
-      ],
-      "reachability": {
-        "staticallyReachable": true,
-        "entrypoints": [
-          "src/app/(dashboard)/custom-domain/page.tsx"
         ],
         "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
       },

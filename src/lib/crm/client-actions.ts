@@ -41,7 +41,7 @@ export async function attachPropertyFile(user: { getIdToken(): Promise<string> }
   return result;
 }
 
-export async function attachBrandFile(user: { getIdToken(): Promise<string> } | null, file: File, destination: 'profile_photo' | 'agency_logo') {
+export async function attachBrandFile(user: { getIdToken(): Promise<string> } | null, file: File, destination: 'profile_photo' | 'agency_logo' | 'agency_share_image') {
   if (!user) throw new Error('Autentificare necesară.');
   const upload = await uploadCrmFile(user, file);
   const response = await fetch(`/api/ai-assistant/uploads/${upload.uploadId}/apply`, { method: 'POST', headers: { Authorization: `Bearer ${await user.getIdToken()}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ destination }) });

@@ -39,6 +39,21 @@ describe('property assets attached by the common server service', () => {
     expect(rows.get('agencies/a')).toMatchObject({ name: 'Agency', logoUrl: result.imageUrl });
     expect(rows.has('publicAgentProfiles/u')).toBe(false);
   });
+  it('applies a website share image without replacing the agency logo or any agent photo', async () => {
+    const { ctx, rows } = fixture();
+    await expect(applyBrandAsset(ctx, 'upload', 'agency_share_image', upload, bytes)).rejects.toMatchObject({ status: 403 });
+    expect(mocks.save).not.toHaveBeenCalled();
+    ctx.role = 'admin'; rows.set('users/u', { agencyId: 'a', role: 'admin', photoUrl: 'original-avatar' }); rows.set('agencies/a', { name: 'Agency', logoUrl: 'original-logo' });
+    const result = await applyBrandAsset(ctx, 'upload', 'agency_share_image', upload, bytes);
+    expect(result).toMatchObject({ status: 'attached', link: '/custom-domain', destination: 'agency_share_image' });
+    expect(rows.get('agencies/a')).toMatchObject({ logoUrl: 'original-logo', shareImageUrl: result.imageUrl });
+    expect(rows.get('users/u').photoUrl).toBe('original-avatar');
+    expect(rows.has('publicAgentProfiles/u')).toBe(false);
+    expect(await applyBrandAsset(ctx, 'upload', 'agency_share_image', upload, bytes)).toEqual(result);
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+    rows.set('users/u', { agencyId: 'other', role: 'admin' });
+    await expect(applyBrandAsset(ctx, 'upload', 'agency_share_image', upload, bytes)).rejects.toMatchObject({ status: 403 });
+  });
   it('attaches once and returns the same result on an idempotent replay', async () => {
     const { ctx, rows } = fixture();
     const first = await applyPropertyAsset(ctx, 'upload', 'p', 'property_image', upload, bytes);

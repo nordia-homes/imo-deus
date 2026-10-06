@@ -34,9 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useFirestore, useStorage } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { attachBrandFile } from '@/lib/crm/client-actions';
 import '@/components/marketing/tiktok-ads/tiktok-workspace.css';
 
 const formSchema = z.object({
@@ -200,8 +198,6 @@ function InstructionTable({ instructions }: { instructions: CustomDomainInstruct
 
 export default function CustomDomainPage() {
   const { agency, user, userProfile, isAgencyLoading } = useAgency();
-  const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -358,12 +354,7 @@ export default function CustomDomainPage() {
 
     try {
       setIsUploadingShareImage(true);
-      const shareImageRef = ref(storage, `agencies/${agency.id}/share/share-image-${Date.now()}`);
-      await uploadBytes(shareImageRef, file);
-      const downloadURL = await getDownloadURL(shareImageRef);
-      await updateDoc(doc(firestore, 'agencies', agency.id), {
-        shareImageUrl: downloadURL,
-      });
+      await attachBrandFile(user, file, 'agency_share_image');
 
       toast({
         title: 'Imagine actualizata',
@@ -374,7 +365,7 @@ export default function CustomDomainPage() {
       toast({
         variant: 'destructive',
         title: 'Upload esuat',
-        description: 'Nu am putut salva imaginea reprezentativa.',
+        description: error instanceof Error ? error.message : 'Nu am putut salva imaginea reprezentativa.',
       });
     } finally {
       setIsUploadingShareImage(false);
