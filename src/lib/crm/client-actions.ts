@@ -32,6 +32,15 @@ export async function uploadCrmFile(user: { getIdToken(): Promise<string> } | nu
   return result as { uploadId: string; name: string };
 }
 
+export async function previewContractFile(user: { getIdToken(): Promise<string> } | null, file: File) {
+  if (!user) throw new Error('Autentificare necesară.');
+  const upload = await uploadCrmFile(user, file);
+  const response = await fetch(`/api/ai-assistant/uploads/${upload.uploadId}/docx-preview`, { headers: { Authorization: `Bearer ${await user.getIdToken()}` } });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || result.message || 'Importul Word nu a fost confirmat.');
+  return result as { content: string; warnings: string[]; note: string };
+}
+
 export async function attachPropertyFile(user: { getIdToken(): Promise<string> } | null, file: File, propertyId: string, destination: 'property_image' | 'property_rlv') {
   if (!user) throw new Error('Autentificare necesară.');
   const upload = await uploadCrmFile(user, file);

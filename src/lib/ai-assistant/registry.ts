@@ -11,6 +11,7 @@ import { capabilityScore } from './capability-discovery';
 export type RiskLevel = 'READ' | 'SAFE_WRITE' | 'SENSITIVE' | 'CRITICAL';
 export type ToolDefinition = { name: string; version: string; description: string; inputSchema: z.ZodTypeAny; outputSchema: z.ZodTypeAny; handler: (ctx: AssistantContext, payload: unknown, prompt: string, options: AgentOptions) => Promise<ToolResult>; permissions: string[]; riskLevel: RiskLevel; timeoutMs: number; retryPolicy: { maxAttempts: number; retryable: string[] }; idempotencyPolicy: string; auditPolicy: string };
 const objectOutput = z.record(z.unknown());
+const documentAdminTools = ['file_docx_preview'];
 const adminOnly = new Set(['update_agency', 'contract_template_action', 'storia_unpublish', 'meta_campaign_publish', 'sales_settings_update', 'agency_agent_create', 'agency_agent_update', 'agency_agent_remove', 'billing_change_plan', 'billing_change_seats', 'billing_checkout', 'billing_portal', 'social_create', 'social_publish', 'social_comment', 'social_reply', 'social_like', 'social_remove', 'social_destination_remove', 'whatsapp_template_create', 'tiktok_ads_resources', 'tiktok_ads_spend_authorization']);
 
 const operationInput = z.object({ operation: idSchema, params: z.record(z.string().max(180)).default({}), query: z.record(z.string().max(2000)).default({}), body: z.record(z.unknown()).default({}) }).strict();
@@ -49,7 +50,7 @@ function definition(name: string, schema: z.ZodTypeAny, output: z.ZodTypeAny, de
   if (Object.hasOwn(actionToolSchemas, name)) return dispatchTool('propose_actions', ctx, { actions: [actionSchema.parse({ ...schema.parse(payload), kind: name })] }, prompt, options);
   if (!isReadOperation(name)) throw new Error('Scrierile necesită plan confirmat și ledger, nu apel direct din model.');
   return dispatchTool('existing_read', ctx, { ...operationInput.parse(payload), operation: name }, prompt, options);
-}, permissions: adminOnly.has(name) ? ['admin'] : ['agent', 'admin'], riskLevel: risk, timeoutMs: risk === 'READ' ? 20000 : 60000, retryPolicy: { maxAttempts: risk === 'READ' ? 2 : 1, retryable: ['temporary', 'rate_limit'] }, idempotencyPolicy: risk === 'READ' ? 'read_only' : 'execution_ledger', auditPolicy: 'metadata_only_no_pii' }; }
+}, permissions: adminOnly.has(name) || documentAdminTools.includes(name) ? ['admin'] : ['agent', 'admin'], riskLevel: risk, timeoutMs: risk === 'READ' ? 20000 : 60000, retryPolicy: { maxAttempts: risk === 'READ' ? 2 : 1, retryable: ['temporary', 'rate_limit'] }, idempotencyPolicy: risk === 'READ' ? 'read_only' : 'execution_ledger', auditPolicy: 'metadata_only_no_pii' }; }
 export const toolRegistry: ReadonlyMap<string, ToolDefinition> = new Map([
   ...Object.entries(core).map(([name, [schema, output, description]]) => [name, definition(name, schema, output, description, name === 'propose_actions' ? 'SENSITIVE' : ['remember_preference', 'forget_preference'].includes(name) ? 'SAFE_WRITE' : 'READ')] as const),
   ...Object.entries(actionToolSchemas).map(([name, [schema, output, description]]) => [name, definition(name, schema, output, description, 'SENSITIVE')] as const),

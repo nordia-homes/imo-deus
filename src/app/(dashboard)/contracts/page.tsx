@@ -1,5 +1,5 @@
 'use client';
-import { executeCrmAction } from '@/lib/crm/client-actions';
+import { executeCrmAction, previewContractFile } from '@/lib/crm/client-actions';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -303,6 +303,10 @@ function CreateTemplateDialog({
   onSubmit: (state: CreateFormState) => Promise<void>;
   isSubmitting: boolean;
 }) {
+  const { user } = useAgency();
+  const { toast } = useToast();
+  const [isImporting, setIsImporting] = useState(false);
+  const importAttempt = useRef(0);
   const [state, setState] = useState<CreateFormState>({
     name: '',
     category: 'reservation',
@@ -314,6 +318,8 @@ function CreateTemplateDialog({
 
   useEffect(() => {
     if (!open) {
+      importAttempt.current++;
+      setIsImporting(false);
       setState({
         name: '',
         category: 'reservation',
@@ -378,17 +384,19 @@ function CreateTemplateDialog({
             <Label className="text-white/80">Import document Word</Label>
             <Input
               type="file"
+              disabled={isImporting}
               accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               className="border-white/15 bg-white/10 text-white file:text-white"
               onChange={async (event) => {
                 const file = event.target.files?.[0];
                 if (!file) return;
+                const attempt = ++importAttempt.current;
 
                 try {
-                  const mammoth = await import('mammoth/mammoth.browser');
-                  const arrayBuffer = await file.arrayBuffer();
-                  const result = await mammoth.convertToHtml({ arrayBuffer });
-                  const importedContent = result.value.trim();
+                  setIsImporting(true);
+                  const result = await previewContractFile(user, file);
+                  const importedContent = result.content;
+                  if (attempt !== importAttempt.current) return;
 
                   setState((current) => ({
                     ...current,
@@ -397,9 +405,11 @@ function CreateTemplateDialog({
                     fileName: file.name,
                     name: current.name || file.name.replace(/\.docx$/i, ''),
                   }));
+                  if (result.warnings.length) toast({ title: 'Document importat', description: result.warnings.join(' ') });
                 } catch (error) {
-                  console.error('Failed to import DOCX file:', error);
+                  if (attempt === importAttempt.current) toast({ title: 'Import Word nereușit', description: error instanceof Error ? error.message : 'Încearcă din nou.', variant: 'destructive' });
                 } finally {
+                  if (attempt === importAttempt.current) setIsImporting(false);
                   event.target.value = '';
                 }
               }}
@@ -422,7 +432,7 @@ function CreateTemplateDialog({
           <Button
             type="button"
             onClick={() => void onSubmit(state)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isImporting}
             className="bg-emerald-400 text-black hover:bg-emerald-300"
           >
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FilePlus2 className="mr-2 h-4 w-4" />}

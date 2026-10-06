@@ -32,6 +32,13 @@
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
   },
+  "file_docx_preview": {
+    "method": "GET",
+    "validation": "",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
   "owner_query": {
     "method": "GET",
     "validation": "",

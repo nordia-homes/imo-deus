@@ -4,7 +4,7 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Etapa curentă
 
-- Catalog curent: 172 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
+- Catalog curent: 173 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
 - Executor comun manual/AI pentru contacte, proprietăți, calendar, prospectare, oferte, portaluri, dosare, contracte și setări. Migrarea UI include dashboard, liste, detalii, dialogs și inbox Storia.
 - Câmpuri complete ale formularelor de bază, assignment în aceeași agenție, lifecycle cu motive și istoric, verificare concurentă la editarea proprietăților.
 - Normalizare telefon/email și locks de identitate. Migrare producție: 468 contacte, 0 conflicte; verificare ulterioară: 0 modificări restante. Cele 386 identități repetate existente sunt păstrate pentru revizuire, fără merge automat.
@@ -155,3 +155,10 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Revizia profilului previne suprascrierea unei editări concurente. Câmpurile phone/photoUrl omise sunt păstrate. Selectarea unei imagini nu mai scrie direct în Storage din browser; închiderea după salvare este corectată.
 - 303 teste AI trecute, 8 probe rezervate emulatorului; typecheck și build Next.js trecute. Probele noi verifică pregătirea fără aplicare, revocarea, apartenența, repetarea și conflictul de revizie. Nu s-au modificat profiluri reale în teste.
 - Sincronizarea displayName în Firebase Auth rămâne un efect ulterior tranzacției CRM; reconcilierea unui eșec Auth este încă restantă. Rămân 6 fișiere montate cu scrieri/upload-uri directe și criteriile de acceptanță din matrice. Prompt/tool 15.
+- Release parity-19, commit 3c4e4ce52c27ef56da67f706e1da64f608ad8b7d: READY, trafic 100%, verificat la 11:29 UTC; heartbeat fără eroare și funcțiile ACTIVE.
+
+### Import Word structurat și integrare Sales — validată local
+- Importul manual și file_apply/contract_template folosesc aceeași conversie server DOCX. Paragrafele, titlurile, listele, tabelele și evidențierile sunt păstrate; linkurile, imaginile și atributele active nu ajung în editor. Imaginile omise și conversiile fără echivalent sunt semnalate. Fonturile, poziționarea exactă și paginarea Word nu sunt certificate ca identice.
+- Previzualizarea privată file_docx_preview nu creează șablonul; necesită administrator și upload propriu neexpirat. Upload-urile au limita de 15 MB, decomprimarea incrementală limita cumulată de 32 MB și maximum 1000 intrări. Dialogul nu salvează în timpul importului și ignoră un rezultat sosit după închidere.
+- Corectat adaptorul manual /api/crm/actions: permite sale_replies_read, folosit de pagina Sales. Handler-ul exista, dar adaptorul îl respingea. Celelalte operații externe păstrează fluxul dedicat; lista permisă nu devine acces generic.
+- 309 teste AI trecute; 8 probe rezervate emulatorului. Teste DOCX reale pentru tabele/evidențieri, hyperlink executabil eliminat și arhivă foarte comprimată refuzată. Testele preview verifică rolul, proprietarul, calea și expirarea; regresia Sales verifică rutarea către executor. Prompt/tool 16; 173 handler-e, fără procent dedus de paritate.

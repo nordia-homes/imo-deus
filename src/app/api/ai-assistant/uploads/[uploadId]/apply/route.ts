@@ -46,15 +46,10 @@ export async function POST(request: NextRequest, route: { params: Promise<{ uplo
     if (input.destination === 'contract_template') {
       if (ctx.role !== 'admin') throw new CommunicationError('Administrarea șabloanelor necesită administratorul.', 403);
       if (upload.mimeType !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') throw new CommunicationError('Selectează documentul DOCX.', 415);
-      const { validateUploadBytes } = await import('@/lib/ai-assistant/upload-validation'); validateUploadBytes(bytes, upload.mimeType);
-      const mammoth = await import('mammoth');
-      const document = await mammoth.extractRawText({ buffer: bytes });
-      if (!document.value.trim() || document.value.length > 100000) throw new CommunicationError('Documentul trebuie să conțină text și să încapă în limita șablonului.', 413);
-      const escape = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
-      const content = document.value.split(/\n\s*\n/).filter(value => value.trim()).map(value => `<p>${escape(value).replaceAll('\n', '<br>')}</p>`).join('');
-      if (content.length > 120000) throw new CommunicationError('Conținutul depășește limita șablonului.', 413);
+      const { importContractDocx } = await import('@/lib/crm/docx-import');
+      const { content, warnings, note } = await importContractDocx(bytes);
       const result = await executeAction(ctx, { kind: 'contract_template_action', action: 'create', data: { name: input.name, category: input.category, description: input.description, content, status: 'draft', sourceFormat: 'docx', fileName: upload.name } }, `docx-${uploadId}`);
-      return NextResponse.json({ ...result, note: 'Textul Word a fost importat ca șablon draft. Verifică în editor formatarea și câmpurile înainte de activare.' });
+      return NextResponse.json({ ...result, warnings, note });
     }
     if (input.destination === 'property_image' || input.destination === 'property_rlv') {
       const { applyPropertyAsset } = await import('@/lib/crm/property-assets');

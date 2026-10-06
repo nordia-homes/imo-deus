@@ -42,6 +42,16 @@
       "verification": "registered_handler_not_provider_certification"
     },
     {
+      "id": "file_docx_preview",
+      "method": "GET",
+      "path": "/api/ai-assistant/uploads/{uploadId}/docx-preview",
+      "handler": "src/app/api/ai-assistant/uploads/[uploadId]/docx-preview/route.ts",
+      "description": "Previzualizează importul Word DOCX privat ca document de contract: paragrafe, liste, tabele și evidențieri, avertismente de conversie. Administrator; fără creare de șablon. Aplicarea contract_template prin file_apply rămâne un pas separat.",
+      "readOnly": true,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
       "id": "owner_query",
       "method": "GET",
       "path": "/api/owner-listings/query",
@@ -1803,12 +1813,12 @@
       "calls": [
         {
           "call": "executeCrmAction",
-          "line": 1195,
+          "line": 1205,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 1223,
+          "line": 1233,
           "sharedExecutor": true
         }
       ],
