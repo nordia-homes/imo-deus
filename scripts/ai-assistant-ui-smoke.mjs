@@ -45,7 +45,7 @@ try {
     const body = request.postDataJSON(); requests.push({ path: new URL(request.url()).pathname, body });
     let result;
     const url = new URL(request.url());
-    if (url.pathname.endsWith('/automations')) result = url.searchParams.has('id') ? { rows: [{ id: 'run', action: 'run', occurredAt: '2026-10-05T10:00:00Z', status: 'active', result: { handled: 1 } }], nextCursor: null } : { rows: [{ id: 'rule', status: 'active', runCount: 1, automation: { type: 'event_rule', maxRuns: 48, intervalMinutes: 30, maxEvents: 100, trigger: { resource: 'contacts', change: 'updated', statusTo: 'Contactat', changedFields: ['status', 'budget'] }, effects: [{ kind: 'create_task', description: 'Sarcină existentă', dueAfterMinutes: 60, agentId: 'colleague' }, { kind: 'notify', title: 'Notificare existentă', body: 'Detalii păstrate' }] } }], nextCursor: null };
+    if (url.pathname.endsWith('/automations')) result = url.searchParams.has('id') ? { rows: [{ id: 'run', action: 'run', occurredAt: '2026-10-05T10:00:00Z', status: 'active', result: { handled: 1 } }], nextCursor: null } : { rows: [{ id: 'rule', status: 'active', runCount: 1, automation: { type: 'event_rule', nextRunAt: '2030-10-06T10:00:00.123Z', stopAfter: '2030-10-07T10:00:00.456Z', maxRuns: 48, intervalMinutes: 30, maxEvents: 100, trigger: { resource: 'contacts', change: 'updated', statusTo: 'Contactat', changedFields: ['status', 'budget'] }, effects: [{ kind: 'create_task', description: 'Sarcină existentă', dueAfterMinutes: 60, agentId: 'colleague' }, { kind: 'notify', title: 'Notificare existentă', body: 'Detalii păstrate' }] } }], nextCursor: null };
     else if (url.pathname.endsWith('/gmail-session')) result = { session: { jobId: 'gmail-job', saleId: 'sale', messageRecordId: 'email', trackingCode: 'IMO', to: ['owner@example.com'], cc: [], subject: 'Ofertă', bodyText: 'Textul verificat', attachments: [] } };
     else if (url.pathname.endsWith('/send-evidence')) { assert.equal(body.level, 'ui_observed'); result = { ok: true }; }
     else if (body?.kind === 'read' && ['contacts', 'conversations'].includes(body.query.resource)) result = { rows: body.query.resource === 'contacts' ? [{ id: 'client', name: 'Maria Popescu' }] : [{ id: 'conversation', contactName: 'Proprietar', channel: 'whatsapp' }], nextCursor: null, complete: true };
@@ -121,15 +121,27 @@ try {
   await page.getByRole('button', { name: 'Pregătește regula', exact: true }).click();
   await page.getByText('Planul regulii este pregătit.', { exact: false }).waitFor();
   const editedRule = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.kind === 'update_automation').at(-1).body.actions[0].automation;
+  assert.equal(editedRule.nextRunAt, '2030-10-06T10:00:00.123Z'); assert.equal(editedRule.stopAfter, '2030-10-07T10:00:00.456Z');
   assert.equal(editedRule.effects[0].agentId, 'colleague'); assert.equal(editedRule.effects[1].body, 'Detalii păstrate'); assert.deepEqual(editedRule.trigger.changedFields, ['status', 'budget']);
   await page.getByRole('button', { name: 'Regulă nouă', exact: true }).click();
   await page.getByLabel('Status nou (opțional)').fill('Contactat');
   await page.getByLabel('Sarcină de creat (gol = fără sarcină)').fill('Follow-up după contactare');
+  await page.getByRole('checkbox', { name: 'Buget', exact: true }).check();
+  await page.getByRole('button', { name: 'Adaugă sarcină suplimentară', exact: true }).click();
+  await page.getByLabel('Descriere sarcină suplimentară 1', { exact: true }).fill('Pregătește comparația');
+  await page.getByLabel('Termen sarcină suplimentară 1, minute', { exact: true }).fill('120');
+  await page.getByRole('button', { name: 'Adaugă notificare suplimentară', exact: true }).click();
+  await page.getByLabel('Titlu notificare suplimentară 2', { exact: true }).fill('Client pregătit');
+  await page.getByLabel('Conținut notificare suplimentară 2', { exact: true }).fill('Verifică documentele');
   await page.getByRole('button', { name: 'Pregătește regula', exact: true }).click();
   await page.getByText('Planul regulii este pregătit.', { exact: false }).waitFor();
   const ruleRequest = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.kind === 'create_automation').at(-1);
   assert.equal(ruleRequest.body.actions[0].automation.type, 'event_rule');
   assert.equal(ruleRequest.body.actions[0].automation.trigger.statusTo, 'Contactat');
+  assert.deepEqual(ruleRequest.body.actions[0].automation.trigger.changedFields, ['budget']);
+  assert.equal(ruleRequest.body.actions[0].automation.effects.length, 3);
+  assert.equal(ruleRequest.body.actions[0].automation.effects[1].dueAfterMinutes, 120);
+  assert.equal(ruleRequest.body.actions[0].automation.effects[2].body, 'Verifică documentele');
   assert.equal(requests.some(r => r.path === '/api/crm/actions' && r.body?.action?.kind === 'create_automation'), false, 'Editor must prepare an approved plan rather than bypass execution approval');
   for (const kind of ['followup_task', 'owner_watch', 'matching_watch', 'insight_report', 'whatsapp_template']) {
     await page.getByRole('button', { name: 'Automatizare nouă', exact: true }).click();
@@ -171,7 +183,7 @@ try {
   await page.getByText('Stare: rezultat de verificat', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: 'Reia pașii rămași' }).count(), 0, 'An uncertain external outcome must not offer replay');
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: true, checks: ['all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
+  console.log(JSON.stringify({ passed: true, checks: ['event rule editor preserves exact schedule and prepares multiple editable effects', 'all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }
 
 

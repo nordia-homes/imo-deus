@@ -100,3 +100,9 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - 287 teste AI trecute, 19 verificări Text și 14 Voice trecute; 18 teste de reguli Firestore trecute pe emulator. Voice este verificat cu audio/microfon simulate.
 - Build calendar parity-10 READY, trafic 100%. Build Gmail parity-12 include commiturile 98901689 și ce4603c6; compilarea cloud a trecut, activarea este următorul pas.
 - Inventarul static încă vede un ClientPortalManager vechi fără importuri montate; acesta nu este un flux manual activ. Rămân de analizat scrierile montate din promovare Facebook, video, custom-domain și contorul de răspunsuri Sales.
+
+### Editor de reguli CRM — extensie validată local
+- Prima verificare și oprirea pot fi configurate explicit; timpii existenți neatinși sunt păstrați exact, inclusiv secundele. Limitele trebuie să depășească execuțiile deja efectuate.
+- Câmpuri urmărite multiple, agent responsabil și conținutul notificării; toate acțiunile suplimentare existente pot fi editate sau eliminate, cu adăugare până la limita de 5 efecte. Nu se activează direct: se pregătește plan pentru confirmare.
+- 20 verificări Text trecute, inclusiv programare și efecte multiple; typecheck trecut. Integrarea concurentă a evenimentelor și acceptanța pe dispozitive/provideri rămân restante.
+- Release parity-13 READY, trafic 100%; Gmail, reviziile calendarului și notificările sunt publicate. Probe live de citire pentru health, Anunțuri proprietari și portofoliu: job completed, răspuns cu carduri, fără trimitere externă.
