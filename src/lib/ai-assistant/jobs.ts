@@ -7,6 +7,7 @@ import { CommunicationError } from '@/lib/communications/server';
 import { adminAuth } from '@/firebase/admin';
 import type { Firestore } from 'firebase-admin/firestore';
 import { failureCategory } from './failure';
+import { saveWorkerTurnFailure } from './worker-failure';
 
 export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string }) {
   if (ctx.runtimeMode === 'demo') throw new CommunicationError('Joburile durabile sunt indisponibile în demo.', 403);
@@ -81,6 +82,12 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
       const errorCategory = failureCategory(error);
       console.error(JSON.stringify({ event: 'jarvis_job_failed', errorCategory }));
       outcome = { status: 'failed', errorCategory, completedAt: new Date().toISOString(), error: 'Comanda nu a fost confirmată. Verifică istoricul înainte de reluare.' };
+      if (job.jobType !== 'plan') {
+        try {
+          const message = await saveWorkerTurnFailure(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, claimId);
+          if (message) outcome = { ...outcome, message, planStatus: 'failed' };
+        } catch (saveError) { console.error(JSON.stringify({ event: 'jarvis_failure_reply_unavailable', errorCategory: failureCategory(saveError) })); }
+      }
     }
     await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.claimId === claimId && fresh.data()?.status === 'running') tx.update(row.ref, outcome); });
   }

@@ -9,7 +9,7 @@ import type { AssistantContext } from '../access';
 function database(initial: Record<string, any> = {}) {
   const rows = new Map<string, any>(Object.entries({ 'users/u': { agencyId: 'a', role: 'agent' }, ...initial }));
   function ref(path: string, filters: any[] = [], cap = Infinity): any {
-    const value = { path, id: path.split('/').at(-1), doc: (id: string) => ref(path + '/' + id), where: (key: string, op: string, expected: any) => ref(path, [...filters, [key, op, expected]], cap), limit: (limit: number) => ref(path, filters, limit), orderBy: () => ref(path, filters, cap), get: async () => {
+    const value = { path, id: path.split('/').at(-1), doc: (id: string) => ref(path + '/' + id), collection: (name: string) => ref(path + '/' + name), where: (key: string, op: string, expected: any) => ref(path, [...filters, [key, op, expected]], cap), limit: (limit: number) => ref(path, filters, limit), orderBy: () => ref(path, filters, cap), get: async () => {
       const docs = [...rows].filter(([key, row]) => key.startsWith(path + '/') && key.split('/').length === path.split('/').length + 1 && filters.every(([field, op, expected]) => op === '<' ? row[field] < expected : row[field] === expected)).slice(0, cap).map(([key, row]) => ({ id: key.split('/').at(-1), ref: ref(key), data: () => structuredClone(row) }));
       return { exists: rows.has(path), data: () => structuredClone(rows.get(path)), docs, size: docs.length };
     }, update: async (patch: any) => rows.set(path, { ...rows.get(path), ...patch }) }; return value;
@@ -20,6 +20,14 @@ function database(initial: Record<string, any> = {}) {
 const input = { sessionId: 'session', requestId: 'request', prompt: 'Read authorized data' };
 afterEach(() => vi.clearAllMocks());
 describe('durable tenant-scoped jobs', () => {
+  it('delivers an early turn exception as a conversation error while the job stays failed', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(chatTurn).mockRejectedValueOnce(new Error('private provider payload'));
+    const { ctx, db, rows } = database(); await enqueueTurn(ctx, input); await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/request')).toMatchObject({ status: 'failed', planStatus: 'failed', message: { outputType: 'ERROR_EVENT' } });
+    expect(rows.get('agencies/a/assistantSessions/session/messages/request-assistant').text).not.toContain('private');
+    expect(chatTurn).toHaveBeenCalledTimes(1); log.mockRestore();
+  });
   it('keeps a delivered failure reply separate from business success', async () => {
     vi.mocked(chatTurn).mockResolvedValueOnce({ message: { id: 'reply', text: 'Not confirmed', outputType: 'ERROR_EVENT' } } as any);
     const { ctx, db, rows } = database(); await enqueueTurn(ctx, input); await drainAgentJobs(db as any);

@@ -7,6 +7,7 @@ vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extend
 import { chatTurn } from '../workspace';
 import { planTurn } from '../planner';
 import { failureCategory } from '../failure';
+import { saveWorkerTurnFailure } from '../worker-failure';
 function fixture() {
   const rows = new Map<string, any>([['users/u', { agencyId: 'a', role: 'agent' }]]);
   function ref(path: string): any {
@@ -21,6 +22,36 @@ function fixture() {
 }
 afterEach(() => vi.restoreAllMocks());
 describe('durable visible turn failures', () => {
+  const workerInput = { sessionId: 's', requestId: 'r', prompt: 'Cerere' };
+  const workerJob = { ...workerInput, userId: 'u', agencyId: 'a', role: 'agent', jobType: 'turn', status: 'running', claimId: 'claim' };
+  it('publishes an early worker failure without clearing another active conversation lock', async () => {
+    const { ctx, rows } = fixture();
+    rows.set('assistantAgentJobs/r', workerJob);
+    rows.set('agencies/a/assistantSessions/s', { ownerId: 'u', busyUntil: 9999999999999, turnId: 'other' });
+    rows.set('agencies/a/assistantLocks/chat-u', { busyUntil: 9999999999999, turnId: 'other' });
+    const message = await saveWorkerTurnFailure(ctx, workerInput, 'claim');
+    expect(message?.outputType).toBe('ERROR_EVENT');
+    expect(rows.get('agencies/a/assistantSessions/s/messages/r-assistant')).toEqual(message);
+    expect(rows.get('agencies/a/assistantSessions/s').turnId).toBe('other');
+    expect(rows.get('agencies/a/assistantLocks/chat-u').busyUntil).toBe(9999999999999);
+    expect(await saveWorkerTurnFailure(ctx, workerInput, 'claim')).toBeNull();
+  });
+  it('refuses an expired worker claim, revoked member, foreign session and substituted prompt', async () => {
+    const { ctx, rows } = fixture(); rows.set('assistantAgentJobs/r', workerJob);
+    expect(await saveWorkerTurnFailure(ctx, workerInput, 'old-claim')).toBeNull();
+    expect(await saveWorkerTurnFailure(ctx, { ...workerInput, prompt: 'Substituit' }, 'claim')).toBeNull();
+    rows.set('users/u', { agencyId: 'b', role: 'agent' }); expect(await saveWorkerTurnFailure(ctx, workerInput, 'claim')).toBeNull();
+    rows.set('users/u', { agencyId: 'a', role: 'agent' }); rows.set('agencies/a/assistantSessions/s', { ownerId: 'other' }); expect(await saveWorkerTurnFailure(ctx, workerInput, 'claim')).toBeNull();
+    expect([...rows.keys()].some(key => key.includes('/messages/'))).toBe(false);
+  });
+  it('creates a missing own conversation for the failed queued request but never replaces a confirmed reply', async () => {
+    const { ctx, rows } = fixture(); rows.set('assistantAgentJobs/r', workerJob);
+    expect((await saveWorkerTurnFailure(ctx, workerInput, 'claim'))?.outputType).toBe('ERROR_EVENT');
+    expect(rows.get('agencies/a/assistantSessions/s')).toMatchObject({ ownerId: 'u', busyUntil: 0 });
+    rows.set('agencies/a/assistantSessions/s/messages/r-assistant', { role: 'assistant', text: 'Rezultat confirmat' });
+    expect(await saveWorkerTurnFailure(ctx, workerInput, 'claim')).toBeNull();
+    expect(rows.get('agencies/a/assistantSessions/s/messages/r-assistant').text).toBe('Rezultat confirmat');
+  });
   it('persists an honest failure reply and clears locks without retrying effects', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(planTurn).mockRejectedValue(new Error('private provider payload'));

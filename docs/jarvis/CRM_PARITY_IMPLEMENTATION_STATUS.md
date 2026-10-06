@@ -169,6 +169,7 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - update_preferences are marker de revizie. Noile planuri fixează o singură dată revizia contactelor, cerințelor și proprietăților; reviziile furnizate sunt păstrate, iar referințele către înregistrări create în plan sunt rezolvate ulterior. Payload-urile vechi fără marker rămân compatibile. Mai multe editări ale aceluiași target pot necesita replanificare după primul pas.
 - 313 teste AI trecute, 9 probe rezervate emulatorului; 24 teste pe emulator Firestore real trecute în 6 suite. Noua concurență contact/preferințe are exact un succes, un 409 și un ledger. Prompt/tool 17. Concurența celorlalte entități și acceptanța providerilor rămân în matrice.
 - Typecheck și build Next.js final trecute, inclusiv dialogul care așteaptă salvarea; manifest regenerat și verificat după migrarea dialogului.
+- Release parity-21, commit 2e7f633bd36b2c91625f5a150003efd28f1220bd: READY, trafic 100%, verificat la 12:04 UTC. Cele 5 funcții ACTIVE, 72 indexuri READY, scheduler ENABLED și heartbeat fără eroare.
 
 ### Paginare și totaluri ale căutării — validare în curs
 - Fallback-ul cu text păstrează continuarea când limita cardului se atinge înainte de consumarea paginii server, inclusiv când serverul returnează mai puțin de 250 de documente. Ultimul segment nu este confundat cu tot corpusul.
@@ -176,3 +177,11 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Cursorul este legat de rolul actorului și de intervalul calendaristic rezolvat. O comandă „mâine” reluată în altă zi cere o căutare nouă. Contractul tool-ului explică aceste limite modelului; prompt/tool 18.
 - Teste pentru căutarea paginată pe 7 contacte, segmentarea unui corpus de 10001 rezultate și invalidarea după schimbarea rolului/zilei. Aceste verificări nu certifică reconcilierea istorică sau agregarea Sales autorizată, încă restante.
 - 316 teste AI trecute, 9 probe rezervate emulatorului; typecheck, build Next.js și verificarea manifestului trecute. Publicarea acestei etape urmează după buildul parity-21.
+
+### Erori worker înainte de preluarea conversației — validare în curs
+- Un eșec al comenzii de tip turn înainte de lock-ul conversației este salvat ca ERROR_EVENT, cu solicitarea originală, în istoricul propriu. Starea jobului rămâne failed; livrarea erorii nu este succes de business.
+- Salvarea verifică tranzacțional claim-ul activ, jobul, actorul, rolul, tenantul, conversația și solicitarea originală. Nu publică pentru un claim vechi, după revocare sau în conversația altuia; nu suprascrie un răspuns existent și nu eliberează lock-ul altei comenzi.
+- Nu reexecută acțiuni și nu schimbă politica de reluare a planurilor. Dacă salvarea în istoric eșuează, jobul păstrează eroarea și jurnalul conține doar categoria fixă, fără payload CRM/provider.
+- 320 teste AI trecute, 9 probe rezervate emulatorului; 17 teste țintite, cu 4 noi pentru aceste cazuri. Typecheck, build Next.js, contracte și manifest trecute. Prompt/tool 19. Publicarea este în curs; recuperarea worker-elor cu lease expirat și acceptanța providerilor rămân distincte.
+- Probă read-only în conversația reală: TEXT, success, card properties, job completed, fără eroare și fără plan executat. Nu s-au trimis mesaje externe.
+
