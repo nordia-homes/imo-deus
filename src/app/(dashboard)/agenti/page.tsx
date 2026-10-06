@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { uploadCrmFile } from '@/lib/crm/client-actions';
 import { ArrowRight, Building2, Camera, Loader2, Mail, Pencil, Phone, ShieldCheck, UserRound, Users2 } from 'lucide-react';
 import { WhatsappIcon } from '@/components/icons/WhatsappIcon';
 import { useAgency } from '@/context/AgencyContext';
-import { useStorage, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { AgentManagementCard } from '@/components/settings/AgentManagementCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,7 +58,6 @@ function formatCurrency(value?: number | null) {
 export default function AgentsPage() {
   const { user } = useUser();
   const { agency, userProfile } = useAgency();
-  const storage = useStorage();
   const { toast } = useToast();
   const [agents, setAgents] = useState<AgentCardProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,11 +65,13 @@ export default function AgentsPage() {
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editPhotoUrl, setEditPhotoUrl] = useState('');
+  const [photoUploadId, setPhotoUploadId] = useState<string | null>(null);
   const [isSavingAgent, setIsSavingAgent] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [deletingAgent, setDeletingAgent] = useState<UserProfile | null>(null);
   const [isDeletingAgent, setIsDeletingAgent] = useState(false);
   const isAdmin = userProfile?.role === 'admin';
+  useEffect(() => () => { if (editPhotoUrl.startsWith('blob:')) URL.revokeObjectURL(editPhotoUrl); }, [editPhotoUrl]);
 
   useEffect(() => {
     if (!agency?.id || !user) {
@@ -144,6 +145,7 @@ export default function AgentsPage() {
   }
 
   function openEditDialog(agent: AgentCardProfile) {
+    setPhotoUploadId(null);
     setEditingAgent(agent);
     setEditName(agent.name || '');
     setEditPhone(agent.phone || '');
@@ -152,10 +154,15 @@ export default function AgentsPage() {
 
   function closeEditDialog() {
     if (isSavingAgent || isUploadingPhoto) return;
+    resetEditDialog();
+  }
+
+  function resetEditDialog() {
     setEditingAgent(null);
     setEditName('');
     setEditPhone('');
     setEditPhotoUrl('');
+    setPhotoUploadId(null);
   }
 
   async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -164,10 +171,9 @@ export default function AgentsPage() {
 
     setIsUploadingPhoto(true);
     try {
-      const photoRef = ref(storage, `agencies/${agency.id}/agents/${editingAgent.id}/profile.jpg`);
-      await uploadBytes(photoRef, file);
-      const photoURL = await getDownloadURL(photoRef);
-      setEditPhotoUrl(photoURL);
+      const uploaded = await uploadCrmFile(user, file);
+      setPhotoUploadId(uploaded.uploadId);
+      setEditPhotoUrl(URL.createObjectURL(file));
       toast({
         title: 'Poză încărcată',
         description: 'Poza a fost încărcată și va fi salvată după confirmarea editării.',
@@ -199,7 +205,8 @@ export default function AgentsPage() {
         body: JSON.stringify({
           name: editName.trim(),
           phone: editPhone.trim(),
-          photoUrl: editPhotoUrl,
+          ...(photoUploadId ? { photoUploadId } : { photoUrl: editPhotoUrl }),
+          expectedUpdatedAt: editingAgent.updatedAt || null,
         }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -227,7 +234,7 @@ export default function AgentsPage() {
         title: 'Agent actualizat',
         description: `${nextAgent.name} are acum datele noi salvate.`,
       });
-      closeEditDialog();
+      resetEditDialog();
     } catch (error) {
       toast({
         title: 'Salvare eșuată',

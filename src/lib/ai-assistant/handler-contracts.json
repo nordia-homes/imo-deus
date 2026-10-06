@@ -27,7 +27,7 @@
   },
   "file_apply": {
     "method": "POST",
-    "validation": "schema = z.discriminatedUnion('destination', [\n  z.object({ destination: z.literal('profile_photo') }).strict(),\n  z.object({ destination: z.literal('agency_logo') }).strict(),\n  z.object({ destination: z.literal('agency_share_image') }).strict(),\n  z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),\n  z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),\n  z.object({ destination: z.literal('identity_ocr') }).strict(),\n  z.object({ destination: z.literal('property_image'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('property_rlv'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('contract_template'), name: z.string().trim().min(1).max(300), category: z.enum(['reservation', 'collaboration', 'exclusivity', 'custom']), description: z.string().max(10000).default('') }).strict(),\n  z.object({ destination: z.literal('electronic_identity_ocr'), addressProofUploadId: z.string().uuid() }).strict(),\n])",
+    "validation": "schema = z.discriminatedUnion('destination', [\n  z.object({ destination: z.literal('profile_photo') }).strict(),\n  z.object({ destination: z.literal('agency_logo') }).strict(),\n  z.object({ destination: z.literal('agency_share_image') }).strict(),\n  z.object({ destination: z.literal('agent_photo'), agentId: id }).strict(),\n  z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),\n  z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),\n  z.object({ destination: z.literal('identity_ocr') }).strict(),\n  z.object({ destination: z.literal('property_image'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('property_rlv'), propertyId: id }).strict(),\n  z.object({ destination: z.literal('contract_template'), name: z.string().trim().min(1).max(300), category: z.enum(['reservation', 'collaboration', 'exclusivity', 'custom']), description: z.string().max(10000).default('') }).strict(),\n  z.object({ destination: z.literal('electronic_identity_ocr'), addressProofUploadId: z.string().uuid() }).strict(),\n])",
     "bodyFields": [],
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
@@ -631,10 +631,12 @@
   },
   "agency_agent_detail": {
     "method": "GET",
-    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n})",
+    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n  photoUploadId: z.string().uuid().optional(),\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
     "bodyFields": [
+      "expectedUpdatedAt",
       "name",
       "phone",
+      "photoUploadId",
       "photoUrl"
     ],
     "queryFields": [],
@@ -880,10 +882,12 @@
   },
   "agency_agent_update": {
     "method": "PATCH",
-    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n})",
+    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n  photoUploadId: z.string().uuid().optional(),\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
     "bodyFields": [
+      "expectedUpdatedAt",
       "name",
       "phone",
+      "photoUploadId",
       "photoUrl"
     ],
     "queryFields": [],
@@ -891,10 +895,12 @@
   },
   "agency_agent_remove": {
     "method": "DELETE",
-    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n})",
+    "validation": "updateAgentSchema = z.object({\n  name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),\n  phone: z.string().trim().optional(),\n  photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),\n  photoUploadId: z.string().uuid().optional(),\n  expectedUpdatedAt: z.string().datetime().nullable().optional(),\n}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.')",
     "bodyFields": [
+      "expectedUpdatedAt",
       "name",
       "phone",
+      "photoUploadId",
       "photoUrl"
     ],
     "queryFields": [],

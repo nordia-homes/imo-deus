@@ -146,3 +146,12 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Idempotency și audit folosesc ledger-ul existent. Revocarea membrului este verificată și la repetare, iar fișierele orfane sunt recunoscute de retenție. Nu se schimbă limita generală de 15 MB a upload-urilor.
 - 297 teste AI trecute, inclusiv proba rolului, destinației, protejării avatarului/siglei și repetării; typecheck trecut. Build Functions trecut; deploy-ul retenției și build-ul backend sunt etape distincte.
 - Rămân 7 fișiere montate cu scrieri/upload-uri directe. Fotografia agentului din dialog trebuie să păstreze aplicarea după confirmarea editării; simpla selectare a fișierului nu trebuie să modifice profilul.
+
+- Release parity-18, commit 971bc1c88dc5e316a6aee5162476b3f5254d2924: READY, trafic 100%, verificat la 10:42 UTC. Retenția a fost publicată separat și este ACTIVE; heartbeat fără eroare, 72 indexuri READY.
+
+### Fotografia agentului — validată pentru publicare
+- Dialogul încarcă imaginea privat și păstrează previzualizarea până la Salvare. Anularea nu modifică profilul. Jarvis poate aplica aceeași imagine prin file_apply/agent_photo cu agentId sau agent_edit cu photoUploadId.
+- Numai administratorul curent poate modifica un agent din aceeași agenție. Recodarea imaginii, limitele, retenția și cheia legată de agent protejează aplicarea; profilul privat, proiecția publică, auditul și receipt-ul imaginii se salvează în aceeași tranzacție.
+- Revizia profilului previne suprascrierea unei editări concurente. Câmpurile phone/photoUrl omise sunt păstrate. Selectarea unei imagini nu mai scrie direct în Storage din browser; închiderea după salvare este corectată.
+- 303 teste AI trecute, 8 probe rezervate emulatorului; typecheck și build Next.js trecute. Probele noi verifică pregătirea fără aplicare, revocarea, apartenența, repetarea și conflictul de revizie. Nu s-au modificat profiluri reale în teste.
+- Sincronizarea displayName în Firebase Auth rămâne un efect ulterior tranzacției CRM; reconcilierea unui eșec Auth este încă restantă. Rămân 6 fișiere montate cu scrieri/upload-uri directe și criteriile de acceptanță din matrice. Prompt/tool 15.

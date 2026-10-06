@@ -1,16 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ save: vi.fn(), metadata: vi.fn(), resource: vi.fn(), encode: vi.fn(async (bytes: Buffer) => bytes) }));
-vi.mock('firebase-admin/storage', () => ({ getStorage: () => ({ bucket: () => ({ name: 'bucket', file: () => ({ save: mocks.save, getMetadata: mocks.metadata }) }) }) }));
+const mocks = vi.hoisted(() => ({ save: vi.fn(), metadata: vi.fn(), download: vi.fn(), resource: vi.fn(), encode: vi.fn(async (bytes: Buffer) => bytes) }));
+vi.mock('firebase-admin/storage', () => ({ getStorage: () => ({ bucket: () => ({ name: 'bucket', file: () => ({ save: mocks.save, getMetadata: mocks.metadata, download: mocks.download }) }) }) }));
 vi.mock('sharp', () => ({ default: (bytes: Buffer) => { const chain: any = { rotate: () => chain, resize: () => chain, webp: () => chain, toBuffer: () => mocks.encode(bytes) }; return chain; } }));
 vi.mock('../access', () => ({ getResource: mocks.resource, collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies/a/' + name) }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 import { applyPropertyAsset } from '@/lib/crm/property-assets';
 import { applyBrandAsset } from '@/lib/crm/brand-assets';
+import { prepareAgentPhoto } from '@/lib/crm/agent-photo';
 import type { AssistantContext } from '../access';
 
 function fixture() {
   const rows = new Map<string, any>([['users/u', { agencyId: 'a', role: 'agent' }], ['agencies/a/properties/p', { images: [] }]]);
-  const reference = (path: string): any => ({ path, doc: (id: string) => reference(path + '/' + id), get: async () => ({ exists: rows.has(path), data: () => rows.get(path) }), update: async (patch: any) => rows.set(path, { ...rows.get(path), ...patch }) });
+  const reference = (path: string): any => ({ path, doc: (id: string) => reference(path + '/' + id), get: async () => ({ ref: reference(path), exists: rows.has(path), data: () => rows.get(path) }), update: async (patch: any) => rows.set(path, { ...rows.get(path), ...patch }) });
   const db = { collection: reference, runTransaction: async (work: any) => {
     const writes: (() => void)[] = [];
     const result = await work({ get: (ref: any) => { if (writes.length) throw new Error('Read after write'); return ref.get(); }, set: (ref: any, patch: any) => writes.push(() => rows.set(ref.path, { ...rows.get(ref.path), ...patch })), update: (ref: any, patch: any) => writes.push(() => rows.set(ref.path, { ...rows.get(ref.path), ...patch })), create: (ref: any, data: any) => writes.push(() => rows.set(ref.path, data)) });
@@ -21,6 +22,35 @@ function fixture() {
 const upload = { name: 'plan.png', mimeType: 'image/png' }, bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 afterEach(() => vi.clearAllMocks());
 describe('property assets attached by the common server service', () => {
+  it('prepares a private agent photo without applying it before dialog confirmation', async () => {
+    const { ctx, rows } = fixture(); ctx.role = 'admin';
+    rows.set('users/u', { agencyId: 'a', role: 'admin', photoUrl: 'admin-original' });
+    rows.set('users/agent', { agencyId: 'a', role: 'agent', photoUrl: 'agent-original' });
+    rows.set('agencies/a/assistantUploads/upload', { ownerId: 'u', expiresAt: Date.now() + 60000, mimeType: 'image/png', storagePath: 'agencies/a/privateCommunications/assistant-uploads/u/upload' });
+    mocks.download.mockResolvedValue([bytes]);
+    const photo = await prepareAgentPhoto(ctx, 'upload', 'agent');
+    expect(photo.imageUrl).toContain('alt=media');
+    expect(rows.get('users/agent').photoUrl).toBe('agent-original');
+    expect(rows.get('users/u').photoUrl).toBe('admin-original');
+    expect(rows.has(photo.ledger.path)).toBe(false);
+    expect(rows.get('agencies/a/assistantUploads/upload')[`assetTargets.${photo.key}`].storagePath).toContain('/profile_photo/asset-');
+    rows.set(photo.ledger.path, { actorId: 'u', status: 'completed', result: { agentId: 'agent', imageUrl: photo.imageUrl } });
+    expect((await prepareAgentPhoto(ctx, 'upload', 'agent')).imageUrl).toBe(photo.imageUrl);
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+    rows.get(photo.ledger.path).status = 'unknown';
+    await expect(prepareAgentPhoto(ctx, 'upload', 'agent')).rejects.toMatchObject({ status: 409 });
+  });
+  it('rejects foreign agents, revoked administrators and uploads owned by another actor before saving a file', async () => {
+    const { ctx, rows } = fixture(); ctx.role = 'admin';
+    rows.set('users/u', { agencyId: 'a', role: 'admin' }); rows.set('users/agent', { agencyId: 'b', role: 'agent' });
+    await expect(prepareAgentPhoto(ctx, 'upload', 'agent')).rejects.toMatchObject({ status: 403 });
+    rows.set('users/agent', { agencyId: 'a', role: 'agent' });
+    rows.set('agencies/a/assistantUploads/upload', { ownerId: 'other', expiresAt: Date.now() + 60000, mimeType: 'image/png', storagePath: 'agencies/a/privateCommunications/assistant-uploads/other/upload' });
+    await expect(prepareAgentPhoto(ctx, 'upload', 'agent')).rejects.toMatchObject({ status: 404 });
+    rows.set('users/u', { agencyId: 'a', role: 'agent' });
+    await expect(prepareAgentPhoto(ctx, 'upload', 'agent')).rejects.toMatchObject({ status: 403 });
+    expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.download).not.toHaveBeenCalled();
+  });
   it('updates the own profile and public avatar once, denying agency logos to agents', async () => {
     const { ctx, rows } = fixture();
     const result = await applyBrandAsset(ctx, 'upload', 'profile_photo', upload, bytes);

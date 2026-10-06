@@ -14,6 +14,7 @@ const schema = z.discriminatedUnion('destination', [
   z.object({ destination: z.literal('profile_photo') }).strict(),
   z.object({ destination: z.literal('agency_logo') }).strict(),
   z.object({ destination: z.literal('agency_share_image') }).strict(),
+  z.object({ destination: z.literal('agent_photo'), agentId: id }).strict(),
   z.object({ destination: z.literal('sale_document'), saleId: id, documentId: id }).strict(),
   z.object({ destination: z.literal('conversation_attachment'), conversationId: id }).strict(),
   z.object({ destination: z.literal('identity_ocr') }).strict(),
@@ -29,6 +30,13 @@ export async function POST(request: NextRequest, route: { params: Promise<{ uplo
     const upload = (await collectionFor(ctx, 'assistantUploads').doc(uploadId).get()).data();
     const prefix = `agencies/${ctx.agencyId}/privateCommunications/assistant-uploads/${ctx.uid}/`;
     if (!upload || upload.ownerId !== ctx.uid || upload.expiresAt <= Date.now() || upload.storagePath !== prefix + uploadId) throw new CommunicationError('Fișierul nu este accesibil sau a expirat.', 404);
+    if (input.destination === 'agent_photo') {
+      if (ctx.role !== 'admin') throw new CommunicationError('Modificarea fotografiei agentului necesită administratorul.', 403);
+      const target = await ctx.adminDb.collection('users').doc(input.agentId).get();
+      if (!target.exists || target.data()?.agencyId !== ctx.agencyId || target.data()?.role !== 'agent') throw new CommunicationError('Agentul nu este accesibil.', 403);
+      const { PATCH } = await import('@/app/api/agency/agents/[agentId]/route');
+      return withAssistantPrincipal(ctx, () => PATCH(new NextRequest(request.url, { method: 'PATCH', headers: { authorization: request.headers.get('authorization') || '', 'Content-Type': 'application/json' }, body: JSON.stringify({ name: target.data()?.name || '', phone: target.data()?.phone || '', photoUploadId: uploadId, expectedUpdatedAt: target.data()?.updatedAt || null }) }), { params: Promise.resolve({ agentId: input.agentId }) }));
+    }
     const [bytes] = await getStorage(ctx.adminAuth.app).bucket().file(upload.storagePath).download();
     if (bytes.length > 15 * 1024 * 1024) throw new CommunicationError('Fișier prea mare.', 413);
     if (input.destination === 'profile_photo' || input.destination === 'agency_logo' || input.destination === 'agency_share_image') {

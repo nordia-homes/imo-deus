@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
+import { randomUUID } from 'node:crypto';
+import { prepareAgentPhoto } from '@/lib/crm/agent-photo';
+import type { AssistantContext } from '@/lib/ai-assistant/access';
 import { z } from 'zod';
 import { requireAgencyAdminFromBearerToken, requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import type { Contact, Property, Task, Viewing } from '@/lib/types';
@@ -10,7 +13,9 @@ const updateAgentSchema = z.object({
   name: z.string().trim().min(2, 'Numele agentului este obligatoriu.'),
   phone: z.string().trim().optional(),
   photoUrl: z.string().url('URL-ul pozei este invalid.').or(z.literal('')).optional(),
-});
+  photoUploadId: z.string().uuid().optional(),
+  expectedUpdatedAt: z.string().datetime().nullable().optional(),
+}).strict().refine(input => !(input.photoUploadId && input.photoUrl !== undefined), 'Folosește imaginea privată sau URL-ul existent, nu ambele.');
 
 function formatError(error: unknown) {
   if (error && typeof error === 'object' && 'status' in error) {
@@ -267,7 +272,8 @@ export async function PATCH(
   context: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const { agencyId, adminDb, adminAuth } = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const auth = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, adminDb, adminAuth } = auth;
     const { agentId } = await context.params;
     if (!agencyId) {
       return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
@@ -286,6 +292,7 @@ export async function PATCH(
       agencyId?: string;
       role?: 'admin' | 'agent';
       email?: string;
+      updatedAt?: string | null;
     } | undefined;
 
     if (userData?.agencyId !== agencyId || userData?.role !== 'agent') {
@@ -295,29 +302,32 @@ export async function PATCH(
       );
     }
 
+    const photo = body.photoUploadId ? await prepareAgentPhoto({ ...auth, authorization: request.headers.get('authorization') || '' } as AssistantContext, body.photoUploadId, agentId) : null;
     const updatePayload = {
       name: body.name.trim(),
-      phone: body.phone?.trim() || '',
-      photoUrl: body.photoUrl?.trim() || '',
+      phone: body.phone === undefined ? userSnapshot.data()?.phone || '' : body.phone.trim(),
+      photoUrl: photo?.imageUrl || (body.photoUrl === undefined ? userSnapshot.data()?.photoUrl || '' : body.photoUrl.trim()),
       updatedAt: new Date().toISOString(),
     };
 
-    const batch = adminDb.batch();
-    batch.set(userRef, updatePayload, { merge: true });
-    batch.set(
-      adminDb.collection('publicAgentProfiles').doc(agentId),
-      {
+    const auditId = randomUUID();
+    await adminDb.runTransaction(async tx => {
+      const [member, target, photoReceipt] = await Promise.all([tx.get(adminDb.collection('users').doc(auth.uid)), tx.get(userRef), photo ? tx.get(photo.ledger) : Promise.resolve(null)]);
+      if (member.data()?.agencyId !== agencyId || member.data()?.role !== 'admin' || target.data()?.agencyId !== agencyId || target.data()?.role !== 'agent') throw Object.assign(new Error('Accesul la editarea agentului a fost revocat.'), { status: 403 });
+      const expected = body.expectedUpdatedAt === undefined ? userSnapshot.data()?.updatedAt || null : body.expectedUpdatedAt;
+      if ((target.data()?.updatedAt || null) !== expected) throw Object.assign(new Error('Profilul agentului a fost modificat între timp. Reîncarcă datele.'), { status: 409 });
+      tx.set(userRef, updatePayload, { merge: true });
+      tx.set(adminDb.collection('publicAgentProfiles').doc(agentId), {
         agencyId,
         name: updatePayload.name,
-        email: userData.email || '',
+        email: target.data()?.email || '',
         phone: updatePayload.phone,
         photoUrl: updatePayload.photoUrl,
         updatedAt: updatePayload.updatedAt,
-      },
-      { merge: true }
-    );
-
-    await batch.commit();
+      }, { merge: true });
+      if (photo && !photoReceipt?.exists) tx.create(photo.ledger, { actorId: auth.uid, operation: 'agent_photo', status: 'completed', completedAt: updatePayload.updatedAt, result: { imageUrl: photo.imageUrl, agentId, uploadId: photo.uploadId } });
+      tx.create(adminDb.collection('agencies').doc(agencyId).collection('crmEvents').doc(auditId), { id: auditId, actorId: auth.uid, agencyId, source: 'agent_edit', capability: 'agents.updated', occurredAt: updatePayload.updatedAt, recordedAt: updatePayload.updatedAt, entities: { userId: agentId }, result: { photoApplied: Boolean(photo) } });
+    });
     await adminAuth.updateUser(agentId, {
       displayName: updatePayload.name,
     });

@@ -1697,6 +1697,7 @@ export type CustomDomainApiResult = {
 
 export type UserProfile = {
   id: string;
+  updatedAt?: string | null;
   name: string;
   email: string;
   phone?: string;
