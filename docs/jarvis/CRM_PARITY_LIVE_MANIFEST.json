@@ -2177,9 +2177,14 @@
       "file": "src/components/layout/NotificationBell.tsx",
       "calls": [
         {
-          "call": "updateDoc",
-          "line": 34,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 37,
+          "sharedExecutor": true
+        },
+        {
+          "call": "executeCrmAction",
+          "line": 44,
+          "sharedExecutor": true
         }
       ],
       "verification": "static_reference_requires_semantic_review"

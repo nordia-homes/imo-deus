@@ -26,6 +26,15 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('records notification reading only in the actor own collection and clears its date on unread', async () => {
+    const { ctx, rows } = database({ 'users/u/notifications/n': { isRead: false }, 'users/other/notifications/private': { isRead: false } });
+    await executeAction(ctx, { kind: 'notification_action', action: 'read', notificationId: 'n' }, 'read-n');
+    expect(rows.get('users/u/notifications/n')).toMatchObject({ isRead: true, readAt: expect.any(String) });
+    await executeAction(ctx, { kind: 'notification_action', action: 'unread', notificationId: 'n' }, 'unread-n');
+    expect(rows.get('users/u/notifications/n')).toMatchObject({ isRead: false, readAt: null });
+    await expect(executeAction(ctx, { kind: 'notification_action', action: 'read', notificationId: 'private' }, 'other-n')).rejects.toMatchObject({ status: 404 });
+    expect(rows.get('users/other/notifications/private')).toEqual({ isRead: false });
+  });
   it('rejects stale calendar edits/deletions atomically and permits a current edit only once', async () => {
     const revision = '2026-10-06T08:00:00Z';
     const { ctx, rows } = database({

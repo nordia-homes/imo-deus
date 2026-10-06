@@ -326,13 +326,13 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (action.action === 'read_all') {
         const unread = await tx.get(notifications.where('isRead', '==', false).limit(400));
         if (unread.size === 400) throw new CommunicationError('Folosește operația read-all pentru lista completă.', 409);
-        unread.docs.forEach(doc => tx.update(doc.ref, { isRead: true }));
+        unread.docs.forEach(doc => tx.update(doc.ref, { isRead: true, readAt: now }));
         result = { count: unread.size, link: '/notifications' };
       } else {
         if (!action.notificationId) throw new CommunicationError('Precizează notificarea.');
         const notification = notifications.doc(action.notificationId);
         if (!(await tx.get(notification)).exists) throw new CommunicationError('Notificarea nu există.', 404);
-        tx.update(notification, { isRead: action.action === 'read' });
+        tx.update(notification, { isRead: action.action === 'read', readAt: action.action === 'read' ? now : null });
         result = { notificationId: action.notificationId, link: '/notifications' };
       }
     } else if (action.kind === 'create_property') {

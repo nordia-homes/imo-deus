@@ -94,3 +94,9 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - send-evidence revalidează actorul/tenantul/dosarul în tranzacție; dovada, comunicarea și auditul sunt atomice. Diagnosticul dispozitivului are schemă strictă și limite.
 - Confirmarea repetată nu dublează auditul; agent_confirmed nu înlocuiește ui_observed/reply_confirmed, iar confirmarea întârziată nu retrogradează replied. Corelarea runner-ului cu jobul este obligatorie.
 - 286 teste AI trecute; typecheck trecut. Testele sunt simulate și nu trimit mesaje.
+
+### Notificări din navigație — validată local
+- Clopoțelul folosește executorul comun pentru citire și read-all; erorile sunt vizibile. Acțiunea comună păstrează readAt la citire și îl golește la unread, numai în colecția utilizatorului autentificat.
+- 287 teste AI trecute, 19 verificări Text și 14 Voice trecute; 18 teste de reguli Firestore trecute pe emulator. Voice este verificat cu audio/microfon simulate.
+- Build calendar parity-10 READY, trafic 100%. Build Gmail parity-12 include commiturile 98901689 și ce4603c6; compilarea cloud a trecut, activarea este următorul pas.
+- Inventarul static încă vede un ClientPortalManager vechi fără importuri montate; acesta nu este un flux manual activ. Rămân de analizat scrierile montate din promovare Facebook, video, custom-domain și contorul de răspunsuri Sales.

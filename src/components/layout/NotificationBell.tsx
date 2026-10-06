@@ -1,7 +1,9 @@
 "use client";
 
 import { ArrowUpRight, Bell, BellRing, CheckCheck, Sparkles } from 'lucide-react';
-import { collection, doc, limit, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, limit, orderBy, query } from 'firebase/firestore';
+import { executeCrmAction } from '@/lib/crm/client-actions';
+import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ import type { AppNotification } from '@/lib/notifications/types';
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
@@ -31,18 +34,15 @@ export function NotificationBell() {
     if (!user) return;
     setIsOpen(false);
     if (!notification.isRead) {
-      await updateDoc(doc(firestore, 'users', user.uid, 'notifications', notification.id), {
-        isRead: true,
-        readAt: serverTimestamp(),
-      }).catch((error) => console.error('Notification read update failed:', error));
+      await executeCrmAction(user, { kind: 'notification_action', action: 'read', notificationId: notification.id }).catch(() => toast({ variant: 'destructive', title: 'Citirea notificării nu a fost salvată' }));
     }
     router.push(notification.actionUrl || '/notifications');
   };
 
   const markAllRead = async () => {
     if (!user) return;
-    const token = await user.getIdToken();
-    await fetch('/api/notifications/read-all', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    try { await executeCrmAction(user, { kind: 'existing_operation', operation: 'notification_read_all', params: {}, query: {}, body: {} }); }
+    catch (error) { toast({ variant: 'destructive', title: 'Notificările nu au fost actualizate', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
   };
 
   return (
