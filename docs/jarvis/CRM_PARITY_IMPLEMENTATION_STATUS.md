@@ -26,7 +26,7 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 | Backlog | Implementare curentă | Criterii încă de închis |
 |---|---|---|
 | B01–B04 | Catalog, servicii comune, politici, ledger, versiune proprietate, audit | Clasificare semantică finală a tuturor fluxurilor montate; optimistic concurrency pe restul entităților |
-| B05–B06 | Lifecycle și calendar comun, lock și validări | Probe concurente integrate pe toate căile de UI și efectele provider lifecycle |
+| B05–B06 | Lifecycle și calendar comun, lock și validări | Concurență Firestore verificată pentru calendar; rămân acceptanța tuturor căilor UI și efectele provider lifecycle |
 | B07–B13 | Contacte/câmpuri/default-uri/dedup/autofill, oferte, proprietăți, task-uri/vizionări, favorites și căile secundare migrate | Verificare exhaustivă câmp cu câmp și concurență pe editările restante |
 | B14–B18 | Import/review, portal/preferences links, feedback, Storia dedup, Sales constructor/handlers | Acceptanță completă în UI și provider pentru import/linkuri/dosare |
 | B19–B22 | Upload privat, scanner domeniu, assets/RLV, OCR, Word text, artefacte/export | Upload video mare, reproducere completă a formatării DOCX, verificare toate formatele/fișierele |
@@ -36,7 +36,7 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 | B35–B41 | Handler-e Imobiliare/Storia/Romimo/Meta/TikTok/Cloud/Video înregistrate cu contracte | Probe funcționale de provider, job controls și disponibilitate per entitate |
 | B42–B45 | Profile/agency/preferences comune, avatar/logo private, agents/domain/billing/collaboration handlers, handoff links | Acceptanță OAuth/plată/push pe dispozitiv și onboarding complet |
 | B46–B47 | Discovery compact, resolver date, buget, checkpoints/pause/cancel | Probe UI pentru pauză/reluare și loturi mari în producție |
-| B48 | Automatizări editabile, istoric, condiții de oprire și reguli CRM pe evenimente cu effects interne/receipts/cursor; editor Text/Voice | Extinderea editorului vizual la toate configurațiile existente și scenarii de evenimente concurente integrate; efecte externe prin aprobări dedicate |
+| B48 | Automatizări editabile, istoric, condiții de oprire și reguli CRM pe evenimente cu effects interne/receipts/cursor; editor Text/Voice | Acceptanță integrată a evenimentelor concurente și providerilor; efecte externe prin aprobări dedicate |
 | B49–B50 | Carduri comune, manifest CI, teste unitare/rules/UI/build | Verificare de release, observabilitate și probe end-to-end pentru fiecare modul |
 
 ## Validări efectuate
@@ -106,3 +106,14 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Câmpuri urmărite multiple, agent responsabil și conținutul notificării; toate acțiunile suplimentare existente pot fi editate sau eliminate, cu adăugare până la limita de 5 efecte. Nu se activează direct: se pregătește plan pentru confirmare.
 - 20 verificări Text trecute, inclusiv programare și efecte multiple; typecheck trecut. Integrarea concurentă a evenimentelor și acceptanța pe dispozitive/provideri rămân restante.
 - Release parity-13 READY, trafic 100%; Gmail, reviziile calendarului și notificările sunt publicate. Probe live de citire pentru health, Anunțuri proprietari și portofoliu: job completed, răspuns cu carduri, fără trimitere externă.
+
+### Tranzacții concurente — verificate pe emulator real
+- 21 teste trecute în 6 suite: 18 de reguli de acces și 3 de concurență calendar/executor. Nu sunt teste cu tranzacții simulate.
+- Sarcină/vizionare simultane pentru același agent: o singură programare acceptată. Client comun între agenți: o singură programare; agenți și clienți independenți: ambele acceptate. Două editări ale aceleiași sarcini cu revizia inițială: un succes, un 409 și o singură intrare în ledger.
+- Typecheck trecut. Testele rulează doar pe un emulator local și pe proiect demo; nu scriu în CRM-ul de producție.
+
+### Reluare la 6 octombrie — verificare și migrare Facebook
+- Release `build-2026-10-06-parity-14`, commit `a63290d84504f3342cd199fb9b2f782954431138`: READY, trafic 100%, verificat la 08:51 UTC. Cele 5 funcții sunt ACTIVE, scheduler ENABLED, 72 indexuri READY și heartbeat fără eroare. Gmail, notificările și editorul extins de reguli sunt publicate.
+- Contul Facebook implicit al proprietății este salvat prin executorul comun, cu revizia proprietății. Handler-ul verifică existența contului în aceeași agenție și proprietarul contului; conturile altui agent nu pot fi atribuite nici prin model, nici prin formular. Eliminarea selecției rămâne permisă.
+- Manifestul v2 arată importurile statice ale paginilor pentru a separa componentele vechi nemontate de fluxurile active. Aceasta nu certifică vizibilitatea în runtime sau paritatea semantică.
+- 288 teste AI trecute; cele 6 probe rezervate emulatorului sunt acoperite separat de suitele de reguli și concurență. Eroarea de tip pentru selecția Facebook nullable a fost corectată înainte de publicare.

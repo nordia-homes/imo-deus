@@ -26,6 +26,16 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('assigns only an owned Facebook account from the same agency and audits through the common property action', async () => {
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { title: 'Home' }, 'agencies/a/facebookCloudConnections/own': { ownerUid: 'u' }, 'agencies/a/facebookCloudConnections/other': { ownerUid: 'other' }, 'agencies/b/facebookCloudConnections/foreign': { ownerUid: 'u' } });
+    for (const [id, status] of [['other', 403], ['foreign', 404]] as const) {
+      await expect(executeAction(ctx, { kind: 'update_property', propertyId: 'p', patch: { defaultFacebookConnectionId: id } }, `facebook-${id}`)).rejects.toMatchObject({ status });
+      expect(rows.has(`agencies/a/assistantExecutions/facebook-${id}`)).toBe(false);
+    }
+    await executeAction(ctx, { kind: 'update_property', propertyId: 'p', expectedUpdatedAt: null, patch: { defaultFacebookConnectionId: 'own' } }, 'facebook-own');
+    expect(rows.get('agencies/a/properties/p')?.defaultFacebookConnectionId).toBe('own');
+    expect(rows.get('agencies/a/assistantExecutions/facebook-own')?.status).toBe('completed');
+  });
   it('records notification reading only in the actor own collection and clears its date on unread', async () => {
     const { ctx, rows } = database({ 'users/u/notifications/n': { isRead: false }, 'users/other/notifications/private': { isRead: false } });
     await executeAction(ctx, { kind: 'notification_action', action: 'read', notificationId: 'n' }, 'read-n');

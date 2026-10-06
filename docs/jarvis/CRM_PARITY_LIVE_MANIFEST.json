@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "operations": [
     {
       "id": "crm_health",
@@ -1764,6 +1764,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/agenti/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1790,6 +1797,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/ai-calls/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1806,6 +1820,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/contracts/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1817,6 +1838,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/contracts/[templateId]/edit/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1833,6 +1861,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/custom-domain/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1849,6 +1884,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/dashboard/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1860,6 +1902,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/facebook-promotion-runner/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1881,6 +1930,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/gmail/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1897,6 +1953,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/inbox/storia/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1913,6 +1976,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/leads/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1974,6 +2044,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/leads/[leadId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -1985,6 +2062,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/marketing/facebook-groups/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2001,6 +2085,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/matching/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2017,6 +2108,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/notifications/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2048,6 +2146,14 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/owner-listings/favorite/page.tsx",
+          "src/app/(dashboard)/owner-listings/prospecting/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2064,6 +2170,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/owner-listings/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2075,6 +2188,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/properties/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2086,6 +2206,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2102,6 +2229,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/sales-management/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2128,6 +2262,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/settings/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2139,6 +2280,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/tasks/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2160,6 +2308,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/viewings/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2171,6 +2326,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/layout.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2187,6 +2349,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/layout.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2203,6 +2372,14 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/dashboard/page.tsx",
+          "src/app/(dashboard)/leads/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2234,6 +2411,11 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": false,
+        "entrypoints": [],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2245,6 +2427,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/leads/[leadId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2256,6 +2445,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/leads/[leadId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2267,6 +2463,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/leads/[leadId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2278,6 +2481,15 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/marketing/meta-advertising/page.tsx",
+          "src/app/(dashboard)/marketing/page.tsx",
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2289,6 +2501,14 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/marketing/tiktok-ads/page.tsx",
+          "src/app/(dashboard)/marketing/tiktok-studio/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2300,6 +2520,14 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/marketing/tiktok-ads/page.tsx",
+          "src/app/(dashboard)/marketing/tiktok-studio/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2326,17 +2554,38 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/dashboard/page.tsx",
+          "src/app/(dashboard)/owner-listings/favorite/page.tsx",
+          "src/app/(dashboard)/owner-listings/favorites/page.tsx",
+          "src/app/(dashboard)/owner-listings/page.tsx",
+          "src/app/(dashboard)/owner-listings/prospecting/page.tsx",
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx",
+          "src/app/(dashboard)/properties/page.tsx",
+          "src/app/(dashboard)/sold-properties/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
       "file": "src/components/properties/detail/actions/FacebookCloudPublishingCard.tsx",
       "calls": [
         {
-          "call": "updateDoc",
-          "line": 149,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 148,
+          "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2348,6 +2597,11 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": false,
+        "entrypoints": [],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2359,6 +2613,11 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": false,
+        "entrypoints": [],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2370,6 +2629,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2391,6 +2657,13 @@
           "sharedExecutor": false
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2402,6 +2675,11 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": false,
+        "entrypoints": [],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2418,6 +2696,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2434,6 +2719,14 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/sales-management/[saleId]/page.tsx",
+          "src/app/(dashboard)/sales-management/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2445,6 +2738,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/settings/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2461,6 +2761,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/tasks/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2482,6 +2789,13 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/tasks/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     },
     {
@@ -2493,6 +2807,16 @@
           "sharedExecutor": true
         }
       ],
+      "reachability": {
+        "staticallyReachable": true,
+        "entrypoints": [
+          "src/app/(dashboard)/dashboard/page.tsx",
+          "src/app/(dashboard)/leads/[leadId]/page.tsx",
+          "src/app/(dashboard)/properties/[propertyId]/page.tsx",
+          "src/app/(dashboard)/viewings/page.tsx"
+        ],
+        "limitation": "Static imports do not prove runtime visibility, permissions or complete manual parity."
+      },
       "verification": "static_reference_requires_semantic_review"
     }
   ],

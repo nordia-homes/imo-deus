@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { doc, updateDoc } from 'firebase/firestore';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 import {
   CalendarClock,
   CheckCircle2,
@@ -16,7 +16,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
-import { useFirestore, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { FacebookCloudPublishDialog } from '@/components/properties/FacebookCloudPublishDialog';
 import { facebookCloudFetch } from '@/lib/facebook-cloud-client';
@@ -58,7 +58,6 @@ function jobLabel(job: FacebookCloudPublishingJob) {
 export function FacebookCloudPublishingCard({ property }: { property: Property }) {
   const { user } = useUser();
   const { agency, agencyId } = useAgency();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const groups = useMemo(
     () => getAgencyFacebookGroupsForProperty(agency, property.transactionType),
@@ -143,13 +142,10 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   }
 
   async function savePropertyDefault() {
-    if (!agencyId || !selectedConnectionId) return;
+    if (!agencyId || !user || !selectedConnectionId) return;
     setSavingDefault(true);
     try {
-      await updateDoc(
-        doc(firestore, 'agencies', agencyId, 'properties', property.id),
-        { defaultFacebookConnectionId: selectedConnectionId }
-      );
+      await executeCrmAction(user, { kind: 'update_property', propertyId: property.id, expectedUpdatedAt: property.updatedAt || null, patch: { defaultFacebookConnectionId: selectedConnectionId } });
       setPropertyDefaultId(selectedConnectionId);
       toast({ title: 'Cont atribuit proprietății', description: selectedConnection?.label || selectedConnection?.displayName });
     } catch (error) {

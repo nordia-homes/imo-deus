@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { dashboardReachability } from './lib/source-reachability.mjs';
 
 const target = 'docs/jarvis/CRM_PARITY_LIVE_MANIFEST.json';
 const text = fs.readFileSync('src/lib/ai-assistant/operations.ts', 'utf8');
@@ -23,10 +24,11 @@ for (const statement of source.statements) if (ts.isVariableStatement(statement)
 }
 function files(root) { return fs.readdirSync(root, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? files(path.join(root, entry.name)) : [path.join(root, entry.name)]); }
 const manualWrites = [];
+const reachability = dashboardReachability();
 for (const file of [...files('src/app/(dashboard)'), ...files('src/components'), ...files('src/hooks')].filter(file => /\.tsx?$/.test(file))) {
   const value = fs.readFileSync(file, 'utf8');
   const calls = [...value.matchAll(/\b(addDoc|updateDoc|setDoc|deleteDoc|writeBatch|uploadBytes|runTransaction|\w+DocumentNonBlocking|executeCrmAction|createManualViewing)\s*\(/g)].map(match => ({ call: match[1], line: value.slice(0, match.index).split('\n').length, sharedExecutor: ['executeCrmAction', 'createManualViewing'].includes(match[1]) }));
-  if (calls.length) manualWrites.push({ file: file.replaceAll('\\', '/'), calls, verification: 'static_reference_requires_semantic_review' });
+  if (calls.length) { const sourceFile = file.replaceAll('\\', '/'); manualWrites.push({ file: sourceFile, calls, reachability: reachability(sourceFile), verification: 'static_reference_requires_semantic_review' }); }
 }
 const contracts = fs.readFileSync('src/lib/ai-assistant/contracts.ts', 'utf8');
 const contractSource = ts.createSourceFile('contracts.ts', contracts, ts.ScriptTarget.Latest, true);
@@ -42,7 +44,7 @@ for (const statement of contractSource.statements) if (ts.isVariableStatement(st
   }
 }
 if (!actionKinds.length) throw new Error('No native action contract found.');
-const manifest = { version: 1, operations, actionKinds, manualWrites, excluded: ['internal workers', 'provider webhooks', 'master-admin outside actor permissions', 'human-only consent and OAuth steps'] };
+const manifest = { version: 2, operations, actionKinds, manualWrites, excluded: ['internal workers', 'provider webhooks', 'master-admin outside actor permissions', 'human-only consent and OAuth steps'] };
 const output = JSON.stringify(manifest, null, 2) + '\n';
 if (process.argv.includes('--check')) {
   if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== output) throw new Error('Parity manifest drift: run npm run jarvis:parity.');

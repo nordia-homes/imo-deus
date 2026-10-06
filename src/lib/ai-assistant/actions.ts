@@ -90,6 +90,12 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       return doc.data()!;
     };
     let result: Record<string, unknown>;
+    const validateFacebookConnection = async (connectionId?: string | null) => {
+      if (!connectionId) return;
+      const connection = await tx.get(collectionFor(ctx, 'facebookCloudConnections').doc(connectionId));
+      if (!connection.exists) throw new CommunicationError('Contul Facebook nu există în agenție.', 404);
+      if (connection.data()?.ownerUid !== ctx.uid) throw new CommunicationError('Nu ai dreptul să folosești acest cont Facebook.', 403);
+    };
     const propertyAssignment = async (agentId: string | null | undefined, row?: Record<string, any>) => {
       if (agentId === undefined || (row && row.agentId === agentId)) return {};
       const agent = agentId ? await tx.get(ctx.adminDb.collection('users').doc(agentId)) : null;
@@ -336,6 +342,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         result = { notificationId: action.notificationId, link: '/notifications' };
       }
     } else if (action.kind === 'create_property') {
+      await validateFacebookConnection(action.property.defaultFacebookConnectionId);
       const ref = collectionFor(ctx, 'properties').doc(action.propertyId || key);
       const assignment = await propertyAssignment(action.agentId === undefined ? ctx.uid : action.agentId);
       const lifecycle = action.statusChange ? propertyLifecyclePatch(action.property, action.statusChange, now) : { status: 'Inactiv' };
@@ -393,6 +400,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { propertyId: action.propertyId, title: property.title || '', ...patch, link: `/properties/${action.propertyId}` };
     } else if (action.kind === 'update_property') {
       const property = await read('properties', action.propertyId);
+      await validateFacebookConnection(action.patch.defaultFacebookConnectionId);
       if (action.expectedUpdatedAt !== undefined && (property.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Proprietatea s-a modificat între timp. Reîncarcă datele înainte de salvare.', 409);
       const assignment = await propertyAssignment(action.agentId, property);
       const patch = { ...action.patch, ...(action.patch.portalProfiles ? { portalProfiles: { ...(property.portalProfiles || {}), imobiliare: { ...(property.portalProfiles?.imobiliare || {}), ...action.patch.portalProfiles.imobiliare } } } : {}), ...assignment };
