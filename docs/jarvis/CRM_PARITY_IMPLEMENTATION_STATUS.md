@@ -78,7 +78,7 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Programare, limite de execuție și oprire după termen/status/răspuns; configurarea pregătește planul fără a activa automatizarea direct. Orele formularului sunt indicate ca ora dispozitivului; orele originale neatinse sunt păstrate exact.
 - 19 verificări UI Text trecute, incluzând pregătirea celor cinci tipuri; 14 verificări Voice trecute. Probele sunt cu date/integrări simulate și nu trimit mesaje.
 
-### Protecție revizii calendar — în validare
+### Protecție revizii calendar — publicare parity-10
 - update/delete pentru sarcini și vizionări verifică expectedUpdatedAt tranzacțional înainte de scrieri; conflictele returnează 409 fără ledger sau ștergere.
 - Formularele manuale trimit revizia afișată. Pregătirea planurilor Jarvis fixează revizia curentă dacă lipsește, inclusiv cardurile Text/Voice; o revizie furnizată nu este înlocuită automat. Referințele la pași care creează înregistrări sunt rezolvate la execuție.
 - Etapa automatizărilor: build-2026-10-05-parity-09 READY, commit 100eea057f0fafceb78027181be7d85dc333a4e5, trafic 100%, verificat la 6 octombrie. Dovada producției este actualizată.
@@ -88,4 +88,9 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Composer-ul nu mai scrie direct statusul emailului pentru deschiderea Gmail sau eroarea runner-ului; PATCH gmail-session revalidează membrul și accesul la dosar în tranzacție și fixează execuția prin handoffJobId.
 - Callback-urile repetate sunt no-op; cele întârziate nu retrogradează stări de trimitere/recepție. Modelul nu poate pretinde că a observat dispozitivul. Auditul și statusul sunt atomice.
 - 284 teste AI trecute (3 probe de reguli rezervate emulatorului), typecheck trecut. Nu au fost trimise emailuri în teste.
-- Rămâne de verificat/reconciliat integral handler-ul separat de send-evidence și recepțiile providerilor; această migrare nu certifică livrarea externă.
+- Handler-ul send-evidence este migrat tranzacțional în etapa următoare; recepțiile providerilor și dispozitivele reale rămân de verificat. Această migrare nu certifică livrarea externă.
+
+### Dovezi Gmail — validată pentru release-ul următor
+- send-evidence revalidează actorul/tenantul/dosarul în tranzacție; dovada, comunicarea și auditul sunt atomice. Diagnosticul dispozitivului are schemă strictă și limite.
+- Confirmarea repetată nu dublează auditul; agent_confirmed nu înlocuiește ui_observed/reply_confirmed, iar confirmarea întârziată nu retrogradează replied. Corelarea runner-ului cu jobul este obligatorie.
+- 286 teste AI trecute; typecheck trecut. Testele sunt simulate și nu trimit mesaje.
