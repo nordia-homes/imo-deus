@@ -7,7 +7,6 @@ import {
   doc,
   orderBy,
   query,
-  updateDoc,
 } from 'firebase/firestore';
 import {
   Archive,
@@ -385,7 +384,9 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
         });
       }
       if (status.state === 'error') {
-        void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', active.saleId, 'emailMessages', active.messageId), { status: 'failed', updatedAt: new Date().toISOString() });
+        void apiRequest(`/api/sales/${active.saleId}/messages/${active.messageId}/gmail-session`, { method: 'PATCH', body: JSON.stringify({ state: 'runner_error', jobId: active.jobId }) }).catch(error => {
+          toast({ variant: 'destructive', title: 'Starea Gmail nu a fost salvată', description: error instanceof Error ? error.message : 'Verifică istoricul înainte de retrimitere.' });
+        });
       }
     });
   }, [agencyId, apiRequest, firestore, open, toast]);
@@ -580,7 +581,6 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
     try {
       const prepared = await executeCrmAction(user, { kind: 'prepare_sale_email', saleId: sale.id, to: [recipient.email.trim()], cc: finalCc, bcc: [], subject, bodyText: body.trim(), bodyHtml, questions: questions.map(item => ({ id: item.id, text: item.text, required: item.required, status: 'pending' as const })), documentIds: selectedDocumentIds, attachmentNames: localFiles.map(item => item.name) });
       if (typeof prepared.messageId !== 'string') throw new Error('Emailul nu a fost confirmat în CRM.');
-      const messageRef = doc(firestore, 'agencies', agencyId, 'sales', sale.id, 'emailMessages', prepared.messageId);
       const { payload } = await apiRequest('/api/sales/' + encodeURIComponent(sale.id) + '/messages/' + encodeURIComponent(prepared.messageId) + '/gmail-session');
       const session = payload.session;
       activeMessageRef.current = { saleId: sale.id, messageId: prepared.messageId, jobId: session.jobId };
@@ -592,7 +592,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
           session: {
             jobId: session.jobId,
             saleId: sale.id,
-            messageRecordId: messageRef.id,
+            messageRecordId: prepared.messageId,
             trackingCode: sale.trackingCode,
             to: [recipient.email.trim()],
             cc: finalCc,
@@ -612,7 +612,7 @@ export function SalesEmailComposer({ sale, open, onOpenChange, initialPanel = 'c
         composeUrl.searchParams.set('su', trackingSubject);
         composeUrl.searchParams.set('body', finalBody);
         window.open(composeUrl.toString(), '_blank', 'noopener,noreferrer');
-        await updateDoc(messageRef, { status: 'opened_in_gmail', sendEvidence: { level: 'none', source: 'web_fallback', observedAt: new Date().toISOString(), observedByUid: userProfile?.id || null, details: 'Fereastra Gmail a fost deschisă; trimiterea nu poate fi observată din browser.' }, updatedAt: new Date().toISOString() });
+        await apiRequest(`/api/sales/${sale.id}/messages/${prepared.messageId}/gmail-session`, { method: 'PATCH', body: JSON.stringify({ state: 'opened_in_gmail', jobId: session.jobId }) });
         toast({ title: 'Gmail a fost deschis', description: storedAttachments.length || localFiles.length ? 'În browser, atașează manual fișierele listate înainte de trimitere.' : 'Verifică mesajul și apasă Trimite în Gmail.' });
       }
     } catch (error) {

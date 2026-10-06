@@ -1,7 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireSaleAccess, salesApiErrorResponse, SalesApiError } from '@/lib/sales-server';
+import { appendSalesAudit, requireSaleAccess, salesApiErrorResponse, SalesApiError } from '@/lib/sales-server';
 import { saleEmailContentHash } from '@/lib/crm/sale-email-hash';
+import { assistantPrincipal } from '@/lib/ai-assistant/principal';
+import { z } from 'zod';
 export const runtime = 'nodejs';
+const handoffStateSchema = z.object({ state: z.enum(['opened_in_gmail', 'runner_error']), jobId: z.string().min(1).max(180) }).strict();
+export async function PATCH(request: NextRequest, route: { params: Promise<{ saleId: string; messageId: string }> }) {
+  try {
+    const { saleId, messageId } = await route.params, access = await requireSaleAccess(request, saleId);
+    if (await assistantPrincipal(request.headers.get('authorization'))) throw new SalesApiError('Starea dispozitivului Gmail se înregistrează din interfața agentului, nu de model.', 403);
+    const input = handoffStateSchema.parse(await request.json());
+    const messageRef = access.saleRef.collection('emailMessages').doc(messageId);
+    const audit = appendSalesAudit(access.adminDb, access.saleRef, { agencyId: access.agencyId, saleId, actorUid: access.uid, actorType: 'agent', action: `message.handoff.${input.state}`, entityType: 'message', entityId: messageId, summary: input.state === 'opened_in_gmail' ? 'Gmail a fost deschis; trimiterea nu este confirmată.' : 'Runner-ul a raportat o eroare; verifică Gmail înainte de orice retrimitere.' });
+    const result = await access.adminDb.runTransaction(async tx => {
+      const [member, sale, snapshot] = await Promise.all([tx.get(access.adminDb.collection('users').doc(access.uid)), tx.get(access.saleRef), tx.get(messageRef)]);
+      const current = sale.data();
+      if (member.data()?.agencyId !== access.agencyId || member.data()?.role !== access.role || !current || (access.role !== 'admin' && current.agentId !== access.uid && !current.collaboratorIds?.includes(access.uid))) throw new SalesApiError('Acces revocat.', 403);
+      const message = snapshot.data();
+      if (!message || message.direction !== 'outbound') throw new SalesApiError('Mesajul outbound nu există.', 404);
+      if (message.handoffJobId !== input.jobId) throw new SalesApiError('Starea Gmail aparține altei execuții.', 409);
+      const status = input.state === 'runner_error' ? 'failed' : 'opened_in_gmail';
+      // Late callbacks cannot erase a stronger send/receipt state. Repeated
+      // notifications are no-ops and therefore do not duplicate the audit.
+      if (message.status === status) return { status, changed: false };
+      if (!['prepared', 'opened_in_gmail'].includes(message.status)) return { status: message.status, changed: false };
+      const now = new Date().toISOString();
+      tx.update(messageRef, { status, updatedAt: now, ...(input.state === 'opened_in_gmail' ? { sendEvidence: { level: 'none', source: 'web_fallback', observedAt: now, observedByUid: access.uid, details: audit.data.summary } } : {}) });
+      tx.set(audit.ref, audit.data);
+      return { status, changed: true };
+    });
+    return NextResponse.json({ ok: true, ...result }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) {
+    const result = error instanceof z.ZodError ? { status: 400, message: 'Starea Gmail este invalidă.' } : salesApiErrorResponse(error);
+    return NextResponse.json({ message: result.message }, { status: result.status });
+  }
+}
 export async function GET(request: NextRequest, route: { params: Promise<{ saleId: string; messageId: string }> }) {
   try {
     const { saleId, messageId } = await route.params, access = await requireSaleAccess(request, saleId);

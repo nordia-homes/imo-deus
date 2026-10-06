@@ -2419,24 +2419,14 @@
       "file": "src/components/sales/SalesEmailComposer.tsx",
       "calls": [
         {
-          "call": "updateDoc",
-          "line": 388,
-          "sharedExecutor": false
-        },
-        {
           "call": "executeCrmAction",
-          "line": 441,
+          "line": 442,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 581,
+          "line": 582,
           "sharedExecutor": true
-        },
-        {
-          "call": "updateDoc",
-          "line": 615,
-          "sharedExecutor": false
         }
       ],
       "verification": "static_reference_requires_semantic_review"

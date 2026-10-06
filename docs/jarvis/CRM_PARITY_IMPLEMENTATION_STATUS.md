@@ -83,3 +83,9 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Formularele manuale trimit revizia afișată. Pregătirea planurilor Jarvis fixează revizia curentă dacă lipsește, inclusiv cardurile Text/Voice; o revizie furnizată nu este înlocuită automat. Referințele la pași care creează înregistrări sunt rezolvate la execuție.
 - Etapa automatizărilor: build-2026-10-05-parity-09 READY, commit 100eea057f0fafceb78027181be7d85dc333a4e5, trafic 100%, verificat la 6 octombrie. Dovada producției este actualizată.
 - Fluxurile cu mai multe editări ale aceleiași înregistrări pot cere replanificare după primul pas; revizia veche nu este ignorată pentru a forța execuția.
+
+### Stări Gmail — în curs de publicare
+- Composer-ul nu mai scrie direct statusul emailului pentru deschiderea Gmail sau eroarea runner-ului; PATCH gmail-session revalidează membrul și accesul la dosar în tranzacție și fixează execuția prin handoffJobId.
+- Callback-urile repetate sunt no-op; cele întârziate nu retrogradează stări de trimitere/recepție. Modelul nu poate pretinde că a observat dispozitivul. Auditul și statusul sunt atomice.
+- 284 teste AI trecute (3 probe de reguli rezervate emulatorului), typecheck trecut. Nu au fost trimise emailuri în teste.
+- Rămâne de verificat/reconciliat integral handler-ul separat de send-evidence și recepțiile providerilor; această migrare nu certifică livrarea externă.
