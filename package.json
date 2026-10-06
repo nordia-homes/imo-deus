@@ -31,6 +31,7 @@
     "test:ai-assistant": "vitest run src/lib/ai-assistant/__tests__",
     "test:ai-assistant:ui": "node scripts/ai-assistant-ui-smoke.mjs",
     "test:jarvis:models": "node scripts/jarvis-benchmark.mjs",
+    "test:jarvis:scenarios": "node scripts/jarvis-continuation-report.mjs",
     "test:jarvis:matching": "node scripts/jarvis-matching-smoke.mjs",
     "test:jarvis:rules": "node scripts/jarvis-rules-test.mjs",
     "jarvis:docs": "node scripts/jarvis-docs.mjs",

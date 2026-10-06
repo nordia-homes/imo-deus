@@ -1,13 +1,13 @@
 {
   "versions": {
-    "prompt": "jarvis-24",
+    "prompt": "jarvis-25",
     "routing": "luna-first-2",
     "policy": "tenant-approval-6",
-    "tools": "24",
+    "tools": "25",
     "memory": "2",
     "skills": "3"
   },
-  "startedAt": "2026-10-06T19:19:14.597Z",
+  "startedAt": "2026-10-06T19:48:34.604Z",
   "environment": "synthetic_fixture_live_openai",
   "maxCostUsd": 1,
   "results": [
@@ -16,13 +16,44 @@
       "model": "gpt-6-luna",
       "pass": true,
       "toolCalls": [
-        "query_records",
+        "read",
         "goal_coverage"
       ],
-      "latencyMs": 17814,
-      "costUsd": 0.0022598749999999997,
-      "tokens": 54231,
-      "cachedTokens": 40255
+      "latencyMs": 13676,
+      "costUsd": 0.00207026,
+      "tokens": 41031,
+      "cachedTokens": 27136,
+      "fixtureTrace": [
+        {
+          "tool": "read",
+          "payload": {
+            "resource": "contacts",
+            "search": "Andrei Popescu",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "client",
+                "sourceQuote": "Găsește clientul Andrei Popescu.",
+                "description": "Identifică clientul Andrei Popescu în CRM.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_7pQGp5sh5zM8FOeUZ3kei5MD"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "L-am găsit în CRM: Andrei Popescu (ID: c1), status „Nou”, tip „Cumpărător”."
     },
     {
       "id": "master-0101",
@@ -33,10 +64,50 @@
         "match_contact",
         "goal_coverage"
       ],
-      "latencyMs": 17877,
-      "costUsd": 0.000697115,
-      "tokens": 54061,
-      "cachedTokens": 53454
+      "latencyMs": 19268,
+      "costUsd": 0.0007072550000000002,
+      "tokens": 54974,
+      "cachedTokens": 54368,
+      "fixtureTrace": [
+        {
+          "tool": "read",
+          "payload": {
+            "resource": "contacts",
+            "search": "Andrei",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "match_contact",
+          "payload": {
+            "contactId": "c1",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Ce proprietăți se potrivesc lui Andrei?",
+                "description": "Identifică proprietățile deja potrivite lui Andrei prin matching-ul ImoDeus.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_dsactCT5MGuwN0fRUCtJ6ABM",
+                  "call_uHLzCmDrtFvcWPFSzVUJmRyI"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Pentru Andrei Popescu, am găsit o proprietate potrivită:\n\n- **Fixture property** — Titan, **125.000**; scorul de potrivire ImoDeus: **82**."
     },
     {
       "id": "master-0151",
@@ -46,10 +117,44 @@
         "query_records",
         "goal_coverage"
       ],
-      "latencyMs": 14044,
-      "costUsd": 0.0005388600000000001,
-      "tokens": 40526,
-      "cachedTokens": 40021
+      "latencyMs": 13554,
+      "costUsd": 0.0005449700000000001,
+      "tokens": 41209,
+      "cachedTokens": 40707,
+      "fixtureTrace": [
+        {
+          "tool": "query_records",
+          "payload": {
+            "resource": "viewings",
+            "dayOffset": 0,
+            "timezone": "Europe/Bucharest",
+            "agentId": "fixture-eval",
+            "mode": "count",
+            "limit": 8
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Câte vizionări am astăzi?",
+                "description": "Numărul vizionărilor agentului pentru ziua de astăzi",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_mw7SXcw31WiiGzdx2UB1AJDw"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Ai 3 vizionări astăzi."
     },
     {
       "id": "master-0152",
@@ -59,10 +164,45 @@
         "query_records",
         "goal_coverage"
       ],
-      "latencyMs": 13104,
-      "costUsd": 0.000537695,
-      "tokens": 40516,
-      "cachedTokens": 40017
+      "latencyMs": 15390,
+      "costUsd": 0.00054622,
+      "tokens": 41213,
+      "cachedTokens": 40707,
+      "fixtureTrace": [
+        {
+          "tool": "query_records",
+          "payload": {
+            "resource": "viewings",
+            "dayOffset": 1,
+            "timezone": "Europe/Bucharest",
+            "status": "scheduled",
+            "agentId": "fixture-eval",
+            "mode": "count",
+            "limit": 8
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Câte vizionări am mâine?",
+                "description": "Numărul vizionărilor programate mâine pentru agentul curent",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_9ZDNP5X6YgqLKwgtFY30H52d"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Ai 3 vizionări programate mâine."
     },
     {
       "id": "master-0201",
@@ -72,10 +212,42 @@
         "search_properties",
         "goal_coverage"
       ],
-      "latencyMs": 12626,
-      "costUsd": 0.000541125,
-      "tokens": 40510,
-      "cachedTokens": 40010
+      "latencyMs": 15082,
+      "costUsd": 0.00080712,
+      "tokens": 44481,
+      "cachedTokens": 42297,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "transactionType": "sale",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește anunțuri direct de la proprietar în Titan.",
+                "description": "Caută anunțuri de la proprietari pentru zona Titan",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_BxBoajQayscnZDTXXBAdK3fl"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de anunțuri direct de la proprietar în Titan: apartamente de 1–4 camere, la prețuri între 70.000 și 130.000 EUR. Pentru fiecare configurație sunt listate variante construite în 1977, 1988, 2005 și 2018, plus una cu anul construcției necunoscut. Dorești să restrâng căutarea după numărul de camere, buget sau anul construcției?"
     },
     {
       "id": "master-0202",
@@ -85,10 +257,44 @@
         "search_properties",
         "goal_coverage"
       ],
-      "latencyMs": 12562,
-      "costUsd": 0.0005359900000000001,
-      "tokens": 40501,
-      "cachedTokens": 40009
+      "latencyMs": 16709,
+      "costUsd": 0.0006339150000000001,
+      "tokens": 42050,
+      "cachedTokens": 41089,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente de proprietar cu două camere în Titan.",
+                "description": "Găsește anunțuri de proprietar pentru apartamente cu două camere în Titan.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_GLOR2gQWX4aVnSfZlr2MKYXa"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 anunțuri de proprietar pentru apartamente cu două camere în Titan, toate de vânzare la 90.000 EUR:\n\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n- Anul construcției necunoscut"
     },
     {
       "id": "master-0203",
@@ -98,10 +304,44 @@
         "search_properties",
         "goal_coverage"
       ],
-      "latencyMs": 11996,
-      "costUsd": 0.000542365,
-      "tokens": 40513,
-      "cachedTokens": 40009
+      "latencyMs": 13695,
+      "costUsd": 0.0006286750000000001,
+      "tokens": 42042,
+      "cachedTokens": 41090,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente de proprietar cu trei camere în Titan.",
+                "description": "Caută anunțuri de proprietar pentru apartamente cu 3 camere în Titan",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_w9SfZkSk5txPDpL7gF1yGlbx"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 anunțuri de proprietar pentru apartamente cu 3 camere în Titan, toate la 110.000 EUR:\n\n- An construite: 1977, 1988, 2005 și 2018\n- Anul construcției nu este specificat: 1 anunț"
     },
     {
       "id": "master-0204",
@@ -111,10 +351,42 @@
         "search_properties",
         "goal_coverage"
       ],
-      "latencyMs": 14918,
-      "costUsd": 0.00056051,
-      "tokens": 40552,
-      "cachedTokens": 40011
+      "latencyMs": 13229,
+      "costUsd": 0.000856735,
+      "tokens": 44797,
+      "cachedTokens": 42421,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Cișmigiu",
+            "transactionType": "sale",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Cișmigiu.",
+                "description": "Caută anunțuri de proprietar în zona Cișmigiu.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_Do8lXwVc4yWoNKrvy09HGKDP"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de anunțuri de proprietari în Cișmigiu, toate apartamente de vânzare:\n\n- 1 cameră — 70.000 EUR: anii 1977, 1988, 2005, 2018 și an necunoscut.\n- 2 camere — 90.000 EUR: anii 1977, 1988, 2005, 2018 și an necunoscut.\n- 3 camere — 110.000 EUR: anii 1977, 1988, 2005, 2018 și an necunoscut.\n- 4 camere — 130.000 EUR: anii 1977, 1988, 2005, 2018 și an necunoscut."
     },
     {
       "id": "master-0205",
@@ -124,10 +396,43 @@
         "search_properties",
         "goal_coverage"
       ],
-      "latencyMs": 12129,
-      "costUsd": 0.0005392600000000001,
-      "tokens": 40508,
-      "cachedTokens": 40011
+      "latencyMs": 13549,
+      "costUsd": 0.0008112950000000001,
+      "tokens": 44630,
+      "cachedTokens": 42377,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Floreasca",
+            "transactionType": "sale",
+            "unknownYear": "include",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Floreasca.",
+                "description": "Caută proprietăți din sursa proprietarilor în zona Floreasca.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_rbx1SYpDqbcaDgjNWAPzi9nf"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de proprietăți de la proprietari în Floreasca. Sunt apartamente de vânzare, cu 1–4 camere, la prețuri afișate între 70.000 și 130.000 EUR. Anul construcției este cunoscut pentru 16 anunțuri (1977, 1988, 2005 sau 2018); pentru 4 nu este precizat."
     },
     {
       "id": "master-0206",
@@ -137,22 +442,1840 @@
         "search_properties",
         "goal_coverage"
       ],
-      "latencyMs": 12123,
-      "costUsd": 0.00055424,
-      "tokens": 40539,
-      "cachedTokens": 40009
+      "latencyMs": 13445,
+      "costUsd": 0.00083497,
+      "tokens": 44651,
+      "cachedTokens": 42357,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Pipera",
+            "transactionType": "sale",
+            "unknownYear": "include",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Pipera.",
+                "description": "Caută proprietăți din anunțurile proprietarilor în zona Pipera și prezintă rezultatele găsite.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_2meqJMsVZ90NJC3JUauMOKKn"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de anunțuri de proprietari în Pipera: apartamente de vânzare, cu 1–4 camere, la prețuri între 70.000 și 130.000 EUR. Pentru fiecare configurație sunt listări construite în 1977, 1988, 2005 și 2018, plus una fără an de construcție cunoscut. Rezultatele sunt marcate ca pregătite pentru publicare. Spune-mi dacă vrei să-ți afișez lista completă sau să restrâng căutarea după numărul de camere, preț ori an."
+    },
+    {
+      "id": "master-0207",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 38323,
+      "costUsd": 0.0008758150000000001,
+      "tokens": 44767,
+      "cachedTokens": 42379,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Aviației",
+            "transactionType": "sale",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Aviației.",
+                "description": "Caută proprietățile listate de proprietari în Aviației și prezintă rezultatele.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_mVxp4MNRKqALo3DdFWQkACSw"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de anunțuri de proprietari în Aviației, toate apartamente de vânzare:\n\n- **1 cameră — 70.000 EUR:** an construcție 1977, 1988, 2005, 2018 sau necunoscut.\n- **2 camere — 90.000 EUR:** an construcție 1977, 1988, 2005, 2018 sau necunoscut.\n- **3 camere — 110.000 EUR:** an construcție 1977, 1988, 2005, 2018 sau necunoscut.\n- **4 camere — 130.000 EUR:** an construcție 1977, 1988, 2005, 2018 sau necunoscut.\n\nPentru câte o ofertă din fiecare categorie, anul construcției nu este precizat. Rezultatele sunt anunțuri de proprietari, nu proprietăți din CRM."
+    },
+    {
+      "id": "master-0208",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12498,
+      "costUsd": 0.0008261400000000001,
+      "tokens": 44744,
+      "cachedTokens": 42424,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "transactionType": "sale",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Drumul Taberei.",
+                "description": "Caută proprietăți din sursa proprietari în zona Drumul Taberei.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_YJgH0VyuIlAzdA8be3Pb5U1b"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de anunțuri de proprietar în Drumul Taberei: apartamente de 1–4 camere, la prețuri între 70.000 și 130.000 EUR. Sunt listări construite în 1977, 1988, 2005 sau 2018, plus câte una cu anul construcției necunoscut pentru fiecare număr de camere. Vrei să le restrâng după camere, buget sau anul construcției?"
+    },
+    {
+      "id": "master-0209",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 26787,
+      "costUsd": 0.0008788050000000001,
+      "tokens": 44772,
+      "cachedTokens": 42378,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Berceni",
+            "transactionType": "sale",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Berceni.",
+                "description": "Caută proprietăți provenite de la proprietari în zona Berceni și prezintă rezultatele.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_VPONsvUJcWDHovRNkzSgeqIj"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de proprietăți de proprietar în Berceni, toate apartamente de vânzare:\n\n| Camere | Preț | Anul construcției |\n|---:|---:|---:|\n| 1 | 70.000 EUR | 1977, 1988, 2005, 2018 sau necunoscut |\n| 2 | 90.000 EUR | 1977, 1988, 2005, 2018 sau necunoscut |\n| 3 | 110.000 EUR | 1977, 1988, 2005, 2018 sau necunoscut |\n| 4 | 130.000 EUR | 1977, 1988, 2005, 2018 sau necunoscut |\n\nSunt câte 5 variante pentru fiecare număr de camere; în fiecare grup, una are anul construcției necunoscut. Toate apar cu statusul de publicare „ready”."
+    },
+    {
+      "id": "master-0210",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 14985,
+      "costUsd": 0.0008655,
+      "tokens": 44665,
+      "cachedTokens": 42335,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Militari",
+            "transactionType": "sale",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți de proprietar în Militari.",
+                "description": "Caută proprietăți oferite de proprietari în zona Militari.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_ndusVxsd0blWHWIfByE9RhxC"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de proprietăți de la proprietari în Militari, toate apartamente de vânzare:\n\n- **1 cameră — 70.000 EUR:** anii 1977, 1988, 2005, 2018 și una cu anul construcției necunoscut.\n- **2 camere — 90.000 EUR:** anii 1977, 1988, 2005, 2018 și una cu anul construcției necunoscut.\n- **3 camere — 110.000 EUR:** anii 1977, 1988, 2005, 2018 și una cu anul construcției necunoscut.\n- **4 camere — 130.000 EUR:** anii 1977, 1988, 2005, 2018 și una cu anul construcției necunoscut.\n\nRezultatele sunt complete pentru această căutare. Spune-mi dacă vrei detalii despre o anumită variantă."
+    },
+    {
+      "id": "master-0211",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13257,
+      "costUsd": 0.0006360000000000001,
+      "tokens": 42048,
+      "cachedTokens": 41085,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "priceMax": 130000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Titan sub 130.000 €.",
+                "description": "Caută apartamente de vânzare cu două camere în Titan, sub 130.000 €.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_O66KbcAWIozze0dqKuDRHt17"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 apartamente cu două camere în Titan, toate la 90.000 € (sub bugetul de 130.000 €). Patru au an de construcție cunoscut — 1977, 1988, 2005 și 2018 — iar pentru al cincilea anul nu este precizat. Anunțurile sunt marcate ca pregătite pentru publicare."
+    },
+    {
+      "id": "master-0212",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12202,
+      "costUsd": 0.0006237500000000001,
+      "tokens": 41899,
+      "cachedTokens": 41010,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "unknownYear": "exclude",
+            "priceMax": 160000,
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Titan sub 160.000 €.",
+                "description": "Caută apartamente de vânzare cu 3 camere în Titan la preț sub 160.000 EUR",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_igh3J6qtWZyXqH7853n8LCfm"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 4 apartamente de vânzare cu 3 camere în Titan, toate sub 160.000 € — fiecare la 110.000 €:\n\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018"
+    },
+    {
+      "id": "master-0213",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12873,
+      "costUsd": 0.0006260800000000001,
+      "tokens": 41960,
+      "cachedTokens": 41043,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Cișmigiu",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "unknownYear": "exclude",
+            "priceMax": 180000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Cișmigiu până în 180.000 €.",
+                "description": "Caută apartamente de vânzare cu 2 camere în Cișmigiu, maximum 180.000 EUR.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_mOcHJwWHyvFjvdmA95LCWgf4"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 4 apartamente de vânzare cu 2 camere în Cișmigiu, toate la 90.000 € și în limita bugetului de 180.000 €. Anii construcției: 1977, 1988, 2005 și 2018."
+    },
+    {
+      "id": "master-0214",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13371,
+      "costUsd": 0.00065572,
+      "tokens": 42001,
+      "cachedTokens": 41032,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Floreasca",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "unknownYear": "exclude",
+            "priceMax": 250000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Floreasca sub 250.000 €.",
+                "description": "Caută proprietăți cu trei camere de vânzare în Floreasca, sub 250.000 €.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_kvHEvrG3ggazEJV5hVJdDTqC"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 4 apartamente cu 3 camere în Floreasca, toate sub 250.000 €:\n\n- 110.000 € — an construcție 1977\n- 110.000 € — an construcție 1988\n- 110.000 € — an construcție 2005\n- 110.000 € — an construcție 2018\n\nAnunțurile sunt din oferta proprietarilor. Pentru fiecare, detaliile afișate includ doar zona, prețul și anul construcției."
+    },
+    {
+      "id": "master-0215",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 15241,
+      "costUsd": 0.0008739899999999999,
+      "tokens": 44734,
+      "cachedTokens": 42359,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Pipera",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "priceMax": 200000,
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente în Pipera până în 200.000 €.",
+                "description": "Găsire proprietăți tip apartament de vânzare în Pipera până la 200.000 EUR din sursa implicită owners.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_NLknMyEIgwPix278bkYqqWLz"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 20 de apartamente în Pipera, toate în limita de 200.000 €:\n\n- 1 cameră — 70.000 € (4 cu an de construcție cunoscut: 1977, 1988, 2005 sau 2018; 1 cu an necunoscut)\n- 2 camere — 90.000 € (4 cu an cunoscut; 1 cu an necunoscut)\n- 3 camere — 110.000 € (4 cu an cunoscut; 1 cu an necunoscut)\n- 4 camere — 130.000 € (4 cu an cunoscut; 1 cu an necunoscut)\n\nSunt rezultate din anunțuri ale proprietarilor. Înregistrările returnate au titluri și locația „Pipera”; nu includ alte detalii de suprafață sau adresă."
+    },
+    {
+      "id": "master-0216",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12550,
+      "costUsd": 0.0005659,
+      "tokens": 41247,
+      "cachedTokens": 40700,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Aviației",
+            "transactionType": "sale",
+            "priceMin": 150000,
+            "priceMax": 250000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți în Aviației între 150.000 și 250.000 €.",
+                "description": "Caută proprietăți de vânzare în Aviației, în intervalul 150.000–250.000 EUR.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_pHp1EJYuntkARAUvtsiWWUkY"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Nu am găsit proprietăți în Aviației în intervalul 150.000–250.000 €."
+    },
+    {
+      "id": "master-0217",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12006,
+      "costUsd": 0.0006623850000000001,
+      "tokens": 42192,
+      "cachedTokens": 41136,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "priceMin": 80000,
+            "priceMax": 120000,
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Drumul Taberei între 80.000 și 120.000 €.",
+                "description": "Caută apartamente de vânzare cu două camere în Drumul Taberei, la prețul solicitat.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_ZDZ7leRLS6rdmhl0xzpoarXI"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 apartamente cu două camere în Drumul Taberei, toate la 90.000 € (în intervalul 80.000–120.000 €):\n\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n- Anul construcției necunoscut\n\nRezultatele provin din anunțuri ale proprietarilor; căutarea este completă."
+    },
+    {
+      "id": "master-0218",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13822,
+      "costUsd": 0.000636845,
+      "tokens": 41964,
+      "cachedTokens": 41032,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Berceni",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "unknownYear": "exclude",
+            "priceMax": 140000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Berceni sub 140.000 €.",
+                "description": "Găsește apartamente de vânzare cu 3 camere în Berceni, sub 140.000 EUR.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_xK6jL8UYibEHe4vcZ0wcQPXs"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 4 apartamente de vânzare cu 3 camere în Berceni, toate la 110.000 €:\n\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n\nRezultatele provin din anunțuri de proprietari; căutarea este completă."
+    },
+    {
+      "id": "master-0219",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13949,
+      "costUsd": 0.000633665,
+      "tokens": 42051,
+      "cachedTokens": 41089,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 4,
+            "priceMax": 199999.99,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește patru camere în Titan sub 200.000 €.",
+                "description": "Caută apartamente de vânzare cu 4 camere în Titan, sub 200.000 €.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_R2yRCY45CMQrEAomnxCV05DB"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 apartamente cu 4 camere în Titan, listate la 130.000 € fiecare. Pentru unul dintre ele nu este precizat anul construcției.\n\n- 1977\n- 1988\n- 2005\n- 2018\n- Anul construcției necunoscut"
+    },
+    {
+      "id": "master-0220",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12999,
+      "costUsd": 0.0006494250000000001,
+      "tokens": 42088,
+      "cachedTokens": 41090,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 1,
+            "priceMax": 80000,
+            "limit": 20
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește garsoniere în Titan sub 80.000 €.",
+                "description": "Caută anunțuri de garsoniere de vânzare în Titan, sub 80.000 EUR.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_q1p1zTU4JDxPDDCYIt3fiGpN"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 anunțuri de garsoniere de vânzare în Titan, toate la 70.000 €:\n\n- Apartament Titan — 1977\n- Apartament Titan — 1988\n- Apartament Titan — 2005\n- Apartament Titan — 2018\n- Apartament Titan — anul construcției necunoscut\n\nAnunțurile sunt din surse externe (proprietari), nu din portofoliul CRM."
+    },
+    {
+      "id": "master-0221",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13416,
+      "costUsd": 0.0007278550000000001,
+      "tokens": 43226,
+      "cachedTokens": 41658,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "yearMin": 1978,
+            "unknownYear": "exclude",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente construite după 1977 în Titan.",
+                "description": "Caută apartamente în Titan cu an de construcție după 1977, excluzând anul necunoscut.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_lsGzVlwjn4EHD6gRYTsP322D"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 12 apartamente în Titan construite după 1977 (anii cunoscuți: 1988, 2005 și 2018). Prețurile afișate sunt 70.000 € pentru 1 cameră, 90.000 € pentru 2 camere, 110.000 € pentru 3 camere și 130.000 € pentru 4 camere; există câte o ofertă pentru fiecare combinație de număr de camere și an. Îți pot afișa lista completă."
+    },
+    {
+      "id": "master-0222",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12270,
+      "costUsd": 0.0006120650000000001,
+      "tokens": 41731,
+      "cachedTokens": 40929,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 1978,
+            "unknownYear": "exclude",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "req1",
+                "sourceQuote": "Găsește două camere construite după 1977 în Titan.",
+                "description": "Caută apartamente cu 2 camere în Titan, an construcție cel puțin 1978",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_CIinza9OCrIXKpvNqf6288zD"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 3 apartamente cu 2 camere în Titan, construite după 1977:\n\n- 1988 — 90.000 EUR\n- 2005 — 90.000 EUR\n- 2018 — 90.000 EUR\n\nSunt anunțuri de proprietari, toate marcate ca pregătite pentru publicare."
+    },
+    {
+      "id": "master-0223",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 14592,
+      "costUsd": 0.00061143,
+      "tokens": 41772,
+      "cachedTokens": 40953,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "yearMin": 1978,
+            "unknownYear": "exclude",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere după 1977 în Drumul Taberei.",
+                "description": "Caută apartamente cu 3 camere construite din 1978 încolo în Drumul Taberei.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_Z2HwiPcPUiwl3J2IDip8TwyT"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 3 apartamente de vânzare cu 3 camere în Drumul Taberei, toate construite după 1977:\n\n- 1988 — 110.000 EUR\n- 2005 — 110.000 EUR\n- 2018 — 110.000 EUR"
+    },
+    {
+      "id": "master-0224",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 22399,
+      "costUsd": 0.0006855,
+      "tokens": 42578,
+      "cachedTokens": 41335,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "yearMin": 1991,
+            "unknownYear": "exclude",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente din Titan construite după 1990.",
+                "description": "Caută apartamente în Titan cu an de construcție strict după 1990.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_H44oTvMuuTpc0Z7RNWeY0Cea"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 8 apartamente în Titan construite după 1990:\n\n- 1 cameră: 2005 — 70.000 EUR; 2018 — 70.000 EUR\n- 2 camere: 2005 — 90.000 EUR; 2018 — 90.000 EUR\n- 3 camere: 2005 — 110.000 EUR; 2018 — 110.000 EUR\n- 4 camere: 2005 — 130.000 EUR; 2018 — 130.000 EUR"
+    },
+    {
+      "id": "master-0225",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 15628,
+      "costUsd": 0.00061195,
+      "tokens": 41602,
+      "cachedTokens": 40855,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Pipera",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 2001,
+            "unknownYear": "exclude",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere după 2000 în Pipera.",
+                "description": "Găsește apartamente cu două camere în Pipera, construite după anul 2000.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_VXLoSA52N0Gs1E7R4Xp2MoCo"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit două apartamente de vânzare în Pipera, ambele cu 2 camere și construite după 2000:\n\n- **Apartament Pipera** — construit în 2005, **90.000 EUR** (ID: `owner-3-2-2`)\n- **Apartament Pipera** — construit în 2018, **90.000 EUR** (ID: `owner-3-2-3`)"
+    },
+    {
+      "id": "master-0226",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12475,
+      "costUsd": 0.0005926050000000001,
+      "tokens": 41570,
+      "cachedTokens": 40858,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Floreasca",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "yearMin": 2001,
+            "unknownYear": "exclude",
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "req1",
+                "sourceQuote": "Găsește trei camere după 2000 în Floreasca.",
+                "description": "Caută apartamente cu 3 camere, an construcție după 2000, în Floreasca.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_sQSlhDYd1EutCROivfrIFKVH"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 2 apartamente de 3 camere în Floreasca, ambele construite după 2000:\n\n- **An 2005** — 110.000 EUR\n- **An 2018** — 110.000 EUR"
+    },
+    {
+      "id": "master-0227",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 15222,
+      "costUsd": 0.000622715,
+      "tokens": 41908,
+      "cachedTokens": 41019,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "yearMin": 1980,
+            "yearMax": 1990,
+            "unknownYear": "exclude",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente construite între 1980 și 1990 în Titan.",
+                "description": "Caută apartamente în Titan cu an exact de construcție 1980–1990 inclusiv.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_xBKS9TseYU24oswajsDm8vZg"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 4 apartamente de vânzare în Titan, toate construite în 1988:\n\n- 1 cameră — 70.000 EUR\n- 2 camere — 90.000 EUR\n- 3 camere — 110.000 EUR\n- 4 camere — 130.000 EUR"
+    },
+    {
+      "id": "master-0228",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13892,
+      "costUsd": 0.000735475,
+      "tokens": 42787,
+      "cachedTokens": 41395,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "transactionType": "sale",
+            "yearMax": 1989,
+            "unknownYear": "exclude",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți construite înainte de 1990 în Drumul Taberei.",
+                "description": "Caută proprietăți cu an de construcție exact mai mic decât 1990 în zona Drumul Taberei.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_B1cCyg0UeqXOl6hxQOVwDZBa"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 8 proprietăți de vânzare în Drumul Taberei, toate apartamente cu ani de construcție confirmați înainte de 1990:\n\n| Camere | An construcție | Preț |\n|---:|---:|---:|\n| 1 | 1977 | 70.000 EUR |\n| 1 | 1988 | 70.000 EUR |\n| 2 | 1977 | 90.000 EUR |\n| 2 | 1988 | 90.000 EUR |\n| 3 | 1977 | 110.000 EUR |\n| 3 | 1988 | 110.000 EUR |\n| 4 | 1977 | 130.000 EUR |\n| 4 | 1988 | 130.000 EUR |"
+    },
+    {
+      "id": "master-0229",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13251,
+      "costUsd": 0.0006262700000000001,
+      "tokens": 41780,
+      "cachedTokens": 40937,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 1978,
+            "unknownYear": "exclude",
+            "priceMax": 120000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Titan sub 120.000 €, după 1977.",
+                "description": "Caută apartamente de vânzare cu două camere în Titan, sub 120.000 EUR și an de construcție după 1977.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_y7EslnHQKg7QVWK0VMUfcz0r"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 3 apartamente de vânzare cu două camere în Titan, toate sub 120.000 € și construite după 1977:\n\n- Apartament Titan — 90.000 €, construit în 1988\n- Apartament Titan — 90.000 €, construit în 2005\n- Apartament Titan — 90.000 €, construit în 2018"
+    },
+    {
+      "id": "master-0230",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 17222,
+      "costUsd": 0.0006028450000000001,
+      "tokens": 41597,
+      "cachedTokens": 40857,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 1991,
+            "unknownYear": "exclude",
+            "priceMax": 140000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Titan sub 140.000 €, după 1990.",
+                "description": "Caută apartamente de vânzare cu 2 camere în Titan, până la 140.000 EUR și an de construcție după 1990.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_kklR5NSZcvPUOiwNqLrqciHB"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit două apartamente de vânzare în Titan, ambele cu 2 camere, construite după 1990 și la 90.000 €:\n\n- Apartament Titan — construit în 2005\n- Apartament Titan — construit în 2018"
+    },
+    {
+      "id": "master-0231",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 12777,
+      "costUsd": 0.0006305600000000001,
+      "tokens": 41797,
+      "cachedTokens": 40941,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "yearMin": 1978,
+            "unknownYear": "exclude",
+            "priceMax": 180000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Titan sub 180.000 €, după 1977.",
+                "description": "Caută apartamente de vânzare cu 3 camere în Titan, sub 180.000 EUR, construite după 1977.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_1t5bjhtI6C7xOJZxSCpuYI21"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 3 apartamente de vânzare în Titan care corespund criteriilor — toate au 3 camere, costă 110.000 € și au fost construite după 1977:\n\n- **Apartament Titan** — construit în 1988\n- **Apartament Titan** — construit în 2005\n- **Apartament Titan** — construit în 2018"
+    },
+    {
+      "id": "master-0232",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 15392,
+      "costUsd": 0.0006348200000000001,
+      "tokens": 41849,
+      "cachedTokens": 40967,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Cișmigiu",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 1978,
+            "unknownYear": "exclude",
+            "priceMax": 200000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "două camere în Cișmigiu sub 200.000 €, după 1977",
+                "description": "Caută apartamente cu două camere de vânzare în Cișmigiu, sub 200.000 EUR, construite după 1977.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_a83gzpNhrwCKv3zSeNRQvVwM"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 3 apartamente de vânzare în Cișmigiu care corespund criteriilor (2 camere, sub 200.000 €, construite după 1977):\n\n- An construcție 1988 — 90.000 €\n- An construcție 2005 — 90.000 €\n- An construcție 2018 — 90.000 €"
+    },
+    {
+      "id": "master-0233",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13966,
+      "costUsd": 0.0006249850000000001,
+      "tokens": 41667,
+      "cachedTokens": 40871,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Floreasca",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "yearMin": 2001,
+            "unknownYear": "exclude",
+            "priceMax": 300000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Floreasca sub 300.000 €, după 2000.",
+                "description": "Caută apartamente de vânzare cu 3 camere în Floreasca, preț sub 300.000 EUR și an construcție după 2000.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_3QTMnNOjubGeGlW9OU8KbVWS"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 2 apartamente care corespund criteriilor (3 camere, Floreasca, sub 300.000 €, construite după 2000):\n\n- Apartament Floreasca — 110.000 €, construit în 2005.\n- Apartament Floreasca — 110.000 €, construit în 2018.\n\nNu am găsit un al treilea rezultat în căutarea completă."
+    },
+    {
+      "id": "master-0234",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13142,
+      "costUsd": 0.00058573,
+      "tokens": 41437,
+      "cachedTokens": 40783,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Pipera",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 2011,
+            "unknownYear": "exclude",
+            "priceMax": 180000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Pipera sub 180.000 €, după 2010.",
+                "description": "Caută anunțuri de proprietar pentru apartament de vânzare în Pipera, două camere, sub 180.000 EUR, construit după 2010.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_Q0fSva9NMixBtuuHTNV2Rufv"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit un anunț care corespunde criteriilor: apartament cu 2 camere în Pipera, construit în 2018, la 90.000 €."
+    },
+    {
+      "id": "master-0235",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13147,
+      "costUsd": 0.000589895,
+      "tokens": 41330,
+      "cachedTokens": 40712,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Pipera",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "yearMin": 2001,
+            "unknownYear": "exclude",
+            "priceMin": 150000,
+            "priceMax": 250000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Pipera între 150.000 și 250.000 €, după 2000.",
+                "description": "Caută anunțuri de apartamente de vânzare cu 3 camere în Pipera, preț 150.000–250.000 € și an de construcție după 2000.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_DsDrNR3lo3zDVEEdI4G3hN5A"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Nu am găsit anunțuri care să corespundă tuturor criteriilor: apartament cu 3 camere în Pipera, între 150.000 și 250.000 €, construit după 2000."
+    },
+    {
+      "id": "master-0236",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13223,
+      "costUsd": 0.0006922300000000001,
+      "tokens": 42585,
+      "cachedTokens": 41333,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "roomsAny": [
+              2,
+              3
+            ],
+            "unknownYear": "exclude",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește apartamente cu două sau trei camere în Titan.",
+                "description": "Caută apartamente cu 2 sau 3 camere în zona Titan.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_of3mSPJhENp4PsFVVYuZl33j"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 8 apartamente de vânzare în Titan:\n\n**2 camere — 90.000 EUR fiecare**\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n\n**3 camere — 110.000 EUR fiecare**\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n\nRezultatele provin din anunțuri ale proprietarilor."
+    },
+    {
+      "id": "master-0237",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13454,
+      "costUsd": 0.0007286650000000001,
+      "tokens": 43021,
+      "cachedTokens": 41539,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Berceni",
+            "transactionType": "sale",
+            "roomsAny": [
+              1,
+              2
+            ],
+            "limit": 50
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți cu una sau două camere în Berceni.",
+                "description": "Caută proprietăți în Berceni cu 1 sau 2 camere și prezintă rezultatele.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_jAxDD4QOExx09DlkUBdOK0b6"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 10 proprietăți de vânzare în Berceni:\n\n**1 cameră — 70.000 EUR fiecare**\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n- Anul construcției necunoscut\n\n**2 camere — 90.000 EUR fiecare**\n- An construcție 1977\n- An construcție 1988\n- An construcție 2005\n- An construcție 2018\n- Anul construcției necunoscut"
+    },
+    {
+      "id": "master-0238",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13407,
+      "costUsd": 0.0007389250000000001,
+      "tokens": 43085,
+      "cachedTokens": 41565,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "transactionType": "sale",
+            "roomsAny": [
+              3,
+              4
+            ],
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește proprietăți cu trei sau patru camere în Drumul Taberei.",
+                "description": "Căutare proprietăți cu 3 sau 4 camere în zona Drumul Taberei",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_DyMAEmGeDkFfJG0vP70ZqAoV"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 10 anunțuri de vânzare în Drumul Taberei:\n\n**3 camere — 110.000 EUR fiecare**\n- Apartament, construit în 1977\n- Apartament, construit în 1988\n- Apartament, construit în 2005\n- Apartament, construit în 2018\n- Apartament, anul construcției necunoscut\n\n**4 camere — 130.000 EUR fiecare**\n- Apartament, construit în 1977\n- Apartament, construit în 1988\n- Apartament, construit în 2005\n- Apartament, construit în 2018\n- Apartament, anul construcției necunoscut"
+    },
+    {
+      "id": "master-0239",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 17138,
+      "costUsd": 0.0006211550000000001,
+      "tokens": 42022,
+      "cachedTokens": 41088,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "unknownYear": "include",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "req1",
+                "sourceQuote": "Găsește două camere în Titan fără să filtrezi după an.",
+                "description": "Caută apartamente cu două camere în Titan fără filtru de an de construcție.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_GTG1HRoY7Gsh7rZEjATsqIps"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 apartamente de vânzare cu două camere în Titan, fără filtru după anul construcției. Patru au anul cunoscut (1977, 1988, 2005 și 2018), iar pentru unul anul nu este disponibil."
+    },
+    {
+      "id": "master-0240",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13016,
+      "costUsd": 0.000630265,
+      "tokens": 42066,
+      "cachedTokens": 41099,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "unknownYear": "include",
+            "priceMax": 130000,
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Titan sub 130.000 € indiferent de an.",
+                "description": "Căutare apartamente cu două camere în Titan, preț sub 130.000 €, fără restricție de an.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_0cMsPaGIR0oK7Gr2YZ50heU4"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 5 apartamente cu două camere în Titan, toate listate la 90.000 €: 4 cu an de construcție cunoscut (1977, 1988, 2005 și 2018) și unul fără an precizat."
+    },
+    {
+      "id": "master-0241",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13930,
+      "costUsd": 0.00069793,
+      "tokens": 42128,
+      "cachedTokens": 41028,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Titan",
+            "transactionType": "sale",
+            "rooms": 3,
+            "yearMin": 1978,
+            "unknownYear": "include",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește trei camere în Titan după 1977",
+                "description": "Caută anunțuri cu 3 camere în Titan, an construcție cel puțin 1978.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_FlncV7IzE8oVNLuEXN5JhhH6"
+                ]
+              },
+              {
+                "id": "r2",
+                "sourceQuote": "marchează separat anunțurile fără an declarat",
+                "description": "Separă anunțurile cu an cunoscut care respectă filtrul de cele fără an declarat.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_FlncV7IzE8oVNLuEXN5JhhH6"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit în Titan:\n\n**An declarat, după 1977 (3):**\n- Apartament Titan — 1988 — 110.000 EUR\n- Apartament Titan — 2005 — 110.000 EUR\n- Apartament Titan — 2018 — 110.000 EUR\n\n**An nedeclarat (1):**\n- Apartament Titan — anul construcției nu este declarat — 110.000 EUR\n\nAnunțul fără an declarat nu este confirmat ca respectând filtrul „după 1977”."
+    },
+    {
+      "id": "master-0242",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "goal_coverage"
+      ],
+      "latencyMs": 13911,
+      "costUsd": 0.0006817500000000001,
+      "tokens": 42106,
+      "cachedTokens": 41060,
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 2,
+            "yearMin": 1978,
+            "unknownYear": "include",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Găsește două camere în Drumul Taberei după 1977 și separă rezultatele cu an necunoscut.",
+                "description": "Caută apartamente cu două camere în Drumul Taberei construite din 1978 încolo și separă rezultatele fără an cunoscut.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_9jmg51Tycgq1FMfPL9LDj3rX"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Am găsit 4 anunțuri în Drumul Taberei:\n\n**An cunoscut, după 1977 (3):**\n- Apartament cu 2 camere — construit în 1988 — 90.000 EUR\n- Apartament cu 2 camere — construit în 2005 — 90.000 EUR\n- Apartament cu 2 camere — construit în 2018 — 90.000 EUR\n\n**An necunoscut (1):**\n- Apartament cu 2 camere — anul construcției nu este precizat — 90.000 EUR\n\nAnunțul cu anul necunoscut nu este confirmat ca îndeplinind criteriul de an."
     },
     {
       "id": "master-0351",
       "model": "gpt-6-luna",
       "pass": true,
       "toolCalls": [
-        "integration_status"
+        "integration_status",
+        "goal_coverage"
       ],
-      "latencyMs": 7820,
-      "costUsd": 0.00031281500000000003,
-      "tokens": 26722,
-      "cachedTokens": 26559
+      "latencyMs": 12247,
+      "costUsd": 0.0005030550000000001,
+      "tokens": 40940,
+      "cachedTokens": 40603,
+      "fixtureTrace": [
+        {
+          "tool": "integration_status",
+          "payload": {
+            "provider": "facebook_groups"
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Arată-mi conturile Facebook conectate.",
+                "description": "Afișează conturile Facebook conectate.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_G0eWliuNvlQcvDIOMQRh72jT"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Conexiunea Facebook Groups este activă. Nu am lista conturilor conectate; verificarea disponibilă arată doar starea conexiunii."
     },
     {
       "id": "master-0401",
@@ -162,10 +2285,39 @@
         "integration_status",
         "goal_coverage"
       ],
-      "latencyMs": 11924,
-      "costUsd": 0.000488445,
-      "tokens": 40243,
-      "cachedTokens": 39917
+      "latencyMs": 12659,
+      "costUsd": 0.0004964800000000001,
+      "tokens": 40940,
+      "cachedTokens": 40608,
+      "fixtureTrace": [
+        {
+          "tool": "integration_status",
+          "payload": {
+            "provider": "meta_ads"
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "meta_connection",
+                "sourceQuote": "Verifică dacă Meta Ads este conectat.",
+                "description": "Verifică și comunică starea conexiunii Meta Ads.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_0XrS6rC3nrlDjxDqsFAFcaCv"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Da, Meta Ads este conectat."
     },
     {
       "id": "master-0451",
@@ -175,10 +2327,39 @@
         "integration_status",
         "goal_coverage"
       ],
-      "latencyMs": 11683,
-      "costUsd": 0.00049616,
-      "tokens": 40277,
-      "cachedTokens": 39926
+      "latencyMs": 14133,
+      "costUsd": 0.0004941250000000001,
+      "tokens": 40935,
+      "cachedTokens": 40610,
+      "fixtureTrace": [
+        {
+          "tool": "integration_status",
+          "payload": {
+            "provider": "tiktok_organic"
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Verifică conexiunea TikTok organic.",
+                "description": "Verificare status conexiunii TikTok organic",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_s6ttfwP4XHLcvBfnRtqQilYB"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "TikTok organic este conectat."
     },
     {
       "id": "master-0453",
@@ -188,10 +2369,40 @@
         "read",
         "goal_coverage"
       ],
-      "latencyMs": 11355,
-      "costUsd": 0.0004991500000000001,
-      "tokens": 40279,
-      "cachedTokens": 39925
+      "latencyMs": 12260,
+      "costUsd": 0.0005024900000000001,
+      "tokens": 40950,
+      "cachedTokens": 40609,
+      "fixtureTrace": [
+        {
+          "tool": "read",
+          "payload": {
+            "resource": "tiktokPostDrafts",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Arată-mi drafturile TikTok.",
+                "description": "Afișează drafturile TikTok existente",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_mjVK6T6TrBQ5Nie8LNEH2dFo"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Nu există drafturi TikTok înregistrate."
     },
     {
       "id": "master-0501",
@@ -201,10 +2412,39 @@
         "integration_status",
         "goal_coverage"
       ],
-      "latencyMs": 11460,
-      "costUsd": 0.0004963400000000001,
-      "tokens": 40260,
-      "cachedTokens": 39919
+      "latencyMs": 11808,
+      "costUsd": 0.000495065,
+      "tokens": 40928,
+      "cachedTokens": 40604,
+      "fixtureTrace": [
+        {
+          "tool": "integration_status",
+          "payload": {
+            "provider": "tiktok_ads"
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Verifică statusul TikTok Ads.",
+                "description": "Verifică și comunică statusul conexiunii TikTok Ads.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_h6Yeiedq9S0tkLvlatnqAaNN"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "TikTok Ads este conectat și configurat."
     },
     {
       "id": "master-0502",
@@ -214,10 +2454,56 @@
         "existing_read",
         "goal_coverage"
       ],
-      "latencyMs": 17393,
-      "costUsd": 0.0006870350000000001,
-      "tokens": 54009,
-      "cachedTokens": 53446
+      "latencyMs": 19935,
+      "costUsd": 0.0008802950000000001,
+      "tokens": 68872,
+      "cachedTokens": 68142,
+      "fixtureTrace": [
+        {
+          "tool": "existing_read",
+          "payload": {
+            "operation": "tiktok_capabilities",
+            "params": {},
+            "query": {},
+            "body": {}
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Arată-mi capabilitățile TikTok Ads disponibile.",
+                "description": "Afișarea listei de capabilități TikTok Ads și disponibilitatea lor",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_V4xuo9YSfDbN2VLLpV2cLiqE"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [
+        {
+          "tool": "existing_read",
+          "payload": {
+            "kind": "existing_operation",
+            "operation": "tiktok_capabilities",
+            "params": {},
+            "query": {},
+            "body": {}
+          },
+          "error": [
+            ": Unrecognized key(s) in object: 'kind'"
+          ]
+        }
+      ],
+      "fixtureResponse": "Capabilități TikTok Ads:\n- Citirea campaniilor (`campaign_read`): disponibilă.\n- Publicarea campaniilor (`campaign_publish`): indisponibilă — fixture-ul nu are autorizare pentru cheltuieli."
     },
     {
       "id": "master-0551",
@@ -227,10 +2513,39 @@
         "integration_status",
         "goal_coverage"
       ],
-      "latencyMs": 12845,
-      "costUsd": 0.00048707000000000004,
-      "tokens": 40238,
-      "cachedTokens": 39917
+      "latencyMs": 12917,
+      "costUsd": 0.000497365,
+      "tokens": 40942,
+      "cachedTokens": 40609,
+      "fixtureTrace": [
+        {
+          "tool": "integration_status",
+          "payload": {
+            "provider": "imobiliare"
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Verifică statusul Imobiliare.ro.",
+                "description": "Verifică statusul conexiunii Imobiliare.ro",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_40skpOF9lXGpruOEIHYVvknM"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Imobiliare.ro este conectat și configurat."
     },
     {
       "id": "master-0651",
@@ -240,10 +2555,40 @@
         "read",
         "goal_coverage"
       ],
-      "latencyMs": 11929,
-      "costUsd": 0.000495745,
-      "tokens": 40264,
-      "cachedTokens": 39922
+      "latencyMs": 26308,
+      "costUsd": 0.00050122,
+      "tokens": 40944,
+      "cachedTokens": 40607,
+      "fixtureTrace": [
+        {
+          "tool": "read",
+          "payload": {
+            "resource": "contractTemplates",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Arată-mi template-urile de contract.",
+                "description": "Afișează template-urile de contract disponibile.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_O5JxL0k4nrflx00HKdddDwqp"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Nu există template-uri de contract disponibile în CRM."
     },
     {
       "id": "master-0701",
@@ -253,10 +2598,40 @@
         "read",
         "goal_coverage"
       ],
-      "latencyMs": 11050,
-      "costUsd": 0.00049637,
-      "tokens": 40266,
-      "cachedTokens": 39922
+      "latencyMs": 14279,
+      "costUsd": 0.0005090000000000001,
+      "tokens": 40970,
+      "cachedTokens": 40610,
+      "fixtureTrace": [
+        {
+          "tool": "read",
+          "payload": {
+            "resource": "agents",
+            "limit": 100
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Arată-mi agenții din echipă.",
+                "description": "Afișează agenții din echipă folosind datele CRM.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_VbjD0Or4bFkD47M6WJHszBo2"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Nu am găsit agenți în echipă în datele CRM disponibile."
     },
     {
       "id": "master-0751",
@@ -266,25 +2641,54 @@
         "search_global",
         "goal_coverage"
       ],
-      "latencyMs": 11388,
-      "costUsd": 0.00051596,
-      "tokens": 40332,
-      "cachedTokens": 39931
+      "latencyMs": 15357,
+      "costUsd": 0.0005316100000000001,
+      "tokens": 41047,
+      "cachedTokens": 40621,
+      "fixtureTrace": [
+        {
+          "tool": "search_global",
+          "payload": {
+            "query": "Andrei Popescu"
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "r1",
+                "sourceQuote": "Caută global „Andrei Popescu”.",
+                "description": "Căutare globală în CRM pentru Andrei Popescu și raportarea rezultatelor din contacte, proprietăți și sarcini.",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_njvNivGfR0zY3eXy2TpteL7r"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [],
+      "fixtureResponse": "Căutarea globală pentru „Andrei Popescu” a găsit un contact: Andrei Popescu (ID: c1). Nu au fost găsite proprietăți sau sarcini."
     }
   ],
   "models": {
     "gpt-6-luna": {
-      "tasks": 20,
-      "passed": 20,
+      "tasks": 56,
+      "passed": 56,
       "successPercent": 100,
-      "averageCostUsd": 0.00061410625,
-      "averageLatencyMs": 12902,
-      "cachedTokens": 813190
+      "averageCostUsd": 0.0006812100000000001,
+      "averageLatencyMs": 15022.017857142857,
+      "cachedTokens": 2333046
     }
   },
   "errors": [],
-  "totalCostUsd": 0.012282125000000001,
-  "completedAt": "2026-10-06T19:23:32.687Z",
+  "totalCostUsd": 0.03814776,
+  "completedAt": "2026-10-06T20:02:35.985Z",
   "sourceSha256": "c6838925c268b043274556545097d9f28ec1b76deae58d4f29e12f7b056a7f17",
   "scope": "Live model planning against synthetic fixtures; no CRM/provider effects. Passing routing does not certify business completion.",
   "corpus": [
@@ -1114,147 +3518,147 @@
     },
     {
       "id": "master-0207",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0208",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0209",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0210",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0211",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0212",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0213",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0214",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0215",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0216",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0217",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0218",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0219",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0220",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0221",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0222",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0223",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0224",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0225",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0226",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0227",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0228",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0229",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0230",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0231",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0232",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0233",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0234",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0235",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0236",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0237",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0238",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0239",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0240",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0241",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0242",
-      "status": "needs_fixture_and_expectations"
+      "status": "planning_passed"
     },
     {
       "id": "master-0243",

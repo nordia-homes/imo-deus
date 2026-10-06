@@ -2,15 +2,15 @@
   "authSyncScheduler": {
     "state": "ENABLED",
     "schedule": "every 5 minutes",
-    "lastAttemptTime": "2026-10-06T16:55:04.551170Z"
+    "lastAttemptTime": "2026-10-06T20:00:06.652813Z"
   },
-  "verifiedAt": "2026-10-06T16:55:19.300Z",
+  "verifiedAt": "2026-10-06T20:02:45.376Z",
   "project": "studio-652232171-42fb6",
   "builds": [
     {
-      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-27",
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-master-3",
       "state": "READY",
-      "commit": "64553efbf5e6b79761360eaa029abc3f0a1c6142",
+      "commit": "3a89e025e902101d7653e508ce355490df8b7855",
       "percent": 100
     }
   ],
@@ -73,10 +73,10 @@
   "scheduler": {
     "state": "ENABLED",
     "schedule": "every 5 minutes",
-    "lastAttemptTime": "2026-10-06T16:52:02.164052Z"
+    "lastAttemptTime": "2026-10-06T20:02:09.333270Z"
   },
   "heartbeat": {
-    "lastSuccessAt": "2026-10-06T16:52:02.380Z",
+    "lastSuccessAt": "2026-10-06T20:02:09.549Z",
     "lastError": null
   },
   "indexStates": {

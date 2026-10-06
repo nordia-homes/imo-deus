@@ -375,3 +375,37 @@ Rerularea după corecție: **20/20 probe de planificare trecute**, cost raportat
 Configurarea monitorizării: în editorul de automatizări se alege „Schimbări în surse oficiale”, se introduc URL-urile exacte separate prin `;`, prima execuție, intervalul și numărul de verificări. Pentru monitorizare repetată se aleg cel puțin două execuții. Salvarea pregătește planul pentru aprobarea existentă; nu activează direct o monitorizare. Pauza, anularea, expirarea și revocarea accesului folosesc mecanismele comune automatizărilor.
 
 Progresul de mai sus închide părți suplimentare din E3/E4 și E7. Nu închide evaluarea celor 1000 de scenarii, paritatea semantică pe toate modulele, verificările externe de publicare, revizia juridică, proactivitatea completă, calibrarea Jev sau rollout-ul în producție.
+
+## Lot nou: minimum 100 de scenarii și căutarea după anul construcției
+
+Acest lot adaugă **116 scenarii deterministe distincte**, executate pe codul de producție cu date sintetice: 44 pentru căutare, 20 pentru starea obiectivului, 12 pentru acoperirea cererii, 12 pentru rezultate verificate, 8 pentru quiet hours, 12 pentru URL-uri oficiale și 8 pentru preferințe. Sunt variante de comportament și cazuri-limită legate de cerințele documentului; **nu sunt 116 dintre cele 1000 de prompturi certificate integral**. Legătura `source` indică cerința asociată.
+
+Definițiile sunt în [continuation-scenarios.json](evals/continuation-scenarios.json), iar dovezile individuale în [CONTINUATION_ACCEPTANCE.json](evals/CONTINUATION_ACCEPTANCE.json). Comanda reproductibilă este `npm run test:jarvis:scenarios`; runnerul refuză sub 100 de ID-uri unice și nu acceptă rapoarte rămase dintr-o execuție anterioară. Raportul include hashurile suitei și codului evaluat.
+
+Implementare suplimentară:
+
+- Căutarea Jarvis acceptă `yearMin`/`yearMax` inclusive, `roomsAny` și tratarea explicită a anului necunoscut. „După 1977” se exprimă prin `yearMin=1978`; „înainte de 1990” prin `yearMax=1989`. Intervalele textuale și anul renovării nu devin artificial ani exacți de construcție.
+- Rezultatele includ anul exact disponibil, eticheta originală limitată și indicatorii `constructionYearKnown`/`yearFilterSatisfied`. Cu `unknownYear=include`, anunțurile fără an exact rămân distincte de cele care îndeplinesc filtrul; cu `only` se caută numai cele necunoscute. Un an cunoscut în afara intervalului rămâne exclus.
+- Paginarea păstrează noile criterii în amprenta cursorului. Schimbarea anului sau camerelor invalidează cursorul; filtrele de zonă, preț, monedă, publicare și separarea CRM/proprietari rămân aplicate. Intervalele inversate și combinarea `rooms` cu `roomsAny` sunt respinse înaintea citirilor.
+- Memoria fusului orar folosește consecvent cheia salvată `preferred_timezone` atât în calcule, cât și în prompt. Testul de regresie verifică salvare → citire → prompt → uitare, fără a simula cheia greșită.
+- Evaluatorul live păstrează acum traseul și răspunsul inclusiv pentru cazurile trecute. Cazul individual selectat nu suprascrie raportul întregului corpus. Fixtures de proprietăți folosesc filtrarea reală și paginare explicită.
+
+Validare locală: **116/116 scenarii**, **137/137 teste în runnerul dedicat**, **543/543 teste în suita completă**, build Next.js/TypeScript trecut, ESLint fără erori și manifestul de paritate verificat. Avertismentele locale Jaeger/standalone rămân cele descrise anterior; nu sunt echivalente cu validarea browserului unui provider real.
+
+Rămân necesare acceptanța completă a corpusului original, verificări externe de publicare/livrare, eliminarea semantică a duplicatelor față de CRM pentru toate cererile compuse și interpretarea verificată a intervalelor textuale de an. Filtrarea numerică nu certifică independent anul real al clădirii.
+
+### Publicarea versiunii anterioare lotului nou
+
+Publicat pe `https://imodeus.ro`: commit **3a89e025e902101d7653e508ce355490df8b7855**, build **build-2026-10-06-master-3**, stare READY și **100% trafic**. Include funcțiile implementate înaintea acestui lot și corecția memoriei fusului orar. Noile filtre și cele 116 scenarii aparțin continuării locale ulterioare și nu trebuie confundate cu acest commit de producție.
+
+Secretul `TYPESAFE_API_KEY` este configurat în Secret Manager și legat în Cloud Run, fără a fi pus în Git sau afișat în rapoarte. `JARVIS_JEV_MODE=shadow`; traseul rapid nu este activat. Prima încercare de build a cerut remedierea permisiunilor prin `firebase apphosting:secrets:grantaccess`. A doua a avut timeout de monitorizare App Hosting, deși compilarea Cloud Build a reușit. Buildul publicat a trecut verificările și a fost lansat prin SHA explicit, fără merge în main.
+
+Dovezi: [CRM_PARITY_PRODUCTION.json](CRM_PARITY_PRODUCTION.json) și [MASTER_PRODUCTION.json](MASTER_PRODUCTION.json). Pagina `/ai-assistant` a răspuns 200; endpointurile private verificate au răspuns 401 fără autentificare. Șase funcții sunt ACTIVE, ambele schedulere sunt ENABLED, 72 de indexuri sunt READY. Nu au fost trimise mesaje externe de test. Aceste probe verifică lansarea și izolarea rutelor, nu finalizarea reală a tuturor fluxurilor cu furnizori.
+
+Verificarea după rollout confirmă o execuție programată reușită a workerului la **2026-10-06T20:02:09.549Z**, cu `lastError=null`.
+
+### Rezultatul evaluării live extinse
+
+**56/56 cereri revizuite din corpus au trecut verificările de planificare**, cost raportat **0,03814776 USD**, folosind exclusiv fixtures sintetice și modelul Luna. Setul include cele 20 de cazuri anterioare și 36 de căutări suplimentare după zonă, preț, camere, an și tratarea anului necunoscut. Pentru cererile 241/242, răspunsurile au separat anunțurile cu an cunoscut de cele fără an și au precizat că necunoscutele nu confirmă filtrul.
+
+[MASTER_ACCEPTANCE.json](evals/MASTER_ACCEPTANCE.json) păstrează fiecare traseu, răspuns și apel invalid recuperat; **944 de cereri** rămân fără fixtures și așteptări individuale. Un caz trecut poate include recuperarea unei erori de argumente, iar alegerea corectă a instrumentelor nu certifică toate afirmațiile din răspuns sau efectele externe. Cele 116 scenarii deterministe și cele 56 de probe live sunt două suite diferite și nu reprezintă 172 de prompturi originale certificate cap-coadă.

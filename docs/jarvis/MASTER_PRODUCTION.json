@@ -1,0 +1,24 @@
+{
+  "verifiedAt": "2026-10-06T20:00:36.208Z",
+  "traffic": {
+    "splits": [
+      {
+        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-06-master-3",
+        "percent": 100
+      }
+    ]
+  },
+  "jevMode": "shadow",
+  "jevSecretBound": true,
+  "conditions": [
+    {
+      "type": "RoutesReady",
+      "state": "CONDITION_SUCCEEDED"
+    },
+    {
+      "type": "ConfigurationsReady",
+      "state": "CONDITION_SUCCEEDED"
+    }
+  ],
+  "secretValuesPrinted": false
+}

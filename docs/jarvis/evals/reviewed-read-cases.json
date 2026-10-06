@@ -102,6 +102,414 @@
     "readOnly": true
   },
   {
+    "id": "master-0207",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Aviației"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0208",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0209",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Berceni"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0210",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Militari"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0211",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "priceMax": 130000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0212",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 3,
+      "priceMax": 160000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0213",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Cișmigiu",
+      "rooms": 2,
+      "priceMax": 180000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0214",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Floreasca",
+      "rooms": 3,
+      "priceMax": 250000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0215",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Pipera",
+      "priceMax": 200000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0216",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Aviației",
+      "priceMin": 150000,
+      "priceMax": 250000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0217",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei",
+      "rooms": 2,
+      "priceMin": 80000,
+      "priceMax": 120000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0218",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Berceni",
+      "rooms": 3,
+      "priceMax": 140000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0219",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 4,
+      "priceMax": 200000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0220",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 1,
+      "priceMax": 80000
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0221",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "yearMin": 1978
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0222",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "yearMin": 1978
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0223",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei",
+      "rooms": 3,
+      "yearMin": 1978
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0224",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "yearMin": 1991
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0225",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Pipera",
+      "rooms": 2,
+      "yearMin": 2001
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0226",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Floreasca",
+      "rooms": 3,
+      "yearMin": 2001
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0227",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "yearMin": 1980,
+      "yearMax": 1990
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0228",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei",
+      "yearMax": 1989
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0229",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "priceMax": 120000,
+      "yearMin": 1978
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0230",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "priceMax": 140000,
+      "yearMin": 1991
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0231",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 3,
+      "priceMax": 180000,
+      "yearMin": 1978
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0232",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Cișmigiu",
+      "rooms": 2,
+      "priceMax": 200000,
+      "yearMin": 1978
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0233",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Floreasca",
+      "rooms": 3,
+      "priceMax": 300000,
+      "yearMin": 2001
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0234",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Pipera",
+      "rooms": 2,
+      "priceMax": 180000,
+      "yearMin": 2011
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0235",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Pipera",
+      "rooms": 3,
+      "priceMin": 150000,
+      "priceMax": 250000,
+      "yearMin": 2001
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0236",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "roomsAny": [
+        2,
+        3
+      ]
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0237",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Berceni",
+      "roomsAny": [
+        1,
+        2
+      ]
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0238",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei",
+      "roomsAny": [
+        3,
+        4
+      ]
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0239",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2
+    },
+    "readOnly": true,
+    "absentFields": [
+      "yearMin",
+      "yearMax"
+    ]
+  },
+  {
+    "id": "master-0240",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 2,
+      "priceMax": 130000
+    },
+    "readOnly": true,
+    "absentFields": [
+      "yearMin",
+      "yearMax"
+    ]
+  },
+  {
+    "id": "master-0241",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Titan",
+      "rooms": 3,
+      "yearMin": 1978,
+      "unknownYear": "include"
+    },
+    "readOnly": true
+  },
+  {
+    "id": "master-0242",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei",
+      "rooms": 2,
+      "yearMin": 1978,
+      "unknownYear": "include"
+    },
+    "readOnly": true
+  },
+  {
     "id": "master-0351",
     "tool": "existing_read",
     "subset": {

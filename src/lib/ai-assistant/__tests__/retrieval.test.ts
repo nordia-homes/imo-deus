@@ -21,6 +21,30 @@ const context = (rows: Record<string, any>[]) => ({ agencyId: 'a', uid: 'agent',
 const listing = { publicationStatus: 'ready', isCanonical: true, scopeKey: 'bucuresti-ilfov', price: '120.000 €', priceValue: 120000, roomsValue: 2, propertyType: 'apartment', transactionType: 'sale', location: 'București Titan', title: 'Apartament', ownerPhone: 'PRIVATE' };
 
 describe('authorized complete pagination', () => {
+  it('preserves unknown-year evidence and binds pagination to year and room filters', async () => {
+    const rows = [
+      { ...listing, id: '0001', constructionYear: 1960 },
+      { ...listing, id: '0002', constructionYear: 1988 },
+      { ...listing, id: '0003', constructionYear: '1977-1990' },
+      { ...listing, id: '0004', constructionYear: 2005, roomsValue: 3 },
+    ];
+    const ctx = context(rows), input = searchSchema.parse({ yearMin: 1978, roomsAny: [2, 3], unknownYear: 'include', limit: 1 });
+    const first = await searchProperties(ctx, input);
+    expect(first.rows[0]).toMatchObject({ id: '0002', constructionYear: 1988, constructionYearKnown: true, yearFilterSatisfied: true });
+    const second = await searchProperties(ctx, { ...input, cursor: first.nextCursor! });
+    expect(second.rows[0]).toMatchObject({ id: '0003', constructionYear: null, constructionYearLabel: '1977-1990', constructionYearKnown: false, yearFilterSatisfied: false });
+    const third = await searchProperties(ctx, { ...input, cursor: second.nextCursor! });
+    expect(third.rows[0]).toMatchObject({ id: '0004', constructionYear: 2005 });
+    expect(third.complete).toBe(true);
+    await expect(searchProperties(ctx, { ...input, yearMin: 2001, cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
+    await expect(searchProperties(ctx, { ...input, roomsAny: [2, 4], cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
+  });
+  it('rejects contradictory criteria before database reads', async () => {
+    const ctx = context([]);
+    for (const query of [{ yearMin: 2000, yearMax: 1980 }, { priceMin: 150000, priceMax: 100000 }, { rooms: 2, roomsAny: [2, 3] }, { roomsAny: [2, 2] }]) {
+      await expect(searchProperties(ctx, searchSchema.parse(query))).rejects.toThrow();
+    }
+  });
   it('pushes zone, rooms and property type into the index before the scan budget', async()=>{
     const rows=Array.from({length:6003},(_,i)=>{const source={...listing,location:i<6000?'Militari':'Titan'};return {...source,...ownerSearchFields(source),id:String(i).padStart(5,'0')};});
     const result=await searchProperties(context(rows),searchSchema.parse({zone:'Titan',rooms:2,propertyType:'apartment',priceMax:130000,limit:3}));

@@ -7,11 +7,13 @@ import type { Agency } from '@/lib/types';
 import { CommunicationError } from '@/lib/communications/server';
 import { OWNER_SEARCH_VERSION, ownerPriceCurrency, parseOwnerPrice, ownerZoneKey } from '@/lib/owner-listings/search-index';
 import { createHash } from 'node:crypto';
+import { constructionYearEvidence, matchesConstructionYear, validateSearchCriteria } from './search-criteria';
 
 export function listingCurrency(price: unknown): 'EUR' | 'RON' | 'unknown' {
   return ownerPriceCurrency(price);
 }
 export function searchMatches(row: Record<string, any>, input: AssistantSearch) {
+  validateSearchCriteria(input);
   const owners = input.source === 'owners';
   if (!owners && row.status !== 'Activ') return false;
   if (owners && (row.publicationStatus !== 'ready' || row.isCanonical !== true)) return false;
@@ -20,6 +22,8 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   if (input.zone && !(owners ? ownerZoneKey(row.location).includes(ownerZoneKey(input.zone)) : location.includes(normalized(input.zone)))) return false;
   const rooms = Number(owners ? row.roomsValue ?? parseOptionalNumber(row.rooms) : row.rooms);
   if (input.rooms !== undefined && rooms !== input.rooms) return false;
+  if (input.roomsAny && !input.roomsAny.includes(rooms)) return false;
+  if (!matchesConstructionYear(row, input)) return false;
   const type = normalized(row.propertyType);
   const aliases: Record<string, string[]> = { apartment: ['apartment', 'apartament', 'garsoniera'], house: ['house', 'casa', 'vila'], land: ['land', 'teren'], commercial: ['commercial', 'comercial', 'birou'] };
   if (input.propertyType && !aliases[input.propertyType].some(v => type.includes(v))) return false;
@@ -32,6 +36,7 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   return true;
 }
 export async function searchProperties(ctx: AssistantContext, input: AssistantSearch) {
+  validateSearchCriteria(input);
   let base: FirebaseFirestore.Query = collectionFor(ctx, 'properties');
   let resolvedScope: string | null = null;
   if (input.source === 'owners') {
@@ -93,7 +98,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
       if (indexed) cursorPrice = Number(row.searchPrice);
       if (input.source === 'owners' && listingCurrency(row.price) === 'unknown') uncertainCurrency++;
       if (!searchMatches(row, input)) continue;
-      rows.push({ id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
+      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearEvidence(row).constructionYearKnown : null, id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
       if (rows.length === input.limit) break;
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }

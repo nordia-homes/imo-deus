@@ -1,0 +1,1702 @@
+{
+  "schemaVersion": 1,
+  "scope": "Deterministic production-code scenarios with synthetic inputs; sourceNumber is a related requirement, not certification of the entire original prompt. No external provider effects.",
+  "scenarios": [
+    {
+      "id": "continuation-001",
+      "category": "search",
+      "name": "an ulterior pragului",
+      "input": {
+        "row": {
+          "constructionYear": 1978
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": true,
+      "source": 221
+    },
+    {
+      "id": "continuation-002",
+      "category": "search",
+      "name": "an exact la limita exclusă",
+      "input": {
+        "row": {
+          "constructionYear": 1977
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 221
+    },
+    {
+      "id": "continuation-003",
+      "category": "search",
+      "name": "an anterior pragului",
+      "input": {
+        "row": {
+          "constructionYear": 1965
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 221
+    },
+    {
+      "id": "continuation-004",
+      "category": "search",
+      "name": "an necunoscut exclus implicit",
+      "input": {
+        "row": {
+          "constructionYear": null
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 241
+    },
+    {
+      "id": "continuation-005",
+      "category": "search",
+      "name": "an necunoscut inclus separat",
+      "input": {
+        "row": {
+          "constructionYear": null
+        },
+        "query": {
+          "yearMin": 1978,
+          "unknownYear": "include"
+        }
+      },
+      "expected": true,
+      "source": 241
+    },
+    {
+      "id": "continuation-006",
+      "category": "search",
+      "name": "numai an necunoscut",
+      "input": {
+        "row": {
+          "constructionYear": null
+        },
+        "query": {
+          "unknownYear": "only"
+        }
+      },
+      "expected": true,
+      "source": 244
+    },
+    {
+      "id": "continuation-007",
+      "category": "search",
+      "name": "an cunoscut exclus din necunoscute",
+      "input": {
+        "row": {
+          "constructionYear": 1988
+        },
+        "query": {
+          "unknownYear": "only"
+        }
+      },
+      "expected": false,
+      "source": 244
+    },
+    {
+      "id": "continuation-008",
+      "category": "search",
+      "name": "interval textual nu este an exact",
+      "input": {
+        "row": {
+          "constructionYear": "1977-1990"
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 241
+    },
+    {
+      "id": "continuation-009",
+      "category": "search",
+      "name": "interval textual rămâne necunoscut",
+      "input": {
+        "row": {
+          "constructionYear": "1977-1990"
+        },
+        "query": {
+          "yearMin": 1978,
+          "unknownYear": "include"
+        }
+      },
+      "expected": true,
+      "source": 241
+    },
+    {
+      "id": "continuation-010",
+      "category": "search",
+      "name": "după 1977 textual nu devine an numeric",
+      "input": {
+        "row": {
+          "constructionYear": "după 1977"
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 243
+    },
+    {
+      "id": "continuation-011",
+      "category": "search",
+      "name": "renovare nu dovedește construcția",
+      "input": {
+        "row": {
+          "constructionYear": "renovat 2018"
+        },
+        "query": {
+          "yearMin": 2001
+        }
+      },
+      "expected": false,
+      "source": 225
+    },
+    {
+      "id": "continuation-012",
+      "category": "search",
+      "name": "proiecție veche nu înlocuiește sursa",
+      "input": {
+        "row": {
+          "constructionYear": "1977-1990",
+          "constructionYearValue": 1988
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 241
+    },
+    {
+      "id": "continuation-013",
+      "category": "search",
+      "name": "an numeric din proiecție când sursa lipsește",
+      "input": {
+        "row": {
+          "constructionYearValue": 1988
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": true,
+      "source": 221
+    },
+    {
+      "id": "continuation-014",
+      "category": "search",
+      "name": "an alternativ year",
+      "input": {
+        "row": {
+          "year": 2008
+        },
+        "query": {
+          "yearMin": 2001
+        }
+      },
+      "expected": true,
+      "source": 226
+    },
+    {
+      "id": "continuation-015",
+      "category": "search",
+      "name": "an exact text cu spații",
+      "input": {
+        "row": {
+          "constructionYear": " 1988 "
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": true,
+      "source": 221
+    },
+    {
+      "id": "continuation-016",
+      "category": "search",
+      "name": "an fracționar invalid",
+      "input": {
+        "row": {
+          "constructionYear": 1988.5
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 221
+    },
+    {
+      "id": "continuation-017",
+      "category": "search",
+      "name": "an numeric prea mare",
+      "input": {
+        "row": {
+          "constructionYear": 9999
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 221
+    },
+    {
+      "id": "continuation-018",
+      "category": "search",
+      "name": "an text prea mare",
+      "input": {
+        "row": {
+          "constructionYear": "9999"
+        },
+        "query": {
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 221
+    },
+    {
+      "id": "continuation-019",
+      "category": "search",
+      "name": "an foarte vechi cunoscut",
+      "input": {
+        "row": {
+          "constructionYear": "1880"
+        },
+        "query": {
+          "yearMax": 1899
+        }
+      },
+      "expected": true,
+      "source": 228
+    },
+    {
+      "id": "continuation-020",
+      "category": "search",
+      "name": "an zero invalid",
+      "input": {
+        "row": {
+          "constructionYear": 0
+        },
+        "query": {
+          "yearMax": 1990
+        }
+      },
+      "expected": false,
+      "source": 228
+    },
+    {
+      "id": "continuation-021",
+      "category": "search",
+      "name": "interval inclusiv limita inferioară",
+      "input": {
+        "row": {
+          "constructionYear": 1980
+        },
+        "query": {
+          "yearMin": 1980,
+          "yearMax": 1990
+        }
+      },
+      "expected": true,
+      "source": 227
+    },
+    {
+      "id": "continuation-022",
+      "category": "search",
+      "name": "interval inclusiv limita superioară",
+      "input": {
+        "row": {
+          "constructionYear": 1990
+        },
+        "query": {
+          "yearMin": 1980,
+          "yearMax": 1990
+        }
+      },
+      "expected": true,
+      "source": 227
+    },
+    {
+      "id": "continuation-023",
+      "category": "search",
+      "name": "interval respinge anul 1979",
+      "input": {
+        "row": {
+          "constructionYear": 1979
+        },
+        "query": {
+          "yearMin": 1980,
+          "yearMax": 1990
+        }
+      },
+      "expected": false,
+      "source": 227
+    },
+    {
+      "id": "continuation-024",
+      "category": "search",
+      "name": "interval respinge anul 1991",
+      "input": {
+        "row": {
+          "constructionYear": 1991
+        },
+        "query": {
+          "yearMin": 1980,
+          "yearMax": 1990
+        }
+      },
+      "expected": false,
+      "source": 227
+    },
+    {
+      "id": "continuation-025",
+      "category": "search",
+      "name": "fără filtru permite an necunoscut",
+      "input": {
+        "row": {},
+        "query": {}
+      },
+      "expected": true,
+      "source": 239
+    },
+    {
+      "id": "continuation-026",
+      "category": "search",
+      "name": "include nu admite an cunoscut neeligibil",
+      "input": {
+        "row": {
+          "constructionYear": 1960
+        },
+        "query": {
+          "yearMin": 1978,
+          "unknownYear": "include"
+        }
+      },
+      "expected": false,
+      "source": 241
+    },
+    {
+      "id": "continuation-027",
+      "category": "search",
+      "name": "două camere din două sau trei",
+      "input": {
+        "row": {
+          "roomsValue": 2
+        },
+        "query": {
+          "roomsAny": [
+            2,
+            3
+          ]
+        }
+      },
+      "expected": true,
+      "source": 236
+    },
+    {
+      "id": "continuation-028",
+      "category": "search",
+      "name": "trei camere din două sau trei",
+      "input": {
+        "row": {
+          "roomsValue": 3
+        },
+        "query": {
+          "roomsAny": [
+            2,
+            3
+          ]
+        }
+      },
+      "expected": true,
+      "source": 236
+    },
+    {
+      "id": "continuation-029",
+      "category": "search",
+      "name": "patru camere excluse din două sau trei",
+      "input": {
+        "row": {
+          "roomsValue": 4
+        },
+        "query": {
+          "roomsAny": [
+            2,
+            3
+          ]
+        }
+      },
+      "expected": false,
+      "source": 236
+    },
+    {
+      "id": "continuation-030",
+      "category": "search",
+      "name": "camere lipsă nu sunt potrivire",
+      "input": {
+        "row": {
+          "roomsValue": null,
+          "rooms": null
+        },
+        "query": {
+          "roomsAny": [
+            2,
+            3
+          ]
+        }
+      },
+      "expected": false,
+      "source": 236
+    },
+    {
+      "id": "continuation-031",
+      "category": "search",
+      "name": "garsonieră din una sau două",
+      "input": {
+        "row": {
+          "roomsValue": 1
+        },
+        "query": {
+          "roomsAny": [
+            1,
+            2
+          ]
+        }
+      },
+      "expected": true,
+      "source": 237
+    },
+    {
+      "id": "continuation-032",
+      "category": "search",
+      "name": "preț egal limitei inclusive",
+      "input": {
+        "row": {},
+        "query": {
+          "priceMax": 120000
+        }
+      },
+      "expected": true,
+      "source": 211
+    },
+    {
+      "id": "continuation-033",
+      "category": "search",
+      "name": "preț peste limita strictă",
+      "input": {
+        "row": {},
+        "query": {
+          "priceMax": 119999.99
+        }
+      },
+      "expected": false,
+      "source": 211
+    },
+    {
+      "id": "continuation-034",
+      "category": "search",
+      "name": "monedă RON nu este EUR",
+      "input": {
+        "row": {
+          "price": "120000 RON"
+        },
+        "query": {
+          "priceMax": 130000
+        }
+      },
+      "expected": false,
+      "source": 211
+    },
+    {
+      "id": "continuation-035",
+      "category": "search",
+      "name": "monedă necunoscută nu este EUR",
+      "input": {
+        "row": {
+          "price": "120000"
+        },
+        "query": {
+          "priceMax": 130000
+        }
+      },
+      "expected": false,
+      "source": 211
+    },
+    {
+      "id": "continuation-036",
+      "category": "search",
+      "name": "zona din descriere nu schimbă locația",
+      "input": {
+        "row": {
+          "location": "Militari",
+          "description": "aproape de Titan"
+        },
+        "query": {
+          "zone": "Titan"
+        }
+      },
+      "expected": false,
+      "source": 201
+    },
+    {
+      "id": "continuation-037",
+      "category": "search",
+      "name": "an bun dar zonă greșită",
+      "input": {
+        "row": {
+          "location": "Militari",
+          "constructionYear": 1988
+        },
+        "query": {
+          "zone": "Titan",
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 221
+    },
+    {
+      "id": "continuation-038",
+      "category": "search",
+      "name": "an bun dar preț prea mare",
+      "input": {
+        "row": {
+          "price": "180000 €",
+          "constructionYear": 1988
+        },
+        "query": {
+          "yearMin": 1978,
+          "priceMax": 130000
+        }
+      },
+      "expected": false,
+      "source": 229
+    },
+    {
+      "id": "continuation-039",
+      "category": "search",
+      "name": "an necunoscut nu relaxează camerele",
+      "input": {
+        "row": {
+          "roomsValue": 3
+        },
+        "query": {
+          "rooms": 2,
+          "yearMin": 1978,
+          "unknownYear": "include"
+        }
+      },
+      "expected": false,
+      "source": 242
+    },
+    {
+      "id": "continuation-040",
+      "category": "search",
+      "name": "an necunoscut nu relaxează publicarea",
+      "input": {
+        "row": {
+          "publicationStatus": "pending"
+        },
+        "query": {
+          "yearMin": 1978,
+          "unknownYear": "include"
+        }
+      },
+      "expected": false,
+      "source": 241
+    },
+    {
+      "id": "continuation-041",
+      "category": "search",
+      "name": "duplicat necanonic exclus",
+      "input": {
+        "row": {
+          "isCanonical": false
+        },
+        "query": {
+          "yearMin": 1978,
+          "unknownYear": "include"
+        }
+      },
+      "expected": false,
+      "source": 245
+    },
+    {
+      "id": "continuation-042",
+      "category": "search",
+      "name": "CRM activ eligibil",
+      "input": {
+        "row": {
+          "status": "Activ",
+          "price": 120000,
+          "rooms": 2,
+          "constructionYear": 1988
+        },
+        "query": {
+          "source": "crm",
+          "yearMin": 1978
+        }
+      },
+      "expected": true,
+      "source": 2
+    },
+    {
+      "id": "continuation-043",
+      "category": "search",
+      "name": "CRM rezervat exclus din oferte active",
+      "input": {
+        "row": {
+          "status": "Rezervat",
+          "price": 120000,
+          "rooms": 2,
+          "constructionYear": 1988
+        },
+        "query": {
+          "source": "crm",
+          "yearMin": 1978
+        }
+      },
+      "expected": false,
+      "source": 2
+    },
+    {
+      "id": "continuation-044",
+      "category": "search",
+      "name": "chirie respectă tipul tranzacției",
+      "input": {
+        "row": {
+          "transactionType": "rent",
+          "price": "850 €",
+          "constructionYear": 1988
+        },
+        "query": {
+          "transactionType": "rent",
+          "priceMax": 1000,
+          "yearMin": 1978
+        }
+      },
+      "expected": true,
+      "source": 14
+    },
+    {
+      "id": "continuation-045",
+      "category": "outcome",
+      "name": "plan pregătit fără execuție",
+      "input": {
+        "status": "pending",
+        "total": 1,
+        "evidence": []
+      },
+      "expected": "AWAITING_APPROVAL",
+      "source": 802
+    },
+    {
+      "id": "continuation-046",
+      "category": "outcome",
+      "name": "executor terminat fără dovezi",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": []
+      },
+      "expected": "BLOCKED",
+      "source": 858
+    },
+    {
+      "id": "continuation-047",
+      "category": "outcome",
+      "name": "worker activ fără rezultate",
+      "input": {
+        "status": "running",
+        "total": 1,
+        "evidence": []
+      },
+      "expected": "RUNNING",
+      "source": 850
+    },
+    {
+      "id": "continuation-048",
+      "category": "outcome",
+      "name": "plan necunoscut fără rezultat",
+      "input": {
+        "status": "unknown",
+        "total": 1,
+        "evidence": []
+      },
+      "expected": "BLOCKED",
+      "source": 858
+    },
+    {
+      "id": "continuation-049",
+      "category": "outcome",
+      "name": "provider în coadă verificabil",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "queued",
+            "watchable": true
+          }
+        ]
+      },
+      "expected": "WAITING_PROVIDER",
+      "source": 860
+    },
+    {
+      "id": "continuation-050",
+      "category": "outcome",
+      "name": "provider rulează verificabil",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "running",
+            "watchable": true
+          }
+        ]
+      },
+      "expected": "WAITING_PROVIDER",
+      "source": 860
+    },
+    {
+      "id": "continuation-051",
+      "category": "outcome",
+      "name": "coadă fără verificator",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "queued"
+          }
+        ]
+      },
+      "expected": "BLOCKED",
+      "source": 858
+    },
+    {
+      "id": "continuation-052",
+      "category": "outcome",
+      "name": "receipt acceptat neconfirmat",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "accepted_unverified"
+          }
+        ]
+      },
+      "expected": "BLOCKED",
+      "source": 834
+    },
+    {
+      "id": "continuation-053",
+      "category": "outcome",
+      "name": "receipt succes fără sursă",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded"
+          }
+        ]
+      },
+      "expected": "BLOCKED",
+      "source": 858
+    },
+    {
+      "id": "continuation-054",
+      "category": "outcome",
+      "name": "succes cu dovadă",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "evidenceSource": "current_domain_state"
+          }
+        ]
+      },
+      "expected": "COMPLETED",
+      "source": 865
+    },
+    {
+      "id": "continuation-055",
+      "category": "outcome",
+      "name": "dovadă explicit insuficientă",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "evidenceSource": "current_domain_state",
+            "completionSatisfied": false
+          }
+        ]
+      },
+      "expected": "BLOCKED",
+      "source": 858
+    },
+    {
+      "id": "continuation-056",
+      "category": "outcome",
+      "name": "programare confirmată chiar dacă în coadă",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "queued",
+            "completionSatisfied": true
+          }
+        ]
+      },
+      "expected": "COMPLETED",
+      "source": 852
+    },
+    {
+      "id": "continuation-057",
+      "category": "outcome",
+      "name": "provider eșuat",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "failed"
+          }
+        ]
+      },
+      "expected": "FAILED",
+      "source": 854
+    },
+    {
+      "id": "continuation-058",
+      "category": "outcome",
+      "name": "provider anulat",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "cancelled"
+          }
+        ]
+      },
+      "expected": "FAILED",
+      "source": 854
+    },
+    {
+      "id": "continuation-059",
+      "category": "outcome",
+      "name": "acces revocat la rezultat",
+      "input": {
+        "status": "completed",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "unavailable"
+          }
+        ]
+      },
+      "expected": "FAILED",
+      "source": 741
+    },
+    {
+      "id": "continuation-060",
+      "category": "outcome",
+      "name": "succes parțial și eroare",
+      "input": {
+        "status": "completed",
+        "total": 2,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "completionSatisfied": true
+          },
+          {
+            "step": 2,
+            "executionState": "failed"
+          }
+        ]
+      },
+      "expected": "PARTIALLY_COMPLETED",
+      "source": 849
+    },
+    {
+      "id": "continuation-061",
+      "category": "outcome",
+      "name": "succes parțial și așteptare",
+      "input": {
+        "status": "completed",
+        "total": 2,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "completionSatisfied": true
+          },
+          {
+            "step": 2,
+            "executionState": "running",
+            "watchable": true
+          }
+        ]
+      },
+      "expected": "WAITING_PROVIDER",
+      "source": 860
+    },
+    {
+      "id": "continuation-062",
+      "category": "outcome",
+      "name": "pas lipsă nu încheie obiectivul",
+      "input": {
+        "status": "completed",
+        "total": 2,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "completionSatisfied": true
+          }
+        ]
+      },
+      "expected": "BLOCKED",
+      "source": 850
+    },
+    {
+      "id": "continuation-063",
+      "category": "outcome",
+      "name": "pauză prevalează asupra succesului",
+      "input": {
+        "status": "paused",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "completionSatisfied": true
+          }
+        ]
+      },
+      "expected": "PAUSED",
+      "source": 872
+    },
+    {
+      "id": "continuation-064",
+      "category": "outcome",
+      "name": "anulare prevalează asupra succesului",
+      "input": {
+        "status": "cancelled",
+        "total": 1,
+        "evidence": [
+          {
+            "step": 1,
+            "executionState": "succeeded",
+            "completionSatisfied": true
+          }
+        ]
+      },
+      "expected": "CANCELLED",
+      "source": 872
+    },
+    {
+      "id": "continuation-065",
+      "category": "coverage",
+      "name": "cerință planificată ancorată",
+      "input": {
+        "patch": {},
+        "count": 1,
+        "reads": []
+      },
+      "expected": true,
+      "source": 850
+    },
+    {
+      "id": "continuation-066",
+      "category": "coverage",
+      "name": "citat inventat",
+      "input": {
+        "patch": {
+          "sourceQuote": "Șterge"
+        },
+        "count": 1,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-067",
+      "category": "coverage",
+      "name": "pas inexistent",
+      "input": {
+        "patch": {
+          "steps": [
+            2
+          ]
+        },
+        "count": 1,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-068",
+      "category": "coverage",
+      "name": "pas zero",
+      "input": {
+        "patch": {
+          "steps": [
+            0
+          ]
+        },
+        "count": 1,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-069",
+      "category": "coverage",
+      "name": "pas duplicat",
+      "input": {
+        "patch": {
+          "steps": [
+            1,
+            1
+          ]
+        },
+        "count": 1,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-070",
+      "category": "coverage",
+      "name": "plan fără pas",
+      "input": {
+        "patch": {
+          "steps": []
+        },
+        "count": 1,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-071",
+      "category": "coverage",
+      "name": "acțiune suplimentară neacoperită",
+      "input": {
+        "patch": {},
+        "count": 2,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-072",
+      "category": "coverage",
+      "name": "răspuns cu citire reală",
+      "input": {
+        "patch": {
+          "resolution": "answered",
+          "steps": [],
+          "evidenceCallIds": [
+            "read-1"
+          ]
+        },
+        "count": 0,
+        "reads": [
+          "read-1"
+        ]
+      },
+      "expected": true,
+      "source": 850
+    },
+    {
+      "id": "continuation-073",
+      "category": "coverage",
+      "name": "răspuns fără citire",
+      "input": {
+        "patch": {
+          "resolution": "answered",
+          "steps": []
+        },
+        "count": 0,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-074",
+      "category": "coverage",
+      "name": "răspuns cu dovadă inventată",
+      "input": {
+        "patch": {
+          "resolution": "answered",
+          "steps": [],
+          "evidenceCallIds": [
+            "invented"
+          ]
+        },
+        "count": 0,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-075",
+      "category": "coverage",
+      "name": "clarificare nu declară pași",
+      "input": {
+        "patch": {
+          "resolution": "needs_clarification"
+        },
+        "count": 1,
+        "reads": []
+      },
+      "expected": false,
+      "source": 850
+    },
+    {
+      "id": "continuation-076",
+      "category": "coverage",
+      "name": "nesuportat explicit fără pași",
+      "input": {
+        "patch": {
+          "resolution": "unsupported",
+          "steps": []
+        },
+        "count": 0,
+        "reads": []
+      },
+      "expected": true,
+      "source": 850
+    },
+    {
+      "id": "continuation-077",
+      "category": "outputs",
+      "name": "ID material verificat",
+      "input": {
+        "outputs": {
+          "assetId": "asset-1"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": true,
+      "source": 885
+    },
+    {
+      "id": "continuation-078",
+      "category": "outputs",
+      "name": "URL HTTPS verificat",
+      "input": {
+        "outputs": {
+          "videoUrl": "https://storage.example/video.mp4"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": true,
+      "source": 885
+    },
+    {
+      "id": "continuation-079",
+      "category": "outputs",
+      "name": "ID material neconfirmat ignorat",
+      "input": {
+        "outputs": {
+          "assetId": "asset-1"
+        },
+        "satisfied": false,
+        "previous": null
+      },
+      "expected": "ignored",
+      "source": 885
+    },
+    {
+      "id": "continuation-080",
+      "category": "outputs",
+      "name": "URL neconfirmat ignorat",
+      "input": {
+        "outputs": {
+          "videoUrl": "https://storage.example/video.mp4"
+        },
+        "satisfied": false,
+        "previous": null
+      },
+      "expected": "ignored",
+      "source": 885
+    },
+    {
+      "id": "continuation-081",
+      "category": "outputs",
+      "name": "URL file respins",
+      "input": {
+        "outputs": {
+          "videoUrl": "file:///secret"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-082",
+      "category": "outputs",
+      "name": "URL HTTP respins",
+      "input": {
+        "outputs": {
+          "videoUrl": "http://storage.example/v.mp4"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-083",
+      "category": "outputs",
+      "name": "URL cu user respins",
+      "input": {
+        "outputs": {
+          "videoUrl": "https://user@storage.example/v.mp4"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-084",
+      "category": "outputs",
+      "name": "URL cu parolă respins",
+      "input": {
+        "outputs": {
+          "videoUrl": "https://user:password@storage.example/v.mp4"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-085",
+      "category": "outputs",
+      "name": "ID cu slash respins",
+      "input": {
+        "outputs": {
+          "assetId": "other/asset"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-086",
+      "category": "outputs",
+      "name": "câmp suplimentar respins",
+      "input": {
+        "outputs": {
+          "messageText": "send this"
+        },
+        "satisfied": true,
+        "previous": null
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-087",
+      "category": "outputs",
+      "name": "material identic la reluare",
+      "input": {
+        "outputs": {
+          "assetId": "asset-1"
+        },
+        "satisfied": true,
+        "previous": {
+          "assetId": "asset-1"
+        }
+      },
+      "expected": true,
+      "source": 885
+    },
+    {
+      "id": "continuation-088",
+      "category": "outputs",
+      "name": "material schimbat la reluare",
+      "input": {
+        "outputs": {
+          "assetId": "asset-2"
+        },
+        "satisfied": true,
+        "previous": {
+          "assetId": "asset-1"
+        }
+      },
+      "expected": false,
+      "source": 885
+    },
+    {
+      "id": "continuation-089",
+      "category": "quiet",
+      "name": "ora dinaintea liniștii",
+      "input": {
+        "time": "21:59",
+        "start": "22:00",
+        "end": "08:00"
+      },
+      "expected": false,
+      "source": 904
+    },
+    {
+      "id": "continuation-090",
+      "category": "quiet",
+      "name": "început inclus în liniște",
+      "input": {
+        "time": "22:00",
+        "start": "22:00",
+        "end": "08:00"
+      },
+      "expected": true,
+      "source": 904
+    },
+    {
+      "id": "continuation-091",
+      "category": "quiet",
+      "name": "miezul nopții în liniște",
+      "input": {
+        "time": "00:00",
+        "start": "22:00",
+        "end": "08:00"
+      },
+      "expected": true,
+      "source": 904
+    },
+    {
+      "id": "continuation-092",
+      "category": "quiet",
+      "name": "ultimul minut de liniște",
+      "input": {
+        "time": "07:59",
+        "start": "22:00",
+        "end": "08:00"
+      },
+      "expected": true,
+      "source": 904
+    },
+    {
+      "id": "continuation-093",
+      "category": "quiet",
+      "name": "sfârșit exclus din liniște",
+      "input": {
+        "time": "08:00",
+        "start": "22:00",
+        "end": "08:00"
+      },
+      "expected": false,
+      "source": 904
+    },
+    {
+      "id": "continuation-094",
+      "category": "quiet",
+      "name": "prânz permis",
+      "input": {
+        "time": "12:00",
+        "start": "22:00",
+        "end": "08:00"
+      },
+      "expected": false,
+      "source": 904
+    },
+    {
+      "id": "continuation-095",
+      "category": "quiet",
+      "name": "pauză de zi început",
+      "input": {
+        "time": "13:00",
+        "start": "13:00",
+        "end": "14:00"
+      },
+      "expected": true,
+      "source": 904
+    },
+    {
+      "id": "continuation-096",
+      "category": "quiet",
+      "name": "pauză de zi sfârșit",
+      "input": {
+        "time": "14:00",
+        "start": "13:00",
+        "end": "14:00"
+      },
+      "expected": false,
+      "source": 904
+    },
+    {
+      "id": "continuation-097",
+      "category": "official_url",
+      "name": "Ministerul Justiției permis",
+      "input": {
+        "url": "https://legislatie.just.ro/Public/DetaliiDocument/1"
+      },
+      "expected": true,
+      "source": 994
+    },
+    {
+      "id": "continuation-098",
+      "category": "official_url",
+      "name": "ANCPI permis",
+      "input": {
+        "url": "https://www.ancpi.ro/document.pdf"
+      },
+      "expected": true,
+      "source": 994
+    },
+    {
+      "id": "continuation-099",
+      "category": "official_url",
+      "name": "ANAF permis",
+      "input": {
+        "url": "https://www.anaf.ro/document.pdf"
+      },
+      "expected": true,
+      "source": 994
+    },
+    {
+      "id": "continuation-100",
+      "category": "official_url",
+      "name": "domeniu imitat respins",
+      "input": {
+        "url": "https://legislatie.just.ro.evil.example/page"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-101",
+      "category": "official_url",
+      "name": "userinfo nu ascunde domeniul",
+      "input": {
+        "url": "https://legislatie.just.ro@evil.example/page"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-102",
+      "category": "official_url",
+      "name": "HTTP respins",
+      "input": {
+        "url": "http://legislatie.just.ro/page"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-103",
+      "category": "official_url",
+      "name": "port alternativ respins",
+      "input": {
+        "url": "https://legislatie.just.ro:8443/page"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-104",
+      "category": "official_url",
+      "name": "fragment respins",
+      "input": {
+        "url": "https://legislatie.just.ro/page#article"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-105",
+      "category": "official_url",
+      "name": "IP local respins",
+      "input": {
+        "url": "https://127.0.0.1/page"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-106",
+      "category": "official_url",
+      "name": "URL javascript respins",
+      "input": {
+        "url": "javascript:alert(1)"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-107",
+      "category": "official_url",
+      "name": "URL file respins",
+      "input": {
+        "url": "file:///private"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-108",
+      "category": "official_url",
+      "name": "sursă comercială neoficială respinsă",
+      "input": {
+        "url": "https://example.com/lege"
+      },
+      "expected": false,
+      "source": 994
+    },
+    {
+      "id": "continuation-109",
+      "category": "preference",
+      "name": "fus București",
+      "input": {
+        "key": "preferred_timezone",
+        "value": "Europe/Bucharest"
+      },
+      "expected": true,
+      "source": 946
+    },
+    {
+      "id": "continuation-110",
+      "category": "preference",
+      "name": "fus New York",
+      "input": {
+        "key": "preferred_timezone",
+        "value": "America/New_York"
+      },
+      "expected": true,
+      "source": 946
+    },
+    {
+      "id": "continuation-111",
+      "category": "preference",
+      "name": "fus invalid",
+      "input": {
+        "key": "preferred_timezone",
+        "value": "Fake/Timezone"
+      },
+      "expected": false,
+      "source": 946
+    },
+    {
+      "id": "continuation-112",
+      "category": "preference",
+      "name": "ora brief validă",
+      "input": {
+        "key": "preferred_brief_time",
+        "value": "08:30"
+      },
+      "expected": true,
+      "source": 946
+    },
+    {
+      "id": "continuation-113",
+      "category": "preference",
+      "name": "ora brief invalidă",
+      "input": {
+        "key": "preferred_brief_time",
+        "value": "25:00"
+      },
+      "expected": false,
+      "source": 946
+    },
+    {
+      "id": "continuation-114",
+      "category": "preference",
+      "name": "minut follow-up invalid",
+      "input": {
+        "key": "preferred_followup_time",
+        "value": "12:60"
+      },
+      "expected": false,
+      "source": 946
+    },
+    {
+      "id": "continuation-115",
+      "category": "preference",
+      "name": "cheie CRM interzisă",
+      "input": {
+        "key": "contact_budget",
+        "value": "150000"
+      },
+      "expected": false,
+      "source": 946
+    },
+    {
+      "id": "continuation-116",
+      "category": "preference",
+      "name": "preferință nu salvează chei",
+      "input": {
+        "key": "api_key",
+        "value": "not-a-secret"
+      },
+      "expected": false,
+      "source": 946
+    }
+  ]
+}
