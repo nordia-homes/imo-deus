@@ -17,6 +17,7 @@ import { OperationFailure } from './operation-error';
 import { MAX_PLAN_ACTIONS, PLAN_EXECUTION_MS } from './plan-limits';
 import { failureCategory } from './failure';
 import { bindCalendarRevisions } from './calendar-revisions';
+import { bindAgencyRevisions } from './agency-revisions';
 
 export async function requireSession(ctx: AssistantContext, id: string) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(id);
@@ -115,7 +116,7 @@ export async function getPlan(ctx: AssistantContext, id: string) {
   return { ref, data: { ...row, id: doc.id, outputType: ['pending', 'running'].includes(row.status) ? 'CONFIRMATION_CARD' : 'ACTION_RESULT', risks: (row.actions || []).map(actionRisk), externalCostNote: (row.actions || []).some((action: any) => action.kind === 'existing_operation' && operations[action.operation]?.external) ? 'Costul extern se verifică în previzualizarea canalului sau campaniei. Bugetele din plan sunt limitele aprobate; o valoare indisponibilă nu înseamnă cost zero.' : undefined } as AssistantPlan & { sessionId: string; expiresAt: number } };
 }
 export async function saveAssistantMessage(ctx: AssistantContext, sessionId: string, messageId: string, text: string, cards: AssistantCard[] = [], actions: z.infer<typeof actionSchema>[] = []) {
-  actions = await bindCalendarRevisions(ctx, actions);
+  actions = await bindAgencyRevisions(ctx, await bindCalendarRevisions(ctx, actions));
   for (const action of actions) if (action.kind === 'existing_operation' && (!Object.hasOwn(operations, action.operation) || isReadOperation(action.operation))) throw new CommunicationError('Această operație nu poate fi pregătită ca mutație.');
   const session = collectionFor(ctx, 'assistantSessions').doc(sessionId);
   const messageRef = session.collection('messages').doc(messageId);

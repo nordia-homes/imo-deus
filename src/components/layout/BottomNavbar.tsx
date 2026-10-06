@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import { executeCrmAction } from '@/lib/crm/client-actions';
+import { useToast } from '@/hooks/use-toast';
 import {
   Building2,
   CalendarCheck,
@@ -16,7 +17,6 @@ import {
   Users,
 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
-import { updateDocumentNonBlocking, useFirestore } from '@/firebase';
 import { THEME_PRESET_OPTIONS, applyAgencyThemeToRoot, resolveThemePreset } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import type { ThemePreset } from '@/lib/types';
@@ -66,24 +66,26 @@ const themeVisuals: Record<
 export function BottomNavbar() {
   const pathname = usePathname();
   const currentPath = pathname ?? '';
-  const firestore = useFirestore();
-  const { agency, agencyId } = useAgency();
+  const { agency, user, userProfile } = useAgency();
+  const { toast } = useToast();
+  const [savingTheme, setSavingTheme] = useState(false);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
   const activeTheme = resolveThemePreset(agency?.themePreset);
 
-  const handleThemeSelect = (themePreset: ThemePreset) => {
-    if (typeof document !== 'undefined') {
-      applyAgencyThemeToRoot(document.documentElement, {
-        primaryColor: agency?.primaryColor,
-        themePreset,
-      });
-    }
-
-    if (agencyId) {
-      updateDocumentNonBlocking(doc(firestore, 'agencies', agencyId), { themePreset });
-    }
-
-    setIsAppearanceOpen(false);
+  const handleThemeSelect = async (themePreset: ThemePreset) => {
+    setSavingTheme(true);
+    try {
+      await executeCrmAction(user, { kind: 'update_agency', expectedUpdatedAt: agency?.updatedAt || null, patch: { themePreset } });
+      if (typeof document !== 'undefined') {
+        applyAgencyThemeToRoot(document.documentElement, {
+          primaryColor: agency?.primaryColor,
+          themePreset,
+        });
+      }
+      setIsAppearanceOpen(false);
+    } catch (error) {
+      toast({ title: 'Tema nu a fost salvată', description: error instanceof Error ? error.message : 'Reîncearcă.', variant: 'destructive' });
+    } finally { setSavingTheme(false); }
   };
 
   return (
@@ -135,7 +137,7 @@ export function BottomNavbar() {
               Alege energia vizuala
             </DialogTitle>
             <DialogDescription className="agentfinder-appearance-dialog__description">
-              Schimba tema CRM-ului instant, cu o previzualizare fina si salvare automata.
+              {userProfile?.role === 'admin' ? 'Tema se aplică agenției după salvare.' : 'Tema agenției poate fi schimbată de administrator.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -148,6 +150,7 @@ export function BottomNavbar() {
                 <button
                   key={theme.value}
                   type="button"
+                  disabled={savingTheme || userProfile?.role !== 'admin'}
                   className={cn(
                     'agentfinder-appearance-dialog__option',
                     isActive && 'agentfinder-appearance-dialog__option--active'

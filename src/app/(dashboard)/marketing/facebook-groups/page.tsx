@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { executeCrmAction } from '@/lib/crm/client-actions';
 import { ExternalLink, Facebook, Link2, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { useAgency } from '@/context/AgencyContext';
-import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
   defaultFacebookGroups,
@@ -46,8 +45,7 @@ function getGroupHref(value: string): string | null {
 }
 
 export default function FacebookGroupsPage() {
-  const firestore = useFirestore();
-  const { agency, agencyId, isAgencyLoading } = useAgency();
+  const { agency, agencyId, isAgencyLoading, user } = useAgency();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'sale' | 'rent'>('sale');
   const [groups, setGroups] = useState<GroupDraft[]>([]);
@@ -102,7 +100,7 @@ export default function FacebookGroupsPage() {
 
     setSaving(true);
     try {
-      await updateDoc(doc(firestore, 'agencies', agencyId), { facebookGroups: sanitized });
+      await executeCrmAction(user, { kind: 'update_agency', expectedUpdatedAt: agency?.updatedAt || null, patch: { facebookGroups: sanitized } });
       setGroups(prepareGroups(sanitized));
       toast({
         title: 'Grupurile au fost salvate',
@@ -113,7 +111,7 @@ export default function FacebookGroupsPage() {
       toast({
         variant: 'destructive',
         title: 'Salvare eșuată',
-        description: 'Grupurile Facebook nu au putut fi salvate.',
+        description: error instanceof Error ? error.message : 'Grupurile Facebook nu au putut fi salvate.',
       });
     } finally {
       setSaving(false);

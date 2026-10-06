@@ -4,7 +4,7 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 
 ## Etapa curentă
 
-- Catalog curent: 171 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
+- Catalog curent: 172 handler-e existente, 40 tipuri de acțiuni; discovery semantic în română, catalog de date și verificare a disponibilității cu pași provider expliciți. Cifrele descriu codul, nu certifică paritatea tuturor fluxurilor.
 - Executor comun manual/AI pentru contacte, proprietăți, calendar, prospectare, oferte, portaluri, dosare, contracte și setări. Migrarea UI include dashboard, liste, detalii, dialogs și inbox Storia.
 - Câmpuri complete ale formularelor de bază, assignment în aceeași agenție, lifecycle cu motive și istoric, verificare concurentă la editarea proprietăților.
 - Normalizare telefon/email și locks de identitate. Migrare producție: 468 contacte, 0 conflicte; verificare ulterioară: 0 modificări restante. Cele 386 identități repetate existente sunt păstrate pentru revizuire, fără merge automat.
@@ -36,14 +36,14 @@ Actualizat: 6 octombrie 2026. Implementarea completă E0–E7 este în curs. Ace
 | B35–B41 | Handler-e Imobiliare/Storia/Romimo/Meta/TikTok/Cloud/Video înregistrate cu contracte | Probe funcționale de provider, job controls și disponibilitate per entitate |
 | B42–B45 | Profile/agency/preferences comune, avatar/logo private, agents/domain/billing/collaboration handlers, handoff links | Acceptanță OAuth/plată/push pe dispozitiv și onboarding complet |
 | B46–B47 | Discovery compact, resolver date, buget, checkpoints/pause/cancel | Probe UI pentru pauză/reluare și loturi mari în producție |
-| B48 | Automatizări editabile, istoric, condiții de oprire și reguli CRM pe evenimente cu effects interne/receipts/cursor; editor Text/Voice | Acceptanță integrată a evenimentelor concurente și providerilor; efecte externe prin aprobări dedicate |
+| B48 | Automatizări editabile, istoric, condiții de oprire și reguli CRM pe evenimente cu effects interne/receipts/cursor; editor Text/Voice; dedup concurent și recuperare parțială verificate pe Firestore | Acceptanța integrată a lease-urilor worker și providerilor; efecte externe prin aprobări dedicate |
 | B49–B50 | Carduri comune, manifest CI, teste unitare/rules/UI/build | Verificare de release, observabilitate și probe end-to-end pentru fiecare modul |
 
 ## Validări efectuate
 
-- 264 teste deterministe AI trecute, plus o probă ulterioară pentru checkpoint/limita regulilor în worker; 3 teste de reguli rulează separat în emulator.
-- 18 teste de reguli Firestore trecute în emulator (5 suite).
-- 18 verificări UI Text și 14 verificări UI Voice trecute; editorul pregătește planul, păstrează atribuirile și filtrele neatinse și citește istoricul; Gmail handoff și lipsa dovezii înainte de callback verificate cu bridge simulat.
+- 296 teste deterministe AI trecute; 8 probe de integrare rulează separat în emulator.
+- 23 teste Firestore trecute în emulator (6 suite): reguli de acces, concurență calendar și recuperare/dedup pentru reguli CRM.
+- 20 verificări UI Text și 14 verificări UI Voice trecute în etapa editorului extins; editorul pregătește planul, păstrează atribuirile și filtrele neatinse și citește istoricul; Gmail handoff și lipsa dovezii înainte de callback verificate cu bridge simulat.
 - Build Next.js și build Functions trecute. Testele headless Voice folosesc microfon/audio simulate; nu certifică ecoul pe hardware real.
 - Producție verificată: build `build-2026-10-05-parity-01`, commit `4cc3402fb2f5eb55e2c20aa5272a5a47fb46999c`, READY, trafic 100%; worker ACTIVE, scheduler ENABLED și heartbeat fără eroare. Regulile/indexurile și cele patru funcții de proiecție/retenție sunt publicate. Modificările din etapa următoare se publică separat după validare.
 - Etapa a doua activă ulterior: `build-2026-10-05-parity-02`, commit `4a479b5b8a47bf7bdde88f477489967cf908bd73`, READY, trafic 100%; funcția de retenție pentru branding actualizată. Etapa Gmail/apeluri se validează și publică separat.
@@ -122,3 +122,15 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Marcarea ca citite este disponibilă prin sale_replies_read și folosită și de pagina manuală. Revizia și contorul afișat sunt obligatorii; dacă a sosit un răspuns nou, handler-ul returnează 409 fără a goli contorul. UI arată eroarea.
 - Membrul, agenția și accesul la dosar sunt revalidate în tranzacție; actualizarea și auditul sunt atomice. Repetarea după marcarea ca citite este no-op, fără audit duplicat. Nu confirmă livrarea unui email.
 - 293 teste AI trecute, dintre care 5 noi pentru aceste cazuri; typecheck și manifest trecute. Catalog: 172 handler-e, fără inferență de paritate completă. Versiunea prompt/tool crește la 12 pentru trasabilitatea contractelor noi.
+
+### Reguli CRM concurente — verificare Firestore reală
+- 23 teste trecute în 6 suite pe emulator local: 18 de reguli de acces, 3 pentru concurența calendarului și 2 pentru regulile pe evenimente. Cele două execuții simultane au produs exact o sarcină, un ledger, o notificare și un receipt.
+- Întreruperea simulată după salvarea sarcinii și înainte de notificare a fost recuperată fără duplicarea sarcinii. Verificarea folosește executorul nativ și tranzacții Firestore, nu un ledger simulat. Lease-urile worker și recepțiile externe rămân verificări distincte.
+- Build Next.js pentru handler-ul Sales a trecut. Release parity-16, commit b116bc243282e15540b6ffddd96976a80cf16e76, READY, trafic 100%, verificat la 09:48 UTC; include handler-ul Sales și versiunea de contract 12. Dovada este în CRM_PARITY_PRODUCTION.json.
+- Probe reale în conversația afectată: căutarea „5 apartamente în Titan sub 130000 euro” a returnat TEXT, success și un card owners cu 5 rânduri; pregătirea sarcinii a returnat TEXT, success și un plan cu o acțiune. Nu s-au executat planuri sau trimis mesaje în aceste probe.
+
+### Tema și grupurile agenției — etapă de migrare
+- Lista grupurilor Facebook poate fi configurată prin update_agency, folosind aceeași schemă ca salvarea manuală. Numele, URL-ul Facebook și scopul sunt validate, inclusiv refuzarea domeniilor care imită Facebook și a URL-urilor cu credențiale.
+- Tema din navigația mobilă este aplicată după confirmarea salvării, cu eroare vizibilă la eșec. Ambele fluxuri păstrează drepturile existente: administratori ai agenției. Agentul nu primește drepturi administrative prin Jarvis.
+- Revizia agenției este fixată la pregătirea planului și trimisă de formulare; modificările concurente sunt refuzate cu 409 fără ledger. Payload-urile vechi fără marker rămân compatibile; noile planuri îl fixează obligatoriu la pregătire. Mai multe editări ale aceleiași agenții într-un plan pot cere replanificare după primul pas.
+- 296 teste AI trecute; 8 probe de integrare rezervate emulatorului, verificate separat în cele 23 teste de acces/concurență. 3 teste noi verifică revizia, rolul revocat și schema grupurilor. Nu au fost lansate publicări Facebook în teste.

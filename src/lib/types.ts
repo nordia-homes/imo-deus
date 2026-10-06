@@ -1485,6 +1485,7 @@ export type Task = {
 
 export type Agency = {
     id: string;
+    updatedAt?: string | null;
     name: string;
     ownerId: string;
     billingProvider?: 'stripe';

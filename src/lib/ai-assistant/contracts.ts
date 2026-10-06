@@ -48,7 +48,7 @@ export const actionSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('outreach_call_action'), callId: idSchema, action: z.enum(['cancel', 'manual_outcome', 'revoke_do_not_call']), outcome: z.enum(['uncalled', 'collaborates', 'does_not_collaborate', 'call_later', 'no_answer', 'busy', 'wrong_number', 'invalid_number', 'already_sold', 'already_has_agency', 'do_not_call', 'verbal_agreement', 'negotiation_success', 'negotiation_blocked', 'needs_human_review', 'failed']).optional(), reason: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ kind: z.literal('email_template_preference'), templateId: idSchema, action: z.enum(['enable', 'disable', 'override', 'reset']), data: emailTemplateOverrideSchema.optional() }).strict(),
   z.object({ kind: z.literal('update_profile'), patch: profilePatchSchema }).strict(),
-  z.object({ kind: z.literal('update_agency'), patch: agencyPatchSchema }).strict(),
+  z.object({ kind: z.literal('update_agency'), expectedUpdatedAt: z.string().datetime().nullable().optional(), patch: agencyPatchSchema }).strict(),
   z.object({ kind: z.literal('update_notification_preferences'), patch: notificationPreferencesPatchSchema }).strict(),
   z.object({ kind: z.literal('storia_lead_action'), leadId: idSchema, action: z.enum(['update', 'convert']), patch: z.object({ status: z.enum(['nou', 'in_lucru', 'raspuns', 'inchis']).optional(), unread: z.boolean().optional() }).strict().optional() }).strict(),
   z.object({ kind: z.literal('preferences_link_action'), contactId: idSchema, action: z.enum(['create', 'regenerate', 'deactivate']) }).strict(),

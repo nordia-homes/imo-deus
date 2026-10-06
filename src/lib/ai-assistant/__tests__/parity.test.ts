@@ -26,6 +26,22 @@ function database(initial: Record<string, any>) {
   return { rows, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as unknown as AssistantContext };
 }
 describe('CRM parity and command execution', () => {
+  it('guards agency revisions and permits Facebook group configuration only for current administrators', async () => {
+    expect(selectActionTools('Schimbă tema agenției și grupurile Facebook', ['update_agency', 'update_property', 'update_contact'])).toContain('update_agency');
+    const revision = '2026-10-06T10:00:00.000Z';
+    const { ctx, rows } = database({ 'users/u': { agencyId: 'a', role: 'admin' }, 'agencies/a': { updatedAt: revision, facebookGroups: [] } });
+    ctx.role = 'admin';
+    const action = actionSchema.parse({ kind: 'update_agency', expectedUpdatedAt: revision, patch: { facebookGroups: [{ name: 'Titan', url: 'https://www.facebook.com/groups/titan', purpose: 'sale' }] } });
+    await expect(executeAction(ctx, { ...action, expectedUpdatedAt: null } as any, 'stale-agency')).rejects.toMatchObject({ status: 409 });
+    expect(rows.has('agencies/a/assistantExecutions/stale-agency')).toBe(false);
+    await executeAction(ctx, action, 'groups');
+    expect(rows.get('agencies/a')?.facebookGroups).toEqual([{ name: 'Titan', url: 'https://www.facebook.com/groups/titan', purpose: 'sale' }]);
+    expect(actionSchema.safeParse({ kind: 'update_agency', patch: { facebookGroups: [{ name: 'External', url: 'https://facebook.com.evil.example/groups/x' }] } }).success).toBe(false);
+    expect(actionSchema.safeParse({ kind: 'update_agency', patch: { facebookGroups: [{ name: 'Invalid', url: '/invalid' }] } }).success).toBe(false);
+    expect(actionSchema.safeParse({ kind: 'update_agency', patch: { facebookGroups: [{ name: 'Credentials', url: 'https://user:password@facebook.com/groups/x' }] } }).success).toBe(false);
+    rows.set('users/u', { agencyId: 'a', role: 'agent' });
+    await expect(executeAction(ctx, action, 'revoked-admin')).rejects.toMatchObject({ status: 403 });
+  });
   it('assigns only an owned Facebook account from the same agency and audits through the common property action', async () => {
     const { ctx, rows } = database({ 'agencies/a/properties/p': { title: 'Home' }, 'agencies/a/facebookCloudConnections/own': { ownerUid: 'u' }, 'agencies/a/facebookCloudConnections/other': { ownerUid: 'other' }, 'agencies/b/facebookCloudConnections/foreign': { ownerUid: 'u' } });
     for (const [id, status] of [['other', 403], ['foreign', 404]] as const) {

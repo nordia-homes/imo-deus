@@ -2067,9 +2067,9 @@
       "file": "src/app/(dashboard)/marketing/facebook-groups/page.tsx",
       "calls": [
         {
-          "call": "updateDoc",
-          "line": 105,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 103,
+          "sharedExecutor": true
         }
       ],
       "reachability": {
@@ -2331,9 +2331,9 @@
       "file": "src/components/layout/BottomNavbar.tsx",
       "calls": [
         {
-          "call": "updateDocumentNonBlocking",
-          "line": 83,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 78,
+          "sharedExecutor": true
         }
       ],
       "reachability": {

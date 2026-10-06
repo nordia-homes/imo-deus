@@ -171,7 +171,9 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (ctx.role !== 'admin') throw new CommunicationError('Doar administratorul poate modifica agenția.', 403);
       if (!Object.keys(action.patch).length) throw new CommunicationError('Precizează modificarea agenției.');
       const ref = ctx.adminDb.collection('agencies').doc(ctx.agencyId);
-      if (!(await tx.get(ref)).exists) throw new CommunicationError('Agenția nu există.', 404);
+      const snapshot = await tx.get(ref);
+      if (!snapshot.exists) throw new CommunicationError('Agenția nu există.', 404);
+      if (action.expectedUpdatedAt !== undefined && (snapshot.data()?.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Setările agenției au fost modificate între timp. Reîncarcă datele înainte de salvare.', 409);
       tx.update(ref, { ...action.patch, updatedAt: now });
       result = { agencyId: ctx.agencyId, changedFields: Object.keys(action.patch), link: '/settings' };
     } else if (action.kind === 'update_notification_preferences') {

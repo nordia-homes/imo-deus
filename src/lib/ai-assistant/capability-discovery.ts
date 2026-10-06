@@ -16,7 +16,7 @@ const aliases: Record<string, string> = {
   outreach: 'apel suna telefoneaza convorbire vapi', email: 'email gmail mesaj notar',
   social: 'facebook instagram postare comentariu raspunde like', facebook: 'grup promovare facebook helper cloud',
   video: 'video film randare tur voce', tiktok: 'tiktok studio reclama campanie', meta: 'meta facebook instagram campanie reclama',
-  billing: 'abonament factura plata locuri seats plan', agency: 'agent agentie echipa invitatie',
+  billing: 'abonament factura plata locuri seats plan', agency: 'agent agentie echipa invitatie grupuri facebook tema aspect culoare branding sigla',
   profile: 'profil nume telefon avatar poza', domain: 'domeniu site dns', contract: 'contract template sablon document',
 };
 const ignored = new Set(['si', 'sa', 'de', 'in', 'din', 'pentru', 'care', 'cum', 'vreau', 'arata', 'toate', 'mi', 'un', 'o', 'the', 'a']);

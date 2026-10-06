@@ -7,6 +7,8 @@ vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, 
 import { assertCalendarSlot } from '@/lib/crm/calendar';
 import { executeAction } from '../actions';
 import type { AssistantContext } from '../access';
+import { automationSchema } from '../contracts';
+import { runEventRule, type EventRule } from '../event-rules';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -56,5 +58,42 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((results.find(result => result.status === 'rejected') as PromiseRejectedResult).reason).toMatchObject({ status: 409 });
       expect((await agency.collection('assistantExecutions').get()).size).toBe(1);
     } finally { await profile.delete(); }
+  }, 20000);
+  it('deduplicates concurrent event-rule task and notification effects on real transactions', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const startedAt = '2030-01-01T10:00:00.000Z';
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set({ name: 'Emulator client', status: 'Contactat' });
+    await agency.collection('crmEvents').doc('e').set({ source: 'firestore_change', actorId: ctx.uid, capability: 'contacts.updated', occurredAt: '2030-01-01T10:10:00.000Z', recordedAt: '2030-01-01T10:11:00.000Z', entities: { contactId: 'c' } });
+    const rule = automationSchema.parse({ type: 'event_rule', nextRunAt: startedAt, intervalMinutes: 30, maxRuns: 10, trigger: { resource: 'contacts', change: 'updated' }, effects: [{ kind: 'create_task', description: 'Follow-up emulator', dueAfterMinutes: 60 }, { kind: 'notify', title: 'Client actualizat' }] }) as EventRule;
+    const claim = { id: 'r', createdAt: startedAt };
+    try {
+      const results = await Promise.allSettled([1, 2].map(() => runEventRule(ctx, claim, rule, executeAction, async () => {})));
+      expect(results.every(result => result.status === 'fulfilled'), JSON.stringify(results.map(result => result.status === 'rejected' ? result.reason.message : result.value))).toBe(true);
+      await runEventRule(ctx, claim, rule, executeAction, async () => {});
+      expect((await agency.collection('tasks').get()).size).toBe(1);
+      expect((await agency.collection('assistantExecutions').get()).size).toBe(1);
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      expect((await agency.collection('assistantAutomations').doc('r').collection('events').get()).size).toBe(1);
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it('recovers an interrupted rule without repeating its committed task', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const startedAt = '2030-01-02T10:00:00.000Z';
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set({ name: 'Emulator client', status: 'Contactat' });
+    await agency.collection('crmEvents').doc('e').set({ source: 'firestore_change', actorId: ctx.uid, capability: 'contacts.updated', occurredAt: '2030-01-02T10:10:00.000Z', recordedAt: '2030-01-02T10:11:00.000Z', entities: { contactId: 'c' } });
+    const rule = automationSchema.parse({ type: 'event_rule', nextRunAt: startedAt, intervalMinutes: 30, maxRuns: 10, trigger: { resource: 'contacts', change: 'updated' }, effects: [{ kind: 'create_task', description: 'Follow-up emulator', dueAfterMinutes: 60 }, { kind: 'notify', title: 'Client actualizat' }] }) as EventRule;
+    const claim = { id: 'r', createdAt: startedAt };
+    let checks = 0;
+    try {
+      await expect(runEventRule(ctx, claim, rule, executeAction, async () => { if (++checks === 3) throw new Error('Simulated lease loss'); })).rejects.toThrow('Simulated lease loss');
+      expect((await agency.collection('tasks').get()).size).toBe(1);
+      expect((await profile.collection('notifications').get()).size).toBe(0);
+      await runEventRule(ctx, claim, rule, executeAction, async () => {});
+      expect((await agency.collection('tasks').get()).size).toBe(1);
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      expect((await agency.collection('assistantAutomations').doc('r').collection('events').get()).size).toBe(1);
+    } finally { await db.recursiveDelete(profile); }
   }, 20000);
 });
