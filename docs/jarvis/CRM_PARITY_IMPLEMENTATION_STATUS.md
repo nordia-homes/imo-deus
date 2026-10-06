@@ -117,3 +117,8 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Contul Facebook implicit al proprietății este salvat prin executorul comun, cu revizia proprietății. Handler-ul verifică existența contului în aceeași agenție și proprietarul contului; conturile altui agent nu pot fi atribuite nici prin model, nici prin formular. Eliminarea selecției rămâne permisă.
 - Manifestul v2 arată importurile statice ale paginilor pentru a separa componentele vechi nemontate de fluxurile active. Aceasta nu certifică vizibilitatea în runtime sau paritatea semantică.
 - 288 teste AI trecute; cele 6 probe rezervate emulatorului sunt acoperite separat de suitele de reguli și concurență. Eroarea de tip pentru selecția Facebook nullable a fost corectată înainte de publicare.
+
+### Răspunsuri Sales — handler comun și protecție la concurență
+- Marcarea ca citite este disponibilă prin sale_replies_read și folosită și de pagina manuală. Revizia și contorul afișat sunt obligatorii; dacă a sosit un răspuns nou, handler-ul returnează 409 fără a goli contorul. UI arată eroarea.
+- Membrul, agenția și accesul la dosar sunt revalidate în tranzacție; actualizarea și auditul sunt atomice. Repetarea după marcarea ca citite este no-op, fără audit duplicat. Nu confirmă livrarea unui email.
+- 293 teste AI trecute, dintre care 5 noi pentru aceste cazuri; typecheck și manifest trecute. Catalog: 172 handler-e, fără inferență de paritate completă. Versiunea prompt/tool crește la 12 pentru trasabilitatea contractelor noi.

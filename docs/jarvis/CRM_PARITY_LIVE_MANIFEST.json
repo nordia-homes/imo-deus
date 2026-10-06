@@ -402,6 +402,16 @@
       "verification": "registered_handler_not_provider_certification"
     },
     {
+      "id": "sale_replies_read",
+      "method": "POST",
+      "path": "/api/sales/{saleId}/read",
+      "handler": "src/app/api/sales/[saleId]/read/route.ts",
+      "description": "Marchează răspunsurile dosarului ca citite. Citește mai întâi dosarul și mesajele; trimite expectedUpdatedAt și observedUnreadCount din snapshot. Nu confirmă trimitere sau livrare. Conflictele cer recitire.",
+      "readOnly": false,
+      "externallySensitive": false,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
       "id": "sale_stage",
       "method": "POST",
       "path": "/api/sales/{saleId}/stage",
@@ -2224,9 +2234,9 @@
           "sharedExecutor": true
         },
         {
-          "call": "updateDoc",
-          "line": 456,
-          "sharedExecutor": false
+          "call": "executeCrmAction",
+          "line": 457,
+          "sharedExecutor": true
         }
       ],
       "reachability": {

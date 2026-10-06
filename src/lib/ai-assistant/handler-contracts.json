@@ -505,6 +505,13 @@
     ],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
   },
+  "sale_replies_read": {
+    "method": "POST",
+    "validation": "readSchema = z.object({ expectedUpdatedAt: z.string().datetime().nullable(), observedUnreadCount: z.number().int().nonnegative() }).strict()",
+    "bodyFields": [],
+    "queryFields": [],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
   "sale_stage": {
     "method": "POST",
     "validation": "stageSchema = z.object({\n  stage: z.enum(['preparing', 'reservation', 'precontract', 'contract', 'completed', 'blocked', 'cancelled']),\n})",

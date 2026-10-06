@@ -3,7 +3,7 @@ import { executeCrmAction } from '@/lib/crm/client-actions';
 
 import { useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, doc, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import {
   AlertTriangle,
   ArrowRight,
@@ -453,7 +453,11 @@ export default function SalesManagementPage() {
       const workspaceSale = normalizeSaleForWorkspace(sale);
       setInitialPanel(panel);
       setSelectedSale(workspaceSale);
-      if (workspaceSale.unreadReplyCount && agencyId) void updateDoc(doc(firestore, 'agencies', agencyId, 'sales', workspaceSale.id), { unreadReplyCount: 0, updatedAt: new Date().toISOString() });
+      if (workspaceSale.unreadReplyCount && user) {
+        void executeCrmAction(user, { kind: 'existing_operation', operation: 'sale_replies_read', params: { saleId: workspaceSale.id }, query: {}, body: { expectedUpdatedAt: workspaceSale.updatedAt || null, observedUnreadCount: workspaceSale.unreadReplyCount } }).catch(error => {
+          toast({ title: 'Răspunsurile nu au fost marcate ca citite', description: error instanceof Error ? error.message : 'Reîncarcă dosarul.', variant: 'destructive' });
+        });
+      }
     } catch (error) {
       console.error('Sales dossier could not be opened', error);
       toast({ title: 'Dosarul nu a putut fi deschis', description: 'Datele dosarului au un format neașteptat.', variant: 'destructive' });
