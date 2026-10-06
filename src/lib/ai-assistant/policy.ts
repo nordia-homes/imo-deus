@@ -4,7 +4,7 @@ import { actionSchema } from './contracts';
 import { skills } from './skills';
 export function buildInstructions(ctx: AssistantContext, dynamic: { readiness: unknown; memory: unknown; allowedTools?: string[]; summary?: unknown }) {
   const { allowedTools: _available, ...runtimeContext } = dynamic;
-  const memoryTimezone = Array.isArray(dynamic.memory) ? dynamic.memory.find(row => row.key === 'timezone')?.value : undefined;
+  const memoryTimezone = Array.isArray(dynamic.memory) ? dynamic.memory.find(row => row.key === 'preferred_timezone')?.value : undefined;
   const timezone = typeof memoryTimezone === 'string' ? memoryTimezone : 'Europe/Bucharest';
   const capabilities = Object.entries(coreToolSchemas).filter(([name]) => !dynamic.allowedTools || dynamic.allowedTools.includes(name)).map(([name, [, , description]]) => ({ name, description }));
   return [
