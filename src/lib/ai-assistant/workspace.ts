@@ -19,6 +19,7 @@ import { failureCategory } from './failure';
 import { bindCalendarRevisions } from './calendar-revisions';
 import { bindAgencyRevisions } from './agency-revisions';
 import { bindBusinessRevisions } from './business-revisions';
+import { continuePlanRevision } from './plan-revisions';
 
 export async function requireSession(ctx: AssistantContext, id: string) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(id);
@@ -179,7 +180,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       // Recheck current membership at every step, including existing domain handlers.
       const member = await ctx.adminDb.collection('users').doc(ctx.uid).get();
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Permisiunile s-au schimbat. Planul a fost oprit.', 403);
-      const resolved = resolveAction(action, results);
+      const resolved = continuePlanRevision(resolveAction(action, results), results);
       const result = await executeAction(ctx, resolved, `${id}-${index}`);
       accessRefs.push(...actionReferences([resolved]));
       if (typeof result?.conversationId === 'string') accessRefs.push({ resource: 'conversations', id: result.conversationId });

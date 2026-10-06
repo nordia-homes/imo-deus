@@ -254,7 +254,8 @@ try {
     } else if (url.pathname.endsWith("owner-consent")) {
       assert.equal(body.confirmedPhoneConsent, true);
       result = { conversationId: "owner-chat" };
-    } else if (r.method() === "GET" && url.searchParams.has("planId"))
+    } else if (url.pathname.endsWith('/plan-outcomes')) result = { planId, executionStatus: plan.status, rows: [{ step: 1, title: 'Pasul 1', executionState: 'succeeded', evidenceSource: 'atomic_crm_transaction' }], pollAfterMs: null, checkedAt: new Date().toISOString(), note: 'Rezultat CRM confirmat.' };
+    else if (r.method() === "GET" && url.searchParams.has("planId"))
       result = { plan };
     else if (r.method() === "GET" && url.searchParams.has("sessionId"))
       result = { messages: [], nextCursor: null };

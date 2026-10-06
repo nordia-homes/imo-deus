@@ -21,6 +21,13 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
       let current: Record<string, any> | undefined;
       const read = (operation: string, params: Record<string, string>) => invokeOperation(ctx, { operation, params, query: {}, body: {} }, true);
       if (action.operation === 'video_create' && id(original.jobId)) current = await read('video_job', { propertyId: action.params.propertyId, jobId: original.jobId });
+      else if (action.operation === 'tiktok_studio_render' && id(original.jobId) && id(action.params.projectId)) {
+        const project = await getResource(ctx, 'tiktokStudioProjects', action.params.projectId);
+        const job = await ctx.adminDb.collection('tiktokStudioJobs').doc(original.jobId).get();
+        const row = job.data();
+        if (project.ownerUid !== ctx.uid || !row || row.agencyId !== ctx.agencyId || row.uid !== ctx.uid || row.projectId !== action.params.projectId || row.kind !== 'render') throw new CommunicationError('Randarea nu mai este accesibilă.', 403);
+        current = operationResult(action.operation, { status: row.status }, true);
+      }
       else if (action.operation.startsWith('tiktok_ads_') && id(original.operation?.id || original.operationId)) current = await read('tiktok_ads_operation_status', { operationId: original.operation?.id || original.operationId });
       else if (action.operation === 'tiktok_post_publish') current = await read('tiktok_post_status', { draftId: action.params.draftId });
       else if (action.operation === 'outreach_start' && id(original.callId)) current = operationResult(action.operation, { call: await getResource(ctx, 'aiOutreachCalls', original.callId) }, true);
@@ -33,12 +40,15 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         await getResource(ctx, 'conversations', action.params.conversationId);
       }
       if (!current) return { ...base, evidenceSource: 'execution_receipt', note: 'Starea inițială a handlerului. Verificarea curentă se face în modulul dedicat; efectul extern nu se repetă.' };
-      return { ...base, executionState: current.executionState, businessStatus: current.businessStatus || null, verifiedAt: current.verifiedAt, evidenceSource: 'current_domain_state', note: current.note || null };
+      return { ...base, executionState: current.executionState, businessStatus: current.businessStatus || null, verifiedAt: current.verifiedAt, evidenceSource: 'current_domain_state', watchable: true, note: current.note || null };
     } catch (error) {
       if ((error as { status?: number }).status === 403 || (error as { status?: number }).status === 404) return { step: step.step, title: `Pasul ${step.step}`, executionState: 'unavailable', note: 'Rezultatul nu mai este accesibil.' };
       return { ...base, executionState: 'unknown', note: 'Citirea stării curente a eșuat. Acțiunea nu a fost retrimisă.' };
     }
   }));
   if (!(await referencesAllowed(ctx, (plan as any).accessRefs || []))) throw new CommunicationError('Accesul la plan a fost revocat.', 403);
-  return { planId, executionStatus: plan.status, rows, checkedAt: new Date().toISOString(), note: 'Starea execuției planului și rezultatele de business sunt verificate separat. Starea CRM nu înlocuiește un receipt extern.' };
+  const finalMember = await ctx.adminDb.collection('users').doc(ctx.uid).get();
+  if (finalMember.data()?.agencyId !== ctx.agencyId || finalMember.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
+  const awaiting = rows.some(row => 'watchable' in row && row.watchable && (['queued', 'running', 'unknown', 'observed', 'accepted_unverified'].includes(row.executionState) || row.businessStatus === 'sent'));
+  return { planId, executionStatus: plan.status, rows, pollAfterMs: awaiting ? 15000 : null, checkedAt: new Date().toISOString(), note: 'Starea execuției planului și rezultatele de business sunt verificate separat. Starea CRM nu înlocuiește un receipt extern.' };
 }

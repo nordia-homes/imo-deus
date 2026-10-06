@@ -37,7 +37,7 @@ try {
   const planId = 'fdaf7ed4-6102-4227-a969-47c1317654e8';
   const action = { kind: 'schedule_viewing', contactId: 'contact', propertyId: 'property', viewingDate: '2027-01-01T12:00:00+02:00', duration: 60, notes: '' };
   const pendingPlan = { id: planId, actions: [action], status: 'pending', risks: ['SAFE_WRITE'], externalCostNote: 'Costul canalului trebuie verificat înainte de confirmare.' };
-  let background = false, autonomyEnabled = false;
+  let background = false, autonomyEnabled = false, outcomeReads = 0, outcomeDenied = false;
   const message = (text, cards = [], extra = {}) => ({ id: crypto.randomUUID(), role: 'assistant', text, cards, createdAt: new Date().toISOString(), ...extra });
   await page.route('**/api/**', async route => {
     const request = route.request();
@@ -49,7 +49,7 @@ try {
     else if (url.pathname.endsWith('/gmail-session')) result = { session: { jobId: 'gmail-job', saleId: 'sale', messageRecordId: 'email', trackingCode: 'IMO', to: ['owner@example.com'], cc: [], subject: 'Ofertă', bodyText: 'Textul verificat', attachments: [] } };
     else if (url.pathname.endsWith('/send-evidence')) { assert.equal(body.level, 'ui_observed'); result = { ok: true }; }
     else if (body?.kind === 'read' && ['contacts', 'conversations'].includes(body.query.resource)) result = { rows: body.query.resource === 'contacts' ? [{ id: 'client', name: 'Maria Popescu' }] : [{ id: 'conversation', contactName: 'Proprietar', channel: 'whatsapp' }], nextCursor: null, complete: true };
-    else if (url.pathname.endsWith('/plan-outcomes')) result = { executionStatus: 'completed', rows: [{ step: 1, title: 'Pasul 1', executionState: 'queued', businessStatus: 'queued', note: 'Cererea a fost acceptată; livrarea încă nu este confirmată.' }], note: 'Starea executorului este separată de rezultatul extern.' };
+    else if (url.pathname.endsWith('/plan-outcomes')) { outcomeReads++; if (outcomeDenied) { await route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Acces revocat.' }) }); return; } const terminal = outcomeReads >= 3; result = { planId, executionStatus: 'completed', pollAfterMs: terminal ? null : 15000, checkedAt: new Date().toISOString(), rows: [{ step: 1, title: 'Pasul 1', executionState: terminal ? 'succeeded' : 'queued', businessStatus: terminal ? 'delivered' : 'queued', note: 'Starea curentă este citită fără retrimitere.' }], note: 'Starea executorului este separată de rezultatul extern.' }; }
     else if (request.method() === 'GET' && url.searchParams.has('planId')) result = { plan: pendingPlan };
     else if (request.method() === 'GET' && url.searchParams.has('jobId')) {
       if (url.searchParams.get('stream') === '1') {
@@ -78,6 +78,7 @@ try {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
+  await page.clock.install();
   await page.getByRole('heading', { name: 'AI Assistant', exact: true }).waitFor();
   await page.getByLabel('Comandă pentru AI Assistant').fill('Programează o vizionare.');
   await page.getByRole('button', { name: 'Trimite comanda' }).click();
@@ -87,8 +88,22 @@ try {
   assert.equal(requests.filter(r => r.body?.kind === 'execute').length, 0, 'Planning must not mutate the CRM');
   await page.getByRole('button', { name: 'Execută planul' }).click();
   await page.getByText('Stare: finalizat', { exact: true }).waitFor();
+  await page.getByText('În coadă · queued', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Verifică rezultatele actuale', exact: true }).click();
   await page.getByText('În coadă · queued', { exact: true }).waitFor();
+  await page.clock.runFor(16000);
+  await page.getByText('Finalizat · delivered', { exact: true }).waitFor();
+  const terminalReads = outcomeReads;
+  await page.clock.runFor(45000);
+  assert.equal(outcomeReads, terminalReads, 'Terminal evidence stops automatic tracking');
+  outcomeDenied = true;
+  await page.getByRole('button', { name: 'Verifică rezultatele actuale', exact: true }).click();
+  await page.getByText('Rezultatul nu mai este accesibil.', { exact: true }).waitFor();
+  assert.equal(await page.getByText('Finalizat · delivered', { exact: true }).count(), 0, 'Revoked evidence is removed from the visible card');
+  const deniedReads = outcomeReads;
+  await page.clock.runFor(45000);
+  assert.equal(outcomeReads, deniedReads, 'Revocation stops automatic tracking');
+  outcomeDenied = false;
   assert.equal(requests.filter(r => r.body?.kind === 'execute').length, 1, 'Inspecting current outcomes must not replay the plan');
   await page.getByRole('button', { name: 'Deschide în Gmail', exact: true }).click();
   await page.getByText('Email pregătit în Gmail; așteaptă trimiterea.', { exact: true }).waitFor();

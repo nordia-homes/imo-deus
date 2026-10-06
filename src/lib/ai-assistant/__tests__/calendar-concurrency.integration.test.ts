@@ -6,6 +6,7 @@ vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extend
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
 import { assertCalendarSlot } from '@/lib/crm/calendar';
 import { executeAction } from '../actions';
+import { continuePlanRevision } from '../plan-revisions';
 import type { AssistantContext } from '../access';
 import { automationSchema } from '../contracts';
 import { runEventRule, type EventRule } from '../event-rules';
@@ -57,6 +58,13 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect(results.filter(result => result.status === 'fulfilled'), JSON.stringify(results.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(1);
       expect((results.find(result => result.status === 'rejected') as PromiseRejectedResult).reason).toMatchObject({ status: 409 });
       expect((await agency.collection('assistantExecutions').get()).size).toBe(1);
+      const winner = results.find(result => result.status === 'fulfilled') as PromiseFulfilledResult<any>;
+      const deletion = continuePlanRevision({ kind: 'delete_task', taskId: 't', expectedUpdatedAt: revision }, [{ step: 1, result: winner.value }]);
+      const deleted = await executeAction(ctx, deletion, 'delete-after-edit');
+      expect(deleted).toMatchObject({ deleted: true });
+      expect(deleted).not.toHaveProperty('mutationRevision');
+      expect((await agency.collection('tasks').doc('t').get()).exists).toBe(false);
+      expect((await agency.collection('assistantExecutions').get()).size).toBe(2);
     } finally { await profile.delete(); }
   }, 20000);
   it('commits only one concurrent contact/preferences edit from the same approved snapshot', async () => {
@@ -75,6 +83,28 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       const saved = (await agency.collection('contacts').doc('c').get()).data()!;
       if (saved.name === 'Actualizat') expect(saved.preferences).toMatchObject({ desiredRooms: 2, desiredPriceRangeMax: 130000 });
       else expect(saved).toMatchObject({ name: 'Original', preferences: { desiredRooms: 3, desiredPriceRangeMax: 120000 } });
+    } finally { await profile.delete(); }
+  }, 20000);
+  it('chains committed contact edits, preserves idempotency and refuses an intervening manual edit', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const revision = '2020-01-01T10:00:00Z';
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Emulator agent' });
+    const contact = agency.collection('contacts').doc('c');
+    await contact.set({ name: 'Original', updatedAt: revision, preferences: { desiredRooms: 2 } });
+    try {
+      const first = await executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: revision, patch: { name: 'Plan edit' } }, 'plan-first');
+      const previous = [{ step: 1, result: first }];
+      const second = continuePlanRevision({ kind: 'update_preferences', contactId: 'c', expectedUpdatedAt: revision, preferences: { desiredRooms: 3 } }, previous);
+      const result = await executeAction(ctx, second, 'plan-second');
+      expect(await executeAction(ctx, second, 'plan-second')).toEqual(result);
+      expect((await contact.get()).data()).toMatchObject({ name: 'Plan edit', preferences: { desiredRooms: 3 } });
+      expect((await agency.collection('assistantExecutions').get()).size).toBe(2);
+      const third = continuePlanRevision({ kind: 'archive_contact', contactId: 'c', expectedUpdatedAt: revision, archived: true }, [...previous, { step: 2, result }]);
+      await contact.update({ name: 'Manual intervening edit', updatedAt: '2030-01-01T10:00:00Z' });
+      await expect(executeAction(ctx, third, 'plan-third')).rejects.toMatchObject({ status: 409 });
+      expect((await agency.collection('assistantExecutions').get()).size).toBe(2);
+      expect((await contact.get()).data()?.archivedAt).toBeUndefined();
+      expect((await contact.get()).data()?.name).toBe('Manual intervening edit');
     } finally { await profile.delete(); }
   }, 20000);
   it('deduplicates concurrent event-rule task and notification effects on real transactions', async () => {

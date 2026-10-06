@@ -12,6 +12,25 @@ it('reads current video status without rerunning a completed plan or replacing i
   expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ executionStatus: 'completed', rows: [{ step: 1, executionState: 'failed', evidenceSource: 'current_domain_state' }] });
   expect(mocks.invoke).toHaveBeenCalledExactlyOnceWith(ctx, { operation: 'video_job', params: { propertyId: 'p', jobId: 'j' }, query: {}, body: {} }, true);
 });
+it('tracks pending results but stops polling terminal evidence and unsupported refreshes', async () => {
+  mocks.invoke.mockResolvedValueOnce({ executionState: 'queued', businessStatus: 'queued' }).mockResolvedValueOnce({ executionState: 'succeeded', businessStatus: 'completed' });
+  expect((await readPlanOutcomes(ctx, 'plan')).pollAfterMs).toBe(15000);
+  expect((await readPlanOutcomes(ctx, 'plan')).pollAfterMs).toBeNull();
+  mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'message_send' }], results: [{ step: 1, result: { executionState: 'queued' } }] } });
+  expect((await readPlanOutcomes(ctx, 'plan')).pollAfterMs).toBeNull();
+});
+it('reads the exact authorized Studio render job and refuses another owner or project', async () => {
+  mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'tiktok_studio_render', params: { projectId: 'project' } }], results: [{ step: 1, result: { jobId: 'job' } }] } });
+  mocks.resource.mockResolvedValue({ ownerUid: 'u' });
+  const job: any = { kind: 'render', uid: 'u', agencyId: 'a', projectId: 'project', status: 'completed' };
+  const studioCtx = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => job }) }) } } };
+  expect(await readPlanOutcomes(studioCtx, 'plan')).toMatchObject({ pollAfterMs: null, rows: [{ executionState: 'succeeded', businessStatus: 'completed' }] });
+  job.uid = 'other';
+  expect((await readPlanOutcomes(studioCtx, 'plan')).rows[0].executionState).toBe('unavailable');
+  job.uid = 'u'; job.projectId = 'other';
+  expect((await readPlanOutcomes(studioCtx, 'plan')).rows[0].executionState).toBe('unavailable');
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
 it('uses current evidence for an uncertain stopped step and never republishes it', async () => {
   mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'tiktok_post_publish', params: { draftId: 'd' } }], status: 'unknown', results: [], stoppedStep: { step: 1, result: { executionState: 'unknown' } } } });
   mocks.invoke.mockResolvedValue({ executionState: 'succeeded', businessStatus: 'published' });

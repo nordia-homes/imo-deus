@@ -26,6 +26,7 @@ import { matchingRevision } from './matching-revision';
 import { assertCalendarSlot } from '@/lib/crm/calendar';
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/lib/notifications/types';
 import { saleEmailContentHash } from '@/lib/crm/sale-email-hash';
+import { revisionTarget } from './plan-revisions';
 
 export async function matchContact(ctx: AssistantContext, contactId: string, limit: number) {
   const contact = await getResource(ctx, 'contacts', contactId);
@@ -76,7 +77,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       throw error;
     }
   }
-  const now = new Date().toISOString();
+  const clock = new Date().toISOString();
+  const now = 'expectedUpdatedAt' in action && action.expectedUpdatedAt === clock ? new Date(Date.parse(clock) + 1).toISOString() : clock;
   return ctx.adminDb.runTransaction(async tx => {
     await assertAutomationFence(ctx.adminDb, tx, ctx);
     const prior = await tx.get(ledger);
@@ -94,6 +96,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       return doc.data()!;
     };
     let result: Record<string, unknown>;
+    let revisionAdvanced = true;
     const validateFacebookConnection = async (connectionId?: string | null) => {
       if (!connectionId) return;
       const connection = await tx.get(collectionFor(ctx, 'facebookCloudConnections').doc(connectionId));
@@ -332,6 +335,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         if (oldRef && previous?.exists) tx.delete(oldRef);
         tx.update(collectionFor(ctx, 'contacts').doc(action.contactId), { portalId: null, recommendationHistory: {}, updatedAt: now });
       } else if (action.action === 'activate' && previous?.exists) {
+        revisionAdvanced = false;
         result = { portalId: oldId, link: `/portal/${oldId}` };
       } else {
         if (oldRef && previous?.exists) tx.delete(oldRef);
@@ -574,6 +578,11 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       tx.create(collectionFor(ctx, 'assistantAutomations').doc(action.automationId).collection('audit').doc(key), { id: key, actorId: ctx.uid, occurredAt: now, action: 'updated', previous: { status: record.status, automation: record.automation }, changes: patch });
       result = { automationId: action.automationId, status: action.status || record.status, nextRunAt: action.automation?.nextRunAt || record.nextRunAt };
     } else throw new CommunicationError('Acțiune necunoscută.');
+    const target = revisionTarget(action);
+    const targetDeleted = action.kind === 'delete_task' || action.kind === 'delete_viewing' || action.kind === 'contract_template_action' && action.action === 'delete';
+    if (revisionAdvanced && !targetDeleted && target && 'expectedUpdatedAt' in action && action.expectedUpdatedAt !== undefined) {
+      result = { ...result, mutationRevision: { ...target, before: action.expectedUpdatedAt, after: now } };
+    }
     tx.create(collectionFor(ctx, 'crmEvents').doc(key), { id: key, actorId: ctx.uid, agencyId: ctx.agencyId,
       source: key.startsWith('manual-') ? 'manual' : 'ai_assistant', capability: action.kind,
       occurredAt: now, recordedAt: now, result: safeData(result),

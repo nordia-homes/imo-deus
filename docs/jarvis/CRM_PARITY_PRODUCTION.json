@@ -1,11 +1,16 @@
 {
-  "verifiedAt": "2026-10-06T12:43:33.729Z",
+  "authSyncScheduler": {
+    "state": "ENABLED",
+    "schedule": "every 5 minutes",
+    "lastAttemptTime": "2026-10-06T15:40:04.468403Z"
+  },
+  "verifiedAt": "2026-10-06T15:43:07.240Z",
   "project": "studio-652232171-42fb6",
   "builds": [
     {
-      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-24",
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-06-parity-26",
       "state": "READY",
-      "commit": "e6d9b08f445ae09ae9960de7ea528b90c5b7bcdc",
+      "commit": "78c4332a6130da3b10284db199e26f47253852b1",
       "percent": 100
     }
   ],
@@ -45,6 +50,10 @@
       "state": "ACTIVE"
     },
     {
+      "name": "jarvisAuthProfileSync",
+      "state": "ACTIVE"
+    },
+    {
       "name": "jarvisUploadRetention",
       "state": "ACTIVE"
     },
@@ -64,14 +73,21 @@
   "scheduler": {
     "state": "ENABLED",
     "schedule": "every 5 minutes",
-    "lastAttemptTime": "2026-10-06T12:42:02.737849Z"
+    "lastAttemptTime": "2026-10-06T15:42:02.050238Z"
   },
   "heartbeat": {
-    "lastSuccessAt": "2026-10-06T12:42:03.003Z",
+    "lastSuccessAt": "2026-10-06T15:42:02.308Z",
     "lastError": null
   },
   "indexStates": {
     "READY": 72
   },
-  "outboundTestMessagesSent": 0
+  "outboundTestMessagesSent": 0,
+  "readOnlyCommandChecks": {
+    "observedOn": "2026-10-06",
+    "method": "Authenticated incident actor; commands queued sequentially and processed by the existing scheduler; result diagnostics read without personal data",
+    "portfolio": { "jobStatus": "completed", "telemetryStatus": "success", "outputType": "TEXT", "textPresent": true, "cardSources": ["properties", "properties"], "error": null, "planPrepared": false },
+    "owners": { "jobStatus": "completed", "telemetryStatus": "success", "outputType": "TEXT", "textPresent": true, "cardSources": ["owners"], "resultCount": 5, "error": null, "planPrepared": false },
+    "report": { "jobStatus": "completed", "telemetryStatus": "success", "outputType": "TEXT", "textPresent": true, "cardSources": ["crm_report"], "error": null, "planPrepared": false }
+  }
 }

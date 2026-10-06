@@ -44,11 +44,13 @@ export async function applyPropertyAsset(ctx: AssistantContext, uploadId: string
     if (!property.exists) throw new CommunicationError('Proprietatea nu mai există.', 404);
     if (previous.exists) return previous.data()?.result;
     if (destination === 'property_rlv' && (property.data()?.updatedAt || null) !== revision) throw new CommunicationError('Proprietatea s-a modificat. Reîncarcă înainte de înlocuirea releveului.', 409);
-    const now = new Date().toISOString();
+    const before = property.data()?.updatedAt || null;
+    const clock = new Date().toISOString();
+    const now = clock === before ? new Date(Date.parse(clock) + 1).toISOString() : clock;
     const images = Array.isArray(property.data()?.images) ? property.data()!.images : [];
     if (destination === 'property_image' && images.length >= 40) throw new CommunicationError('Proprietatea are deja 40 de imagini.');
     tx.update(propertyRef, destination === 'property_image' ? { images: [...images, { url, alt: upload.name }], updatedAt: now } : { rlvUrl: url, rlvFileType: mime, updatedAt: now });
-    const result = { propertyId, uploadId, status: 'attached', imageUrl: image ? url : null, link: `/properties/${propertyId}`, note: destination === 'property_image' ? 'Imagine salvată în galeria proprietății.' : 'Releveu salvat pe proprietate.' };
+    const result = { propertyId, uploadId, status: 'attached', mutationRevision: { resource: 'properties', id: propertyId, before, after: now }, imageUrl: image ? url : null, link: `/properties/${propertyId}`, note: destination === 'property_image' ? 'Imagine salvată în galeria proprietății.' : 'Releveu salvat pe proprietate.' };
     tx.create(ledger, { actorId: ctx.uid, operation: destination, status: 'completed', result, completedAt: now });
     tx.create(collectionFor(ctx, 'crmEvents').doc(key), { id: key, actorId: ctx.uid, agencyId: ctx.agencyId, source: 'file_apply', capability: destination, occurredAt: now, recordedAt: now, entities: { propertyId }, result: { propertyId, uploadId, status: 'attached' } });
     return result;

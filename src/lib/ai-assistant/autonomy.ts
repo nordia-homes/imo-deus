@@ -2,6 +2,7 @@ import { collectionFor, type AssistantContext } from './access';
 import { actionSchema, normalized, type AssistantAction } from './contracts';
 import { executeAction } from './actions';
 import { resolveAction } from './dependencies';
+import { continuePlanRevision } from './plan-revisions';
 import { featureFlags } from './skills';
 const SAFE_KINDS = new Set(['create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
 export function safeAutonomousAction(action: AssistantAction) {
@@ -45,11 +46,11 @@ export async function executeSafePrefix(ctx: AssistantContext, requestId: string
       if (!safeAutonomousAction(action) || !explicitlyRequestedSafeAction(action, prompt)) break;
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');
-      const resolved = resolveAction(action, results);
+      const resolved = continuePlanRevision(resolveAction(action, results), results);
       const result = await executeAction(ctx, resolved, `${requestId}-safe-${results.length}`);
       results.push({ step: results.length + 1, kind: action.kind, result });
     }
-    return { actions: actions.slice(results.length).map(action => actionSchema.parse(remapReferences(action, results))), results, blocked: false };
+    return { actions: actions.slice(results.length).map(action => continuePlanRevision(actionSchema.parse(remapReferences(action, results)), results)), results, blocked: false };
   } catch {
     // An ambiguous outcome cannot become a new manual plan with a different key.
     return { actions: [] as AssistantAction[], results, blocked: true };

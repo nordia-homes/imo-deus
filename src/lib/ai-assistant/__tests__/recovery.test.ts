@@ -53,6 +53,21 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it('continues the approved revision from persisted receipts after a checkpoint', async () => {
+    const { ctx, plan } = executionFixture();
+    const revision = '2026-10-06T10:00:00Z', next = '2026-10-06T10:01:00Z';
+    plan.actions = [
+      { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: revision, patch: { name: 'Client' } },
+      { kind: 'update_preferences', contactId: 'c', expectedUpdatedAt: revision, preferences: { desiredRooms: 3 } },
+    ];
+    plan.approval = approvalEnvelope('u', 'a', 'p', plan.actions, plan.expiresAt);
+    vi.mocked(executeAction).mockResolvedValueOnce({ mutationRevision: { resource: 'contacts', id: 'c', before: revision, after: next } }).mockResolvedValueOnce({ contactId: 'c' });
+    expect((await runPlan(ctx, 'p', false, 1)).status).toBe('pending');
+    expect((await runPlan(ctx, 'p', false, 1)).status).toBe('completed');
+    expect(vi.mocked(executeAction).mock.calls[1][1]).toMatchObject({ expectedUpdatedAt: next, preferences: { desiredRooms: 3 } });
+    expect(plan.actions[1].expectedUpdatedAt).toBe(revision);
+    expect(vi.mocked(executeAction).mock.calls.map(call => call[2])).toEqual(['p-0', 'p-1']);
+  });
   it('resumes the next step after a checkpoint without replaying confirmed steps', async () => {
     const { ctx, plan } = executionFixture();
     vi.mocked(executeAction).mockImplementation(async (_ctx, _action, key) => ({ taskId: key }));

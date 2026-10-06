@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { AssistantPlan } from '@/lib/ai-assistant/contracts';
+import { usePlanOutcomes } from './usePlanOutcomes';
 
 export function AssistantExecutionControls({ plan, user, onPlan, onResume, onError, resumeDisabled }: {
   plan: AssistantPlan; user: { getIdToken(): Promise<string> } | null;
@@ -9,18 +10,7 @@ export function AssistantExecutionControls({ plan, user, onPlan, onResume, onErr
   resumeDisabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
-  const [outcomes, setOutcomes] = useState<any>(null);
-  async function inspectOutcomes() {
-    if (!user || busy) return;
-    setBusy(true);
-    try {
-      const response = await fetch('/api/ai-assistant/plan-outcomes?planId=' + encodeURIComponent(plan.id), { headers: { Authorization: `Bearer ${await user.getIdToken()}` }, cache: 'no-store' });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Rezultatul nu a fost verificat.');
-      setOutcomes(result);
-    } catch (error) { onError(error instanceof Error ? error.message : 'Rezultatul nu a fost verificat.'); }
-    finally { setBusy(false); }
-  }
+  const { outcomes, refreshing, watching, error: outcomeError, refresh } = usePlanOutcomes(plan.id, !!plan.results?.length || !!plan.stoppedStep, (plan.results?.length || 0) + (plan.stoppedStep ? 1 : 0), user);
   async function control(kind: 'pause' | 'resume' | 'cancel') {
     if (!user || busy) return;
     setBusy(true);
@@ -41,9 +31,11 @@ export function AssistantExecutionControls({ plan, user, onPlan, onResume, onErr
     <div className="flex flex-wrap gap-2">
       {controllable && <><Button type="button" size="sm" variant="outline" disabled={busy || (plan.status === 'paused' && resumeDisabled)} onClick={() => control(plan.status === 'paused' ? 'resume' : 'pause')}>{plan.status === 'paused' ? 'Reia planul' : 'Pune în pauză'}</Button>
       <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => control('cancel')}>Oprește pașii rămași</Button></>}
-      {(!!plan.results?.length || !!plan.stoppedStep) && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={inspectOutcomes}>Verifică rezultatele actuale</Button>}
+      {(!!plan.results?.length || !!plan.stoppedStep) && <Button type="button" size="sm" variant="outline" disabled={busy || refreshing} onClick={() => void refresh()}>Verifică rezultatele actuale</Button>}
     </div>
     {outcomes && <div className="grid gap-2" aria-live="polite">{outcomes.rows.map((row: any) => <div key={row.step} className="rounded-xl border bg-background p-3 text-sm"><strong>{row.title}</strong><p>{({ queued: 'În coadă', running: 'În procesare', succeeded: 'Finalizat', failed: 'Eșuat', cancelled: 'Anulat', draft: 'Pregătit', unknown: 'Rezultat incert', unavailable: 'Indisponibil', accepted_unverified: 'Acceptat, de verificat', observed: 'Stare observată' } as Record<string, string>)[row.executionState] || row.executionState}{row.businessStatus ? ` · ${row.businessStatus}` : ''}</p>{row.note && <p className="text-xs text-muted-foreground">{row.note}</p>}</div>)}<p className="text-xs text-muted-foreground">{outcomes.note}</p></div>}
+    {outcomes?.checkedAt && <p className="text-xs text-muted-foreground">Verificat la {new Date(outcomes.checkedAt).toLocaleTimeString('ro-RO')}{watching ? ' · Urmărire automată cât timp pagina este vizibilă' : ''}</p>}
+    {outcomeError && <p role="status" className="text-xs text-amber-700">{outcomeError}</p>}
     {plan.status === 'running' && <p className="text-xs text-muted-foreground">Pauza sau oprirea se aplică după pasul deja pornit.</p>}
   </div>;
 }

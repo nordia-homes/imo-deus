@@ -17,6 +17,7 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
   const key = String(state || '').toLowerCase();
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };
   result.executionState = Object.entries(groups).find(([, values]) => values.includes(key))?.[0] || (readOnly ? 'observed' : 'accepted_unverified');
+  if (operation === 'file_apply' && key === 'attached' && result.mutationRevision?.resource === 'properties') result.executionState = 'succeeded';
   if (result.call?.providerErrorCode === 'vapi_create_unknown') {
     result.executionState = 'unknown';
     result.note = 'Rezultatul lansării apelului este incert. Verifică furnizorul; apelul nu trebuie retrimis automat.';

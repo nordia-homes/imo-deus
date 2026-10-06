@@ -29,6 +29,8 @@ describe.skipIf(!host)('floor-plan replacement on actual Firestore transactions'
     const agency = db.collection('agencies').doc(id);
     expect((await agency.collection('assistantExecutions').get()).size).toBe(1);
     const winner = results.find(result => result.status === 'fulfilled') as PromiseFulfilledResult<any>;
+    expect(winner.value.mutationRevision).toMatchObject({ resource: 'properties', id: 'p', before: revision });
+    expect(winner.value.mutationRevision.after).toBe((await agency.collection('properties').doc('p').get()).data()?.updatedAt);
     expect((await agency.collection('properties').doc('p').get()).data()?.rlvUrl).toBe(winner.value.imageUrl);
     expect(await applyPropertyAsset(ctx, winner.value.uploadId, 'p', 'property_rlv', { mimeType: 'image/png', name: 'plan.png' }, bytes, revision)).toEqual(winner.value);
   }, 20000);

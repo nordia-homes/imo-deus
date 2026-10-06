@@ -27,6 +27,10 @@ describe('confirmed domain result binding', () => {
     const action = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_post_publish', params: { draftId: '@step:1:draftId' }, body: {}, query: {} });
     expect(resolveAction(action, [{ result: operationResult('tiktok_post_draft', { draft: { id: 'draft' } }) }])).toMatchObject({ params: { draftId: 'draft' } });
   });
+  it('reports a committed property attachment without treating arbitrary acceptance as success', () => {
+    expect(operationResult('file_apply', { status: 'attached', mutationRevision: { resource: 'properties', id: 'p', before: null, after: 'now' } })).toMatchObject({ executionState: 'succeeded', businessStatus: 'attached' });
+    expect(operationResult('file_apply', { status: 'attached' }).executionState).toBe('accepted_unverified');
+  });
   it('binds the already generated script to a video job, without another model choice', () => {
     const action = actionSchema.parse({ kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: { aiPresenterScript: '@step:1:script' } });
     expect(resolveAction(action, [{ result: { script: 'Scenariul confirmat.' } }])).toMatchObject({ body: { aiPresenterScript: 'Scenariul confirmat.' } });
