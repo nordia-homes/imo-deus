@@ -59,6 +59,24 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await agency.collection('assistantExecutions').get()).size).toBe(1);
     } finally { await profile.delete(); }
   }, 20000);
+  it('commits only one concurrent contact/preferences edit from the same approved snapshot', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const revision = '2020-01-01T10:00:00Z';
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Emulator agent' });
+    await agency.collection('contacts').doc('c').set({ name: 'Original', updatedAt: revision, preferences: { desiredRooms: 2, desiredPriceRangeMin: 100000, desiredPriceRangeMax: 120000 } });
+    try {
+      const results = await Promise.allSettled([
+        executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: revision, patch: { name: 'Actualizat', preferences: { desiredPriceRangeMax: 130000 } } }, 'contact-edit'),
+        executeAction(ctx, { kind: 'update_preferences', contactId: 'c', expectedUpdatedAt: revision, preferences: { desiredRooms: 3 } }, 'requirements-edit'),
+      ]);
+      expect(results.filter(result => result.status === 'fulfilled'), JSON.stringify(results.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(1);
+      expect((results.find(result => result.status === 'rejected') as PromiseRejectedResult).reason).toMatchObject({ status: 409 });
+      expect((await agency.collection('assistantExecutions').get()).size).toBe(1);
+      const saved = (await agency.collection('contacts').doc('c').get()).data()!;
+      if (saved.name === 'Actualizat') expect(saved.preferences).toMatchObject({ desiredRooms: 2, desiredPriceRangeMax: 130000 });
+      else expect(saved).toMatchObject({ name: 'Original', preferences: { desiredRooms: 3, desiredPriceRangeMax: 120000 } });
+    } finally { await profile.delete(); }
+  }, 20000);
   it('deduplicates concurrent event-rule task and notification effects on real transactions', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const startedAt = '2030-01-01T10:00:00.000Z';

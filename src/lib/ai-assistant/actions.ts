@@ -420,6 +420,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { offerId: key, contactId: action.contactId, link: `/leads/${action.contactId}` };
     } else if (action.kind === 'update_preferences') {
       const contact = await read('contacts', action.contactId);
+      if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Cerințele clientului s-au modificat între timp. Reîncarcă datele înainte de salvare.', 409);
       const preferences = { ...(contact.preferences || {}), ...action.preferences };
       if (preferences.desiredPriceRangeMin > preferences.desiredPriceRangeMax || preferences.desiredSquareFootageMin > preferences.desiredSquareFootageMax) throw new CommunicationError('Intervalul minim nu poate depăși maximul.');
       tx.update(collectionFor(ctx, 'contacts').doc(action.contactId), { preferences, updatedAt: now });
@@ -429,10 +430,14 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const ref = collectionFor(ctx, 'contacts').doc(action.contactId);
       if (action.kind === 'update_contact') {
         if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Contactul a fost modificat între timp. Reîncarcă datele înainte de editare.', 409);
+        const preferences = action.patch.preferences ? { ...(contact.preferences || {}), ...action.patch.preferences } : null;
+        if (preferences && (preferences.desiredPriceRangeMin > preferences.desiredPriceRangeMax || preferences.desiredSquareFootageMin > preferences.desiredSquareFootageMax)) throw new CommunicationError('Intervalul minim nu poate depăși maximul.');
+        const agent = action.patch.agentId ? await tx.get(ctx.adminDb.collection('users').doc(action.patch.agentId)) : null;
+        if (agent && (agent.data()?.agencyId !== ctx.agencyId || !['admin', 'agent'].includes(agent.data()?.role))) throw new CommunicationError('Agentul nu aparține agenției.', 403);
         if (action.patch.sourcePropertyId) await read('properties', action.patch.sourcePropertyId);
         const identity = action.patch.phone !== undefined || action.patch.email !== undefined ? await prepareContactIdentity(ctx, tx, action.contactId, { ...contact, ...action.patch }, contact) : null;
         identity?.write();
-        tx.update(ref, { ...action.patch, ...(identity?.fields || {}), updatedAt: now });
+        tx.update(ref, { ...action.patch, ...(preferences ? { preferences } : {}), ...(action.patch.agentId !== undefined ? { agentName: agent?.data()?.name || null } : {}), ...(identity?.fields || {}), updatedAt: now });
       }
       else tx.update(ref, { interactionHistory: [...(contact.interactionHistory || []), { id: key, type: action.type, date: now, notes: action.notes, agentId: ctx.uid, agent: { name: profile.data()?.name || 'Agent' } }] });
       result = { contactId: action.contactId, link: `/leads/${action.contactId}` };

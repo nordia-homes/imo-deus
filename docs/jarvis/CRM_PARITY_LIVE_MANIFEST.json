@@ -1979,47 +1979,37 @@
         },
         {
           "call": "executeCrmAction",
-          "line": 302,
+          "line": 308,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 303,
+          "line": 313,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 309,
-          "sharedExecutor": true
-        },
-        {
-          "call": "executeCrmAction",
-          "line": 314,
-          "sharedExecutor": true
-        },
-        {
-          "call": "executeCrmAction",
-          "line": 362,
+          "line": 361,
           "sharedExecutor": true
         },
         {
           "call": "createManualViewing",
-          "line": 384,
+          "line": 383,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 399,
+          "line": 398,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 402,
+          "line": 401,
           "sharedExecutor": true
         },
         {
           "call": "executeCrmAction",
-          "line": 434,
+          "line": 433,
           "sharedExecutor": true
         }
       ],

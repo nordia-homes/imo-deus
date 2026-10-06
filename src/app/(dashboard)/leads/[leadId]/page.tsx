@@ -295,14 +295,13 @@ export default function LeadDetailPage() {
     
     // --- MUTATION HANDLERS ---
     const handleUpdateContact = async (data: Partial<Omit<Contact, 'id'>>) => {
-        if (!contact || !user) return;
+        if (!contact || !user) return false;
         try {
-            const { preferences, agentId, agentName: _agentName, ...patch } = data;
-            if (agentId !== undefined) await executeCrmAction(user, { kind: 'assign_record', resource: 'contacts', id: contact.id, agentId });
-            if (preferences) await executeCrmAction(user, { kind: 'update_preferences', contactId: contact.id, preferences });
-            if (Object.values(patch).some(value => value !== undefined)) await executeCrmAction(user, { kind: 'update_contact', contactId: contact.id, patch });
+            const { agentName: _agentName, ...patch } = data;
+            if (Object.values(patch).some(value => value !== undefined)) await executeCrmAction(user, { kind: 'update_contact', contactId: contact.id, expectedUpdatedAt: contact.updatedAt ?? null, patch });
             toast({ title: 'Cumpărător actualizat', description: 'Modificările au fost salvate.' });
-        } catch (error) { toast({ variant: 'destructive', title: 'Modificarea nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); }
+            return true;
+        } catch (error) { toast({ variant: 'destructive', title: 'Modificarea nu a fost confirmată', description: error instanceof Error ? error.message : 'Încearcă din nou.' }); return false; }
     };
     const handleUpdateRecommendation = async (recommendationId: string, data: Partial<Omit<PortalRecommendation, 'id'>>) => {
         if (!contact) return;

@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 import { Label } from '@/components/ui/label';
 import { useAgency } from '@/context/AgencyContext';
@@ -56,12 +55,11 @@ interface EditLeadDialogProps {
   contact: Contact;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateContact: (data: Partial<Contact>) => void;
+  onUpdateContact: (data: Partial<Contact>) => Promise<boolean>;
 }
 
 export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUpdateContact }: EditLeadDialogProps) {
   const [selectedZones, setSelectedZones] = useState<string[]>([]);
-  const { toast } = useToast();
   const { user } = useUser();
   const { agency } = useAgency();
   const { agents } = useAgencyAgents({ enabled: isOpen });
@@ -119,7 +117,7 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
   }, [watchedCity, contact.city]);
   
 
-  function onSubmit(values: z.infer<typeof cumparatorSchema>) {
+  async function onSubmit(values: z.infer<typeof cumparatorSchema>) {
     if (!user || !agency?.id) return;
 
     const isUnassigned = !values.agentId || values.agentId === 'unassigned';
@@ -136,12 +134,7 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
         sourcePropertyId: values.sourcePropertyId === 'none' ? null : values.sourcePropertyId,
     };
     
-    onUpdateContact(updatedData);
-
-    toast({
-        title: "Cumpărător actualizat!",
-        description: `${values.name} a fost actualizat.`,
-    });
+    if (!await onUpdateContact(updatedData)) return;
 
     onOpenChange(false);
   }
@@ -155,7 +148,7 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={open => { if (!form.formState.isSubmitting) onOpenChange(open); }}>
       <DialogContent className={cn("p-0 flex flex-col", isMobile ? "h-screen w-screen max-w-full rounded-none border-none" : "sm:max-w-3xl h-[90vh]")}>
         <DialogHeader className="shrink-0 border-b p-2 h-14 flex items-center justify-center shadow-md z-10 relative bg-background">
           <DialogTitle className="text-xl text-foreground/90 text-center">Editează Cumpărător</DialogTitle>
@@ -362,8 +355,8 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
 
                 <DialogFooter className="shrink-0 border-t bg-background p-3 md:py-3 md:px-6 shadow-md">
                     <div className="flex justify-end gap-2 w-full">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Anulează</Button>
-                        <Button type="submit">Salvează Modificări</Button>
+                        <Button type="button" disabled={form.formState.isSubmitting} variant="ghost" onClick={() => onOpenChange(false)}>Anulează</Button>
+                        <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? 'Se salvează…' : 'Salvează Modificări'}</Button>
                     </div>
                 </DialogFooter>
             </form>

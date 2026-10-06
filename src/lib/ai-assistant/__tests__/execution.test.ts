@@ -32,6 +32,22 @@ function memory(initial: Record<string, any> = {}) {
   return { records, ctx: { adminDb: db, uid: 'u', agencyId: 'a', role: 'agent' } as unknown as AssistantContext };
 }
 describe('atomic CRM execution', () => {
+  it('commits contact fields, assignment and merged preferences together without losing existing requirements', async () => {
+    const revision = '2026-10-06T10:00:00Z';
+    const { ctx, records } = memory({ 'users/v': { agencyId: 'a', role: 'agent', name: 'Agent V' }, 'agencies/a/contacts/c': { name: 'Original', agentId: 'u', updatedAt: revision, preferences: { desiredRooms: 2, desiredPriceRangeMin: 100000, desiredPriceRangeMax: 120000 } } });
+    await executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: revision, patch: { name: 'Actualizat', agentId: 'v', preferences: { desiredPriceRangeMax: 130000 } } }, 'combined');
+    expect(records.get('agencies/a/contacts/c')).toMatchObject({ name: 'Actualizat', agentId: 'v', agentName: 'Agent V', preferences: { desiredRooms: 2, desiredPriceRangeMin: 100000, desiredPriceRangeMax: 130000 } });
+    expect(records.get('agencies/a/assistantExecutions/combined').result).toMatchObject({ contactId: 'c' });
+  });
+  it('does not partially save contact fields when preference bounds, assignment or revision fail', async () => {
+    const revision = '2026-10-06T10:00:00Z', original = { name: 'Original', updatedAt: revision, preferences: { desiredPriceRangeMin: 100000, desiredPriceRangeMax: 120000 } };
+    const { ctx, records } = memory({ 'users/v': { agencyId: 'other', role: 'agent' }, 'agencies/a/contacts/c': original });
+    await expect(executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: revision, patch: { name: 'Parțial', preferences: { desiredPriceRangeMax: 90000 } } }, 'bad-range')).rejects.toThrow('minim');
+    await expect(executeAction(ctx, { kind: 'update_contact', contactId: 'c', expectedUpdatedAt: revision, patch: { name: 'Parțial', agentId: 'v' } }, 'bad-agent')).rejects.toMatchObject({ status: 403 });
+    await expect(executeAction(ctx, { kind: 'update_preferences', contactId: 'c', expectedUpdatedAt: null, preferences: { desiredRooms: 3 } }, 'stale')).rejects.toMatchObject({ status: 409 });
+    expect(records.get('agencies/a/contacts/c')).toEqual(original);
+    expect([...records.keys()].filter(key => key.includes('/assistantExecutions/'))).toEqual([]);
+  });
   it('reserves a property atomically, records the real instruction and replays once', async () => {
     const {ctx,records}=memory({'agencies/a/properties/p':{status:'Activ',title:'Apartament'}});
     const action={kind:'update_property_status' as const,propertyId:'p',status:'Rezervat' as const,notes:''};
