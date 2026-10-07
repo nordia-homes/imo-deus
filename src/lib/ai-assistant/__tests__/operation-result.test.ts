@@ -29,11 +29,11 @@ describe('confirmed domain result binding', () => {
   });
   it('binds confirmed Studio assets and projects across import, project and render steps', () => {
     const asset = { result: operationResult('tiktok_studio_asset_create', { asset: { id: 'asset' } }) };
-    const project = { result: operationResult('tiktok_studio_project_create', { project: { id: 'project' } }) };
+    const project = { result: operationResult('tiktok_studio_project_create', { project: { id: 'project', version: 1 } }) };
     const create = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_studio_project_create', params: {}, query: {}, body: { sourceAssetIds: ['@step:1:assetId'] } });
     expect(resolveAction(create, [asset])).toMatchObject({ body: { sourceAssetIds: ['asset'] } });
     const render = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_studio_render', params: { projectId: '@step:2:projectId' }, body: {}, query: {} });
-    expect(resolveAction(render, [asset, project])).toMatchObject({ params: { projectId: 'project' } });
+    expect(resolveAction(render, [asset, project])).toMatchObject({ params: { projectId: 'project' }, body: { expectedVersion: 1 } });
     expect(() => resolveAction(render, [asset])).toThrow();
     expect(() => resolveAction(create, [{ result: { assetId: 'agency/other' } }])).toThrow();
   });

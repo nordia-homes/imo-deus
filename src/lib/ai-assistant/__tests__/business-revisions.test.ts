@@ -14,6 +14,20 @@ beforeEach(() => vi.mocked(getResource).mockReset());
 const schedule = { kind: 'existing_operation' as const, operation: 'tiktok_post_schedule', params: { draftId: 'draft' }, query: {}, body: { confirm: true, runAt: '2030-01-01T10:00:00Z' } };
 const draft = { agencyId: 'a', createdByUid: 'u', status: 'draft', consentedAt: '2026-01-01', description: 'Postare aprobată', videoTourUrl: 'https://example.test/video.mp4', privacyLevel: 'SELF_ONLY' };
 const owner = { agencyId: 'a', uid: 'u' } as AssistantContext;
+const render = { kind: 'existing_operation' as const, operation: 'tiktok_studio_render', params: { projectId: 'project' }, query: {}, body: {} };
+it('pins render approval to the current project version and rejects legacy unpinned plans', async () => {
+  vi.mocked(getResource).mockResolvedValue({ agencyId: 'a', ownerUid: 'u', version: 3 });
+  const actions = await bindBusinessRevisions(owner, [render, render]);
+  expect(getResource).toHaveBeenCalledTimes(1);
+  expect(actions[0]).toMatchObject({ body: { expectedVersion: 3 } });
+  validateApproval(approvalEnvelope('u', 'a', 'plan', actions, Date.now() + 60000), 'u', 'a', 'plan', actions);
+  expect(() => validateApproval(approvalEnvelope('u', 'a', 'plan', [render], Date.now() + 60000), 'u', 'a', 'plan', [render])).toThrow('nu fixează');
+  await expect(bindBusinessRevisions(owner, [{ ...render, body: { expectedVersion: 2 } }])).rejects.toThrow('s-a schimbat');
+});
+it.each([{ agencyId: 'other', ownerUid: 'u' }, { agencyId: 'a', ownerUid: 'other' }, { agencyId: 'a', ownerUid: 'u', version: -1 }])('refuses inaccessible render approval: %j', project => {
+  vi.mocked(getResource).mockResolvedValue(project);
+  return expect(bindBusinessRevisions(owner, [render])).rejects.toThrow('nu este accesibil');
+});
 it('binds scheduling to a shared authorized draft snapshot and replaces forged preview data', async () => {
   vi.mocked(getResource).mockResolvedValue(draft);
   const actions = await bindBusinessRevisions(owner, [schedule, { ...schedule, body: { ...schedule.body, draftPreview: { description: 'invented' } } }]);

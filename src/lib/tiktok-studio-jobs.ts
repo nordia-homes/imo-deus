@@ -6,12 +6,14 @@ import { renderTikTokStudioProject, publishTikTokPostDraft, refreshTikTokPostDra
 
 const jobs = () => adminDb.collection('tiktokStudioJobs');
 
-export async function enqueueStudioRender(agencyId: string, uid: string, projectId: string) {
+export async function enqueueStudioRender(agencyId: string, uid: string, projectId: string, expectedVersion?: number) {
+  if (expectedVersion !== undefined && (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)) throw Object.assign(new Error('Versiunea proiectului este invalidă.'), { status: 400 });
   const projectRef = adminDb.collection('agencies').doc(agencyId).collection('tiktokStudioProjects').doc(projectId);
   return adminDb.runTransaction(async (tx) => {
     const snapshot = await tx.get(projectRef);
     const project = snapshot.data();
     if (!project || project.agencyId !== agencyId || project.ownerUid !== uid) throw new Error('Proiectul nu aparține utilizatorului curent.');
+    if (expectedVersion !== undefined && (project.version || 1) !== expectedVersion) throw Object.assign(new Error('Proiectul s-a modificat. Pregătește randarea din nou.'), { status: 409 });
     if (!project.propertyId || !project.script?.trim() || project.sourceAssetIds?.length < 2) throw new Error('Completează proprietatea, scenariul și minimum două fotografii.');
     const id = `${agencyId}_${projectId}_v${project.version || 1}`;
     const ref = jobs().doc(id);

@@ -35,5 +35,13 @@ export function resolveAction(action: AssistantAction, previous: Record<string, 
   }
   if (action.kind === 'existing_operation' && action.operation === 'message_send' && /@step:\d+:/.test(JSON.stringify({ text: action.body.text, template: action.body.template }))) throw new Error('Mesajul necesită text și parametri concreți pentru previzualizare/aprobare; nu poate trimite referințe la conținut încă negenerat.');
   if (action.kind === 'prepare_sale_email' && /@step:\d+:/.test(JSON.stringify({ to: action.to, cc: action.cc, bcc: action.bcc, subject: action.subject, bodyText: action.bodyText, bodyHtml: action.bodyHtml, questions: action.questions }))) throw new Error('Emailul necesită destinatari și conținut concret pentru previzualizare.');
-  return actionSchema.parse(resolve(action));
+  const resolved = actionSchema.parse(resolve(action));
+  if (action.kind === 'existing_operation' && action.operation === 'tiktok_studio_render' && action.params.projectId?.startsWith('@step:') && resolved.kind === 'existing_operation') {
+    const match = action.params.projectId.match(reference);
+    const result = match ? previous[Number(match[1]) - 1]?.result as Record<string, any> | undefined : undefined;
+    const project = result?.project;
+    if (match?.[2] !== 'projectId' || project?.id !== resolved.params.projectId || !Number.isSafeInteger(project?.version) || project.version < 1 || (action.body.expectedVersion !== undefined && action.body.expectedVersion !== project.version)) throw new Error('Versiunea proiectului trebuie confirmată în rezultatul pasului anterior.');
+    resolved.body.expectedVersion = project.version;
+  }
+  return resolved;
 }

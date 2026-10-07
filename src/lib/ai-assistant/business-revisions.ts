@@ -7,6 +7,19 @@ import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 export async function bindBusinessRevisions(ctx: AssistantContext, actions: AssistantAction[]): Promise<AssistantAction[]> {
   const snapshots = new Map<string, Promise<Record<string, any>>>();
   return Promise.all(actions.map(async action => {
+    if (action.kind === 'existing_operation' && action.operation === 'tiktok_studio_render') {
+      const id = action.params.projectId;
+      // A project created by a prior approved step binds its version from that receipt.
+      if (id?.startsWith('@step:')) return action;
+      if (!id) throw new Error('Randarea necesită un proiect Studio.');
+      const key = `tiktokStudioProjects/${id}`;
+      if (!snapshots.has(key)) snapshots.set(key, getResource(ctx, 'tiktokStudioProjects', id));
+      const project = await snapshots.get(key)!;
+      const version = project.version || 1;
+      if (project.agencyId !== ctx.agencyId || project.ownerUid !== ctx.uid || !Number.isSafeInteger(version) || version < 1) throw new Error('Proiectul Studio nu este accesibil pentru randare.');
+      if (action.body.expectedVersion !== undefined && action.body.expectedVersion !== version) throw new Error('Proiectul Studio s-a schimbat. Pregătește un plan nou pentru aprobare.');
+      return { ...action, body: { ...action.body, expectedVersion: version } };
+    }
     if (action.kind === 'existing_operation' && action.operation === 'tiktok_post_schedule') {
       const id = action.params.draftId;
       if (!id || id.startsWith('@step:')) throw new Error('Programarea TikTok necesită un draft existent. Creează draftul, apoi pregătește programarea pentru aprobare.');

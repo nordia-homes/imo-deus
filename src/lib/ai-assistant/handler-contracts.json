@@ -1403,7 +1403,9 @@
   "tiktok_studio_render": {
     "method": "POST",
     "validation": "",
-    "bodyFields": [],
+    "bodyFields": [
+      "expectedVersion"
+    ],
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
   },

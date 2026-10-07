@@ -68,7 +68,7 @@ describe('durable batch checkpoints and controls', () => {
     const { ctx, plan } = executionFixture();
     plan.goal = { schemaVersion: 1 };
     plan.actions = [
-      { kind: 'existing_operation', operation: 'tiktok_studio_render', params: { projectId: 'project' }, query: {}, body: {} },
+      { kind: 'existing_operation', operation: 'tiktok_studio_render', params: { projectId: 'project' }, query: {}, body: { expectedVersion: 1 } },
       { kind: 'existing_operation', operation: 'tiktok_post_draft', params: {}, query: {}, body: { assetId: '@step:1:assetId' } },
     ];
     plan.approval = approvalEnvelope('u', 'a', 'p', plan.actions, plan.expiresAt);

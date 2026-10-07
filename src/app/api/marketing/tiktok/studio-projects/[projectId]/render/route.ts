@@ -31,7 +31,9 @@ export async function POST(
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(params.projectId)) {
       return NextResponse.json({ message: 'projectId este obligatoriu.' }, { status: 400 });
     }
-    const result = await enqueueStudioRender(agencyId, uid, params.projectId);
+    const body = await request.json().catch(() => ({})) || {};
+    if (body.expectedVersion !== undefined && (!Number.isSafeInteger(body.expectedVersion) || body.expectedVersion < 1)) return NextResponse.json({ message: 'Versiunea proiectului este invalidă.' }, { status: 400 });
+    const result = await enqueueStudioRender(agencyId, uid, params.projectId, body.expectedVersion);
     return NextResponse.json(result, { status: 202 });
   } catch (error) {
     const formatted = formatError(error);

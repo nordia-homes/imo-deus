@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 const state = vi.hoisted(() => ({ db: null as any, publish: vi.fn(), render: vi.fn() }));
 vi.mock('@/firebase/admin', () => ({ get adminDb() { return state.db; }, adminAuth: {} }));
 vi.mock('@/lib/tiktok-marketing', () => ({ publishTikTokPostDraft: state.publish, renderTikTokStudioProject: state.render, refreshTikTokPostDraftStatus: vi.fn() }));
-import { scheduleTikTokPost, cancelScheduledTikTokPost, drainStudioRenders } from '@/lib/tiktok-studio-jobs';
+import { scheduleTikTokPost, cancelScheduledTikTokPost, drainStudioRenders, enqueueStudioRender } from '@/lib/tiktok-studio-jobs';
 import { bindBusinessRevisions } from '../business-revisions';
 import { approvalEnvelope, validateApproval } from '../approval';
 import { claimTikTokPublication } from '@/lib/tiktok-publish-claim';
@@ -40,6 +40,27 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and sched
     const due = async () => { const batch = db.batch(); batch.update(job, { runAt: '2020-01-01T00:00:00Z' }); batch.update(ref, { scheduledAt: '2020-01-01T00:00:00Z' }); await batch.commit(); };
     return { agencyId, uid, ref, job, revision, schedule, due };
   }
+  it.each([false, true])('binds approval to a render version and checks it inside the queue transaction (changed=%s)', async changed => {
+    const f = await fixture();
+    const ref = db.collection('agencies').doc(f.agencyId).collection('tiktokStudioProjects').doc('project');
+    await ref.set({ agencyId: f.agencyId, ownerUid: f.uid, version: 1, status: 'draft', propertyId: 'p', script: 'Synthetic script', sourceAssetIds: ['one', 'two'] });
+    const ctx = { agencyId: f.agencyId, uid: f.uid, role: 'agent', adminDb: db } as any;
+    const actions = await bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'tiktok_studio_render', params: { projectId: 'project' }, query: {}, body: {} }]);
+    validateApproval(approvalEnvelope(f.uid, f.agencyId, 'render-plan', actions, Date.now() + 60000), f.uid, f.agencyId, 'render-plan', actions);
+    const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+    if (changed) await ref.update({ version: 2, script: 'Edited after approval' });
+    const enqueue = () => enqueueStudioRender(f.agencyId, f.uid, 'project', action.body.expectedVersion as number);
+    if (changed) {
+      await expect(enqueue()).rejects.toMatchObject({ status: 409 });
+      expect((await db.collection('tiktokStudioJobs').where('agencyId', '==', f.agencyId).get()).empty).toBe(true);
+      expect((await ref.get()).data()).toMatchObject({ status: 'draft', version: 2 });
+    } else {
+      const [first, second] = await Promise.all([enqueue(), enqueue()]);
+      expect(first.jobId).toBe(second.jobId);
+      expect((await db.collection('tiktokStudioJobs').where('agencyId', '==', f.agencyId).get()).size).toBe(1);
+    }
+    expect(state.render).not.toHaveBeenCalled();
+  }, 20000);
   it('prepares and approves a concrete draft, schedules once under concurrency and invokes the simulated publisher once', async () => {
     const f = await fixture();
     await Promise.all([f.schedule(), f.schedule()]);

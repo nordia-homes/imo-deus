@@ -32,6 +32,16 @@ beforeEach(() => {
   state.documents.set(postPath, { agencyId: 'org', createdByUid: 'user', status: 'draft', consentedAt: new Date().toISOString() });
 });
 describe('Durable property video and publishing queue', () => {
+  it('refuses a stale approved version before creating a render job', async () => {
+    state.documents.set(projectPath, { ...state.documents.get(projectPath), version: 2 });
+    await expect(enqueueStudioRender('org', 'user', 'project', 1)).rejects.toMatchObject({ status: 409 });
+    expect([...state.documents.keys()].some(key => key.startsWith('tiktokStudioJobs/'))).toBe(false);
+    expect(state.documents.get(projectPath)?.status).toBe('draft');
+  });
+  it.each([0, -1, 1.5, NaN, Infinity])('rejects invalid render version %s without queuing', async version => {
+    await expect(enqueueStudioRender('org', 'user', 'project', version)).rejects.toMatchObject({ status: 400 });
+    expect([...state.documents.keys()].some(key => key.startsWith('tiktokStudioJobs/'))).toBe(false);
+  });
   it('checks the approved revision inside scheduling before any write', async () => {
     const revision = tikTokScheduleRevision(state.documents.get(postPath)!);
     state.documents.get(postPath)!.description = 'Changed after approval';
