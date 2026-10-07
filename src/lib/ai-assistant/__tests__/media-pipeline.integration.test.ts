@@ -53,8 +53,9 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
       }
       if (action.operation === 'tiktok_post_draft') {
         expect(action.body.assetId).toBe('asset');
-        await agency.collection('tiktokPostDrafts').doc('draft').set({ status: 'draft', agencyId: id, createdByUid: id });
-        return { draftId: 'draft' };
+        const draft = { id: 'draft', status: 'draft', agencyId: id, createdByUid: id, studioAssetId: 'asset', videoOwnerUid: id, propertyId: 'p', videoTourUrl: url, description: 'Synthetic draft.', targetOpenId: 'profile' };
+        await agency.collection('tiktokPostDrafts').doc('draft').set(draft);
+        return { draftId: 'draft', draft };
       }
       throw new Error('Unexpected mutation');
     });
@@ -85,5 +86,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'unknown' });
     expect((await f.agency.collection('tiktokPostDrafts').get()).empty).toBe(true);
     expect(executeAction).toHaveBeenCalledTimes(3);
+  }, 20000);
+  it.each([{ description: 'Changed after creation' }, { studioAssetId: 'different' }, { videoTourUrl: 'https://fixture.example/different.mp4' }])('does not confirm a replaced draft after execution completed: %j', async patch => {
+    const f = await fixture(); f.ready();
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
+    await f.agency.collection('tiktokPostDrafts').doc('draft').update(patch);
+    expect(await readPlanOutcomes(f.ctx, 'plan')).toMatchObject({ executionStatus: 'completed', outcome: { state: 'BLOCKED' }, pollAfterMs: null });
+    expect(executeAction).toHaveBeenCalledTimes(4);
   }, 20000);
 });

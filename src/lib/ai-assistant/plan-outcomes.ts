@@ -12,6 +12,7 @@ import { recommendationOutcome } from './recommendation-outcome';
 import { messageOutcome } from './message-outcome';
 import { facebookOutcome } from './facebook-outcome';
 import { tikTokScheduleOutcome } from './tiktok-schedule-outcome';
+import { tikTokDraftOutcome } from './tiktok-draft-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -111,12 +112,15 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         if (!row || row.uid !== ctx.uid || row.agencyId !== ctx.agencyId || row.draftId !== action.params.draftId) throw new CommunicationError('Programare inaccesibilă.', 403);
         return { ...base, ...tikTokScheduleOutcome(ctx, action.params.draftId, action.body, draft, row) };
       }
-      else if (['tiktok_post_draft', 'meta_campaign_draft'].includes(action.operation)) {
-        const tiktok = action.operation === 'tiktok_post_draft';
-        const targetId = id(tiktok ? original.draftId : original.campaignId);
+      else if (action.operation === 'tiktok_post_draft' && id(original.draftId)) {
+        refreshAttempted = true;
+        return { ...base, ...await tikTokDraftOutcome(ctx, original.draftId, action.body, original) };
+      }
+      else if (action.operation === 'meta_campaign_draft') {
+        const targetId = id(original.campaignId);
         if (targetId) {
           refreshAttempted = true;
-          const row = await getResource(ctx, tiktok ? 'tiktokPostDrafts' : 'metaCampaignDrafts', targetId);
+          const row = await getResource(ctx, 'metaCampaignDrafts', targetId);
           current = operationResult(action.operation, { status: row.status }, true);
           completionSatisfied = ['draft', 'ready', 'ready_to_publish'].includes(row.status);
         }

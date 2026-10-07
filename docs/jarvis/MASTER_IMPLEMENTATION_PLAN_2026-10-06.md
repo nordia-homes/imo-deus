@@ -653,3 +653,13 @@ Suita nouă `media-pipeline.integration.test.ts`, inclusă în runnerul emulator
 Validări: 33/33 teste țintite; 112/112 teste pe emulator în 17 fișiere; TypeScript separat și ESLint pe forma finală. Au fost adăugate 15 cazuri de unitate și trei probe de integrare; acestea nu reprezintă scenarii originale noi acceptate din corpusul de 1000. Planul integral și validarea externă rămân deschise. Nu s-a efectuat deployment.
 Regresia generală Jarvis, Communications și TikTok a trecut 1041/1041 teste în 103 fișiere.
 Buildul final a trecut cu TypeScript și 225 de pagini. Avertismentele locale Jaeger/standalone rămân cele cunoscute; nu s-a efectuat deployment.
+
+## 7 octombrie: draft TikTok legat de sursa și conținutul verificat
+
+Continuare E3/E4. Confirmarea pregătirii unui draft TikTok nu mai folosește exclusiv statusul draft/ready. Verificatorul recitește draftul și sursa autorizată, verifică agenția și autorul, ID-ul materialului sau proprietății, URL-ul HTTPS fără credențiale, proprietarul materialului Studio, statusul ready al sursei, descrierea și profilul țintă nenule. Câmpurile explicite de descriere, vizibilitate, opțiuni de publicare și acord sunt confruntate cu cererea. Pentru răspunsurile normale ale handlerului, snapshotul draftului este comparat prin revizia comună a conținutului, astfel încât modificările ulterioare de text, hashtags, profil sau opțiuni să nu fie prezentate drept rezultatul inițial.
+
+Compatibilitate: un receipt legacy fără snapshot poate confirma numai sursa curentă și câmpurile explicite verificate; nu reconstruiește textul generat inițial. Materialele cu proprietar lipsă nu sunt confirmate. O cerere cu assetId opțional gol păstrează ruta existentă prin propertyId. Confirmarea pregătirii nu confirmă programarea sau publicarea și nu execută efecte externe. Verificarea metadatelor/URL-ului nu dovedește imutabilitatea octeților video ori acceptanța furnizorului.
+
+Au fost adăugate 29 de teste de unitate ale verificatorului și trei probe Firestore pentru modificarea descrierii, materialului sau URL-ului după încheierea execuției. Suitele țintite au trecut 56/56 teste, iar emulatorul 115/115 teste în 17 fișiere. Nu sunt scenarii originale noi acceptate din corpusul de 1000. Planul integral și validarea externă rămân deschise; lotul nu este publicat în producție.
+Regresia generală a trecut 1070/1070 teste în 104 fișiere; TypeScript separat și ESLint au trecut pe forma finală.
+Buildul final a trecut, inclusiv TypeScript și 225 de pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu s-a efectuat deployment.

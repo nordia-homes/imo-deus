@@ -32,7 +32,7 @@ function fixture() {
 }
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.mocked(getResource).mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioAssets' ? { ownerUid: 'u', agencyId: 'a', propertyId: 'p', type: 'video', status: 'ready', url: 'https://storage.example/video.mp4' } : resource === 'tiktokPostDrafts' ? { status: 'draft' } : { id: 'p' });
+  vi.mocked(getResource).mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioAssets' ? { ownerUid: 'u', agencyId: 'a', propertyId: 'p', type: 'video', status: 'ready', url: 'https://storage.example/video.mp4' } : resource === 'tiktokPostDrafts' ? { status: 'draft', agencyId: 'a', createdByUid: 'u', studioAssetId: 'asset', videoOwnerUid: 'u', propertyId: 'p', videoTourUrl: 'https://storage.example/video.mp4', description: 'Draft fixture.', targetOpenId: 'profile' } : { id: 'p' });
   const receipts: Record<string, any> = { video_script: { script: 'Scenariu verificat.' }, video_create: { jobId: 'job', executionState: 'queued' }, tiktok_studio_asset_create: { assetId: 'asset' }, tiktok_post_draft: { draftId: 'draft' } };
   vi.mocked(executeAction).mockImplementation(async (_ctx, action: any) => receipts[action.operation]);
 });
