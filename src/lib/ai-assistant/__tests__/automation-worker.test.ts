@@ -17,6 +17,7 @@ import { runEventRule } from '../event-rules';
 import { getInsights } from '../insights';
 import * as insightNotifications from '../insight-notifications';
 import { searchProperties } from '../search';
+import { watchNotificationId } from '../watch-notification-id';
 function database(automation: any, patch: any = {}) {
   const job = { id: 'job', agencyId: 'a', actorId: 'u', actorRole: 'agent', createdAt: '2026-01-01T00:00:00.000Z', status: 'active', nextRunAt: '2026-01-01T00:00:00.000Z', automation, ...patch };
   const rows = new Map<string, any>([['assistantAutomationJobs/job', job], ['agencies/a/assistantAutomations/job', { ...job }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
@@ -26,6 +27,36 @@ function database(automation: any, patch: any = {}) {
   const db = { collection: ref, runTransaction: async (callback: any) => { const writes: (() => void)[] = []; const result = await callback({ get: (reference: any) => { if (writes.length) throw new Error('Read after write'); return reference.get(); }, update: (reference: any, value: any) => writes.push(() => rows.set(reference.path, { ...rows.get(reference.path), ...value })), create: (reference: any, value: any) => writes.push(() => rows.set(reference.path, value)) }); writes.forEach(write => write()); return result; } };
   return { db, rows };
 }
+it.each(['owner_watch', 'matching_watch'].flatMap(type => [undefined, false, true].map(repeatAlerts => ({ type, repeatAlerts }))))('repeats only opted-in later executions: %j', async ({ type, repeatAlerts }) => {
+  vi.useFakeTimers({ toFake: ['Date'] }); const now = Date.parse('2026-10-07T12:00:00Z'); vi.setSystemTime(now);
+  const { db, rows } = database({ type, repeatAlerts, cooldownMinutes: 60, intervalMinutes: 30, maxRuns: 3, nextRunAt: new Date(now).toISOString(), ...(type === 'owner_watch' ? { search: { scopeKey: 'brasov' } } : { contactId: 'c' }) });
+  const contact = { status: 'Nou' }, source = { title: 'Fixture', status: 'Activ', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' };
+  rows.set('agencies/a/contacts/c', contact);
+  rows.set(type === 'owner_watch' ? 'ownerListings/p' : 'agencies/a/properties/p', source);
+  const cards = [{ id: 'p', title: 'Fixture', matchScore: 90, sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(source) }];
+  if (type === 'owner_watch') vi.mocked(searchProperties).mockResolvedValue({ rows: cards, nextCursor: null, complete: true } as any);
+  else vi.mocked(matchContact).mockResolvedValue(cards as any);
+  const notifications = () => [...rows.keys()].filter(key => key.includes('/notifications/'));
+  await drainAssistantAutomations(db as any);
+  const firstId = notifications()[0]; expect(firstId).toBe(`users/u/notifications/${watchNotificationId('job', 'p', 1, repeatAlerts === true)}`);
+  rows.set(firstId, { ...rows.get(firstId), withdrawnAt: new Date(now).toISOString(), isRead: true });
+  vi.setSystemTime(now + 30 * 60000); await drainAssistantAutomations(db as any);
+  expect(notifications()).toHaveLength(1);
+  expect(rows.get('assistantAutomationJobs/job').lastResult.notificationResults[0]).toMatchObject(repeatAlerts ? { status: 'skipped', reasonCode: 'cooldown' } : { status: 'existing' });
+  vi.setSystemTime(now + 60 * 60000); await drainAssistantAutomations(db as any);
+  expect(notifications()).toHaveLength(repeatAlerts ? 2 : 1);
+  expect(rows.get(firstId)).toMatchObject({ withdrawnAt: new Date(now).toISOString(), isRead: true });
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', runCount: 3 });
+  if (repeatAlerts) expect(rows.has(`users/u/notifications/${watchNotificationId('job', 'p', 3, true)}`)).toBe(true);
+  await drainAssistantAutomations(db as any); expect(notifications()).toHaveLength(repeatAlerts ? 2 : 1);
+  if (repeatAlerts) {
+    const job = rows.get('assistantAutomationJobs/job');
+    rows.set('assistantAutomationJobs/job', { ...job, status: 'active', nextRunAt: new Date(now + 120 * 60000).toISOString(), automation: { ...job.automation, maxRuns: 4, repeatAlerts: false } });
+    vi.setSystemTime(now + 120 * 60000); await drainAssistantAutomations(db as any);
+    expect(notifications()).toHaveLength(2);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', runCount: 4, lastResult: { notificationResults: [{ status: 'existing' }] } });
+  }
+});
 it.each([false, true])('owner worker rechecks fresh listing state after search (changed: %s)', async changed => {
   const { db, rows } = database({ type: 'owner_watch', cooldownMinutes: 90, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, search: { scopeKey: 'brasov', priceMax: 120000 } });
   rows.set('ownerListings/p', { title: 'Live title', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR' });
@@ -202,9 +233,9 @@ it.each(['owner_watch', 'matching_watch'] as const)('defers %s before reading da
   await drainAssistantAutomations(db as any);
   expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', lastResult: { skipped: true } });
 });
-it.each(['owner_watch', 'matching_watch'] as const)('resumes %s mid-page without losing or repeating notifications and rechecks sources', async type => {
+it.each(['owner_watch', 'matching_watch'].flatMap(type => [false, true].map(repeatAlerts => ({ type, repeatAlerts }))))('resumes mid-page without losing or repeating notifications: %j', async ({ type, repeatAlerts }) => {
   vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T18:59:59Z'));
-  const { db, rows } = database({ type, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, quietHours: watchQuiet, ...(type === 'owner_watch' ? { search: { scopeKey: 'brasov' } } : { contactId: 'c' }) }, { scanCursor: 'saved-page' });
+  const { db, rows } = database({ type, repeatAlerts, cooldownMinutes: 30, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, quietHours: watchQuiet, ...(type === 'owner_watch' ? { search: { scopeKey: 'brasov' } } : { contactId: 'c' }) }, { scanCursor: 'saved-page' });
   const contact = { status: 'Nou', budget: 150000 }; rows.set('agencies/a/contacts/c', contact);
   const cards = ['a', 'b', 'c'].map(id => {
     const source = { title: id, status: 'Activ', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR' };
@@ -217,17 +248,17 @@ it.each(['owner_watch', 'matching_watch'] as const)('resumes %s mid-page without
   let crossed = false;
   db.runTransaction = async callback => {
     const result = await originalTransaction(callback);
-    if (!crossed && rows.has('users/u/notifications/job-a')) { crossed = true; vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); }
+    if (!crossed && rows.has(`users/u/notifications/${watchNotificationId('job', 'a', 1, repeatAlerts)}`)) { crossed = true; vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); }
     return result;
   };
   await drainAssistantAutomations(db as any);
   expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 0, status: 'active', lastResult: { reasonCode: 'quiet_hours' }, ...(type === 'owner_watch' ? { scanCursor: 'saved-page' } : {}) });
-  expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toEqual(['users/u/notifications/job-a']);
+  expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toEqual([`users/u/notifications/${watchNotificationId('job', 'a', 1, repeatAlerts)}`]);
   rows.delete(type === 'owner_watch' ? 'ownerListings/b' : 'agencies/a/properties/b');
   vi.setSystemTime(new Date('2026-10-08T05:00:00Z'));
   await drainAssistantAutomations(db as any);
   expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 1, status: 'completed', ...(type === 'owner_watch' ? { scanCursor: 'next-page' } : {}) });
-  expect([...rows.keys()].filter(key => key.includes('/notifications/')).sort()).toEqual(['users/u/notifications/job-a', 'users/u/notifications/job-c']);
+  expect([...rows.keys()].filter(key => key.includes('/notifications/')).sort()).toEqual([`users/u/notifications/${watchNotificationId('job', 'a', 1, repeatAlerts)}`, `users/u/notifications/${watchNotificationId('job', 'c', 1, repeatAlerts)}`]);
   if (type === 'owner_watch') expect(vi.mocked(searchProperties).mock.calls.at(-1)?.[1].cursor).toBe('saved-page');
 });
 

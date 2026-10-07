@@ -208,6 +208,8 @@ try {
       const pause = page.getByLabel('Pauză între alertele monitorizărilor, minute', { exact: true });
       assert.equal(await pause.inputValue(), '1440');
       await pause.fill('90');
+      const repeat = page.getByLabel('Repetă alertele dacă rezultatul rămâne relevant', { exact: false });
+      assert.equal(await repeat.isChecked(), false); await repeat.check();
     }
     if (kind === 'whatsapp_template') {
       await page.getByRole('option', { name: 'Proprietar · whatsapp', exact: true }).waitFor({ state: 'attached' });
@@ -225,6 +227,8 @@ try {
     if (kind === 'matching_watch') assert.equal(prepared.automation.threshold, 75);
     if (['owner_watch', 'matching_watch'].includes(kind)) {
       assert.equal(prepared.automation.cooldownMinutes, 90);
+      assert.equal(prepared.automation.repeatAlerts, true);
+      await page.getByText('Repetă alertele pentru rezultate încă relevante', { exact: true }).last().waitFor();
       await page.getByText('Maximum 10 alerte din rapoarte și monitorizări', { exact: false }).last().waitFor();
       await page.getByText('omisiunile nu prelungesc pauza', { exact: false }).last().waitFor();
     }
@@ -315,14 +319,15 @@ try {
   }
   assert.equal(await page.getByText('Scor canonic păstrat.', { exact: true }).count(), 2);
   await page.screenshot({ path: path.join(output, 'watch-feedback-results.png'), fullPage: true });
-  for (const type of ['owner_watch', 'matching_watch']) {
-    watchEdit = { id: 'watch-edit', status: 'active', runCount: 0, automation: { type, nextRunAt: '2030-10-06T10:00:00.123Z', maxRuns: 3, intervalMinutes: 60, ...(type === 'owner_watch' ? { search: { source: 'owners', scopeKey: 'brasov', transactionType: 'sale', limit: 5, yearMin: 1980, unknownYear: 'exclude', excludeImported: true, roomsAny: [2, 3] } } : { contactId: 'client', threshold: 75, limit: 5 }) } };
+  for (const [type, repeatAlerts] of ['owner_watch', 'matching_watch'].flatMap(type => [undefined, true].map(repeat => [type, repeat]))) {
+    watchEdit = { id: 'watch-edit', status: 'active', runCount: 0, automation: { type, ...(repeatAlerts === undefined ? {} : { repeatAlerts }), nextRunAt: '2030-10-06T10:00:00.123Z', maxRuns: 3, intervalMinutes: 60, ...(type === 'owner_watch' ? { search: { source: 'owners', scopeKey: 'brasov', transactionType: 'sale', limit: 5, yearMin: 1980, unknownYear: 'exclude', excludeImported: true, roomsAny: [2, 3] } } : { contactId: 'client', threshold: 75, limit: 5 }) } };
     await page.reload();
     await page.getByRole('button', { name: 'Vezi automatizările', exact: true }).click();
     await page.getByRole('button', { name: 'Editează', exact: true }).click();
     if (type === 'matching_watch') await page.getByRole('option', { name: 'Maria Popescu', exact: true }).waitFor({ state: 'attached' });
     const toggle = page.getByLabel('Interval de liniște pentru alerte', { exact: true });
     assert.equal(await toggle.isChecked(), false, 'Legacy watches must not gain quiet hours silently');
+    assert.equal(await page.getByLabel('Repetă alertele dacă rezultatul rămâne relevant', { exact: false }).isChecked(), repeatAlerts === true);
     await toggle.check();
     await page.getByLabel('Fus orar pentru alerte', { exact: true }).fill('UTC');
     await page.getByRole('button', { name: 'Pregătește automatizarea', exact: true }).click();
@@ -330,6 +335,7 @@ try {
     const edited = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.kind === 'update_automation' && r.body.actions[0].automationId === 'watch-edit').at(-1).body.actions[0].automation;
     assert.deepEqual(edited.quietHours, { timezone: 'UTC', start: '22:00', end: '08:00' });
     assert.equal(edited.nextRunAt, watchEdit.automation.nextRunAt);
+    assert.equal(edited.repeatAlerts, repeatAlerts === true);
     await page.getByRole('button', { name: 'Istoric', exact: true }).click();
     await page.getByText(/Monitorizare amânată: plafonul comun de 10 alerte/).waitFor();
     assert.equal(await page.getByText(/Unele alerte au fost omise: plafonul comun/).count(), 0);

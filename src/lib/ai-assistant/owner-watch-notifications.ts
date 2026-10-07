@@ -11,6 +11,7 @@ import { importedListingIds } from './imported-listings';
 import { insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
 import { readNotificationBudget } from './notification-budget';
 import { readWatchCooldown } from './watch-notification-cooldown';
+import { priorWatchNotification } from './watch-notification-id';
 
 export const ownerWatchConditionSchema = z.object({ listingId: idSchema, search: searchSchema.omit({ cursor: true, limit: true }).extend({ source: z.literal('owners') }) }).strict();
 
@@ -25,7 +26,7 @@ export async function readOwnerWatchRelevance(ctx: AssistantContext, tx: Transac
   return { reason: null, row };
 }
 
-export async function createOwnerWatchNotification(ctx: AssistantContext, automationId: string, id: string, listingId: string, search: AssistantSearch, quietHours?: InsightQuietHours, cooldownMinutes = 1440) {
+export async function createOwnerWatchNotification(ctx: AssistantContext, automationId: string, id: string, listingId: string, search: AssistantSearch, quietHours?: InsightQuietHours, cooldownMinutes = 1440, repeatAlerts?: boolean) {
   const { cursor: _cursor, limit: _limit, ...criteria } = search;
   const condition = ownerWatchConditionSchema.parse({ listingId, search: { ...criteria, source: 'owners' } });
   const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(id);
@@ -35,6 +36,8 @@ export async function createOwnerWatchNotification(ctx: AssistantContext, automa
     const member = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
     if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Permisiunile automatizării s-au schimbat.');
     if ((await tx.get(ref)).exists) return { status: 'existing', notificationId: id };
+    const priorId = await priorWatchNotification(ctx, tx, automationId, listingId, repeatAlerts);
+    if (priorId) return { status: 'existing', notificationId: priorId };
     const quiet = insightQuietDeferral(quietHours);
     if (quiet) return quiet;
     const fresh = await readOwnerWatchRelevance(ctx, tx, condition);

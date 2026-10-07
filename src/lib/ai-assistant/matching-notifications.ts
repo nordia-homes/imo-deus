@@ -8,6 +8,7 @@ import { matchingRevision } from './matching-revision';
 import { insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
 import { readNotificationBudget } from './notification-budget';
 import { readWatchCooldown } from './watch-notification-cooldown';
+import { priorWatchNotification } from './watch-notification-id';
 
 export const matchingConditionSchema = z.object({ contactId: idSchema, propertyId: idSchema, contactRevision: z.string().regex(/^[a-f0-9]{64}$/), propertyRevision: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 export async function readMatchingRelevance(ctx: AssistantContext, tx: Transaction, condition: z.infer<typeof matchingConditionSchema>) {
@@ -21,7 +22,7 @@ export async function readMatchingRelevance(ctx: AssistantContext, tx: Transacti
   return null;
 }
 
-export async function createMatchingNotification(ctx: AssistantContext, automationId: string, id: string, contactId: string, row: Record<string, any>, quietHours?: InsightQuietHours, cooldownMinutes = 1440) {
+export async function createMatchingNotification(ctx: AssistantContext, automationId: string, id: string, contactId: string, row: Record<string, any>, quietHours?: InsightQuietHours, cooldownMinutes = 1440, repeatAlerts?: boolean) {
   const condition = matchingConditionSchema.parse({ contactId, propertyId: row.id, contactRevision: row.sourceContactRevision, propertyRevision: row.matchingRevision });
   const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(id);
   return ctx.adminDb.runTransaction(async rawTx => {
@@ -30,6 +31,8 @@ export async function createMatchingNotification(ctx: AssistantContext, automati
     const member = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
     if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Permisiunile automatizării s-au schimbat.');
     if ((await tx.get(ref)).exists) return { status: 'existing', notificationId: id };
+    const priorId = await priorWatchNotification(ctx, tx, automationId, row.id, repeatAlerts);
+    if (priorId) return { status: 'existing', notificationId: priorId };
     const quiet = insightQuietDeferral(quietHours);
     if (quiet) return quiet;
     const reason = await readMatchingRelevance(ctx, tx, condition);

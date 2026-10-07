@@ -35,6 +35,7 @@ import { matchingRevision } from '../matching-revision';
 import { createOwnerWatchNotification } from '../owner-watch-notifications';
 import { notificationTransactionReads } from '../notification-transaction';
 import { readNotificationBudget } from '../notification-budget';
+import { watchNotificationId } from '../watch-notification-id';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -49,6 +50,42 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it.each(['owner', 'matching'] as const)('repeats %s only in a later execution after cooldown and preserves withdrawn history', async kind => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const listing = db.collection('ownerListings').doc(randomUUID());
+    const contact = { status: 'Nou' }, property = { status: 'Activ' };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
+    await listing.set({ scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' });
+    const id = (run: number) => watchNotificationId('repeat', kind === 'owner' ? listing.id : 'p', run, true);
+    const deliver = (run: number) => kind === 'owner'
+      ? createOwnerWatchNotification(ctx, 'repeat', id(run), listing.id, searchSchema.parse({ scopeKey: 'brasov' }), undefined, 30)
+      : createMatchingNotification(ctx, 'repeat', id(run), 'c', { id: 'p', title: 'Fixture', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }, undefined, 30);
+    try {
+      expect(await deliver(1)).toMatchObject({ status: 'created' });
+      await profile.collection('notifications').doc(id(1)).update({ withdrawnAt: '2026-10-07T10:00:00Z', isRead: true });
+      expect(await deliver(2)).toMatchObject({ status: 'skipped', reasonCode: 'cooldown' });
+      const states = await agency.collection('assistantNotificationState').get();
+      const cooldown = states.docs.find(doc => doc.id.startsWith('watch-cooldown-'))!;
+      await cooldown.ref.update({ lastDeliveredAt: Date.now() - 31 * 60000 });
+      expect(await deliver(1)).toMatchObject({ status: 'existing' });
+      const results = await Promise.all([deliver(2), deliver(2)]);
+      expect(results.map(row => row.status).sort()).toEqual(['created', 'existing']);
+      expect((await profile.collection('notifications').get()).size).toBe(2);
+      expect((await profile.collection('notifications').doc(id(1)).get()).data()).toMatchObject({ withdrawnAt: '2026-10-07T10:00:00Z', isRead: true });
+      expect((await states.docs.find(doc => doc.id.startsWith('budget-'))!.ref.get()).data()!.deliveries).toHaveLength(2);
+      await cooldown.ref.update({ lastDeliveredAt: Date.now() - 31 * 60000 });
+      const disabled = kind === 'owner'
+        ? await createOwnerWatchNotification(ctx, 'repeat', `repeat-${listing.id}`, listing.id, searchSchema.parse({ scopeKey: 'brasov' }), undefined, 30, false)
+        : await createMatchingNotification(ctx, 'repeat', 'repeat-p', 'c', { id: 'p', title: 'Fixture', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }, undefined, 30, false);
+      expect(disabled).toMatchObject({ status: 'existing' });
+      expect((await profile.collection('notifications').get()).size).toBe(2);
+      if (kind === 'owner') await listing.update({ publicationStatus: 'hidden' });
+      else await agency.collection('properties').doc('p').update({ status: 'Vândut' });
+      expect(await deliver(3)).toMatchObject({ status: 'skipped', reasonCode: 'state_changed' });
+      expect((await profile.collection('notifications').get()).size).toBe(2);
+    } finally { await listing.delete(); await db.recursiveDelete(profile); }
+  }, 20000);
   it.each(['owner', 'matching'] as const)('shares %s cooldown across concurrent independent automations', async kind => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const listing = db.collection('ownerListings').doc(randomUUID());

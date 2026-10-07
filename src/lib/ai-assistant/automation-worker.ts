@@ -18,6 +18,7 @@ import { createInsightNotification } from './insight-notifications';
 import { insightQuietDeferral } from './insight-notification-policy';
 import { createMatchingNotification } from './matching-notifications';
 import { createOwnerWatchNotification } from './owner-watch-notifications';
+import { watchNotificationId } from './watch-notification-id';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -106,14 +107,14 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         result = report;
         const notificationResults: Record<string, any>[] = [];
         for (const row of report.rows) {
-          const id = automation.type === 'matching_watch' ? `${claim.id}-${row.id}` : `insight-${createHash('sha256').update(JSON.stringify([claim.id, run, row.id])).digest('hex')}`;
+          const id = automation.type === 'matching_watch' ? watchNotificationId(claim.id, String(row.id), run, automation.repeatAlerts) : `insight-${createHash('sha256').update(JSON.stringify([claim.id, run, row.id])).digest('hex')}`;
           if (automation.type === 'insight_report') {
             const notificationResult = await createInsightNotification(ctx, claim.id, id, row, `${claim.id}-run-${run}-${row.id}`, automation.cooldownMinutes, automation.quietHours);
             notificationResults.push(notificationResult);
             if (notificationResult.status === 'deferred') break;
             continue;
           }
-          const notificationResult = await createMatchingNotification(ctx, claim.id, id, automation.contactId, row, automation.quietHours, automation.cooldownMinutes);
+          const notificationResult = await createMatchingNotification(ctx, claim.id, id, automation.contactId, row, automation.quietHours, automation.cooldownMinutes, automation.repeatAlerts);
           notificationResults.push(notificationResult);
           if (notificationResult.status === 'deferred') break;
         }
@@ -124,7 +125,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         const page = result as Awaited<ReturnType<typeof searchProperties>>;
         const notificationResults = [];
         for (const row of page.rows) {
-          const notificationResult = await createOwnerWatchNotification(ctx, claim.id, `${claim.id}-${String(row.id)}`, String(row.id), search, automation.quietHours, automation.cooldownMinutes);
+          const notificationResult = await createOwnerWatchNotification(ctx, claim.id, watchNotificationId(claim.id, String(row.id), run, automation.repeatAlerts), String(row.id), search, automation.quietHours, automation.cooldownMinutes, automation.repeatAlerts);
           notificationResults.push(notificationResult);
           if (notificationResult.status === 'deferred') break;
         }
