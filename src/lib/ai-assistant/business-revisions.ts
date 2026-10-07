@@ -1,6 +1,7 @@
 import { getResource, type AssistantContext } from './access';
 import type { AssistantAction } from './contracts';
 import { recipientRevision, assertRecipientRevision } from '@/lib/communications/recipient-revision';
+import { prepareMessage } from './message-preparation';
 
 export async function bindBusinessRevisions(ctx: AssistantContext, actions: AssistantAction[]): Promise<AssistantAction[]> {
   const snapshots = new Map<string, Promise<Record<string, any>>>();
@@ -12,7 +13,7 @@ export async function bindBusinessRevisions(ctx: AssistantContext, actions: Assi
       if (!snapshots.has(key)) snapshots.set(key, getResource(ctx, 'conversations', id));
       const record = await snapshots.get(key)!;
       if (action.body.expectedRecipientRevision !== undefined) assertRecipientRevision(record, action.body.expectedRecipientRevision);
-      return { ...action, body: { ...action.body, expectedRecipientRevision: recipientRevision(record) } };
+      return { ...action, body: await prepareMessage(ctx, id, { ...action.body, expectedRecipientRevision: recipientRevision(record) }) };
     }
     if (action.kind === 'existing_operation' && action.operation === 'file_apply' && action.body.destination === 'property_rlv') {
       const id = action.body.propertyId;

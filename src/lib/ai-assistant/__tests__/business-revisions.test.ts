@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ getResource: vi.fn() }));
+vi.mock('../message-preparation', () => ({ prepareMessage: vi.fn(async (_ctx, _id, body) => body) }));
 import { getResource } from '../access';
 import { bindBusinessRevisions } from '../business-revisions';
 import { recipientRevision } from '@/lib/communications/recipient-revision';

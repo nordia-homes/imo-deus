@@ -61,6 +61,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
   });
   it('rejects stale recipient approval before estimating or creating a job', async () => {
     const f = await fixture(); await f.ref.update({ externalParticipantId: 'changed' });
+    mocks.token.mockClear();
     await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow('s-a schimbat');
     expect(mocks.token).not.toHaveBeenCalled(); expect((await f.ref.collection('messages').get()).empty).toBe(true);
   });
@@ -89,6 +90,23 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     await second.ref.update({ assigneeId: 'someone-else' }); await drainOutbound(db as any);
     expect((await db.collection('communicationOutboundJobs').doc(revoked.messageId!).get()).data()?.status).toBe('failed');
     expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it('refuses preparation after the response window expires without queuing a message', async () => {
+    const f = await fixture(); await f.ref.update({ lastInboundAt: '2020-01-01T00:00:00Z' });
+    await expect(bindBusinessRevisions({ ...f.actor, adminDb: db } as any, f.actions)).rejects.toThrow('Fereastra');
+    expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it.each(['expired', 'missing'])('refuses a %s quote in the queue and worker before provider invocation', async kind => {
+    const f = await fixture();
+    const expired = { ...f.input, sendApproval: kind === 'missing' ? undefined : { ...(f.input.sendApproval as any), expiresAt: 1 } };
+    await expect(queueMessage(db as any, f.actor, f.ref.id, expired)).rejects.toThrow('valabilitatea');
+    const result = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    const job = db.collection('communicationOutboundJobs').doc(result.messageId!);
+    const saved = (await job.get()).data()!;
+    if (kind === 'missing') delete saved.input.sendApproval; else saved.input.sendApproval.expiresAt = 1;
+    await job.set(saved);
+    await drainOutbound(db as any);
+    expect((await job.get()).data()?.status).toBe('failed'); expect(mocks.graph).not.toHaveBeenCalled();
   });
   it('allows inbox-only updates and binds manual queue submissions too', async () => {
     const f = await fixture(); const manual = { text: 'Mesaj manual', requestId: randomUUID() };

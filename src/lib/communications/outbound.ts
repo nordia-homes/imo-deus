@@ -11,8 +11,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { assertWhatsAppAccess, whatsappAppId } from './whatsapp-config';
 import { receiptCorrelation } from './receipt-correlation';
 import { recipientRevision, assertRecipientRevision } from './recipient-revision';
+import { sendApprovalSchema, assertSendApproval } from './send-approval';
 
-const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 export async function estimateSend(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput) {
   const { connection, token } = await connectionToken(db, actor, conversation.connectionId, 'send');
@@ -76,6 +77,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   if (input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, input.expectedRecipientRevision);
   const recipient = recipientRevision(conversation);
   const estimate = await estimateSend(db, actor, conversation, input);
+  if (input.sendApproval !== undefined || (!preview && input.expectedRecipientRevision !== undefined)) assertSendApproval(input.sendApproval, estimate);
   const attachment = input.attachmentId ? (await agencyCollection(db, actor.agencyId, 'communicationMedia').doc(input.attachmentId).get()).data() : null;
   if (preview) return { estimate: { amountMicros: estimate.amount, currency: estimate.currency, category: estimate.category }, withinWindow: withinResponseWindow(conversation.lastInboundAt), renderedText: estimate.renderedText };
   const jobId = stableId(actor.agencyId, input.requestId);
@@ -149,6 +151,7 @@ export async function drainOutbound(db: Firestore) {
       assertRecipientRevision(conversation, job.recipientRevision);
       if (job.input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, job.input.expectedRecipientRevision);
       const estimate = await estimateSend(db, actor, conversation, job.input);
+      if (job.input.sendApproval !== undefined || job.input.expectedRecipientRevision !== undefined) assertSendApproval(job.input.sendApproval, estimate);
       if (estimate.currency !== job.estimate.currency || estimate.amount > job.estimate.amount) throw new CommunicationError('Tariful s-a modificat. Pregătește din nou trimiterea.');
       const { connection, token } = await connectionToken(db, actor, job.connectionId, 'send');
       await messageRef.update({ status: 'sending' });

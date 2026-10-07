@@ -12,6 +12,9 @@ it('requires the approved recipient revision in the job and current conversation
   expect(messageOutcome(actor, 'c', approved, { ...current, contactId: 'other' }, pinned, message).completionSatisfied).toBe(false);
   expect(messageOutcome(actor, 'c', approved, current, { ...pinned, recipientRevision: undefined }, message).completionSatisfied).toBe(false);
   expect(messageOutcome(actor, 'c', approved, current, { ...pinned, input: body }, message).completionSatisfied).toBe(false);
+  const quoted = { ...approved, sendApproval: { amountMicros: 12000, currency: 'EUR', renderedText: body.text, expiresAt: 2000 } };
+  expect(messageOutcome(actor, 'c', quoted, current, { ...pinned, input: quoted }, message).completionSatisfied).toBe(true);
+  expect(messageOutcome(actor, 'c', quoted, current, { ...pinned, input: { ...quoted, sendApproval: { ...quoted.sendApproval, amountMicros: 90000 } } }, message).completionSatisfied).toBe(false);
 });
 it.each(['queued', 'sending', 'accepted', 'unknown'])('does not equate %s with delivery', status => {
   expect(messageOutcome(actor, 'c', body, conversation, job, { ...message, status })).toMatchObject({ completionSatisfied: false, watchable: true, businessStatus: status });

@@ -484,3 +484,19 @@ Validări trecute: **765/765 teste unitare în 82 fișiere** din Jarvis și comu
 Corpusul live nu a fost extins în acest lot. Cele 937 de cereri fără fixtures individuale și criteriile rămase ale planului integral sunt în continuare deschise. Modificările nu sunt publicate în producție.
 
 Build-ul final a trecut, inclusiv TypeScript și 225 pagini. Bundle-ul rezultat conține și ascunderea reviziei interne din preview. Avertismentele Jaeger/Tailwind și copierea omisă a browserului standalone local rămân cele documentate anterior.
+
+## 7 octombrie: preview obligatoriu și condiții concrete de trimitere
+
+Continuare E3/E4. Este implementat controlul server al previewului care rămăsese deschis în lotul anterior:
+
+- Pregătirea fiecărui `message_send` apelează modul preview al serviciului comun `queueMessage`. Verifică prin serviciul existent conversația, conexiunea, fereastra de răspuns, șablonul, acordurile și tariful aplicabile. O eroare oprește pregătirea planului. Previewul nu creează mesaj sau job și nu trimite către furnizor.
+- Serverul generează condițiile aprobării din răspunsul serviciului: cost maxim în micros, moneda, textul efectiv randat și valabilitate de o oră. Condițiile introduse de model sunt înlocuite cu rezultatul verificat; nu pot deveni autorizație pentru un cost inventat. Condițiile fac parte din payloadul exact al aprobării.
+- Coada și workerul recalculează eligibilitatea, costul și textul. Expirarea, schimbarea monedei, creșterea peste plafon sau modificarea textului randat cer pregătire/aprobare nouă. Un cost mai mic pentru același conținut și aceeași monedă este permis, cu păstrarea verificării suplimentare a rezervării din job. Prețul necunoscut/invalid nu este tratat ca zero.
+- Confirmarea afișează costul maxim în unitatea monetară, textul efectiv și ora expirării. Verificatorul rezultatului cere concordanța condițiilor aprobate cu inputul jobului. Expirarea ulterioară nu anulează dovada unui mesaj deja livrat și nu produce retrimitere.
+- Planurile Jarvis neexecutate fără preview valid cer pregătire nouă. Joburile Jarvis vechi cu destinatar fixat, dar fără condiții de trimitere, sunt oprite înainte de furnizor. Trimiterile manuale fără câmpul de aprobare Jarvis păstrează fluxul lor existent de estimare, buget și revalidare; nu sunt transformate în planuri Jarvis. Lansarea coordonată web/worker și verificarea cozii rămân necesare.
+
+Validări: **773/773 teste unitare în 83 fișiere**, **59/59 teste pe emulator în 15 fișiere**, **134/134 scenarii deterministe** și **155/155 teste în runnerul dedicat**. Cele 11 probe ale cozii reale includ acum fereastra expirată la pregătire și condiții expirate/lipsă atât la coadă, cât și la worker; transportul este simulat. Proba Chromium verifică afișarea costului și textului concret pe mobil. ESLint a trecut. Nu au fost trimise mesaje reale.
+
+Rămân deschise verificarea integrală a celor trei fluxuri pilot, probele furnizorilor reali și criteriile deja enumerate pentru corpus, validitate juridică și Jev. Previzualizarea înainte de aprobare este acum obligatorie pentru pregătirea mesajelor Jarvis, dar această etapă nu certifică întregul plan. Lotul nu este publicat în producție.
+
+Build-ul final a trecut cu TypeScript și 225 pagini; manifestul de paritate a trecut. Avertismentele locale Jaeger/Tailwind și copierea omisă a browserului standalone rămân cele cunoscute.

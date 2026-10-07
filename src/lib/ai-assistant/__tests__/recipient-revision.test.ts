@@ -4,7 +4,7 @@ import { approvalEnvelope, validateApproval } from '../approval';
 import type { AssistantAction } from '../contracts';
 const recipient = { id: 'conversation', agencyId: 'agency', channel: 'messenger', connectionId: 'connection', externalParticipantId: 'participant', contactId: 'contact' };
 it('rejects old unpinned send approvals and detects changing the approved revision', () => {
-  const action: AssistantAction = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conversation' }, query: {}, body: { text: 'Ofertă concretă' } };
+  const action: AssistantAction = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conversation' }, query: {}, body: { text: 'Ofertă concretă', sendApproval: { amountMicros: 0, currency: 'EUR', renderedText: 'Ofertă concretă', expiresAt: Date.now() + 60000 } } };
   const envelope = approvalEnvelope('u', 'a', 'p', [action], Date.now() + 60000);
   expect(() => validateApproval(envelope, 'u', 'a', 'p', [action])).toThrow('nu fixează destinatarul');
   const bound = { ...action, body: { ...action.body, expectedRecipientRevision: recipientRevision(recipient) } };
