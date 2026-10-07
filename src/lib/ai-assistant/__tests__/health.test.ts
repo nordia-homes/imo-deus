@@ -12,6 +12,14 @@ function source(rows: any[]) {
 }
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('authorized operational health', () => {
+  it('reports degraded reconciliation separately from an active automation worker', async () => {
+    vi.stubEnv('AI_ASSISTANT_WORKER_SECRET', 'synthetic'); source([]);
+    const adminDb = { collection: () => ({ doc: (id: string) => ({ get: async () => ({ data: () => id === 'notificationSweep' ? { lastFinishedAt: new Date(Date.now() - 1000).toISOString(), failed: 1, token: 'private', cursor: 'users/other/notifications/n' } : {} }) }) }) };
+    const result = await crmHealth({ ...ctx, adminDb });
+    expect(result.worker.active).toBe(true);
+    expect(result.notificationReconciliation.status).toBe('degraded');
+    expect(JSON.stringify(result)).not.toMatch(/private|users\/other/);
+  });
   it('measures lag only from genuine projected events with valid original timestamps', () => {
     expect(projectionLag([{ source: 'firestore_change', occurredAt: '2026-10-05T12:00:00Z', recordedAt: '2026-10-05T12:00:01Z' }, { source: 'firestore_change', occurredAt: '2026-10-05T12:00:00Z', recordedAt: '2026-10-05T12:00:03Z' }, { source: 'backfill', occurredAt: '2026-10-01', recordedAt: '2026-10-05' }, { source: 'firestore_change', occurredAt: 'bad', recordedAt: 'bad' }])).toEqual({ measuredEvents: 2, averageMs: 2000, p95Ms: 3000, maxMs: 3000 });
     expect(projectionLag([]).p95Ms).toBeNull();

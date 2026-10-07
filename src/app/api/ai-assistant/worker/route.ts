@@ -17,6 +17,7 @@ export async function POST(request: Request) {
   try {
     await adminDb.collection('assistantWorkerState').doc('global').set({ lastAttemptAt: new Date().toISOString() }, { merge: true });
     const notifications = await sweepAssistantNotifications(adminDb).catch(() => ({ status: 'failed' }));
+    if (notifications.status === 'failed') await adminDb.collection('assistantWorkerState').doc('global').set({ lastNotificationSweepFailureAt: new Date().toISOString() }, { merge: true }).catch(() => undefined);
     const jobs = await drainAgentJobs(adminDb, 1);
     const result = await drainAssistantAutomations(adminDb);
     await adminDb.collection('assistantWorkerState').doc('global').set({ lastSuccessAt: new Date().toISOString(), processed: result.processed }, { merge: true });

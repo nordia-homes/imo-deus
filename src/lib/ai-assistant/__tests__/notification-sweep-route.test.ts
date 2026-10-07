@@ -9,6 +9,7 @@ import { POST } from '@/app/api/ai-assistant/worker/route';
 const request = (token = 'synthetic-worker-secret', suffix = '') => new Request(`https://example.test/api/ai-assistant/worker${suffix}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
 beforeEach(() => {
   vi.resetAllMocks(); vi.stubEnv('AI_ASSISTANT_WORKER_SECRET', 'synthetic-worker-secret');
+  mocks.set.mockResolvedValue(undefined);
   mocks.sweep.mockResolvedValue({ status: 'completed', scanned: 25, withdrawn: 3 });
   mocks.jobs.mockResolvedValue({ processed: 0 }); mocks.automations.mockResolvedValue({ processed: 0 });
 });
@@ -29,6 +30,7 @@ it('does not block jobs or expose exception contents after a sweep failure', asy
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ processed: 0, jobs: { processed: 0 }, notifications: { status: 'failed' } });
   expect(mocks.jobs).toHaveBeenCalledTimes(1); expect(mocks.automations).toHaveBeenCalledTimes(1);
+  expect(mocks.set).toHaveBeenCalledWith({ lastNotificationSweepFailureAt: expect.any(String) }, { merge: true });
 });
 it('does not scan during a voice-only health probe', async () => {
   mocks.voice.mockResolvedValue({ ready: true });
