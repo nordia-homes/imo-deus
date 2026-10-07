@@ -28,9 +28,10 @@ export function summarizeOutcome(status: string, total: number, rows: OutcomeEvi
   let state: GoalState;
   if (status === 'cancelled') state = 'CANCELLED';
   else if (status === 'paused') state = 'PAUSED';
-  else if (failed) state = confirmed ? 'PARTIALLY_COMPLETED' : 'FAILED';
+  // A failed sibling does not settle a provider wait or an uncertain effect.
   else if (uncertain) state = 'BLOCKED';
   else if (pending) state = 'WAITING_PROVIDER';
+  else if (failed) state = confirmed ? 'PARTIALLY_COMPLETED' : 'FAILED';
   else if (total > 0 && confirmed === total) state = 'COMPLETED';
   else if (status === 'pending' && unique.size === 0) state = 'AWAITING_APPROVAL';
   else if (['failed', 'unknown', 'completed'].includes(status)) state = 'BLOCKED';
@@ -42,7 +43,9 @@ export function summarizeOutcome(status: string, total: number, rows: OutcomeEvi
     COMPLETED: 'Rezultatele pașilor sunt confirmate prin dovezile disponibile.', PARTIALLY_COMPLETED: 'O parte din rezultate este confirmată; există pași nereușiți.',
     FAILED: 'Rezultatul cerut nu a fost confirmat.', CANCELLED: 'Pașii rămași au fost opriți; efectele deja pornite pot continua.',
   };
-  return { schemaVersion: 1, state, confirmed, total, pending, uncertain, failed, checkedAt: now, note: notes[state] };
+  const mixed = failed > 0 && (pending > 0 || uncertain > 0);
+  const note = mixed ? `${notes[state]} Rezultate confirmate: ${confirmed}; pași nereușiți: ${failed}; în așteptarea furnizorului: ${pending}; rezultate incerte: ${uncertain}.` : notes[state];
+  return { schemaVersion: 1, state, confirmed, total, pending, uncertain, failed, checkedAt: now, note };
 }
 
 export const goalContractSchema = z.object({

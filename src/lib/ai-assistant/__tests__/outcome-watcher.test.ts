@@ -6,6 +6,7 @@ vi.mock('../plan-outcomes', () => ({ readPlanOutcomes: mocks.read }));
 vi.mock('@/lib/crm/automation-fence', () => ({ assertAutomationFence: mocks.fence }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status: number) { super(message); } } }));
 import { verifyPlanOutcome } from '../outcome-watcher';
+import { summarizeOutcome } from '../outcome';
 function context(status = 'completed', agencyId = 'a', nanoseconds = 1) {
   const update = vi.fn();
   const db: any = { collection: (name: string) => ({ doc: () => ({ name }) }), runTransaction: async (fn: any) => fn({
@@ -21,6 +22,18 @@ it('reschedules verification without replaying domain effects', async () => {
   const { ctx, update } = context();
   expect(await verifyPlanOutcome(ctx, 'p', Date.now() + 60000)).toMatchObject({ status: 'pending', planStatus: 'WAITING_PROVIDER' });
   expect(update).toHaveBeenCalledOnce(); expect(mocks.fence).toHaveBeenCalledOnce();
+});
+it('persists mixed pending results then settles them without hiding the failed step', async () => {
+  const { ctx, update } = context();
+  const failed = { step: 1, executionState: 'failed' };
+  const pending = summarizeOutcome('completed', 2, [failed, { step: 2, executionState: 'queued', watchable: true }]);
+  mocks.read.mockResolvedValue({ planRevision: '100:1', pollAfterMs: 15000, executionStatus: 'completed', outcome: pending });
+  expect(await verifyPlanOutcome(ctx, 'p', Date.now() + 60000)).toMatchObject({ status: 'pending', planStatus: 'WAITING_PROVIDER', outcome: { failed: 1, pending: 1 } });
+  expect(update).toHaveBeenLastCalledWith(expect.anything(), { outcome: pending });
+  const settled = summarizeOutcome('completed', 2, [failed, { step: 2, executionState: 'succeeded', completionSatisfied: true }]);
+  mocks.read.mockResolvedValue({ planRevision: '100:1', pollAfterMs: null, executionStatus: 'completed', outcome: settled });
+  expect(await verifyPlanOutcome(ctx, 'p', Date.now() + 60000)).toMatchObject({ status: 'completed', planStatus: 'PARTIALLY_COMPLETED', outcome: { failed: 1, confirmed: 1, pending: 0 } });
+  expect(update).toHaveBeenLastCalledWith(expect.anything(), { outcome: settled });
 });
 it('ends at the deadline with an explicit unresolved outcome', async () => {
   const { ctx, update } = context();

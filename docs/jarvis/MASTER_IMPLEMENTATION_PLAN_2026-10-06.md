@@ -1227,3 +1227,13 @@ Versiunea uneltelor este 51. Modificarea întărește E1/E3, fără să certific
 Validări: 1659/1659 teste de regresie în 132 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 13 probe noi acoperă tipurile incompatibile, numerele de pas invalide, ID-urile prea lungi sau nerezolvate, ordinea listelor și legarea URL-urilor/scenariilor. Fluxurile async-pipeline și verified-outputs au trecut în regresie. Providerii sunt simulați; emulatorul și UI nu au fost relansate pentru această transformare a parametrilor. Nu au fost acceptate scenarii originale suplimentare prin aceste teste sintetice.
 
 Buildul complet a trecut cu 227/227 pagini. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Dovezile ultimei publicări în producție nu au fost modificate.
+
+## 8 octombrie: rezultate mixte cu efecte externe încă nesoluționate
+
+Agregarea rezultatului păstrează WAITING_PROVIDER când un pas este nereușit, dar alt pas așteaptă încă furnizorul. Dacă există și un efect incert, starea rămâne BLOCKED, cu numărătorile de așteptare și eșec păstrate. FAILED sau PARTIALLY_COMPLETED sunt stabilite după soluționarea acestor așteptări și incertitudini. O eroare de citire nu devine dovadă de eșec al operației externe și nu declanșează retrimiterea ei.
+
+Mesajul rezultatului mixt precizează separat numărul rezultatelor confirmate, pașilor nereușiți, așteptărilor și incertitudinilor. Pauza și anularea explicită păstrează prioritatea. Acoperirea cererii nu înlocuiește așteptarea activă cu o clarificare sau limitare a altei cerințe. Monitorul existent salvează rezultatul și continuă verificarea în limita termenului deja stabilit; nu se schimbă durata, lease-ul, accesul sau receipts-urile.
+
+Versiunea uneltelor este 52. Validări: 79/79 teste țintite și 1671/1671 teste de regresie în 132 de fișiere, ESLint și paritatea au trecut. Cele 12 probe noi acoperă ordinea rezultatelor, eșec/anulare/inaccesibilitate, incertitudine, pauză, acoperirea cererii, citirea repetată a două joburi video și persistența monitorului până la soluționare. Providerii și persistența sunt simulate; emulatorul și UI nu au fost relansate pentru schimbarea reducerului. Nu cresc cele 63 de scenarii originale acceptate. Regula București și producția rămân neschimbate; E1/E3 și restul planului integral nu sunt declarate închise.
+
+Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut; dovezile producției nu au fost modificate.

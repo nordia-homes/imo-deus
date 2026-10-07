@@ -1,6 +1,28 @@
 import { expect, it } from 'vitest';
 import { summarizeOutcome } from '../outcome';
 
+it.each(['failed', 'cancelled', 'unavailable'])('keeps an active provider wait visible alongside a %s step', executionState => {
+  const rows = [{ step: 1, executionState: 'succeeded', completionSatisfied: true }, { step: 2, executionState }, { step: 3, executionState: 'running', watchable: true }];
+  for (const ordered of [rows, [...rows].reverse()]) {
+    const outcome = summarizeOutcome('completed', 3, ordered);
+    expect(outcome).toMatchObject({ state: 'WAITING_PROVIDER', confirmed: 1, failed: 1, pending: 1, uncertain: 0 });
+    expect(outcome.note).toContain('pași nereușiți: 1');
+    expect(outcome.note).toContain('în așteptarea furnizorului: 1');
+  }
+});
+it.each([false, true])('keeps uncertain effects blocked alongside failures, with watchable=%s', watchable => {
+  expect(summarizeOutcome('completed', 3, [{ step: 1, executionState: 'failed' }, { step: 2, executionState: 'unknown', watchable }, { step: 3, executionState: 'queued', watchable: true }])).toMatchObject({ state: 'BLOCKED', failed: 1, uncertain: 1, pending: 1 });
+});
+it('settles a mixed result only after the provider wait finishes', () => {
+  const failure = { step: 1, executionState: 'failed' };
+  expect(summarizeOutcome('completed', 2, [failure, { step: 2, executionState: 'queued', watchable: true }])).toMatchObject({ state: 'WAITING_PROVIDER', confirmed: 0 });
+  expect(summarizeOutcome('completed', 2, [failure, { step: 2, executionState: 'succeeded', completionSatisfied: true }])).toMatchObject({ state: 'PARTIALLY_COMPLETED', confirmed: 1, pending: 0 });
+  expect(summarizeOutcome('completed', 2, [failure, { step: 2, executionState: 'failed' }])).toMatchObject({ state: 'FAILED', failed: 2, pending: 0 });
+});
+it.each(['paused', 'cancelled'])('preserves %s for mixed results and reports outstanding effects', status => {
+  expect(summarizeOutcome(status, 2, [{ step: 1, executionState: 'failed' }, { step: 2, executionState: 'queued', watchable: true }])).toMatchObject({ state: status.toUpperCase(), failed: 1, pending: 1 });
+});
+
 it('does not certify worker completion without business evidence', () => {
   expect(summarizeOutcome('completed', 1, [])).toMatchObject({ state: 'BLOCKED', confirmed: 0 });
   expect(summarizeOutcome('completed', 1, [{ step: 1, executionState: 'queued', watchable: true }]).state).toBe('WAITING_PROVIDER');

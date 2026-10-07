@@ -2,6 +2,11 @@ import { expect, it } from 'vitest';
 import { goalCoverageOutcome, validateGoalCoverage } from '../goal-coverage';
 import { summarizeOutcome } from '../outcome';
 const requirement = { id: 'task', sourceQuote: 'Creează', description: 'Sarcina cerută', resolution: 'planned' as const, steps: [1], evidenceCallIds: [] };
+it.each(['needs_clarification', 'unsupported'] as const)('does not replace an active mixed wait with %s', resolution => {
+  const rows = [{ step: 1, executionState: 'succeeded', completionSatisfied: true }, { step: 2, executionState: 'failed' }, { step: 3, executionState: 'queued', watchable: true }];
+  const coverage = { requirements: [{ ...requirement, steps: [1, 2, 3] }, { ...requirement, id: 'remaining', resolution, steps: [] }] };
+  expect(goalCoverageOutcome(summarizeOutcome('completed', 3, rows), coverage, rows, true)).toMatchObject({ state: 'WAITING_PROVIDER', confirmed: 1, failed: 1, pending: 1 });
+});
 it('rejects ungrounded requests, missing steps, duplicate IDs and fabricated evidence', () => {
   expect(() => validateGoalCoverage({ requirements: [requirement] }, 'Creează task', 1, new Set())).not.toThrow();
   expect(() => validateGoalCoverage({ requirements: [requirement] }, 'Citește task', 1, new Set())).toThrow('citat exact');

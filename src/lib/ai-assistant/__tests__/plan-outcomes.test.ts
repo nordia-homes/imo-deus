@@ -7,6 +7,24 @@ import { readPlanOutcomes } from '../plan-outcomes';
 import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx: any = { uid: 'u', role: 'agent', agencyId: 'a', adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ role: 'agent', agencyId: 'a' }) }) }) }) } };
 const action = { kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: {} };
+it('keeps mixed video results under verification until the remaining provider effect settles', async () => {
+  const plan = { actions: [action, action], status: 'completed', results: [1, 2].map(step => ({ step, result: { jobId: `j${step}`, executionState: 'queued' } })) };
+  mocks.plan.mockResolvedValue({ data: plan });
+  let phase = 'queued';
+  mocks.invoke.mockImplementation(async (_ctx, request) => {
+    if (request.params.jobId === 'j1') return { executionState: 'failed' };
+    if (phase === 'unknown') throw new Error('temporary provider read failure');
+    if (phase === 'queued') return { executionState: 'queued' };
+    return { executionState: 'succeeded', job: { id: 'j2', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://storage.example/video.mp4' } };
+  });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'WAITING_PROVIDER', failed: 1, pending: 1 }, pollAfterMs: 15000 });
+  phase = 'unknown';
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'BLOCKED', failed: 1, uncertain: 1 }, pollAfterMs: 15000 });
+  phase = 'completed';
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'PARTIALLY_COMPLETED', failed: 1, confirmed: 1, pending: 0 }, pollAfterMs: null });
+  expect(mocks.invoke.mock.calls.every(args => args[1].operation === 'video_job' && args[2] === true)).toBe(true);
+  expect(plan.results.every(row => row.result.executionState === 'queued')).toBe(true);
+});
 it('confirms an outreach schedule by current identity and never resends it while reconciling', async () => {
   const scheduledAt = new Date(Date.now() + 3600000).toISOString();
   const body = { ownerListing: { id: 'l' }, scheduledAt };
