@@ -364,10 +364,10 @@ export default function LeadDetailPage() {
     };
     
     const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
-        if (!agency?.id || !user) return;
+        if (!agency?.id || !user) throw new Error('Autentificare necesară. Reîncarcă pagina.');
 
         const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
-        if (!selectedProperty) return;
+        if (!selectedProperty) throw new Error('Proprietate invalidă. Selectează din nou proprietatea.');
         
         const viewingToAdd: Omit<Viewing, 'id'> = {
             ...viewingData,
@@ -384,11 +384,6 @@ export default function LeadDetailPage() {
             toast({ title: "Vizionare programată!" });
         } catch (error) {
             console.error('Failed to add viewing from lead detail page:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Eroare',
-                description: 'Vizionarea nu a putut fi salvată.',
-            });
             throw error;
         }
     };

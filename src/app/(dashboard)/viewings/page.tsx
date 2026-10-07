@@ -91,12 +91,11 @@ export default function ViewingsPage() {
     }, [agentsError]);
 
     const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
-        if (!agencyId || !user) return;
+        if (!agencyId || !user) throw new Error('Autentificare necesară. Reîncarcă pagina.');
 
         const selectedProperty = properties?.find(p => p.id === viewingData.propertyId);
         if (!selectedProperty) {
-             toast({ variant: 'destructive', title: 'Proprietate invalidă.' });
-             return;
+             throw new Error('Proprietate invalidă. Selectează din nou proprietatea.');
         };
         
         const viewingToAdd: Omit<Viewing, 'id'> = {
@@ -115,7 +114,7 @@ export default function ViewingsPage() {
             toast({ title: 'Vizionare programată!', description: 'Vizionarea a fost adăugată în calendar.' });
         } catch (error) {
             console.error('Failed to add viewing:', error);
-            toast({ variant: 'destructive', title: 'Eroare', description: 'Vizionarea nu a putut fi salvată.' });
+            throw error;
         }
     };
 

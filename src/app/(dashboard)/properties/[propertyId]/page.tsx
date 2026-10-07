@@ -156,7 +156,7 @@ export default function PropertyDetailPage() {
     }, [loadedPropertyId, isPropertyLoading, isAgencyLoading, matchingUserId, agencyId, buyerMatchScope, shouldLoadBuyerMatches]);
 
     const handleAddViewing = async (viewingData: Omit<Viewing, 'id' | 'status' | 'agentId' | 'agentName' | 'createdAt' | 'propertyAddress' | 'propertyTitle'>) => {
-        if (!agencyId || !user || !property) return;
+        if (!agencyId || !user || !property) throw new Error('Datele necesare programării nu sunt disponibile. Reîncarcă pagina.');
         
         const viewingsCollection = collection(firestore, 'agencies', agencyId, 'viewings');
         const viewingToAdd: Omit<Viewing, 'id'> = {

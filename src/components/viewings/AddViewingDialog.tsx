@@ -1,7 +1,7 @@
 "use client";
 import { executeCrmAction } from "@/lib/crm/client-actions";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,13 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Viewing, Property, Contact } from '@/lib/types';
+import type { Viewing } from '@/lib/types';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useAgency } from '@/context/AgencyContext';
-import { collection, addDoc } from 'firebase/firestore';
+import { resolveViewingContact, type ViewingContactAttempt } from '@/lib/crm/viewing-contact';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent } from '../ui/card';
 import { PropertyPicker, type PropertyPickerOption } from './PropertyPicker';
@@ -69,7 +69,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
   const { toast } = useToast();
   const { agencyId } = useAgency();
   const { user } = useUser();
-  const firestore = useFirestore();
+  const contactAttempt = useRef<ViewingContactAttempt>({});
+  const wasOpen = useRef(false);
   const isMobile = useIsMobile();
   const formKey = useMemo(() => `add-viewing-${isOpen}`, [isOpen]);
 
@@ -88,7 +89,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
   });
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpen.current) {
+      contactAttempt.current = {};
       form.reset({
         propertyId: defaultPropertyId,
         contactId: defaultContactId,
@@ -101,6 +103,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
       setIsDatePickerOpen(false);
       setContactSearch('');
     }
+    wasOpen.current = isOpen;
   }, [isOpen, defaultContactId, defaultPropertyId, form]);
 
   const timeSlots = useMemo(() => {
@@ -147,6 +150,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
 
   async function onSubmit(values: z.infer<typeof viewingSchema>) {
     setIsSubmitting(true);
+    let stage: 'contact' | 'viewing' = 'contact';
     try {
         if (!agencyId || !user) {
             throw new Error('Nu sunteți autentificat sau agenția nu este validă.');
@@ -162,29 +166,25 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
             }
 
             const selectedProperty = properties.find((property) => property.id === values.propertyId);
-            const contactsCollection = collection(firestore, 'agencies', agencyId, 'contacts');
-            const newContactData: Omit<Contact, 'id'> = {
-                name: values.newContactName,
-                phone: values.newContactPhone,
-                email: values.newContactEmail,
+            const action = {
+                kind: 'create_contact' as const,
+                name: values.newContactName.trim(),
+                phone: values.newContactPhone.trim(),
+                email: values.newContactEmail.trim(),
                 description: selectedProperty
                     ? `Notita automata: client adaugat pentru vizionarea proprietatii ${selectedProperty.title}`
                     : undefined,
                 source: 'Contact direct',
-                status: 'Nou',
-                contactType: 'Cumparator',
-                createdAt: new Date().toISOString(),
-                agentId: user.uid,
-                agentName: user.displayName || user.email,
+                contactType: 'Cumparator' as const,
                 sourcePropertyId: selectedProperty?.id,
-                budget: selectedProperty?.price,
-                city: selectedProperty?.city,
+                budget: selectedProperty?.price ?? undefined,
+                city: selectedProperty?.city ?? undefined,
                 zones: selectedProperty?.zone ? [selectedProperty.zone] : [],
             };
-            const created = await executeCrmAction(user, { kind: 'create_contact', name: values.newContactName, phone: values.newContactPhone, email: values.newContactEmail, contactType: 'Cumparator', source: 'Contact direct', description: newContactData.description, budget: newContactData.budget, city: newContactData.city, zones: newContactData.zones, sourcePropertyId: selectedProperty?.id });
-            contactIdToUse = String(created.contactId);
-            contactNameToUse = values.newContactName;
-            toast({ title: "Client nou creat!", description: `${values.newContactName} a fost adăugat în CRM.` });
+            const contact = await resolveViewingContact(action, contactAttempt.current,
+                (request, requestId) => executeCrmAction(user, request, requestId));
+            contactIdToUse = contact.id;
+            contactNameToUse = contact.name;
         } else {
             const selectedContact = contacts.find(c => c.id === values.contactId);
             if (!selectedContact) {
@@ -195,6 +195,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
             contactNameToUse = selectedContact.name;
         }
         
+        stage = 'viewing';
         const [hours, minutes] = values.viewingTime.split(':').map(Number);
         const viewingDateTime = new Date(values.viewingDate);
         viewingDateTime.setHours(hours, minutes);
@@ -212,7 +213,11 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
 
     } catch (error) {
         console.error("Failed to submit viewing:", error);
-        toast({ variant: "destructive", title: "Eroare la salvare", description: "A apărut o problemă la salvarea vizionării. Încearcă din nou." });
+        const reason = error instanceof Error ? error.message : 'Verifică conexiunea și încearcă din nou.';
+        toast({ variant: "destructive", title: stage === 'contact' ? 'Clientul nu a putut fi adăugat' : 'Vizionarea nu a putut fi salvată',
+            description: stage === 'viewing' && isNewContact && contactAttempt.current.contact
+                ? `Clientul a fost salvat. ${reason} Poți reîncerca programarea fără să creezi clientul din nou.`
+                : reason });
     } finally {
         setIsSubmitting(false);
     }
@@ -256,7 +261,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                     <FormField control={form.control} name="newContactName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Nume client" /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name="newContactPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="0712345678" /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
-                                    <Button type="button" variant="link" size="sm" className="h-auto p-0 text-primary" onClick={() => setIsNewContact(false)}>
+                                    <Button type="button" variant="link" size="sm" className="agentfinder-add-viewing-dialog__contact-link h-auto p-0 text-primary" onClick={() => setIsNewContact(false)}>
                                         Sau selectează un client existent
                                     </Button>
                                 </div>
@@ -289,7 +294,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                                 </Select>
                                             )}
                                         />
-                                        <Button type="button" variant="outline" size="icon" onClick={() => setIsNewContact(true)} className="bg-white/10 border-white/20 text-white">
+                                        <Button type="button" variant="outline" size="icon" aria-label="Adaugă un client nou" onClick={() => setIsNewContact(true)} className="agentfinder-add-viewing-dialog__add-client shrink-0 bg-white/10 border-white/20 text-white">
                                             <UserPlus className="h-4 w-4"/>
                                         </Button>
                                     </div>
@@ -305,7 +310,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
 
                     <Card className="rounded-2xl border-none bg-[#152A47] text-white shadow-xl">
                         <CardContent className="pt-6 space-y-4">
-                             <div className="grid grid-cols-2 gap-4">
+                             <div className="grid grid-cols-2 gap-3 sm:gap-4 [&>*]:min-w-0">
                                 <FormField
                                 control={form.control}
                                 name="viewingDate"
@@ -316,15 +321,16 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                         <PopoverTrigger asChild>
                                         <FormControl>
                                             <Button
+                                            type="button"
                                             variant="outline"
                                             className={cn(
-                                                "w-full pl-3 text-left font-normal",
+                                                "agentfinder-add-viewing-dialog__date w-full min-w-0 justify-between gap-2 px-3 text-left font-normal tabular-nums",
                                                 !field.value && "text-muted-foreground",
                                                 "bg-white/10 border-white/20 text-white"
                                             )}
                                             >
-                                            {field.value ? format(field.value, "PPP", { locale: ro }) : <span>Alege data</span>}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            <span className="min-w-0 truncate">{field.value ? format(field.value, "dd/MM/yyyy") : 'Alege data'}</span>
+                                            <CalendarIcon className="h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </FormControl>
                                         </PopoverTrigger>
