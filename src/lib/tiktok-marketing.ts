@@ -1007,23 +1007,8 @@ export async function publishTikTokPostDraft(input: {
   scheduleOwner?: string;
 }) {
   const ref = getDraftRef(input.agencyId, input.draftId);
-  let draft = await adminDb.runTransaction(async tx => {
-    const snapshot = await tx.get(ref);
-    if (!snapshot.exists) throw new Error('Draftul TikTok nu a fost gasit.');
-    const current = { id: snapshot.id, ...snapshot.data() } as TikTokPostDraft;
-    if (input.fromSchedule) {
-      const { assertTikTokSchedule } = await import('./tiktok-schedule-revision');
-      const job = await tx.get(adminDb.collection('tiktokStudioJobs').doc(`publish_${input.agencyId}_${input.draftId}`));
-      assertTikTokSchedule(current, job.data(), { agencyId: input.agencyId, uid: input.requestedByUid, draftId: input.draftId, owner: input.scheduleOwner || '' });
-    }
-    if (current.createdByUid !== input.requestedByUid) throw new Error('Numai autorul poate publica pe profilul conectat.');
-    if (current.scheduleStatus === 'scheduled' && !input.fromSchedule) throw new Error('Postarea este programată. Anulează programarea înainte de publicarea manuală.');
-    if (current.publishId || current.publishOutcomeUnknown || current.manualReviewRequired || ['publishing', 'processing', 'published'].includes(current.status)) throw new Error('Publicarea a fost deja inițiată. Verifică starea fără a retrimite.');
-    if (!current.description.trim() || !current.videoTourUrl || !current.consentedAt) throw new Error('Completează postarea și confirmă acordul pentru publicare.');
-    if (current.brandContent && current.privacyLevel === 'SELF_ONLY') throw new Error('Parteneriatul plătit nu poate fi publicat privat.');
-    tx.update(ref, { status: 'publishing', updatedAt: nowIso(), lastStatusCheckedAt: nowIso() });
-    return current;
-  });
+  const { claimTikTokPublication } = await import('./tiktok-publish-claim');
+  let draft = await claimTikTokPublication(adminDb, input);
   if (!draft.description.trim()) throw new Error('Descrierea TikTok este obligatorie.');
   if (!draft.videoTourUrl) throw new Error('Draftul nu are video tur atasat.');
 

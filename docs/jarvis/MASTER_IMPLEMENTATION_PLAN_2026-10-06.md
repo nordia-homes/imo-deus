@@ -596,3 +596,14 @@ Limite: publisherul TikTok este simulat în această suită; tranzacția intern�
 Suita completă de emulator a trecut 87/87 teste în 16 fișiere. Verificarea separată TypeScript a identificat și tipări necorespunzătoare în fixtures mai vechi și o parametrizare Vitest Facebook care despacheta lista de grupuri ca argumente. Tabelul de cazuri a fost corectat să transmită lista integrală; toate cele 28 de teste Facebook au trecut după corecție. Ajustările celorlalte fixtures clarifică tipurile și verificarea prezenței statusului, fără schimbarea codului runtime.
 
 Verificarea finală TypeScript (	sc --noEmit --incremental) și ESLint au trecut. Acest lot schimbă exclusiv testele, runnerul și documentația; buildul aplicației din etapa precedentă nu a fost rerulat.
+
+## 7 octombrie: tranzacția publisherului TikTok verificată direct
+
+Continuare E3/E4. Tranzacția care trece draftul în `publishing` a fost extrasă în `claimTikTokPublication`, reutilizată de serviciul real de publicare. Nu există un executor paralel. Pe lângă verificările existente de conținut, acord, programare și claim, tranzacția citește acum utilizatorul și confirmă că autorul încă aparține agenției draftului. ID-ul returnat provine din referința documentului, nu dintr-un câmp modificabil.
+
+Suita Firestore reală testează direct această tranzacție: două încercări simultane au un singur câștigător; schimbarea conținutului, ownerului, expirarea lease-ului, revocarea apartenenței, anularea jobului sau retragerea acordului păstrează draftul în starea inițială. Trimiterea manuală nu poate ocoli programarea activă, iar după anulare poate porni o singură dată. Sunt opt probe noi, adăugate celor nouă ale schedulerului.
+
+Validări trecute: **95/95 teste pe emulator în 16 fișiere**, **157/157 teste în 17 fișiere** din TikTok și verificarea rezultatelor planului, TypeScript separat și ESLint. Ultima suită generală de 979 de teste rămâne dovada etapei precedente, nu o rerulare a acestui lot. Testele directe nu apelează publisherul extern; ele verifică tranzacția reală înaintea solicitărilor de media/provider. Transferul video, confirmarea publicării, webhookurile și schimbările survenite după pornirea autorizată rămân în afara acestei probe.
+
+Compatibilitate: publicarea este refuzată dacă documentul autorului lipsește, acesta a schimbat agenția sau draftul nu mai corespunde agenției; nu se reconstruiesc automat permisiunile din job. Planul integral și acceptanța furnizorilor rămân deschise. Lotul nu este publicat în producție.
+Buildul final a trecut cu TypeScript și 225 pagini; avertismentele locale Jaeger/standalone sunt cele cunoscute. Nu s-a efectuat deployment.

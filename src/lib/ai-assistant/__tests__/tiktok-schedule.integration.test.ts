@@ -7,6 +7,7 @@ vi.mock('@/lib/tiktok-marketing', () => ({ publishTikTokPostDraft: state.publish
 import { scheduleTikTokPost, cancelScheduledTikTokPost, drainStudioRenders } from '@/lib/tiktok-studio-jobs';
 import { bindBusinessRevisions } from '../business-revisions';
 import { approvalEnvelope, validateApproval } from '../approval';
+import { claimTikTokPublication } from '@/lib/tiktok-publish-claim';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and scheduling on actual Firestore', () => {
   let db: Firestore;
@@ -48,6 +49,39 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and sched
     expect((await f.job.get()).data()?.status).toBe('completed');
     expect((await f.ref.get()).data()?.scheduleStatus).toBe('sent');
   }, 30000);
+  async function publicationFixture() {
+    const f = await fixture(); await f.schedule(); await f.due();
+    await f.job.update({ status: 'running', owner: 'claim', leaseUntil: new Date(Date.now() + 60000).toISOString() });
+    const input = { agencyId: f.agencyId, draftId: f.ref.id, requestedByUid: f.uid, fromSchedule: true, scheduleOwner: 'claim' };
+    return { ...f, input, claim: () => claimTikTokPublication(db as any, input) };
+  }
+  it('allows only one actual publisher transaction to claim the approved content', async () => {
+    const f = await publicationFixture();
+    const results = await Promise.allSettled([f.claim(), f.claim()]);
+    expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter(result => result.status === 'rejected')).toHaveLength(1);
+    expect((await f.ref.get()).data()?.status).toBe('publishing');
+    expect(state.publish).not.toHaveBeenCalled();
+  }, 30000);
+  it.each(['content', 'owner', 'lease', 'membership', 'canceled', 'consent'])('rejects %s changed after the scheduler read at the actual publication transaction', async change => {
+    const f = await publicationFixture();
+    if (change === 'content') await f.ref.update({ description: 'Changed after worker read' });
+    if (change === 'owner') await f.job.update({ owner: 'replacement' });
+    if (change === 'lease') await f.job.update({ leaseUntil: '2020-01-01T00:00:00Z' });
+    if (change === 'membership') await db.collection('users').doc(f.uid).update({ agencyId: 'other' });
+    if (change === 'canceled') await f.job.update({ status: 'canceled' });
+    if (change === 'consent') await f.ref.update({ consentedAt: null });
+    await expect(f.claim()).rejects.toThrow();
+    expect((await f.ref.get()).data()?.status).toBe('draft');
+    expect(state.publish).not.toHaveBeenCalled();
+  });
+  it('preserves manual publishing while refusing a manual bypass of an active schedule', async () => {
+    const f = await fixture(), input = { agencyId: f.agencyId, draftId: f.ref.id, requestedByUid: f.uid };
+    await f.schedule(); await expect(claimTikTokPublication(db as any, input)).rejects.toThrow('programată');
+    await cancelScheduledTikTokPost(f.agencyId, f.uid, f.ref.id);
+    expect(await claimTikTokPublication(db as any, input)).toMatchObject({ description: 'Text aprobat' });
+    await expect(claimTikTokPublication(db as any, input)).rejects.toThrow('deja inițiată');
+  });
   it.each(['description', 'videoTourUrl', 'targetOpenId'])('refuses a changed %s between approval and scheduling without writes', async field => {
     const f = await fixture(); await f.ref.update({ [field]: 'changed' });
     await expect(f.schedule()).rejects.toThrow('după aprobare');
