@@ -57,8 +57,9 @@ it('reads the exact authorized Studio render job and refuses another owner or pr
   expect(mocks.invoke).not.toHaveBeenCalled();
 });
 it('verifies a saved Studio project before allowing the render dependency to advance', async () => {
-  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_studio_project_create', body: { propertyId: 'p' } }], results: [{ step: 1, result: { projectId: 'project' } }] } });
-  mocks.resource.mockResolvedValue({ ownerUid: 'u', agencyId: 'a', propertyId: 'p' });
+  const project = { id: 'project', ownerUid: 'u', agencyId: 'a', propertyId: 'p', version: 1, sourceAssetIds: [], script: '', status: 'draft' };
+  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_studio_project_create', body: { propertyId: 'p' } }], results: [{ step: 1, result: { projectId: 'project', project } }] } });
+  mocks.resource.mockResolvedValue(project);
   expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' } });
   expect(mocks.resource).toHaveBeenCalledWith(ctx, 'tiktokStudioProjects', 'project');
   mocks.resource.mockResolvedValue({ ownerUid: 'u', agencyId: 'a', propertyId: 'different' });

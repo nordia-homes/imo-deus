@@ -683,3 +683,14 @@ Nouă cazuri noi de unitate verifică oprirea pollingului, păstrarea stării la
 Validări trecute: 36/36 teste țintite, 123/123 teste pe emulator în 17 fișiere, TypeScript separat și ESLint.
 Regresia generală Jarvis, Communications și TikTok a trecut 1085/1085 teste în 104 fișiere.
 Buildul final a trecut, inclusiv TypeScript și generarea celor 225 de pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu s-a efectuat deployment.
+
+## 7 octombrie: proiectul Studio verificat înainte de randare
+
+Continuare E3/E4. Confirmarea salvării unui proiect Studio compară acum conținutul curent cu snapshotul întors de handler, în loc să verifice numai proprietatea. Sunt legate versiunea, ordinea materialelor sursă, scenariul, vocea, formatul, storyboardul/timeline-ul, subtitrările, brandingul și celelalte opțiuni creative persistate. Proprietatea, ID-ul explicit al proiectului, versiunea așteptată, lista normalizată de surse și scenariul sunt confruntate și cu cererea rezolvată. Controalele existente de autor și agenție rămân obligatorii.
+
+Statusul de randare, lease-urile, timestamps și ID-urile materialelor produse nu invalidează salvarea conținutului neschimbat. Confirmarea salvării nu confirmă randarea: inclusiv o eroare ulterioară de randare este raportată separat. Un receipt legacy fără snapshot complet nu poate confirma conținutul istoric și cere reconciliere, fără relansarea salvării sau randării. Compararea folosește aceeași filtrare a câmpurilor sensibile ca receipt-ul; nu verifică imutabilitatea octeților fotografiilor externe.
+
+Au trecut 27 de teste noi ale verificatorului și patru probe noi cu plan persistent pe Firestore emulat: continuare validă, fotografii reordonate, scenariu schimbat și versiune schimbată. Pentru cele trei modificări, executorul nu invocă randarea și nu repetă salvarea. Furnizorii sunt simulați; acestea nu măresc numărul scenariilor originale acceptate din corpus.
+
+Validări trecute: 47/47 teste țintite, 127/127 teste pe emulator în 17 fișiere, 1112/1112 teste de regresie în 105 fișiere, TypeScript separat și ESLint. Planul integral și validarea externă rămân deschise; lotul nu este publicat în producție.
+Buildul complet a trecut cu 225 de pagini. Avertismentele Jaeger/standalone sunt cele cunoscute; nu s-a efectuat deployment.

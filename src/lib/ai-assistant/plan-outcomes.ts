@@ -13,6 +13,7 @@ import { messageOutcome } from './message-outcome';
 import { facebookOutcome } from './facebook-outcome';
 import { tikTokScheduleOutcome } from './tiktok-schedule-outcome';
 import { tikTokDraftOutcome } from './tiktok-draft-outcome';
+import { tikTokProjectOutcome } from './tiktok-project-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -64,6 +65,7 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
           refreshAttempted = true;
           const row = await getResource(ctx, project ? 'tiktokStudioProjects' : 'tiktokStudioAssets', targetId);
           if (row.ownerUid !== ctx.uid || row.agencyId !== ctx.agencyId) throw new CommunicationError('Materialul Studio nu mai este accesibil.', 403);
+          if (project) return { ...base, ...tikTokProjectOutcome(targetId, action.body, row, original) };
           completionSatisfied = (row.propertyId || null) === (action.body.propertyId || null);
           if (!project) {
             let validUrl = false;

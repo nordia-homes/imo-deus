@@ -95,6 +95,34 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     expect(await readPlanOutcomes(f.ctx, 'plan')).toMatchObject({ executionStatus: 'completed', outcome: { state: 'BLOCKED' }, pollAfterMs: null });
     expect(executeAction).toHaveBeenCalledTimes(4);
   }, 20000);
+  it.each([null, { sourceAssetIds: ['photo2', 'photo1'] }, { script: 'Changed script' }, { version: 2 }])('checks saved Studio content before starting render: %j', patch => {
+    return (async () => {
+      const f = await fixture();
+      const body = { propertyId: 'p', sourceAssetIds: ['photo1', 'photo2'], script: 'Synthetic script.' };
+      const project = { id: 'project', ...body, agencyId: f.ctx.agencyId, ownerUid: f.ctx.uid, version: 1, status: 'draft' };
+      const actions = [
+        { operation: 'tiktok_studio_project_create', body },
+        { operation: 'tiktok_studio_render', params: { projectId: '@step:1:projectId' }, body: { expectedVersion: 1 } },
+      ].map(action => actionSchema.parse({ kind: 'existing_operation', ...action }));
+      const expiresAt = Date.now() + 3600000;
+      await f.plan.update({ actions, expiresAt, approval: approvalEnvelope(f.ctx.uid, f.ctx.agencyId, 'plan', actions, expiresAt) });
+      vi.mocked(executeAction).mockImplementation(async (_ctx, action: any) => {
+        if (action.operation === 'tiktok_studio_project_create') {
+          await f.agency.collection('tiktokStudioProjects').doc('project').set(project);
+          return { projectId: 'project', project };
+        }
+        expect(action.operation).toBe('tiktok_studio_render');
+        expect(action.params.projectId).toBe('project');
+        return { executionState: 'queued' };
+      });
+      expect(await runPlan(f.ctx, 'plan', false, 1)).toMatchObject({ status: 'pending' });
+      if (patch) await f.agency.collection('tiktokStudioProjects').doc('project').update(patch);
+      const result = await runPlan(f.ctx, 'plan');
+      expect(result.status).toBe(patch ? 'unknown' : 'completed');
+      expect(executeAction).toHaveBeenCalledTimes(patch ? 1 : 2);
+      expect(invokeOperation).not.toHaveBeenCalled();
+    })();
+  }, 20000);
   async function interruptedFixture() {
     const f = await fixture(); f.ready();
     await runPlan(f.ctx, 'plan');
