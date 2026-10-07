@@ -2,13 +2,19 @@ import type { AssistantContext } from './access';
 
 // Expose service status only: global cursor, user paths, tokens and counts stay server-side.
 export async function notificationReconciliationHealth(ctx: Pick<AssistantContext, 'adminDb'>) {
-  const note = 'Starea descrie ultimul lot verificat, nu întregul inbox. Un ciclu poate necesita mai multe execuții; alertele legacy și utilizatorii fără acces CRM sunt omişi.';
-  if (!process.env.AI_ASSISTANT_WORKER_SECRET) return { status: 'unconfigured', running: false, lastFinishedAt: null, note };
+  const note = 'Starea principală descrie ultimul lot verificat. lastCycle descrie separat ultima parcurgere încheiată, pe date care se pot schimba între loturi; nu certifică un snapshot al tuturor inboxurilor. Alertele legacy și utilizatorii fără acces CRM sunt omişi.';
+  if (!process.env.AI_ASSISTANT_WORKER_SECRET) return { status: 'unconfigured', running: false, lastFinishedAt: null, lastCycle: null, note };
   try {
     const [scan, worker] = await Promise.all(['notificationSweep', 'global'].map(id => ctx.adminDb.collection('assistantWorkerState').doc(id).get()));
     const row = scan.data(), now = Date.now();
     const timestamp = (value: unknown) => typeof value === 'string' && Number.isFinite(Date.parse(value)) && Date.parse(value) <= now ? Date.parse(value) : null;
     const finished = timestamp(row?.lastFinishedAt);
+    const cycleStart = timestamp(row?.lastCycle?.startedAt), cycleFinish = timestamp(row?.lastCycle?.finishedAt);
+    const lastCycle = cycleStart !== null && cycleFinish !== null && cycleStart <= cycleFinish ? {
+      startedAt: new Date(cycleStart).toISOString(), finishedAt: new Date(cycleFinish).toISOString(),
+      status: row?.lastCycle?.coverageKnown !== true || typeof row?.lastCycle?.hadFailures !== 'boolean' ? 'unknown'
+        : now - cycleFinish >= 15 * 60000 ? 'stale' : row.lastCycle.hadFailures ? 'degraded' : 'current',
+    } : null;
     const failures = [timestamp(row?.lastFailedAt), timestamp(worker.data()?.lastNotificationSweepFailureAt)].filter((value): value is number => value !== null);
     const lastFailure = failures.length ? Math.max(...failures) : null;
     const running = Number.isFinite(row?.leaseUntil) && row!.leaseUntil > now && row!.leaseUntil <= now + 60000;
@@ -17,8 +23,8 @@ export async function notificationReconciliationHealth(ctx: Pick<AssistantContex
       : lastFailure !== null && (finished === null || lastFailure >= finished) ? 'degraded'
         : !Number.isSafeInteger(row?.failed) || row!.failed < 0 ? 'unknown'
           : row!.failed > 0 ? 'degraded' : 'current';
-    return { status, running, lastFinishedAt: finished === null ? null : new Date(finished).toISOString(), note };
+    return { status, running, lastFinishedAt: finished === null ? null : new Date(finished).toISOString(), lastCycle, note };
   } catch {
-    return { status: 'unavailable', running: false, lastFinishedAt: null, note };
+    return { status: 'unavailable', running: false, lastFinishedAt: null, lastCycle: null, note };
   }
 }

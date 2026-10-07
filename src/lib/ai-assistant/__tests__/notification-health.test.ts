@@ -15,7 +15,7 @@ it('does not read storage when the worker is unconfigured', async () => {
 it('separates a recent successful batch from completeness and redacts global data', async () => {
   const f = fixture({ lastFinishedAt: recent, failed: 0, cursor: 'users/private/notifications/secret', token: 'private-token', scanned: 25, withdrawn: 20, cycleComplete: false });
   const result = await notificationReconciliationHealth(f.ctx);
-  expect(result).toEqual({ status: 'current', running: false, lastFinishedAt: recent, note: expect.stringContaining('ultimul lot') });
+  expect(result).toEqual({ status: 'current', running: false, lastFinishedAt: recent, lastCycle: null, note: expect.stringContaining('ultimul lot') });
   expect(JSON.stringify(result)).not.toMatch(/private|secret|scanned|withdrawn|cycleComplete/);
 });
 it.each([
@@ -39,4 +39,23 @@ it('reports unavailable storage without exception contents', async () => {
   const f = fixture(); f.get.mockRejectedValue(new Error('private-storage-path'));
   const result = await notificationReconciliationHealth(f.ctx);
   expect(result.status).toBe('unavailable'); expect(JSON.stringify(result)).not.toContain('private-storage-path');
+});
+it.each([
+  [{ coverageKnown: true, hadFailures: false }, 'current'],
+  [{ coverageKnown: true, hadFailures: true }, 'degraded'],
+  [{ coverageKnown: false, hadFailures: false }, 'unknown'],
+  [{ coverageKnown: true, hadFailures: 0 }, 'unknown'],
+  [{ coverageKnown: true, hadFailures: false, startedAt: new Date(now - 1000000).toISOString(), finishedAt: new Date(now - 900000).toISOString() }, 'stale'],
+])('reports cycle evidence separately from a successful last batch: %j', async (patch, status) => {
+  const lastCycle = { startedAt: new Date(now - 10000).toISOString(), finishedAt: recent, ...patch };
+  const result = await notificationReconciliationHealth(fixture({ lastFinishedAt: recent, failed: 0, lastCycle }).ctx);
+  expect(result).toMatchObject({ status: 'current', lastCycle: { status, startedAt: lastCycle.startedAt, finishedAt: lastCycle.finishedAt } });
+  expect(JSON.stringify(result.lastCycle)).not.toMatch(/coverageKnown|hadFailures/);
+});
+it.each([
+  { startedAt: recent, finishedAt: new Date(now + 1000).toISOString() },
+  { startedAt: recent, finishedAt: new Date(now - 2000).toISOString() },
+  { startedAt: 'invalid', finishedAt: recent },
+])('does not certify invalid cycle times: %j', async lastCycle => {
+  expect(await notificationReconciliationHealth(fixture({ lastFinishedAt: recent, failed: 0, lastCycle: { ...lastCycle, coverageKnown: true, hadFailures: false } }).ctx)).toMatchObject({ lastCycle: null });
 });

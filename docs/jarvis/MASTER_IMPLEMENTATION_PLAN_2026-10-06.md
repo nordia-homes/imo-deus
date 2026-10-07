@@ -1137,3 +1137,17 @@ UTC rămâne formatul de stocare al instantelor; nu este o alternativă de confi
 Validări: 257/257 probe emulator au trecut. Regresia generală a trecut 1548 din 1550 probe, identificând două așteptări legacy pentru fusuri americane; după adaptarea lor la cerința nouă, ambele suite afectate au trecut 163/163 probe. Cele șase teste noi acoperă respingerea altor fusuri la intrările asistentului, ignorarea preferințelor incompatibile și diferența vară/iarnă în București. TypeScript, ESLint, UI și paritatea au trecut. Rămâne avertismentul preexistent useEffect/load. Probele sunt sintetice și nu reprezintă acceptarea unor scenarii originale noi; raportul istoric CONTINUATION_ACCEPTANCE nu este rescris ca dovadă a acestui lot.
 
 Buildul complet a trecut cu TypeScript și 227/227 pagini; rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Regula București este implementată și validată local; producția rămâne la ultima versiune verificată 97ac8248 / build-2026-10-07-002.
+
+## 7 octombrie: dovadă separată pentru ciclurile complete de reconciliere
+
+Scanarea notificărilor păstrează acum începutul ciclului, dacă parcurgerea a fost observată de la început și dacă vreun lot a avut erori. La încheiere, checkpointul salvează lastCycle sub același token și lease ca progresul cursorului. O eroare individuală sau de interogare după un lot deja parcurs rămâne în dovada ciclului, chiar dacă ultimul lot reușește. O parcurgere completă ulterioară fără erori poate înlocui această dovadă. Un scanner care pierde lease-ul nu poate publica rezultatul ciclului.
+
+Un cursor legacy fără metadate suficiente nu certifică parcurgerea de la început; prima încheiere este marcată cu acoperire necunoscută. După revenirea la început, ciclul nou poate produce dovada completă. O colecție goală produce o parcurgere validă, fără a pretinde verificarea unor inboxuri. Nu sunt introduse numărători globale în răspunsul public.
+
+notificationReconciliation păstrează starea ultimului lot și adaugă lastCycle separat, cu început, finalizare și starea current/degraded/stale/unknown; datele temporale invalide nu produc dovadă. Nu se expun cursorul, căile utilizatorilor, tokenul sau volumele. Pragul de prospețime rămâne 15 minute. O parcurgere încheiată este o observație pe date live între loturi, nu un snapshot atomic și nici garanția că fiecare alertă este încă relevantă la momentul citirii raportului. Alertele legacy și conturile fără acces CRM rămân omise conform politicii existente.
+
+Versiunea uneltelor este 45. Regula Europe/Bucharest rămâne neschimbată. Nu au fost lansate servicii externe sau mutate date reale. Producția nu este actualizată în acest lot; planul integral și acceptarea corpusului original rămân deschise.
+
+Validări: 259/259 probe în emulator (18 fișiere) și 1558/1558 probe de regresie (127 fișiere) au trecut. Regresia include și corecțiile București din lotul anterior. TypeScript, ESLint pentru fișierele modificate și verificarea parității au trecut. Cele 10 probe noi verifică stările ciclului, timestampurile invalide, reluarea unui cursor legacy și colecția goală; probele existente extinse verifică păstrarea erorilor între loturi și protecția la pierderea lease-ului. Aceste probe sintetice nu măresc numărul scenariilor originale acceptate.
+
+Buildul complet a trecut cu 227/227 pagini. Au rămas avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Nu s-au modificat dovezile ultimei publicări în producție.

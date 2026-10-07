@@ -14,7 +14,13 @@ export async function sweepAssistantNotifications(db: Firestore, limit = 25, tim
     if (row?.leaseUntil > Date.now()) return null;
     const cursor = row?.cursor ?? null;
     if (cursor !== null && (typeof cursor !== 'string' || !/^(?:[^/]+\/)+notifications\/[^/]+$/.test(cursor) || cursor.split('/').length % 2 !== 0)) throw new Error('Invalid notification scan cursor');
-    tx.set(state, { token, leaseUntil: Date.now() + 60000, lastAttemptAt: new Date().toISOString() }, { merge: true });
+    const priorStart = typeof row?.cycleStartedAt === 'string' ? Date.parse(row.cycleStartedAt) : NaN;
+    const knownCycle = Number.isFinite(priorStart) && priorStart <= started && typeof row?.cycleHadFailures === 'boolean' && row?.cycleCoverageKnown === true;
+    tx.set(state, { token, leaseUntil: Date.now() + 60000, lastAttemptAt: new Date().toISOString(),
+      cycleStartedAt: cursor === null || !Number.isFinite(priorStart) || priorStart > started ? new Date(started).toISOString() : row!.cycleStartedAt,
+      cycleCoverageKnown: cursor === null || knownCycle,
+      cycleHadFailures: cursor === null ? false : row?.cycleHadFailures === true,
+    }, { merge: true });
     return { cursor };
   });
   if (!claim) return { status: 'busy', scanned: 0, checked: 0, withdrawn: 0, failed: 0 };
@@ -47,13 +53,17 @@ export async function sweepAssistantNotifications(db: Firestore, limit = 25, tim
     const committed = await db.runTransaction(async tx => {
       const row = (await tx.get(state)).data();
       if (row?.token !== token || row.leaseUntil <= Date.now()) return false;
-      tx.update(state, { cursor, leaseUntil: 0, scanned, checked, withdrawn, failed, cycleComplete, lastFinishedAt: new Date().toISOString() });
+      const finishedAt = new Date().toISOString(), hadFailures = row.cycleHadFailures === true || failed > 0;
+      tx.update(state, { cursor, leaseUntil: 0, scanned, checked, withdrawn, failed, cycleComplete, lastFinishedAt: finishedAt,
+        cycleHadFailures: hadFailures,
+        ...(cycleComplete ? { lastCycle: { startedAt: row.cycleStartedAt, finishedAt, coverageKnown: row.cycleCoverageKnown === true, hadFailures } } : {}),
+      });
       return true;
     });
     return { status: committed ? 'completed' : 'lease_lost', scanned, checked, withdrawn, failed, cycleComplete };
   } catch (error) {
     await db.runTransaction(async tx => {
-      if ((await tx.get(state)).data()?.token === token) tx.update(state, { leaseUntil: 0, lastFailedAt: new Date().toISOString() });
+      if ((await tx.get(state)).data()?.token === token) tx.update(state, { leaseUntil: 0, lastFailedAt: new Date().toISOString(), cycleHadFailures: true });
     });
     throw error;
   }

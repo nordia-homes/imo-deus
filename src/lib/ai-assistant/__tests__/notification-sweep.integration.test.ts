@@ -28,8 +28,10 @@ describe.skipIf(!host)('background alert reconciliation on Firestore', () => {
     await db.doc('agencies/a/tasks/c').set({ status: 'open', agentId: 'u', dueDate: '2020-01-01' });
     expect(await sweepAssistantNotifications(db as any, 2)).toMatchObject({ status: 'completed', scanned: 2, withdrawn: 2, cycleComplete: false });
     expect((await state().get()).data()!.cursor).toBe(b.path);
+    expect((await state().get()).data()!.lastCycle).toBeUndefined();
     expect(await sweepAssistantNotifications(db as any, 2)).toMatchObject({ scanned: 1, withdrawn: 0, cycleComplete: true });
     expect((await state().get()).data()!.cursor).toBeNull();
+    expect((await state().get()).data()!.lastCycle).toMatchObject({ coverageKnown: true, hadFailures: false, startedAt: expect.any(String), finishedAt: expect.any(String) });
     await db.doc('agencies/a/tasks/c').update({ status: 'completed' });
     expect(await sweepAssistantNotifications(db as any, 10)).toMatchObject({ scanned: 3, withdrawn: 1, cycleComplete: true });
     for (const ref of [a, b, c]) expect((await ref.get()).data()).toMatchObject({ isRead: true, withdrawnAt: expect.any(String) });
@@ -67,7 +69,7 @@ describe.skipIf(!host)('background alert reconciliation on Firestore', () => {
   });
   it('keeps the cursor on query failure and releases its lease for retry', async () => {
     const a = await alert('a'); await alert('b');
-    await state().set({ cursor: a.path, leaseUntil: 0 });
+    await sweepAssistantNotifications(db as any, 1);
     const broken = new Proxy(db, { get(target, key) {
       if (key === 'collectionGroup') return () => { throw new Error('Synthetic query failure'); };
       const value = Reflect.get(target, key, target); return typeof value === 'function' ? value.bind(target) : value;
@@ -75,6 +77,7 @@ describe.skipIf(!host)('background alert reconciliation on Firestore', () => {
     await expect(sweepAssistantNotifications(broken as any)).rejects.toThrow('Synthetic query failure');
     expect((await state().get()).data()).toMatchObject({ cursor: a.path, leaseUntil: 0, lastFailedAt: expect.any(String) });
     expect(await sweepAssistantNotifications(db as any)).toMatchObject({ scanned: 1, withdrawn: 1 });
+    expect((await state().get()).data()!.lastCycle).toMatchObject({ coverageKnown: true, hadFailures: true });
   });
   it('advances past a failing alert and retries it in the next cycle', async () => {
     const a = await alert('a');
@@ -87,9 +90,24 @@ describe.skipIf(!host)('background alert reconciliation on Firestore', () => {
       } })));
       const value = Reflect.get(target, key, target); return typeof value === 'function' ? value.bind(target) : value;
     } });
-    expect(await sweepAssistantNotifications(broken as any)).toMatchObject({ scanned: 3, withdrawn: 1, failed: 1, cycleComplete: true });
+    expect(await sweepAssistantNotifications(broken as any, 1)).toMatchObject({ scanned: 1, failed: 1, cycleComplete: false });
+    expect(await sweepAssistantNotifications(db as any)).toMatchObject({ scanned: 2, failed: 0, cycleComplete: true });
+    expect((await state().get()).data()).toMatchObject({ failed: 0, lastCycle: { coverageKnown: true, hadFailures: true } });
     expect((await a.get()).data()!.withdrawnAt).toBeUndefined();
     expect(await sweepAssistantNotifications(db as any)).toMatchObject({ withdrawn: 1, failed: 0 });
+    expect((await state().get()).data()!.lastCycle).toMatchObject({ coverageKnown: true, hadFailures: false });
+  });
+  it('does not certify a legacy cursor until a new complete traversal', async () => {
+    const a = await alert('a'); await alert('b');
+    await state().set({ cursor: a.path, leaseUntil: 0 });
+    await sweepAssistantNotifications(db as any);
+    expect((await state().get()).data()!.lastCycle).toMatchObject({ coverageKnown: false });
+    await sweepAssistantNotifications(db as any);
+    expect((await state().get()).data()!.lastCycle).toMatchObject({ coverageKnown: true, hadFailures: false });
+  });
+  it('records an empty traversal without inventing checked inboxes', async () => {
+    expect(await sweepAssistantNotifications(db as any)).toMatchObject({ scanned: 0, checked: 0, cycleComplete: true });
+    expect((await state().get()).data()!.lastCycle).toMatchObject({ coverageKnown: true, hadFailures: false });
   });
   it.each([0, 101, 1.5])('rejects an invalid batch budget %s before database access', async limit => {
     await expect(sweepAssistantNotifications(db as any, limit)).rejects.toThrow('Invalid notification scan budget');
@@ -107,5 +125,6 @@ describe.skipIf(!host)('background alert reconciliation on Firestore', () => {
     } });
     expect(await sweepAssistantNotifications(interrupted as any)).toMatchObject({ status: 'lease_lost', withdrawn: 1 });
     expect((await state().get()).data()).toMatchObject({ token: 'replacement', cursor: 'users/u/notifications/z' });
+    expect((await state().get()).data()!.lastCycle).toBeUndefined();
   });
 });
