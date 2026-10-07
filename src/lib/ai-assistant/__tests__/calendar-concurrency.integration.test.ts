@@ -139,12 +139,14 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     expect(rejected.reason).toMatchObject({ status: 409 });
   }, 20000);
   it('serializes a shared client across agents but allows unrelated simultaneous appointments', async () => {
-    const ctx = context(), date = '2030-01-12T10:00:00.000Z';
-    const shared = await Promise.allSettled(['one', 'two'].map(id => reserve(ctx, 'viewings', id, { status: 'scheduled', viewingDate: date, duration: 60, agentId: id, contactId: 'shared-client' })));
-    expect(shared.filter(result => result.status === 'fulfilled'), JSON.stringify(shared.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(1);
-    const free = await Promise.allSettled(['three', 'four'].map(id => reserve(ctx, 'viewings', id, { status: 'scheduled', viewingDate: date, duration: 60, agentId: id, contactId: id })));
-    expect(free.filter(result => result.status === 'fulfilled'), JSON.stringify(free.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(2);
-  }, 20000);
+    for (let round = 0; round < 3; round++) {
+      const ctx = context(), date = '2030-01-12T10:00:00.000Z';
+      const shared = await Promise.allSettled(['one', 'two'].map(id => reserve(ctx, 'viewings', id, { status: 'scheduled', viewingDate: date, duration: 60, agentId: id, contactId: 'shared-client' })));
+      expect(shared.filter(result => result.status === 'fulfilled'), JSON.stringify(shared.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(1);
+      const free = await Promise.allSettled(['three', 'four'].map(id => reserve(ctx, 'viewings', id, { status: 'scheduled', viewingDate: date, duration: 60, agentId: id, contactId: id })));
+      expect(free.filter(result => result.status === 'fulfilled'), JSON.stringify(free.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(2);
+    }
+  }, 60000);
   it('commits one edit and ledger when two commands approve the same original task revision', async () => {
     const ctx = context(), revision = '2020-01-01T10:00:00Z';
     const profile = db.collection('users').doc(ctx.uid), agency = db.collection('agencies').doc(ctx.agencyId);

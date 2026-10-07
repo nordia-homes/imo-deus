@@ -65,7 +65,7 @@ function executionFixture() {
   const actions = Array.from({ length: 3 }, (_, index) => ({ kind: 'create_task' as const, description: 'Task ' + index, dueDate: '2027-01-01' }));
   const plan: any = { ownerId: 'u', sessionId: 's', status: 'pending', actions, expiresAt: Date.now() + 3600000, approval: approvalEnvelope('u', 'a', 'p', actions, Date.now() + 3600000) };
   const member = { agencyId: 'a', role: 'agent' };
-  const planRef: any = { id: 'p', get: async () => ({ exists: true, id: 'p', data: () => structuredClone(plan) }), update: async (patch: any) => Object.assign(plan, patch) };
+  const planRef: any = { id: 'p', get: async () => ({ exists: true, id: 'p', updateTime: { seconds: 100, nanoseconds: plan.testRevision || 1 }, data: () => structuredClone(plan) }), update: async (patch: any) => Object.assign(plan, patch) };
   const sessionRef: any = { get: async () => ({ exists: true, data: () => ({ ownerId: 'u' }) }), collection: () => ({ doc: () => ({}) }) };
   const db: any = { collection: () => ({ doc: () => ({ get: async () => ({ data: () => member }) }) }),
     runTransaction: async (work: any) => work({ get: (ref: any) => ref.get(), update: (_: any, patch: any) => Object.assign(plan, patch), set: vi.fn() }),
@@ -76,6 +76,31 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['results', 'approval', 'wait', 'cancel'])('refuses a stale claim after a concurrent %s change', async change => {
+    const { ctx, plan } = executionFixture();
+    const transact = ctx.adminDb.runTransaction.bind(ctx.adminDb);
+    let raced = false;
+    ctx.adminDb.runTransaction = (async (work: any) => {
+      if (!raced) {
+        raced = true;
+        plan.testRevision = 2;
+        if (change === 'results') plan.results = [{ step: 1, kind: 'create_task', result: { taskId: 'already-created' } }];
+        if (change === 'approval') plan.approval = { ...plan.approval, approvedBy: 'changed' };
+        if (change === 'wait') plan.waitUntil = Date.now() + 60000;
+      }
+      return transact(work);
+    }) as any;
+    await expect(runPlan(ctx, 'p', change === 'cancel')).rejects.toMatchObject({ status: 409 });
+    expect(plan.status).toBe('pending');
+    expect(plan.executionId).toBeUndefined();
+    expect(executeAction).not.toHaveBeenCalled();
+    if (change === 'results') {
+      vi.mocked(executeAction).mockResolvedValue({ taskId: 'next' });
+      expect(await runPlan(ctx, 'p')).toMatchObject({ status: 'completed' });
+      expect(vi.mocked(executeAction).mock.calls.map(call => call[2])).toEqual(['p-1', 'p-2']);
+      expect(plan.results[0].result.taskId).toBe('already-created');
+    }
+  });
   it.each(['receipt', 'failure', 'verification'])('rejects stale %s after another execution takes over', async phase => {
     const { ctx, plan } = executionFixture();
     const newer = [{ step: 1, kind: 'create_task', result: { taskId: 'newer' } }];

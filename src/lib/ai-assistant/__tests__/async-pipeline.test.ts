@@ -21,7 +21,7 @@ function fixture() {
   ];
   const plan: any = { ownerId: 'u', sessionId: 's', status: 'pending', actions, goal: { schemaVersion: 1 }, expiresAt: Date.now() + 3600000 };
   plan.approval = approvalEnvelope('u', 'a', 'plan', actions as any, plan.expiresAt);
-  const ref: any = { id: 'plan', get: async () => ({ exists: true, id: 'plan', data: () => structuredClone(plan) }), update: async (patch: any) => Object.assign(plan, patch) };
+  const ref: any = { id: 'plan', get: async () => ({ exists: true, id: 'plan', updateTime: { seconds: 100, nanoseconds: 1 }, data: () => structuredClone(plan) }), update: async (patch: any) => Object.assign(plan, patch) };
   const session = { get: async () => ({ exists: true, data: () => ({ ownerId: 'u' }) }), collection: () => ({ doc: () => ({}) }) };
   const ctx: any = { uid: 'u', agencyId: 'a', role: 'agent', collection: (name: string) => ({ doc: () => name === 'assistantPlans' ? ref : session }), adminDb: {
     collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ agencyId: 'a', role: 'agent' }) }) }) }),

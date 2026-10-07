@@ -63,6 +63,41 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['checkpoint', 'wait', 'approval', 'cancel'])('rejects a stale claim after a concurrent %s before any new effect', async change => {
+    const f = await fixture(); f.ready();
+    let raced = false;
+    const racedDb = new Proxy(db, { get(target, property) {
+      if (property === 'runTransaction') return async (work: any) => {
+        if (!raced) {
+          raced = true;
+          if (change === 'checkpoint' || change === 'cancel') await runPlan(f.ctx, 'plan', false, 1);
+          else if (change === 'wait') await f.plan.update({ waitUntil: Date.now() + 60000 });
+          else {
+            const actions = [actionSchema.parse({ kind: 'create_task', description: 'New approved task', dueDate: '2027-01-01' })];
+            const expiresAt = Date.now() + 3600000;
+            await f.plan.update({ actions, approval: approvalEnvelope(f.ctx.uid, f.ctx.agencyId, 'plan', actions, expiresAt), expiresAt });
+          }
+        }
+        return db.runTransaction(work);
+      };
+      const value = Reflect.get(target, property);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    await expect(runPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan', change === 'cancel')).rejects.toMatchObject({ status: 409 });
+    expect((await f.plan.get()).data()?.status).toBe('pending');
+    expect(executeAction).toHaveBeenCalledTimes(['checkpoint', 'cancel'].includes(change) ? 1 : 0);
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+    if (change === 'checkpoint') {
+      expect((await f.plan.get()).data()?.results).toHaveLength(1);
+      expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed' });
+      expect(executeAction).toHaveBeenCalledTimes(4);
+      expect((await f.agency.collection('tiktokPostDrafts').get()).size).toBe(1);
+    } else if (change === 'cancel') {
+      expect(await runPlan(f.ctx, 'plan', true)).toMatchObject({ status: 'cancelled' });
+      expect((await f.plan.get()).data()?.results).toHaveLength(1);
+      expect(executeAction).toHaveBeenCalledTimes(1);
+    }
+  }, 20000);
   it.each([false, true])('fences an old execution after recovery and actual resumption (lateFailure=%s)', async lateFailure => {
     const f = await fixture(); f.ready();
     const execute = vi.mocked(executeAction).getMockImplementation()!;

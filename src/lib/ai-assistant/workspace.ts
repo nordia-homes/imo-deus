@@ -152,7 +152,7 @@ export async function saveAssistantMessage(ctx: AssistantContext, sessionId: str
   });
 }
 export async function runPlan(ctx: AssistantContext, id: string, cancel = false, maxSteps = MAX_PLAN_ACTIONS) {
-  const { ref, data } = await getPlan(ctx, id);
+  const { ref, data, revision } = await getPlan(ctx, id);
   if (data.status === 'completed' || data.status === 'cancelled') return data;
   if (data.status === 'paused' && !cancel) return data;
   if (!cancel && data.waitUntil && data.waitUntil > Date.now()) return data;
@@ -168,6 +168,8 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
   await ctx.adminDb.runTransaction(async tx => {
     const snap = await tx.get(ref);
     if (snap.data()?.ownerId !== ctx.uid || !(cancel ? ['pending', 'failed', 'paused'] : ['pending', 'failed']).includes(snap.data()?.status)) throw new CommunicationError('Planul este deja în execuție sau necesită verificarea rezultatului. Repetarea automată este blocată.', 409);
+    const currentRevision = snap.updateTime ? `${snap.updateTime.seconds}:${snap.updateTime.nanoseconds}` : null;
+    if (!revision || currentRevision !== revision) throw new CommunicationError('Planul s-a modificat înainte de pornire. Reîncarcă rezultatul.', 409);
     if (Number(snap.data()?.expiresAt) < Date.now()) throw new CommunicationError('Planul a expirat. Cere un plan nou cu date actuale.', 409);
     if (!cancel) validateApproval(snap.data()?.approval, ctx.uid, ctx.agencyId, id, snap.data()?.actions || []);
     tx.update(ref, { status: cancel ? 'cancelled' : 'running', startedAt: new Date().toISOString(), ...(cancel ? {} : { executionId, approvalUsedAt: snap.data()?.approvalUsedAt || new Date().toISOString(), approvedBy: ctx.uid }) });

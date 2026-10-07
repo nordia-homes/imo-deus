@@ -18,11 +18,11 @@ export async function assertCalendarSlot(ctx: AssistantContext, tx: Transaction,
   const lockRef = collectionFor(ctx, 'assistantLocks').doc('calendar');
   const taskFrom = bucharestInputFromIso(new Date(start - 86400000)).date;
   const taskTo = bucharestInputFromIso(new Date(end + 86400000)).date;
-  const [lock, tasks, viewings] = await Promise.all([
-    tx.get(lockRef),
-    tx.get(collectionFor(ctx, 'tasks').where('dueDate', '>=', taskFrom).where('dueDate', '<', taskTo)),
-    tx.get(collectionFor(ctx, 'viewings').where('viewingDate', '>=', new Date(start - 4 * 3600000).toISOString()).where('viewingDate', '<', new Date(end).toISOString())),
-  ]);
+  // Keep one read in flight: a rejected read must settle before Firestore can
+  // retry this transaction, without other queries using its closed identity.
+  const lock = await tx.get(lockRef);
+  const tasks = await tx.get(collectionFor(ctx, 'tasks').where('dueDate', '>=', taskFrom).where('dueDate', '<', taskTo));
+  const viewings = await tx.get(collectionFor(ctx, 'viewings').where('viewingDate', '>=', new Date(start - 4 * 3600000).toISOString()).where('viewingDate', '<', new Date(end).toISOString()));
   const related = (other: Record<string, any>) => row.agentId && other.agentId === row.agentId || row.contactId && other.contactId === row.contactId || row.propertyId && other.propertyId === row.propertyId;
   for (const item of tasks.docs) {
     if (resource === 'tasks' && item.id === id) continue;
