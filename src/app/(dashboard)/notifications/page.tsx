@@ -13,6 +13,7 @@ import {
 } from '@/components/notifications/NotificationItem';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { AppNotification } from '@/lib/notifications/types';
+import { useRuleNotificationRelevance } from '@/hooks/use-rule-notification-relevance';
 
 export default function NotificationsPage() {
   const { user } = useUser();
@@ -28,7 +29,8 @@ export default function NotificationsPage() {
     limit(pageSize),
   ) : null, [firestore, pageSize, user]);
   const { data, isLoading } = useCollection<AppNotification>(notificationsQuery);
-  const allNotifications = data || [];
+  const relevanceError = useRuleNotificationRelevance(user, data);
+  const allNotifications = (data || []).filter(item => !item.withdrawnAt);
   const notifications = allNotifications.filter((item) => !onlyUnread || !item.isRead);
   const unreadCount = allNotifications.filter((item) => !item.isRead).length;
   const todayCount = allNotifications.filter((item) => isNotificationToday(item.createdAt)).length;
@@ -58,6 +60,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-3 p-3 pb-28 sm:space-y-5 md:p-6 md:pb-10">
+      {relevanceError && <p role="status" className="text-sm text-muted-foreground">Starea alertelor nu a putut fi verificată. Vom reîncerca automat.</p>}
       <section className="notification-dark-header relative overflow-hidden rounded-[24px] border border-white/10 bg-[#10233d] px-4 py-4 text-white shadow-[0_30px_80px_-42px_rgba(15,35,61,0.85)] sm:rounded-[32px] sm:px-7 sm:py-7">
         <span className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
         <span className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-cyan-400/15 blur-3xl" />

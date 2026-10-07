@@ -66,6 +66,9 @@ export type AppNotification = {
   isRead: boolean;
   readAt?: Timestamp | string | null;
   expiresAt?: Timestamp | string | null;
+  withdrawnAt?: string;
+  withdrawalReason?: 'state_changed' | 'entity_deleted' | 'access_revoked';
+  ruleCondition?: { resource: string; id: string; status: string };
 };
 
 export type MessagingRegistration = {

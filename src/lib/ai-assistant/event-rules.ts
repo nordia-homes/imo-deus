@@ -69,7 +69,7 @@ export async function runEventRule(ctx: AssistantContext, claim: Record<string, 
                     tx.create(outcome, skipped);
                     return skipped;
                   }
-                  if (!existing.exists) tx.create(notification, { eventId: key, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: effect.title, body: effect.body, actionUrl: '/ai-assistant', entityId: targetId, isRead: false, createdAt: new Date().toISOString(), automationId: claim.id, sourceEventId: doc.id });
+                  if (!existing.exists) tx.create(notification, { eventId: key, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: effect.title, body: effect.body, actionUrl: '/ai-assistant', entityId: targetId, isRead: false, createdAt: new Date().toISOString(), automationId: claim.id, sourceEventId: doc.id, ...(rule.trigger.statusTo !== undefined ? { ruleCondition: { resource: rule.trigger.resource, id: targetId, status: rule.trigger.statusTo } } : {}) });
                   return { notificationId: key };
                 });
                 results.push(result);

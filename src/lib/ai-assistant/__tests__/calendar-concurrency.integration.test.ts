@@ -25,6 +25,7 @@ import { nextBriefRun } from '../daily-brief-contract';
 import { readBriefDelivery } from '../brief-delivery';
 import { stableId } from '@/lib/communications/crypto';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
+import { reconcileRuleNotifications } from '../notification-relevance';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -345,6 +346,32 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect(receipts.size).toBe(1);
       expect(receipts.docs[0].data().effects[0]).toMatchObject({ status: 'skipped', reasonCode: 'state_changed', entityId: 'c' });
       expect((await agency.collection('tasks').get()).size).toBe(1);
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it.each(['changed', 'deleted', 'revoked'])('withdraws a committed rule alert after the entity is %s', async change => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const startedAt = '2030-01-02T10:00:00.000Z';
+    const resource = change === 'revoked' ? 'sales' : 'contacts';
+    const entity = agency.collection(resource).doc('c');
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await entity.set({ name: 'Emulator record', status: 'Contactat', agentId: ctx.uid });
+    await agency.collection('crmEvents').doc('e').set({ source: 'firestore_change', actorId: ctx.uid, capability: `${resource}.updated`, occurredAt: startedAt, recordedAt: startedAt, entities: { [resource === 'sales' ? 'saleId' : 'contactId']: 'c' }, ruleState: { after: { status: 'Contactat' } } });
+    const rule = automationSchema.parse({ type: 'event_rule', nextRunAt: startedAt, intervalMinutes: 30, maxRuns: 10, trigger: { resource, change: 'updated', statusTo: 'Contactat' }, effects: [{ kind: 'notify', title: 'Fixture alert' }] }) as EventRule;
+    try {
+      await runEventRule(ctx, { id: 'r', createdAt: startedAt }, rule, executeAction, async () => {});
+      const notifications = await profile.collection('notifications').get();
+      expect(notifications.size).toBe(1);
+      const notification = notifications.docs[0];
+      expect(notification.data().ruleCondition).toEqual({ resource, id: 'c', status: 'Contactat' });
+      expect((await reconcileRuleNotifications(ctx, { ids: [notification.id] })).withdrawn).toBe(0);
+      if (change === 'deleted') await entity.delete();
+      else await entity.update(change === 'changed' ? { status: 'Câștigat' } : { agentId: 'other', collaboratorIds: [] });
+      const results = await Promise.all([1, 2].map(() => reconcileRuleNotifications(ctx, { ids: [notification.id] })));
+      expect(results.reduce((sum, result) => sum + result.withdrawn, 0)).toBe(1);
+      expect((await notification.ref.get()).data()).toMatchObject({ title: 'Fixture alert', isRead: true, withdrawnAt: expect.any(String), withdrawalReason: change === 'deleted' ? 'entity_deleted' : change === 'revoked' ? 'access_revoked' : 'state_changed' });
+      await entity.set({ name: 'Emulator record', status: 'Contactat', agentId: ctx.uid });
+      expect((await reconcileRuleNotifications(ctx, { ids: [notification.id] })).withdrawn).toBe(0);
+      expect((await notification.ref.get()).data()?.withdrawnAt).toBeTruthy();
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
   it('recovers an interrupted rule without repeating its committed task', async () => {

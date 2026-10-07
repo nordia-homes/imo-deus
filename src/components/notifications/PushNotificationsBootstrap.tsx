@@ -51,6 +51,7 @@ export function PushNotificationsBootstrap() {
             for (const change of snapshot.docChanges()) {
               if (change.type !== 'added') continue;
               const notification = change.doc.data() as AppNotification;
+              if (notification.withdrawnAt) continue;
               if (!preferencesLoaded || preferences.pushEnabled === false || preferences.categories[notification.category] === false) continue;
               void window.imodeusDesktop?.showDesktopNotification({
                 title: notification.title,

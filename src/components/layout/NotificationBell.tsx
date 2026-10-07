@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { NotificationItem } from '@/components/notifications/NotificationItem';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { AppNotification } from '@/lib/notifications/types';
+import { useRuleNotificationRelevance } from '@/hooks/use-rule-notification-relevance';
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,8 +28,10 @@ export function NotificationBell() {
     );
   }, [firestore, user]);
   const { data: notifications } = useCollection<AppNotification>(notificationsQuery);
-  const unreadCount = notifications?.filter((item) => !item.isRead).length || 0;
-  const recentNotifications = notifications?.slice(0, 8) || [];
+  const relevanceError = useRuleNotificationRelevance(user, notifications, isOpen);
+  const activeNotifications = notifications?.filter(item => !item.withdrawnAt) || [];
+  const unreadCount = activeNotifications.filter(item => !item.isRead).length;
+  const recentNotifications = activeNotifications.slice(0, 8);
 
   const openNotification = async (notification: AppNotification) => {
     if (!user) return;
@@ -95,6 +98,7 @@ export function NotificationBell() {
         </div>
 
         <div className="max-h-[min(62vh,560px)] space-y-2 overflow-y-auto bg-gradient-to-b from-muted/35 via-background to-background p-3">
+          {relevanceError && <p role="status" className="px-3 text-xs text-muted-foreground">Starea alertelor nu a putut fi verificată. Vom reîncerca automat.</p>}
           {!recentNotifications.length ? (
             <div className="flex flex-col items-center px-6 py-12 text-center">
               <span className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-gradient-to-br from-emerald-400/15 to-violet-400/15 ring-1 ring-primary/10">
