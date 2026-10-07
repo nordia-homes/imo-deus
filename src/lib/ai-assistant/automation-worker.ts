@@ -129,6 +129,10 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       if (['whatsapp_template', 'daily_sales_brief'].includes(automation.type) && ['unknown', 'failed'].includes(String((result as { status?: string }).status))) outcome.status = (result as { status: string }).status === 'unknown' ? 'unknown' : 'blocked';
     } catch (error) {
       outcome = { status: 'blocked', lastRunAt: now, error: error instanceof Error ? error.message : 'Automatizarea a fost oprită.' };
+      if (error instanceof Error && 'briefReceiptId' in error && typeof error.briefReceiptId === 'string' && /^[a-f0-9]{64}$/.test(error.briefReceiptId)) {
+        outcome.status = 'unknown';
+        outcome.lastResult = { receiptId: error.briefReceiptId, status: 'unknown' };
+      }
     }
     await db.runTransaction(async tx => {
       const fresh = await tx.get(doc.ref);

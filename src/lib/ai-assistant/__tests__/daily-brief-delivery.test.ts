@@ -8,6 +8,7 @@ import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
 import { deliverDailyBrief } from '../daily-brief';
 import { briefSettingsSchema } from '../daily-brief-contract';
+import { readBriefDelivery } from '../brief-delivery';
 
 function database() {
   const rows = new Map<string, any>([['users/u', { agencyId: 'a', role: 'agent', phone: '+40722123456' }]]);
@@ -31,7 +32,48 @@ const whatsapp = { ...settings, deliveryChannel: 'whatsapp' as const, conversati
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getInsights).mockResolvedValue({ rows: [{ title: 'Sarcină restantă' }], complete: true } as any);
-  vi.mocked(getConversation).mockResolvedValue({ channel: 'whatsapp', phone: '+40722123456' } as any);
+  vi.mocked(getConversation).mockResolvedValue({ id: 'own', agencyId: 'a', channel: 'whatsapp', connectionId: 'connection', externalParticipantId: '40722123456', phone: '+40722123456', assigneeId: 'u', collaboratorIds: [] } as any);
+});
+async function queuedBrief(crash = false) {
+  const fixture = database();
+  const conversation = await getConversation(fixture.ctx.adminDb, fixture.ctx, 'own');
+  fixture.rows.set('agencies/a/conversations/own', conversation);
+  let receipt: any;
+  vi.mocked(queueMessage).mockImplementationOnce(async (_db, _actor, _id, input: any) => {
+    receipt = [...fixture.rows].find(([key]) => key.includes('/assistantArtifacts/'))![1];
+    expect(receipt).toMatchObject({ status: 'prepared', delivery: { requestId: input.requestId, template: input.template } });
+    fixture.rows.set(`communicationOutboundJobs/${receipt.delivery.messageId}`, { agencyId: 'a', uid: 'u', conversationId: 'own', connectionId: 'connection', recipientRevision: receipt.delivery.recipientRevision, input: { ...input, text: '' } });
+    fixture.rows.set(`agencies/a/conversations/own/messages/${receipt.delivery.messageId}`, { agencyId: 'a', conversationId: 'own', authorId: 'u', direction: 'sent', origin: 'imodeus', status: 'queued' });
+    if (crash) throw new Error('Response lost after queue commit');
+    return { messageId: receipt.delivery.messageId, status: 'queued' };
+  });
+  if (crash) await expect(deliverDailyBrief(fixture.ctx, whatsapp, now)).rejects.toThrow('nu se retrimite');
+  else expect(await deliverDailyBrief(fixture.ctx, whatsapp, now)).toMatchObject({ status: 'queued', completionSatisfied: false });
+  const receiptPath = [...fixture.rows.keys()].find(key => key.includes('/assistantArtifacts/'))!;
+  return { ...fixture, receiptId: receiptPath.split('brief-')[1], receipt: fixture.rows.get(receiptPath), job: fixture.rows.get(`communicationOutboundJobs/${receipt.delivery.messageId}`), message: fixture.rows.get(`agencies/a/conversations/own/messages/${receipt.delivery.messageId}`), conversation };
+}
+it.each(['queued', 'sending', 'accepted', 'delivered', 'read', 'failed', 'unknown'])('reads the verified brief message status %s without sending again', async status => {
+  const f = await queuedBrief(); Object.assign(f.message, { status, externalId: 'provider-receipt' });
+  expect(await deliverDailyBrief(f.ctx, whatsapp, now)).toMatchObject({ deduplicated: true, status, completionSatisfied: ['delivered', 'read'].includes(status) });
+  expect(queueMessage).toHaveBeenCalledTimes(1);
+});
+it.each(['foreign-job', 'changed-template', 'changed-recipient', 'revoked-role', 'foreign-message', 'no-external-id', 'legacy', 'foreign-receipt'])('does not claim brief delivery after %s', async change => {
+  const f = await queuedBrief(); Object.assign(f.message, { status: 'delivered', externalId: 'provider-receipt' });
+  if (change === 'foreign-job') f.job.agencyId = 'other';
+  if (change === 'changed-template') f.job.input.template = { ...f.job.input.template, parameters: ['Changed'] };
+  if (change === 'changed-recipient') f.conversation.externalParticipantId = 'other';
+  if (change === 'revoked-role') f.rows.get('users/u').role = 'admin';
+  if (change === 'foreign-message') f.message.authorId = 'other';
+  if (change === 'no-external-id') delete f.message.externalId;
+  if (change === 'legacy') delete f.receipt.delivery;
+  if (change === 'foreign-receipt') f.receipt.actorId = 'other';
+  expect(await readBriefDelivery(f.ctx, f.receiptId)).toMatchObject({ status: 'unknown', completionSatisfied: false });
+  expect(queueMessage).toHaveBeenCalledTimes(1);
+});
+it('recovers a committed queue receipt after a lost response through a read only', async () => {
+  const f = await queuedBrief(true); Object.assign(f.message, { status: 'delivered', externalId: 'provider-receipt' });
+  expect(await deliverDailyBrief(f.ctx, whatsapp, now)).toMatchObject({ deduplicated: true, status: 'delivered', completionSatisfied: true });
+  expect(queueMessage).toHaveBeenCalledTimes(1);
 });
 it('atomically delivers one app notification per local day', async () => {
   const { ctx, rows } = database();

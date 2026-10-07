@@ -22,6 +22,9 @@ import { readPlanOutcomes } from '../plan-outcomes';
 import { verifyPlanOutcome, enqueueOutcomeWatch } from '../outcome-watcher';
 import { drainAssistantAutomations } from '../automation-worker';
 import { nextBriefRun } from '../daily-brief-contract';
+import { readBriefDelivery } from '../brief-delivery';
+import { stableId } from '@/lib/communications/crypto';
+import { recipientRevision } from '@/lib/communications/recipient-revision';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -155,12 +158,32 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const settings = briefSettingsSchema.parse({ timezone: 'Europe/Bucharest', deliveryTime: '08:30', daysOfWeek: [1, 2, 3, 4, 5] });
     try {
       const results = await Promise.all([1, 2].map(() => deliverDailyBrief(ctx, settings, new Date('2026-10-06T06:00:00Z'))));
-      expect(results.filter(row => 'status' in row && row.status === 'delivered')).toHaveLength(1);
+      expect(results.filter(row => 'status' in row && row.status === 'delivered' && !('deduplicated' in row && row.deduplicated))).toHaveLength(1);
+      expect(results.filter(row => 'deduplicated' in row && row.deduplicated)).toHaveLength(1);
       expect((await profile.collection('notifications').get()).size).toBe(1);
       expect((await agency.collection('assistantArtifacts').get()).size).toBe(1);
       await deliverDailyBrief(ctx, settings, new Date('2026-10-06T07:00:00Z'));
       expect((await profile.collection('notifications').get()).size).toBe(1);
     } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it.each(['queued', 'accepted', 'delivered', 'read', 'foreign-job', 'changed-recipient'])('verifies persisted brief delivery: %s', async state => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const receiptId = 'a'.repeat(64), requestId = randomUUID(), messageId = stableId(ctx.agencyId, requestId);
+    const job = db.collection('communicationOutboundJobs').doc(messageId);
+    const conversation = { id: 'own', agencyId: ctx.agencyId, channel: 'whatsapp', connectionId: 'connection', externalParticipantId: '40722123456', assigneeId: ctx.uid, collaboratorIds: [] };
+    const revision = recipientRevision(conversation), template = { name: 'daily', language: 'ro', parameters: ['Priorități sintetice'] };
+    const batch = db.batch();
+    batch.set(profile, { agencyId: ctx.agencyId, role: 'agent' });
+    batch.set(agency.collection('assistantArtifacts').doc(`brief-${receiptId}`), { actorId: ctx.uid, channel: 'whatsapp', status: 'unknown', delivery: { conversationId: 'own', requestId, messageId, recipientRevision: revision, template } });
+    batch.set(agency.collection('conversations').doc('own'), { ...conversation, ...(state === 'changed-recipient' ? { externalParticipantId: 'other' } : {}) });
+    batch.set(job, { agencyId: state === 'foreign-job' ? 'other' : ctx.agencyId, uid: ctx.uid, conversationId: 'own', connectionId: 'connection', recipientRevision: revision, input: { requestId, text: '', template } });
+    batch.set(agency.collection('conversations').doc('own').collection('messages').doc(messageId), { agencyId: ctx.agencyId, conversationId: 'own', authorId: ctx.uid, direction: 'sent', origin: 'imodeus', externalId: 'provider-receipt', status: ['foreign-job', 'changed-recipient'].includes(state) ? 'delivered' : state });
+    await batch.commit();
+    try {
+      expect(await readBriefDelivery(ctx, receiptId)).toMatchObject({ status: ['foreign-job', 'changed-recipient'].includes(state) ? 'unknown' : state, completionSatisfied: ['delivered', 'read'].includes(state) });
+      expect((await agency.collection('assistantArtifacts').doc(`brief-${receiptId}`).get()).data()?.status).toBe('unknown');
+      expect((await agency.collection('conversations').doc('own').collection('messages').get()).size).toBe(1);
+    } finally { await job.delete(); await profile.delete(); }
   }, 20000);
   it.each(['app', 'whatsapp'] as const)('persists a missed %s brief run and advances the worker without delivery', async deliveryChannel => {
     const ctx = context(), profile = db.collection('users').doc(ctx.uid), agency = db.collection('agencies').doc(ctx.agencyId);

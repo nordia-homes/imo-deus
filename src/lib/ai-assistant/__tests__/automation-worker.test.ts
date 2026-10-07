@@ -24,8 +24,19 @@ function database(automation: any, patch: any = {}) {
 }
 const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z', contactId: 'c', description: 'Follow up', maxRuns: 1 };
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
-afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
+afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe('approved automation execution', () => {
+  it('keeps the receipt visible after an ambiguous brief delivery without retrying it', async () => {
+    const brief = await import('../daily-brief');
+    const receiptId = 'a'.repeat(64);
+    const send = vi.spyOn(brief, 'deliverDailyBrief').mockRejectedValueOnce(Object.assign(new Error('Livrare incertă'), { briefReceiptId: receiptId }));
+    const { db, rows } = database({ type: 'daily_sales_brief', nextRunAt: '2026-01-01T00:00:00.000Z', timezone: 'Europe/Bucharest', deliveryTime: '08:30', daysOfWeek: [1, 2, 3, 4, 5], maxRuns: 10 });
+    await drainAssistantAutomations(db as any); await drainAssistantAutomations(db as any);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'unknown', lastResult: { receiptId, status: 'unknown' } });
+    expect(rows.get('agencies/a/assistantAutomations/job')).toMatchObject({ status: 'unknown', lastResult: { receiptId } });
+    expect([...rows].filter(([key]) => key.includes('/audit/')).map(([, value]) => value)).toEqual([expect.objectContaining({ result: expect.objectContaining({ receiptId }) })]);
+  });
   it('records a missed brief day and schedules the next local slot without delivering catch-up', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-06T06:00:00Z'));
     const due = '2026-10-05T05:30:00.000Z';
