@@ -23,7 +23,9 @@ export function resolveAction(action: AssistantAction, previous: Record<string, 
       const step = match ? Number(match[1]) : 0;
       if (!match || step < 1 || step > previous.length || !identifierKeys.has(match[2])) throw new Error('Referință de pas invalidă sau rezultat încă indisponibil.');
       const result = previous[step - 1].result as Record<string, unknown> | undefined;
-      const id = result?.[match[2]] ?? (match[2] === 'assetId' ? verifiedOutput(previous[step - 1], 'assetId') : undefined);
+      const verified = match[2] === 'assetId' ? verifiedOutput(previous[step - 1], 'assetId') : undefined;
+      if (verified && result?.assetId != null && result.assetId !== verified) throw new Error('Identificatorul materialului diferă de rezultatul verificat. Continuarea necesită reconciliere.');
+      const id = verified ?? result?.[match[2]];
       if (typeof id !== 'string' || !id || id.includes('/')) throw new Error('Pasul anterior nu a confirmat identificatorul solicitat.');
       return id;
     }

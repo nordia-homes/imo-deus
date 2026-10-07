@@ -19,3 +19,8 @@ it('allows the verified video URL only in the Studio import URL field', () => {
   expect(() => bindVerifiedOutputs([], [])).not.toThrow();
   expect(() => bindVerifiedOutputs([{ result: {} }], [{ step: 1, completionSatisfied: true, outputs: { videoUrl: 'file:///secret' } }])).toThrow();
 });
+it('rejects a receipt ID conflicting with the verified asset instead of importing the wrong material', () => {
+  const action = actionSchema.parse({ kind: 'existing_operation', operation: 'tiktok_post_draft', body: { assetId: '@step:1:assetId' } });
+  expect(resolveAction(action, [{ result: { assetId: 'asset' }, outputs: { assetId: 'asset' } }])).toMatchObject({ body: { assetId: 'asset' } });
+  expect(() => resolveAction(action, [{ result: { assetId: 'other' }, outputs: { assetId: 'asset' } }])).toThrow('diferă');
+});

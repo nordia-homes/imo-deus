@@ -643,3 +643,13 @@ Probe adăugate: recuperare după 80 de verificări, limită epuizată sau inval
 
 Validări trecute: 109/109 teste pe emulator în 16 fișiere; regresia generală Jarvis, Communications și TikTok, 1026/1026 teste în 103 fișiere; TypeScript separat și ESLint. Suitele de unitate includ 15 cazuri noi, iar emulatorul trei cazuri noi de recuperare a verificărilor. Numărul de teste nu reprezintă numărul scenariilor originale acceptate.
 Buildul final a trecut, inclusiv TypeScript și 225 de pagini. Avertismentele Jaeger/standalone sunt cele cunoscute; nu s-a efectuat deployment.
+
+## 7 octombrie: import media verificat înaintea continuării planului
+
+Continuare E3/E4. Verificarea importului TikTok Studio cere acum autorul și agenția corecte, aceeași proprietate, tipul și URL-ul solicitate, un URL HTTPS fără credențiale și status ready. Anterior, existența materialului și proprietatea puteau confirma importul chiar dacă sursa ori starea se schimbaseră. Un material diferit sau nefinalizat blochează continuarea înainte de pregătirea draftului; un import sincron inconsistent nu declanșează polling automat. ID-ul verificat este păstrat separat de răspunsul inițial. Un ID din răspuns care diferă de cel verificat oprește rezolvarea dependenței, fără substituție tacită.
+
+Suita nouă `media-pipeline.integration.test.ts`, inclusă în runnerul emulatorului, folosește planul, sesiunea, approvals, rezultatele și checkpointurile salvate în Firestore real emulat. Verifică așteptarea randării, reluarea fără reexecutarea primilor pași, transferul URL-ului și ID-ului verificate către import și draft, precum și oprirea când URL-ul sau statusul materialului se schimbă după checkpoint. Serviciile de generare/import/draft sunt simulate în această suită; nu certifică transferuri la furnizori, disponibilitatea octeților la URL sau publicarea. Identitatea URL-ului nu reprezintă un hash al conținutului video.
+
+Validări: 33/33 teste țintite; 112/112 teste pe emulator în 17 fișiere; TypeScript separat și ESLint pe forma finală. Au fost adăugate 15 cazuri de unitate și trei probe de integrare; acestea nu reprezintă scenarii originale noi acceptate din corpusul de 1000. Planul integral și validarea externă rămân deschise. Nu s-a efectuat deployment.
+Regresia generală Jarvis, Communications și TikTok a trecut 1041/1041 teste în 103 fișiere.
+Buildul final a trecut cu TypeScript și 225 de pagini. Avertismentele locale Jaeger/standalone rămân cele cunoscute; nu s-a efectuat deployment.

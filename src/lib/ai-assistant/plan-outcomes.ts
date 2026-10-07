@@ -64,6 +64,18 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
           const row = await getResource(ctx, project ? 'tiktokStudioProjects' : 'tiktokStudioAssets', targetId);
           if (row.ownerUid !== ctx.uid || row.agencyId !== ctx.agencyId) throw new CommunicationError('Materialul Studio nu mai este accesibil.', 403);
           completionSatisfied = (row.propertyId || null) === (action.body.propertyId || null);
+          if (!project) {
+            let validUrl = false;
+            try {
+              const url = new URL(row.url);
+              validUrl = url.protocol === 'https:' && !url.username && !url.password;
+            } catch { /* Missing or malformed media cannot confirm the import. */ }
+            completionSatisfied = completionSatisfied && ['video', 'image'].includes(action.body.type as string) && row.type === action.body.type && row.url === action.body.url && validUrl && row.status === 'ready';
+            if (completionSatisfied) outputs.assetId = targetId;
+          }
+          if (!project && !completionSatisfied) {
+            return { ...base, executionState: 'unknown', completionSatisfied: false, businessStatus: String(row.status || 'unknown'), evidenceSource: 'current_domain_state', verifiedAt: new Date().toISOString(), watchable: false, note: 'Materialul importat nu mai corespunde tipului, URL-ului, proprietății sau stării ready aprobate. Pasul următor nu poate folosi acest material.' };
+          }
           current = operationResult(action.operation, { status: completionSatisfied ? 'draft' : 'unknown' }, true);
         }
       }

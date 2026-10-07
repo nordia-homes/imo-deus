@@ -117,3 +117,19 @@ it('verifies TikTok scheduling against both draft and owned queue record', async
   expect((await readPlanOutcomes(scoped, 'plan')).rows[0].executionState).toBe('unavailable');
   expect(mocks.invoke).not.toHaveBeenCalled();
 });
+it.each(['video', 'image'])('verifies an imported %s against the requested source before exposing its ID', async type => {
+  const body = { type, propertyId: 'p', url: 'https://storage.example/media' };
+  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_studio_asset_create', body }], results: [{ step: 1, result: { assetId: 'asset' } }] } });
+  mocks.resource.mockResolvedValue({ ...body, ownerUid: 'u', agencyId: 'a', status: 'ready' });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null, rows: [{ completionSatisfied: true, outputs: { assetId: 'asset' } }] });
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
+it.each(['http://storage.example/video.mp4', 'https://user:password@storage.example/video.mp4', 'file:///video.mp4', 'not-a-url', ''])('rejects unsafe or missing import URL %s even if it matches the request', async url => {
+  const body = { type: 'video', url };
+  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_studio_asset_create', body }], results: [{ step: 1, result: { assetId: 'asset' } }] } });
+  mocks.resource.mockResolvedValue({ ...body, ownerUid: 'u', agencyId: 'a', status: 'ready' });
+  const result = await readPlanOutcomes(ctx, 'plan');
+  expect(result).toMatchObject({ outcome: { state: 'BLOCKED' }, pollAfterMs: null, rows: [{ completionSatisfied: false, watchable: false }] });
+  expect(result.rows[0]).not.toHaveProperty('outputs');
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
