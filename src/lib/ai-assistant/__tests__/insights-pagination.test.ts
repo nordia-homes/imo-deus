@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn() }));
+vi.mock('../insight-feedback', () => ({ annotateInsightFeedback: async (_ctx: unknown, rows: unknown[]) => rows }));
 import { readResource } from '../access';
 import { getInsights } from '../insights';
 import type { AssistantContext } from '../access';

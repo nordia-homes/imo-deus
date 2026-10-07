@@ -1,5 +1,6 @@
 import { readResource, type AssistantContext } from './access';
 import { insightStillRelevant } from './insight-relevance';
+import { annotateInsightFeedback } from './insight-feedback';
 
 export const insightSources = ['contacts', 'tasks', 'viewings', 'sales', 'conversations', 'metaCampaignDrafts', 'tiktokPostDrafts', 'aiOutreachCalls'] as const;
 async function inspect(ctx: AssistantContext, resource: typeof insightSources[number], deadline: number) {
@@ -56,7 +57,7 @@ export async function getInsights(ctx: AssistantContext, limit = 10) {
     row.reason ||= String(row.id).startsWith('conflict-') ? 'Intervale suprapuse pentru aceeași persoană sau proprietate.' : String(row.id).startsWith('task-') ? 'Sarcină deschisă, atribuită ție, cu termen depășit.' : 'Lead nou, fără interacțiuni înregistrate, mai vechi de 48 de ore.';
   }
   rows.sort((a, b) => Number(b.priority) - Number(a.priority) || String(a.id).localeCompare(String(b.id)));
-  const selected = rows.slice(0, limit);
+  const selected = await annotateInsightFeedback(ctx, rows.slice(0, limit));
   const inspectionComplete = [...pages.values()].every(page => page.complete), complete = inspectionComplete && analysisComplete;
   return { rows: selected, complete, inspectionComplete, analysisComplete, actionableCount, resultLimitReached: actionableCount > selected.length,
     sources: [...insightSources], coverage: Object.fromEntries([...pages].map(([source, page]) => [source, { complete: page.complete, inspected: page.rows.length }])),

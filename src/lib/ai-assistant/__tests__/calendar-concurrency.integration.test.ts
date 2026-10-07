@@ -59,6 +59,9 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await notification.get()).data()).toMatchObject({ feedback: { value, revision: 2 }, withdrawnAt: '2026-10-07T10:00:00Z', isRead: true });
       await saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 });
       expect((await notification.get()).data()!.feedback.revision).toBe(2);
+      await db.collection('agencies').doc(ctx.agencyId).collection('tasks').doc('t').set({ status: 'open', agentId: ctx.uid, dueDate: '2020-01-01' });
+      const report = await insightReports.getInsights(ctx);
+      expect(report.rows.find(row => row.taskId === 't')).toMatchObject({ previousFeedback: value, priority: 80, feedbackNote: expect.any(String) });
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
   async function reserve(ctx: AssistantContext, kind: 'tasks' | 'viewings', id: string, record: Record<string, unknown>) {

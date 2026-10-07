@@ -345,6 +345,7 @@ export function AssistantResultCard({
                       {row.yearFilterSatisfied === false && ' · nu confirmă filtrul de an'}
                     </p>
                   )}
+                  {typeof row.feedbackNote === 'string' && <p className="mt-3 rounded-xl bg-sky-50 p-2.5 text-xs text-sky-900 dark:bg-sky-950 dark:text-sky-100">{row.feedbackNote}</p>}
                   {row.reasoning ? (
                     <p className="mt-3 rounded-xl bg-emerald-50/70 p-2.5 text-xs leading-5 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
                       {String(row.reasoning)}

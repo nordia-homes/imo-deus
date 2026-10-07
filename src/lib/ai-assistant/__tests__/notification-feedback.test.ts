@@ -6,7 +6,7 @@ function fixture() {
   const rows = new Map<string, any>([['users/u', { agencyId: 'a', role: 'agent' }], ['users/u/notifications/n', notification]]);
   function ref(path: string): any { return { path, collection: (id: string) => ref(`${path}/${id}`), doc: (id: string) => ref(`${path}/${id}`) }; }
   let writes = 0;
-  const db = { collection: ref, runTransaction: async (callback: any) => callback({ get: async (r: any) => ({ data: () => rows.get(r.path) }), update: (r: any, patch: any) => { writes++; rows.set(r.path, { ...rows.get(r.path), ...patch }); } }) };
+  const db = { collection: ref, runTransaction: async (callback: any) => callback({ get: async (r: any) => ({ data: () => rows.get(r.path) }), set: (r: any, value: any) => rows.set(r.path, value), update: (r: any, patch: any) => { writes++; rows.set(r.path, { ...rows.get(r.path), ...patch }); } }) };
   return { rows, notification, writes: () => writes, ctx: { uid: 'u', agencyId: 'a', role: 'agent', adminDb: db } as any };
 }
 const input = { notificationId: 'n', value: 'useful', expectedRevision: 0 };
