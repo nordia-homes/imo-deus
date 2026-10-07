@@ -63,6 +63,25 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await profile.collection('notifications').doc('owner').get()).data()).toMatchObject({ isRead: true, withdrawalReason: 'state_changed' });
     } finally { await listing.delete(); await db.recursiveDelete(profile); }
   }, 20000);
+  it.each(['owner_watch', 'matching_watch'] as const)('defers %s transactionally and creates once after quiet hours end', async type => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const listing = db.collection('ownerListings').doc(randomUUID());
+    const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
+    await listing.set({ title: 'Synthetic owner', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' });
+    const quiet = { timezone: 'UTC', start: new Date(Date.now() - 3600000).toISOString().slice(11, 16), end: new Date(Date.now() + 3600000).toISOString().slice(11, 16) };
+    const deliver = (hours: typeof quiet) => type === 'owner_watch'
+      ? createOwnerWatchNotification(ctx, 'r', 'quiet', listing.id, searchSchema.parse({ scopeKey: 'brasov' }), hours)
+      : createMatchingNotification(ctx, 'r', 'quiet', 'c', { id: 'p', title: 'Synthetic match', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }, hours);
+    try {
+      expect(await deliver(quiet)).toMatchObject({ status: 'deferred', reasonCode: 'quiet_hours' });
+      expect((await profile.collection('notifications').get()).empty).toBe(true);
+      const results = await Promise.all([1, 2].map(() => deliver({ ...quiet, end: quiet.start })));
+      expect(results.map(row => row.status).sort()).toEqual(['created', 'existing']);
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+    } finally { await listing.delete(); await db.recursiveDelete(profile); }
+  }, 20000);
   it('creates one matching alert under concurrency and withdraws it after a source edit', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };

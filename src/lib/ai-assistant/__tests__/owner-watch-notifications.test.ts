@@ -1,15 +1,16 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ collectionFor: (ctx: any, resource: string) => ctx.adminDb.collection(`agencies/${ctx.agencyId}/${resource}`), canReadResource: () => true }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error {} }));
 import { createOwnerWatchNotification } from '../owner-watch-notifications';
 import { reconcileRuleNotifications } from '../notification-relevance';
 import { searchSchema } from '../contracts';
-function fixture() {
+afterEach(() => vi.useRealTimers());
+function fixture(onRead: (path: string) => void = () => {}) {
   const rows = new Map<string, any>([['users/u', { agencyId: 'a', role: 'agent' }], ['agencies/a', { city: 'Brasov' }], ['ownerListings/p', { title: 'Fresh title', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR', roomsValue: 2, link: 'https://example.test/listing' }]]);
   function ref(path: string, filters: any[] = []): any { return { path, filters, collection: (id: string) => ref(`${path}/${id}`), doc: (id: string) => ref(`${path}/${id}`), where: (field: string, _op: string, values: string[]) => ref(path, [...filters, [field, values]]), select: () => ref(path, filters), limit: () => ({ ...ref(path, filters), query: true }) }; }
   const db = { collection: ref, runTransaction: async (fn: any) => {
     const writes: (() => void)[] = []; const result = await fn({ get: async (r: any) => {
-      if (writes.length) throw new Error('Read after write');
+      if (writes.length) throw new Error('Read after write'); onRead(r.path);
       if (r.query) { const docs = [...rows].filter(([key, row]) => key.startsWith(`${r.path}/`) && r.filters.every(([field, values]: any) => values.includes(row[field]))).map(([, row]) => ({ data: () => row })); return { docs, size: docs.length }; }
       return { exists: rows.has(r.path), data: () => rows.get(r.path) };
     }, create: (r: any, value: any) => writes.push(() => rows.set(r.path, value)), update: (r: any, value: any) => writes.push(() => rows.set(r.path, { ...rows.get(r.path), ...value })) }); writes.forEach(fn => fn()); return result;
@@ -66,4 +67,11 @@ describe('owner watch notification relevance', () => {
     rows.set('users/u/notifications/old', { type: 'ai_assistant', agencyId: 'a', recipientId: 'u', automationId: 'r' });
     expect((await reconcileRuleNotifications(ctx, { ids: ['old'] })).withdrawn).toBe(0);
   });
+});
+
+it.each([false, true])('defers owner watch without writes at quiet boundary (during import read: %s)', async during => {
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(during ? '2026-10-07T18:59:59Z' : '2026-10-07T19:00:00Z'));
+  const { ctx, rows, search } = fixture(path => { if (during && path === 'agencies/a/properties') vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); });
+  expect(await createOwnerWatchNotification(ctx, 'r', 'n', 'p', search, { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' })).toMatchObject({ status: 'deferred', reasonCode: 'quiet_hours', deferredUntil: '2026-10-08T05:00:00.000Z' });
+  expect(rows.has('users/u/notifications/n')).toBe(false);
 });

@@ -37,6 +37,7 @@ try {
   const planId = 'fdaf7ed4-6102-4227-a969-47c1317654e8';
   const action = { kind: 'schedule_viewing', contactId: 'contact', propertyId: 'property', viewingDate: '2027-01-01T12:00:00+02:00', duration: 60, notes: '' };
   const pendingPlan = { id: planId, actions: [action], status: 'pending', risks: ['SAFE_WRITE'], externalCostNote: 'Costul canalului trebuie verificat înainte de confirmare.' };
+  let watchEdit = null;
   let background = false, autonomyEnabled = false, outcomeReads = 0, outcomeDenied = false;
   const message = (text, cards = [], extra = {}) => ({ id: crypto.randomUUID(), role: 'assistant', text, cards, createdAt: new Date().toISOString(), ...extra });
   await page.route('**/api/**', async route => {
@@ -84,6 +85,7 @@ try {
       const card = { type: 'results', source: body.query.source, title: body.query.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', search: body.query, rows, complete: true };
       result = { rows, complete: true, nextCursor: null, message: message('Rezultate verificate.', [card]) };
     } else throw new Error('Unexpected fixture request: ' + JSON.stringify(body));
+    if (watchEdit && url.pathname.endsWith('/automations') && !url.searchParams.has('id')) result = { rows: [watchEdit], nextCursor: null };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -149,7 +151,7 @@ try {
   await page.getByText(/plafonul comun de 10 alerte în 24 de ore a fost atins/).waitFor();
   await page.getByText(/Alerte omise: datele sursă nu mai confirmă rezultatul/).waitFor();
   await page.getByText(/Alertele repetitive au fost omise în perioada de pauză/).waitFor();
-  await page.getByText(/Raport amânat pentru respectarea intervalului de liniște/).waitFor();
+  await page.getByText(/Verificare amânată pentru respectarea intervalului de liniște/).waitFor();
   await page.screenshot({ path: path.join(output, 'brief-delivery.png'), fullPage: true });
   await page.getByText('1 evenimente executate', { exact: false }).waitFor();
   await page.getByRole('button', { name: 'Editează', exact: true }).click();
@@ -195,8 +197,8 @@ try {
       const cooldown = page.getByLabel('Pauză între alertele aceleiași priorități', { exact: false });
       assert.equal(await cooldown.inputValue(), '1440');
       await cooldown.fill('60');
-      assert.equal(await page.getByLabel('Interval de liniște pentru raport', { exact: true }).isChecked(), true);
-      await page.getByLabel('Fus orar pentru raport', { exact: true }).fill('UTC');
+      assert.equal(await page.getByLabel('Interval de liniște pentru alerte', { exact: true }).isChecked(), true);
+      await page.getByLabel('Fus orar pentru alerte', { exact: true }).fill('UTC');
       await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Liniște de la', { exact: true }).fill('12:00');
       await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Până la', { exact: true }).fill('13:00');
       await page.screenshot({ path: path.join(output, 'insight-cooldown.png'), fullPage: true });
@@ -215,7 +217,8 @@ try {
     if (kind === 'legal_source_watch') { assert.deepEqual(prepared.automation.sourceUrls, ['https://www.ancpi.ro/fixture.pdf']); assert.equal(prepared.automation.intervalMinutes, 1440); }
     if (kind === 'owner_watch') { assert.equal(prepared.automation.search.source, 'owners'); assert.equal(prepared.automation.search.priceMax, 130000); }
     if (kind === 'matching_watch') assert.equal(prepared.automation.threshold, 75);
-    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).waitFor(); await page.getByText('Interval de liniște', { exact: true }).waitFor(); }
+    if (['owner_watch', 'matching_watch'].includes(kind)) { assert.deepEqual(prepared.automation.quietHours, { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' }); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
+    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }
@@ -294,5 +297,23 @@ try {
   await page.getByText('Scor de urgență', { exact: true }).waitFor();
   assert.equal(await page.getByText('feedbackOrder', { exact: true }).count(), 0);
   await page.screenshot({ path: path.join(output, 'insight-feedback.png'), fullPage: true });
+  for (const type of ['owner_watch', 'matching_watch']) {
+    watchEdit = { id: 'watch-edit', status: 'active', runCount: 0, automation: { type, nextRunAt: '2030-10-06T10:00:00.123Z', maxRuns: 3, intervalMinutes: 60, ...(type === 'owner_watch' ? { search: { source: 'owners', scopeKey: 'brasov', transactionType: 'sale', limit: 5, yearMin: 1980, unknownYear: 'exclude', excludeImported: true, roomsAny: [2, 3] } } : { contactId: 'client', threshold: 75, limit: 5 }) } };
+    await page.reload();
+    await page.getByRole('button', { name: 'Vezi automatizările', exact: true }).click();
+    await page.getByRole('button', { name: 'Editează', exact: true }).click();
+    if (type === 'matching_watch') await page.getByRole('option', { name: 'Maria Popescu', exact: true }).waitFor({ state: 'attached' });
+    const toggle = page.getByLabel('Interval de liniște pentru alerte', { exact: true });
+    assert.equal(await toggle.isChecked(), false, 'Legacy watches must not gain quiet hours silently');
+    await toggle.check();
+    await page.getByLabel('Fus orar pentru alerte', { exact: true }).fill('UTC');
+    await page.getByRole('button', { name: 'Pregătește automatizarea', exact: true }).click();
+    await page.getByRole('form', { name: 'Configurare automatizare' }).waitFor({ state: 'detached' });
+    const edited = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.kind === 'update_automation' && r.body.actions[0].automationId === 'watch-edit').at(-1).body.actions[0].automation;
+    assert.deepEqual(edited.quietHours, { timezone: 'UTC', start: '22:00', end: '08:00' });
+    assert.equal(edited.nextRunAt, watchEdit.automation.nextRunAt);
+    if (type === 'owner_watch') for (const key of ['scopeKey', 'yearMin', 'unknownYear', 'excludeImported', 'roomsAny']) assert.deepEqual(edited.search[key], watchEdit.automation.search[key]);
+  }
+  assert.deepEqual(errors, []);
   console.log(JSON.stringify({ passed: true, checks: ['Sales card stage, price, next action and dossier link', 'event rule editor preserves exact schedule and prepares multiple editable effects', 'all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'verified delivery labels remain distinct from automation status', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

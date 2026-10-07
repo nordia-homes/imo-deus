@@ -53,3 +53,11 @@ describe('owner prices and atomic index fields', () => {
     expect(ownerSearchFields({ price: '125.000 €', priceValue: 999999, location: 'Piața Victoriei' })).toMatchObject({ searchPrice: 125000, searchLocation: 'piata victoriei' });
   });
 });
+
+it.each(['owner_watch', 'matching_watch'] as const)('validates optional quiet hours for %s while preserving legacy behavior', type => {
+  const input = { type, nextRunAt: '2030-01-01T12:00:00Z', ...(type === 'owner_watch' ? { search: {} } : { contactId: 'c' }) };
+  expect(automationSchema.parse(input)).not.toHaveProperty('quietHours');
+  const quietHours = { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' };
+  expect(automationSchema.parse({ ...input, quietHours })).toHaveProperty('quietHours', quietHours);
+  for (const patch of [{ timezone: 'Invalid/Zone' }, { start: '25:00' }, { end: '8:00' }]) expect(automationSchema.safeParse({ ...input, quietHours: { ...quietHours, ...patch } }).success).toBe(false);
+});

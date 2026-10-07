@@ -63,7 +63,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       const automation = automationSchema.parse(claim.automation);
       const run = Number(claim.runCount || 0) + 1;
       let result: unknown;
-      const quiet = automation.type === 'insight_report' ? insightQuietDeferral(automation.quietHours) : null;
+      const quiet = 'quietHours' in automation ? insightQuietDeferral(automation.quietHours) : null;
       const stopReason = automation.stopAfter && Date.parse(automation.stopAfter) <= Date.now() ? 'Termenul de oprire a fost atins.' : 'contactId' in automation && automation.stopOnContactStatuses?.includes((await getResource(ctx, 'contacts', automation.contactId)).status) ? 'Clientul a ajuns într-un status configurat pentru oprire.' : null;
       if (stopReason) {
         result = { skipped: true, reason: stopReason };
@@ -113,7 +113,9 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
             if (notificationResult.status === 'deferred') break;
             continue;
           }
-          notificationResults.push(await createMatchingNotification(ctx, claim.id, id, automation.contactId, row));
+          const notificationResult = await createMatchingNotification(ctx, claim.id, id, automation.contactId, row, automation.quietHours);
+          notificationResults.push(notificationResult);
+          if (notificationResult.status === 'deferred') break;
         }
         result = { ...report, notificationResults, ...notificationResults.find(item => item.status === 'deferred') };
       } else {
@@ -122,21 +124,25 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         const page = result as Awaited<ReturnType<typeof searchProperties>>;
         const notificationResults = [];
         for (const row of page.rows) {
-          notificationResults.push(await createOwnerWatchNotification(ctx, claim.id, `${claim.id}-${String(row.id)}`, String(row.id), search));
+          const notificationResult = await createOwnerWatchNotification(ctx, claim.id, `${claim.id}-${String(row.id)}`, String(row.id), search, automation.quietHours);
+          notificationResults.push(notificationResult);
+          if (notificationResult.status === 'deferred') break;
         }
         result = { ...page, notificationResults };
         // Keep an explicit continuation if the corpus exceeds this worker's read budget.
         if (page.nextCursor) result = { ...page, notificationResults, partial: true, note: 'Monitorizarea a verificat o pagină de rezultate; continuarea este disponibilă în AI Assistant.' };
+        const deferred = notificationResults.find(item => item.status === 'deferred');
+        if (deferred) result = { ...page, notificationResults, ...deferred, nextCursor: claim.scanCursor || null };
       }
       const skipped = Boolean((result as { skipped?: boolean })?.skipped);
       const eventResult = automation.type === 'event_rule' ? result as Awaited<ReturnType<typeof runEventRule>> : null;
-      const deferredUntil = automation.type === 'insight_report' && (result as { reasonCode?: string })?.reasonCode === 'quiet_hours' ? (result as { deferredUntil: string }).deferredUntil : null;
+      const deferredUntil = 'quietHours' in automation && (result as { reasonCode?: string })?.reasonCode === 'quiet_hours' ? (result as { deferredUntil: string }).deferredUntil : null;
       const nextRun = deferredUntil ? (automation.stopAfter && Date.parse(automation.stopAfter) < Date.parse(deferredUntil) ? automation.stopAfter : deferredUntil) : !skipped && !eventResult?.limitReached && run < automation.maxRuns
         ? automation.type === 'daily_sales_brief'
           ? nextBriefRun(briefSettingsSchema.parse(Object.fromEntries(Object.keys(briefSettingsSchema.shape).map(key => [key, (automation as Record<string, unknown>)[key]]))))
           : automation.intervalMinutes ? new Date(Date.now() + automation.intervalMinutes * 60000).toISOString() : null
         : null;
-      outcome = { status: nextRun ? 'active' : 'completed', runCount: deferredUntil ? Number(claim.runCount || 0) : run, nextRunAt: nextRun, lastRunAt: now, lastResult: safeData(result), scanCursor: automation.type === 'owner_watch' ? (result as { nextCursor?: string }).nextCursor || null : null, ...(eventResult ? { eventCursor: eventResult.eventCursor, eventCount: eventResult.eventCount } : {}), requestId: null, error: null };
+      outcome = { status: nextRun ? 'active' : 'completed', runCount: deferredUntil ? Number(claim.runCount || 0) : run, nextRunAt: nextRun, lastRunAt: now, lastResult: safeData(result), scanCursor: automation.type === 'owner_watch' ? (deferredUntil ? claim.scanCursor || null : (result as { nextCursor?: string }).nextCursor || null) : null, ...(eventResult ? { eventCursor: eventResult.eventCursor, eventCount: eventResult.eventCount } : {}), requestId: null, error: null };
       if (['whatsapp_template', 'daily_sales_brief'].includes(automation.type) && ['unknown', 'failed'].includes(String((result as { status?: string }).status))) outcome.status = (result as { status: string }).status === 'unknown' ? 'unknown' : 'blocked';
     } catch (error) {
       outcome = { status: 'blocked', lastRunAt: now, error: error instanceof Error ? error.message : 'Automatizarea a fost oprită.' };

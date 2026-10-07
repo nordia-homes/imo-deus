@@ -4,6 +4,7 @@ import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { canReadResource, collectionFor, type AssistantContext } from './access';
 import { idSchema } from './contracts';
 import { matchingRevision } from './matching-revision';
+import { insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
 
 export const matchingConditionSchema = z.object({ contactId: idSchema, propertyId: idSchema, contactRevision: z.string().regex(/^[a-f0-9]{64}$/), propertyRevision: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 export async function readMatchingRelevance(ctx: AssistantContext, tx: Transaction, condition: z.infer<typeof matchingConditionSchema>) {
@@ -17,7 +18,7 @@ export async function readMatchingRelevance(ctx: AssistantContext, tx: Transacti
   return null;
 }
 
-export async function createMatchingNotification(ctx: AssistantContext, automationId: string, id: string, contactId: string, row: Record<string, any>) {
+export async function createMatchingNotification(ctx: AssistantContext, automationId: string, id: string, contactId: string, row: Record<string, any>, quietHours?: InsightQuietHours) {
   const condition = matchingConditionSchema.parse({ contactId, propertyId: row.id, contactRevision: row.sourceContactRevision, propertyRevision: row.matchingRevision });
   const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(id);
   return ctx.adminDb.runTransaction(async tx => {
@@ -25,8 +26,12 @@ export async function createMatchingNotification(ctx: AssistantContext, automati
     const member = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
     if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Permisiunile automatizării s-au schimbat.');
     if ((await tx.get(ref)).exists) return { status: 'existing', notificationId: id };
+    const quiet = insightQuietDeferral(quietHours);
+    if (quiet) return quiet;
     const reason = await readMatchingRelevance(ctx, tx, condition);
     if (reason) return { status: 'skipped', reasonCode: reason };
+    const quietAfterReads = insightQuietDeferral(quietHours);
+    if (quietAfterReads) return quietAfterReads;
     tx.create(ref, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: 'Potrivire ImoDeus peste pragul configurat', body: String(row.title), actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: new Date().toISOString(), automationId, matchingCondition: condition });
     return { status: 'created', notificationId: id };
   });

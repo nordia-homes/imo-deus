@@ -187,3 +187,43 @@ describe('approved automation execution', () => {
     expect(await drainAssistantAutomations(db as any)).toMatchObject({ disabled: true, processed: 0 }); expect(executeAction).not.toHaveBeenCalled();
   });
 });
+
+const watchQuiet = { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' };
+it.each(['owner_watch', 'matching_watch'] as const)('defers %s before reading data and preserves progress until stopAfter', async type => {
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T19:00:00Z'));
+  const { db, rows } = database({ type, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, stopAfter: '2026-10-07T20:00:00Z', quietHours: watchQuiet, ...(type === 'owner_watch' ? { search: {} } : { contactId: 'c' }) }, { scanCursor: 'saved-page' });
+  await drainAssistantAutomations(db as any);
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'active', runCount: 0, nextRunAt: '2026-10-07T20:00:00.000Z', lastResult: { reasonCode: 'quiet_hours' }, ...(type === 'owner_watch' ? { scanCursor: 'saved-page' } : {}) });
+  expect(searchProperties).not.toHaveBeenCalled(); expect(matchContact).not.toHaveBeenCalled();
+  vi.setSystemTime(new Date('2026-10-07T20:00:00Z'));
+  await drainAssistantAutomations(db as any);
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', lastResult: { skipped: true } });
+});
+it.each(['owner_watch', 'matching_watch'] as const)('resumes %s mid-page without losing or repeating notifications and rechecks sources', async type => {
+  vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T18:59:59Z'));
+  const { db, rows } = database({ type, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, quietHours: watchQuiet, ...(type === 'owner_watch' ? { search: { scopeKey: 'brasov' } } : { contactId: 'c' }) }, { scanCursor: 'saved-page' });
+  const contact = { status: 'Nou', budget: 150000 }; rows.set('agencies/a/contacts/c', contact);
+  const cards = ['a', 'b', 'c'].map(id => {
+    const source = { title: id, status: 'Activ', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR' };
+    rows.set(type === 'owner_watch' ? `ownerListings/${id}` : `agencies/a/properties/${id}`, source);
+    return { id, title: id, matchScore: 90, sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(source) };
+  });
+  if (type === 'owner_watch') vi.mocked(searchProperties).mockResolvedValue({ rows: cards, nextCursor: 'next-page', complete: false } as any);
+  else vi.mocked(matchContact).mockResolvedValue(cards as any);
+  const originalTransaction = db.runTransaction;
+  let crossed = false;
+  db.runTransaction = async callback => {
+    const result = await originalTransaction(callback);
+    if (!crossed && rows.has('users/u/notifications/job-a')) { crossed = true; vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); }
+    return result;
+  };
+  await drainAssistantAutomations(db as any);
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 0, status: 'active', lastResult: { reasonCode: 'quiet_hours' }, ...(type === 'owner_watch' ? { scanCursor: 'saved-page' } : {}) });
+  expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toEqual(['users/u/notifications/job-a']);
+  rows.delete(type === 'owner_watch' ? 'ownerListings/b' : 'agencies/a/properties/b');
+  vi.setSystemTime(new Date('2026-10-08T05:00:00Z'));
+  await drainAssistantAutomations(db as any);
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 1, status: 'completed', ...(type === 'owner_watch' ? { scanCursor: 'next-page' } : {}) });
+  expect([...rows.keys()].filter(key => key.includes('/notifications/')).sort()).toEqual(['users/u/notifications/job-a', 'users/u/notifications/job-c']);
+  if (type === 'owner_watch') expect(vi.mocked(searchProperties).mock.calls.at(-1)?.[1].cursor).toBe('saved-page');
+});
