@@ -10,6 +10,7 @@ import { searchMatches } from './search';
 import { importedListingIds } from './imported-listings';
 import { insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
 import { readNotificationBudget } from './notification-budget';
+import { readWatchCooldown } from './watch-notification-cooldown';
 
 export const ownerWatchConditionSchema = z.object({ listingId: idSchema, search: searchSchema.omit({ cursor: true, limit: true }).extend({ source: z.literal('owners') }) }).strict();
 
@@ -38,11 +39,14 @@ export async function createOwnerWatchNotification(ctx: AssistantContext, automa
     if (quiet) return quiet;
     const fresh = await readOwnerWatchRelevance(ctx, tx, condition);
     if (fresh.reason) return { status: 'skipped', reasonCode: fresh.reason };
+    const cooldown = await readWatchCooldown(ctx, tx, ['owner', listingId]);
+    if (cooldown.skipped) return cooldown.skipped;
     const budget = await readNotificationBudget(ctx, tx);
     const quietAfterReads = insightQuietDeferral(quietHours, budget.now);
     if (quietAfterReads) return quietAfterReads;
     if (budget.deferred) return budget.deferred;
     budget.consume();
+    cooldown.consume();
     tx.create(ref, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: 'Anunț potrivit căutării salvate', body: String(fresh.row!.title || ''), actionUrl: '/owner-listings', entityType: 'ownerListing', entityId: listingId, isRead: false, createdAt: new Date().toISOString(), automationId, ownerWatchCondition: condition });
     return { status: 'created', notificationId: id };
   });

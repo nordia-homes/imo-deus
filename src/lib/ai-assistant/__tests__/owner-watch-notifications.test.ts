@@ -58,6 +58,7 @@ describe('owner watch notification relevance', () => {
     rows.set('agencies/a/properties/similar', { title: 'Fresh title' });
     expect(await createOwnerWatchNotification(ctx, 'r', 'n', 'p', { ...search, scopeKey: 'brasov' })).toMatchObject({ status: 'created' });
     rows.set('agencies/a/properties/import', { ownerListingId: 'p' });
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(Date.now() + 86400001);
     expect(await createOwnerWatchNotification(ctx, 'r', 'n2', 'p', { ...search, scopeKey: 'brasov', excludeImported: false })).toMatchObject({ status: 'created' });
   });
   it('rejects revoked membership and does not infer a binding for legacy alerts', async () => {

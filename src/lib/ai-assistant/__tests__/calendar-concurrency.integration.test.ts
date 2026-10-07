@@ -48,6 +48,32 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it.each(['owner', 'matching'] as const)('shares %s cooldown across concurrent independent automations', async kind => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const listing = db.collection('ownerListings').doc(randomUUID());
+    const contact = { status: 'Nou' }, property = { status: 'Activ', price: 120000 };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
+    await listing.set({ scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' });
+    const deliver = (id: string) => kind === 'owner'
+      ? createOwnerWatchNotification(ctx, id, id, listing.id, searchSchema.parse({ scopeKey: 'brasov' }))
+      : createMatchingNotification(ctx, id, id, 'c', { id: 'p', title: 'Fixture', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) });
+    try {
+      const results = await Promise.all(['one', 'two'].map(deliver));
+      expect(results.map(row => row.status).sort()).toEqual(['created', 'skipped']);
+      expect(results.find(row => row.status === 'skipped')).toMatchObject({ reasonCode: 'cooldown' });
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      const states = await agency.collection('assistantNotificationState').get();
+      expect(states.docs.find(doc => doc.id.startsWith('budget-'))!.data().deliveries).toHaveLength(1);
+      const cooldown = states.docs.find(doc => doc.id.startsWith('watch-cooldown-'))!;
+      await cooldown.ref.update({ lastDeliveredAt: Date.now() - 86400001 });
+      // Expiration permits a fresh evaluation, not delivery from the old result.
+      if (kind === 'owner') await listing.update({ publicationStatus: 'hidden' });
+      else await agency.collection('properties').doc('p').update({ status: 'Vândut' });
+      expect(await deliver('three')).toMatchObject({ status: 'skipped', reasonCode: 'state_changed' });
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+    } finally { await listing.delete(); await db.recursiveDelete(profile); }
+  }, 20000);
   it('deduplicates owner alerts transactionally and withdraws after an exact CRM import', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const listing = db.collection('ownerListings').doc(randomUUID());

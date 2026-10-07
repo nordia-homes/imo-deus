@@ -7,6 +7,7 @@ import { idSchema } from './contracts';
 import { matchingRevision } from './matching-revision';
 import { insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
 import { readNotificationBudget } from './notification-budget';
+import { readWatchCooldown } from './watch-notification-cooldown';
 
 export const matchingConditionSchema = z.object({ contactId: idSchema, propertyId: idSchema, contactRevision: z.string().regex(/^[a-f0-9]{64}$/), propertyRevision: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 export async function readMatchingRelevance(ctx: AssistantContext, tx: Transaction, condition: z.infer<typeof matchingConditionSchema>) {
@@ -33,11 +34,14 @@ export async function createMatchingNotification(ctx: AssistantContext, automati
     if (quiet) return quiet;
     const reason = await readMatchingRelevance(ctx, tx, condition);
     if (reason) return { status: 'skipped', reasonCode: reason };
+    const cooldown = await readWatchCooldown(ctx, tx, ['matching', contactId, row.id]);
+    if (cooldown.skipped) return cooldown.skipped;
     const budget = await readNotificationBudget(ctx, tx);
     const quietAfterReads = insightQuietDeferral(quietHours, budget.now);
     if (quietAfterReads) return quietAfterReads;
     if (budget.deferred) return budget.deferred;
     budget.consume();
+    cooldown.consume();
     tx.create(ref, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: 'Potrivire ImoDeus peste pragul configurat', body: String(row.title), actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: new Date().toISOString(), automationId, matchingCondition: condition });
     return { status: 'created', notificationId: id };
   });

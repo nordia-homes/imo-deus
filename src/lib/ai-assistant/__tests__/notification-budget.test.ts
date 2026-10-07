@@ -26,6 +26,37 @@ function fixture() {
   return { ctx, rows, deliver };
 }
 describe('shared report and watch budget', () => {
+  it.each(['owner', 'matching'] as const)('shares the %s cooldown without extending it on omissions or consuming capacity', async kind => {
+    const { rows, deliver } = fixture();
+    expect(await deliver(kind, 'first')).toMatchObject({ status: 'created' });
+    vi.setSystemTime(now + 3600000);
+    expect(await deliver(kind, 'second')).toMatchObject({ status: 'skipped', reasonCode: 'cooldown', nextEligibleAt: new Date(now + 86400000).toISOString() });
+    expect(rows.get(budgetPath()).deliveries).toHaveLength(1);
+    expect(rows.has('users/u/notifications/second')).toBe(false);
+    vi.setSystemTime(now + 86400000);
+    expect(await deliver(kind, 'second')).toMatchObject({ status: 'created' });
+    expect(await deliver(kind, 'first')).toMatchObject({ status: 'existing' });
+    expect(rows.get(budgetPath()).deliveries).toHaveLength(1);
+  });
+  it('keeps owner and matching cooldowns separate and isolates users and agencies', async () => {
+    const { rows, deliver, ctx } = fixture();
+    expect(await deliver('owner', 'owner')).toMatchObject({ status: 'created' });
+    expect(await deliver('matching', 'matching')).toMatchObject({ status: 'created' });
+    rows.set('users/v', { agencyId: 'a', role: 'agent' });
+    expect(await deliver('owner', 'other-user', { ...ctx, uid: 'v' })).toMatchObject({ status: 'created' });
+    rows.set('users/u', { agencyId: 'b', role: 'agent' });
+    expect(await deliver('owner', 'other-agency', { ...ctx, agencyId: 'b' })).toMatchObject({ status: 'created' });
+  });
+  it.each(['owner', 'matching'] as const)('fails closed for corrupted %s cooldown state', async kind => {
+    const { rows, deliver } = fixture();
+    await deliver(kind, 'first');
+    const path = [...rows.keys()].find(key => key.includes('/watch-cooldown-'))!;
+    for (const value of [null, -1, now + 1, 'today']) {
+      rows.set(path, { actorId: 'u', lastDeliveredAt: value });
+      await expect(deliver(kind, 'second')).rejects.toThrow('Pauza dintre alerte');
+      expect(rows.has('users/u/notifications/second')).toBe(false);
+    }
+  });
   it.each(['owner', 'matching'] as const)('defers %s at the report limit, permits expiry and does not charge a retry', async kind => {
     const { rows, deliver } = fixture(); rows.set(budgetPath(), { actorId: 'u', deliveries: Array(9).fill(now - 3600000) });
     expect(await deliver('report', 'report')).toMatchObject({ status: 'created' });
