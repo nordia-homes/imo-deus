@@ -630,3 +630,16 @@ Validări: prima rulare a regresiilor TikTok și rezultate ale planului a trecut
 
 Planul integral, probele externe și restul corpusului rămân deschise. Acest lot nu este publicat în producție.
 TypeScript separat și buildul final au trecut pe forma finală, cu 225 de pagini generate. Rămân avertismentele locale cunoscute Jaeger și copierea browserului standalone.
+
+## 7 octombrie: recuperarea verificărilor durabile după întreruperi
+
+Continuare E3. Joburile de verificare foloseau același contor `attempts` pentru verificările periodice normale și recuperarea după un worker întrerupt. După două citiri normale, o întrerupere ulterioară oprea definitiv urmărirea rezultatului, chiar dacă termenul de verificare nu expirase.
+
+Recuperarea recitește tranzacțional jobul și lease-ul curent. Pentru joburile de verificare, limita este acum de două recuperări după întreruperi, prin contorul separat `recoveryAttempts`; pollingul obișnuit nu consumă această limită. Termenul inițial nu se prelungește. Termenul expirat/invalid sau limita epuizată opresc jobul cu rezultatul BLOCKED și un mesaj explicit de verificare manuală, fără a declara succesul ori eșecul efectului extern. Politica planurilor care execută mutații rămâne fără reluare automată după întrerupere. Apartenența și rolul sunt reverificate înaintea noului claim.
+
+Verificatorul de rezultat tratează și termenele nefinite ca expirate, inclusiv dacă o modificare concurentă a planului împiedică salvarea rezultatului. O astfel de valoare nu mai poate produce reprogramări nelimitate.
+
+Probe adăugate: recuperare după 80 de verificări, limită epuizată sau invalidă, termen expirat/invalid, lease reînnoit și job deja încheiat; pe Firestore real emulat, doi workeri concurenți, două recuperări urmate de oprire și acces revocat înainte de claim. Aceste probe nu sunt cazuri noi certificate din corpusul original și nu apelează furnizori externi. Planul integral și acceptanța externă rămân deschise; lotul nu este publicat în producție.
+
+Validări trecute: 109/109 teste pe emulator în 16 fișiere; regresia generală Jarvis, Communications și TikTok, 1026/1026 teste în 103 fișiere; TypeScript separat și ESLint. Suitele de unitate includ 15 cazuri noi, iar emulatorul trei cazuri noi de recuperare a verificărilor. Numărul de teste nu reprezintă numărul scenariilor originale acceptate.
+Buildul final a trecut, inclusiv TypeScript și 225 de pagini. Avertismentele Jaeger/standalone sunt cele cunoscute; nu s-a efectuat deployment.

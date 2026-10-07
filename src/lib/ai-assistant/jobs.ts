@@ -5,7 +5,7 @@ import { chatTurn, getPlan, runPlan } from './workspace';
 import { validateApproval } from './approval';
 import { CommunicationError } from '@/lib/communications/server';
 import { adminAuth } from '@/firebase/admin';
-import type { Firestore } from 'firebase-admin/firestore';
+import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { failureCategory } from './failure';
 import { saveWorkerTurnFailure } from './worker-failure';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
@@ -58,10 +58,28 @@ export async function readJob(ctx: AssistantContext, id: string) {
   const plan = data.planId ? (await getPlan(ctx, data.planId)).data : null;
   return { jobId: id, status: data.status, businessStatus: data.planStatus || plan?.status || data.status, events: data.events || [], message: data.message || null, plan, error: data.error || null };
 }
+export async function recoverAgentJob(db: Firestore, ref: DocumentReference) {
+  await db.runTransaction(async tx => {
+    const fresh = await tx.get(ref), job = fresh.data();
+    if (!job || job.status !== 'running' || !(job.leaseUntil < Date.now())) return;
+    if (job.jobType === 'verification') {
+      // attempts counts ordinary polling too. Only interrupted checks consume
+      // the recovery allowance; never renew the original verification deadline.
+      const recoveries = job.recoveryAttempts ?? 0;
+      const retry = Number.isSafeInteger(recoveries) && recoveries >= 0 && recoveries < 2 && Number.isFinite(job.deadline) && job.deadline > Date.now();
+      tx.update(ref, retry
+        ? { status: 'pending', recoveryAttempts: recoveries + 1, error: null }
+        : { status: 'failed', planStatus: 'BLOCKED', error: 'Verificarea rezultatului a fost întreruptă și nu mai poate continua automat. Efectul extern nu a fost repetat; verifică starea în modulul dedicat.' });
+      return;
+    }
+    tx.update(ref, { status: job.jobType !== 'plan' && job.attempts < 2 ? 'pending' : 'failed', error: 'Execuție întreruptă; verifică planul. Acțiunile externe nu se repetă automat.' });
+  });
+}
+
 export async function drainAgentJobs(db: Firestore, limit = 1) {
   const jobs = db.collection('assistantAgentJobs');
   const stale = await jobs.where('status', '==', 'running').where('leaseUntil', '<', Date.now()).limit(limit).get();
-  for (const row of stale.docs) await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.status === 'running' && fresh.data()?.leaseUntil < Date.now()) tx.update(row.ref, { status: fresh.data()?.jobType !== 'plan' && fresh.data()?.attempts < 2 ? 'pending' : 'failed', error: 'Execuție întreruptă; verifică planul. Acțiunile externe nu se repetă automat.' }); });
+  for (const row of stale.docs) await recoverAgentJob(db, row.ref);
   const due = await jobs.where('status', '==', 'pending').orderBy('createdAt').limit(limit).get();
   let processed = 0;
   for (const row of due.docs) {

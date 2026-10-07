@@ -5,8 +5,10 @@ vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), referencesAllowed: async () => true }));
 vi.mock('../workspace', () => ({ chatTurn: vi.fn(), runPlan: vi.fn(), getPlan: vi.fn() }));
-import { chatTurn } from '../workspace';
-import { drainAgentJobs, enqueueTurn, renewAgentJobLease } from '../jobs';
+vi.mock('../outcome-watcher', () => ({ verifyPlanOutcome: vi.fn() }));
+import { verifyPlanOutcome } from '../outcome-watcher';
+import { chatTurn, runPlan } from '../workspace';
+import { drainAgentJobs, enqueueTurn, renewAgentJobLease, recoverAgentJob } from '../jobs';
 import type { AssistantContext } from '../access';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
@@ -40,6 +42,39 @@ describe.skipIf(!host)('worker claims on actual Firestore transactions', () => {
     await Promise.all([drainAgentJobs(db as any), drainAgentJobs(db as any)]);
     expect(chatTurn).toHaveBeenCalledTimes(1);
     expect((await db.collection('assistantAgentJobs').doc(row.requestId).get()).data()?.status).toBe('completed');
+  }, 20000);
+  it('recovers a late polling crash once under two workers without replaying a turn or plan', async () => {
+    vi.mocked(chatTurn).mockClear(); vi.mocked(runPlan).mockClear(); vi.mocked(verifyPlanOutcome).mockReset();
+    const row = await fixture(), ref = db.collection('assistantAgentJobs').doc(row.requestId);
+    const deadline = Date.now() + 60000;
+    await ref.update({ jobType: 'verification', planId: 'plan', status: 'running', attempts: 80, leaseUntil: 0, deadline });
+    vi.mocked(verifyPlanOutcome).mockResolvedValue({ status: 'completed', planStatus: 'COMPLETED', notBefore: 0 } as any);
+    await Promise.all([drainAgentJobs(db as any), drainAgentJobs(db as any)]);
+    expect(verifyPlanOutcome).toHaveBeenCalledTimes(1);
+    expect(verifyPlanOutcome).toHaveBeenCalledWith(expect.objectContaining({ uid: row.uid, agencyId: row.agencyId }), 'plan', deadline);
+    expect((await ref.get()).data()).toMatchObject({ status: 'completed', attempts: 81, recoveryAttempts: 1, deadline });
+    expect(chatTurn).not.toHaveBeenCalled(); expect(runPlan).not.toHaveBeenCalled();
+  }, 30000);
+  it('limits repeated interrupted checks without extending the original deadline', async () => {
+    const row = await fixture(), ref = db.collection('assistantAgentJobs').doc(row.requestId);
+    const deadline = Date.now() + 60000;
+    await ref.update({ jobType: 'verification', status: 'running', attempts: 80, leaseUntil: 0, deadline });
+    for (let count = 1; count <= 2; count++) {
+      await Promise.all([recoverAgentJob(db as any, ref as any), recoverAgentJob(db as any, ref as any)]);
+      expect((await ref.get()).data()).toMatchObject({ status: 'pending', recoveryAttempts: count, deadline });
+      await ref.update({ status: 'running', leaseUntil: 0 });
+    }
+    await recoverAgentJob(db as any, ref as any);
+    expect((await ref.get()).data()).toMatchObject({ status: 'failed', planStatus: 'BLOCKED', recoveryAttempts: 2, deadline });
+  }, 30000);
+  it('rechecks revoked membership after recovering verification', async () => {
+    vi.mocked(verifyPlanOutcome).mockClear();
+    const row = await fixture(), ref = db.collection('assistantAgentJobs').doc(row.requestId);
+    await ref.update({ jobType: 'verification', status: 'running', attempts: 80, leaseUntil: 0, deadline: Date.now() + 60000 });
+    await db.collection('users').doc(row.uid).update({ agencyId: 'other' });
+    await drainAgentJobs(db as any);
+    expect(verifyPlanOutcome).not.toHaveBeenCalled();
+    expect((await ref.get()).data()).toMatchObject({ status: 'failed', error: 'Acces revocat.' });
   }, 20000);
   it('renews a silent operation without changing progress and refuses a replacement claim', async () => {
     const row = await fixture(), ref = db.collection('assistantAgentJobs').doc(row.requestId);

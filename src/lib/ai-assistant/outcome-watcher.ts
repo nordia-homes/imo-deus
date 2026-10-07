@@ -19,8 +19,9 @@ export async function enqueueOutcomeWatch(ctx: AssistantContext, planId: string)
 }
 
 export async function verifyPlanOutcome(ctx: AssistantContext, planId: string, deadline: number) {
+  const expired = () => !Number.isFinite(deadline) || Date.now() >= deadline;
   const verification = await readPlanOutcomes(ctx, planId);
-  const keepWatching = Boolean(verification.pollAfterMs) && Date.now() < deadline;
+  const keepWatching = Boolean(verification.pollAfterMs) && !expired();
   const outcome = !keepWatching && verification.pollAfterMs
     ? { ...verification.outcome, state: 'BLOCKED' as const, note: 'Verificarea automată a ajuns la termen. Efectul nu se repetă; verifică starea în modulul dedicat.' }
     : verification.outcome;
@@ -38,8 +39,8 @@ export async function verifyPlanOutcome(ctx: AssistantContext, planId: string, d
   });
   if (!persisted.saved) {
     const stopped = ['paused', 'cancelled'].includes(persisted.status);
-    const expired = Date.now() >= deadline;
-    return { status: stopped || expired ? 'completed' : 'pending', planStatus: stopped ? persisted.status.toUpperCase() : expired ? 'BLOCKED' : 'RUNNING', notBefore: stopped || expired ? 0 : Date.now() + 15000, createdAt: new Date().toISOString(), ...(expired && !stopped ? { note: 'Verificarea a expirat în timpul unei modificări concurente. Planul curent nu a fost suprascris; verifică starea în modulul dedicat.' } : {}) };
+    const deadlineReached = expired();
+    return { status: stopped || deadlineReached ? 'completed' : 'pending', planStatus: stopped ? persisted.status.toUpperCase() : deadlineReached ? 'BLOCKED' : 'RUNNING', notBefore: stopped || deadlineReached ? 0 : Date.now() + 15000, createdAt: new Date().toISOString(), ...(deadlineReached && !stopped ? { note: 'Verificarea a expirat în timpul unei modificări concurente. Planul curent nu a fost suprascris; verifică starea în modulul dedicat.' } : {}) };
   }
   return { status: keepWatching ? 'pending' : 'completed', planStatus: outcome.state, notBefore: keepWatching ? Date.now() + verification.pollAfterMs! : 0, createdAt: new Date().toISOString(), outcome };
 }

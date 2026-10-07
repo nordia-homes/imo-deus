@@ -46,3 +46,8 @@ it('does not extend the deadline when the plan revision keeps changing', async (
   expect(await verifyPlanOutcome(ctx, 'p', Date.now() - 1)).toMatchObject({ status: 'completed', planStatus: 'BLOCKED', notBefore: 0 });
   expect(update).not.toHaveBeenCalled();
 });
+it.each([NaN, Infinity, -Infinity])('ends an invalid deadline %s even during concurrent plan changes', async deadline => {
+  const { ctx, update } = context('completed', 'a', 2);
+  expect(await verifyPlanOutcome(ctx, 'p', deadline)).toMatchObject({ status: 'completed', planStatus: 'BLOCKED', notBefore: 0 });
+  expect(update).not.toHaveBeenCalled();
+});

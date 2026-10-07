@@ -3,7 +3,7 @@ vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection(`agencies/${ctx.agencyId}/${name}`), referencesAllowed: vi.fn(async () => true) }));
 vi.mock('../workspace', () => ({ chatTurn: vi.fn(async () => ({ message: { id: 'reply', text: 'Confirmed fixture', accessRefs: [] } })), runPlan: vi.fn(async () => ({ status: 'unknown' })), getPlan: vi.fn(async () => ({ data: { status: 'pending' } })) }));
-import { enqueueTurn, readJob, drainAgentJobs } from '../jobs';
+import { enqueueTurn, readJob, drainAgentJobs, recoverAgentJob } from '../jobs';
 import { chatTurn, runPlan } from '../workspace';
 import type { AssistantContext } from '../access';
 function database(initial: Record<string, any> = {}) {
@@ -20,6 +20,39 @@ function database(initial: Record<string, any> = {}) {
 const input = { sessionId: 'session', requestId: 'request', prompt: 'Read authorized data' };
 afterEach(() => vi.clearAllMocks());
 describe('durable tenant-scoped jobs', () => {
+  it('recovers interrupted verification independently of its polling count without extending its deadline', async () => {
+    const deadline = Date.now() + 60000;
+    const { db, rows } = database({ 'assistantAgentJobs/watch': { jobType: 'verification', status: 'running', leaseUntil: 0, attempts: 80, deadline, recoveryAttempts: 1, notBefore: 123 } });
+    await recoverAgentJob(db as any, db.collection('assistantAgentJobs').doc('watch'));
+    expect(rows.get('assistantAgentJobs/watch')).toMatchObject({ status: 'pending', attempts: 80, recoveryAttempts: 2, deadline, notBefore: 123 });
+    expect(chatTurn).not.toHaveBeenCalled(); expect(runPlan).not.toHaveBeenCalled();
+  });
+  it.each([
+    { recoveryAttempts: 2, deadline: Date.now() + 60000 },
+    { recoveryAttempts: -1, deadline: Date.now() + 60000 },
+    { recoveryAttempts: '0', deadline: Date.now() + 60000 },
+    { recoveryAttempts: 0, deadline: 0 },
+    { recoveryAttempts: 0, deadline: NaN },
+    { recoveryAttempts: 0, deadline: Infinity },
+    { recoveryAttempts: 0 },
+  ])('stops verification with an exhausted or invalid recovery budget: %j', async fields => {
+    const { db, rows } = database({ 'assistantAgentJobs/watch': { jobType: 'verification', status: 'running', leaseUntil: 0, attempts: 1, ...fields } });
+    await recoverAgentJob(db as any, db.collection('assistantAgentJobs').doc('watch'));
+    expect(rows.get('assistantAgentJobs/watch')).toMatchObject({ status: 'failed', planStatus: 'BLOCKED' });
+    expect(chatTurn).not.toHaveBeenCalled(); expect(runPlan).not.toHaveBeenCalled();
+  });
+  it.each(['pending', 'completed', 'failed'])('does not overwrite a verification already %s', async status => {
+    const original = { jobType: 'verification', status, leaseUntil: 0, attempts: 80, deadline: Date.now() + 60000 };
+    const { db, rows } = database({ 'assistantAgentJobs/watch': original });
+    await recoverAgentJob(db as any, db.collection('assistantAgentJobs').doc('watch'));
+    expect(rows.get('assistantAgentJobs/watch')).toEqual(original);
+  });
+  it('preserves a verification whose lease has been renewed', async () => {
+    const original = { jobType: 'verification', status: 'running', leaseUntil: Date.now() + 60000, attempts: 80 };
+    const { db, rows } = database({ 'assistantAgentJobs/watch': original });
+    await recoverAgentJob(db as any, db.collection('assistantAgentJobs').doc('watch'));
+    expect(rows.get('assistantAgentJobs/watch')).toEqual(original);
+  });
   it('does not let a replaced worker overwrite progress or the new claim result', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { ctx, db, rows } = database(); await enqueueTurn(ctx, input);
