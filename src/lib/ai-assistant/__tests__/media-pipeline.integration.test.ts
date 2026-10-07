@@ -60,7 +60,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
       }
       throw new Error('Unexpected mutation');
     });
-    const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', videoUrl: url } });
+    const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
   it('persists the wait, resumes from receipts and passes only verified media to the draft', async () => {
@@ -77,6 +77,17 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     expect(await readPlanOutcomes(f.ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' } });
     await runPlan(f.ctx, 'plan');
     expect(executeAction).toHaveBeenCalledTimes(4);
+    expect(vi.mocked(invokeOperation).mock.calls.every(call => call[1].operation === 'video_job' && call[2] === true)).toBe(true);
+  }, 20000);
+  it.each([{ videoUrl: 'https://' }, { videoUrl: 'https://user:secret@fixture.example/video.mp4' }, { requestedByUid: 'other' }, { propertyId: 'other' }])('blocks unverified completed video before importing or creating a draft: %j', async patch => {
+    const f = await fixture();
+    vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: f.ctx.agencyId, requestedByUid: f.ctx.uid, status: 'completed', videoUrl: f.url, ...patch } });
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'unknown' });
+    expect((await f.plan.get()).data()?.results).toHaveLength(2);
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).empty).toBe(true);
+    expect(executeAction).toHaveBeenCalledTimes(2);
+    expect((await readPlanOutcomes(f.ctx, 'plan')).pollAfterMs).toBeNull();
     expect(vi.mocked(invokeOperation).mock.calls.every(call => call[1].operation === 'video_job' && call[2] === true)).toBe(true);
   }, 20000);
   it.each([{ url: 'https://fixture.example/replaced.mp4' }, { status: 'error' }])('blocks changed imported media at a durable checkpoint: %j', async patch => {

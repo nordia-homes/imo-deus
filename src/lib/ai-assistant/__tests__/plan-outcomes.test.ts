@@ -14,7 +14,7 @@ it('reads current video status without rerunning a completed plan or replacing i
   expect(mocks.invoke).toHaveBeenCalledExactlyOnceWith(ctx, { operation: 'video_job', params: { propertyId: 'p', jobId: 'j' }, query: {}, body: {} }, true);
 });
 it('keeps polling after a transient provider read failure without repeating the mutation', async () => {
-  mocks.invoke.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({ executionState: 'succeeded', businessStatus: 'completed', job: { id: 'j', propertyId: 'p', videoUrl: 'https://storage.example/video.mp4' } });
+  mocks.invoke.mockRejectedValueOnce(new Error('network')).mockResolvedValueOnce({ executionState: 'succeeded', businessStatus: 'completed', job: { id: 'j', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://storage.example/video.mp4' } });
   expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ pollAfterMs: 15000, rows: [{ executionState: 'unknown', watchable: true }] });
   expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ pollAfterMs: null, outcome: { state: 'COMPLETED' } });
   expect(mocks.invoke.mock.calls.every(args => args[1].operation === 'video_job' && args[2] === true)).toBe(true);
@@ -28,8 +28,31 @@ it('accepts a concrete generated script as a preparation step, without regenerat
   expect((await readPlanOutcomes(ctx, 'plan')).outcome.state).toBe('BLOCKED');
   expect(mocks.invoke).not.toHaveBeenCalled();
 });
+it.each([
+  { label: 'wrong job', patch: { id: 'other' } },
+  { label: 'wrong property', patch: { propertyId: 'other' } },
+  { label: 'wrong agency', patch: { agencyId: 'other' } },
+  { label: 'wrong author', patch: { requestedByUid: 'other' } },
+  { label: 'missing author', patch: { requestedByUid: undefined } },
+  { label: 'unfinished job', patch: { status: 'processing' } },
+  { label: 'missing URL', patch: { videoUrl: undefined } },
+  { label: 'malformed HTTPS', patch: { videoUrl: 'https://' } },
+  { label: 'credentials', patch: { videoUrl: 'https://user:secret@media.example/video.mp4' } },
+  { label: 'insecure URL', patch: { videoUrl: 'http://media.example/video.mp4' } },
+  { label: 'oversized URL', patch: { videoUrl: 'https://media.example/' + 'a'.repeat(8000) } },
+])('does not confirm completed video with $label', async ({ patch }) => {
+  mocks.invoke.mockResolvedValue({ executionState: 'succeeded', job: { id: 'j', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://media.example/video.mp4', ...patch } });
+  const result = await readPlanOutcomes(ctx, 'plan');
+  expect(result).toMatchObject({ outcome: { state: 'BLOCKED' }, pollAfterMs: null, rows: [{ completionSatisfied: false, watchable: false }] });
+  expect(result.rows[0]).not.toHaveProperty('outputs');
+  expect(mocks.invoke).toHaveBeenCalledExactlyOnceWith(ctx, { operation: 'video_job', params: { propertyId: 'p', jobId: 'j' }, query: {}, body: {} }, true);
+});
+it('exposes only the verified completed video URL for downstream import', async () => {
+  mocks.invoke.mockResolvedValue({ executionState: 'succeeded', job: { id: 'j', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://media.example/video.mp4' } });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null, rows: [{ outputs: { videoUrl: 'https://media.example/video.mp4' } }] });
+});
 it('tracks pending results but stops polling terminal evidence and unsupported refreshes', async () => {
-  mocks.invoke.mockResolvedValueOnce({ executionState: 'queued', businessStatus: 'queued' }).mockResolvedValueOnce({ executionState: 'succeeded', businessStatus: 'completed', job: { id: 'j', propertyId: 'p', videoUrl: 'https://storage.example/video.mp4' } });
+  mocks.invoke.mockResolvedValueOnce({ executionState: 'queued', businessStatus: 'queued' }).mockResolvedValueOnce({ executionState: 'succeeded', businessStatus: 'completed', job: { id: 'j', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://storage.example/video.mp4' } });
   expect((await readPlanOutcomes(ctx, 'plan')).pollAfterMs).toBe(15000);
   expect((await readPlanOutcomes(ctx, 'plan')).pollAfterMs).toBeNull();
   mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'message_send' }], results: [{ step: 1, result: { executionState: 'queued' } }] } });

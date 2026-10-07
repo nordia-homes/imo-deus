@@ -6,7 +6,7 @@ import { resolveAction } from './dependencies';
 import { CommunicationError } from '@/lib/communications/server';
 import { summarizeOutcome } from './outcome';
 import { goalCoverageOutcome } from './goal-coverage';
-import type { VerifiedOutputs } from './verified-outputs';
+import { validatedVideoUrl, type VerifiedOutputs } from './verified-outputs';
 import { prospectingOutcome } from './prospecting-outcome';
 import { recommendationOutcome } from './recommendation-outcome';
 import { messageOutcome } from './message-outcome';
@@ -54,9 +54,10 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         current = await read('video_job', { propertyId: action.params.propertyId, jobId: original.jobId });
         if (current?.executionState === 'succeeded') {
           const job = current.job;
-          completionSatisfied = job?.id === original.jobId && job?.propertyId === action.params.propertyId && typeof job?.videoUrl === 'string' && job.videoUrl.startsWith('https://');
-          if (completionSatisfied) outputs.videoUrl = job.videoUrl;
-          else current.executionState = 'unknown';
+          const videoUrl = validatedVideoUrl(job?.videoUrl);
+          completionSatisfied = job?.id === original.jobId && job?.propertyId === action.params.propertyId && job?.agencyId === ctx.agencyId && job?.requestedByUid === ctx.uid && job?.status === 'completed' && Boolean(videoUrl);
+          if (completionSatisfied) outputs.videoUrl = videoUrl;
+          else return { ...base, executionState: 'unknown', completionSatisfied: false, businessStatus: String(job?.status || 'unknown'), evidenceSource: 'current_domain_state', verifiedAt: new Date().toISOString(), watchable: false, note: 'Rezultatul video nu confirmă jobul, proprietatea, autorul sau URL-ul utilizabil cerut. Verifică materialul înainte de import; randarea nu se repetă automat.' };
         }
       }
       else if (['tiktok_studio_project_create', 'tiktok_studio_asset_create'].includes(action.operation)) {

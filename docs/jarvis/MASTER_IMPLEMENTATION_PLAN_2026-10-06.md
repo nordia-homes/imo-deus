@@ -727,3 +727,12 @@ Regula pentru material este comună verificatorului Jarvis și recuperării jobu
 
 Au fost adăugate 25 de teste ale regulii comune, șase probe ale rezultatului Jarvis și trei cazuri de recuperare pe Firestore emulat. Cele 51 de teste țintite, TypeScript și ESLint au trecut. Prima rulare țintită a identificat un callback de test fără async; corectarea testului a permis executarea tuturor aserțiunilor. Nu sunt scenarii originale noi acceptate din corpus. Lotul nu este publicat în producție; planul integral rămâne deschis.
 Regresia generală a trecut 1170/1170 teste în 107 fișiere, iar emulatorul 136/136 în 17 fișiere. Pentru acest lot de verificare server nu s-a repetat buildul complet; ultimul build complet validat este cel al lotului anterior. Producția rămâne `7f2da840`.
+
+## 7 octombrie: confirmarea video-ului proprietății înainte de import
+
+Continuare E3/E4. Pentru `video_create`, starea generică succeeded nu mai este suficientă: jobul recitit trebuie să aibă ID-ul cerut, proprietatea, agenția și autorul execuției, plus starea completed. URL-ul este validat cu aceeași schemă folosită la legarea rezultatului pentru import: HTTPS, fără credențiale și maximum 8000 de caractere. Un rezultat necorespunzător nu expune videoUrl, cere verificarea materialului și nu pornește polling ori o randare nouă. Joburile legacy fără autor nu sunt confirmate automat.
+
+Testul pentru URL-ul `https://` a expus o excepție din rafinarea Zod, care putea transforma un rezultat invalid într-o presupusă eroare temporară de citire. Rafinarea tratează acum explicit eșecul parsării; aceeași regulă se aplică observării și legării rezultatului. Verificarea privește receipt-ul și metadatele jobului, fără descărcarea sau certificarea octeților video.
+
+Au fost adăugate 12 cazuri de rezultat (identitate, autor lipsă, stare nefinală, URL invalid/cu credențiale/prea lung și succes verificat) și patru probe Firestore ale fluxului video → import → draft. Probele verifică oprirea după cei doi pași deja executați, absența materialelor/drafturilor noi și lipsa relansării providerului. Cele 56 de teste țintite, TypeScript și ESLint au trecut. Nu sunt scenarii originale noi acceptate. Lotul nu este publicat; planul integral rămâne deschis.
+Regresia generală a trecut 1182/1182 teste în 107 fișiere; emulatorul a trecut 140/140 în 17 fișiere. Buildul complet nu a fost repetat pentru acest lot de validare server. Producția verificată rămâne `7f2da840`.

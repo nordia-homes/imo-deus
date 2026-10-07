@@ -43,7 +43,7 @@ it('runs script, waits for video, resumes import and prepares a draft using veri
   expect(executeAction).toHaveBeenCalledTimes(2);
   expect(vi.mocked(executeAction).mock.calls[1][1]).toMatchObject({ body: { aiPresenterScript: 'Scenariu verificat.' } });
   plan.waitUntil = Date.now() - 1;
-  vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', videoUrl: 'https://storage.example/video.mp4' } });
+  vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://storage.example/video.mp4' } });
   expect(await runPlan(ctx, 'plan')).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
   expect(executeAction).toHaveBeenCalledTimes(4);
   expect(vi.mocked(executeAction).mock.calls[2][1]).toMatchObject({ body: { url: 'https://storage.example/video.mp4' } });
@@ -59,7 +59,7 @@ it.each([
   { ownerUid: 'other' }, { agencyId: 'other' },
 ])('stops before draft creation when imported media changes: %j', async patch => {
   const { ctx } = fixture();
-  vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', videoUrl: 'https://storage.example/video.mp4' } });
+  vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: 'a', requestedByUid: 'u', status: 'completed', videoUrl: 'https://storage.example/video.mp4' } });
   vi.mocked(getResource).mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioAssets'
     ? { ownerUid: 'u', agencyId: 'a', propertyId: 'p', type: 'video', status: 'ready', url: 'https://storage.example/video.mp4', ...patch }
     : { id: 'p' });

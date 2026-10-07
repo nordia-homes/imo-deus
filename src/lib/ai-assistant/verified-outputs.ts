@@ -4,11 +4,19 @@ import { isDeepStrictEqual } from 'node:util';
 const outputsSchema = z.object({
   assetId: z.string().regex(/^[A-Za-z0-9_.:-]{1,180}$/).optional(),
   videoUrl: z.string().url().max(8000).refine(value => {
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' && !url.username && !url.password;
+    } catch { return false; }
   }).optional(),
 }).strict();
 export type VerifiedOutputs = z.infer<typeof outputsSchema>;
+
+// Apply exactly the same URL contract when observing and later binding output.
+export function validatedVideoUrl(value: unknown): string | undefined {
+  const parsed = outputsSchema.safeParse({ videoUrl: value });
+  return parsed.success ? parsed.data.videoUrl : undefined;
+}
 
 // These values are produced by authorized domain verifiers, never model output.
 // Keep them separate from the immutable provider receipt and bind once per plan.
