@@ -7,6 +7,19 @@ import { readPlanOutcomes } from '../plan-outcomes';
 import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx: any = { uid: 'u', role: 'agent', agencyId: 'a', adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ role: 'agent', agencyId: 'a' }) }) }) }) } };
 const action = { kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: {} };
+it('confirms an outreach schedule by current identity and never resends it while reconciling', async () => {
+  const scheduledAt = new Date(Date.now() + 3600000).toISOString();
+  const body = { ownerListing: { id: 'l' }, scheduledAt };
+  const call = { id: 'c', agencyId: 'a', agentId: 'u', createdBy: 'u', ownerListingId: 'l', ownerPhone: '0722334455', status: 'scheduled', scheduledAt };
+  mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'outreach_start', body }], status: 'completed', results: [{ step: 1, result: { callId: 'c', call, executionState: 'queued' } }] } });
+  mocks.resource.mockResolvedValue(call);
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null, rows: [{ completionSatisfied: true }] });
+  mocks.resource.mockResolvedValue({ ...call, ownerPhone: '0733445566' });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'BLOCKED' }, pollAfterMs: null, rows: [{ completionSatisfied: false }] });
+  mocks.resource.mockRejectedValueOnce(new Error('temporary read failure'));
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ pollAfterMs: 15000, rows: [{ executionState: 'unknown', watchable: true }] });
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
 it('verifies Meta draft parameters through current authorized reads without executing a mutation', async () => {
   const body = { propertyId: 'p', budgetAmount: 50, durationDays: 7, objective: 'leads', budgetType: 'daily' };
   const campaign = { ...body, id: 'c', agencyId: 'a', createdByUid: 'u', currency: 'RON', status: 'draft' };

@@ -16,6 +16,7 @@ import { tikTokDraftOutcome } from './tiktok-draft-outcome';
 import { tikTokProjectOutcome } from './tiktok-project-outcome';
 import { confirmedStudioRender } from '@/lib/tiktok-render-evidence';
 import { metaDraftOutcome } from './meta-draft-outcome';
+import { outreachOutcome } from './outreach-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -140,9 +141,14 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         if (!row || row.ownerUid !== ctx.uid || row.propertyId !== action.body.propertyId || row.connectionId !== action.body.connectionId) throw new CommunicationError('Job inaccesibil.', 403);
         return { ...base, ...facebookOutcome(ctx, original.jobId, action.body, row) };
       }
-      else if (action.operation === 'outreach_start' && id(original.callId)) {
-        refreshAttempted = true;
-        current = operationResult(action.operation, { call: await getResource(ctx, 'aiOutreachCalls', original.callId) }, true);
+      else if (action.operation === 'outreach_start') {
+        const callId = id(original.callId);
+        let call: Record<string, any> | undefined;
+        if (callId) {
+          refreshAttempted = true;
+          call = await getResource(ctx, 'aiOutreachCalls', callId);
+        }
+        return { ...base, ...outreachOutcome(ctx, callId, action.body, call, original) };
       }
       else if (action.operation.startsWith('meta_campaign_') && id(action.params.campaignId || original.campaignId)) {
         refreshAttempted = true;

@@ -1201,3 +1201,17 @@ Acest lot acoperă constructorii editorului și publicarea cu aprobarea workspac
 Validări: 1624/1624 teste în 131 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 13 probe noi acoperă conturile incompatibile, conversia vară/iarnă, orele DST ambigue/inexistente și schimbarea fusului între preview și publicare fără pornirea scrierilor. Două probe inițiale aveau date de draft incomplete; după corectarea fixturelor, regresia integrală a trecut. Providerii sunt simulați. Emulatorul și verificarea vizuală nu au fost relansate pentru acest lot; mesajele UI sunt verificate static și prin build. Aceste teste nu cresc numărul scenariilor originale acceptate.
 
 Buildul complet a trecut cu 227/227 pagini. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut; dovezile ultimei publicări în producție nu au fost modificate.
+
+## 8 octombrie: dovezi distincte pentru programarea și încheierea apelurilor AI
+
+Reconcilierea outreach_start leagă acum înregistrarea curentă de receiptul inițial, actor, agenție, anunț și telefonul canonic folosit de handler. Compară identitatea providerului când aceasta exista în receipt și păstrează exact instantul programării, inclusiv când două reprezentări ISO cu offset descriu aceeași oră. Telefonul din payloadul liber nu înlocuiește sursa canonică a handlerului.
+
+O programare viitoare salvată și concordantă este confirmată ca programare, cu mențiunea că apelul nu este încă efectuat. O programare întârziată rămâne de urmărit. Un apel pornit sau încheiat înaintea momentului cerut nu confirmă respectarea programării. Pentru încheiere sunt necesare ID-ul providerului, timestampul de finalizare valid și semnalul de încheiere înregistrat de webhook. Starea completed singură nu este suficientă. Un webhook ulterior poate clarifica o lansare inițial incertă fără să relanseze apelul.
+
+Confirmarea încheierii nu confirmă acordul proprietarului, colaborarea sau vânzarea. Eșecul și anularea rămân terminale; neconcordanțele și lipsa dovezii cer verificare în modulul dedicat. Erorile temporare de citire păstrează reverificarea limitată existentă. Datele telefonului și transcrierea nu sunt copiate în noua dovadă. Planurile legacy fără receipt complet nu sunt certificate automat.
+
+Versiunea uneltelor este 50. Nu se modifică mecanismul de lansare, providerul, webhookul sau programările existente. Regula București și producția rămân neschimbate. Verificarea semantică a fiecărui obiectiv de business și restul planului integral rămân deschise.
+
+Validări: regresia finală a trecut 1646/1646 teste în 132 de fișiere. Cele 22 de probe noi acoperă identitatea, telefonul, receiptul, finalizarea prin webhook, programarea și execuția prea devreme, plus integrarea în plan fără mutații. Prima rulare generală a intersectat ultima editare și a avut un eșec; suita țintită a trecut 61/61 și apoi regresia integrală a fost relansată cu succes pe codul final. ESLint și paritatea au trecut. Nu s-au apelat provideri reali, nu s-au relansat emulatorul sau UI și nu s-au adăugat scenarii originale la cele 63 acceptate.
+
+Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut. Dovezile producției rămân neschimbate.
