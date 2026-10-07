@@ -459,6 +459,33 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect(audit.docs.some(row => row.data().result?.notificationResults?.[0]?.reasonCode === 'cooldown')).toBe(true);
     } finally { await job.delete(); await db.recursiveDelete(profile); }
   }, 20000);
+  it.each([false, true])('defers a one-shot report and rereads sources after quiet hours are disabled (resolved: %s)', async resolved => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const job = db.collection('assistantAutomationJobs').doc(ctx.uid), mirror = agency.collection('assistantAutomations').doc(ctx.uid);
+    const quietHours = { timezone: 'UTC', start: new Date(Date.now() - 3600000).toISOString().slice(11, 16), end: new Date(Date.now() + 3600000).toISOString().slice(11, 16) };
+    const due = '2020-01-01T00:00:00.000Z';
+    const data = { id: ctx.uid, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: 'agent', status: 'active', nextRunAt: due, automation: { type: 'insight_report', nextRunAt: due, maxRuns: 1, limit: 5, quietHours } };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    const task = agency.collection('tasks').doc('t');
+    await task.set({ status: 'open', agentId: ctx.uid, dueDate: due });
+    await job.set(data); await mirror.set(data);
+    try {
+      await drainAssistantAutomations(db as any);
+      expect((await job.get()).data()).toMatchObject({ status: 'active', runCount: 0, lastResult: { reasonCode: 'quiet_hours', deferredUntil: expect.any(String) } });
+      expect(await createInsightNotification(ctx, ctx.uid, 'guard', { id: 'task-t', taskId: 't', title: 'Overdue' }, undefined, 60, quietHours)).toMatchObject({ status: 'deferred' });
+      expect((await profile.collection('notifications').get()).size).toBe(0);
+      expect((await mirror.collection('insightEffects').get()).size).toBe(0);
+      expect((await agency.collection('assistantNotificationState').get()).size).toBe(0);
+      if (resolved) await task.update({ status: 'completed' });
+      const patch = { nextRunAt: due, automation: { ...data.automation, quietHours: { ...quietHours, end: quietHours.start } } };
+      await job.update(patch); await mirror.update(patch);
+      await drainAssistantAutomations(db as any);
+      expect((await job.get()).data()).toMatchObject({ status: 'completed', runCount: 1 });
+      expect((await profile.collection('notifications').get()).size).toBe(resolved ? 0 : 1);
+      const audit = await mirror.collection('audit').get();
+      expect(audit.size).toBe(2); expect(audit.docs.some(row => row.data().result?.reasonCode === 'quiet_hours')).toBe(true);
+    } finally { await job.delete(); await db.recursiveDelete(profile); }
+  }, 20000);
   it('recovers an interrupted rule without repeating its committed task', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const startedAt = '2030-01-02T10:00:00.000Z';

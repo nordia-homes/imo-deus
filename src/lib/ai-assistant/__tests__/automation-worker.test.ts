@@ -13,6 +13,7 @@ import { queueMessage } from '@/lib/communications/outbound';
 import { getResource } from '../access';
 import { runEventRule } from '../event-rules';
 import { getInsights } from '../insights';
+import * as insightNotifications from '../insight-notifications';
 function database(automation: any, patch: any = {}) {
   const job = { id: 'job', agencyId: 'a', actorId: 'u', actorRole: 'agent', createdAt: '2026-01-01T00:00:00.000Z', status: 'active', nextRunAt: '2026-01-01T00:00:00.000Z', automation, ...patch };
   const rows = new Map<string, any>([['assistantAutomationJobs/job', job], ['agencies/a/assistantAutomations/job', { ...job }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
@@ -26,6 +27,49 @@ const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z',
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe('approved automation execution', () => {
+  it.each([false, true])('defers a one-shot report without consuming its run and rereads current tasks (resolved: %s)', async resolved => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T19:30:00Z'));
+    const { db, rows } = database({ type: 'insight_report', nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, quietHours: { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' } });
+    await drainAssistantAutomations(db as any);
+    expect(getInsights).not.toHaveBeenCalled();
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'active', runCount: 0, nextRunAt: '2026-10-08T05:00:00.000Z', lastResult: { reasonCode: 'quiet_hours' } });
+    vi.setSystemTime(new Date('2026-10-08T05:00:00Z'));
+    rows.set('agencies/a/tasks/t', { status: resolved ? 'completed' : 'open', agentId: 'u', dueDate: '2020-01-01' });
+    vi.mocked(getInsights).mockResolvedValueOnce({ rows: resolved ? [] : [{ id: 'task-t', taskId: 't', title: 'Overdue' }], complete: true } as any);
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', runCount: 1 });
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(resolved ? 0 : 1);
+  });
+  it('defers if quiet hours begin during report generation and honors stopAfter', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T18:59:59Z'));
+    const { db, rows } = database({ type: 'insight_report', nextRunAt: '2020-01-01T00:00:00Z', stopAfter: '2026-10-07T20:00:00Z', maxRuns: 1, quietHours: { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' } });
+    rows.set('agencies/a/tasks/t', { status: 'open', agentId: 'u', dueDate: '2020-01-01' });
+    vi.mocked(getInsights).mockImplementationOnce(async () => { vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); return { rows: [{ id: 'task-t', taskId: 't', title: 'Overdue' }], complete: true } as any; });
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'active', runCount: 0, nextRunAt: '2026-10-07T20:00:00.000Z', lastResult: { reasonCode: 'quiet_hours' } });
+    expect([...rows.keys()].filter(key => key.includes('/notifications/') || key.includes('/insightEffects/') || key.includes('/assistantNotificationState/'))).toHaveLength(0);
+    vi.setSystemTime(new Date('2026-10-07T20:00:00Z'));
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', lastResult: { skipped: true } });
+  });
+  it('resumes a partially delivered report without repeating the first notification', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T18:59:59Z'));
+    const { db, rows } = database({ type: 'insight_report', nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, quietHours: { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' } });
+    for (const id of ['a', 'b']) rows.set(`agencies/a/tasks/${id}`, { status: 'open', agentId: 'u', dueDate: '2020-01-01' });
+    const report = { rows: ['a', 'b'].map(id => ({ id: `task-${id}`, taskId: id, title: 'Overdue' })), complete: true } as any;
+    vi.mocked(getInsights).mockResolvedValueOnce(report).mockResolvedValueOnce(report);
+    const original = insightNotifications.createInsightNotification;
+    vi.spyOn(insightNotifications, 'createInsightNotification').mockImplementationOnce(async (...args) => {
+      const result = await original(...args); vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); return result;
+    });
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 0, status: 'active', lastResult: { reasonCode: 'quiet_hours' } });
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(1);
+    vi.setSystemTime(new Date('2026-10-08T05:00:00Z'));
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 1, status: 'completed' });
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(2);
+  });
   it.each([false, true])('uses live task state and bounded notification IDs (resolved: %s)', async resolved => {
     const taskId = 't'.repeat(180);
     const { db, rows } = database({ type: 'insight_report', nextRunAt: '2020-01-01T00:00:00.000Z', maxRuns: 1, limit: 5 });

@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { collectionFor, type AssistantContext } from './access';
 import { insightConditionFor, readInsightRelevance } from './insight-relevance';
-import { insightCooldownMinutesSchema } from './insight-notification-policy';
+import { insightCooldownMinutesSchema, insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
 
-export async function createInsightNotification(ctx: AssistantContext, automationId: string, id: string, row: Record<string, any>, legacyId?: string, cooldownMinutes?: number) {
+export async function createInsightNotification(ctx: AssistantContext, automationId: string, id: string, row: Record<string, any>, legacyId?: string, cooldownMinutes?: number, quietHours?: InsightQuietHours) {
   const condition = insightConditionFor(row);
   const cooldown = insightCooldownMinutesSchema.parse(cooldownMinutes);
   const identity = JSON.stringify([ctx.uid, condition.kind, [condition.id, ...(condition.otherId ? [condition.otherId] : [])].sort()]);
@@ -23,8 +23,12 @@ export async function createInsightNotification(ctx: AssistantContext, automatio
       const legacy = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(legacyId));
       if (legacy.exists) return { status: 'existing', notificationId: legacyId };
     }
+    const quiet = insightQuietDeferral(quietHours);
+    if (quiet) return quiet;
     const reason = await readInsightRelevance(ctx, tx, condition);
     const previous = await tx.get(state), now = Date.now();
+    const quietBeforeWrite = insightQuietDeferral(quietHours, now);
+    if (quietBeforeWrite) return quietBeforeWrite;
     const lastNotifiedAt = previous.exists ? Date.parse(String(previous.data()?.lastNotifiedAt)) : null;
     if (lastNotifiedAt !== null && !Number.isFinite(lastNotifiedAt)) throw new Error('Istoricul pauzei dintre alerte nu poate fi verificat.');
     const nextEligibleAt = lastNotifiedAt === null ? null : lastNotifiedAt + cooldown * 60000;

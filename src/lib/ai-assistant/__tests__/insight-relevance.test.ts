@@ -28,6 +28,22 @@ function fixture(testCase: typeof cases[number]) {
   return { rows, path, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as any, card: { id: 'card', title: 'Priority', ...testCase.card } };
 }
 describe('shared insight conditions and transactional delivery', () => {
+  it('rechecks quiet hours after transaction reads and leaves the effect resumable', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T18:59:59Z'));
+    const { ctx, rows, card } = fixture(cases[1]);
+    const original = ctx.adminDb.runTransaction;
+    let crossed = false;
+    ctx.adminDb.runTransaction = (callback: any) => original((tx: any) => callback({ ...tx, get: async (ref: any) => {
+      const result = await tx.get(ref);
+      if (!crossed && ref.path.includes('/assistantNotificationState/')) { crossed = true; vi.setSystemTime(new Date('2026-10-07T19:00:00Z')); }
+      return result;
+    } }));
+    const hours = { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' };
+    expect(await createInsightNotification(ctx, 'r', 'n', card, undefined, 60, hours)).toMatchObject({ status: 'deferred', reasonCode: 'quiet_hours' });
+    expect([...rows.keys()].filter(key => key.includes('/notifications/') || key.includes('/insightEffects/') || key.includes('/assistantNotificationState/'))).toHaveLength(0);
+    vi.setSystemTime(new Date('2026-10-08T05:00:00Z'));
+    expect(await createInsightNotification(ctx, 'r', 'n', card, undefined, 60, hours)).toMatchObject({ status: 'created' });
+  });
   it('shares the cooldown across reports without extending it on suppressed runs', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T10:00:00Z'));
     const { ctx, rows, card } = fixture(cases[1]);

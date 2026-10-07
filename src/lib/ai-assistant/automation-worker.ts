@@ -15,6 +15,7 @@ import { deliverDailyBrief } from './daily-brief';
 import { nextBriefRun, briefSettingsSchema } from './daily-brief-contract';
 import { assertNoReplySince } from './reply-stop';
 import { createInsightNotification } from './insight-notifications';
+import { insightQuietDeferral } from './insight-notification-policy';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -60,9 +61,12 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       const automation = automationSchema.parse(claim.automation);
       const run = Number(claim.runCount || 0) + 1;
       let result: unknown;
+      const quiet = automation.type === 'insight_report' ? insightQuietDeferral(automation.quietHours) : null;
       const stopReason = automation.stopAfter && Date.parse(automation.stopAfter) <= Date.now() ? 'Termenul de oprire a fost atins.' : 'contactId' in automation && automation.stopOnContactStatuses?.includes((await getResource(ctx, 'contacts', automation.contactId)).status) ? 'Clientul a ajuns într-un status configurat pentru oprire.' : null;
       if (stopReason) {
         result = { skipped: true, reason: stopReason };
+      } else if (quiet) {
+        result = quiet;
       } else if (automation.type === 'legal_source_watch') {
         const { watchOfficialSources } = await import('./legal-source-watch');
         result = await watchOfficialSources(ctx, claim.id, automation.sourceUrls, claim.lastResult?.versions);
@@ -98,17 +102,19 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       } else if (automation.type === 'insight_report' || automation.type === 'matching_watch') {
         const report = automation.type === 'insight_report' ? await getInsights(ctx, automation.limit) : { rows: (await matchContact(ctx, automation.contactId, automation.limit)).filter(row => row.matchScore >= automation.threshold), complete: true };
         result = report;
-        const notificationResults: unknown[] = [];
+        const notificationResults: Record<string, any>[] = [];
         for (const row of report.rows) {
           const id = automation.type === 'matching_watch' ? `${claim.id}-${row.id}` : `insight-${createHash('sha256').update(JSON.stringify([claim.id, run, row.id])).digest('hex')}`;
           if (automation.type === 'insight_report') {
-            notificationResults.push(await createInsightNotification(ctx, claim.id, id, row, `${claim.id}-run-${run}-${row.id}`, automation.cooldownMinutes));
+            const notificationResult = await createInsightNotification(ctx, claim.id, id, row, `${claim.id}-run-${run}-${row.id}`, automation.cooldownMinutes, automation.quietHours);
+            notificationResults.push(notificationResult);
+            if (notificationResult.status === 'deferred') break;
             continue;
           }
           const notification = db.collection('users').doc(ctx.uid).collection('notifications').doc(id);
           await db.runTransaction(async tx => { await assertAutomationFence(db, tx, ctx); if ((await tx.get(notification)).exists) return; tx.create(notification, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: automation.type === 'matching_watch' ? 'Potrivire ImoDeus peste pragul configurat' : String(row.title), body: automation.type === 'matching_watch' ? String(row.title) : 'Verifică insight-ul în AI Assistant.', actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: now }); });
         }
-        if (automation.type === 'insight_report') result = { ...report, notificationResults };
+        if (automation.type === 'insight_report') result = { ...report, notificationResults, ...notificationResults.find(item => item.status === 'deferred') };
       } else {
         const search = { ...automation.search, source: 'owners' as const, cursor: claim.scanCursor || undefined, limit: 100 };
         result = await searchProperties(ctx, search);
@@ -127,12 +133,13 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       }
       const skipped = Boolean((result as { skipped?: boolean })?.skipped);
       const eventResult = automation.type === 'event_rule' ? result as Awaited<ReturnType<typeof runEventRule>> : null;
-      const nextRun = !skipped && !eventResult?.limitReached && run < automation.maxRuns
+      const deferredUntil = automation.type === 'insight_report' && (result as { reasonCode?: string })?.reasonCode === 'quiet_hours' ? (result as { deferredUntil: string }).deferredUntil : null;
+      const nextRun = deferredUntil ? (automation.stopAfter && Date.parse(automation.stopAfter) < Date.parse(deferredUntil) ? automation.stopAfter : deferredUntil) : !skipped && !eventResult?.limitReached && run < automation.maxRuns
         ? automation.type === 'daily_sales_brief'
           ? nextBriefRun(briefSettingsSchema.parse(Object.fromEntries(Object.keys(briefSettingsSchema.shape).map(key => [key, (automation as Record<string, unknown>)[key]]))))
           : automation.intervalMinutes ? new Date(Date.now() + automation.intervalMinutes * 60000).toISOString() : null
         : null;
-      outcome = { status: nextRun ? 'active' : 'completed', runCount: run, nextRunAt: nextRun, lastRunAt: now, lastResult: safeData(result), scanCursor: automation.type === 'owner_watch' ? (result as { nextCursor?: string }).nextCursor || null : null, ...(eventResult ? { eventCursor: eventResult.eventCursor, eventCount: eventResult.eventCount } : {}), requestId: null, error: null };
+      outcome = { status: nextRun ? 'active' : 'completed', runCount: deferredUntil ? Number(claim.runCount || 0) : run, nextRunAt: nextRun, lastRunAt: now, lastResult: safeData(result), scanCursor: automation.type === 'owner_watch' ? (result as { nextCursor?: string }).nextCursor || null : null, ...(eventResult ? { eventCursor: eventResult.eventCursor, eventCount: eventResult.eventCount } : {}), requestId: null, error: null };
       if (['whatsapp_template', 'daily_sales_brief'].includes(automation.type) && ['unknown', 'failed'].includes(String((result as { status?: string }).status))) outcome.status = (result as { status: string }).status === 'unknown' ? 'unknown' : 'blocked';
     } catch (error) {
       outcome = { status: 'blocked', lastRunAt: now, error: error instanceof Error ? error.message : 'Automatizarea a fost oprită.' };
