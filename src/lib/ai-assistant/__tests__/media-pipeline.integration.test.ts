@@ -63,6 +63,36 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['running', 'pending', 'failed', 'paused', 'unknown', 'completed', 'cancelled', 'revoked'])('persists or resolves cancellation after a concurrent %s transition', async status => {
+    const f = await fixture();
+    await f.plan.update({ status: 'running' });
+    const results = [{ step: 1, kind: 'existing_operation', result: { script: 'Preserved receipt' } }];
+    const racedDb = new Proxy(db, { get(target, property) {
+      if (property === 'runTransaction') return async (work: any) => {
+        if (status === 'revoked') await db.collection('users').doc(f.ctx.uid).update({ role: 'admin' });
+        else await f.plan.update({ status, results, waitUntil: Date.now() + 60000 });
+        return db.runTransaction(work);
+      };
+      const value = Reflect.get(target, property);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    if (status === 'revoked') {
+      await expect(runPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan', true)).rejects.toMatchObject({ status: 403 });
+      expect((await f.plan.get()).data()?.cancelRequestedAt).toBeUndefined();
+    } else {
+      const expected = ['pending', 'failed', 'paused'].includes(status) ? 'cancelled' : status;
+      const response = await runPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan', true);
+      const saved = (await f.plan.get()).data()!;
+      expect(response).toMatchObject({ status: expected, results });
+      expect(saved).toMatchObject({ status: expected, results });
+      if (['completed', 'cancelled'].includes(status)) expect(saved.cancelRequestedAt).toBeUndefined();
+      else expect(saved.cancelRequestedAt).toEqual(expect.any(String));
+      if (['pending', 'failed', 'paused'].includes(status)) expect(saved.waitUntil).toBe(0);
+      if (status === 'unknown') await expect(controlPlan(f.ctx, 'plan', 'resume')).rejects.toMatchObject({ status: 409 });
+    }
+    expect(executeAction).not.toHaveBeenCalled();
+    expect((await f.agency.collection('tiktokPostDrafts').get()).empty).toBe(true);
+  }, 20000);
   it.each(['checkpoint', 'wait', 'approval', 'cancel'])('rejects a stale claim after a concurrent %s before any new effect', async change => {
     const f = await fixture(); f.ready();
     let raced = false;

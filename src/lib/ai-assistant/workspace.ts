@@ -157,12 +157,24 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
   if (data.status === 'paused' && !cancel) return data;
   if (!cancel && data.waitUntil && data.waitUntil > Date.now()) return data;
   if (cancel && data.status === 'running') {
-    await ctx.adminDb.runTransaction(async tx => {
-      const fresh = await tx.get(ref);
-      if (fresh.data()?.ownerId !== ctx.uid) throw new CommunicationError('Plan inaccesibil.', 403);
-      if (fresh.data()?.status === 'running') tx.update(ref, { cancelRequestedAt: new Date().toISOString() });
+    return ctx.adminDb.runTransaction(async tx => {
+      const [snapshot, member] = await Promise.all([tx.get(ref), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
+      const fresh = snapshot.data();
+      if (fresh?.ownerId !== ctx.uid || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Plan inaccesibil sau acces revocat.', 403);
+      if (['completed', 'cancelled'].includes(fresh.status)) return { ...data, ...fresh };
+      const now = new Date().toISOString();
+      if (['pending', 'failed', 'paused'].includes(fresh.status)) {
+        const patch = { status: 'cancelled' as const, cancelRequestedAt: now, completedAt: now, waitUntil: 0 };
+        tx.update(ref, patch);
+        if (fresh.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(fresh.telemetryId), { executionStatus: 'cancelled' }, { merge: true });
+        return { ...data, ...fresh, ...patch };
+      }
+      if (!['running', 'unknown'].includes(fresh.status)) throw new CommunicationError('Starea planului s-a schimbat. Reîncarcă rezultatul.', 409);
+      tx.update(ref, { cancelRequestedAt: now });
+      return { ...data, ...fresh, cancelRequestedAt: now, error: fresh.status === 'unknown'
+        ? 'Oprirea a fost înregistrată. Rezultatul pasului anterior rămâne incert și necesită verificare; nu se repetă automat.'
+        : 'Oprirea a fost solicitată. Pasul deja pornit trebuie să returneze rezultatul; pașii următori nu vor porni.' };
     });
-    return { ...data, error: 'Oprirea a fost solicitată. Pasul deja pornit trebuie să returneze rezultatul; pașii următori nu vor porni.' };
   }
   const executionId = randomUUID();
   await ctx.adminDb.runTransaction(async tx => {

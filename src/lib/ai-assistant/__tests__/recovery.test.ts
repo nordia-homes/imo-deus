@@ -76,6 +76,31 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['running', 'pending', 'failed', 'paused', 'unknown', 'completed', 'cancelled'])('keeps cancellation truthful when running becomes %s before the transaction', async status => {
+    const { ctx, plan } = executionFixture();
+    plan.status = 'running';
+    const results = [{ step: 1, kind: 'create_task', result: { taskId: 'preserved' } }];
+    const transact = ctx.adminDb.runTransaction.bind(ctx.adminDb);
+    ctx.adminDb.runTransaction = (async (work: any) => {
+      Object.assign(plan, { status, results, waitUntil: Date.now() + 60000 });
+      return transact(work);
+    }) as any;
+    const expected = ['pending', 'failed', 'paused'].includes(status) ? 'cancelled' : status;
+    const response = await runPlan(ctx, 'p', true);
+    expect(response).toMatchObject({ status: expected, results });
+    expect(plan.status).toBe(expected);
+    if (['completed', 'cancelled'].includes(status)) expect(plan.cancelRequestedAt).toBeUndefined();
+    else expect(plan.cancelRequestedAt).toEqual(expect.any(String));
+    if (expected === 'cancelled' && status !== 'cancelled') expect(plan.waitUntil).toBe(0);
+    if (status === 'completed') expect(response.error).toBeUndefined();
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it('refuses in-flight cancellation after membership changes', async () => {
+    const { ctx, plan } = executionFixture();
+    plan.status = 'running'; ctx.role = 'admin';
+    await expect(runPlan(ctx, 'p', true)).rejects.toMatchObject({ status: 403 });
+    expect(plan.cancelRequestedAt).toBeUndefined();
+  });
   it.each(['results', 'approval', 'wait', 'cancel'])('refuses a stale claim after a concurrent %s change', async change => {
     const { ctx, plan } = executionFixture();
     const transact = ctx.adminDb.runTransaction.bind(ctx.adminDb);
