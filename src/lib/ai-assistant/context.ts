@@ -9,7 +9,19 @@ export async function preferredTimezone(_ctx: AssistantContext) {
   return DEFAULT_TIMEZONE;
 }
 
+// Keep qualifications beside the values they qualify, including in model previews.
+// Do not truncate notes or identifiers: if they do not fit, omit the whole result.
+function provenance(row: Record<string, any>) {
+  return Object.fromEntries(['scoreMayBeStale', 'scoreRecalculated', 'scoringSource', 'freshness', 'observedAt', 'paginationConsistency', 'uncertainCurrency', 'note', 'orderSource', 'sourceMessageId', 'contactId']
+    .filter(key => row[key] !== undefined).map(key => [key, row[key]]));
+}
+function rowProvenance(row: Record<string, any>) {
+  return Object.fromEntries(['scoreMayBeStale', 'selectedPosition', 'previousAlertFeedback', 'alertFeedbackUpdatedAt', 'feedbackNote']
+    .filter(key => row[key] !== undefined).map(key => [key, row[key]]));
+}
+
 export function compressedResult(result: unknown, maxBytes = 14000) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 256) throw new Error('Invalid context byte budget');
   const safe = safeData(result), serialized = JSON.stringify(safe);
   if (Buffer.byteLength(serialized) <= maxBytes) return serialized;
   if (typeof safe?.value === 'string') {
@@ -19,16 +31,16 @@ export function compressedResult(result: unknown, maxBytes = 14000) {
     return result();
   }
   const rows = Array.isArray(safe?.rows) ? safe.rows : [];
-  const overview = rows.slice(0, 100).map((row: any) => ({ ...Object.fromEntries(['id', 'name', 'title', 'status', 'price', 'constructionYear', 'constructionYearLabel', 'constructionYearKnown', 'constructionYearEvidenceKind', 'constructionYearLowerBound', 'constructionYearUpperBound', 'yearFilterSatisfied', 'matchScore', 'contactId', 'propertyId', 'viewingDate', 'dueDate'].filter(key => row[key] !== undefined).map(key => [key, typeof row[key] === 'string' ? row[key].slice(0, 150) : row[key]])), availableFields: Object.keys(row).slice(0, 30) }));
+  const overview = rows.slice(0, 100).map((row: any) => ({ ...Object.fromEntries(['id', 'name', 'title', 'status', 'price', 'constructionYear', 'constructionYearLabel', 'constructionYearKnown', 'constructionYearEvidenceKind', 'constructionYearLowerBound', 'constructionYearUpperBound', 'yearFilterSatisfied', 'matchScore', 'contactId', 'propertyId', 'viewingDate', 'dueDate'].filter(key => row[key] !== undefined).map(key => [key, typeof row[key] === 'string' && ['name', 'title'].includes(key) ? row[key].slice(0, 150) : row[key]])), ...rowProvenance(row), availableFields: Object.keys(row).slice(0, 30) }));
   const selected = overview.slice(0, 40);
-  const preview = () => JSON.stringify({ truncated: true, rows: selected, ...(safe?.crmComparison?.mode === 'exact_references' ? { crmComparison: { mode: 'exact_references', semanticDuplicateDetection: false } } : {}), resultSetId: safe?.resultSetId || null, nextCursor: safe?.nextCursor || null, complete: false, warning: 'Previzualizare incompletă; folosește read_field/read cu limită mai mică.' });
+  const preview = () => JSON.stringify({ ...provenance(safe || {}), truncated: true, rows: selected, ...(safe?.crmComparison?.mode === 'exact_references' ? { crmComparison: { mode: 'exact_references', semanticDuplicateDetection: false } } : {}), resultSetId: safe?.resultSetId || null, nextCursor: safe?.nextCursor || null, complete: false, warning: 'Previzualizare incompletă; folosește read_field/read cu limită mai mică.' });
   while (selected.length && Buffer.byteLength(preview()) > maxBytes) selected.pop();
-  return preview();
+  return Buffer.byteLength(preview()) <= maxBytes ? preview() : JSON.stringify({ truncated: true, rows: [], complete: false, warning: 'Rezultatul și limitele sale nu încap în context. Recitește cu limită mai mică.' });
 }
 export function contextMessages(history: AssistantMessage[], maxBytes = 14000) {
   const messages: { role: string; content: string }[] = []; let bytes = 0;
   for (const row of [...history].reverse()) {
-    const content = row.text.slice(0, 2200) + (row.cards?.length ? '\nRESULT_REFERENCES ' + JSON.stringify(row.cards.slice(-4).map(card => ({ source: card.source, resultSetId: card.resultSetId, entities: card.rows.slice(0, 6).map(r => ({id:r.id,title:r.title||r.name||r.propertyTitle,status:r.status})), ...(card.summary?{summary:card.summary}:{}) }))) : '');
+    const content = row.text.slice(0, 2200) + (row.cards?.length ? '\nRESULT_REFERENCES ' + JSON.stringify(safeData(row.cards.slice(-4).map(card => ({ ...provenance(card), historical: true, source: card.source, resultSetId: card.resultSetId, complete: false, sourceComplete: card.complete ?? null, entities: card.rows.slice(0, 6).map(r => ({ id:r.id,title:r.title||r.name||r.propertyTitle,status:r.status, ...rowProvenance(r) })), ...(card.crmComparison ? { crmComparison: card.crmComparison } : {}), ...(card.summary?{summary:card.summary}:{}) })))) : '');
     const size = Buffer.byteLength(content); if (bytes + size > maxBytes) break;
     bytes += size; messages.unshift({ role: row.role, content });
   }

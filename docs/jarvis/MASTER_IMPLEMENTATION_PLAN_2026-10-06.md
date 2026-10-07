@@ -1151,3 +1151,17 @@ Versiunea uneltelor este 45. Regula Europe/Bucharest rămâne neschimbată. Nu a
 Validări: 259/259 probe în emulator (18 fișiere) și 1558/1558 probe de regresie (127 fișiere) au trecut. Regresia include și corecțiile București din lotul anterior. TypeScript, ESLint pentru fișierele modificate și verificarea parității au trecut. Cele 10 probe noi verifică stările ciclului, timestampurile invalide, reluarea unui cursor legacy și colecția goală; probele existente extinse verifică păstrarea erorilor între loturi și protecția la pierderea lease-ului. Aceste probe sintetice nu măresc numărul scenariilor originale acceptate.
 
 Buildul complet a trecut cu 227/227 pagini. Au rămas avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Nu s-au modificat dovezile ultimei publicări în producție.
+
+## 7 octombrie: păstrarea limitelor rezultatelor în contextul comprimat
+
+În E2, previzualizarea pentru model pierdea calificările unor rezultate mari: scoruri de matching posibil învechite, proveniența calculului, feedback istoric și limitele paginării live. Compresia păstrează acum aceste câmpuri lângă valorile originale, inclusiv poziția selectată și data evaluării unei alerte. Nu recalculează scoruri și nu transformă feedbackul istoric în evaluarea ofertei actuale.
+
+Notele și identificatorii nu sunt scurtați în referințe sau afirmații diferite. Pentru rezultate structurate, dacă un rând și calificările sale depășesc bugetul, rândul este omis integral; dacă nici metadatele rezultatului nu încap, modelul primește o previzualizare goală, explicit incompletă, cu cererea de recitire. Compresia rămâne limitată în bytes, inclusiv pentru text multibyte. Rezultatele mici și continuarea câmpurilor text păstrează comportamentul existent.
+
+Referințele din istoricul conversației sunt marcate historical și complete=false, cu sourceComplete separat. Păstrează avertismentele cardului, feedbackul datat și limitele comparației CRM. Cele maximum șase entități dintr-un card nu sunt prezentate drept o listă completă sau o recitire actuală. Se păstrează filtrarea câmpurilor de credențiale. Selecția și revalidarea accesului folosesc în continuare cititorii existenți; această modificare nu extinde durata seturilor salvate și nu autorizează acțiuni noi.
+
+Versiunea uneltelor este 46. Regula Europe/Bucharest rămâne neschimbată. Lotul nu modifică producția, fluxurile providerilor, regulile Firestore sau stocarea datelor. Planul integral și cele 937 de scenarii originale încă nerevizuite rămân deschise.
+
+Validări: 1571/1571 teste de regresie în 128 de fișiere, TypeScript, ESLint și verificarea parității au trecut. Cele 13 probe noi acoperă calificările matchingului, feedbackul datat, paginarea live, identificatorii integrali, bugete insuficiente sau invalide, rezultatele mici și referințele istorice. Fiind o transformare locală a contextului fără modificări ale tranzacțiilor sau UI, suitele emulator/UI nu au fost relansate pentru acest lot. Probele sintetice nu sunt scenarii originale acceptate suplimentar.
+
+Buildul complet a trecut cu 227/227 pagini. Avertismentul Jaeger și omiterea copierii Playwright în standalone sunt cele cunoscute. Verificarea git diff --check a trecut.
