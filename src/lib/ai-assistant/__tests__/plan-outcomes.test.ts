@@ -7,6 +7,18 @@ import { readPlanOutcomes } from '../plan-outcomes';
 import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx: any = { uid: 'u', role: 'agent', agencyId: 'a', adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ role: 'agent', agencyId: 'a' }) }) }) }) } };
 const action = { kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: {} };
+it('verifies Meta draft parameters through current authorized reads without executing a mutation', async () => {
+  const body = { propertyId: 'p', budgetAmount: 50, durationDays: 7, objective: 'leads', budgetType: 'daily' };
+  const campaign = { ...body, id: 'c', agencyId: 'a', createdByUid: 'u', currency: 'RON', status: 'draft' };
+  mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'meta_campaign_draft', body }], status: 'completed', results: [{ step: 1, result: { campaignId: 'c', campaign, executionState: 'draft' } }] } });
+  mocks.resource.mockImplementation(async (_ctx, resource) => resource === 'properties' ? { id: 'p' } : { ...campaign });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null, rows: [{ completionSatisfied: true }] });
+  mocks.resource.mockImplementation(async (_ctx, resource) => resource === 'properties' ? { id: 'p' } : { ...campaign, budgetAmount: 100 });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'BLOCKED' }, pollAfterMs: null, rows: [{ completionSatisfied: false, watchable: false }] });
+  mocks.resource.mockRejectedValueOnce(Object.assign(new Error('revoked'), { status: 403 }));
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'FAILED' }, pollAfterMs: null, rows: [{ executionState: 'unavailable' }] });
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
 beforeEach(() => { vi.clearAllMocks(); mocks.allowed.mockResolvedValue(true); mocks.plan.mockResolvedValue({ data: { actions: [action], status: 'completed', results: [{ step: 1, result: { jobId: 'j', executionState: 'queued' } }] } }); });
 it('reads current video status without rerunning a completed plan or replacing its original receipt', async () => {
   mocks.invoke.mockResolvedValue({ executionState: 'failed', businessStatus: 'failed', verifiedAt: 'now' });

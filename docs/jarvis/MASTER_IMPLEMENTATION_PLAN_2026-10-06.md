@@ -1165,3 +1165,15 @@ Versiunea uneltelor este 46. Regula Europe/Bucharest rămâne neschimbată. Lotu
 Validări: 1571/1571 teste de regresie în 128 de fișiere, TypeScript, ESLint și verificarea parității au trecut. Cele 13 probe noi acoperă calificările matchingului, feedbackul datat, paginarea live, identificatorii integrali, bugete insuficiente sau invalide, rezultatele mici și referințele istorice. Fiind o transformare locală a contextului fără modificări ale tranzacțiilor sau UI, suitele emulator/UI nu au fost relansate pentru acest lot. Probele sintetice nu sunt scenarii originale acceptate suplimentar.
 
 Buildul complet a trecut cu 227/227 pagini. Avertismentul Jaeger și omiterea copierii Playwright în standalone sunt cele cunoscute. Verificarea git diff --check a trecut.
+
+## 7 octombrie: verificarea parametrilor drafturilor Meta
+
+În E3/E5, reconcilierea meta_campaign_draft confirma anterior pregătirea numai din starea draft/ready/ready_to_publish. Verificatorul compară acum draftul recitit cu rezultatul original al handlerului și cu parametrii cererii: ID, agenție, autor, proprietate, obiectiv, tipul și valoarea bugetului, durata și moneda. Pentru opțiunile omise, valorile concrete din receipt rămân referința; verificarea nu inventează retrospectiv alte valori implicite. Numerele transmise ca string sunt comparate conform normalizării rutei existente.
+
+Reconcilierea recitește și proprietatea cu accesul curent. Lipsa receiptului, valorile invalide, identitatea incompatibilă, parametrii modificați sau trecerea la o stare de publicare nu confirmă acest pas de pregătire. Rezultatul cere verificare în modulul dedicat și nu declanșează recreare, publicare sau polling fără rost pentru o neconcordanță constatată. Erorile de acces păstrează rezultatul unavailable; erorile tranzitorii de citire păstrează mecanismul existent de reverificare limitată.
+
+Aceasta este dovada pregătirii cu parametrii ceruți, nu dovada publicării, performanței sau cheltuirii bugetului la Meta. Nu certifică neschimbarea tuturor câmpurilor creative editabile și nu înlocuiește aprobarea concretă înainte de publicare. Versiunea uneltelor este 47. Producția și regula Europe/Bucharest rămân neschimbate; planul integral rămâne deschis.
+
+Validări: 1599/1599 teste de regresie în 129 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 28 de probe noi acoperă drafturi valide, schimbări de identitate și parametri, valori invalide, lipsa receiptului, opțiuni omise, normalizarea numerelor și integrarea în readPlanOutcomes, inclusiv acces revocat și absența mutațiilor. Nu s-au apelat provideri reali. Emulatorul și UI nu au fost relansate: lotul schimbă numai verificarea pe citire și reducerea rezultatului. Numărul scenariilor originale acceptate nu crește prin aceste teste sintetice.
+
+Buildul complet a trecut cu 227/227 pagini; avertismentul Jaeger și omiterea copierii Playwright în standalone rămân cele cunoscute. git diff --check a trecut. Dovezile publicării în producție nu au fost modificate.

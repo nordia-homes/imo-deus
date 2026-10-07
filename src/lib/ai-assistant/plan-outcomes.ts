@@ -15,6 +15,7 @@ import { tikTokScheduleOutcome } from './tiktok-schedule-outcome';
 import { tikTokDraftOutcome } from './tiktok-draft-outcome';
 import { tikTokProjectOutcome } from './tiktok-project-outcome';
 import { confirmedStudioRender } from '@/lib/tiktok-render-evidence';
+import { metaDraftOutcome } from './meta-draft-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -122,12 +123,13 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
       }
       else if (action.operation === 'meta_campaign_draft') {
         const targetId = id(original.campaignId);
+        let draft: Record<string, any> | undefined;
         if (targetId) {
           refreshAttempted = true;
-          const row = await getResource(ctx, 'metaCampaignDrafts', targetId);
-          current = operationResult(action.operation, { status: row.status }, true);
-          completionSatisfied = ['draft', 'ready', 'ready_to_publish'].includes(row.status);
+          if (typeof action.body.propertyId === 'string') await getResource(ctx, 'properties', action.body.propertyId);
+          draft = await getResource(ctx, 'metaCampaignDrafts', targetId);
         }
+        return { ...base, ...metaDraftOutcome(ctx, targetId, action.body, draft, original) };
       }
       else if (action.operation === 'facebook_job_create' && id(original.jobId)) {
         refreshAttempted = true;
