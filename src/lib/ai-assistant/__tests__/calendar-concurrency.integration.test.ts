@@ -29,6 +29,8 @@ import { reconcileRuleNotifications } from '../notification-relevance';
 import { createInsightNotification } from '../insight-notifications';
 import * as insightReports from '../insights';
 import { saveNotificationFeedback } from '../notification-feedback';
+import { createMatchingNotification } from '../matching-notifications';
+import { matchingRevision } from '../matching-revision';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -43,6 +45,22 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('creates one matching alert under concurrency and withdraws it after a source edit', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
+    const card = { id: 'p', title: 'Matching fixture', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) };
+    try {
+      const results = await Promise.all([1, 2].map(() => createMatchingNotification(ctx, 'r', 'matching', 'c', card)));
+      expect(results.map(row => row.status).sort()).toEqual(['created', 'existing']);
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      await agency.collection('properties').doc('p').update({ price: 180000 });
+      expect(await createMatchingNotification(ctx, 'r', 'stale', 'c', card)).toMatchObject({ status: 'skipped', reasonCode: 'state_changed' });
+      expect((await reconcileRuleNotifications(ctx, { ids: ['matching'] })).withdrawn).toBe(1);
+      expect((await profile.collection('notifications').doc('matching').get()).data()).toMatchObject({ isRead: true, withdrawalReason: 'state_changed' });
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
   it('serializes feedback revisions and preserves a concurrent withdrawal', async () => {
     const ctx = context(), profile = db.collection('users').doc(ctx.uid), notification = profile.collection('notifications').doc('feedback');
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });

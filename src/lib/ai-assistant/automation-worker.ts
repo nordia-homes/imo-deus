@@ -16,6 +16,7 @@ import { nextBriefRun, briefSettingsSchema } from './daily-brief-contract';
 import { assertNoReplySince } from './reply-stop';
 import { createInsightNotification } from './insight-notifications';
 import { insightQuietDeferral } from './insight-notification-policy';
+import { createMatchingNotification } from './matching-notifications';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -111,10 +112,9 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
             if (notificationResult.status === 'deferred') break;
             continue;
           }
-          const notification = db.collection('users').doc(ctx.uid).collection('notifications').doc(id);
-          await db.runTransaction(async tx => { await assertAutomationFence(db, tx, ctx); if ((await tx.get(notification)).exists) return; tx.create(notification, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: automation.type === 'matching_watch' ? 'Potrivire ImoDeus peste pragul configurat' : String(row.title), body: automation.type === 'matching_watch' ? String(row.title) : 'Verifică insight-ul în AI Assistant.', actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: now }); });
+          notificationResults.push(await createMatchingNotification(ctx, claim.id, id, automation.contactId, row));
         }
-        if (automation.type === 'insight_report') result = { ...report, notificationResults, ...notificationResults.find(item => item.status === 'deferred') };
+        result = { ...report, notificationResults, ...notificationResults.find(item => item.status === 'deferred') };
       } else {
         const search = { ...automation.search, source: 'owners' as const, cursor: claim.scanCursor || undefined, limit: 100 };
         result = await searchProperties(ctx, search);

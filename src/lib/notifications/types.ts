@@ -70,6 +70,7 @@ export type AppNotification = {
   withdrawalReason?: 'state_changed' | 'entity_deleted' | 'access_revoked';
   ruleCondition?: { resource: string; id: string; status: string };
   insightCondition?: { kind: string; id: string; otherId?: string };
+  matchingCondition?: { contactId: string; propertyId: string; contactRevision: string; propertyRevision: string };
   automationId?: string;
   feedback?: { value: 'useful' | 'not_useful'; revision: number; updatedAt: string };
 };

@@ -7,7 +7,8 @@ vi.mock('@/lib/communications/server', () => ({ getConversation: vi.fn() }));
 vi.mock('@/lib/communications/outbound', () => ({ queueMessage: vi.fn() }));
 vi.mock('../event-rules', () => ({ runEventRule: vi.fn() }));
 import { drainAssistantAutomations } from '../automation-worker';
-import { executeAction } from '../actions';
+import { executeAction, matchContact } from '../actions';
+import { matchingRevision } from '../matching-revision';
 import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
 import { getResource } from '../access';
@@ -27,6 +28,19 @@ const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z',
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe('approved automation execution', () => {
+  it.each([false, true])('verifies matching sources after calculation and audits omission (changed: %s)', async changed => {
+    const { db, rows } = database({ type: 'matching_watch', contactId: 'c', threshold: 80, limit: 5, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1 });
+    const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };
+    rows.set('agencies/a/contacts/c', contact); rows.set('agencies/a/properties/p', property);
+    vi.mocked(matchContact).mockImplementationOnce(async () => {
+      if (changed) rows.set('agencies/a/properties/p', { ...property, price: 180000 });
+      return [{ id: 'p', title: 'Match', matchScore: 90, sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }] as any;
+    });
+    await drainAssistantAutomations(db as any);
+    expect(rows.has('users/u/notifications/job-p')).toBe(!changed);
+    expect(rows.get('assistantAutomationJobs/job').lastResult.notificationResults[0]).toMatchObject(changed ? { status: 'skipped', reasonCode: 'state_changed' } : { status: 'created' });
+    expect([...rows.entries()].find(([key]) => key.includes('/audit/'))?.[1].result.notificationResults).toHaveLength(1);
+  });
   it.each([false, true])('defers a one-shot report without consuming its run and rereads current tasks (resolved: %s)', async resolved => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T19:30:00Z'));
     const { db, rows } = database({ type: 'insight_report', nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, quietHours: { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' } });

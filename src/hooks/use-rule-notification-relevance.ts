@@ -6,7 +6,7 @@ import type { AppNotification } from '@/lib/notifications/types';
 
 export function useRuleNotificationRelevance(user: User | null | undefined, notifications: AppNotification[] | null | undefined, enabled = true) {
   const [failedKey, setFailedKey] = useState<string | null>(null);
-  const idsKey = JSON.stringify((notifications || []).filter(row => (row.ruleCondition || row.insightCondition) && !row.withdrawnAt).map(row => row.id).sort());
+  const idsKey = JSON.stringify((notifications || []).filter(row => (row.ruleCondition || row.insightCondition || row.matchingCondition) && !row.withdrawnAt).map(row => row.id).sort());
   const requestKey = `${user?.uid}:${idsKey}`;
   useEffect(() => {
     const ids: string[] = JSON.parse(idsKey);
