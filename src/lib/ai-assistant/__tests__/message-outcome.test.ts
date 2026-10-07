@@ -4,6 +4,12 @@ import { recipientRevision } from '@/lib/communications/recipient-revision';
 const actor = { uid: 'u', agencyId: 'a' }, conversation = { connectionId: 'connection' }, body = { text: 'Oferta aprobată' };
 const job = { ...actor, conversationId: 'c', connectionId: 'connection', input: { text: body.text } };
 const message = { agencyId: 'a', authorId: 'u', conversationId: 'c', direction: 'sent', origin: 'imodeus', status: 'delivered', externalId: 'provider-id' };
+it('requires the exact approved matching selection in the delivered job', () => {
+  const approved = { ...body, matchingSelection: { resultSetId: 'set', propertyId: 'chosen', contactId: 'client', propertyRevision: 'revision', contactRevision: 'revision' } };
+  expect(messageOutcome(actor, 'c', approved, conversation, { ...job, input: approved }, message).completionSatisfied).toBe(true);
+  expect(messageOutcome(actor, 'c', approved, conversation, job, message).completionSatisfied).toBe(false);
+  expect(messageOutcome(actor, 'c', approved, conversation, { ...job, input: { ...approved, matchingSelection: { ...approved.matchingSelection, propertyId: 'replacement' } } }, message).completionSatisfied).toBe(false);
+});
 it('requires the approved recipient revision in the job and current conversation', () => {
   const current = { ...conversation, id: 'c', agencyId: 'a', channel: 'messenger', externalParticipantId: 'participant', contactId: 'contact' };
   const revision = recipientRevision(current), approved = { ...body, expectedRecipientRevision: revision };

@@ -10,7 +10,7 @@ const ctx = {} as any, input = { resultSetId: 'set', position: 2 }, conversation
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(selectContext).mockResolvedValue({ contactId: 'client', rows: [{ id: 'second', matchScore: 90, scoreMayBeStale: true }], resultSetId: 'set' } as any);
-  vi.mocked(getResource).mockImplementation(async (_ctx, resource, id) => resource === 'contacts' ? { id } : { ...conversation, id });
+  vi.mocked(getResource).mockImplementation(async (_ctx, resource, id) => resource === 'contacts' ? { id } : resource === 'properties' ? { id, status: 'Activ', price: 120000 } : { ...conversation, id });
   vi.mocked(listConversations).mockResolvedValue({ conversations: [conversation], cursor: null } as any);
 });
 it('resolves one exact client conversation while preserving ordinal evidence and withholding private fields', async () => {
@@ -18,6 +18,7 @@ it('resolves one exact client conversation while preserving ordinal evidence and
   expect(selectContext).toHaveBeenCalledWith(ctx, { selections: [] }, { resultSetId: 'set', positions: [2] });
   expect(result).toMatchObject({ conversationId: 'conversation', recipientStatus: 'resolved', eligibilityChecked: false, rows: [{ id: 'second', matchScore: 90, scoreMayBeStale: true }] });
   expect(JSON.stringify(result)).not.toContain('private-phone'); expect(JSON.stringify(result)).not.toContain('secret');
+  expect(result.matchingSelection).toMatchObject({ resultSetId: 'set', contactId: 'client', propertyId: 'second', propertyRevision: expect.stringMatching(/^[a-f0-9]{64}$/), contactRevision: expect.stringMatching(/^[a-f0-9]{64}$/) });
   expect(vi.mocked(listConversations).mock.calls[0][2].get('contactId')).toBe('client');
 });
 it.each([{ conversations: [] }, { conversations: [conversation, { ...conversation, id: 'other' }] }])('asks for clarification instead of selecting an absent or ambiguous recipient', async ({ conversations }) => {

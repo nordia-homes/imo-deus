@@ -6,6 +6,7 @@ import { assertRecipientRevision } from '@/lib/communications/recipient-revision
 export function messageOutcome(actor: { uid: string; agencyId: string }, conversationId: string, body: Record<string, unknown>, conversation: Record<string, any>, job: Record<string, any> | undefined, message: Record<string, any>) {
   const evidence = (executionState: string, businessStatus: string, completionSatisfied: boolean, watchable: boolean, note: string) => ({ executionState, businessStatus, completionSatisfied, watchable, note, evidenceSource: 'current_domain_state', verifiedAt: new Date().toISOString() });
   const template = (value: any) => value ? { name: value.name, language: value.language, parameters: value.parameters || [] } : null;
+  if (body.matchingSelection !== undefined && !isDeepStrictEqual(body.matchingSelection, job?.input?.matchingSelection)) return evidence('unknown', 'message_identity_unconfirmed', false, false, 'Selecția aprobată nu corespunde jobului de trimitere. Mesajul nu este retrimis automat.');
   if (body.sendApproval !== undefined && !isDeepStrictEqual(body.sendApproval, job?.input?.sendApproval)) return evidence('unknown', 'message_identity_unconfirmed', false, false, 'Condițiile aprobate nu corespund jobului de trimitere. Mesajul nu este retrimis automat.');
   if (body.expectedRecipientRevision !== undefined) {
     try {

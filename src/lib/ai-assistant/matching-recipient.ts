@@ -3,6 +3,7 @@ import { listConversations } from '@/lib/communications/server';
 import { getResource, type AssistantContext } from './access';
 import { selectContext } from './context-selection';
 import { matchingRecipientSchema } from './matching-recipient-contract';
+import { matchingRevision } from './matching-revision';
 
 export async function resolveMatchingRecipient(ctx: AssistantContext, summary: unknown, input: z.infer<typeof matchingRecipientSchema>) {
   const selection = await selectContext(ctx, summary, { resultSetId: input.resultSetId, ...(input.messageId ? { messageId: input.messageId } : {}), positions: [input.position] });
@@ -36,5 +37,9 @@ export async function resolveMatchingRecipient(ctx: AssistantContext, summary: u
     conversations.push({ id, name: String(row.name || ''), channel: row.channel, connectionId: row.connectionId });
   }
   const resolved = complete && conversations.length === 1;
-  return { ...selection, complete, contactId, conversations, conversationId: resolved ? conversations[0].id : null, recipientStatus: resolved ? 'resolved' : 'needs_clarification', recipientSearchComplete: complete, eligibilityChecked: false, note: resolved ? 'Conversația este asociată exact clientului din matching. Pregătește mesajul concret pentru verificarea eligibilității, costului și aprobare.' : !complete ? 'Căutarea conversațiilor este parțială. Alege explicit conversația; nu se presupune că rezultatul este unic.' : conversations.length ? 'Clientul are mai multe conversații. Alege conversația și canalul înainte de pregătirea mesajului.' : 'Nu există o conversație autorizată identificată pentru acest client. Creează sau asociază conversația în fluxul existent, apoi pregătește mesajul.' };
+  const property = await getResource(ctx, 'properties', selection.rows[0].id);
+  if (property.status !== 'Activ') throw new Error('Proprietatea selectată nu mai este activă. Refă selecția înainte de pregătirea mesajului.');
+  const contact = await getResource(ctx, 'contacts', contactId);
+  const matchingSelection = resolved ? { resultSetId: input.resultSetId, contactId, propertyId: selection.rows[0].id, propertyRevision: matchingRevision(property), contactRevision: matchingRevision(contact) } : null;
+  return { ...selection, complete, contactId, conversations, matchingSelection, conversationId: resolved ? conversations[0].id : null, recipientStatus: resolved ? 'resolved' : 'needs_clarification', recipientSearchComplete: complete, eligibilityChecked: false, note: resolved ? 'Conversația este asociată exact clientului din matching. Pregătește mesajul concret pentru verificarea eligibilității, costului și aprobare.' : !complete ? 'Căutarea conversațiilor este parțială. Alege explicit conversația; nu se presupune că rezultatul este unic.' : conversations.length ? 'Clientul are mai multe conversații. Alege conversația și canalul înainte de pregătirea mesajului.' : 'Nu există o conversație autorizată identificată pentru acest client. Creează sau asociază conversația în fluxul existent, apoi pregătește mesajul.' };
 }

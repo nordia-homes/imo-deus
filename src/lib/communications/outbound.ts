@@ -12,8 +12,9 @@ import { assertWhatsAppAccess, whatsappAppId } from './whatsapp-config';
 import { receiptCorrelation } from './receipt-correlation';
 import { recipientRevision, assertRecipientRevision } from './recipient-revision';
 import { sendApprovalSchema, assertSendApproval } from './send-approval';
+import { matchingSendSchema, assertMatchingSend } from './matching-send';
 
-const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 export async function estimateSend(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput) {
   const { connection, token } = await connectionToken(db, actor, conversation.connectionId, 'send');
@@ -76,6 +77,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   }
   if (input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, input.expectedRecipientRevision);
   const recipient = recipientRevision(conversation);
+  await assertMatchingSend(db, actor, conversation, input.matchingSelection);
   const estimate = await estimateSend(db, actor, conversation, input);
   if (input.sendApproval !== undefined || (!preview && input.expectedRecipientRevision !== undefined)) assertSendApproval(input.sendApproval, estimate);
   const attachment = input.attachmentId ? (await agencyCollection(db, actor.agencyId, 'communicationMedia').doc(input.attachmentId).get()).data() : null;
@@ -93,6 +95,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     }
     if (!canReadConversation(actor, fresh.data() as Conversation)) throw new CommunicationError('Acces revocat.', 403);
     assertRecipientRevision({ ...fresh.data(), id }, recipient);
+    await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
     if (estimate.amount > 0) tx.set(budgetRef, { currency: estimate.currency, limitMicros: budget.data()?.limitMicros || 0, spentMicros: budget.data()?.spentMicros || 0,
       reservedMicros: budgetReservation(budget.data()?.limitMicros || 0, budget.data()?.spentMicros || 0, budget.data()?.reservedMicros || 0, estimate.amount) }, { merge: true });
     const message: Message = { id: jobId, agencyId: actor.agencyId, conversationId: id, externalId: null, direction: 'sent', origin: 'imodeus', text: input.template ? estimate.renderedText || `[${input.template.name}] ${input.template.parameters.join(' · ')}` : input.text, createdAt: nowIso(), authorId: actor.uid, status: 'queued', attachments: [] };
@@ -154,6 +157,7 @@ export async function drainOutbound(db: Firestore) {
       if (job.input.sendApproval !== undefined || job.input.expectedRecipientRevision !== undefined) assertSendApproval(job.input.sendApproval, estimate);
       if (estimate.currency !== job.estimate.currency || estimate.amount > job.estimate.amount) throw new CommunicationError('Tariful s-a modificat. Pregătește din nou trimiterea.');
       const { connection, token } = await connectionToken(db, actor, job.connectionId, 'send');
+      await assertMatchingSend(db, actor, conversation, job.input.matchingSelection);
       await messageRef.update({ status: 'sending' });
       attempted = true;
       const response = await graph(`/${connection.externalId}/messages`, token, { ...estimate.body, ...(connection.channel === 'whatsapp' ? { biz_opaque_callback_data: receiptCorrelation(row.id, connection.id) } : {}) });

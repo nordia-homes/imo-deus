@@ -518,3 +518,15 @@ Testul pentru două erori consecutive de infrastructură a fost izolat cu un cat
 Acest lot nu declară închise cele trei fluxuri pilot și nu extinde corpusul live revizuit. Rămân probele complete cu provideri, scenariile individuale restante, verificarea juridică temporală și calibrarea Jev. Modificările nu sunt publicate în producție.
 
 Build-ul final a trecut cu TypeScript și 225 pagini. Avertismentele Jaeger/standalone locale rămân cele documentate anterior.
+
+## 7 octombrie: selecția din matching păstrată până la worker
+
+Continuare E2/E4. Resolverul furnizează acum `matchingSelection`: setul salvat, proprietatea aleasă, clientul și reviziile surselor citite. Instrucțiunile plannerului cer copierea integrală în mesajul pregătit; payloadul intră în aprobarea existentă. Previewul afișează proprietatea/clientul și reverificarea, fără hashurile interne.
+
+Serviciul comun verifică proprietarul și expirarea setului, apartenența proprietății la set, asocierea conversației cu clientul, existența și starea activă a proprietății, reviziile proprietății/clientului și accesul la referințe. Verificarea are loc la pregătire, în tranzacția cozii și din nou înainte de invocarea furnizorului. O schimbare cere pregătire nouă și nu substituie o altă proprietate. Citirea idempotentă a unui job anterior rămâne posibilă fără trimitere nouă. Dovada livrării cere aceeași selecție în acțiune și inputul jobului; expirarea ulterioară a setului nu anulează retroactiv dovada unui mesaj livrat.
+
+Validări trecute: **784/784 teste unitare în 84 fișiere**, **73/73 teste pe emulator în 15 fișiere**, **134/134 scenarii deterministe** și **156/156 teste în runnerul dedicat**, ESLint, paritate și proba Chromium. Cele 13 probe noi pe emulator acoperă schimbarea prețului, inactivarea proprietății, modificarea clientului, expirarea setului, schimbarea proprietarului setului și eliminarea din rezultate, înainte și după queue, plus schimbarea în timpul estimării. Transportul Meta este simulat; nu au fost trimise mesaje reale.
+
+Limite: metadatele sunt obligatorii în instrucțiunea fluxului de matching, dar mesajele generice fără `matchingSelection` păstrează comportamentul existent; nu se deduce semantic pe server că orice text despre o proprietate provine din matching. Controlul înainte de apelul extern nu este o tranzacție distribuită cu providerul. Reviziile folosesc excluderile existente ale matchingului pentru câmpuri operaționale și media; nu certifică identitatea tuturor atașamentelor. Planurile istorice fără aceste metadate nu sunt reinterpretate. Corpusul live revizuit nu este extins de aceste teste. Rămân verificările complete ale celor trei fluxuri pilot, cele 937 de cazuri fără fixtures individuale, probele externe, validitatea juridică temporală și calibrarea Jev. Acest lot nu este publicat în producție.
+
+Build-ul final a trecut cu TypeScript și 225 pagini. Rămân avertismentele cunoscute pentru Jaeger, clasele Tailwind și copierea browserului standalone local; buildul nu constituie dovadă de deployment.

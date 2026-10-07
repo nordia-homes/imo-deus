@@ -11,6 +11,7 @@ import { approvalEnvelope, validateApproval } from '../approval';
 import { matchContact } from '../actions';
 import { saveResultSet } from '../context';
 import { resolveMatchingRecipient } from '../matching-recipient';
+import { matchingRevision } from '../matching-revision';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient through the real outbound queue and worker', () => {
   let db: Firestore;
@@ -58,13 +59,57 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const summary = { selections: [{ messageId: 'matching', source: 'crm', resultSetId, orderedIds: rows.map(row => row.id) }] };
     const selected = await resolveMatchingRecipient(ctx, summary, { resultSetId, position: 2 });
     expect(selected).toMatchObject({ contactId: 'contact', conversationId: f.ref.id, eligibilityChecked: false, rows: [{ id: rows[1].id, matchScore: rows[1].matchScore }] });
-    const actions = await bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: selected.conversationId! }, query: {}, body: { text: `Vă propun ${selected.rows[0].title}.` } }]);
+    const actions = await bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: selected.conversationId! }, query: {}, body: { text: `Vă propun ${selected.rows[0].title}.`, matchingSelection: selected.matchingSelection } }]);
     validateApproval(approvalEnvelope(f.actor.uid, f.actor.agencyId, 'matching-send', actions, Date.now() + 60000), f.actor.uid, f.actor.agencyId, 'matching-send', actions);
     const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
     await queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() });
     await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
     await f.ref.update({ contactId: 'other-client' });
     await expect(resolveMatchingRecipient(ctx, summary, { resultSetId, position: 2, conversationId: f.ref.id })).rejects.toThrow('nu corespunde');
+  });
+  async function matchingFixture() {
+    const f = await fixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    const property = { status: 'Activ', title: 'Oferta aleasă', price: 120000 }, contact = { name: 'Client test', budget: 150000 };
+    const propertyRef = agency.collection('properties').doc('selected'), contactRef = agency.collection('contacts').doc('contact'), setRef = agency.collection('assistantResultSets').doc('selection');
+    await propertyRef.set(property); await contactRef.set(contact);
+    await setRef.set({ ownerId: f.actor.uid, kind: 'existing_matches', contactId: 'contact', expiresAt: Date.now() + 60000, rows: [{ id: 'selected' }], accessRefs: [{ resource: 'properties', id: 'selected' }, { resource: 'contacts', id: 'contact' }] });
+    const matchingSelection = { resultSetId: 'selection', propertyId: 'selected', contactId: 'contact', propertyRevision: matchingRevision(property), contactRevision: matchingRevision(contact) };
+    const actions = await bindBusinessRevisions({ ...f.actor, adminDb: db } as any, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { text: 'Oferta aleasă: 120000 EUR.', matchingSelection } }]);
+    const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+    return { ...f, propertyRef, contactRef, setRef, input: { ...action.body, requestId: randomUUID() } };
+  }
+  const matchingChanges = ['price', 'inactive', 'contact', 'expired', 'owner', 'membership'] as const;
+  async function changeMatching(f: Awaited<ReturnType<typeof matchingFixture>>, change: typeof matchingChanges[number]) {
+    if (change === 'price') await f.propertyRef.update({ price: 130000 });
+    if (change === 'inactive') await f.propertyRef.update({ status: 'Vandut' });
+    if (change === 'contact') await f.contactRef.update({ budget: 100000 });
+    if (change === 'expired') await f.setRef.update({ expiresAt: 1 });
+    if (change === 'owner') await f.setRef.update({ ownerId: 'other' });
+    if (change === 'membership') await f.setRef.update({ rows: [{ id: 'replacement' }] });
+  }
+  it.each(matchingChanges)('rejects matching change %s before queue creation', async change => {
+    const f = await matchingFixture(); await changeMatching(f, change);
+    await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow('Selecția');
+    expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it.each(matchingChanges)('rejects matching change %s after queueing and before provider invocation', async change => {
+    const f = await matchingFixture(), result = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    expect((await db.collection('communicationOutboundJobs').doc(result.messageId!).get()).data()?.input.matchingSelection).toEqual(f.input.matchingSelection);
+    await changeMatching(f, change);
+    // An idempotent receipt lookup remains available; it does not authorize another send.
+    expect(await queueMessage(db as any, f.actor, f.ref.id, f.input)).toEqual(result);
+    await drainOutbound(db as any);
+    expect(mocks.graph).not.toHaveBeenCalled();
+    expect((await db.collection('communicationOutboundJobs').doc(result.messageId!).get()).data()).toMatchObject({ status: 'failed', budgetSettled: true });
+  });
+  it('rechecks matching inside the queue transaction after estimation', async () => {
+    const f = await matchingFixture();
+    mocks.token.mockImplementationOnce(async () => {
+      await f.propertyRef.update({ price: 130000 });
+      return { connection: { id: f.conversation.connectionId, channel: 'messenger', externalId: 'fixture-page' }, token: 'fixture-token' };
+    });
+    await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow('Selecția');
+    expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(mocks.graph).not.toHaveBeenCalled();
   });
   it('pins the approved recipient, queues once and invokes the simulated provider only once', async () => {
     const f = await fixture();

@@ -75,7 +75,7 @@ try {
       { id: 'unknown', title: 'An necunoscut', constructionYearEvidenceKind: 'unknown', constructionYear: null, yearFilterSatisfied: false },
     ] }]) };
     else if (body.kind === 'chat' && body.prompt === 'Selectează a doua potrivire.') result = { message: message('Datele proprietății au fost recitite.', [{ type: 'results', source: 'crm', title: 'Proprietatea selectată', complete: true, rows: [{ id: 'match-second', title: 'Apartament Titan', status: 'Activ', price: 130000, matchScore: 91, scoreMayBeStale: true }] }]) };
-    else if (body.kind === 'chat' && body.prompt === 'Pregătește mesajul verificat.') result = { message: message('Mesaj pregătit pentru confirmare.', [], { planId, actions: [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conversation' }, query: {}, body: { text: 'Oferta concretă pentru clientul selectat.', expectedRecipientRevision: 'a'.repeat(64), sendApproval: { amountMicros: 12000, currency: 'EUR', renderedText: 'Oferta concretă pentru clientul selectat.', expiresAt: Date.now() + 3600000 } } }] }) };
+    else if (body.kind === 'chat' && body.prompt === 'Pregătește mesajul verificat.') result = { message: message('Mesaj pregătit pentru confirmare.', [], { planId, actions: [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conversation' }, query: {}, body: { text: 'Oferta concretă pentru clientul selectat.', expectedRecipientRevision: 'a'.repeat(64), matchingSelection: { resultSetId: 'selection', propertyId: 'chosen-property', contactId: 'chosen-client', propertyRevision: 'b'.repeat(64), contactRevision: 'c'.repeat(64) }, sendApproval: { amountMicros: 12000, currency: 'EUR', renderedText: 'Oferta concretă pentru clientul selectat.', expiresAt: Date.now() + 3600000 } } }] }) };
     else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
     else if (body.kind === 'search') {
       const rows = [{ id: body.query.source === 'owners' ? 'listing' : 'property', title: body.query.source === 'owners' ? 'Apartament Titan proprietar' : 'Apartament Titan CRM', price: '120.000 €', location: 'Titan', rooms: 2 }];
@@ -246,6 +246,8 @@ try {
   await page.getByRole('button', { name: 'Trimite comanda' }).click();
   await page.getByText('Oferta concretă pentru clientul selectat.', { exact: true }).waitFor();
   await page.getByText('Cost maxim: 0.012 EUR', { exact: true }).waitFor();
+  await page.getByText('Datele vor fi reverificate înainte de trimitere.', { exact: true }).waitFor();
+  if ((await page.locator('body').innerText()).includes('b'.repeat(64))) throw new Error('Matching revision exposed in approval preview');
   await page.getByText('Mesaj: Oferta concretă pentru clientul selectat.', { exact: true }).waitFor();
   assert.equal(await page.getByText('expectedRecipientRevision', { exact: true }).count(), 0);
   assert.equal(await page.getByText('a'.repeat(64), { exact: true }).count(), 0);
