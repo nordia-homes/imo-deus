@@ -1,13 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-const state = vi.hoisted(() => ({ db: null as any, publish: vi.fn() }));
+const state = vi.hoisted(() => ({ db: null as any, publish: vi.fn(), render: vi.fn() }));
 vi.mock('@/firebase/admin', () => ({ get adminDb() { return state.db; }, adminAuth: {} }));
-vi.mock('@/lib/tiktok-marketing', () => ({ publishTikTokPostDraft: state.publish, renderTikTokStudioProject: vi.fn(), refreshTikTokPostDraftStatus: vi.fn() }));
+vi.mock('@/lib/tiktok-marketing', () => ({ publishTikTokPostDraft: state.publish, renderTikTokStudioProject: state.render, refreshTikTokPostDraftStatus: vi.fn() }));
 import { scheduleTikTokPost, cancelScheduledTikTokPost, drainStudioRenders } from '@/lib/tiktok-studio-jobs';
 import { bindBusinessRevisions } from '../business-revisions';
 import { approvalEnvelope, validateApproval } from '../approval';
 import { claimTikTokPublication } from '@/lib/tiktok-publish-claim';
+import { recoverTikTokStudioJob } from '@/lib/tiktok-job-recovery';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and scheduling on actual Firestore', () => {
   let db: Firestore;
@@ -16,7 +17,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and sched
     if (!/^(127\.0\.0\.1|localhost):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     db = new Firestore({ projectId: 'demo-imodeus-tiktok-schedule' }); state.db = db;
   });
-  beforeEach(() => { state.publish.mockReset(); state.publish.mockResolvedValue({}); });
+  beforeEach(() => { state.publish.mockReset(); state.publish.mockResolvedValue({}); state.render.mockReset(); });
   afterAll(async () => {
     if (!db) return;
     for (const id of agencies) await db.recursiveDelete(db.collection('agencies').doc(id));
@@ -55,6 +56,42 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and sched
     const input = { agencyId: f.agencyId, draftId: f.ref.id, requestedByUid: f.uid, fromSchedule: true, scheduleOwner: 'claim' };
     return { ...f, input, claim: () => claimTikTokPublication(db as any, input) };
   }
+  it.each(['valid', 'newer_project', 'missing_asset', 'other_asset_version', 'other_asset_owner', 'deleted_project', 'not_ready'])('recovers expired render with %s evidence without replay', async mode => {
+    const f = await fixture(), agency = db.collection('agencies').doc(f.agencyId);
+    const project = agency.collection('tiktokStudioProjects').doc('project'), asset = agency.collection('tiktokStudioAssets').doc('asset');
+    await f.job.set({ kind: 'render', agencyId: f.agencyId, uid: f.uid, projectId: project.id, version: 1, status: 'running', leaseUntil: '2020-01-01T00:00:00Z' });
+    const original = { agencyId: f.agencyId, ownerUid: f.uid, version: mode === 'newer_project' ? 2 : 1, status: mode === 'not_ready' ? 'rendering' : 'ready', outputAssetId: asset.id };
+    if (mode !== 'deleted_project') await project.set(original);
+    if (mode !== 'missing_asset') await asset.set({ agencyId: f.agencyId, ownerUid: mode === 'other_asset_owner' ? 'other' : f.uid, studioProjectId: project.id, version: mode === 'other_asset_version' ? 2 : 1, status: 'ready', type: 'video', url: 'https://example.test/video.mp4' });
+    await recoverTikTokStudioJob(db as any, f.job as any);
+    expect((await f.job.get()).data()?.status).toBe(mode === 'valid' ? 'completed' : 'failed');
+    if (mode === 'deleted_project') expect((await project.get()).exists).toBe(false);
+    else if (mode === 'not_ready') expect((await project.get()).data()?.status).toBe('error');
+    else expect((await project.get()).data()).toEqual(original);
+    expect(state.publish).not.toHaveBeenCalled();
+  });
+  it.each(['published', 'processing'])('preserves %s provider evidence during expired-job recovery', async status => {
+    const f = await publicationFixture(); await f.job.update({ leaseUntil: '2020-01-01T00:00:00Z' });
+    await f.ref.update({ status, publishId: 'synthetic-provider-id', scheduleStatus: 'sent' });
+    const before = (await f.ref.get()).data();
+    await recoverTikTokStudioJob(db as any, f.job as any);
+    expect((await f.ref.get()).data()).toEqual(before); expect((await f.job.get()).data()?.status).toBe('failed');
+    expect(state.publish).not.toHaveBeenCalled();
+  });
+  it('leaves an unexpired worker claim unchanged', async () => {
+    const f = await publicationFixture(), before = (await f.job.get()).data();
+    await recoverTikTokStudioJob(db as any, f.job as any);
+    expect((await f.job.get()).data()).toEqual(before);
+  });
+  it('does not mark a newer project as failed after an older renderer errors', async () => {
+    const f = await fixture(), project = db.collection('agencies').doc(f.agencyId).collection('tiktokStudioProjects').doc('project');
+    await project.set({ agencyId: f.agencyId, ownerUid: f.uid, version: 1, status: 'queued' });
+    await f.job.set({ kind: 'render', agencyId: f.agencyId, uid: f.uid, projectId: project.id, version: 1, status: 'queued', runAt: '2020-01-01T00:00:00Z' });
+    state.render.mockImplementationOnce(async () => { await project.update({ version: 2, status: 'queued' }); throw new Error('Old render failed'); });
+    await drainStudioRenders();
+    expect((await project.get()).data()).toMatchObject({ version: 2, status: 'queued' });
+    expect((await f.job.get()).data()?.status).toBe('failed');
+  });
   it('allows only one actual publisher transaction to claim the approved content', async () => {
     const f = await publicationFixture();
     const results = await Promise.allSettled([f.claim(), f.claim()]);

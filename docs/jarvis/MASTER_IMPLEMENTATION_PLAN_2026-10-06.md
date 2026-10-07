@@ -607,3 +607,15 @@ Validări trecute: **95/95 teste pe emulator în 16 fișiere**, **157/157 teste 
 
 Compatibilitate: publicarea este refuzată dacă documentul autorului lipsește, acesta a schimbat agenția sau draftul nu mai corespunde agenției; nu se reconstruiesc automat permisiunile din job. Planul integral și acceptanța furnizorilor rămân deschise. Lotul nu este publicat în producție.
 Buildul final a trecut cu TypeScript și 225 pagini; avertismentele locale Jaeger/standalone sunt cele cunoscute. Nu s-a efectuat deployment.
+
+## 7 octombrie: recuperarea randărilor fără a confunda versiunile
+
+Continuare E3/E4. Recuperarea unui job de render expirat nu mai folosește doar statusul `ready` al proiectului. Confirmarea cere același autor, agenție, versiune, proiect și asset video ready cu URL HTTPS. Un asset lipsă sau al altei versiuni nu confirmă jobul. Proiectele mai noi, proiectele șterse și cele ready care necesită verificarea assetului nu sunt suprascrise. Un proiect încă nefinalizat poate fi marcat error numai dacă aparține aceleiași versiuni și aceluiași autor.
+
+Aceeași limitare de versiune/autor este aplicată erorii venite de la renderer după ce proiectul a fost modificat. La recuperarea unui job de publicare expirat, jobul rămâne failed și nu este retrimis, dar draftul este păstrat dacă are ID de provider, status processing/published sau a fost modificat față de revizia programată. Rezultatul de business și execuția schedulerului rămân distincte; această recuperare nu certifică publicarea la TikTok.
+
+Suita pe Firestore real adaugă 11 cazuri: rezultat valid, proiect mai nou, asset lipsă, versiune/autor greșit al assetului, proiect șters, render nefinalizat, publicare published/processing, lease încă activ și eroarea unui renderer vechi după actualizarea proiectului. Nu există apeluri externe sau retry automat. Verificarea URL-ului și a metadatelor din CRM nu reprezintă o verificare a octeților ori a disponibilității fișierului video.
+
+Planul integral și probele externe rămân deschise. Lotul nu este publicat în producție.
+Validări finale: 106/106 teste pe emulator în 16 fișiere, 157/157 teste TikTok și rezultate ale planului în 17 fișiere, ESLint. Verificarea TypeScript separată a trecut înaintea ultimei restricții de versiune; buildul final verifică și forma finală. Nu au fost rerulate toate cele 979 de teste generale.
+Buildul final a trecut, inclusiv TypeScript și 225 pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu s-a efectuat deployment.

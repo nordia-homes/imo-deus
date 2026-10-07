@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { recoverTikTokStudioJob } from './tiktok-job-recovery';
 import { tikTokScheduleRevision, assertTikTokSchedule } from './tiktok-schedule-revision';
 import { adminDb } from '@/firebase/admin';
 import { renderTikTokStudioProject, publishTikTokPostDraft, refreshTikTokPostDraftStatus } from './tiktok-marketing';
@@ -28,18 +29,7 @@ export async function drainStudioRenders() {
   const expired = await jobs().where('status', '==', 'running').limit(20).get();
   for (const doc of expired.docs) {
     if (Date.parse(doc.data().leaseUntil || '') > Date.now()) continue;
-    await adminDb.runTransaction(async (tx) => {
-      const fresh = await tx.get(doc.ref);
-      const job = fresh.data();
-      if (!job || job.status !== 'running' || Date.parse(job.leaseUntil) > Date.now()) return;
-      if (job.kind !== 'publish') {
-        const project = await tx.get(adminDb.collection('agencies').doc(job.agencyId).collection('tiktokStudioProjects').doc(job.projectId));
-        if (project.data()?.status === 'ready') { tx.update(doc.ref, { status: 'completed', completedAt: new Date().toISOString() }); return; }
-      }
-      tx.update(doc.ref, { status: 'failed', error: 'Randare întreruptă. Verifică rezultatele și reîncearcă.' });
-      if (job.kind !== 'publish') tx.update(adminDb.collection('agencies').doc(job.agencyId).collection('tiktokStudioProjects').doc(job.projectId), { status: 'error', renderLeaseUntil: null, errorMessage: 'Randare întreruptă. Poți relua din proiect.' });
-      else tx.update(adminDb.collection('agencies').doc(job.agencyId).collection('tiktokPostDrafts').doc(job.draftId), { scheduleStatus: 'error', lastPublishError: 'Rezultat necunoscut. Verifică starea TikTok înainte de orice reluare.' });
-    });
+    await recoverTikTokStudioJob(adminDb, doc.ref);
   }
   const pending = await jobs().where('status', '==', 'queued').where('runAt', '<=', new Date().toISOString()).orderBy('runAt').limit(1).get();
   for (const doc of pending.docs) {
@@ -79,7 +69,7 @@ export async function drainStudioRenders() {
         const message = error instanceof Error ? error.message : 'Randare eșuată';
         tx.update(doc.ref, { status: 'failed', error: message });
         if (job.kind === 'publish') tx.update(adminDb.collection('agencies').doc(job.agencyId).collection('tiktokPostDrafts').doc(job.draftId), { scheduleStatus: 'error' });
-        if (projectRef && project?.exists && project.data()?.status !== 'ready') tx.update(projectRef, { status: 'error', renderLeaseUntil: null, errorMessage: message });
+        if (projectRef && project?.exists && project.data()?.agencyId === job.agencyId && project.data()?.ownerUid === job.uid && (project.data()?.version || 1) === job.version && project.data()?.status !== 'ready') tx.update(projectRef, { status: 'error', renderLeaseUntil: null, errorMessage: message });
       });
     }
   }
