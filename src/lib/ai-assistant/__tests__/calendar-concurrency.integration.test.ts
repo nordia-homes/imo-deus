@@ -41,6 +41,57 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       return id;
     });
   }
+  function closedRead(tx: any, position: number) {
+    let reads = 0;
+    return new Proxy(tx, { get(target, key) {
+      if (key === 'get') return async (...args: any[]) => {
+        const snapshot = await target.get(...args);
+        if (++reads === position) throw Object.assign(new Error('3 INVALID_ARGUMENT: Transaction is invalid or closed.'), { code: 3 });
+        return snapshot;
+      };
+      const value = Reflect.get(target, key);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+  }
+  it.each([1, 2, 3])('restarts all calendar reads after invalidation at read %s and commits once', async position => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId);
+    const record = { status: 'scheduled', viewingDate: '2030-01-12T10:00:00.000Z', duration: 60, agentId: ctx.uid };
+    let attempts = 0;
+    await db.runTransaction(async tx => {
+      const current = ++attempts === 1 ? closedRead(tx, position) : tx;
+      await assertCalendarSlot(ctx, current, 'viewings', 'new', record);
+      tx.create(agency.collection('viewings').doc('new'), record);
+    }, { maxAttempts: 2 });
+    expect(attempts).toBe(2);
+    expect((await agency.collection('viewings').get()).size).toBe(1);
+    expect((await agency.collection('assistantLocks').doc('calendar').get()).data()?.version).toBe(1);
+  }, 20000);
+  it('retains the transaction attempt limit on persistent invalidation without writing a reservation', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId);
+    let attempts = 0;
+    await expect(db.runTransaction(async tx => {
+      attempts++;
+      await assertCalendarSlot(ctx, closedRead(tx, 2), 'viewings', 'new', { status: 'scheduled', viewingDate: '2030-01-12T10:00:00.000Z', agentId: ctx.uid });
+      tx.create(agency.collection('viewings').doc('new'), { status: 'scheduled' });
+    }, { maxAttempts: 2 })).rejects.toMatchObject({ code: 10 });
+    expect(attempts).toBe(2);
+    expect((await agency.collection('viewings').get()).empty).toBe(true);
+    expect((await agency.collection('assistantLocks').get()).empty).toBe(true);
+  }, 20000);
+  it('rechecks overlap after invalidation and rejects the conflicting reservation', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId);
+    const record = { status: 'scheduled', viewingDate: '2030-01-12T10:00:00.000Z', duration: 60, agentId: ctx.uid };
+    await agency.collection('viewings').doc('existing').set(record);
+    let attempts = 0;
+    await expect(db.runTransaction(async tx => {
+      const current = ++attempts === 1 ? closedRead(tx, 3) : tx;
+      await assertCalendarSlot(ctx, current, 'viewings', 'new', record);
+      tx.create(agency.collection('viewings').doc('new'), record);
+    }, { maxAttempts: 2 })).rejects.toMatchObject({ status: 409 });
+    expect(attempts).toBe(2);
+    expect((await agency.collection('viewings').get()).docs.map(doc => doc.id)).toEqual(['existing']);
+    expect((await agency.collection('assistantLocks').get()).empty).toBe(true);
+  }, 20000);
   it('rejects a stale outcome on real Firestore updateTime and uses tenant-bound watch identities', async () => {
     const ctx = context(), second = context();
     const profiles = [ctx, second].map(c => db.collection('users').doc(c.uid));

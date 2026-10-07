@@ -5,6 +5,19 @@ import { resolveDatetime } from '@/lib/ai-assistant/datetime';
 import { bucharestInputFromIso } from '@/lib/bucharest-time';
 import { CommunicationError } from '@/lib/communications/server';
 
+async function calendarRead<T>(read: () => Promise<T>): Promise<T> {
+  try { return await read(); } catch (error) {
+    // The emulator reports an invalidated transaction as INVALID_ARGUMENT,
+    // which the SDK does not retry. Only normalize this exact read failure:
+    // ABORTED lets runTransaction restart all reads with its bounded backoff.
+    // Never retry a query on the closed transaction or wrap a commit/effect.
+    if (error instanceof Error && 'code' in error && error.code === 3 && /^(?:3 INVALID_ARGUMENT: )?Transaction is invalid or closed\.$/.test(error.message)) {
+      throw Object.assign(new Error(error.message, { cause: error }), { code: 10 });
+    }
+    throw error;
+  }
+}
+
 export function taskInterval(row: Record<string, any>) {
   if (row.status === 'completed' || !row.startTime || !row.dueDate) return null;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(row.dueDate) ? row.dueDate : bucharestInputFromIso(row.dueDate).date;
@@ -20,9 +33,9 @@ export async function assertCalendarSlot(ctx: AssistantContext, tx: Transaction,
   const taskTo = bucharestInputFromIso(new Date(end + 86400000)).date;
   // Keep one read in flight: a rejected read must settle before Firestore can
   // retry this transaction, without other queries using its closed identity.
-  const lock = await tx.get(lockRef);
-  const tasks = await tx.get(collectionFor(ctx, 'tasks').where('dueDate', '>=', taskFrom).where('dueDate', '<', taskTo));
-  const viewings = await tx.get(collectionFor(ctx, 'viewings').where('viewingDate', '>=', new Date(start - 4 * 3600000).toISOString()).where('viewingDate', '<', new Date(end).toISOString()));
+  const lock = await calendarRead(() => tx.get(lockRef));
+  const tasks = await calendarRead(() => tx.get(collectionFor(ctx, 'tasks').where('dueDate', '>=', taskFrom).where('dueDate', '<', taskTo)));
+  const viewings = await calendarRead(() => tx.get(collectionFor(ctx, 'viewings').where('viewingDate', '>=', new Date(start - 4 * 3600000).toISOString()).where('viewingDate', '<', new Date(end).toISOString())));
   const related = (other: Record<string, any>) => row.agentId && other.agentId === row.agentId || row.contactId && other.contactId === row.contactId || row.propertyId && other.propertyId === row.propertyId;
   for (const item of tasks.docs) {
     if (resource === 'tasks' && item.id === id) continue;
