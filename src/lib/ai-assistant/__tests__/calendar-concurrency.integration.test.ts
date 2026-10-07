@@ -31,6 +31,7 @@ import * as insightReports from '../insights';
 import { saveNotificationFeedback } from '../notification-feedback';
 import { createMatchingNotification } from '../matching-notifications';
 import { matchingRevision } from '../matching-revision';
+import { createOwnerWatchNotification } from '../owner-watch-notifications';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -45,6 +46,23 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('deduplicates owner alerts transactionally and withdraws after an exact CRM import', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const listing = db.collection('ownerListings').doc(randomUUID());
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.set({ city: 'Brasov' });
+    await listing.set({ title: 'Synthetic owner', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR', link: `https://example.test/${listing.id}` });
+    const search = searchSchema.parse({ excludeImported: true, priceMax: 120000 });
+    try {
+      const results = await Promise.all([1, 2].map(() => createOwnerWatchNotification(ctx, 'r', 'owner', listing.id, search)));
+      expect(results.map(row => row.status).sort()).toEqual(['created', 'existing']);
+      expect((await reconcileRuleNotifications(ctx, { ids: ['owner'] })).withdrawn).toBe(0);
+      await agency.collection('properties').doc('import').set({ ownerListingUrl: `https://example.test/${listing.id}` });
+      expect(await createOwnerWatchNotification(ctx, 'r', 'new', listing.id, search)).toMatchObject({ status: 'skipped', reasonCode: 'state_changed' });
+      expect((await reconcileRuleNotifications(ctx, { ids: ['owner'] })).withdrawn).toBe(1);
+      expect((await profile.collection('notifications').doc('owner').get()).data()).toMatchObject({ isRead: true, withdrawalReason: 'state_changed' });
+    } finally { await listing.delete(); await db.recursiveDelete(profile); }
+  }, 20000);
   it('creates one matching alert under concurrency and withdraws it after a source edit', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };

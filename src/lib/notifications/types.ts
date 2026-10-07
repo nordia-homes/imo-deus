@@ -71,6 +71,7 @@ export type AppNotification = {
   ruleCondition?: { resource: string; id: string; status: string };
   insightCondition?: { kind: string; id: string; otherId?: string };
   matchingCondition?: { contactId: string; propertyId: string; contactRevision: string; propertyRevision: string };
+  ownerWatchCondition?: { listingId: string; search: Record<string, unknown> };
   automationId?: string;
   feedback?: { value: 'useful' | 'not_useful'; revision: number; updatedAt: string };
 };

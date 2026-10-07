@@ -17,6 +17,7 @@ import { assertNoReplySince } from './reply-stop';
 import { createInsightNotification } from './insight-notifications';
 import { insightQuietDeferral } from './insight-notification-policy';
 import { createMatchingNotification } from './matching-notifications';
+import { createOwnerWatchNotification } from './owner-watch-notifications';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -119,17 +120,13 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         const search = { ...automation.search, source: 'owners' as const, cursor: claim.scanCursor || undefined, limit: 100 };
         result = await searchProperties(ctx, search);
         const page = result as Awaited<ReturnType<typeof searchProperties>>;
-        const notifications = db.collection('users').doc(ctx.uid).collection('notifications');
+        const notificationResults = [];
         for (const row of page.rows) {
-          const ref = notifications.doc(`${claim.id}-${String(row.id)}`);
-          await db.runTransaction(async tx => {
-            await assertAutomationFence(db, tx, ctx);
-            if ((await tx.get(ref)).exists) return;
-            tx.create(ref, { eventId: ref.id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: 'Anunț potrivit căutării salvate', body: String(row.title), actionUrl: '/owner-listings', entityType: 'ownerListing', entityId: row.id, isRead: false, createdAt: now });
-          });
+          notificationResults.push(await createOwnerWatchNotification(ctx, claim.id, `${claim.id}-${String(row.id)}`, String(row.id), search));
         }
+        result = { ...page, notificationResults };
         // Keep an explicit continuation if the corpus exceeds this worker's read budget.
-        if (page.nextCursor) result = { ...page, partial: true, note: 'Monitorizarea a verificat o pagină de rezultate; continuarea este disponibilă în AI Assistant.' };
+        if (page.nextCursor) result = { ...page, notificationResults, partial: true, note: 'Monitorizarea a verificat o pagină de rezultate; continuarea este disponibilă în AI Assistant.' };
       }
       const skipped = Boolean((result as { skipped?: boolean })?.skipped);
       const eventResult = automation.type === 'event_rule' ? result as Awaited<ReturnType<typeof runEventRule>> : null;

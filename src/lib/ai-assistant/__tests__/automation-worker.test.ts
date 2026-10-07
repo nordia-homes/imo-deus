@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn(), canReadResource: vi.fn(() => true) }));
 vi.mock('../actions', () => ({ executeAction: vi.fn(async () => ({ taskId: 'task' })), matchContact: vi.fn() }));
 vi.mock('../insights', () => ({ getInsights: vi.fn() }));
-vi.mock('../search', () => ({ searchProperties: vi.fn() }));
+vi.mock('../search', async importOriginal => ({ ...await importOriginal<typeof import('../search')>(), searchProperties: vi.fn() }));
 vi.mock('@/lib/communications/server', () => ({ getConversation: vi.fn() }));
 vi.mock('@/lib/communications/outbound', () => ({ queueMessage: vi.fn() }));
 vi.mock('../event-rules', () => ({ runEventRule: vi.fn() }));
@@ -15,6 +15,7 @@ import { getResource } from '../access';
 import { runEventRule } from '../event-rules';
 import { getInsights } from '../insights';
 import * as insightNotifications from '../insight-notifications';
+import { searchProperties } from '../search';
 function database(automation: any, patch: any = {}) {
   const job = { id: 'job', agencyId: 'a', actorId: 'u', actorRole: 'agent', createdAt: '2026-01-01T00:00:00.000Z', status: 'active', nextRunAt: '2026-01-01T00:00:00.000Z', automation, ...patch };
   const rows = new Map<string, any>([['assistantAutomationJobs/job', job], ['agencies/a/assistantAutomations/job', { ...job }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
@@ -24,6 +25,18 @@ function database(automation: any, patch: any = {}) {
   const db = { collection: ref, runTransaction: async (callback: any) => { const writes: (() => void)[] = []; const result = await callback({ get: (reference: any) => { if (writes.length) throw new Error('Read after write'); return reference.get(); }, update: (reference: any, value: any) => writes.push(() => rows.set(reference.path, { ...rows.get(reference.path), ...value })), create: (reference: any, value: any) => writes.push(() => rows.set(reference.path, value)) }); writes.forEach(write => write()); return result; } };
   return { db, rows };
 }
+it.each([false, true])('owner worker rechecks fresh listing state after search (changed: %s)', async changed => {
+  const { db, rows } = database({ type: 'owner_watch', nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, search: { scopeKey: 'brasov', priceMax: 120000 } });
+  rows.set('ownerListings/p', { title: 'Live title', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR' });
+  vi.mocked(searchProperties).mockImplementationOnce(async () => {
+    if (changed) rows.set('ownerListings/p', { ...rows.get('ownerListings/p'), price: '200000 EUR' });
+    return { rows: [{ id: 'p', title: 'Old title' }], nextCursor: 'continuation', complete: false } as any;
+  });
+  await drainAssistantAutomations(db as any);
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', scanCursor: 'continuation', lastResult: { partial: true, notificationResults: [{ status: changed ? 'skipped' : 'created' }] } });
+  expect(rows.has('users/u/notifications/job-p')).toBe(!changed);
+  if (!changed) expect(rows.get('users/u/notifications/job-p').body).toBe('Live title');
+});
 const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z', contactId: 'c', description: 'Follow up', maxRuns: 1 };
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });

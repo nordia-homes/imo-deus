@@ -39,7 +39,7 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => {
     const base = { eventId: 'e', recipientId: 'fixture', agencyId: 'a', type: 'ai_assistant', automationId: 'r', category: 'propertyAssignments', priority: 'action_required', body: 'Fixture', actionUrl: '/ai-assistant', entityId: 'c', createdAt: '2026-10-07T09:00:00Z', isRead: false };
-    window.fixtureNotifications = ['Stale', 'Active', 'Legacy', 'Withdrawn'].map(title => ({ ...base, id: title, title, ...(title === 'Stale' ? { insightCondition: { kind: 'task', id: 't' } } : title === 'Active' ? { matchingCondition: { contactId: 'c', propertyId: 'p', contactRevision: 'a'.repeat(64), propertyRevision: 'b'.repeat(64) } } : title !== 'Legacy' ? { ruleCondition: { resource: 'contacts', id: 'c', status: 'Contactat' } } : {}), ...(title === 'Withdrawn' ? { withdrawnAt: '2026-10-07T09:01:00Z' } : {}) }));
+    window.fixtureNotifications = ['Stale', 'Active', 'Legacy', 'Withdrawn'].map(title => ({ ...base, id: title, title, ...(title === 'Stale' ? { insightCondition: { kind: 'task', id: 't' } } : title === 'Active' ? { ownerWatchCondition: { listingId: 'p', search: { source: 'owners', transactionType: 'sale' } } } : title !== 'Legacy' ? { ruleCondition: { resource: 'contacts', id: 'c', status: 'Contactat' } } : {}), ...(title === 'Withdrawn' ? { withdrawnAt: '2026-10-07T09:01:00Z' } : {}) }));
   });
   let fail = true;
   const feedbackRequests = [];

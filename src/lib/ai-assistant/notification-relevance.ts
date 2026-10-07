@@ -3,6 +3,7 @@ import { idSchema } from './contracts';
 import { canReadResource, collectionFor, type AssistantContext } from './access';
 import { insightConditionSchema, readInsightRelevance } from './insight-relevance';
 import { matchingConditionSchema, readMatchingRelevance } from './matching-notifications';
+import { ownerWatchConditionSchema, readOwnerWatchRelevance } from './owner-watch-notifications';
 
 export const ruleConditionSchema = z.object({
   resource: z.enum(['contacts', 'properties', 'viewings', 'sales', 'ownerListingFavorites']),
@@ -26,7 +27,11 @@ export async function reconcileRuleNotifications(ctx: AssistantContext, input: u
       if (!row || row.type !== 'ai_assistant' || row.recipientId !== ctx.uid || row.agencyId !== ctx.agencyId || row.withdrawnAt) return false;
       if (!row.automationId) return false;
       let reason: 'entity_deleted' | 'access_revoked' | 'state_changed' | null;
-      if (row.matchingCondition !== undefined) {
+      if (row.ownerWatchCondition !== undefined) {
+        const condition = ownerWatchConditionSchema.safeParse(row.ownerWatchCondition);
+        if (!condition.success) return false;
+        reason = (await readOwnerWatchRelevance(ctx, tx, condition.data)).reason;
+      } else if (row.matchingCondition !== undefined) {
         const condition = matchingConditionSchema.safeParse(row.matchingCondition);
         if (!condition.success) return false;
         reason = await readMatchingRelevance(ctx, tx, condition.data);
