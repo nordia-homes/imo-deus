@@ -63,6 +63,28 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['expired-plan', 'expired-approval', 'replaced-approval', 'changed-actions'])('does not launch video after %s between steps', async change => {
+    const f = await fixture(); f.ready();
+    const execute = vi.mocked(executeAction).getMockImplementation()!;
+    vi.mocked(executeAction).mockImplementation(async (...args) => {
+      const result = await execute(...args);
+      const saved = (await f.plan.get()).data()!;
+      if (change === 'expired-plan') await f.plan.update({ expiresAt: Date.now() - 1 });
+      if (change === 'expired-approval') await f.plan.update({ approval: { ...saved.approval, expiresAt: Date.now() - 1 } });
+      if (change === 'replaced-approval') await f.plan.update({ approval: { ...saved.approval, userId: 'other' } });
+      if (change === 'changed-actions') {
+        saved.actions[1].body.aiPresenterScript = 'Unapproved replacement';
+        await f.plan.update({ actions: saved.actions });
+      }
+      return result;
+    });
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'failed' });
+    expect((await f.plan.get()).data()).toMatchObject({ status: 'failed', lastStartedStep: 1, results: [{ result: { script: 'Synthetic script.' } }] });
+    expect(executeAction).toHaveBeenCalledTimes(1);
+    expect(invokeOperation).not.toHaveBeenCalled();
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).empty).toBe(true);
+  }, 20000);
   it.each(['pending', 'failed', 'paused'])('cancels an expired %s plan and preserves its existing receipt', async status => {
     const f = await fixture();
     const results = [{ step: 1, kind: 'existing_operation', result: { script: 'Saved script' } }];

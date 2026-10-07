@@ -799,3 +799,13 @@ Expirarea planului împiedică execuția, dar nu mai împiedică anularea unui p
 Tranzacția de preluare recitește acum și utilizatorul, atât pentru pornire cât și pentru anulare: schimbarea agenției, rolului ori ștergerea profilului refuză operația înainte de modificarea planului. Șapte teste de unitate acoperă anularea expirată, refuzul execuției expirate și rolul schimbat. Nouă probe Firestore verifică păstrarea rezultatelor și cele trei modificări concurente de acces pe ambele căi. Probele sunt sintetice și nu se adaugă corpusului original acceptat.
 
 Au trecut 76/76 teste țintite (recuperare și flux asincron), 190/190 teste pe emulator în 17 fișiere, 1234/1234 teste de regresie în 107 fișiere, TypeScript și ESLint. Buildul complet nu a fost repetat; ultimul validat rămâne `b4215e42`. Lotul nu este publicat, producția verificată rămâne `7f2da840`, iar planul integral rămâne deschis.
+
+## 7 octombrie: aprobarea verificată înaintea fiecărui pas nou
+
+Tranzacția care marchează pornirea fiecărui pas verifică acum expirarea planului și aprobarea, atât din snapshotul execuției cât și din documentul curent. Verifică și că acțiunile curente corespund celor aprobate. Expirarea sau modificarea neautorizată oprește planul în failed înaintea următoarei acțiuni, păstrând rezultatele deja salvate și numărul ultimului pas pornit. Cererile de pauză/anulare au prioritate. Expirarea în timpul ultimului pas nu împiedică salvarea rezultatului și finalizarea acestuia; protecția controlează pornirea acțiunilor noi și nu anulează apelurile deja lansate.
+
+Șase teste de unitate acoperă expirarea ceasului, expirarea planului/aprobării, înlocuirea identității aprobării și modificarea acțiunilor. Patru probe Firestore verifică aceleași modificări între scenariu și generarea video: un singur rezultat păstrat, fără apeluri video, assets sau drafturi noi. Acestea sunt probe sintetice, nu scenarii originale noi acceptate din corpus.
+
+Au trecut 82/82 teste țintite, 1240/1240 teste de regresie în 107 fișiere, TypeScript și ESLint. Prima rulare pe emulator a trecut 193/194 probe, inclusiv toate cele 80 ale fluxului media. Testul existent al programărilor independente simultane a reprodus `3 INVALID_ARGUMENT: Transaction is invalid or closed.` Citirile secvențiale din lotul anterior nu au eliminat această intermitență; cauza și remedierea rămân deschise.
+
+Repetarea completă a trecut 194/194 probe pe emulator în 17 fișiere, fără schimbări ale codului sau limitelor testului de calendar. Aceasta nu închide problema intermitentă. Buildul complet nu a fost repetat; ultimul validat rămâne `b4215e42`. Lotul nu este publicat, producția verificată rămâne `7f2da840`, iar planul integral rămâne deschis.

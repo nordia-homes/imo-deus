@@ -8,7 +8,7 @@ import { CommunicationError } from '@/lib/communications/server';
 import { resolveAction } from './dependencies';
 import { bindVerifiedOutputs, restoreVerifiedOutputs } from './verified-outputs';
 import { operations, isReadOperation } from './operations';
-import { approvalEnvelope, validateApproval } from './approval';
+import { approvalEnvelope, payloadHash, validateApproval } from './approval';
 import { telemetryDocument, type AgentEvent, type TurnMetrics } from './telemetry';
 import { VERSIONS } from './models';
 import { sessionSummary } from './context';
@@ -130,7 +130,7 @@ export async function getPlan(ctx: AssistantContext, id: string) {
   if (!(await referencesAllowed(ctx, actionReferences(doc.data()?.actions || [])))) throw new CommunicationError('Accesul la resursele planului a fost revocat.', 403);
   if (!(await referencesAllowed(ctx, doc.data()?.accessRefs || []))) throw new CommunicationError('Accesul la rezultatele planului a fost revocat.', 403);
   const row = doc.data()!;
-  return { ref, revision: doc.updateTime ? `${doc.updateTime.seconds}:${doc.updateTime.nanoseconds}` : null, data: { ...row, id: doc.id, outputType: ['pending', 'running'].includes(row.status) ? 'CONFIRMATION_CARD' : 'ACTION_RESULT', risks: (row.actions || []).map(actionRisk), externalCostNote: (row.actions || []).some((action: any) => action.kind === 'existing_operation' && operations[action.operation]?.external) ? 'Costul extern se verifică în previzualizarea canalului sau campaniei. Bugetele din plan sunt limitele aprobate; o valoare indisponibilă nu înseamnă cost zero.' : undefined } as AssistantPlan & { sessionId: string; expiresAt: number } };
+  return { ref, revision: doc.updateTime ? `${doc.updateTime.seconds}:${doc.updateTime.nanoseconds}` : null, data: { ...row, id: doc.id, outputType: ['pending', 'running'].includes(row.status) ? 'CONFIRMATION_CARD' : 'ACTION_RESULT', risks: (row.actions || []).map(actionRisk), externalCostNote: (row.actions || []).some((action: any) => action.kind === 'existing_operation' && operations[action.operation]?.external) ? 'Costul extern se verifică în previzualizarea canalului sau campaniei. Bugetele din plan sunt limitele aprobate; o valoare indisponibilă nu înseamnă cost zero.' : undefined } as AssistantPlan & { sessionId: string; expiresAt: number; approval?: ReturnType<typeof approvalEnvelope> } };
 }
 export async function saveAssistantMessage(ctx: AssistantContext, sessionId: string, messageId: string, text: string, cards: AssistantCard[] = [], actions: z.infer<typeof actionSchema>[] = []) {
   actions = await bindBusinessRevisions(ctx, await bindAgencyRevisions(ctx, await bindCalendarRevisions(ctx, actions)));
@@ -200,8 +200,18 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
     const fresh = (await tx.get(ref)).data();
     if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running' || fresh.executionId !== executionId) throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
     const now = new Date().toISOString();
-    const next = fresh.cancelRequestedAt ? { status: 'cancelled', completedAt: now, waitUntil: 0 }
+    let next = fresh.cancelRequestedAt ? { status: 'cancelled', completedAt: now, waitUntil: 0 }
       : fresh.pauseRequestedAt ? { status: 'paused', pausedAt: now, waitUntil: 0 } : patch;
+    if (!fresh.cancelRequestedAt && !fresh.pauseRequestedAt && patch.lastStartedStep !== undefined) {
+      try {
+        if (Number(data.expiresAt) < Date.now() || Number(fresh.expiresAt) < Date.now()) throw new Error('Planul a expirat. Cere un plan nou cu date actuale.');
+        validateApproval(data.approval, ctx.uid, ctx.agencyId, id, data.actions);
+        validateApproval(fresh.approval, ctx.uid, ctx.agencyId, id, data.actions);
+        if (payloadHash(fresh.actions || []) !== payloadHash(data.actions)) throw new Error('Acțiunile planului s-au modificat. Cere un plan nou pentru aprobare.');
+      } catch (error) {
+        next = { status: 'failed', waitUntil: 0, error: error instanceof Error ? error.message : 'Aprobarea nu mai este validă.' };
+      }
+    }
     tx.update(ref, next);
     return next;
   });
@@ -250,7 +260,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       // The transaction defines when this step starts. Controls committed before
       // it prevent execution; later controls stop after this in-flight step.
       const gate = await transition({ lastStartedStep: index + 1 });
-      if (gate.status === 'paused' || gate.status === 'cancelled') return { ...data, ...gate, results };
+      if (gate.status === 'paused' || gate.status === 'cancelled' || gate.status === 'failed') return { ...data, ...gate, results };
       const result = await executeAction(ctx, resolved, `${id}-${index}`);
       accessRefs.push(...actionReferences([resolved]));
       if (typeof result?.conversationId === 'string') accessRefs.push({ resource: 'conversations', id: result.conversationId });

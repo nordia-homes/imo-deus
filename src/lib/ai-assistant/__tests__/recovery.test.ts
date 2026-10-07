@@ -76,6 +76,35 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each([1, 3])('handles clock expiry after a receipt in a %s-step plan', async count => {
+    const { ctx, plan } = executionFixture();
+    plan.actions = plan.actions.slice(0, count);
+    plan.expiresAt = Date.now() + 1000;
+    plan.approval = approvalEnvelope('u', 'a', 'p', plan.actions, plan.expiresAt);
+    const clock = vi.spyOn(Date, 'now');
+    try {
+      vi.mocked(executeAction).mockImplementation(async () => {
+        clock.mockReturnValue(plan.expiresAt + 1);
+        return { taskId: 'committed' };
+      });
+      expect(await runPlan(ctx, 'p')).toMatchObject({ status: count === 1 ? 'completed' : 'failed' });
+      expect(plan.results).toHaveLength(1);
+      expect(executeAction).toHaveBeenCalledTimes(1);
+    } finally { clock.mockRestore(); }
+  });
+  it.each(['expired-plan', 'expired-approval', 'replaced-approval', 'changed-actions'])('blocks the next action after %s while preserving the first receipt', async change => {
+    const { ctx, plan } = executionFixture();
+    vi.mocked(executeAction).mockImplementation(async () => {
+      if (change === 'expired-plan') plan.expiresAt = Date.now() - 1;
+      if (change === 'expired-approval') plan.approval.expiresAt = Date.now() - 1;
+      if (change === 'replaced-approval') plan.approval.userId = 'other';
+      if (change === 'changed-actions') plan.actions[1].description = 'Unapproved replacement';
+      return { taskId: 'committed' };
+    });
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status: 'failed', results: [{ result: { taskId: 'committed' } }] });
+    expect(plan.lastStartedStep).toBe(1);
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
   it.each(['pending', 'failed', 'paused'])('cancels an expired %s plan without requiring renewed approval', async status => {
     const { ctx, plan } = executionFixture();
     Object.assign(plan, { status, expiresAt: Date.now() - 60000, approval: null, waitUntil: Date.now() + 60000,
