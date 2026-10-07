@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { storedPreference } from '../preferences';
 const key = 'preferred_timezone', now = 1000;
-const row = { ownerId: 'u', key, value: 'America/New_York', expiresAt: 2000 };
+const row = { ownerId: 'u', key, value: 'Europe/Bucharest', expiresAt: 2000 };
 it('accepts a valid legacy preference without requiring a new schema version', () => {
   expect(storedPreference(row, key, 'u', now)).toEqual({ key, value: row.value });
 });

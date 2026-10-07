@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { timezoneSchema } from './timezone';
 import { zonedInstant, zonedParts } from './zoned-time';
 
 const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 export const briefSettingsShape = {
-  timezone: z.string().max(80).refine(value => { try { new Intl.DateTimeFormat('en', { timeZone: value }); return true; } catch { return false; } }),
+  timezone: timezoneSchema,
   deliveryTime: clock, daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1).max(7),
   quietStart: clock.default('22:00'), quietEnd: clock.default('08:00'), maxItems: z.number().int().min(1).max(10).default(5),
   deliveryChannel: z.enum(['app', 'whatsapp']).default('app'), language: z.literal('ro').default('ro'),

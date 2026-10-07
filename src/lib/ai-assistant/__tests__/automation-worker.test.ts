@@ -266,7 +266,7 @@ it.each(['owner_watch', 'matching_watch'].flatMap(type => ['resume', 'stop', 'qu
   vi.useFakeTimers({ toFake: ['Date'] }); const now = Date.parse('2026-10-07T12:00:00Z'); vi.setSystemTime(now);
   const { db, rows } = database({ type, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1,
     ...(mode === 'stop' ? { stopAfter: new Date(now + 22 * 3600000).toISOString() } : {}),
-    ...(mode === 'quiet' ? { quietHours: { timezone: 'UTC', start: '10:00', end: '12:00' } } : {}),
+    ...(mode === 'quiet' ? { quietHours: { timezone: 'Europe/Bucharest', start: '13:00', end: '15:00' } } : {}),
     ...(type === 'owner_watch' ? { search: { scopeKey: 'brasov' } } : { contactId: 'c' }) }, { scanCursor: 'saved-page' });
   rows.set(`agencies/a/assistantNotificationState/budget-${createHash('sha256').update('u').digest('hex')}`, { actorId: 'u', deliveries: Array(9).fill(now - 3600000) });
   const contact = { status: 'Nou', budget: 150000 }; rows.set('agencies/a/contacts/c', contact);

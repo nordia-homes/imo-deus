@@ -13,8 +13,8 @@ it('rejects quiet-hour delivery and incomplete WhatsApp settings', () => {
   expect(() => validateBriefSettings({ ...settings, deliveryTime: '07:00' })).toThrow();
   expect(() => validateBriefSettings({ ...settings, deliveryChannel: 'whatsapp' })).toThrow();
 });
-it('uses explicit timezone and requires an offset for ambiguous local times', () => {
-  expect(resolveDatetime({ date: '2026-10-06', time: '09:00', timezone: 'America/New_York' }).iso).toBe('2026-10-06T13:00:00.000Z');
+it('uses only Bucharest and requires an offset for ambiguous local times', () => {
+  expect(() => resolveDatetime({ date: '2026-10-06', time: '09:00', timezone: 'America/New_York' })).toThrow('Europe/Bucharest');
   expect(() => resolveDatetime({ date: '2026-10-25', time: '03:30' })).toThrow('ambiguă');
   expect(() => resolveDatetime({ date: '2026-03-29', time: '03:30' })).toThrow('nu există');
   expect(resolveDatetime({ date: '2026-10-25', time: '03:30', utcOffsetMinutes: 120 }).iso).toBe('2026-10-25T01:30:00.000Z');

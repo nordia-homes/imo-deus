@@ -1624,12 +1624,12 @@
     {
       "id": "continuation-110",
       "category": "preference",
-      "name": "fus New York",
+      "name": "respinge fus New York: numai București",
       "input": {
         "key": "preferred_timezone",
         "value": "America/New_York"
       },
-      "expected": true,
+      "expected": false,
       "source": 946
     },
     {

@@ -36,6 +36,7 @@ import { createOwnerWatchNotification } from '../owner-watch-notifications';
 import { notificationTransactionReads } from '../notification-transaction';
 import { readNotificationBudget } from '../notification-budget';
 import { watchNotificationId } from '../watch-notification-id';
+import { zonedParts } from '../zoned-time';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -139,7 +140,7 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
     await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
     await listing.set({ title: 'Synthetic owner', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' });
-    const quiet = { timezone: 'UTC', start: new Date(Date.now() - 3600000).toISOString().slice(11, 16), end: new Date(Date.now() + 3600000).toISOString().slice(11, 16) };
+    const quiet = { timezone: 'Europe/Bucharest', start: zonedParts(new Date(Date.now() - 3600000), 'Europe/Bucharest').time, end: zonedParts(new Date(Date.now() + 3600000), 'Europe/Bucharest').time };
     const deliver = (hours: typeof quiet) => type === 'owner_watch'
       ? createOwnerWatchNotification(ctx, 'r', 'quiet', listing.id, searchSchema.parse({ scopeKey: 'brasov' }), hours)
       : createMatchingNotification(ctx, 'r', 'quiet', 'c', { id: 'p', title: 'Synthetic match', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }, hours);
@@ -713,7 +714,7 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
   it.each([false, true])('defers a one-shot report and rereads sources after quiet hours are disabled (resolved: %s)', async resolved => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const job = db.collection('assistantAutomationJobs').doc(ctx.uid), mirror = agency.collection('assistantAutomations').doc(ctx.uid);
-    const quietHours = { timezone: 'UTC', start: new Date(Date.now() - 3600000).toISOString().slice(11, 16), end: new Date(Date.now() + 3600000).toISOString().slice(11, 16) };
+    const quietHours = { timezone: 'Europe/Bucharest', start: zonedParts(new Date(Date.now() - 3600000), 'Europe/Bucharest').time, end: zonedParts(new Date(Date.now() + 3600000), 'Europe/Bucharest').time };
     const due = '2020-01-01T00:00:00.000Z';
     const data = { id: ctx.uid, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: 'agent', status: 'active', nextRunAt: due, automation: { type: 'insight_report', nextRunAt: due, maxRuns: 1, limit: 5, quietHours } };
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });

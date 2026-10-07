@@ -199,7 +199,8 @@ try {
       assert.equal(await cooldown.inputValue(), '1440');
       await cooldown.fill('60');
       assert.equal(await page.getByLabel('Interval de liniște pentru alerte', { exact: true }).isChecked(), true);
-      await page.getByLabel('Fus orar pentru alerte', { exact: true }).fill('UTC');
+      assert.equal(await page.getByLabel('Fus orar pentru alerte', { exact: true }).inputValue(), 'Europe/Bucharest');
+      assert.equal(await page.getByLabel('Fus orar pentru alerte', { exact: true }).getAttribute('readonly'), '');
       await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Liniște de la', { exact: true }).fill('12:00');
       await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Până la', { exact: true }).fill('13:00');
       await page.screenshot({ path: path.join(output, 'insight-cooldown.png'), fullPage: true });
@@ -233,7 +234,7 @@ try {
       await page.getByText('omisiunile nu prelungesc pauza', { exact: false }).last().waitFor();
     }
     if (['owner_watch', 'matching_watch'].includes(kind)) { assert.deepEqual(prepared.automation.quietHours, { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' }); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
-    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).last().waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).last().waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
+    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).last().waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'Europe/Bucharest', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).last().waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }
@@ -329,11 +330,12 @@ try {
     assert.equal(await toggle.isChecked(), false, 'Legacy watches must not gain quiet hours silently');
     assert.equal(await page.getByLabel('Repetă alertele dacă rezultatul rămâne relevant', { exact: false }).isChecked(), repeatAlerts === true);
     await toggle.check();
-    await page.getByLabel('Fus orar pentru alerte', { exact: true }).fill('UTC');
+    assert.equal(await page.getByLabel('Fus orar pentru alerte', { exact: true }).inputValue(), 'Europe/Bucharest');
+      assert.equal(await page.getByLabel('Fus orar pentru alerte', { exact: true }).getAttribute('readonly'), '');
     await page.getByRole('button', { name: 'Pregătește automatizarea', exact: true }).click();
     await page.getByRole('form', { name: 'Configurare automatizare' }).waitFor({ state: 'detached' });
     const edited = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.kind === 'update_automation' && r.body.actions[0].automationId === 'watch-edit').at(-1).body.actions[0].automation;
-    assert.deepEqual(edited.quietHours, { timezone: 'UTC', start: '22:00', end: '08:00' });
+    assert.deepEqual(edited.quietHours, { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' });
     assert.equal(edited.nextRunAt, watchEdit.automation.nextRunAt);
     assert.equal(edited.repeatAlerts, repeatAlerts === true);
     await page.getByRole('button', { name: 'Istoric', exact: true }).click();

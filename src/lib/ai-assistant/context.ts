@@ -3,14 +3,10 @@ import { normalized, safeData, type AssistantMessage, type AccessReference } fro
 import { collectionFor, referencesAllowed, getResource, type AssistantContext } from './access';
 import { matchingRevision } from './matching-revision';
 import { preferenceKeys, validatePreference, storedPreference } from './preferences';
-import { DEFAULT_TIMEZONE, timezoneSchema } from './timezone';
+import { DEFAULT_TIMEZONE } from './timezone';
 
-export async function preferredTimezone(ctx: AssistantContext) {
-  if (!ctx.adminDb || process.env.JARVIS_MEMORY === 'false') return DEFAULT_TIMEZONE;
-  const id = createHash('sha256').update(`${ctx.uid}:preferred_timezone`).digest('hex').slice(0, 32);
-  const row = (await collectionFor(ctx, 'assistantMemory').doc(id).get()).data();
-  const parsed = timezoneSchema.safeParse(storedPreference(row, 'preferred_timezone', ctx.uid)?.value);
-  return parsed.success ? parsed.data : DEFAULT_TIMEZONE;
+export async function preferredTimezone(_ctx: AssistantContext) {
+  return DEFAULT_TIMEZONE;
 }
 
 export function compressedResult(result: unknown, maxBytes = 14000) {

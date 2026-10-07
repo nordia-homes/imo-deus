@@ -76,7 +76,7 @@ describe('shared report and watch budget', () => {
   });
   it.each(['owner', 'matching'] as const)('does not charge %s for stale data or quiet hours', async kind => {
     const { rows, deliver } = fixture();
-    expect(await deliver(kind, 'quiet', undefined, { timezone: 'UTC', start: '11:00', end: '13:00' })).toMatchObject({ status: 'deferred', reasonCode: 'quiet_hours' });
+    expect(await deliver(kind, 'quiet', undefined, { timezone: 'Europe/Bucharest', start: '14:00', end: '16:00' })).toMatchObject({ status: 'deferred', reasonCode: 'quiet_hours' });
     expect(rows.has(budgetPath())).toBe(false);
     rows.delete(kind === 'owner' ? 'ownerListings/p' : 'agencies/a/properties/p');
     expect(await deliver(kind, 'stale')).toMatchObject({ status: 'skipped', reasonCode: 'entity_deleted' }); expect(rows.has(budgetPath())).toBe(false);

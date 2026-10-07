@@ -98,7 +98,7 @@ it.each(['app', 'whatsapp'] as const)('does not replay a missed local day throug
 });
 it('allows same-local-day catch-up across UTC midnight', async () => {
   const { ctx } = database();
-  const local = { ...settings, timezone: 'America/Los_Angeles', deliveryTime: '16:00', daysOfWeek: [1, 2, 3, 4, 5, 6, 0] };
+  const local = { ...settings, timezone: 'Europe/Bucharest', deliveryTime: '02:00', quietStart: '00:00', quietEnd: '00:00', daysOfWeek: [1, 2, 3, 4, 5, 6, 0] };
   expect(await deliverDailyBrief(ctx, local, new Date('2026-10-07T01:00:00Z'), '2026-10-06T23:00:00Z')).toMatchObject({ status: 'delivered' });
 });
 it('rejects a missed local day even when UTC dates match', async () => {

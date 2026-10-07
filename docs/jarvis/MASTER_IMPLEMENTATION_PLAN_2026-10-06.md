@@ -109,7 +109,7 @@ Dependențe: E1. Prioritate: P0 pentru context; P1 pentru preferințe extinse.
 - Revalidează drepturile, existența și revizia înainte de acțiune. Rezultatele expirate se reîncarcă sau cer clarificare, fără substituirea tacită a „celei de-a doua”.
 - Extinde memoria existentă cu categorie, proveniență, createdAt, versiune, expirare și reguli de contradicție. Preferințele utilizatorului nu sunt instrucțiuni de securitate.
 - Înlocuiește selecția arbitrară a primelor 20 de preferințe cu recuperare relevantă și tratarea corectă a expirării. Testează salvarea, actualizarea și uitarea.
-- Definește prioritatea timpului: timezone explicit în cerere, apoi configurarea utilizatorului, apoi agenția; fallback documentat Europe/Bucharest. Păstrează UTC și interpretarea locală originală.
+- Conform deciziei utilizatorului din 7 octombrie, toate agențiile sunt din România: folosește exclusiv Europe/Bucharest, cu schimbările DST, fără alegere de fus per utilizator sau agenție. Păstrează UTC ca reprezentare a instantelor și interpretarea locală originală.
 
 Fișiere vizate: `context.ts`, `workspace.ts`, `datetime.ts`, `temporal-policy.ts`, `access.ts`, contractele sesiunii și integrarea Voice.
 
@@ -1125,3 +1125,15 @@ Monitorizarea anunțurilor păstrează parcurgerea paginată existentă: entită
 Validări: 1544/1544 teste de regresie în 126 de fișiere și 257/257 probe emulator în 18 fișiere. Cele 11 probe unitare suplimentare acoperă opt-in-ul, compatibilitatea legacy, identitatea execuției, repetarea după pauză, oprirea și reluarea după liniște. Două probe Firestore noi verifică retry-ul după expirare, livrarea concurentă o singură dată, consumul bugetului, istoricul retras, dezactivarea repetării și sursele devenite neeligibile. Suita emulator a fost rerulată după completarea comportamentului de dezactivare și a trecut. UI verifică valoarea implicită, transmiterea în preview și păstrarea atât a configurațiilor legacy, cât și a repetării active la editare. TypeScript, ESLint și paritatea au trecut; rămâne avertismentul preexistent useEffect/load din editor.
 
 Buildul complet a trecut cu TypeScript și 227/227 pagini. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Lotul este validat local; ultima producție verificată rămâne 97ac8248 / build-2026-10-07-002. Planul integral rămâne deschis.
+
+## 7 octombrie: fus unic Europe/Bucharest, conform deciziei utilizatorului
+
+Cerința de prioritate între fusuri din E2 este înlocuită explicit: AI Assistant folosește exclusiv Europe/Bucharest. Extinderea începută pentru fusul agenției a fost eliminată, inclusiv câmpul din setările agenției. Plannerul și preferredTimezone folosesc valoarea fixă; memoria validă nu mai acceptă alte fusuri, iar preferințele legacy incompatibile sunt ignorate la citire.
+
+Contractele de calcul calendaristic, interogări, liniște și Daily Sales Brief resping alte fusuri. Calculul direct resolveDatetime validează și el contractul. Editorul arată București în câmpuri read-only; crearea și editarea trec prin aprobarea existentă. Un document de automatizare legacy cu alt fus este respins la validarea workerului, fără conversia tacită a orei; editarea explicită poate pregăti configurația București pentru confirmare. Nu sunt migrate sau modificate date reale în acest lot.
+
+UTC rămâne formatul de stocare al instantelor; nu este o alternativă de configurare. Europe/Bucharest aplică automat UTC+2 iarna și UTC+3 vara. Orele inexistente sau ambigue la schimbarea sezonieră păstrează verificările existente. Programările salvate și orele ISO cu offset nu sunt rescrise. Versiuni: prompt jarvis-31, tools 44. Producția nu este actualizată în acest lot.
+
+Validări: 257/257 probe emulator au trecut. Regresia generală a trecut 1548 din 1550 probe, identificând două așteptări legacy pentru fusuri americane; după adaptarea lor la cerința nouă, ambele suite afectate au trecut 163/163 probe. Cele șase teste noi acoperă respingerea altor fusuri la intrările asistentului, ignorarea preferințelor incompatibile și diferența vară/iarnă în București. TypeScript, ESLint, UI și paritatea au trecut. Rămâne avertismentul preexistent useEffect/load. Probele sunt sintetice și nu reprezintă acceptarea unor scenarii originale noi; raportul istoric CONTINUATION_ACCEPTANCE nu este rescris ca dovadă a acestui lot.
+
+Buildul complet a trecut cu TypeScript și 227/227 pagini; rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Regula București este implementată și validată local; producția rămâne la ultima versiune verificată 97ac8248 / build-2026-10-07-002.
