@@ -694,3 +694,12 @@ Au trecut 27 de teste noi ale verificatorului și patru probe noi cu plan persis
 
 Validări trecute: 47/47 teste țintite, 127/127 teste pe emulator în 17 fișiere, 1112/1112 teste de regresie în 105 fișiere, TypeScript separat și ESLint. Planul integral și validarea externă rămân deschise; lotul nu este publicat în producție.
 Buildul complet a trecut cu 225 de pagini. Avertismentele Jaeger/standalone sunt cele cunoscute; nu s-a efectuat deployment.
+
+## 7 octombrie: revocarea accesului în timpul recuperării
+
+Continuare E3/E4. `inspectPlan` recitește acum apartenența la agenție și rolul înainte de citirea planului, inclusiv pentru răspunsurile fără mutație. La salvarea reconcilierii, tranzacția citește din nou utilizatorul și proprietarul planului, alături de verificarea existentă a reviziei. Schimbarea agenției sau rolului ori ștergerea utilizatorului între citire și salvare produce 403 fără rescrierea rezultatelor și fără repetarea acțiunilor. Modificarea câmpurilor de profil care nu afectează accesul permite recuperarea.
+
+Trei teste noi de unitate verifică refuzul unui context cu apartenență veche pentru planuri running/unknown/completed. Patru probe noi pe Firestore emulat modifică utilizatorul după citirea ledgerelor și înaintea tranzacției finale: agenție, rol, ștergere și nume. Cazurile de revocare compară întregul document al planului înainte/după, iar toate probele verifică absența relansării acțiunilor.
+
+Validări trecute: 24/24 teste țintite, 131/131 teste pe emulator în 17 fișiere, TypeScript și ESLint. Sunt probe cu furnizori simulați, nu scenarii originale noi acceptate. Planul integral și validarea externă rămân deschise; nu s-a efectuat deployment.
+Regresia generală a trecut 1115/1115 teste în 105 fișiere. Pentru acest lot de autorizare server nu s-a repetat buildul complet; ultimul build complet validat aparține lotului anterior.

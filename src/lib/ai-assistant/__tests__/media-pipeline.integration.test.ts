@@ -145,6 +145,28 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     expect((await f.plan.get()).data()).toMatchObject({ status: 'unknown', results: f.results });
     expect(executeAction).toHaveBeenCalledTimes(4);
   }, 20000);
+  it.each(['agency', 'role', 'deleted', 'profile'])('checks membership atomically when recovery races with a %s change', async change => {
+    const f = await interruptedFixture();
+    const before = (await f.plan.get()).data();
+    const racedDb = new Proxy(db, { get(target, property) {
+      if (property === 'runTransaction') return async (work: any) => {
+        const member = db.collection('users').doc(f.ctx.uid);
+        if (change === 'deleted') await member.delete();
+        else await member.update(change === 'agency' ? { agencyId: 'other' } : change === 'role' ? { role: 'admin' } : { displayName: 'Updated name' });
+        return db.runTransaction(work);
+      };
+      const value = Reflect.get(target, property);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    const recovery = inspectPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan');
+    if (change === 'profile') {
+      expect(await recovery).toMatchObject({ status: 'completed', results: f.results });
+    } else {
+      await expect(recovery).rejects.toMatchObject({ status: 403 });
+      expect((await f.plan.get()).data()).toEqual(before);
+    }
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
   it('refuses to overwrite an intervening same-status plan update during recovery', async () => {
     const f = await interruptedFixture();
     const racedDb = new Proxy(db, { get(target, property) {

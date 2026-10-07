@@ -273,6 +273,9 @@ export async function controlPlan(ctx: AssistantContext, id: string, command: 'p
 
 // Reconcile confirmed ledgers after an interrupted HTTP response; never retry a provider.
 export async function inspectPlan(ctx: AssistantContext, id: string) {
+  const memberRef = ctx.adminDb.collection('users').doc(ctx.uid);
+  const member = await memberRef.get();
+  if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
   const { ref, data, revision } = await getPlan(ctx, id);
   if (!['running', 'unknown'].includes(data.status)) return data;
   const started = Date.parse(String((data as unknown as Record<string, unknown>).startedAt || ''));
@@ -290,7 +293,8 @@ export async function inspectPlan(ctx: AssistantContext, id: string) {
   const status = results.length === data.actions.length ? 'completed' : uncertain || data.status === 'unknown' ? 'unknown' : 'failed';
   const error = status === 'completed' ? null : status === 'unknown' ? 'Rezultatul unei acțiuni externe trebuie verificat în modulul corespunzător. Trimiterea nu se repetă automat.' : 'Execuția a fost întreruptă. Poți relua planul; pașii confirmați nu se repetă.';
   await ctx.adminDb.runTransaction(async tx => {
-    const fresh = await tx.get(ref);
+    const [fresh, currentMember] = await Promise.all([tx.get(ref), tx.get(memberRef)]);
+    if (currentMember.data()?.agencyId !== ctx.agencyId || currentMember.data()?.role !== ctx.role || fresh.data()?.ownerId !== ctx.uid) throw new CommunicationError('Acces revocat.', 403);
     const currentRevision = fresh.updateTime ? `${fresh.updateTime.seconds}:${fresh.updateTime.nanoseconds}` : null;
     if (!revision || currentRevision !== revision || fresh.data()?.status !== data.status || fresh.data()?.startedAt !== (data as any).startedAt) throw new CommunicationError('Starea planului s-a schimbat. Reîncarcă rezultatul.', 409);
     tx.update(ref, { status, results, accessRefs, error, inspectedAt: new Date().toISOString() });

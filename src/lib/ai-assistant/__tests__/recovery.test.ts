@@ -15,10 +15,18 @@ import type { AssistantContext } from '../access';
 function fixture(status: string, ledger?: Record<string, unknown>, recent = false) {
   const plan: any = { ownerId: 'u', sessionId: 'session', status, startedAt: new Date(Date.now() - (recent ? 0 : 20 * 60000)).toISOString(), actions: [{ kind: 'create_contact', name: 'Client', phone: '', email: '', contactType: 'Cumparator' }] };
   const planRef = { id: 'p', get: async () => ({ exists: true, updateTime: { seconds: 100, nanoseconds: 1 }, data: () => structuredClone(plan), id: 'p' }) };
-  const ctx = { uid: 'u', collection: (name: string) => ({ doc: () => name === 'assistantPlans' ? planRef : { get: async () => ({ exists: !!ledger, data: () => ledger }) } }), adminDb: { runTransaction: async (callback: any) => callback({ get: (ref: any) => ref.get(), update: (_: any, patch: any) => Object.assign(plan, patch) }) } } as unknown as AssistantContext;
-  return { ctx, plan };
+  const member: any = { agencyId: 'a', role: 'agent' };
+  const ctx = { uid: 'u', agencyId: 'a', role: 'agent', collection: (name: string) => ({ doc: () => name === 'assistantPlans' ? planRef : { get: async () => ({ exists: !!ledger, data: () => ledger }) } }), adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => member }) }) }), runTransaction: async (callback: any) => callback({ get: (ref: any) => ref.get(), update: (_: any, patch: any) => Object.assign(plan, patch) }) } } as unknown as AssistantContext;
+  return { ctx, plan, member };
 }
 describe('interrupted plan recovery', () => {
+  it.each(['running', 'unknown', 'completed'])('refuses stale membership before inspecting a %s plan', async status => {
+    const { ctx, plan, member } = fixture(status);
+    member.agencyId = 'other';
+    await expect(inspectPlan(ctx, 'p')).rejects.toMatchObject({ status: 403 });
+    expect(plan).not.toHaveProperty('inspectedAt');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('keeps a recent running plan intact', async () => {
     const { ctx, plan } = fixture('running', undefined, true);
     expect((await inspectPlan(ctx, 'p')).status).toBe('running');
