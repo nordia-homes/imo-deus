@@ -28,6 +28,59 @@ function fixture(testCase: typeof cases[number]) {
   return { rows, path, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as any, card: { id: 'card', title: 'Priority', ...testCase.card } };
 }
 describe('shared insight conditions and transactional delivery', () => {
+  it('caps distinct alerts across reports, expires a rolling window, and keeps omission receipts', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); const now = Date.parse('2026-10-07T10:00:00Z'); vi.setSystemTime(now);
+    const { ctx, rows, card } = fixture(cases[1]);
+    for (let i = 0; i < 11; i++) rows.set(`agencies/a/tasks/t${i}`, { ...cases[1].live });
+    for (let i = 0; i < 10; i++) {
+      vi.setSystemTime(now + i * 60000);
+      expect(await createInsightNotification(ctx, `report-${i}`, `n${i}`, { ...card, taskId: `t${i}` })).toMatchObject({ status: 'created' });
+    }
+    const extra = { ...card, taskId: 't10' };
+    expect(await createInsightNotification(ctx, 'another', 'n10', extra)).toMatchObject({ status: 'skipped', reasonCode: 'notification_cap', limit: 10, nextEligibleAt: '2026-10-08T10:00:00.000Z' });
+    const budgetKey = [...rows.keys()].find(key => key.includes('/budget-'))!;
+    expect(rows.get(budgetKey).deliveries).toHaveLength(10);
+    vi.setSystemTime(now + 86400000 - 1);
+    expect(await createInsightNotification(ctx, 'another', 'too-early', extra)).toMatchObject({ reasonCode: 'notification_cap' });
+    vi.setSystemTime(now + 86400000);
+    expect(await createInsightNotification(ctx, 'another', 'n10', extra)).toMatchObject({ reasonCode: 'notification_cap' });
+    expect(await createInsightNotification(ctx, 'another', 'new-run', extra)).toMatchObject({ status: 'created' });
+    expect(rows.get(budgetKey).deliveries).toHaveLength(10);
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(11);
+  });
+  it('counts only committed new alerts, retaining capacity usage after withdrawal', async () => {
+    const { ctx, rows, path, card } = fixture(cases[1]);
+    await createInsightNotification(ctx, 'r', 'n', card);
+    await createInsightNotification(ctx, 'r', 'n', card);
+    await createInsightNotification(ctx, 'r', 'cooldown', card);
+    rows.set(path, { ...cases[1].live, status: 'completed' });
+    await createInsightNotification(ctx, 'r', 'resolved', card);
+    await reconcileRuleNotifications(ctx, { ids: ['n'] });
+    const budget = [...rows.entries()].find(([key]) => key.includes('/budget-'))![1];
+    expect(budget.deliveries).toHaveLength(1);
+    expect(rows.get('users/u/notifications/n').withdrawnAt).toBeTruthy();
+  });
+  it('isolates notification capacity by actor and agency', async () => {
+    const { ctx, rows, card } = fixture(cases[0]);
+    await createInsightNotification(ctx, 'r', 'n', card);
+    const budgetKey = [...rows.keys()].find(key => key.includes('/budget-'))!;
+    rows.set(budgetKey, { actorId: 'u', deliveries: Array(10).fill(Date.now()) });
+    rows.set('agencies/a/contacts/other', { ...cases[0].live });
+    expect(await createInsightNotification(ctx, 'r', 'capped', { ...card, contactId: 'other' })).toMatchObject({ reasonCode: 'notification_cap' });
+    rows.set('users/v', { agencyId: 'a', role: 'agent' });
+    expect(await createInsightNotification({ ...ctx, uid: 'v' }, 'r', 'v', card)).toMatchObject({ status: 'created' });
+    rows.set('users/u', { agencyId: 'b', role: 'agent' }); rows.set('agencies/b/contacts/c', { ...cases[0].live });
+    expect(await createInsightNotification({ ...ctx, agencyId: 'b' }, 'r', 'b', card)).toMatchObject({ status: 'created' });
+  });
+  it.each([null, ['bad'], Array(11).fill(1), [Date.now() + 86400000]])('fails closed for invalid capacity history: %j', async deliveries => {
+    const { ctx, rows, card } = fixture(cases[1]);
+    await createInsightNotification(ctx, 'r', 'n', card);
+    const budgetKey = [...rows.keys()].find(key => key.includes('/budget-'))!;
+    rows.set(budgetKey, { deliveries });
+    rows.set('agencies/a/tasks/other', { ...cases[1].live });
+    await expect(createInsightNotification(ctx, 'r', 'other', { ...card, taskId: 'other' })).rejects.toThrow('plafonului');
+    expect(rows.has('users/u/notifications/other')).toBe(false);
+  });
   it('rechecks quiet hours after transaction reads and leaves the effect resumable', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T18:59:59Z'));
     const { ctx, rows, card } = fixture(cases[1]);

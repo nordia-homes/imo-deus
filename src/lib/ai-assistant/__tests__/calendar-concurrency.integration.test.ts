@@ -429,7 +429,8 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect(results.filter(result => result.status === 'created')).toHaveLength(1);
       expect(results.filter(result => result.reasonCode === 'cooldown')).toHaveLength(1);
       expect((await profile.collection('notifications').get()).size).toBe(1);
-      const states = await agency.collection('assistantNotificationState').get();
+      const stateSnapshot = await agency.collection('assistantNotificationState').get();
+      const states = { docs: stateSnapshot.docs.filter(doc => !doc.id.startsWith('budget-')), size: stateSnapshot.docs.filter(doc => !doc.id.startsWith('budget-')).length };
       expect(states.size).toBe(1);
       const suppressedId = results[0].status === 'skipped' ? 1 : 2;
       const expiredAt = new Date(Date.now() - 3600000).toISOString();
@@ -440,6 +441,43 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await profile.collection('notifications').get()).size).toBe(2);
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
+  it('serializes the last capacity slot across concurrent reports for different priorities', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    try {
+      for (let i = 0; i < 11; i++) await agency.collection('tasks').doc(`t${i}`).set({ status: 'open', agentId: ctx.uid, dueDate: '2020-01-01' });
+      const send = (i: number) => createInsightNotification(ctx, `report-${i}`, `notification-${i}`, { id: `task-t${i}`, title: 'Overdue', taskId: `t${i}` });
+      for (let i = 0; i < 9; i++) expect(await send(i)).toMatchObject({ status: 'created' });
+      const results = await Promise.all([send(9), send(10)]);
+      expect(results.filter(row => row.status === 'created')).toHaveLength(1);
+      expect(results.filter(row => row.reasonCode === 'notification_cap')).toHaveLength(1);
+      expect((await profile.collection('notifications').get()).size).toBe(10);
+      const budget = (await agency.collection('assistantNotificationState').get()).docs.find(doc => doc.id.startsWith('budget-'))!;
+      expect(budget.data().deliveries).toHaveLength(10);
+      const omitted = results[0].reasonCode === 'notification_cap' ? 9 : 10;
+      await budget.ref.update({ deliveries: [] });
+      expect(await send(omitted)).toMatchObject({ reasonCode: 'notification_cap' });
+      expect(await createInsightNotification(ctx, 'new-run', 'new-run', { id: `task-t${omitted}`, taskId: `t${omitted}`, title: 'Still overdue' })).toMatchObject({ status: 'created' });
+    } finally { await db.recursiveDelete(profile); }
+  }, 30000);
+  it('records capacity omissions in worker audit without queuing a deferred backlog', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const job = db.collection('assistantAutomationJobs').doc(ctx.uid), mirror = agency.collection('assistantAutomations').doc(ctx.uid);
+    const due = '2020-01-01T00:00:00.000Z';
+    const data = { id: ctx.uid, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: 'agent', status: 'active', nextRunAt: due, automation: { type: 'insight_report', nextRunAt: due, maxRuns: 1, limit: 30 } };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    for (let i = 0; i < 11; i++) await agency.collection('tasks').doc(`t${i}`).set({ description: 'Overdue', status: 'open', agentId: ctx.uid, dueDate: due });
+    await job.set(data); await mirror.set(data);
+    try {
+      await drainAssistantAutomations(db as any);
+      const result = (await job.get()).data()!;
+      expect(result).toMatchObject({ status: 'completed', runCount: 1, nextRunAt: null });
+      expect(result.lastResult.notificationResults.filter((row: any) => row.reasonCode === 'notification_cap')).toHaveLength(1);
+      expect((await profile.collection('notifications').get()).size).toBe(10);
+      const audit = await mirror.collection('audit').get();
+      expect(audit.docs[0].data().result.notificationResults.some((row: any) => row.reasonCode === 'notification_cap')).toBe(true);
+    } finally { await job.delete(); await db.recursiveDelete(profile); }
+  }, 30000);
   it('keeps repeat-report cooldown evidence in the worker audit', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const job = db.collection('assistantAutomationJobs').doc(ctx.uid), mirror = agency.collection('assistantAutomations').doc(ctx.uid);

@@ -2,6 +2,16 @@ import { z } from 'zod';
 import { timezoneSchema } from './timezone';
 
 export const insightCooldownMinutesSchema = z.number().int().min(30).max(43200).default(1440);
+export const INSIGHT_NOTIFICATION_LIMIT = 10;
+export const INSIGHT_NOTIFICATION_WINDOW_MS = 24 * 60 * 60 * 1000;
+export const INSIGHT_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte în ultimele 24 de ore, cumulat pentru tine în această agenție. Alertele peste plafon sunt omise; următoarea execuție reevaluează prioritățile.';
+
+export function insightNotificationBudget(value: unknown, now: number) {
+  const parsed = z.array(z.number().int().nonnegative()).max(INSIGHT_NOTIFICATION_LIMIT).safeParse(value);
+  if (!parsed.success || !Number.isFinite(now) || parsed.data.some(at => at > now)) throw new Error('Istoricul plafonului de notificări nu poate fi verificat.');
+  const deliveries = parsed.data.filter(at => at > now - INSIGHT_NOTIFICATION_WINDOW_MS).sort((a, b) => a - b);
+  return { deliveries, nextEligibleAt: deliveries.length >= INSIGHT_NOTIFICATION_LIMIT ? new Date(deliveries[0] + INSIGHT_NOTIFICATION_WINDOW_MS).toISOString() : null };
+}
 const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 export const insightQuietHoursSchema = z.object({ timezone: timezoneSchema, start: clock, end: clock }).strict();
 export type InsightQuietHours = z.infer<typeof insightQuietHoursSchema>;
