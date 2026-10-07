@@ -20,6 +20,18 @@ function fixture(status: string, ledger?: Record<string, unknown>, recent = fals
   return { ctx, plan, member };
 }
 describe('interrupted plan recovery', () => {
+  it.each(['pause', 'cancel', 'both'].flatMap(command => ['completed', 'missing', 'unknown'].map(receipt => ({ command, receipt }))))('preserves $command with a $receipt receipt during recovery', async ({ command, receipt }) => {
+    const { ctx, plan } = fixture('running', receipt === 'missing' ? undefined : { status: receipt, result: { contactId: 'c' } });
+    if (command !== 'cancel') plan.pauseRequestedAt = new Date().toISOString();
+    if (command !== 'pause') plan.cancelRequestedAt = new Date().toISOString();
+    const status = receipt === 'unknown' ? 'unknown' : command === 'pause' ? 'paused' : 'cancelled';
+    expect(await inspectPlan(ctx, 'p')).toMatchObject({ status });
+    expect(plan.status).toBe(status);
+    expect(plan.results).toHaveLength(receipt === 'completed' ? 1 : 0);
+    if (receipt !== 'unknown') expect(plan.waitUntil).toBe(0);
+    else await expect(controlPlan(ctx, 'p', 'resume')).rejects.toThrow('nu este în pauză');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it.each(['running', 'unknown', 'completed'])('refuses stale membership before inspecting a %s plan', async status => {
     const { ctx, plan, member } = fixture(status);
     member.agencyId = 'other';

@@ -751,3 +751,11 @@ Aceeași regulă se aplică trecerii în așteptare, rezultatului incert și che
 
 Au trecut 27/27 teste țintite, 1194/1194 teste de regresie în 107 fișiere, 152/152 teste pe emulator în 17 fișiere, TypeScript, ESLint și verificarea manifestului (180 operații, 40 acțiuni native, 46 fișiere UI). Probele sunt sintetice și nu se adaugă corpusului original acceptat. Lotul nu este publicat; planul integral rămâne deschis.
 Buildul complet cumulativ a trecut, inclusiv verificarea TypeScript și generarea celor 225 de pagini. Au rămas avertismentele cunoscute pentru exporterul opțional Jaeger și absența folderului standalone Playwright la copiere. Producția verificată rămâne `7f2da840`.
+
+## 7 octombrie: cererile de oprire la recuperarea execuției
+
+Recuperarea unui plan întrerupt respectă acum pauza sau anularea deja cerută atunci când receipt-urile permit stabilirea rezultatului execuției. Nu mai înlocuiește oprirea cu completed ori failed. Anularea are prioritate față de pauză, iar rezultatele confirmate și legăturile media verificate sunt păstrate. O pauză recuperată poate fi reluată explicit fără repetarea pașilor confirmați.
+
+Efectele cu rezultat incert păstrează starea unknown și cer reconciliere, inclusiv în prezența unei cereri de oprire. Aceasta evită transformarea unei acțiuni externe incerte într-un plan paused care ar putea fi reluat. Cererile rămân salvate pentru verificarea ulterioară; oprirea nu certifică anularea unui efect extern. Verificarea reviziei Firestore refuză rezultatul recuperării dacă o cerere nouă apare între citire și tranzacția finală.
+
+Nouă teste de unitate acoperă cererile pause/cancel/ambele cu receipt completed/lipsă/unknown. Nouă probe Firestore verifică păstrarea rezultatelor media, refuzul reluării incerte, continuarea fără duplicare și cererile concurente. Au trecut 36/36 teste țintite, 1203/1203 teste de regresie în 107 fișiere, 161/161 pe emulator în 17 fișiere, TypeScript și ESLint. Probele folosesc date și provideri simulați; nu sunt scenarii originale noi acceptate. Buildul complet nu a fost repetat pentru această modificare server; ultimul build complet validat este `b4215e42`. Lotul nu este publicat, producția verificată rămâne `7f2da840`, iar planul integral rămâne deschis.

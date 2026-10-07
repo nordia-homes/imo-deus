@@ -194,6 +194,38 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     await f.plan.update({ status: 'unknown' });
     return { ...f, results };
   }
+  it.each(['pause', 'cancel', 'both'].flatMap(command => [false, true].map(uncertain => ({ command, uncertain }))))('recovers $command without replaying media effects (uncertain=$uncertain)', async ({ command, uncertain }) => {
+    const f = await interruptedFixture();
+    const flags = { ...(command !== 'cancel' ? { pauseRequestedAt: new Date().toISOString() } : {}), ...(command !== 'pause' ? { cancelRequestedAt: new Date().toISOString() } : {}) };
+    await f.plan.update(flags);
+    if (uncertain) await f.agency.collection('assistantExecutions').doc('plan-3').update({ status: 'unknown' });
+    const status = uncertain ? 'unknown' : command === 'pause' ? 'paused' : 'cancelled';
+    expect(await inspectPlan(f.ctx, 'plan')).toMatchObject({ status });
+    expect((await f.plan.get()).data()).toMatchObject({ status, ...flags });
+    expect((await f.plan.get()).data()?.results).toEqual(uncertain ? f.results.slice(0, 3) : f.results);
+    if (uncertain) {
+      await expect(controlPlan(f.ctx, 'plan', 'resume')).rejects.toMatchObject({ status: 409 });
+      await expect(runPlan(f.ctx, 'plan')).rejects.toMatchObject({ status: 409 });
+    } else if (command === 'pause') {
+      await controlPlan(f.ctx, 'plan', 'resume');
+      expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed' });
+    }
+    expect(executeAction).toHaveBeenCalledTimes(4);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).size).toBe(1);
+  }, 20000);
+  it.each(['pause', 'cancel', 'both'])('preserves a concurrent %s request during recovery', async command => {
+    const f = await interruptedFixture();
+    const flags = { ...(command !== 'cancel' ? { pauseRequestedAt: new Date().toISOString() } : {}), ...(command !== 'pause' ? { cancelRequestedAt: new Date().toISOString() } : {}) };
+    const racedDb = new Proxy(db, { get(target, property) {
+      if (property === 'runTransaction') return async (work: any) => { await f.plan.update(flags); return db.runTransaction(work); };
+      const value = Reflect.get(target, property);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    await expect(inspectPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan')).rejects.toMatchObject({ status: 409 });
+    expect((await f.plan.get()).data()).toMatchObject({ status: 'unknown', ...flags, results: f.results });
+    expect(await inspectPlan(f.ctx, 'plan')).toMatchObject({ status: command === 'pause' ? 'paused' : 'cancelled' });
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
   it('recovers verified media bindings from matching receipts without rerunning the pipeline', async () => {
     const f = await interruptedFixture();
     expect(await inspectPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', results: f.results });
