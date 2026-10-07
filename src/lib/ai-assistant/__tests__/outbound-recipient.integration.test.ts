@@ -46,7 +46,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const envelope = approvalEnvelope(uid, agencyId, 'fixture-plan', actions, Date.now() + 60000);
     validateApproval(envelope, uid, agencyId, 'fixture-plan', actions);
     const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
-    const input = { ...action.body, requestId: randomUUID() };
+    const input: Record<string, any> = { ...action.body, requestId: randomUUID() };
     return { actor, conversation, ref, input, actions, envelope };
   }
   it('resolves the second real matching result to its client conversation before preparing and queuing the message', async () => {
@@ -59,7 +59,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const summary = { selections: [{ messageId: 'matching', source: 'crm', resultSetId, orderedIds: rows.map(row => row.id) }] };
     const selected = await resolveMatchingRecipient(ctx, summary, { resultSetId, position: 2 });
     expect(selected).toMatchObject({ contactId: 'contact', conversationId: f.ref.id, eligibilityChecked: false, rows: [{ id: rows[1].id, matchScore: rows[1].matchScore }] });
-    const actions = await bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: selected.conversationId! }, query: {}, body: { text: `Vă propun ${selected.rows[0].title}.`, matchingSelection: selected.matchingSelection } }]);
+    const actions = await bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: selected.conversationId! }, query: {}, body: { text: `Vă propun ${(selected.rows[0] as Record<string, any>).title}.`, matchingSelection: selected.matchingSelection } }]);
     validateApproval(approvalEnvelope(f.actor.uid, f.actor.agencyId, 'matching-send', actions, Date.now() + 60000), f.actor.uid, f.actor.agencyId, 'matching-send', actions);
     const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
     await queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() });
@@ -76,7 +76,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const matchingSelection = { resultSetId: 'selection', propertyId: 'selected', contactId: 'contact', propertyRevision: matchingRevision(property), contactRevision: matchingRevision(contact) };
     const actions = await bindBusinessRevisions({ ...f.actor, adminDb: db } as any, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { text: 'Oferta aleasă: 120000 EUR.', matchingSelection } }]);
     const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
-    return { ...f, propertyRef, contactRef, setRef, input: { ...action.body, requestId: randomUUID() } };
+    return { ...f, propertyRef, contactRef, setRef, input: { ...action.body, requestId: randomUUID() } as Record<string, any> };
   }
   const matchingChanges = ['price', 'inactive', 'contact', 'expired', 'owner', 'membership'] as const;
   async function changeMatching(f: Awaited<ReturnType<typeof matchingFixture>>, change: typeof matchingChanges[number]) {

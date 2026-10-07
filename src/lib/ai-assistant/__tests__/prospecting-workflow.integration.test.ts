@@ -66,7 +66,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.plan.mockResolvedValue({ data: { status: 'completed', actions, results } });
     const outcome = await readPlanOutcomes(ctx, 'plan');
     expect(outcome).toMatchObject({ outcome: { state: 'COMPLETED', confirmed: 2 }, pollAfterMs: null });
-    expect(outcome.rows.every(row => row.businessStatus === 'added_to_prospecting')).toBe(true);
+    expect(outcome.rows.every(row => 'businessStatus' in row && row.businessStatus === 'added_to_prospecting')).toBe(true);
     expect(JSON.stringify(outcome)).not.toContain('ownerPhone');
     const favorite = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites').doc(ids[2]);
     await favorite.update({ isFavoriteActive: false });

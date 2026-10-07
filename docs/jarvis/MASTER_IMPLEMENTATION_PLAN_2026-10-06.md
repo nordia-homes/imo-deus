@@ -582,3 +582,17 @@ Testele noi acoperă sursa autorizată, citirea comună pentru același draft, p
 Validări trecute: 979/979 teste în 102 fișiere (Jarvis, comunicări și TikTok), incluzând cele 134 de scenarii deterministe existente; ESLint, contractele generate, manifestul de paritate și proba Chromium. Sunt 9 cazuri noi în suitele de pregătire și programare. Testele tranzacționale ale acestui lot folosesc stocare simulată; emulatorul nu a fost rerulat.
 
 Build-ul final a trecut cu TypeScript și 225 pagini; rămân avertismentele locale cunoscute Jaeger, Tailwind și standalone. Nu este o dovadă de deployment.
+
+## 7 octombrie: aprobare și programare TikTok pe emulatorul Firestore
+
+Continuare E4, cu noua suită `tiktok-schedule.integration.test.ts`, inclusă în runnerul standard `test:jarvis:rules`. Pregătirea reviziei, previzualizarea și validarea payloadului aprobat folosesc codul real; serviciile de programare/anulare și workerul Studio folosesc tranzacții Firestore reale într-un proiect demo izolat.
+
+Cele nouă probe acoperă două programări simultane și doi workeri simultani (o singură invocare a publisherului simulat), interdicția pornirii înainte de ora programată, modificarea textului/video-ului/contului între aprobare și programare fără scrieri, schimbarea conținutului după queue fără retry, anularea durabilă și refuzul altui autor, revocarea apartenenței și păstrarea rezultatului unui claim înlocuit atât la succes, cât și la eroarea publisherului.
+
+Prima rulare a depășit timeoutul implicit de cinci secunde numai în proba concurentă. Limita acelui test a fost extinsă la 30 de secunde; rerularea a trecut în aproximativ zece secunde, cu aserțiunile de unicitate păstrate. Nu au fost schimbate limitele sau comportamentul runtime.
+
+Limite: publisherul TikTok este simulat în această suită; tranzacția internă a publisherului, transferul media și confirmarea furnizorului nu sunt certificate de aceste probe. Ora este mutată în fixture doar pentru a face jobul scadent, fără a aștepta o oră. Nu s-au trimis postări reale. Etapa consolidează dovezile de integrare și nu declară închis întregul flux pilot, corpusul live sau planul integral. Nu s-a publicat un nou deployment.
+
+Suita completă de emulator a trecut 87/87 teste în 16 fișiere. Verificarea separată TypeScript a identificat și tipări necorespunzătoare în fixtures mai vechi și o parametrizare Vitest Facebook care despacheta lista de grupuri ca argumente. Tabelul de cazuri a fost corectat să transmită lista integrală; toate cele 28 de teste Facebook au trecut după corecție. Ajustările celorlalte fixtures clarifică tipurile și verificarea prezenței statusului, fără schimbarea codului runtime.
+
+Verificarea finală TypeScript (	sc --noEmit --incremental) și ESLint au trecut. Acest lot schimbă exclusiv testele, runnerul și documentația; buildul aplicației din etapa precedentă nu a fost rerulat.

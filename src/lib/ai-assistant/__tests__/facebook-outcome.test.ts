@@ -9,7 +9,7 @@ it.each(['scheduled', 'queued', 'running', 'cooldown', 'completed'])('confirms s
 it.each(['id', 'agencyId', 'ownerUid', 'propertyId', 'connectionId'])('rejects mismatched %s', field => {
   expect(facebookOutcome(actor, 'j', body, { ...job, [field]: 'other' })).toMatchObject({ executionState: 'unknown', completionSatisfied: false, watchable: false });
 });
-it.each([[], [{ url: urls[0] }], [{ url: urls[0] }, { url: urls[0] }], [{ url: urls[0] }, { url: 'extra' }], [null, {}]])('rejects incomplete, duplicate and malformed groups %j', groups => {
+it.each([[], [{ url: urls[0] }], [{ url: urls[0] }, { url: urls[0] }], [{ url: urls[0] }, { url: 'extra' }], [null, {}]].map(groups => ({ groups })))('rejects incomplete, duplicate and malformed groups %j', ({ groups }) => {
   expect(facebookOutcome(actor, 'j', body, { ...job, groups }).completionSatisfied).toBe(false);
 });
 it('normalizes approved duplicates like the creation handler but refuses duplicate saved groups', () => {
