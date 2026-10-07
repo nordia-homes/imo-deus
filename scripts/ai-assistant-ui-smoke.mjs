@@ -85,7 +85,7 @@ try {
       const card = { type: 'results', source: body.query.source, title: body.query.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', search: body.query, rows, complete: true };
       result = { rows, complete: true, nextCursor: null, message: message('Rezultate verificate.', [card]) };
     } else throw new Error('Unexpected fixture request: ' + JSON.stringify(body));
-    if (watchEdit && url.pathname.endsWith('/automations') && !url.searchParams.has('id')) result = { rows: [watchEdit], nextCursor: null };
+    if (watchEdit && url.pathname.endsWith('/automations')) result = url.searchParams.has('id') ? { rows: [{ id: 'cap-run', action: 'run', occurredAt: '2026-10-07', status: 'active', result: { status: 'deferred', reasonCode: 'notification_cap', notificationResults: [{ status: 'deferred', reasonCode: 'notification_cap' }] } }], nextCursor: null } : { rows: [watchEdit], nextCursor: null };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -217,8 +217,9 @@ try {
     if (kind === 'legal_source_watch') { assert.deepEqual(prepared.automation.sourceUrls, ['https://www.ancpi.ro/fixture.pdf']); assert.equal(prepared.automation.intervalMinutes, 1440); }
     if (kind === 'owner_watch') { assert.equal(prepared.automation.search.source, 'owners'); assert.equal(prepared.automation.search.priceMax, 130000); }
     if (kind === 'matching_watch') assert.equal(prepared.automation.threshold, 75);
+    if (['owner_watch', 'matching_watch'].includes(kind)) await page.getByText('Maximum 10 alerte din rapoarte și monitorizări', { exact: false }).last().waitFor();
     if (['owner_watch', 'matching_watch'].includes(kind)) { assert.deepEqual(prepared.automation.quietHours, { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' }); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
-    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
+    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).last().waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }
@@ -312,6 +313,9 @@ try {
     const edited = requests.filter(r => r.body?.kind === 'prepare' && r.body.actions?.[0]?.kind === 'update_automation' && r.body.actions[0].automationId === 'watch-edit').at(-1).body.actions[0].automation;
     assert.deepEqual(edited.quietHours, { timezone: 'UTC', start: '22:00', end: '08:00' });
     assert.equal(edited.nextRunAt, watchEdit.automation.nextRunAt);
+    await page.getByRole('button', { name: 'Istoric', exact: true }).click();
+    await page.getByText(/Monitorizare amânată: plafonul comun de 10 alerte/).waitFor();
+    assert.equal(await page.getByText(/Unele alerte au fost omise: plafonul comun/).count(), 0);
     if (type === 'owner_watch') for (const key of ['scopeKey', 'yearMin', 'unknownYear', 'excludeImported', 'roomsAny']) assert.deepEqual(edited.search[key], watchEdit.automation.search[key]);
   }
   assert.deepEqual(errors, []);

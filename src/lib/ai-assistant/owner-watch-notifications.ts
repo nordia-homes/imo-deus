@@ -1,3 +1,4 @@
+import { notificationTransactionReads } from './notification-transaction';
 import { z } from 'zod';
 import type { Transaction } from 'firebase-admin/firestore';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
@@ -8,6 +9,7 @@ import { idSchema, searchSchema, type AssistantSearch } from './contracts';
 import { searchMatches } from './search';
 import { importedListingIds } from './imported-listings';
 import { insightQuietDeferral, type InsightQuietHours } from './insight-notification-policy';
+import { readNotificationBudget } from './notification-budget';
 
 export const ownerWatchConditionSchema = z.object({ listingId: idSchema, search: searchSchema.omit({ cursor: true, limit: true }).extend({ source: z.literal('owners') }) }).strict();
 
@@ -26,7 +28,8 @@ export async function createOwnerWatchNotification(ctx: AssistantContext, automa
   const { cursor: _cursor, limit: _limit, ...criteria } = search;
   const condition = ownerWatchConditionSchema.parse({ listingId, search: { ...criteria, source: 'owners' } });
   const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(id);
-  return ctx.adminDb.runTransaction(async tx => {
+  return ctx.adminDb.runTransaction(async rawTx => {
+    const tx = notificationTransactionReads(rawTx);
     await assertAutomationFence(ctx.adminDb, tx, ctx);
     const member = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid));
     if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Permisiunile automatizării s-au schimbat.');
@@ -35,8 +38,11 @@ export async function createOwnerWatchNotification(ctx: AssistantContext, automa
     if (quiet) return quiet;
     const fresh = await readOwnerWatchRelevance(ctx, tx, condition);
     if (fresh.reason) return { status: 'skipped', reasonCode: fresh.reason };
-    const quietAfterReads = insightQuietDeferral(quietHours);
+    const budget = await readNotificationBudget(ctx, tx);
+    const quietAfterReads = insightQuietDeferral(quietHours, budget.now);
     if (quietAfterReads) return quietAfterReads;
+    if (budget.deferred) return budget.deferred;
+    budget.consume();
     tx.create(ref, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: 'Anunț potrivit căutării salvate', body: String(fresh.row!.title || ''), actionUrl: '/owner-listings', entityType: 'ownerListing', entityId: listingId, isRead: false, createdAt: new Date().toISOString(), automationId, ownerWatchCondition: condition });
     return { status: 'created', notificationId: id };
   });

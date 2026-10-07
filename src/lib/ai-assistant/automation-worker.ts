@@ -136,7 +136,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       }
       const skipped = Boolean((result as { skipped?: boolean })?.skipped);
       const eventResult = automation.type === 'event_rule' ? result as Awaited<ReturnType<typeof runEventRule>> : null;
-      const deferredUntil = 'quietHours' in automation && (result as { reasonCode?: string })?.reasonCode === 'quiet_hours' ? (result as { deferredUntil: string }).deferredUntil : null;
+      const deferredUntil = ['insight_report', 'owner_watch', 'matching_watch'].includes(automation.type) && (result as { status?: string })?.status === 'deferred' && ['quiet_hours', 'notification_cap'].includes((result as { reasonCode: string }).reasonCode) ? (result as { deferredUntil: string }).deferredUntil : null;
       const nextRun = deferredUntil ? (automation.stopAfter && Date.parse(automation.stopAfter) < Date.parse(deferredUntil) ? automation.stopAfter : deferredUntil) : !skipped && !eventResult?.limitReached && run < automation.maxRuns
         ? automation.type === 'daily_sales_brief'
           ? nextBriefRun(briefSettingsSchema.parse(Object.fromEntries(Object.keys(briefSettingsSchema.shape).map(key => [key, (automation as Record<string, unknown>)[key]]))))

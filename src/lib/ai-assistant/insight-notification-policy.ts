@@ -4,7 +4,9 @@ import { timezoneSchema } from './timezone';
 export const insightCooldownMinutesSchema = z.number().int().min(30).max(43200).default(1440);
 export const INSIGHT_NOTIFICATION_LIMIT = 10;
 export const INSIGHT_NOTIFICATION_WINDOW_MS = 24 * 60 * 60 * 1000;
-export const INSIGHT_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte în ultimele 24 de ore, cumulat pentru tine în această agenție. Alertele peste plafon sunt omise; următoarea execuție reevaluează prioritățile.';
+export const INSIGHT_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte și monitorizări în ultimele 24 de ore, cumulat pentru tine în această agenție. Alertele peste plafon sunt omise; următoarea execuție reevaluează prioritățile.';
+
+export const WATCH_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte și monitorizări în ultimele 24 de ore, cumulat pentru tine în această agenție. La atingerea plafonului, monitorizarea se amână fără să consume o execuție și reverifică datele la reluare. Termenul de oprire rămâne aplicabil.';
 
 export function insightNotificationBudget(value: unknown, now: number) {
   const parsed = z.array(z.number().int().nonnegative()).max(INSIGHT_NOTIFICATION_LIMIT).safeParse(value);

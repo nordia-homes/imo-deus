@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
@@ -32,6 +32,8 @@ import { saveNotificationFeedback } from '../notification-feedback';
 import { createMatchingNotification } from '../matching-notifications';
 import { matchingRevision } from '../matching-revision';
 import { createOwnerWatchNotification } from '../owner-watch-notifications';
+import { notificationTransactionReads } from '../notification-transaction';
+import { readNotificationBudget } from '../notification-budget';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -80,6 +82,29 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       const results = await Promise.all([1, 2].map(() => deliver({ ...quiet, end: quiet.start })));
       expect(results.map(row => row.status).sort()).toEqual(['created', 'existing']);
       expect((await profile.collection('notifications').get()).size).toBe(1);
+    } finally { await listing.delete(); await db.recursiveDelete(profile); }
+  }, 20000);
+  it('serializes the last shared budget slot across reports and both watch types', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const listing = db.collection('ownerListings').doc(randomUUID());
+    const budget = agency.collection('assistantNotificationState').doc(`budget-${createHash('sha256').update(ctx.uid).digest('hex')}`);
+    const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
+    await agency.collection('tasks').doc('t').set({ status: 'open', agentId: ctx.uid, dueDate: '2020-01-01' });
+    await listing.set({ title: 'Synthetic owner', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' });
+    await budget.set({ actorId: ctx.uid, deliveries: Array(9).fill(Date.now()) });
+    try {
+      const results = await Promise.all([
+        createOwnerWatchNotification(ctx, 'r', 'owner-cap', listing.id, searchSchema.parse({ scopeKey: 'brasov' })),
+        createMatchingNotification(ctx, 'r', 'matching-cap', 'c', { id: 'p', title: 'Synthetic match', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }),
+        createInsightNotification(ctx, 'r', 'report-cap', { id: 'task-t', taskId: 't', title: 'Task' }),
+      ]);
+      expect(results.filter(row => row.status === 'created')).toHaveLength(1);
+      expect(results.filter(row => row.reasonCode === 'notification_cap')).toHaveLength(2);
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      expect((await budget.get()).data()!.deliveries).toHaveLength(10);
+      for (const result of results.slice(0, 2)) if (result.status !== 'created') expect(result).toMatchObject({ status: 'deferred', deferredUntil: expect.any(String) });
     } finally { await listing.delete(); await db.recursiveDelete(profile); }
   }, 20000);
   it('creates one matching alert under concurrency and withdraws it after a source edit', async () => {
@@ -142,6 +167,23 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       return typeof value === 'function' ? value.bind(target) : value;
     } });
   }
+  it.each([false, true])('restarts notification reads within the SDK attempt limit (persistent: %s)', async persistent => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId);
+    let attempts = 0;
+    const run = db.runTransaction(async raw => {
+      const tx = notificationTransactionReads(++attempts === 1 || persistent ? closedRead(raw, 2) : raw);
+      await tx.get(agency);
+      const budget = await readNotificationBudget(ctx, tx);
+      budget.consume();
+      tx.create(agency.collection('assistantAutomations').doc('retry-evidence'), { verified: true });
+    }, { maxAttempts: 2 });
+    if (persistent) await expect(run).rejects.toMatchObject({ code: 10 }); else await run;
+    expect(attempts).toBe(2);
+    expect((await agency.collection('assistantAutomations').get()).size).toBe(persistent ? 0 : 1);
+    const states = await agency.collection('assistantNotificationState').get();
+    expect(states.size).toBe(persistent ? 0 : 1);
+    if (!persistent) expect(states.docs[0].data().deliveries).toHaveLength(1);
+  }, 20000);
   it.each([1, 2, 3])('restarts all calendar reads after invalidation at read %s and commits once', async position => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId);
     const record = { status: 'scheduled', viewingDate: '2030-01-12T10:00:00.000Z', duration: 60, agentId: ctx.uid };

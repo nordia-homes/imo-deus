@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn(), canReadResource: vi.fn(() => true) }));
 vi.mock('../actions', () => ({ executeAction: vi.fn(async () => ({ taskId: 'task' })), matchContact: vi.fn() }));
@@ -226,4 +227,34 @@ it.each(['owner_watch', 'matching_watch'] as const)('resumes %s mid-page without
   expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 1, status: 'completed', ...(type === 'owner_watch' ? { scanCursor: 'next-page' } : {}) });
   expect([...rows.keys()].filter(key => key.includes('/notifications/')).sort()).toEqual(['users/u/notifications/job-a', 'users/u/notifications/job-c']);
   if (type === 'owner_watch') expect(vi.mocked(searchProperties).mock.calls.at(-1)?.[1].cursor).toBe('saved-page');
+});
+
+it.each(['owner_watch', 'matching_watch'].flatMap(type => ['resume', 'stop', 'quiet'].map(mode => [type, mode])))('preserves %s progress after a shared cap (%s)', async (type, mode) => {
+  vi.useFakeTimers({ toFake: ['Date'] }); const now = Date.parse('2026-10-07T12:00:00Z'); vi.setSystemTime(now);
+  const { db, rows } = database({ type, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1,
+    ...(mode === 'stop' ? { stopAfter: new Date(now + 22 * 3600000).toISOString() } : {}),
+    ...(mode === 'quiet' ? { quietHours: { timezone: 'UTC', start: '10:00', end: '12:00' } } : {}),
+    ...(type === 'owner_watch' ? { search: { scopeKey: 'brasov' } } : { contactId: 'c' }) }, { scanCursor: 'saved-page' });
+  rows.set(`agencies/a/assistantNotificationState/budget-${createHash('sha256').update('u').digest('hex')}`, { actorId: 'u', deliveries: Array(9).fill(now - 3600000) });
+  const contact = { status: 'Nou', budget: 150000 }; rows.set('agencies/a/contacts/c', contact);
+  const cards = ['a', 'b', 'c'].map(id => {
+    const source = { title: id, status: 'Activ', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR' };
+    rows.set(type === 'owner_watch' ? `ownerListings/${id}` : `agencies/a/properties/${id}`, source);
+    return { id, title: id, matchScore: 90, sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(source) };
+  });
+  if (type === 'owner_watch') vi.mocked(searchProperties).mockResolvedValue({ rows: cards, nextCursor: 'next-page', complete: false } as any);
+  else vi.mocked(matchContact).mockResolvedValue(cards as any);
+  await drainAssistantAutomations(db as any);
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 0, status: 'active', nextRunAt: new Date(now + (mode === 'stop' ? 22 : 23) * 3600000).toISOString(), lastResult: { reasonCode: 'notification_cap' }, ...(type === 'owner_watch' ? { scanCursor: 'saved-page' } : {}) });
+  expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toEqual(['users/u/notifications/job-a']);
+  rows.delete(type === 'owner_watch' ? 'ownerListings/b' : 'agencies/a/properties/b');
+  vi.setSystemTime(now + (mode === 'stop' ? 22 : 23) * 3600000);
+  await drainAssistantAutomations(db as any);
+  if (mode === 'quiet') {
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ runCount: 0, status: 'active', lastResult: { reasonCode: 'quiet_hours' }, ...(type === 'owner_watch' ? { scanCursor: 'saved-page' } : {}) });
+    vi.setSystemTime(now + 24 * 3600000); await drainAssistantAutomations(db as any);
+  }
+  expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', runCount: 1 });
+  expect([...rows.keys()].filter(key => key.includes('/notifications/')).sort()).toEqual(mode === 'stop' ? ['users/u/notifications/job-a'] : ['users/u/notifications/job-a', 'users/u/notifications/job-c']);
+  if (type === 'owner_watch' && mode !== 'stop') expect(vi.mocked(searchProperties).mock.calls.at(-1)?.[1].cursor).toBe('saved-page');
 });
