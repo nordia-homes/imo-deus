@@ -1215,3 +1215,15 @@ Versiunea uneltelor este 50. Nu se modifică mecanismul de lansare, providerul, 
 Validări: regresia finală a trecut 1646/1646 teste în 132 de fișiere. Cele 22 de probe noi acoperă identitatea, telefonul, receiptul, finalizarea prin webhook, programarea și execuția prea devreme, plus integrarea în plan fără mutații. Prima rulare generală a intersectat ultima editare și a avut un eșec; suita țintită a trecut 61/61 și apoi regresia integrală a fost relansată cu succes pe codul final. ESLint și paritatea au trecut. Nu s-au apelat provideri reali, nu s-au relansat emulatorul sau UI și nu s-au adăugat scenarii originale la cele 63 acceptate.
 
 Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut. Dovezile producției rămân neschimbate.
+
+## 8 octombrie: dependențe tipizate între pașii planului
+
+Resolverul de dependențe verifică acum că identificatorul din receipt are același tip cu cel cerut de câmpul destinație. Un propertyId nu poate fi legat de contactId și un assetId nu poate fi legat de projectId, chiar dacă valorile lor textuale coincid. Numărul pasului din rezultatul salvat trebuie să corespundă poziției referite, atunci când acel câmp există. Protecția se aplică și URL-ului media verificat și scenariului generat. Rezultatele legacy fără numărul explicit păstrează compatibilitatea pozițională existentă.
+
+ID-urile rezultatului respectă contractul comun de lungime și cale și nu pot rămâne referințe @step nerezolvate. Listele de ID-uri pentru tipurile deja cunoscute sunt rezolvate cu același control, inclusiv propertyIds și sourceAssetIds; ordinea și ID-urile literale sunt păstrate. Aceasta permite folosirea unei proprietăți nou create într-o listă de recomandări fără a permite referințe către clienți în acea listă. Propunerea aprobată nu este modificată în loc, iar revalidările ulterioare ale accesului și reviziilor rămân active.
+
+Versiunea uneltelor este 51. Modificarea întărește E1/E3, fără să certifice toate criteriile semantice de business sau să închidă planul integral. Nu au fost schimbate producția, regula București, providerii sau aprobările domeniilor.
+
+Validări: 1659/1659 teste de regresie în 132 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 13 probe noi acoperă tipurile incompatibile, numerele de pas invalide, ID-urile prea lungi sau nerezolvate, ordinea listelor și legarea URL-urilor/scenariilor. Fluxurile async-pipeline și verified-outputs au trecut în regresie. Providerii sunt simulați; emulatorul și UI nu au fost relansate pentru această transformare a parametrilor. Nu au fost acceptate scenarii originale suplimentare prin aceste teste sintetice.
+
+Buildul complet a trecut cu 227/227 pagini. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Dovezile ultimei publicări în producție nu au fost modificate.
