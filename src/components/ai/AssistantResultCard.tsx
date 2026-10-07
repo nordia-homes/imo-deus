@@ -357,7 +357,7 @@ export function AssistantResultCard({
                         .filter(
                           ([key, value]) =>
                             typeof value === "number" &&
-                            !["id", "version"].includes(key),
+                            !["id", "version", "feedbackOrder"].includes(key),
                         )
                         .slice(0, 6)
                         .map(([key, value]) => (
@@ -375,6 +375,7 @@ export function AssistantResultCard({
                                   matched: "Potriviri",
                                   sent: "Trimise",
                                   failed: "Erori",
+                                  priority: "Scor de urgență",
                                 } as Record<string, string>
                               )[key] || key}
                             </span>

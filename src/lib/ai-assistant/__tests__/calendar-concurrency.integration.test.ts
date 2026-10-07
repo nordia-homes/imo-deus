@@ -62,6 +62,10 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       await db.collection('agencies').doc(ctx.agencyId).collection('tasks').doc('t').set({ status: 'open', agentId: ctx.uid, dueDate: '2020-01-01' });
       const report = await insightReports.getInsights(ctx);
       expect(report.rows.find(row => row.taskId === 't')).toMatchObject({ previousFeedback: value, priority: 80, feedbackNote: expect.any(String) });
+      await db.collection('agencies').doc(ctx.agencyId).collection('tasks').doc('a').set({ status: 'open', agentId: ctx.uid, dueDate: '2020-01-01' });
+      const ranked = await insightReports.getInsights(ctx, 1);
+      expect(ranked.rows[0].taskId).toBe(value === 'useful' ? 't' : 'a');
+      expect(ranked.feedbackRankingComplete).toBe(true);
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
   async function reserve(ctx: AssistantContext, kind: 'tasks' | 'viewings', id: string, record: Record<string, unknown>) {

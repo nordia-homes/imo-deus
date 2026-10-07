@@ -1,6 +1,7 @@
 import { readResource, type AssistantContext } from './access';
 import { insightStillRelevant } from './insight-relevance';
 import { annotateInsightFeedback } from './insight-feedback';
+import { FEEDBACK_CANDIDATE_LIMIT, rankInsightFeedback } from './insight-ranking';
 
 export const insightSources = ['contacts', 'tasks', 'viewings', 'sales', 'conversations', 'metaCampaignDrafts', 'tiktokPostDrafts', 'aiOutreachCalls'] as const;
 async function inspect(ctx: AssistantContext, resource: typeof insightSources[number], deadline: number) {
@@ -57,11 +58,13 @@ export async function getInsights(ctx: AssistantContext, limit = 10) {
     row.reason ||= String(row.id).startsWith('conflict-') ? 'Intervale suprapuse pentru aceeași persoană sau proprietate.' : String(row.id).startsWith('task-') ? 'Sarcină deschisă, atribuită ție, cu termen depășit.' : 'Lead nou, fără interacțiuni înregistrate, mai vechi de 48 de ore.';
   }
   rows.sort((a, b) => Number(b.priority) - Number(a.priority) || String(a.id).localeCompare(String(b.id)));
-  const selected = await annotateInsightFeedback(ctx, rows.slice(0, limit));
+  const candidates = await annotateInsightFeedback(ctx, rows.slice(0, FEEDBACK_CANDIDATE_LIMIT));
+  const selected = rankInsightFeedback(candidates).slice(0, limit);
   const inspectionComplete = [...pages.values()].every(page => page.complete), complete = inspectionComplete && analysisComplete;
   return { rows: selected, complete, inspectionComplete, analysisComplete, actionableCount, resultLimitReached: actionableCount > selected.length,
     sources: [...insightSources], coverage: Object.fromEntries([...pages].map(([source, page]) => [source, { complete: page.complete, inspected: page.rows.length }])),
-    ranking: 'Reguli deterministe de urgență operațională; nu scoruri de matching sau impact financiar estimat.',
+    feedbackRankingComplete: rows.length <= FEEDBACK_CANDIDATE_LIMIT, feedbackInspectedPriorities: candidates.length,
+    ranking: `Urgența operațională are prioritate. Feedbackul din ultimele 30 de zile departajează numai scoruri egale sub 90, în primii ${FEEDBACK_CANDIDATE_LIMIT} de candidați ordonați după urgență și ID. ${rows.length > FEEDBACK_CANDIDATE_LIMIT ? 'Personalizare parțială: există priorități în afara acestui lot.' : 'Toate prioritățile identificate au fost evaluate pentru departajare.'}`,
     inspectedRecords: [...pages.values()].reduce((sum, page) => sum + page.rows.length, 0), checkedAt: new Date().toISOString(),
     continuations: Object.fromEntries([...pages].map(([source, page]) => [source, page.cursor])),
     note: complete ? 'Analiză din toate paginile citite pe server, independent de paginarea interfeței. Date observate în timpul verificării; nu reprezintă un snapshot tranzacțional al agenției.' : 'Analiză parțială la limita de citire/calcul. Folosește query_records/read cu continuarea pentru raportul complet; numărul afișat nu este totalul agenției.' };

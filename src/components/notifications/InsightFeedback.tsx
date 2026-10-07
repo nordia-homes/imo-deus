@@ -25,7 +25,7 @@ export function InsightFeedback({ item }: { item: AppNotification }) {
   if (!user || item.recipientId !== user.uid || item.type !== 'ai_assistant' || !item.insightCondition || !item.automationId) return null;
   return <div className="px-3 py-2 text-xs" role="group" aria-label={`Feedback pentru ${item.title}`}>
     <div className="flex flex-wrap items-center gap-2"><span>A fost utilă alerta?</span>{(['useful', 'not_useful'] as const).map(value => <button key={value} type="button" disabled={busy || feedback?.value === value} aria-pressed={feedback?.value === value} onClick={() => void submit(value)} className="rounded-md border px-3 py-1.5 aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:font-semibold disabled:opacity-60">{value === 'useful' ? 'Utilă' : 'Neutilă'}</button>)}<span role="status">{busy ? 'Se salvează…' : error ? '' : feedback ? 'Feedback salvat.' : ''}</span></div>
-    <p className="mt-1 text-muted-foreground">Evaluarea este păstrată pentru revizuire; nu oprește automat alertele.</p>
+    <p className="mt-1 text-muted-foreground">Timp de 30 de zile, evaluarea poate departaja priorități cu aceeași urgență. Nu oprește alertele și nu reordonează incidentele urgente.</p>
     {error && <p role="alert" className="mt-1 text-destructive">{error}</p>}
   </div>;
 }

@@ -1,10 +1,19 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn() }));
-vi.mock('../insight-feedback', () => ({ annotateInsightFeedback: async (_ctx: unknown, rows: unknown[]) => rows }));
+vi.mock('../insight-feedback', () => ({ annotateInsightFeedback: vi.fn(async (_ctx: unknown, rows: unknown[]) => rows) }));
+import { annotateInsightFeedback } from '../insight-feedback';
 import { readResource } from '../access';
 import { getInsights } from '../insights';
 import type { AssistantContext } from '../access';
-beforeEach(() => { vi.mocked(readResource).mockReset(); });
+beforeEach(() => { vi.mocked(readResource).mockReset(); vi.mocked(annotateInsightFeedback).mockImplementation(async (_ctx, rows) => rows); });
+it('applies feedback before the output limit and discloses bounded candidate coverage', async () => {
+  vi.mocked(readResource).mockImplementation(async (_ctx, input) => ({ rows: input.resource === 'tasks' ? Array.from({ length: 201 }, (_, i) => ({ id: `t${String(i).padStart(3, '0')}`, status: 'open', agentId: 'u', dueDate: '2020-01-01' })) : [], complete: true, nextCursor: null }));
+  vi.mocked(annotateInsightFeedback).mockImplementation(async (_ctx, rows) => rows.map(row => row.taskId === 't199' ? { ...row, previousFeedback: 'useful', feedbackUpdatedAt: new Date().toISOString() } : row));
+  const report = await getInsights({ uid: 'u' } as AssistantContext, 1);
+  expect(report.rows[0]).toMatchObject({ taskId: 't199', priority: 80 });
+  expect(report).toMatchObject({ actionableCount: 201, resultLimitReached: true, complete: true, feedbackRankingComplete: false, feedbackInspectedPriorities: 200 });
+  expect(report.ranking).toContain('Personalizare parțială');
+});
 it.each(['resolved', 'spam', 'snoozed'])('excludes %s conversations even with stale needsReply', async status => {
   vi.mocked(readResource).mockImplementation(async (_ctx, input) => ({ rows: input.resource === 'conversations' ? [{ id: 'c', status, needsReply: true, lastInboundAt: '2020-01-01' }] : [], complete: true, nextCursor: null }));
   expect((await getInsights({ uid: 'u' } as AssistantContext)).rows).toEqual([]);
