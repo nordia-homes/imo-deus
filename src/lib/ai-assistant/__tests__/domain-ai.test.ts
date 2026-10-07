@@ -10,6 +10,15 @@ const usage = { inputTokens: 100, outputTokens: 50, cachedTokens: 0, cacheWriteT
 const ctx = { agencyId: 'a', uid: 'u', role: 'agent' } as AssistantContext;
 afterEach(() => vi.clearAllMocks());
 describe('domain AI uses the same model policy and accounts auxiliary cost', () => {
+  it('rejects text with invalid provider usage and prevents another call on the shared budget', async () => {
+    const budget = new AgentBudget();
+    const respond = vi.fn(async () => ({ text: 'Nu trebuie confirmat.', intentStatus: 'answer' as const, calls: [], items: [], status: 'completed' as const, usage: { ...usage, inputTokens: NaN }, latencyMs: 10 }));
+    const shared = { ...ctx, agentBudget: budget };
+    await expect(assistantDomainText(shared, 'Scrie', {}, { id: 'fixture', respond })).rejects.toThrow('date de consum invalide');
+    await expect(assistantDomainText(shared, 'Încearcă din nou', {}, { id: 'fixture', respond })).rejects.toThrow('date de consum invalide');
+    expect(respond).toHaveBeenCalledTimes(1);
+    expect(budget.snapshot()).toMatchObject({ tokens: 0, costUsd: 0 });
+  });
   it('uses Luna, strips secrets and debits the shared parent budget', async () => {
     const budget = new AgentBudget(), respond = vi.fn<(request: ProviderRequest) => Promise<ProviderResult>>(async () => ({ text: 'Scenariu', intentStatus: 'answer', calls: [], items: [], status: 'completed', usage, latencyMs: 10 }));
     expect(await assistantDomainText({ ...ctx, agentBudget: budget }, 'Scrie un scenariu', { title: 'Apartament', apiKey: 'DO_NOT_SEND' }, { id: 'fixture', respond })).toBe('Scenariu');

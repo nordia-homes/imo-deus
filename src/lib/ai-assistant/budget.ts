@@ -13,16 +13,33 @@ export function requestReservation(instructions: string, input: unknown[], tools
 }
 export class AgentBudget {
   readonly started = Date.now(); steps = 0; calls = 0; tokens = 0; cost = 0;
+  private invalidAccounting = false;
   constructor(readonly limits: AgentLimits = DEFAULT_LIMITS) {}
-  check() { if (Date.now() - this.started >= this.limits.maxExecutionMs) throw new BudgetExceeded('timp'); if (this.tokens >= this.limits.maxTokens) throw new BudgetExceeded('tokens'); if (this.cost >= this.limits.maxCost) throw new BudgetExceeded('cost'); }
+  private validateAccounting(counts: number[], costs: number[] = []) {
+    if (this.invalidAccounting || counts.some(value => !Number.isSafeInteger(value) || value < 0) || costs.some(value => !Number.isFinite(value) || value < 0)) {
+      this.invalidAccounting = true;
+      throw new BudgetExceeded('date de consum invalide; execuția necesită verificare');
+    }
+  }
+  check() { this.validateAccounting([this.tokens], [this.cost]); if (Date.now() - this.started >= this.limits.maxExecutionMs) throw new BudgetExceeded('timp'); if (this.tokens >= this.limits.maxTokens) throw new BudgetExceeded('tokens'); if (this.cost >= this.limits.maxCost) throw new BudgetExceeded('cost'); }
   step() { this.check(); if (++this.steps > this.limits.maxSteps) throw new BudgetExceeded('pași'); }
   tool() { this.check(); if (++this.calls > this.limits.maxToolCalls) throw new BudgetExceeded('unelte'); }
   reserve(model: ModelId, inputBytes: number, output: number) {
     this.check(); // UTF-8 byte count is an upper bound, not chars/4 pretending exact tokenization.
+    this.validateAccounting([inputBytes, output]);
     if (this.tokens + inputBytes + output > this.limits.maxTokens) throw new BudgetExceeded('tokens');
     if (this.cost + usageCost(model, { inputTokens: inputBytes, outputTokens: output, cachedTokens: 0, cacheWriteTokens: inputBytes, estimated: true }) > this.limits.maxCost) throw new BudgetExceeded('cost');
   }
-  record(model: ModelId, usage: ModelUsage) { this.tokens += usage.inputTokens + usage.outputTokens; this.cost += usageCost(model, usage); this.check(); }
-  recordAuxiliary(costUsd: number, tokens: number) { this.cost += Math.max(0, costUsd); this.tokens += Math.max(0, tokens); this.check(); }
+  record(model: ModelId, usage: ModelUsage) {
+    this.validateAccounting([usage.inputTokens, usage.outputTokens, usage.cachedTokens, usage.cacheWriteTokens]);
+    const cost = usageCost(model, usage);
+    this.recordAuxiliary(cost, usage.inputTokens + usage.outputTokens);
+  }
+  recordAuxiliary(costUsd: number, tokens: number) {
+    // Validate before mutation; invalid provider data must never turn a ceiling
+    // comparison into NaN or subtract from previously accounted usage.
+    this.validateAccounting([tokens, this.tokens + tokens], [costUsd, this.cost + costUsd]);
+    this.cost += costUsd; this.tokens += tokens; this.check();
+  }
   snapshot() { return { steps: this.steps, toolCalls: this.calls, tokens: this.tokens, costUsd: this.cost, elapsedMs: Date.now() - this.started }; }
 }

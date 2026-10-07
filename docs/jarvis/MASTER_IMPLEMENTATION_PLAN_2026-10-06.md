@@ -1247,3 +1247,13 @@ Numărul explicit al pasului din receipt trebuie să corespundă poziției pentr
 Versiunea uneltelor este 53. Au trecut 50/50 teste țintite și 1681/1681 teste de regresie în 132 de fișiere, ESLint și paritatea. Cele 10 probe noi verifică contradicțiile în ambele ordini, numerele de pas incompatibile, duplicatele identice, separarea pașilor și outputs invalide. Fluxul async video/import/draft a trecut în regresie. Nu s-au folosit provideri reali și nu s-au relansat emulatorul sau UI pentru această verificare pură a dovezilor. Numărul scenariilor originale acceptate rămâne 63. Producția și regula București nu au fost schimbate; planul integral rămâne deschis.
 
 Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Dovezile producției nu au fost modificate.
+
+## 8 octombrie: contabilizare numerică validă a consumului AI
+
+AgentBudget respinge consumul de tokens care nu este întreg sigur și nenegativ și costurile care nu sunt finite și nenegative. Verificarea se aplică rezervărilor, consumului modelelor, câmpurilor de cache și consumului auxiliar. Totalurile rezultate sunt validate înainte de mutație; un raport invalid nu scade consumul anterior și nu transformă totalurile în NaN. Sumele zero și costurile fracționare valide rămân permise.
+
+După o eroare de contabilizare, instanța comună de buget blochează verificările, pașii, uneltele și apelurile următoare, chiar dacă eroarea a fost prinsă de un apelant. Consumul valid care atinge plafonul este contabilizat înainte de oprire. Testul de integrare pentru generarea textului confirmă că un răspuns cu usage invalid este respins și că a doua cerere pe același buget nu apelează providerul.
+
+Versiunea uneltelor este 54. Au trecut 1696/1696 teste de regresie în 133 de fișiere, ESLint și paritatea, inclusiv cele 15 teste noi. Providerii sunt simulați; emulatorul și UI nu au fost relansate pentru acest control numeric în memorie. Acest lot nu implementează bugetul cumulativ persistent pe obiectiv, rezervările distribuite sau reconcilierea financiară a unui raport invalid. Aceste cerințe E3 rămân deschise. Regula București, producția și cele 63 de scenarii originale acceptate rămân neschimbate.
+
+Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut; dovezile producției nu au fost modificate.
