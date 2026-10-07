@@ -63,6 +63,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['pause', 'cancel', 'both'].flatMap(command => [false, true].map(external => ({ command, external }))))('preserves $command through a failed action (external=$external)', async ({ command, external }) => {
+    const f = await fixture(); f.ready();
+    if (!external) {
+      const actions = [actionSchema.parse({ kind: 'create_task', description: 'Synthetic task', dueDate: '2027-01-01' })];
+      const expiresAt = Date.now() + 3600000;
+      await f.plan.update({ actions, approval: approvalEnvelope(f.ctx.uid, f.ctx.agencyId, 'plan', actions, expiresAt), expiresAt });
+    }
+    const execute = vi.mocked(executeAction).getMockImplementation()!;
+    vi.mocked(executeAction).mockImplementation(async (...args) => {
+      const action = args[1];
+      if (external && action.kind === 'existing_operation' && action.operation !== 'video_create') return execute(...args);
+      if (command !== 'cancel') await controlPlan(f.ctx, 'plan', 'pause');
+      if (command !== 'pause') await runPlan(f.ctx, 'plan', true);
+      throw new Error('Synthetic interrupted response');
+    });
+    const status = external ? 'unknown' : command === 'pause' ? 'paused' : 'cancelled';
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status, error: 'Synthetic interrupted response' });
+    expect((await f.plan.get()).data()?.status).toBe(status);
+    expect((await f.plan.get()).data()?.results).toHaveLength(external ? 1 : 0);
+    if (external) {
+      await expect(controlPlan(f.ctx, 'plan', 'resume')).rejects.toMatchObject({ status: 409 });
+      await expect(runPlan(f.ctx, 'plan')).rejects.toMatchObject({ status: 409 });
+    } else expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status });
+    expect(executeAction).toHaveBeenCalledTimes(external ? 2 : 1);
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).empty).toBe(true);
+  }, 20000);
   it.each(['pause', 'cancel', 'both'].flatMap(command => ['ready', 'waiting', 'unknown'].map(outcome => ({ command, outcome }))))('stops before import when $command arrives during $outcome video verification', async ({ command, outcome }) => {
     const f = await fixture(); f.ready();
     const read = vi.mocked(invokeOperation).getMockImplementation()!;

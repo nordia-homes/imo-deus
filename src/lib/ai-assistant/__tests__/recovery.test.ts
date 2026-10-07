@@ -76,6 +76,34 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['pause', 'cancel', 'both'].flatMap(command => [false, true].map(external => ({ command, external }))))('keeps $command when an action throws (external=$external)', async ({ command, external }) => {
+    const { ctx, plan } = executionFixture();
+    if (external) {
+      plan.actions = [{ kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: {} }];
+      plan.approval = approvalEnvelope('u', 'a', 'p', plan.actions, plan.expiresAt);
+    }
+    vi.mocked(executeAction).mockImplementation(async () => {
+      if (command !== 'cancel') await controlPlan(ctx, 'p', 'pause');
+      if (command !== 'pause') await runPlan(ctx, 'p', true);
+      throw new Error('Synthetic failure');
+    });
+    const status = external ? 'unknown' : command === 'pause' ? 'paused' : 'cancelled';
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status, error: 'Synthetic failure' });
+    expect(plan.status).toBe(status);
+    expect(plan.results).toEqual([]);
+    if (external) await expect(controlPlan(ctx, 'p', 'resume')).rejects.toThrow('nu este în pauză');
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
+  it.each(['paused', 'cancelled', 'completed'])('does not overwrite a newer %s state when an old execution fails', async status => {
+    const { ctx, plan } = executionFixture();
+    const newer = [{ step: 1, kind: 'create_task', result: { taskId: 'recovered' } }];
+    vi.mocked(executeAction).mockImplementation(async () => {
+      Object.assign(plan, { status, results: newer, error: null });
+      throw new Error('Late failure');
+    });
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status, results: newer, error: null });
+    expect(plan).toMatchObject({ status, results: newer, error: null });
+  });
   it.each(['pause', 'cancel', 'both'].flatMap(command => ['ready', 'waiting', 'unknown'].map(outcome => ({ command, outcome }))))('honors $command during $outcome verification before the next step', async ({ command, outcome }) => {
     const { ctx, plan } = executionFixture();
     plan.goal = { schemaVersion: 1 };

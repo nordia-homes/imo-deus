@@ -143,7 +143,7 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const shared = await Promise.allSettled(['one', 'two'].map(id => reserve(ctx, 'viewings', id, { status: 'scheduled', viewingDate: date, duration: 60, agentId: id, contactId: 'shared-client' })));
     expect(shared.filter(result => result.status === 'fulfilled'), JSON.stringify(shared.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(1);
     const free = await Promise.allSettled(['three', 'four'].map(id => reserve(ctx, 'viewings', id, { status: 'scheduled', viewingDate: date, duration: 60, agentId: id, contactId: id })));
-    expect(free.filter(result => result.status === 'fulfilled')).toHaveLength(2);
+    expect(free.filter(result => result.status === 'fulfilled'), JSON.stringify(free.map(result => result.status === 'rejected' ? result.reason.message : result.status))).toHaveLength(2);
   }, 20000);
   it('commits one edit and ledger when two commands approve the same original task revision', async () => {
     const ctx = context(), revision = '2020-01-01T10:00:00Z';

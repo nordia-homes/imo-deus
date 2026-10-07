@@ -262,11 +262,22 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Execuția nu a fost confirmată.';
     const externalStep = data.actions[results.length]?.kind === 'existing_operation';
-    const status = externalStep || results.length === data.actions.length ? 'unknown' : 'failed';
+    const failureStatus = externalStep || results.length === data.actions.length ? 'unknown' : 'failed';
     const stoppedStep = error instanceof OperationFailure ? { step: results.length + 1, result: error.result } : undefined;
-    await ref.update({ status, results, error: message, ...(stoppedStep ? { stoppedStep } : {}) });
-    if ((data as any).telemetryId) await collectionFor(ctx, 'assistantTelemetry').doc((data as any).telemetryId).set({ executionStatus: status, confirmedSteps: results.length }, { merge: true });
-    return { ...data, status, results, error: message, ...(stoppedStep ? { stoppedStep } : {}) };
+    return ctx.adminDb.runTransaction(async tx => {
+      const fresh = (await tx.get(ref)).data();
+      if (fresh?.ownerId !== ctx.uid) throw new CommunicationError('Plan inaccesibil.', 403);
+      // Another control or recovery may already have settled the plan. A late
+      // failure must not overwrite its state or newer receipts.
+      if (fresh.status !== 'running') return fresh;
+      const status = failureStatus === 'unknown' ? 'unknown' : fresh.cancelRequestedAt ? 'cancelled' : fresh.pauseRequestedAt ? 'paused' : 'failed';
+      const now = new Date().toISOString();
+      const patch = { status, results, error: message, ...(stoppedStep ? { stoppedStep } : {}),
+        ...(status === 'paused' ? { pausedAt: now, waitUntil: 0 } : status === 'cancelled' ? { completedAt: now, waitUntil: 0 } : {}) };
+      tx.update(ref, patch);
+      if (fresh.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(fresh.telemetryId), { executionStatus: status, confirmedSteps: results.length }, { merge: true });
+      return { ...fresh, ...patch };
+    });
   }
 }
 
