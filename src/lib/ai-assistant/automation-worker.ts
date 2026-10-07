@@ -102,7 +102,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         for (const row of report.rows) {
           const id = automation.type === 'matching_watch' ? `${claim.id}-${row.id}` : `insight-${createHash('sha256').update(JSON.stringify([claim.id, run, row.id])).digest('hex')}`;
           if (automation.type === 'insight_report') {
-            notificationResults.push(await createInsightNotification(ctx, claim.id, id, row, `${claim.id}-run-${run}-${row.id}`));
+            notificationResults.push(await createInsightNotification(ctx, claim.id, id, row, `${claim.id}-run-${run}-${row.id}`, automation.cooldownMinutes));
             continue;
           }
           const notification = db.collection('users').doc(ctx.uid).collection('notifications').doc(id);

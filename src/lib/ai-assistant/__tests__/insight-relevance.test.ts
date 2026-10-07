@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ collectionFor: (ctx: any, resource: string) => ctx.adminDb.collection(`agencies/${ctx.agencyId}/${resource}`), canReadResource: (_ctx: any, _resource: string, row: any) => row.allowed !== false }));
 import { insightStillRelevant } from '../insight-relevance';
 import { createInsightNotification } from '../insight-notifications';
 import { reconcileRuleNotifications } from '../notification-relevance';
+afterEach(() => { vi.useRealTimers(); });
 
 const upcoming = new Date(Date.now() + 86400000).toISOString();
 const cases = [
@@ -27,6 +28,56 @@ function fixture(testCase: typeof cases[number]) {
   return { rows, path, ctx: { uid: 'u', role: 'agent', agencyId: 'a', adminDb: db } as any, card: { id: 'card', title: 'Priority', ...testCase.card } };
 }
 describe('shared insight conditions and transactional delivery', () => {
+  it('shares the cooldown across reports without extending it on suppressed runs', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T10:00:00Z'));
+    const { ctx, rows, card } = fixture(cases[1]);
+    await createInsightNotification(ctx, 'report-one', 'n1', card, undefined, 60);
+    vi.setSystemTime(new Date('2026-10-07T10:30:00Z'));
+    expect(await createInsightNotification(ctx, 'report-two', 'n2', card, undefined, 60)).toMatchObject({ status: 'skipped', reasonCode: 'cooldown', nextEligibleAt: '2026-10-07T11:00:00.000Z' });
+    vi.setSystemTime(new Date('2026-10-07T11:00:00Z'));
+    expect(await createInsightNotification(ctx, 'report-two', 'n3', card, undefined, 60)).toMatchObject({ status: 'created' });
+    expect(await createInsightNotification(ctx, 'report-two', 'n2', card, undefined, 60)).toMatchObject({ status: 'skipped', reasonCode: 'cooldown' });
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(2);
+  });
+  it('defaults to a day and applies an explicitly changed cooldown to the last delivery', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T10:00:00Z'));
+    const { ctx, card } = fixture(cases[1]);
+    await createInsightNotification(ctx, 'r', 'n1', card);
+    vi.setSystemTime(new Date('2026-10-07T12:00:00Z'));
+    expect(await createInsightNotification(ctx, 'r', 'n2', card)).toMatchObject({ reasonCode: 'cooldown', nextEligibleAt: '2026-10-08T10:00:00.000Z' });
+    expect(await createInsightNotification(ctx, 'r', 'n3', card, undefined, 30)).toMatchObject({ status: 'created' });
+  });
+  it('canonicalizes a viewing pair and isolates different priorities', async () => {
+    const { ctx, rows, card } = fixture(cases[7]);
+    await createInsightNotification(ctx, 'r1', 'n1', card);
+    expect(await createInsightNotification(ctx, 'r2', 'n2', { ...card, viewingIds: ['d', 'c'] })).toMatchObject({ reasonCode: 'cooldown' });
+    rows.set('agencies/a/tasks/c', { status: 'open', agentId: 'u', dueDate: '2020-01-01' });
+    expect(await createInsightNotification(ctx, 'r2', 'n3', { id: 'task-c', title: 'Task', taskId: 'c' })).toMatchObject({ status: 'created' });
+  });
+  it('keeps cooldowns separate for different actors and agencies', async () => {
+    const { ctx, rows, card } = fixture(cases[0]);
+    await createInsightNotification(ctx, 'r', 'n1', card);
+    rows.set('users/v', { agencyId: 'a', role: 'agent' });
+    expect(await createInsightNotification({ ...ctx, uid: 'v' }, 'r', 'n2', card)).toMatchObject({ status: 'created' });
+    rows.set('users/u', { agencyId: 'b', role: 'agent' }); rows.set('agencies/b/contacts/c', { ...cases[0].live });
+    expect(await createInsightNotification({ ...ctx, agencyId: 'b' }, 'r', 'n3', card)).toMatchObject({ status: 'created' });
+  });
+  it('does not start a cooldown for a resolved or inaccessible priority', async () => {
+    const { ctx, rows, path, card } = fixture(cases[1]);
+    rows.set(path, { ...cases[1].live, status: 'completed' });
+    await createInsightNotification(ctx, 'r', 'n1', card);
+    expect([...rows.keys()].filter(key => key.includes('/assistantNotificationState/'))).toHaveLength(0);
+    rows.set(path, { ...cases[1].live });
+    expect(await createInsightNotification(ctx, 'r', 'n2', card)).toMatchObject({ status: 'created' });
+  });
+  it('refuses malformed cooldown state instead of sending another alert', async () => {
+    const { ctx, rows, card } = fixture(cases[1]);
+    await createInsightNotification(ctx, 'r', 'n1', card);
+    const key = [...rows.keys()].find(key => key.includes('/assistantNotificationState/'))!;
+    rows.set(key, { lastNotifiedAt: 'invalid' });
+    await expect(createInsightNotification(ctx, 'r', 'n2', card)).rejects.toThrow('Istoricul');
+    expect(rows.has('users/u/notifications/n2')).toBe(false);
+  });
   it('preserves a legacy delivery when resuming with the new bounded identifier', async () => {
     const { ctx, rows, card } = fixture(cases[0]);
     rows.set('users/u/notifications/legacy', { title: 'Already delivered', agencyId: 'a', recipientId: 'u' });

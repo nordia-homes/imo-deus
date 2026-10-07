@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { insightCooldownMinutesSchema } from './insight-notification-policy';
 import { timezoneSchema } from './timezone';
 import { officialUrlSchema } from './official-source-contract';
 import { briefSettingsShape } from './daily-brief-contract';
@@ -41,7 +42,7 @@ export const automationSchema = z.discriminatedUnion('type', [
   }).strict(),
   z.object({ type: z.literal('followup_task'), ...timing, contactId: idSchema, description: z.string().trim().min(1).max(2000) }).strict(),
   z.object({ type: z.literal('owner_watch'), ...timing, search: searchSchema }).strict(),
-  z.object({ type: z.literal('insight_report'), ...timing, limit: z.number().int().min(1).max(30).default(10) }).strict(),
+  z.object({ type: z.literal('insight_report'), ...timing, limit: z.number().int().min(1).max(30).default(10), cooldownMinutes: insightCooldownMinutesSchema }).strict(),
   z.object({ type: z.literal('matching_watch'), ...timing, contactId: idSchema, threshold: z.number().min(0).max(100).default(60), limit: z.number().int().min(1).max(30).default(10) }).strict(),
   z.object({ type: z.literal('whatsapp_template'), ...timing, conversationId: idSchema, stopOnReply: z.boolean().default(true), template: z.object({ name: z.string().min(1).max(200), language: z.string().min(2).max(20), parameters: z.array(z.string().max(1000)).max(20).default([]) }).strict() }).strict(),
 ]);

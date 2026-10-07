@@ -3,6 +3,12 @@ import { actionSchema, searchSchema, safeData, overlaps, automationSchema } from
 import { ownerSearchFields, parseOwnerPrice } from '@/lib/owner-listings/search-index';
 
 describe('assistant command boundary', () => {
+  it('bounds the repeat-alert cooldown and supplies a daily default', () => {
+    const input = { type: 'insight_report', nextRunAt: '2030-01-01T12:00:00Z' };
+    expect(automationSchema.parse(input)).toMatchObject({ cooldownMinutes: 1440 });
+    for (const cooldownMinutes of [0, 29, 43201, 30.5, '60']) expect(automationSchema.safeParse({ ...input, cooldownMinutes }).success).toBe(false);
+    for (const cooldownMinutes of [30, 43200]) expect(automationSchema.parse({ ...input, cooldownMinutes })).toMatchObject({ cooldownMinutes });
+  });
   it('bounds official-source watches to explicit allowed URLs and an hourly-or-slower interval', () => {
     const input = { type: 'legal_source_watch', nextRunAt: '2030-01-01T12:00:00Z', sourceUrls: ['https://www.ancpi.ro/document.pdf'] };
     expect(automationSchema.parse(input)).toMatchObject({ intervalMinutes: 1440 });

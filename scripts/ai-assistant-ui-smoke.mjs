@@ -45,7 +45,7 @@ try {
     const body = request.postDataJSON(); requests.push({ path: new URL(request.url()).pathname, body });
     let result;
     const url = new URL(request.url());
-    if (url.pathname.endsWith('/automations')) result = url.searchParams.has('id') ? { rows: [{ id: 'run', action: 'run', occurredAt: '2026-10-05T10:00:00Z', status: 'active', result: { handled: 1 }, deliveryEvidence: { status: 'read', note: 'Canalul confirmă citirea mesajului identificat.' } }], nextCursor: null } : { rows: [{ id: 'rule', status: 'active', runCount: 1, deliveryEvidence: { status: 'accepted', note: 'Livrarea nu este încă verificată.' }, automation: { type: 'event_rule', nextRunAt: '2030-10-06T10:00:00.123Z', stopAfter: '2030-10-07T10:00:00.456Z', maxRuns: 48, intervalMinutes: 30, maxEvents: 100, trigger: { resource: 'contacts', change: 'updated', statusTo: 'Contactat', changedFields: ['status', 'budget'] }, effects: [{ kind: 'create_task', description: 'Sarcină existentă', dueAfterMinutes: 60, agentId: 'colleague' }, { kind: 'notify', title: 'Notificare existentă', body: 'Detalii păstrate' }] } }], nextCursor: null };
+    if (url.pathname.endsWith('/automations')) result = url.searchParams.has('id') ? { rows: [{ id: 'run', action: 'run', occurredAt: '2026-10-05T10:00:00Z', status: 'active', result: { handled: 1, notificationResults: [{ status: 'skipped', reasonCode: 'cooldown' }] }, deliveryEvidence: { status: 'read', note: 'Canalul confirmă citirea mesajului identificat.' } }], nextCursor: null } : { rows: [{ id: 'rule', status: 'active', runCount: 1, deliveryEvidence: { status: 'accepted', note: 'Livrarea nu este încă verificată.' }, automation: { type: 'event_rule', nextRunAt: '2030-10-06T10:00:00.123Z', stopAfter: '2030-10-07T10:00:00.456Z', maxRuns: 48, intervalMinutes: 30, maxEvents: 100, trigger: { resource: 'contacts', change: 'updated', statusTo: 'Contactat', changedFields: ['status', 'budget'] }, effects: [{ kind: 'create_task', description: 'Sarcină existentă', dueAfterMinutes: 60, agentId: 'colleague' }, { kind: 'notify', title: 'Notificare existentă', body: 'Detalii păstrate' }] } }], nextCursor: null };
     else if (url.pathname.endsWith('/gmail-session')) result = { session: { jobId: 'gmail-job', saleId: 'sale', messageRecordId: 'email', trackingCode: 'IMO', to: ['owner@example.com'], cc: [], subject: 'Ofertă', bodyText: 'Textul verificat', attachments: [] } };
     else if (url.pathname.endsWith('/send-evidence')) { assert.equal(body.level, 'ui_observed'); result = { ok: true }; }
     else if (body?.kind === 'read' && ['contacts', 'conversations'].includes(body.query.resource)) result = { rows: body.query.resource === 'contacts' ? [{ id: 'client', name: 'Maria Popescu' }] : [{ id: 'conversation', contactName: 'Proprietar', channel: 'whatsapp' }], nextCursor: null, complete: true };
@@ -145,6 +145,7 @@ try {
   assert.ok(await page.getByText('Acceptat de canal · Livrarea nu este încă verificată.', { exact: true }).isVisible());
   await page.getByRole('button', { name: 'Istoric', exact: true }).click();
   await page.getByText(/Citit: Canalul confirmă citirea mesajului identificat/).waitFor();
+  await page.getByText(/Alertele repetitive au fost omise în perioada de pauză/).waitFor();
   await page.screenshot({ path: path.join(output, 'brief-delivery.png'), fullPage: true });
   await page.getByText('1 evenimente executate', { exact: false }).waitFor();
   await page.getByRole('button', { name: 'Editează', exact: true }).click();
@@ -186,6 +187,12 @@ try {
     if (kind === 'legal_source_watch') await page.getByLabel('Surse oficiale', { exact: false }).fill('https://www.ancpi.ro/fixture.pdf');
     if (kind === 'owner_watch') { await page.getByLabel('Zona căutării').fill('Titan'); await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Buget maxim EUR').fill('130000'); }
     if (kind === 'matching_watch') await page.getByLabel('Scor minim matching').fill('75');
+    if (kind === 'insight_report') {
+      const cooldown = page.getByLabel('Pauză între alertele aceleiași priorități', { exact: false });
+      assert.equal(await cooldown.inputValue(), '1440');
+      await cooldown.fill('60');
+      await page.screenshot({ path: path.join(output, 'insight-cooldown.png'), fullPage: true });
+    }
     if (kind === 'whatsapp_template') {
       await page.getByRole('option', { name: 'Proprietar · whatsapp', exact: true }).waitFor({ state: 'attached' });
       await page.getByLabel('Conversație', { exact: true }).selectOption('conversation');
@@ -200,6 +207,7 @@ try {
     if (kind === 'legal_source_watch') { assert.deepEqual(prepared.automation.sourceUrls, ['https://www.ancpi.ro/fixture.pdf']); assert.equal(prepared.automation.intervalMinutes, 1440); }
     if (kind === 'owner_watch') { assert.equal(prepared.automation.search.source, 'owners'); assert.equal(prepared.automation.search.priceMax, 130000); }
     if (kind === 'matching_watch') assert.equal(prepared.automation.threshold, 75);
+    if (kind === 'insight_report') { assert.equal(prepared.automation.cooldownMinutes, 60); await page.getByText('Pauză între alerte (minute)', { exact: true }).waitFor(); }
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }
