@@ -1,5 +1,6 @@
 import type { Firestore, DocumentReference } from 'firebase-admin/firestore';
 import { tikTokScheduleRevision } from './tiktok-schedule-revision';
+import { confirmedStudioRender } from './tiktok-render-evidence';
 
 /** Reconcile expired work without replaying provider calls or overwriting newer work. */
 export async function recoverTikTokStudioJob(db: Firestore, ref: DocumentReference) {
@@ -18,7 +19,7 @@ export async function recoverTikTokStudioJob(db: Firestore, ref: DocumentReferen
     const sameVersion = project && project.agencyId === job.agencyId && project.ownerUid === job.uid && (project.version || 1) === job.version;
     const assetId = sameVersion && project.status === 'ready' && typeof project.outputAssetId === 'string' && /^[A-Za-z0-9_-]{1,180}$/.test(project.outputAssetId) ? project.outputAssetId : null;
     const asset = assetId ? (await tx.get(agency.collection('tiktokStudioAssets').doc(assetId))).data() : null;
-    if (asset && asset.agencyId === job.agencyId && asset.ownerUid === job.uid && asset.studioProjectId === job.projectId && asset.version === job.version && asset.type === 'video' && asset.status === 'ready' && typeof asset.url === 'string' && asset.url.startsWith('https://')) {
+    if (confirmedStudioRender({ agencyId: job.agencyId, uid: job.uid, projectId: job.projectId, version: job.version }, project, asset || undefined)) {
       tx.update(ref, { status: 'completed', completedAt: new Date().toISOString() }); return;
     }
     tx.update(ref, { status: 'failed', error: 'Randare întreruptă; materialul aceleiași versiuni nu este confirmat. Verifică înainte de reluare.' });

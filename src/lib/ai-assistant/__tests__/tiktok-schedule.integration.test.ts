@@ -77,19 +77,20 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('TikTok approval and sched
     const input = { agencyId: f.agencyId, draftId: f.ref.id, requestedByUid: f.uid, fromSchedule: true, scheduleOwner: 'claim' };
     return { ...f, input, claim: () => claimTikTokPublication(db as any, input) };
   }
-  it.each(['valid', 'newer_project', 'missing_asset', 'other_asset_version', 'other_asset_owner', 'deleted_project', 'not_ready'])('recovers expired render with %s evidence without replay', async mode => {
+  it.each(['valid', 'newer_project', 'missing_asset', 'other_asset_version', 'other_asset_owner', 'deleted_project', 'not_ready', 'other_property', 'malformed_url', 'credential_url'])('recovers expired render with %s evidence without replay', async mode => {
     const f = await fixture(), agency = db.collection('agencies').doc(f.agencyId);
     const project = agency.collection('tiktokStudioProjects').doc('project'), asset = agency.collection('tiktokStudioAssets').doc('asset');
     await f.job.set({ kind: 'render', agencyId: f.agencyId, uid: f.uid, projectId: project.id, version: 1, status: 'running', leaseUntil: '2020-01-01T00:00:00Z' });
-    const original = { agencyId: f.agencyId, ownerUid: f.uid, version: mode === 'newer_project' ? 2 : 1, status: mode === 'not_ready' ? 'rendering' : 'ready', outputAssetId: asset.id };
+    const original = { agencyId: f.agencyId, ownerUid: f.uid, propertyId: 'p', version: mode === 'newer_project' ? 2 : 1, status: mode === 'not_ready' ? 'rendering' : 'ready', outputAssetId: asset.id };
     if (mode !== 'deleted_project') await project.set(original);
-    if (mode !== 'missing_asset') await asset.set({ agencyId: f.agencyId, ownerUid: mode === 'other_asset_owner' ? 'other' : f.uid, studioProjectId: project.id, version: mode === 'other_asset_version' ? 2 : 1, status: 'ready', type: 'video', url: 'https://example.test/video.mp4' });
+    if (mode !== 'missing_asset') await asset.set({ agencyId: f.agencyId, ownerUid: mode === 'other_asset_owner' ? 'other' : f.uid, propertyId: mode === 'other_property' ? 'other' : 'p', studioProjectId: project.id, version: mode === 'other_asset_version' ? 2 : 1, status: 'ready', type: 'video', url: mode === 'malformed_url' ? 'https://' : mode === 'credential_url' ? 'https://user:secret@example.test/video.mp4' : 'https://example.test/video.mp4' });
     await recoverTikTokStudioJob(db as any, f.job as any);
     expect((await f.job.get()).data()?.status).toBe(mode === 'valid' ? 'completed' : 'failed');
     if (mode === 'deleted_project') expect((await project.get()).exists).toBe(false);
     else if (mode === 'not_ready') expect((await project.get()).data()?.status).toBe('error');
     else expect((await project.get()).data()).toEqual(original);
     expect(state.publish).not.toHaveBeenCalled();
+    expect(state.render).not.toHaveBeenCalled();
   });
   it.each(['published', 'processing'])('preserves %s provider evidence during expired-job recovery', async status => {
     const f = await publicationFixture(); await f.job.update({ leaseUntil: '2020-01-01T00:00:00Z' });

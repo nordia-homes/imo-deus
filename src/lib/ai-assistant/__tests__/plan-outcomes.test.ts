@@ -43,7 +43,7 @@ it.each(['paused', 'cancelled'])('stops automatic polling for a %s plan while re
 });
 it('reads the exact authorized Studio render job and refuses another owner or project', async () => {
   mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'tiktok_studio_render', params: { projectId: 'project' } }], results: [{ step: 1, result: { jobId: 'job' } }] } });
-  mocks.resource.mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioProjects' ? { ownerUid: 'u', outputAssetId: 'asset', version: 1, status: 'ready' } : { ownerUid: 'u', agencyId: 'a', studioProjectId: 'project', version: 1, type: 'video', status: 'ready', url: 'https://storage.example/video.mp4' });
+  mocks.resource.mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioProjects' ? { agencyId: 'a', ownerUid: 'u', propertyId: 'p', outputAssetId: 'asset', version: 1, status: 'ready' } : { ownerUid: 'u', agencyId: 'a', propertyId: 'p', studioProjectId: 'project', version: 1, type: 'video', status: 'ready', url: 'https://storage.example/video.mp4' });
   const job: any = { kind: 'render', uid: 'u', agencyId: 'a', projectId: 'project', version: 1, status: 'completed' };
   const studioCtx = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => job }) }) } } };
   expect(await readPlanOutcomes(studioCtx, 'plan')).toMatchObject({ pollAfterMs: null, rows: [{ executionState: 'succeeded', businessStatus: 'completed' }] });
@@ -66,6 +66,23 @@ it('verifies a saved Studio project before allowing the render dependency to adv
   expect((await readPlanOutcomes(ctx, 'plan')).outcome.state).not.toBe('COMPLETED');
   mocks.resource.mockResolvedValue({ ownerUid: 'other', agencyId: 'a', propertyId: 'p' });
   expect((await readPlanOutcomes(ctx, 'plan')).rows[0].executionState).toBe('unavailable');
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
+it.each(['queued', 'running', 'completed'])('does not watch or confirm a %s render for another approved version', async status => {
+  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_studio_render', params: { projectId: 'project' }, body: { expectedVersion: 1 } }], results: [{ step: 1, result: { jobId: 'job' } }] } });
+  mocks.resource.mockResolvedValue({ agencyId: 'a', ownerUid: 'u', version: 2, status: 'ready' });
+  const scoped = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => ({ agencyId: 'a', uid: 'u', projectId: 'project', kind: 'render', version: 2, status }) }) }) } } };
+  expect(await readPlanOutcomes(scoped, 'plan')).toMatchObject({ pollAfterMs: null, outcome: { state: 'BLOCKED' }, rows: [{ completionSatisfied: false, watchable: false }] });
+  expect(mocks.resource).toHaveBeenCalledTimes(1);
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
+it.each([{ propertyId: 'other' }, { url: 'https://' }, { url: 'https://user:secret@media.example/video.mp4' }])('does not expose a completed render asset with inconsistent evidence: %j', async patch => {
+  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_studio_render', params: { projectId: 'project' }, body: { expectedVersion: 1 } }], results: [{ step: 1, result: { jobId: 'job' } }] } });
+  mocks.resource.mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioProjects' ? { agencyId: 'a', ownerUid: 'u', propertyId: 'p', outputAssetId: 'asset', version: 1, status: 'ready' } : { ownerUid: 'u', agencyId: 'a', propertyId: 'p', studioProjectId: 'project', version: 1, type: 'video', status: 'ready', url: 'https://media.example/video.mp4', ...patch });
+  const scoped = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => ({ agencyId: 'a', uid: 'u', projectId: 'project', kind: 'render', version: 1, status: 'completed' }) }) }) } } };
+  const result = await readPlanOutcomes(scoped, 'plan');
+  expect(result).toMatchObject({ pollAfterMs: null, outcome: { state: 'BLOCKED' }, rows: [{ completionSatisfied: false, watchable: false }] });
+  expect(result.rows[0]).not.toHaveProperty('outputs');
   expect(mocks.invoke).not.toHaveBeenCalled();
 });
 it('uses current evidence for an uncertain stopped step and never republishes it', async () => {

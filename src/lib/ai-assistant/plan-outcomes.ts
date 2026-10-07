@@ -14,6 +14,7 @@ import { facebookOutcome } from './facebook-outcome';
 import { tikTokScheduleOutcome } from './tiktok-schedule-outcome';
 import { tikTokDraftOutcome } from './tiktok-draft-outcome';
 import { tikTokProjectOutcome } from './tiktok-project-outcome';
+import { confirmedStudioRender } from '@/lib/tiktok-render-evidence';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -87,20 +88,20 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         const project = await getResource(ctx, 'tiktokStudioProjects', action.params.projectId);
         const job = await ctx.adminDb.collection('tiktokStudioJobs').doc(original.jobId).get();
         const row = job.data();
-        if (project.ownerUid !== ctx.uid || !row || row.agencyId !== ctx.agencyId || row.uid !== ctx.uid || row.projectId !== action.params.projectId || row.kind !== 'render') throw new CommunicationError('Randarea nu mai este accesibilă.', 403);
+        if (project.agencyId !== ctx.agencyId || project.ownerUid !== ctx.uid || !row || row.agencyId !== ctx.agencyId || row.uid !== ctx.uid || row.projectId !== action.params.projectId || row.kind !== 'render') throw new CommunicationError('Randarea nu mai este accesibilă.', 403);
+        if (action.body.expectedVersion !== undefined && action.body.expectedVersion !== row.version) return { ...base, executionState: 'unknown', completionSatisfied: false, businessStatus: String(row.status || 'unknown'), evidenceSource: 'current_domain_state', verifiedAt: new Date().toISOString(), watchable: false, note: 'Jobul de randare nu corespunde versiunii aprobate. Verifică proiectul înainte de continuare.' };
         current = operationResult(action.operation, { status: row.status }, true);
         if (row.status === 'completed') {
           const assetId = id(project.outputAssetId);
           completionSatisfied = false;
-          if (assetId && project.status === 'ready' && project.version === row.version) {
+          if (assetId && project.status === 'ready' && (project.version ?? 1) === row.version) {
             const asset = await getResource(ctx, 'tiktokStudioAssets', assetId);
             if (asset.agencyId !== ctx.agencyId || asset.ownerUid !== ctx.uid) throw new CommunicationError('Materialul randat nu mai este accesibil.', 403);
-            completionSatisfied = asset.studioProjectId === action.params.projectId && asset.version === row.version && asset.type === 'video' && asset.status === 'ready' && typeof asset.url === 'string' && asset.url.startsWith('https://');
+            completionSatisfied = confirmedStudioRender({ agencyId: ctx.agencyId, uid: ctx.uid, projectId: action.params.projectId, version: row.version }, project, asset);
             if (completionSatisfied) outputs.assetId = assetId;
           }
           if (!completionSatisfied && current) {
-            current.executionState = 'unknown';
-            current.note = 'Jobul s-a încheiat, dar materialul video al aceleiași versiuni nu este confirmat în CRM.';
+            return { ...base, executionState: 'unknown', completionSatisfied: false, businessStatus: 'completed', evidenceSource: 'current_domain_state', verifiedAt: new Date().toISOString(), watchable: false, note: 'Jobul s-a încheiat, dar materialul video al aceleiași proprietăți și versiuni nu este confirmat în CRM. Verifică materialul înainte de continuare.' };
           }
         }
       }
