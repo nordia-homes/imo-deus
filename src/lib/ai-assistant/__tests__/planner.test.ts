@@ -110,7 +110,9 @@ describe('Responses tool planning', () => {
   });
   it('stops after a repeated infrastructure failure and preserves truthful status', async () => {
     const model = scripted(new ProviderError('rate_limit', true), new ProviderError('rate_limit', true));
-    const result = await planTurn(ctx, 'Salut', [], { provider: model });
+    // Isolate retry policy from the conservative missing-usage reservation for
+    // the entire tool catalog. Production budget limits remain unchanged.
+    const result = await planTurn(ctx, 'Salut', [], { provider: model, allowedTools: ['read'] });
     expect(model.respond).toHaveBeenCalledTimes(2); expect(result.metrics.status).toBe('failed'); expect(result.actions).toEqual([]);
   });
   it('escalates after three validated invalid calls, sharing one budget', async () => {

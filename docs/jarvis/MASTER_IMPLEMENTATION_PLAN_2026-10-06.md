@@ -500,3 +500,21 @@ Validări: **773/773 teste unitare în 83 fișiere**, **59/59 teste pe emulator 
 Rămân deschise verificarea integrală a celor trei fluxuri pilot, probele furnizorilor reali și criteriile deja enumerate pentru corpus, validitate juridică și Jev. Previzualizarea înainte de aprobare este acum obligatorie pentru pregătirea mesajelor Jarvis, dar această etapă nu certifică întregul plan. Lotul nu este publicat în producție.
 
 Build-ul final a trecut cu TypeScript și 225 pagini; manifestul de paritate a trecut. Avertismentele locale Jaeger/Tailwind și copierea omisă a browserului standalone rămân cele cunoscute.
+
+## 7 octombrie: proprietatea selectată → client → conversație
+
+Continuare E2/E4, cu noul instrument read-only `resolve_matching_recipient`, disponibil în schema nativă și în plannerul comun Text/Voice:
+
+- Rezolvă poziția prin selecția contextuală existentă, păstrând setul, ordinea, scorul și marcajul de învechire. Cere clientul asociat setului; nu deduce destinatarul dintr-un nume sau telefon.
+- Reutilizează citirea autorizată a conversațiilor, filtrată după ID-ul clientului și canalul cerut. Parcurge maximum cinci pagini, deduplică ID-urile și recitește accesul și asocierea cu clientul. Dacă paginarea este incompletă sau repetă cursorul, rezultatul rămâne parțial și nu este declarat unic.
+- O singură conversație într-o căutare completă este rezolvată; absența sau ambiguitatea cere alegerea utilizatorului. O conversație indicată explicit trebuie să aparțină aceluiași client și canal. Nu schimbă destinatarul când asocierea se modifică. Proiecția conversațiilor nu returnează telefonul extern sau câmpurile secrete.
+- Rezolvarea destinatarului nu certifică eligibilitatea de trimitere. Mesajul concret continuă prin pregătirea, previewul, aprobarea, coada și workerul existente. Instrucțiunile disting linkul de portal concret de linkurile CRM private și cer o aprobare separată dacă portalul este creat într-un pas anterior.
+- Proba nouă pe emulator folosește motorul real de matching, setul salvat, a doua proprietate, căutarea reală a conversațiilor, condițiile reale de pregătire și verificarea payloadului aprobat, apoi coada și workerul cu transport simulat. Verifică și refuzul conversației reasociate altui client. Nu este o probă live de interpretare a limbajului natural sau de livrare reală.
+
+Validare: **783/783 teste unitare în 84 fișiere**, **60/60 teste în 15 fișiere pe emulator**, **134/134 scenarii deterministe** și **156/156 teste în runnerul dedicat**. ESLint și manifestul de paritate au trecut. Indexurile declarate existente acoperă filtrele contact/canal/acces; nu se deduce din emulator că sunt deja disponibile în producție.
+
+Testul pentru două erori consecutive de infrastructură a fost izolat cu un catalog restrâns de unelte, astfel încât să verifice retry-ul separat de rezervarea conservatoare fără usage. Plafoanele de producție nu au fost mărite. Pe catalogul complet, bugetul poate opri retry-ul; aceasta rămâne limita intenționată, nu o garanție de două apeluri.
+
+Acest lot nu declară închise cele trei fluxuri pilot și nu extinde corpusul live revizuit. Rămân probele complete cu provideri, scenariile individuale restante, verificarea juridică temporală și calibrarea Jev. Modificările nu sunt publicate în producție.
+
+Build-ul final a trecut cu TypeScript și 225 pagini. Avertismentele Jaeger/standalone locale rămân cele documentate anterior.

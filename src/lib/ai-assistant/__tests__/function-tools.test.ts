@@ -3,6 +3,12 @@ import { functionDefinition, functionPayload } from '../function-tools';
 import { coreToolSchemas } from '../tool-schemas';
 import { explicitInstants, validateActionDates } from '../temporal-policy';
 describe('strict native Responses tool contracts', () => {
+  it('exposes matching recipient resolution natively and normalizes optional choices', () => {
+    const tool = functionDefinition('resolve_matching_recipient');
+    expect((tool.parameters as any).properties.position.type).toBe('integer');
+    const input = functionPayload('resolve_matching_recipient', JSON.stringify({ resultSetId: 'set', position: 2, messageId: null, conversationId: null, channel: null }));
+    expect(coreToolSchemas.resolve_matching_recipient[0].parse(input)).toEqual({ resultSetId: 'set', position: 2 });
+  });
   it('preserves intentional nulls for unassignment and nested field clearing', () => {
     expect(functionPayload('assign_record', JSON.stringify({ resource: 'contacts', id: 'contact1', agentId: null }))).toHaveProperty('agentId', null);
     expect(functionPayload('update_property', JSON.stringify({ propertyId: 'property1', patch: { ownerId: null, notes: 'Actualizat' }, agentId: null }))).toMatchObject({ patch: { ownerId: null }, agentId: null });

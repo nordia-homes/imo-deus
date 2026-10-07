@@ -8,6 +8,9 @@ import { queueMessage, drainOutbound } from '@/lib/communications/outbound';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { bindBusinessRevisions } from '../business-revisions';
 import { approvalEnvelope, validateApproval } from '../approval';
+import { matchContact } from '../actions';
+import { saveResultSet } from '../context';
+import { resolveMatchingRecipient } from '../matching-recipient';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient through the real outbound queue and worker', () => {
   let db: Firestore;
@@ -45,6 +48,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const input = { ...action.body, requestId: randomUUID() };
     return { actor, conversation, ref, input, actions, envelope };
   }
+  it('resolves the second real matching result to its client conversation before preparing and queuing the message', async () => {
+    const f = await fixture(), agency = db.collection('agencies').doc(f.actor.agencyId), ctx = { ...f.actor, adminDb: db } as any;
+    await agency.collection('contacts').doc('contact').set({ name: 'Andrei', contactType: 'Cumparator', budget: 150000, preferences: { desiredRooms: 2, desiredPriceRangeMax: 150000 } });
+    for (const id of ['p1', 'p2']) await agency.collection('properties').doc(id).set({ title: `Apartament ${id}`, status: 'Activ', rooms: 2, price: 120000, transactionType: 'Vanzare', propertyType: 'Apartament' });
+    await f.ref.update({ lastMessageAt: new Date().toISOString(), accessUids: [f.actor.uid] });
+    const rows = await matchContact(ctx, 'contact', 10); expect(rows.length).toBe(2);
+    const resultSetId = await saveResultSet(ctx, rows, 'contact');
+    const summary = { selections: [{ messageId: 'matching', source: 'crm', resultSetId, orderedIds: rows.map(row => row.id) }] };
+    const selected = await resolveMatchingRecipient(ctx, summary, { resultSetId, position: 2 });
+    expect(selected).toMatchObject({ contactId: 'contact', conversationId: f.ref.id, eligibilityChecked: false, rows: [{ id: rows[1].id, matchScore: rows[1].matchScore }] });
+    const actions = await bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: selected.conversationId! }, query: {}, body: { text: `Vă propun ${selected.rows[0].title}.` } }]);
+    validateApproval(approvalEnvelope(f.actor.uid, f.actor.agencyId, 'matching-send', actions, Date.now() + 60000), f.actor.uid, f.actor.agencyId, 'matching-send', actions);
+    const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+    await queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() });
+    await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
+    await f.ref.update({ contactId: 'other-client' });
+    await expect(resolveMatchingRecipient(ctx, summary, { resultSetId, position: 2, conversationId: f.ref.id })).rejects.toThrow('nu corespunde');
+  });
   it('pins the approved recipient, queues once and invokes the simulated provider only once', async () => {
     const f = await fixture();
     const preview = await queueMessage(db as any, f.actor, f.ref.id, f.input, true);

@@ -35,6 +35,13 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     data.note = 'Căutarea globală afișează maximum cinci rezultate din fiecare categorie. Pentru toate rezultatele folosește citirea paginată a categoriei.';
     for (const source of ['contacts', 'properties', 'tasks']) if (Array.isArray(data[source])) cards.push({ type: 'results', title: 'Căutare globală · ' + source, source, rows: data[source], complete: data[source].length < 5, note: data.note });
   }
+  else if (name === 'resolve_matching_recipient') {
+    const { resolveMatchingRecipient } = await import('./matching-recipient');
+    data = await resolveMatchingRecipient(ctx, options.summary, payload);
+    refs.push({ resource: 'contacts', id: data.contactId }, ...data.conversations.map((row: any) => ({ resource: 'conversations' as const, id: row.id })));
+    cards.push({ type: 'results', title: 'Proprietatea selectată pentru client', source: 'crm', rows: data.rows, resultSetId: data.resultSetId, note: data.note, complete: true });
+    cards.push({ type: 'data', title: 'Conversații pentru client', source: 'conversations', rows: data.conversations, note: data.note, complete: data.recipientSearchComplete });
+  }
   else if (name === 'select_context') {
     const { selectContext } = await import('./context-selection'); data = await selectContext(ctx, options.summary, payload);
     if (data.resource !== 'owners') refs.push(...data.rows.map((row: any) => ({ resource: data.resource, id: row.id })));
