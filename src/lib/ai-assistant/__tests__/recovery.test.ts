@@ -64,6 +64,29 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['pause', 'cancel', 'both'] as const)('preserves %s requested during the last action', async command => {
+    const { ctx, plan } = executionFixture();
+    let calls = 0;
+    vi.mocked(executeAction).mockImplementation(async () => {
+      calls++;
+      if (calls === 3) {
+        if (command !== 'cancel') await controlPlan(ctx, 'p', 'pause');
+        if (command !== 'pause') await runPlan(ctx, 'p', true);
+      }
+      return { taskId: `task-${calls}` };
+    });
+    const status = command === 'pause' ? 'paused' : 'cancelled';
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status });
+    expect(plan.status).toBe(status);
+    expect(plan.results).toHaveLength(3);
+    expect(plan.results[2].result).toEqual({ taskId: 'task-3' });
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status });
+    if (command === 'pause') {
+      await controlPlan(ctx, 'p', 'resume');
+      expect(await runPlan(ctx, 'p')).toMatchObject({ status: 'completed' });
+    }
+    expect(executeAction).toHaveBeenCalledTimes(3);
+  });
   it('resumes render-to-draft with the verified asset without rerendering or rewriting its receipt', async () => {
     const { ctx, plan } = executionFixture();
     plan.goal = { schemaVersion: 1 };

@@ -222,11 +222,19 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       await ref.update({ results, accessRefs });
     }
     const session = await requireSession(ctx, data.sessionId);
-    const batch = ctx.adminDb.batch();
-    batch.update(ref, { status: 'completed', completedAt: new Date().toISOString() });
-    if ((data as any).telemetryId) batch.set(collectionFor(ctx, 'assistantTelemetry').doc((data as any).telemetryId), { executionStatus: 'completed', confirmedSteps: results.length }, { merge: true });
-    batch.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`, createdAt: new Date().toISOString() });
-    await batch.commit();
+    // Serialize finalization with controls arriving during the last action.
+    // Its receipt remains committed even when the plan itself is stopped.
+    const status = await ctx.adminDb.runTransaction(async tx => {
+      const fresh = (await tx.get(ref)).data();
+      if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running') throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
+      const status = fresh.cancelRequestedAt ? 'cancelled' as const : fresh.pauseRequestedAt ? 'paused' as const : 'completed' as const;
+      const now = new Date().toISOString();
+      tx.update(ref, { status, ...(status === 'paused' ? { pausedAt: now } : { completedAt: now }) });
+      if (fresh.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(fresh.telemetryId), { executionStatus: status, confirmedSteps: results.length }, { merge: true });
+      if (status === 'completed') tx.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`, createdAt: now });
+      return status;
+    });
+    if (status !== 'completed') return { ...data, status, results };
     let outcome = data.outcome;
     if (data.goal?.schemaVersion === 1) {
       const { readPlanOutcomes } = await import('./plan-outcomes');

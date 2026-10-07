@@ -63,6 +63,35 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['pause', 'cancel', 'both'] as const)('keeps last-step receipts and honors %s without announcing completion', async command => {
+    const f = await fixture(); f.ready();
+    const execute = vi.mocked(executeAction).getMockImplementation()!;
+    vi.mocked(executeAction).mockImplementation(async (...args) => {
+      const result = await execute(...args);
+      const action = args[1];
+      if (action.kind === 'existing_operation' && action.operation === 'tiktok_post_draft') {
+        if (command !== 'cancel') await controlPlan(f.ctx, 'plan', 'pause');
+        if (command !== 'pause') await runPlan(f.ctx, 'plan', true);
+      }
+      return result;
+    });
+    const status = command === 'pause' ? 'paused' : 'cancelled';
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status });
+    const saved = (await f.plan.get()).data()!;
+    expect(saved.status).toBe(status);
+    expect(saved.results).toHaveLength(4);
+    expect(saved.results[3].result.draftId).toBe('draft');
+    const message = f.agency.collection('assistantSessions').doc('s').collection('messages').doc('plan-result');
+    expect((await message.get()).exists).toBe(false);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).size).toBe(1);
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status });
+    if (command === 'pause') {
+      await controlPlan(f.ctx, 'plan', 'resume');
+      expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
+      expect((await message.get()).exists).toBe(true);
+    }
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
   it('persists the wait, resumes from receipts and passes only verified media to the draft', async () => {
     const f = await fixture();
     vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'queued', job: { id: 'job', propertyId: 'p' } });
