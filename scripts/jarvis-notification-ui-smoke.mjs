@@ -94,11 +94,22 @@ try {
   assert.equal(await page.getByText('Stale', { exact: true }).count(), 0);
   assert.equal(await page.getByText('Active', { exact: true }).count(), 2);
   // A fresh server snapshot restores the saved vote in both surfaces, independently of local response state.
-  await page.evaluate(() => { window.fixtureNotifications = window.fixtureNotifications.map(row => row.id === 'Active' ? { ...row, insightCondition: { kind: 'task', id: 'active-task' }, feedback: { value: 'not_useful', revision: 4, updatedAt: '2026-10-07T11:00:00Z' } } : row); window.dispatchEvent(new Event('fixture-data')); });
+  await page.evaluate(() => { window.fixtureNotifications = window.fixtureNotifications.map(row => row.id === 'Active' ? { ...row, feedback: { value: 'not_useful', revision: 4, updatedAt: '2026-10-07T11:00:00Z' } } : row); window.dispatchEvent(new Event('fixture-data')); });
   const restored = page.getByRole('group', { name: 'Feedback pentru Active', exact: true });
   await restored.first().waitFor();
   assert.equal(await restored.count(), 2);
   for (const group of await restored.all()) assert.equal(await group.getByRole('button', { name: 'Neutilă', exact: true }).getAttribute('aria-pressed'), 'true');
+  assert.match(await restored.first().innerText(), /Deocamdată nu schimbă ordinea rezultatelor/);
+  feedbackStatus = 200;
+  await restored.last().getByRole('button', { name: 'Utilă', exact: true }).click();
+  await page.waitForFunction(() => [...document.querySelectorAll('[role="group"]')].some(group => group.getAttribute('aria-label') === 'Feedback pentru Active' && group.querySelector('button[aria-pressed="true"]')?.textContent === 'Utilă'));
+  assert.deepEqual(feedbackRequests.at(-1), { notificationId: 'Active', value: 'useful', expectedRevision: 4 });
+  // Reuse the active alert to exercise the matching binding on both surfaces.
+  await page.evaluate(() => { window.fixtureNotifications = window.fixtureNotifications.map(row => row.id === 'Active' ? { ...row, ownerWatchCondition: undefined, matchingCondition: { contactId: 'c', propertyId: 'p', contactRevision: 'a'.repeat(64), propertyRevision: 'b'.repeat(64) }, feedback: { value: 'useful', revision: 6, updatedAt: '2026-10-07T11:01:00Z' } } : row); window.dispatchEvent(new Event('fixture-data')); });
+  await page.waitForFunction(() => [...document.querySelectorAll('[aria-label="Feedback pentru Active"] button[aria-pressed="true"]')].every(button => button.textContent === 'Utilă'));
+  await restored.last().getByRole('button', { name: 'Neutilă', exact: true }).click();
+  await page.waitForFunction(() => [...document.querySelectorAll('[aria-label="Feedback pentru Active"] button[aria-pressed="true"]')].some(button => button.textContent === 'Neutilă'));
+  assert.deepEqual(feedbackRequests.at(-1), { notificationId: 'Active', value: 'not_useful', expectedRevision: 6 });
   assert.deepEqual(errors, []);
   console.log('Notification UI: reconciliation and feedback checks passed (synthetic auth, API and Firestore snapshots).');
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

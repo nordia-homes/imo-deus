@@ -123,6 +123,25 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await profile.collection('notifications').doc('matching').get()).data()).toMatchObject({ isRead: true, withdrawalReason: 'state_changed' });
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
+  it.each([
+    { matchingCondition: { contactId: 'c', propertyId: 'p', contactRevision: 'a'.repeat(64), propertyRevision: 'b'.repeat(64) } },
+    { ownerWatchCondition: { listingId: 'p', search: { source: 'owners', transactionType: 'sale' } } },
+  ])('serializes watch votes without ranking projections: %j', async condition => {
+    const ctx = context(), profile = db.collection('users').doc(ctx.uid), notification = profile.collection('notifications').doc('feedback');
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await notification.set({ type: 'ai_assistant', recipientId: ctx.uid, agencyId: ctx.agencyId, automationId: 'r', ...condition, isRead: false });
+    try {
+      const results = await Promise.allSettled(['useful', 'not_useful'].map(value => saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 0 })));
+      expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+      expect((results.find(result => result.status === 'rejected') as PromiseRejectedResult).reason.status).toBe(409);
+      const prior = (await notification.get()).data()!.feedback;
+      const value = prior.value === 'useful' ? 'not_useful' : 'useful';
+      await Promise.all([saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 }), notification.update({ withdrawnAt: '2026-10-07T10:00:00Z', isRead: true })]);
+      await saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 });
+      expect((await notification.get()).data()).toMatchObject({ ...condition, feedback: { value, revision: 2 }, withdrawnAt: '2026-10-07T10:00:00Z', isRead: true });
+      expect((await db.collection('agencies').doc(ctx.agencyId).collection('assistantNotificationState').get()).empty).toBe(true);
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
   it('serializes feedback revisions and preserves a concurrent withdrawal', async () => {
     const ctx = context(), profile = db.collection('users').doc(ctx.uid), notification = profile.collection('notifications').doc('feedback');
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
