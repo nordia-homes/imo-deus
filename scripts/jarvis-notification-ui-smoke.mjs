@@ -99,7 +99,7 @@ try {
   await restored.first().waitFor();
   assert.equal(await restored.count(), 2);
   for (const group of await restored.all()) assert.equal(await group.getByRole('button', { name: 'Neutilă', exact: true }).getAttribute('aria-pressed'), 'true');
-  assert.match(await restored.first().innerText(), /Deocamdată nu schimbă ordinea rezultatelor/);
+  assert.match(await restored.first().innerText(), /Nu schimbă scorul, ordinea rezultatelor/);
   feedbackStatus = 200;
   await restored.last().getByRole('button', { name: 'Utilă', exact: true }).click();
   await page.waitForFunction(() => [...document.querySelectorAll('[role="group"]')].some(group => group.getAttribute('aria-label') === 'Feedback pentru Active' && group.querySelector('button[aria-pressed="true"]')?.textContent === 'Utilă'));

@@ -5,6 +5,7 @@ import { assistantContext, collectionFor, readResource } from '@/lib/ai-assistan
 import { idSchema, searchSchema, readSchema, actionSchema, queryRecordsSchema } from '@/lib/ai-assistant/contracts';
 import { queryRecords } from '@/lib/ai-assistant/record-query';
 import { searchProperties } from '@/lib/ai-assistant/search';
+import { annotateWatchFeedback } from '@/lib/ai-assistant/watch-feedback';
 import { chatTurn, getPlan, runPlan, controlPlan, inspectPlan, sessionHistory, saveAssistantMessage } from '@/lib/ai-assistant/workspace';
 import { operationCatalog } from '@/lib/ai-assistant/operations';
 import { readBoundedText } from '@/lib/romimo/transport';
@@ -77,6 +78,7 @@ export async function POST(request: NextRequest) {
     else if (input.kind === 'prepare') result = { message: await saveAssistantMessage(ctx, input.sessionId, input.requestId, 'Verifică acțiunea înainte de execuție.', [], input.actions) };
     else if (input.kind === 'search') {
       const page = await searchProperties(ctx, input.query);
+      if (input.query.source === 'owners') page.rows = await annotateWatchFeedback(ctx, page.rows);
       result = page;
       if (input.sessionId && input.requestId) {
         const message = await saveAssistantMessage(ctx, input.sessionId, input.requestId, page.note || 'Rezultate din datele actuale.', [{ type: 'results', title: input.query.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', source: input.query.source, search: input.query, ...page }]);

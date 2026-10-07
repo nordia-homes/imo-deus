@@ -29,6 +29,7 @@ import { reconcileRuleNotifications } from '../notification-relevance';
 import { createInsightNotification } from '../insight-notifications';
 import * as insightReports from '../insights';
 import { saveNotificationFeedback } from '../notification-feedback';
+import { annotateWatchFeedback } from '../watch-feedback';
 import { createMatchingNotification } from '../matching-notifications';
 import { matchingRevision } from '../matching-revision';
 import { createOwnerWatchNotification } from '../owner-watch-notifications';
@@ -155,7 +156,7 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
   it.each([
     { matchingCondition: { contactId: 'c', propertyId: 'p', contactRevision: 'a'.repeat(64), propertyRevision: 'b'.repeat(64) } },
     { ownerWatchCondition: { listingId: 'p', search: { source: 'owners', transactionType: 'sale' } } },
-  ])('serializes watch votes without ranking projections: %j', async condition => {
+  ])('serializes watch votes and projects their committed value: %j', async condition => {
     const ctx = context(), profile = db.collection('users').doc(ctx.uid), notification = profile.collection('notifications').doc('feedback');
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
     await notification.set({ type: 'ai_assistant', recipientId: ctx.uid, agencyId: ctx.agencyId, automationId: 'r', ...condition, isRead: false });
@@ -168,7 +169,11 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       await Promise.all([saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 }), notification.update({ withdrawnAt: '2026-10-07T10:00:00Z', isRead: true })]);
       await saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 });
       expect((await notification.get()).data()).toMatchObject({ ...condition, feedback: { value, revision: 2 }, withdrawnAt: '2026-10-07T10:00:00Z', isRead: true });
-      expect((await db.collection('agencies').doc(ctx.agencyId).collection('assistantNotificationState').get()).empty).toBe(true);
+      const states = await db.collection('agencies').doc(ctx.agencyId).collection('assistantNotificationState').get();
+      expect(states.size).toBe(1); expect(states.docs[0].id).toMatch(/^watch-feedback-/);
+      expect(states.docs[0].data().feedback).toMatchObject({ value, revision: 2 });
+      const rows = await annotateWatchFeedback(ctx, [{ id: 'p', matchScore: 88 }], condition.matchingCondition ? 'c' : undefined);
+      expect(rows[0]).toMatchObject({ previousAlertFeedback: value, matchScore: 88 });
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
   it('serializes feedback revisions and preserves a concurrent withdrawal', async () => {

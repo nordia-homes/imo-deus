@@ -22,7 +22,7 @@ describe('notification feedback', () => {
     const first = await saveNotificationFeedback(f.ctx, input);
     expect(await saveNotificationFeedback(f.ctx, input)).toEqual(first);
     expect(f.writes()).toBe(1);
-    expect(f.rows.size).toBe(2); // No projection into insight ranking.
+    expect(f.rows.size).toBe(3); // Separate watch projection, never insight ranking.
     await expect(saveNotificationFeedback(f.ctx, { ...input, value: 'not_useful' })).rejects.toMatchObject({ status: 409 });
     const revised = await saveNotificationFeedback(f.ctx, { ...input, value: 'not_useful', expectedRevision: 1 });
     expect(f.rows.get('users/u/notifications/n')).toEqual({ ...before, feedback: revised.feedback });

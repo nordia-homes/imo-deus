@@ -66,6 +66,7 @@ try {
     } else if (body.kind === 'autonomy') { autonomyEnabled = body.enabled; result = { available: true, enabled: autonomyEnabled }; }
     else if (body.kind === 'start') result = { jobId: 'turn-job', status: 'pending' };
     else if (body.kind === 'execute_background') result = { jobId: 'plan-job', status: 'pending' };
+    else if (body.kind === 'chat' && body.prompt === 'Arată alertele evaluate.') result = { message: message('Rezultate actuale.', ['owners', 'crm'].map(source => ({ type: 'results', source, title: source, complete: true, rows: [{ id: source + '-p', title: 'Ofertă ' + source, price: 120000, matchScore: 92, reasoning: 'Scor canonic păstrat.', feedbackNote: `Ai evaluat o alertă anterioară pentru ${source === 'owners' ? 'acest anunț' : 'această pereche client–proprietate'} ca neutilă (2026-10-07T10:00:00Z). Este evaluarea alertei de atunci; nu evaluează oferta actuală și nu schimbă scorul, ordinea rezultatelor sau frecvența alertelor.` }] }))) };
     else if (body.kind === 'chat' && body.prompt === 'Arată prioritățile evaluate.') result = { message: message('Prioritate încă activă.', [{ type: 'data', source: 'insights', title: 'Priorități', complete: true, rows: [{ id: 'task-t', taskId: 't', type: 'TASK_CARD', title: 'Sarcină restantă', priority: 80, previousFeedback: 'not_useful', feedbackOrder: -1, feedbackNote: 'Evaluare anterioară: neutilă. La aceeași urgență, prioritățile evaluate utile apar înaintea celor neevaluate, apoi cele evaluate neutile. Problema rămâne activă.' }] }]) };
     else if (body.kind === 'chat' && body.prompt?.includes('dosare Sales')) result = { message: message('Un dosar autorizat.', [{ type: 'data', source: 'sales', title: 'Dosare Sales', complete: true, summary: { count: 1, label: 'dosare Sales', scope: 'Dosare autorizate' }, rows: [{ id: 'sale', trackingCode: 'IMO-123', propertyTitle: 'Apartament verificat', stage: 'contract', agreedPrice: 130000, agentName: 'Mirela Agent', nextAction: 'Confirmă programarea notarului' }] }]) };
     else if (body.kind === 'prepare') result = { message: message('Plan pregătit pentru confirmare.', [], { planId, actions: body.actions }) };
@@ -307,6 +308,13 @@ try {
   await page.getByText('Scor de urgență', { exact: true }).waitFor();
   assert.equal(await page.getByText('feedbackOrder', { exact: true }).count(), 0);
   await page.screenshot({ path: path.join(output, 'insight-feedback.png'), fullPage: true });
+  await page.getByLabel('Comandă pentru AI Assistant').fill('Arată alertele evaluate.');
+  await page.getByRole('button', { name: 'Trimite comanda' }).click();
+  for (const entity of ['acest anunț', 'această pereche client–proprietate']) {
+    await page.getByText(`Ai evaluat o alertă anterioară pentru ${entity} ca neutilă (2026-10-07T10:00:00Z). Este evaluarea alertei de atunci; nu evaluează oferta actuală și nu schimbă scorul, ordinea rezultatelor sau frecvența alertelor.`, { exact: true }).waitFor();
+  }
+  assert.equal(await page.getByText('Scor canonic păstrat.', { exact: true }).count(), 2);
+  await page.screenshot({ path: path.join(output, 'watch-feedback-results.png'), fullPage: true });
   for (const type of ['owner_watch', 'matching_watch']) {
     watchEdit = { id: 'watch-edit', status: 'active', runCount: 0, automation: { type, nextRunAt: '2030-10-06T10:00:00.123Z', maxRuns: 3, intervalMinutes: 60, ...(type === 'owner_watch' ? { search: { source: 'owners', scopeKey: 'brasov', transactionType: 'sale', limit: 5, yearMin: 1980, unknownYear: 'exclude', excludeImported: true, roomsAny: [2, 3] } } : { contactId: 'client', threshold: 75, limit: 5 }) } };
     await page.reload();

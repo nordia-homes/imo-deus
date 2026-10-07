@@ -4,6 +4,7 @@ import { VERSIONS } from './models';
 import { actionSchema, type AssistantAction, type AssistantCard, type AccessReference } from './contracts';
 import { readResource, readRelated, readField, type AssistantContext } from './access';
 import { searchProperties } from './search';
+import { annotateWatchFeedback } from './watch-feedback';
 import { matchContact, matchProperty } from './actions';
 import { invokeOperation, operations, isReadOperation, operationContract } from './operations';
 import { discoverTools, requireTool, inputContract } from './registry';
@@ -75,9 +76,11 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     if (['sales', 'conversations', 'socialPosts', 'salesTemplateAudit', 'assistantAutomations'].includes(payload.resource)) refs.push(...(payload.id ? [{ resource: payload.resource, id: payload.id }] : (data.rows || []).map((row: any) => ({ resource: payload.resource, id: row.id }))));
     if (Array.isArray(data.rows)) cards.push({ type: 'data', title: payload.collection || payload.resource, source: payload.resource, ...data, rows: await decorateRecords(ctx, payload.resource, data.rows.slice(0, 20)) } as AssistantCard);
   } else if (name === 'search_properties') {
-    data = await searchProperties(ctx, payload); cards.push({ type: 'results', title: payload.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', source: payload.source, search: payload, ...data } as AssistantCard);
+    data = await searchProperties(ctx, payload);
+    if (payload.source === 'owners') data.rows = await annotateWatchFeedback(ctx, data.rows);
+    cards.push({ type: 'results', title: payload.source === 'owners' ? 'Anunțuri proprietari' : 'Potriviri din CRM', source: payload.source, search: payload, ...data } as AssistantCard);
   } else if (name === 'match_contact' || name === 'match_property') {
-    const rows = name === 'match_contact' ? await matchContact(ctx, payload.contactId, payload.limit) : await matchProperty(ctx, payload.propertyId, payload.limit);
+    const rows = name === 'match_contact' ? await annotateWatchFeedback(ctx, await matchContact(ctx, payload.contactId, payload.limit), payload.contactId) : await matchProperty(ctx, payload.propertyId, payload.limit);
     const resultSetId = name === 'match_contact' && ctx.adminDb ? await saveResultSet(ctx, rows, payload.contactId) : undefined;
     data = { rows, ...(resultSetId ? { resultSetId } : {}), scoringSource: 'existing_imodeus_matching', scoreRecalculated: false };
     cards.push({ type: 'results', title: 'Matching CRM', source: name === 'match_contact' ? 'crm' : 'contacts', ...data } as AssistantCard);
