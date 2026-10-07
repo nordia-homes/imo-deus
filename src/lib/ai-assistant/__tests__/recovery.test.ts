@@ -64,6 +64,23 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['pause', 'cancel', 'both'].flatMap(command => ['ready', 'waiting', 'unknown'].map(outcome => ({ command, outcome }))))('honors $command during $outcome verification before the next step', async ({ command, outcome }) => {
+    const { ctx, plan } = executionFixture();
+    plan.goal = { schemaVersion: 1 };
+    vi.mocked(executeAction).mockResolvedValue({ taskId: 'first' });
+    vi.mocked(readPlanOutcomes).mockImplementation(async () => {
+      if (command !== 'cancel') await controlPlan(ctx, 'p', 'pause');
+      if (command !== 'pause') await runPlan(ctx, 'p', true);
+      const rows = [{ step: 1, executionState: outcome === 'ready' ? 'succeeded' : outcome === 'waiting' ? 'queued' : 'unknown', completionSatisfied: outcome === 'ready', watchable: outcome === 'waiting' }];
+      return { rows, outcome: summarizeOutcome('running', 3, rows as any), pollAfterMs: outcome === 'waiting' ? 15000 : null } as any;
+    });
+    const status = command === 'pause' ? 'paused' : 'cancelled';
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status });
+    expect(plan.status).toBe(status);
+    expect(plan.results).toHaveLength(1);
+    expect(plan.waitUntil).toBe(0);
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
   it.each(['pause', 'cancel', 'both'] as const)('preserves %s requested during the last action', async command => {
     const { ctx, plan } = executionFixture();
     let calls = 0;

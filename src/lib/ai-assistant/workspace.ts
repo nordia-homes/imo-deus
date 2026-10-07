@@ -176,22 +176,27 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
   let results: Record<string, unknown>[] = [...(data.results || [])];
   const accessRefs = [...((data as any).accessRefs || []), ...actionReferences(data.actions)];
   const checkpointStarted = Date.now(), initialCount = results.length;
+  const transition = (patch: Record<string, unknown>) => ctx.adminDb.runTransaction(async tx => {
+    const fresh = (await tx.get(ref)).data();
+    if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running') throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
+    const now = new Date().toISOString();
+    const next = fresh.cancelRequestedAt ? { status: 'cancelled', completedAt: now, waitUntil: 0 }
+      : fresh.pauseRequestedAt ? { status: 'paused', pausedAt: now, waitUntil: 0 } : patch;
+    tx.update(ref, next);
+    return next;
+  });
   try {
     const actions = z.array(actionSchema).min(1).max(MAX_PLAN_ACTIONS).parse(data.actions);
     for (const [index, action] of actions.entries()) {
       if (index < initialCount) continue;
       const fresh = await ref.get();
-      if (fresh.data()?.cancelRequestedAt) {
-        await ref.update({ status: 'cancelled', results, accessRefs, completedAt: new Date().toISOString() });
-        return { ...data, status: 'cancelled' as const, results };
-      }
-      if (fresh.data()?.pauseRequestedAt) {
-        await ref.update({ status: 'paused', results, accessRefs, pausedAt: new Date().toISOString() });
-        return { ...data, status: 'paused' as const, results };
+      if (fresh.data()?.cancelRequestedAt || fresh.data()?.pauseRequestedAt) {
+        const patch = await transition({});
+        return { ...data, ...patch, results };
       }
       if (results.length - initialCount >= maxSteps || Date.now() - checkpointStarted >= PLAN_EXECUTION_MS) {
-        await ref.update({ status: 'pending', results, accessRefs, checkpointAt: new Date().toISOString() });
-        return { ...data, status: 'pending' as const, results };
+        const patch = await transition({ status: 'pending', checkpointAt: new Date().toISOString() });
+        return { ...data, ...patch, results };
       }
       // New plans verify committed asynchronous effects before advancing. Legacy
       // plans retain their original execution semantics; no implicit migration.
@@ -205,8 +210,8 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
           const patch = { status: canWait ? 'pending' as const : 'unknown' as const, outcome,
             waitUntil: canWait ? Date.now() + verification.pollAfterMs! : 0, verificationDeadline: deadline,
             error: canWait ? 'Aștept verificarea rezultatului înaintea pasului următor.' : 'Rezultatul anterior necesită reconciliere. Pașii următori nu au pornit.' };
-          await ref.update(patch);
-          return { ...data, ...patch, results };
+          const saved = await transition(patch);
+          return { ...data, ...saved, results };
         }
         results = bindVerifiedOutputs(results, verification.rows || []);
         await ref.update({ results });
@@ -215,6 +220,10 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       const member = await ctx.adminDb.collection('users').doc(ctx.uid).get();
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Permisiunile s-au schimbat. Planul a fost oprit.', 403);
       const resolved = continuePlanRevision(resolveAction(action, results), results);
+      // The transaction defines when this step starts. Controls committed before
+      // it prevent execution; later controls stop after this in-flight step.
+      const gate = await transition({ lastStartedStep: index + 1 });
+      if (gate.status === 'paused' || gate.status === 'cancelled') return { ...data, ...gate, results };
       const result = await executeAction(ctx, resolved, `${id}-${index}`);
       accessRefs.push(...actionReferences([resolved]));
       if (typeof result?.conversationId === 'string') accessRefs.push({ resource: 'conversations', id: result.conversationId });

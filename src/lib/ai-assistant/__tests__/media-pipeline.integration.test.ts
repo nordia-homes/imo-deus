@@ -63,6 +63,29 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['pause', 'cancel', 'both'].flatMap(command => ['ready', 'waiting', 'unknown'].map(outcome => ({ command, outcome }))))('stops before import when $command arrives during $outcome video verification', async ({ command, outcome }) => {
+    const f = await fixture(); f.ready();
+    const read = vi.mocked(invokeOperation).getMockImplementation()!;
+    vi.mocked(invokeOperation).mockImplementation(async (...args) => {
+      if (command !== 'cancel') await controlPlan(f.ctx, 'plan', 'pause');
+      if (command !== 'pause') await runPlan(f.ctx, 'plan', true);
+      if (outcome === 'ready') return read(...args);
+      return { executionState: outcome === 'waiting' ? 'queued' : 'unknown', job: { id: 'job', propertyId: 'p' } };
+    });
+    const status = command === 'pause' ? 'paused' : 'cancelled';
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status });
+    expect((await f.plan.get()).data()).toMatchObject({ status, waitUntil: 0 });
+    expect((await f.plan.get()).data()?.results).toHaveLength(2);
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).empty).toBe(true);
+    expect(executeAction).toHaveBeenCalledTimes(2);
+    if (command === 'pause') {
+      f.ready();
+      await controlPlan(f.ctx, 'plan', 'resume');
+      expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed' });
+      expect(executeAction).toHaveBeenCalledTimes(4);
+    }
+  }, 20000);
   it.each(['pause', 'cancel', 'both'] as const)('keeps last-step receipts and honors %s without announcing completion', async command => {
     const f = await fixture(); f.ready();
     const execute = vi.mocked(executeAction).getMockImplementation()!;
