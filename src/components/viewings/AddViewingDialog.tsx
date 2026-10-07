@@ -38,7 +38,7 @@ const viewingSchema = z.object({
   // New contact fields
   newContactName: z.string().optional(),
   newContactPhone: z.string().optional(),
-  newContactEmail: z.string().email({ message: 'Adresă de email invalidă.'}).optional().or(z.literal('')),
+  newContactEmail: z.string().trim().optional().refine((value) => !value || z.string().email().safeParse(value).success, { message: 'Adresă de email invalidă.' }),
 });
 
 type PropertyStub = {
@@ -160,8 +160,8 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
         let contactNameToUse = '';
 
         if (isNewContact) {
-            if (!values.newContactName || !values.newContactPhone || !values.newContactEmail) {
-                toast({ variant: "destructive", title: "Date incomplete", description: "Numele, telefonul și emailul sunt obligatorii pentru un client nou." });
+            if (!values.newContactName?.trim() || !values.newContactPhone?.trim()) {
+                toast({ variant: "destructive", title: "Date incomplete", description: "Numele și telefonul sunt obligatorii pentru un client nou." });
                 return; // Early exit, finally will still run
             }
 
@@ -170,7 +170,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                 kind: 'create_contact' as const,
                 name: values.newContactName.trim(),
                 phone: values.newContactPhone.trim(),
-                email: values.newContactEmail.trim(),
+                email: values.newContactEmail?.trim() || '',
                 description: selectedProperty
                     ? `Notita automata: client adaugat pentru vizionarea proprietatii ${selectedProperty.title}`
                     : undefined,
@@ -260,7 +260,7 @@ export function AddViewingDialog({ onAddViewing, properties, contacts, isOpen, o
                                     <h4 className="font-semibold text-sm">Detalii Client Nou</h4>
                                     <FormField control={form.control} name="newContactName" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="Nume client" /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name="newContactPhone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} placeholder="0712345678" /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="newContactEmail" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email (opțional)</FormLabel><FormControl><Input className="bg-white/10 border-white/20 text-white placeholder:text-white/50" {...field} type="email" placeholder="client@email.com" /></FormControl><FormMessage /></FormItem> )} />
                                     <Button type="button" variant="link" size="sm" className="agentfinder-add-viewing-dialog__contact-link h-auto p-0 text-primary" onClick={() => setIsNewContact(false)}>
                                         Sau selectează un client existent
                                     </Button>

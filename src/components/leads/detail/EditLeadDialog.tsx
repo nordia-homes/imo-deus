@@ -39,7 +39,7 @@ import { useAgencyAgents } from '@/hooks/use-agency-agents';
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
   phone: z.string().min(1, { message: "Telefonul este obligatoriu." }),
-  email: z.string().email({ message: "Adresă de email invalidă." }),
+  email: z.string().trim().refine((value) => !value || z.string().email().safeParse(value).success, { message: "Adresă de email invalidă." }),
   source: z.string().min(1, { message: "Sursa este obligatorie." }),
   budget: z.coerce.number().positive({ message: "Bugetul trebuie să fie un număr pozitiv." }),
   status: z.string().min(1, { message: "Statusul este obligatoriu." }),
@@ -163,7 +163,7 @@ export function EditLeadDialog({ properties, contact, isOpen, onOpenChange, onUp
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nume</FormLabel><FormControl><Input {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Telefon</FormLabel><FormControl><Input {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email (opțional)</FormLabel><FormControl><Input type="email" {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="source"

@@ -45,7 +45,7 @@ import { useAgencyAgents } from '@/hooks/use-agency-agents';
 const cumparatorSchema = z.object({
   name: z.string().min(1, { message: "Numele este obligatoriu." }),
   phone: z.string().min(1, { message: "Telefonul este obligatoriu." }),
-  email: z.string().optional().refine((value) => !value || z.string().email().safeParse(value).success, {
+  email: z.string().trim().optional().refine((value) => !value || z.string().email().safeParse(value).success, {
     message: "Adresă de email invalidă.",
   }),
   source: z.string().min(1, { message: "Sursa este obligatorie." }),
@@ -289,7 +289,7 @@ export function AddLeadDialog({ properties, contacts = [], children, isOpen, onO
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Nume</FormLabel><FormControl><Input className={inputClassName} {...field} placeholder="Ion Popescu" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Telefon</FormLabel><FormControl><Input className={inputClassName} {...field} placeholder="0712 345 678"/></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email</FormLabel><FormControl><Input type="email" className={inputClassName} {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel className="text-white/80">Email (opțional)</FormLabel><FormControl><Input type="email" className={inputClassName} {...field} placeholder="ion.popescu@email.com" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField
                                     control={form.control}
                                     name="source"
