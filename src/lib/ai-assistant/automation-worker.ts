@@ -13,6 +13,7 @@ import { featureFlags } from './skills';
 import { runEventRule } from './event-rules';
 import { deliverDailyBrief } from './daily-brief';
 import { nextBriefRun, briefSettingsSchema } from './daily-brief-contract';
+import { assertNoReplySince } from './reply-stop';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -77,13 +78,21 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       } else if (automation.type === 'whatsapp_template') {
         if (isDemoAgencyId(claim.agencyId)) throw new Error('Mesajele externe sunt indisponibile în demo.');
         const conversation = await getConversation(db, ctx, automation.conversationId);
-        if (automation.stopOnReply && conversation.lastInboundAt && conversation.lastInboundAt > claim.createdAt) {
+        const replyCutoff = automation.stopOnReply ? claim.createdAt : undefined;
+        // Compare instants, including offsets. Invalid persisted dates fail closed.
+        let replied = false;
+        if (replyCutoff !== undefined) {
+          const cutoff = Date.parse(replyCutoff), inbound = Date.parse(conversation.lastInboundAt || '');
+          if (!Number.isFinite(cutoff) || (conversation.lastInboundAt && !Number.isFinite(inbound))) assertNoReplySince(conversation, replyCutoff);
+          replied = Number.isFinite(inbound) && inbound >= cutoff;
+        } else if (automation.stopOnReply) throw new Error('Momentul activării follow-upului lipsește.');
+        if (replied) {
           result = { skipped: true, reason: 'Destinatarul a răspuns după crearea automatizării.' };
         } else {
           // requestId is persisted BEFORE provider interaction, reused if the queue is inspected.
           let requestId = claim.requestId as string | undefined;
           if (!requestId) { requestId = randomUUID(); await db.runTransaction(async tx => { await assertAutomationFence(db, tx, ctx); tx.update(doc.ref, { requestId }); }); }
-          result = await queueMessage(db, ctx, automation.conversationId, { template: automation.template, requestId });
+          result = await queueMessage(db, ctx, automation.conversationId, { template: automation.template, requestId, ...(automation.stopOnReply ? { stopOnReplySince: replyCutoff } : {}) });
         }
       } else if (automation.type === 'insight_report' || automation.type === 'matching_watch') {
         const report = automation.type === 'insight_report' ? await getInsights(ctx, automation.limit) : { rows: (await matchContact(ctx, automation.contactId, automation.limit)).filter(row => row.matchScore >= automation.threshold), complete: true };

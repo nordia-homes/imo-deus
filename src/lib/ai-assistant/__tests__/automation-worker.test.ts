@@ -59,13 +59,23 @@ describe('approved automation execution', () => {
   it('persists a request ID before queueing and keeps unknown delivery unknown', async () => {
     vi.mocked(getConversation).mockResolvedValue({} as any);
     const { db, rows } = database(whatsapp);
-    vi.mocked(queueMessage).mockImplementationOnce(async (_db, _ctx, _conversation, input) => { expect(rows.get('assistantAutomationJobs/job').requestId).toBe((input as { requestId: string }).requestId); return { status: 'unknown' } as any; });
+    vi.mocked(queueMessage).mockImplementationOnce(async (_db, _ctx, _conversation, input) => { expect(rows.get('assistantAutomationJobs/job').requestId).toBe((input as { requestId: string }).requestId); expect(input).toMatchObject({ stopOnReplySince: '2026-01-01T00:00:00.000Z' }); return { status: 'unknown' } as any; });
     await drainAssistantAutomations(db as any); await drainAssistantAutomations(db as any);
     expect(queueMessage).toHaveBeenCalledTimes(1); expect(rows.get('assistantAutomationJobs/job').status).toBe('unknown');
   });
   it('never replays an interrupted ambiguous automation', async () => {
     const { db, rows } = database(whatsapp, { status: 'running', leaseUntil: 0 }); await drainAssistantAutomations(db as any);
     expect(queueMessage).not.toHaveBeenCalled(); expect(rows.get('assistantAutomationJobs/job').status).toBe('unknown');
+  });
+  it.each(['bad', undefined])('blocks a follow-up with invalid activation time %s', async createdAt => {
+    vi.mocked(getConversation).mockResolvedValue({} as any);
+    const { db, rows } = database(whatsapp, { createdAt }); await drainAssistantAutomations(db as any);
+    expect(queueMessage).not.toHaveBeenCalled(); expect(rows.get('assistantAutomationJobs/job').status).toBe('blocked');
+  });
+  it('compares reply instants across timezone offsets', async () => {
+    vi.mocked(getConversation).mockResolvedValue({ lastInboundAt: '2026-01-01T00:30:00Z' } as any);
+    const { db, rows } = database(whatsapp, { createdAt: '2026-01-01T02:00:00+02:00' }); await drainAssistantAutomations(db as any);
+    expect(queueMessage).not.toHaveBeenCalled(); expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ lastResult: { skipped: true } });
   });
   it('honors the global automation kill switch', async () => {
     vi.stubEnv('JARVIS_AUTOMATIONS', 'false'); const { db } = database(followup);

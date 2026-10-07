@@ -125,6 +125,36 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     expect((await f.ref.collection('messages').doc(result.messageId!).get()).data()?.status).toBe('accepted');
     expect((await queueMessage(db as any, f.actor, f.ref.id, f.input)).status).toBe('accepted');
   });
+  it.each(['before_queue', 'during_estimate', 'after_queue', 'during_worker'])('stops a follow-up when a reply arrives %s', async timing => {
+    const f = await fixture(), cutoff = new Date(Date.now() + 1000).toISOString();
+    const input = { ...f.input, stopOnReplySince: cutoff };
+    const reply = () => f.ref.update({ lastInboundAt: new Date(Date.parse(cutoff) + 1).toISOString() });
+    if (timing === 'before_queue') await reply();
+    if (timing === 'during_estimate') mocks.token.mockImplementationOnce(async () => {
+      await reply(); return { connection: { id: f.conversation.connectionId, channel: 'messenger', externalId: 'fixture-page' }, token: 'fixture-token' };
+    });
+    if (timing === 'before_queue' || timing === 'during_estimate') {
+      await expect(queueMessage(db as any, f.actor, f.ref.id, input)).rejects.toThrow('a răspuns');
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+    } else {
+      const result = await queueMessage(db as any, f.actor, f.ref.id, input);
+      if (timing === 'after_queue') await reply();
+      else mocks.token.mockImplementationOnce(async () => {
+        await reply(); return { connection: { id: f.conversation.connectionId, channel: 'messenger', externalId: 'fixture-page' }, token: 'fixture-token' };
+      });
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect((await db.collection('communicationOutboundJobs').doc(result.messageId!).get()).data()).toMatchObject({ status: 'failed', budgetSettled: true });
+      expect((await queueMessage(db as any, f.actor, f.ref.id, input)).status).toBe('failed');
+    }
+    expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it('sends a follow-up once when no new reply is recorded', async () => {
+    const f = await fixture(), input = { ...f.input, stopOnReplySince: new Date(Date.now() + 1000).toISOString() };
+    const result = await queueMessage(db as any, f.actor, f.ref.id, input);
+    await drainOutbound(db as any); await drainOutbound(db as any);
+    expect(mocks.graph).toHaveBeenCalledTimes(1);
+    expect((await f.ref.collection('messages').doc(result.messageId!).get()).data()?.status).toBe('accepted');
+  });
   it('rejects stale recipient approval before estimating or creating a job', async () => {
     const f = await fixture(); await f.ref.update({ externalParticipantId: 'changed' });
     mocks.token.mockClear();

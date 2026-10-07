@@ -530,3 +530,17 @@ Validări trecute: **784/784 teste unitare în 84 fișiere**, **73/73 teste pe e
 Limite: metadatele sunt obligatorii în instrucțiunea fluxului de matching, dar mesajele generice fără `matchingSelection` păstrează comportamentul existent; nu se deduce semantic pe server că orice text despre o proprietate provine din matching. Controlul înainte de apelul extern nu este o tranzacție distribuită cu providerul. Reviziile folosesc excluderile existente ale matchingului pentru câmpuri operaționale și media; nu certifică identitatea tuturor atașamentelor. Planurile istorice fără aceste metadate nu sunt reinterpretate. Corpusul live revizuit nu este extins de aceste teste. Rămân verificările complete ale celor trei fluxuri pilot, cele 937 de cazuri fără fixtures individuale, probele externe, validitatea juridică temporală și calibrarea Jev. Acest lot nu este publicat în producție.
 
 Build-ul final a trecut cu TypeScript și 225 pagini. Rămân avertismentele cunoscute pentru Jaeger, clasele Tailwind și copierea browserului standalone local; buildul nu constituie dovadă de deployment.
+
+## 7 octombrie: oprirea follow-upului după un răspuns sosit în coadă
+
+Continuare E3/E4. Verificarea anterioară `stopOnReply` avea loc numai în workerul automatizării, înainte de queue; un răspuns sosit ulterior nu oprea expedierea deja pusă în coadă.
+
+Automatizările noi păstrează acum în inputul jobului `stopOnReplySince`, momentul original al creării automatizării. Serviciul comun îl verifică înainte de estimare, în tranzacția cozii și după recitirea autorizată a conversației înainte de apelul furnizorului. Comparația folosește momente UTC, inclusiv offseturi diferite; un răspuns cu același timestamp oprește conservator follow-upul. Datele lipsă/invalide ale activării blochează automatizarea. Dezactivarea explicită a opririi la răspuns rămâne respectată.
+
+Dacă răspunsul este observat după queue, mesajul se încheie `failed` cu motiv explicit prin mecanismul existent, rezervarea este eliberată și jobul nu este retrimis. Rezultatul poate fi consultat idempotent. Workerul recitește și revalidează identitatea destinatarului după estimare, înainte de trimitere. Mesajele accepted/delivered nu sunt anulate retroactiv.
+
+Validări: **797/797 teste unitare în 85 fișiere**, inclusiv cele **134 scenarii deterministe existente**; **78/78 teste pe emulator în 15 fișiere**; ESLint și manifestul de paritate. Cele cinci probe noi ale cozii reale acoperă răspuns înainte de queue, în timpul estimării, după queue, în timpul workerului și calea fără răspuns (o singură invocare simulată). Testele unitare verifică offseturile, egalitatea momentelor și datele invalide. Nu au fost trimise mesaje reale.
+
+Limite de rollout: joburile deja create fără `stopOnReplySince` nu pot fi reinterpretate drept follow-upuri; verificarea cozii și lansarea coordonată a workerelor rămân necesare. Protecția se bazează pe răspunsurile deja persistate în conversație; un webhook întârziat sau un răspuns sosit după ultima verificare nu poate fi oprit atomic împreună cu un apel extern. Aceasta nu închide integral fluxurile pilot, corpusul live, verificările externe, validitatea juridică sau calibrarea Jev. Lotul nu este publicat în producție.
+
+Build-ul final a trecut: TypeScript și 225 pagini. Rămân avertismentele locale cunoscute pentru Jaeger și copierea browserului standalone; acestea nu sunt probe de deployment.
