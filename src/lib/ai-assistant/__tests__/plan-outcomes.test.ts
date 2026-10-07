@@ -107,8 +107,13 @@ it('verifies TikTok scheduling against both draft and owned queue record', async
   const row = { kind: 'publish', draftRevision: tikTokScheduleRevision(draft), uid: 'u', agencyId: 'a', draftId: 'd', runAt, status: 'queued' };
   const scoped = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => row }) }) } } };
   expect((await readPlanOutcomes(scoped, 'plan')).outcome.state).toBe('COMPLETED');
+  row.status = 'running';
+  expect(await readPlanOutcomes(scoped, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null, rows: [{ publicationConfirmed: false }] });
+  row.status = 'completed'; draft.scheduleStatus = 'sent';
+  expect(await readPlanOutcomes(scoped, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null, rows: [{ publicationConfirmed: false }] });
   row.runAt = '2030-01-01T12:00:00.000Z';
   expect((await readPlanOutcomes(scoped, 'plan')).outcome.state).not.toBe('COMPLETED');
   row.agencyId = 'other';
   expect((await readPlanOutcomes(scoped, 'plan')).rows[0].executionState).toBe('unavailable');
+  expect(mocks.invoke).not.toHaveBeenCalled();
 });

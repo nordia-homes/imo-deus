@@ -619,3 +619,14 @@ Suita pe Firestore real adaugă 11 cazuri: rezultat valid, proiect mai nou, asse
 Planul integral și probele externe rămân deschise. Lotul nu este publicat în producție.
 Validări finale: 106/106 teste pe emulator în 16 fișiere, 157/157 teste TikTok și rezultate ale planului în 17 fișiere, ESLint. Verificarea TypeScript separată a trecut înaintea ultimei restricții de versiune; buildul final verifică și forma finală. Nu au fost rerulate toate cele 979 de teste generale.
 Buildul final a trecut, inclusiv TypeScript și 225 pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu s-a efectuat deployment.
+
+## 7 octombrie: dovada programării TikTok după pornirea workerului
+
+Continuare E3/E4. Verificarea rezultatului programării nu mai cere exclusiv un job queued. Același draft, autor, agenție, revizie de conținut și moment UTC confirmă programarea și când jobul rulează sau este completed, cu stările corespunzătoare ale draftului. Este acoperit și răspunsul de status TikTok care marchează draftul sent/published înainte ca workerul să închidă jobul. Rezultatul explică separat că programarea confirmată nu reprezintă o confirmare a publicării; nu execută apeluri de publicare și nu declanșează retry.
+
+Verificatorul refuză ore invalide ori diferite, conținut schimbat, alt autor/agenție/draft, revizie lipsă sau diferită și stări incoerente. Joburile failed/canceled nu sunt confirmate prin simpla prezență a unui ID de provider și nu determină o afirmație despre succesul ori eșecul publicării externe. Planurile legacy fără expectedDraftRevision rămân citibile, dar cer în continuare revizia jobului egală cu cea a draftului actual.
+
+Validări: prima rulare a regresiilor TikTok și rezultate ale planului a trecut 187/187 teste în 18 fișiere. După adăugarea celor două cazuri pentru răspunsul providerului înaintea închiderii jobului, suitele modificate au trecut 43/43 teste (32 ale verificatorului și 11 ale citirii rezultatului). ESLint a trecut pe forma finală. Acestea sunt probe deterministe, nu scenarii noi certificate din corpusul original de 1000. Nu au fost rerulate emulatorul sau toate testele generale; nu au fost schimbate tranzacțiile de scriere.
+
+Planul integral, probele externe și restul corpusului rămân deschise. Acest lot nu este publicat în producție.
+TypeScript separat și buildul final au trecut pe forma finală, cu 225 de pagini generate. Rămân avertismentele locale cunoscute Jaeger și copierea browserului standalone.
