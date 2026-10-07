@@ -3,6 +3,40 @@ import { bindVerifiedOutputs, restoreVerifiedOutputs } from '../verified-outputs
 import { resolveAction } from '../dependencies';
 import { actionSchema } from '../contracts';
 
+it.each([
+  { completionSatisfied: true, outputs: { assetId: 'different' } },
+  { completionSatisfied: true, outputs: { videoUrl: 'https://storage.example/different.mp4' } },
+  { completionSatisfied: true },
+  { completionSatisfied: false, outputs: { assetId: 'asset' } },
+  { outputs: { assetId: 'asset' } },
+])('rejects contradictory observations independently of their order: %j', conflicting => {
+  const result = { step: 1, result: { jobId: 'job' } };
+  const valid = { step: 1, completionSatisfied: true, outputs: { assetId: 'asset' } };
+  const other = { step: 1, ...conflicting };
+  for (const rows of [[valid, other], [other, valid]]) expect(() => bindVerifiedOutputs([result], rows)).toThrow('contradictorii');
+  expect(result).not.toHaveProperty('outputs');
+});
+it.each([0, 2, '1'])('rejects evidence attached to a mismatched saved step %s', step => {
+  expect(() => bindVerifiedOutputs([{ step, result: { jobId: 'job' } }], [{ step: 1, completionSatisfied: true, outputs: { assetId: 'asset' } }])).toThrow('pasului salvat');
+});
+it('accepts identical observations with reordered fields without mixing different steps', () => {
+  const results = [{ step: 1, result: { jobId: 'first' } }, { step: 2, result: { jobId: 'second' } }];
+  const first = { assetId: 'a', videoUrl: 'https://storage.example/first.mp4' };
+  const bound = bindVerifiedOutputs(results, [
+    { step: 2, completionSatisfied: true, outputs: { assetId: 'b' } },
+    { step: 1, completionSatisfied: true, outputs: first },
+    { step: 1, completionSatisfied: true, outputs: { videoUrl: first.videoUrl, assetId: 'a' } },
+  ]);
+  expect(bound.map(row => row.outputs)).toEqual([first, { assetId: 'b' }]);
+  expect(results.every(row => !('outputs' in row))).toBe(true);
+});
+it('rejects a malformed duplicate even when the first observation is valid', () => {
+  expect(() => bindVerifiedOutputs([{ step: 1 }], [
+    { step: 1, completionSatisfied: true, outputs: { assetId: 'a' } },
+    { step: 1, completionSatisfied: true, outputs: { assetId: 'a', videoUrl: 'file:///private' } },
+  ])).toThrow();
+});
+
 it('binds verified output separately from a queued receipt and rejects subsequent replacement', () => {
   const original = [{ step: 1, result: { jobId: 'job', executionState: 'queued' } }];
   const bound = bindVerifiedOutputs(original, [{ step: 1, completionSatisfied: true, outputs: { assetId: 'asset' } }]);

@@ -22,9 +22,16 @@ export function validatedVideoUrl(value: unknown): string | undefined {
 // Keep them separate from the immutable provider receipt and bind once per plan.
 export function bindVerifiedOutputs(results: Record<string, unknown>[], rows: { step: number; completionSatisfied?: boolean; outputs?: unknown }[]) {
   return results.map((step, index) => {
-    const evidence = rows.find(row => row.step === index + 1 && row.completionSatisfied === true);
+    const candidates = rows.filter(row => row.step === index + 1);
+    const evidence = candidates.find(row => row.completionSatisfied === true && row.outputs != null);
     if (!evidence?.outputs) return step;
+    if (step.step !== undefined && step.step !== index + 1) throw new Error('Dovezile media nu corespund pasului salvat. Planul necesită reconciliere.');
     const outputs = outputsSchema.parse(evidence.outputs);
+    // Duplicate observations are harmless only when they agree on completion
+    // and on the full validated output. Never pick the first favorable row.
+    for (const candidate of candidates) {
+      if (candidate.completionSatisfied !== true || !isDeepStrictEqual(outputsSchema.parse(candidate.outputs ?? {}), outputs)) throw new Error('Dovezi media contradictorii pentru același pas. Planul necesită reconciliere.');
+    }
     if (!Object.keys(outputs).length) return step;
     const previous = outputsSchema.parse(step.outputs || {});
     for (const key of Object.keys(previous) as (keyof VerifiedOutputs)[]) {

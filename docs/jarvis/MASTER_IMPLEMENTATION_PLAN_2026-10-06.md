@@ -1237,3 +1237,13 @@ Mesajul rezultatului mixt precizează separat numărul rezultatelor confirmate, 
 Versiunea uneltelor este 52. Validări: 79/79 teste țintite și 1671/1671 teste de regresie în 132 de fișiere, ESLint și paritatea au trecut. Cele 12 probe noi acoperă ordinea rezultatelor, eșec/anulare/inaccesibilitate, incertitudine, pauză, acoperirea cererii, citirea repetată a două joburi video și persistența monitorului până la soluționare. Providerii și persistența sunt simulate; emulatorul și UI nu au fost relansate pentru schimbarea reducerului. Nu cresc cele 63 de scenarii originale acceptate. Regula București și producția rămân neschimbate; E1/E3 și restul planului integral nu sunt declarate închise.
 
 Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut; dovezile producției nu au fost modificate.
+
+## 8 octombrie: concordanța dovezilor media înainte de continuare
+
+Legarea materialelor verificate de rezultatele pașilor nu mai selectează prima observație favorabilă ignorând alte observații ale aceluiași pas. Înainte de legare, toate observațiile acelui pas trebuie să confirme finalizarea și să conțină aceleași outputs validate. Duplicate identice sunt acceptate indiferent de ordinea câmpurilor; ID-uri/URL-uri diferite, lipsa outputs într-o observație concurentă, finalizarea neconfirmată sau un output invalid opresc legarea. Nu se combină fragmente provenite din dovezi contradictorii.
+
+Numărul explicit al pasului din receipt trebuie să corespundă poziției pentru care se leagă dovada. Receipts legacy fără număr păstrează compatibilitatea pozițională. Rezultatele originale nu sunt modificate în loc, iar regulile existente care împiedică înlocuirea unui material deja legat rămân active. Protecția completează verificările E3/E4; nu reprezintă acceptanța integrală a fluxurilor externe.
+
+Versiunea uneltelor este 53. Au trecut 50/50 teste țintite și 1681/1681 teste de regresie în 132 de fișiere, ESLint și paritatea. Cele 10 probe noi verifică contradicțiile în ambele ordini, numerele de pas incompatibile, duplicatele identice, separarea pașilor și outputs invalide. Fluxul async video/import/draft a trecut în regresie. Nu s-au folosit provideri reali și nu s-au relansat emulatorul sau UI pentru această verificare pură a dovezilor. Numărul scenariilor originale acceptate rămâne 63. Producția și regula București nu au fost schimbate; planul integral rămâne deschis.
+
+Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Dovezile producției nu au fost modificate.
