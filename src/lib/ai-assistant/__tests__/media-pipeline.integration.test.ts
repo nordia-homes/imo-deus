@@ -63,6 +63,43 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each([false, true])('fences an old execution after recovery and actual resumption (lateFailure=%s)', async lateFailure => {
+    const f = await fixture(); f.ready();
+    const execute = vi.mocked(executeAction).getMockImplementation()!;
+    let releaseOld!: () => void, releaseNew!: () => void, oldEntered!: () => void, newEntered!: () => void;
+    const oldGate = new Promise<void>(resolve => { releaseOld = resolve; });
+    const newGate = new Promise<void>(resolve => { releaseNew = resolve; });
+    const oldReady = new Promise<void>(resolve => { oldEntered = resolve; });
+    const newReady = new Promise<void>(resolve => { newEntered = resolve; });
+    vi.mocked(executeAction).mockImplementation(async (...args) => {
+      const action = args[1];
+      if (action.kind === 'existing_operation' && action.operation === 'video_script') {
+        const result = await execute(...args);
+        await f.agency.collection('assistantExecutions').doc('plan-0').set({ status: 'completed', result });
+        oldEntered(); await oldGate;
+        if (lateFailure) throw new Error('Late response failure');
+        return result;
+      }
+      if (action.kind === 'existing_operation' && action.operation === 'video_create') { newEntered(); await newGate; }
+      return execute(...args);
+    });
+    const oldRun = runPlan(f.ctx, 'plan');
+    await oldReady;
+    const oldId = (await f.plan.get()).data()?.executionId;
+    await f.plan.update({ startedAt: new Date(Date.now() - 20 * 60000).toISOString() });
+    expect(await inspectPlan(f.ctx, 'plan')).toMatchObject({ status: 'failed' });
+    const newRun = runPlan(f.ctx, 'plan');
+    await newReady;
+    const current = (await f.plan.get()).data()!;
+    expect(current.executionId).not.toBe(oldId);
+    releaseOld();
+    expect(await oldRun).toMatchObject({ status: 'running', executionId: current.executionId, results: current.results });
+    expect((await f.plan.get()).data()).toEqual(current);
+    releaseNew();
+    expect(await newRun).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
+    expect(executeAction).toHaveBeenCalledTimes(4);
+    expect((await f.agency.collection('tiktokPostDrafts').get()).size).toBe(1);
+  }, 20000);
   it.each(['pause', 'cancel', 'both'].flatMap(command => [false, true].map(external => ({ command, external }))))('preserves $command through a failed action (external=$external)', async ({ command, external }) => {
     const f = await fixture(); f.ready();
     if (!external) {

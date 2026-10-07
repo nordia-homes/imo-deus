@@ -164,12 +164,13 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
     });
     return { ...data, error: 'Oprirea a fost solicitată. Pasul deja pornit trebuie să returneze rezultatul; pașii următori nu vor porni.' };
   }
+  const executionId = randomUUID();
   await ctx.adminDb.runTransaction(async tx => {
     const snap = await tx.get(ref);
     if (snap.data()?.ownerId !== ctx.uid || !(cancel ? ['pending', 'failed', 'paused'] : ['pending', 'failed']).includes(snap.data()?.status)) throw new CommunicationError('Planul este deja în execuție sau necesită verificarea rezultatului. Repetarea automată este blocată.', 409);
     if (Number(snap.data()?.expiresAt) < Date.now()) throw new CommunicationError('Planul a expirat. Cere un plan nou cu date actuale.', 409);
     if (!cancel) validateApproval(snap.data()?.approval, ctx.uid, ctx.agencyId, id, snap.data()?.actions || []);
-    tx.update(ref, { status: cancel ? 'cancelled' : 'running', startedAt: new Date().toISOString(), ...(cancel ? {} : { approvalUsedAt: snap.data()?.approvalUsedAt || new Date().toISOString(), approvedBy: ctx.uid }) });
+    tx.update(ref, { status: cancel ? 'cancelled' : 'running', startedAt: new Date().toISOString(), ...(cancel ? {} : { executionId, approvalUsedAt: snap.data()?.approvalUsedAt || new Date().toISOString(), approvedBy: ctx.uid }) });
     if (snap.data()?.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(snap.data()!.telemetryId), { approval: !cancel, approvalStatus: cancel ? 'cancelled' : 'approved', executionStatus: cancel ? 'cancelled' : 'running' }, { merge: true });
   });
   if (cancel) return { ...data, status: 'cancelled' as const };
@@ -178,12 +179,19 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
   const checkpointStarted = Date.now(), initialCount = results.length;
   const transition = (patch: Record<string, unknown>) => ctx.adminDb.runTransaction(async tx => {
     const fresh = (await tx.get(ref)).data();
-    if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running') throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
+    if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running' || fresh.executionId !== executionId) throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
     const now = new Date().toISOString();
     const next = fresh.cancelRequestedAt ? { status: 'cancelled', completedAt: now, waitUntil: 0 }
       : fresh.pauseRequestedAt ? { status: 'paused', pausedAt: now, waitUntil: 0 } : patch;
     tx.update(ref, next);
     return next;
+  });
+  const saveProgress = (patch: Record<string, unknown>) => ctx.adminDb.runTransaction(async tx => {
+    const fresh = (await tx.get(ref)).data();
+    if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running' || fresh.executionId !== executionId) throw new CommunicationError('Execuția a fost înlocuită. Verifică rezultatul.', 409);
+    // Preserve in-flight receipts even when a stop was requested. A recovered
+    // or resumed execution has a different identity and owns its own progress.
+    tx.update(ref, patch);
   });
   try {
     const actions = z.array(actionSchema).min(1).max(MAX_PLAN_ACTIONS).parse(data.actions);
@@ -214,7 +222,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
           return { ...data, ...saved, results };
         }
         results = bindVerifiedOutputs(results, verification.rows || []);
-        await ref.update({ results });
+        await saveProgress({ results });
       }
       // Recheck current membership at every step, including existing domain handlers.
       const member = await ctx.adminDb.collection('users').doc(ctx.uid).get();
@@ -228,14 +236,14 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       accessRefs.push(...actionReferences([resolved]));
       if (typeof result?.conversationId === 'string') accessRefs.push({ resource: 'conversations', id: result.conversationId });
       results.push({ step: index + 1, kind: action.kind, result });
-      await ref.update({ results, accessRefs });
+      await saveProgress({ results, accessRefs });
     }
     const session = await requireSession(ctx, data.sessionId);
     // Serialize finalization with controls arriving during the last action.
     // Its receipt remains committed even when the plan itself is stopped.
     const status = await ctx.adminDb.runTransaction(async tx => {
       const fresh = (await tx.get(ref)).data();
-      if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running') throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
+      if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running' || fresh.executionId !== executionId) throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
       const status = fresh.cancelRequestedAt ? 'cancelled' as const : fresh.pauseRequestedAt ? 'paused' as const : 'completed' as const;
       const now = new Date().toISOString();
       tx.update(ref, { status, ...(status === 'paused' ? { pausedAt: now } : { completedAt: now }) });
@@ -256,7 +264,10 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
         }
       }
       catch { outcome = summarizeOutcome('completed', data.actions.length, []); }
-      await ref.update({ outcome, waitUntil: 0 });
+      await ctx.adminDb.runTransaction(async tx => {
+        const fresh = (await tx.get(ref)).data();
+        if (fresh?.ownerId === ctx.uid && fresh.status === 'completed' && fresh.executionId === executionId) tx.update(ref, { outcome, waitUntil: 0 });
+      });
     }
     return { ...data, status: 'completed' as const, results, ...(outcome ? { outcome } : {}) };
   } catch (error) {
@@ -269,7 +280,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       if (fresh?.ownerId !== ctx.uid) throw new CommunicationError('Plan inaccesibil.', 403);
       // Another control or recovery may already have settled the plan. A late
       // failure must not overwrite its state or newer receipts.
-      if (fresh.status !== 'running') return fresh;
+      if (fresh.status !== 'running' || fresh.executionId !== executionId) return fresh;
       const status = failureStatus === 'unknown' ? 'unknown' : fresh.cancelRequestedAt ? 'cancelled' : fresh.pauseRequestedAt ? 'paused' : 'failed';
       const now = new Date().toISOString();
       const patch = { status, results, error: message, ...(stoppedStep ? { stoppedStep } : {}),

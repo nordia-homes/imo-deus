@@ -76,6 +76,27 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['receipt', 'failure', 'verification'])('rejects stale %s after another execution takes over', async phase => {
+    const { ctx, plan } = executionFixture();
+    const newer = [{ step: 1, kind: 'create_task', result: { taskId: 'newer' } }];
+    const takeOver = () => Object.assign(plan, { executionId: 'new-execution', status: 'running', results: newer, lastStartedStep: 2 });
+    if (phase === 'verification') {
+      plan.goal = { schemaVersion: 1 };
+      vi.mocked(readPlanOutcomes).mockImplementation(async () => {
+        takeOver();
+        return { rows: [], outcome: summarizeOutcome('running', 3, []), pollAfterMs: null } as any;
+      });
+      vi.mocked(executeAction).mockResolvedValue({ taskId: 'old' });
+    } else vi.mocked(executeAction).mockImplementation(async () => {
+      takeOver();
+      if (phase === 'failure') throw new Error('Old failure');
+      return { taskId: 'old' };
+    });
+    expect(await runPlan(ctx, 'p')).toMatchObject({ status: 'running', executionId: 'new-execution', results: newer });
+    expect(plan).toMatchObject({ results: newer, lastStartedStep: 2 });
+    expect(plan.error).toBeUndefined();
+    expect(executeAction).toHaveBeenCalledTimes(1);
+  });
   it.each(['pause', 'cancel', 'both'].flatMap(command => [false, true].map(external => ({ command, external }))))('keeps $command when an action throws (external=$external)', async ({ command, external }) => {
     const { ctx, plan } = executionFixture();
     if (external) {
