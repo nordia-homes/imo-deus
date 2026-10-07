@@ -21,7 +21,7 @@ export async function readMatchingRelevance(ctx: AssistantContext, tx: Transacti
   return null;
 }
 
-export async function createMatchingNotification(ctx: AssistantContext, automationId: string, id: string, contactId: string, row: Record<string, any>, quietHours?: InsightQuietHours) {
+export async function createMatchingNotification(ctx: AssistantContext, automationId: string, id: string, contactId: string, row: Record<string, any>, quietHours?: InsightQuietHours, cooldownMinutes = 1440) {
   const condition = matchingConditionSchema.parse({ contactId, propertyId: row.id, contactRevision: row.sourceContactRevision, propertyRevision: row.matchingRevision });
   const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(id);
   return ctx.adminDb.runTransaction(async rawTx => {
@@ -34,7 +34,7 @@ export async function createMatchingNotification(ctx: AssistantContext, automati
     if (quiet) return quiet;
     const reason = await readMatchingRelevance(ctx, tx, condition);
     if (reason) return { status: 'skipped', reasonCode: reason };
-    const cooldown = await readWatchCooldown(ctx, tx, ['matching', contactId, row.id]);
+    const cooldown = await readWatchCooldown(ctx, tx, ['matching', contactId, row.id], cooldownMinutes);
     if (cooldown.skipped) return cooldown.skipped;
     const budget = await readNotificationBudget(ctx, tx);
     const quietAfterReads = insightQuietDeferral(quietHours, budget.now);

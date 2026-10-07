@@ -25,7 +25,7 @@ export async function readOwnerWatchRelevance(ctx: AssistantContext, tx: Transac
   return { reason: null, row };
 }
 
-export async function createOwnerWatchNotification(ctx: AssistantContext, automationId: string, id: string, listingId: string, search: AssistantSearch, quietHours?: InsightQuietHours) {
+export async function createOwnerWatchNotification(ctx: AssistantContext, automationId: string, id: string, listingId: string, search: AssistantSearch, quietHours?: InsightQuietHours, cooldownMinutes = 1440) {
   const { cursor: _cursor, limit: _limit, ...criteria } = search;
   const condition = ownerWatchConditionSchema.parse({ listingId, search: { ...criteria, source: 'owners' } });
   const ref = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(id);
@@ -39,7 +39,7 @@ export async function createOwnerWatchNotification(ctx: AssistantContext, automa
     if (quiet) return quiet;
     const fresh = await readOwnerWatchRelevance(ctx, tx, condition);
     if (fresh.reason) return { status: 'skipped', reasonCode: fresh.reason };
-    const cooldown = await readWatchCooldown(ctx, tx, ['owner', listingId]);
+    const cooldown = await readWatchCooldown(ctx, tx, ['owner', listingId], cooldownMinutes);
     if (cooldown.skipped) return cooldown.skipped;
     const budget = await readNotificationBudget(ctx, tx);
     const quietAfterReads = insightQuietDeferral(quietHours, budget.now);

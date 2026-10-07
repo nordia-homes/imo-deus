@@ -55,17 +55,20 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
     await agency.collection('contacts').doc('c').set(contact); await agency.collection('properties').doc('p').set(property);
     await listing.set({ scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale' });
-    const deliver = (id: string) => kind === 'owner'
-      ? createOwnerWatchNotification(ctx, id, id, listing.id, searchSchema.parse({ scopeKey: 'brasov' }))
-      : createMatchingNotification(ctx, id, id, 'c', { id: 'p', title: 'Fixture', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) });
+    const deliver = (id: string, minutes = 60) => kind === 'owner'
+      ? createOwnerWatchNotification(ctx, id, id, listing.id, searchSchema.parse({ scopeKey: 'brasov' }), undefined, minutes)
+      : createMatchingNotification(ctx, id, id, 'c', { id: 'p', title: 'Fixture', sourceContactRevision: matchingRevision(contact), matchingRevision: matchingRevision(property) }, undefined, minutes);
     try {
-      const results = await Promise.all(['one', 'two'].map(deliver));
+      const results = await Promise.all(['one', 'two'].map(id => deliver(id)));
       expect(results.map(row => row.status).sort()).toEqual(['created', 'skipped']);
       expect(results.find(row => row.status === 'skipped')).toMatchObject({ reasonCode: 'cooldown' });
       expect((await profile.collection('notifications').get()).size).toBe(1);
       const states = await agency.collection('assistantNotificationState').get();
       expect(states.docs.find(doc => doc.id.startsWith('budget-'))!.data().deliveries).toHaveLength(1);
       const cooldown = states.docs.find(doc => doc.id.startsWith('watch-cooldown-'))!;
+      expect(cooldown.data().cooldownMinutes).toBe(60);
+      await cooldown.ref.update({ lastDeliveredAt: Date.now() - 31 * 60000 });
+      expect(await deliver('shorter', 30)).toMatchObject({ status: 'skipped', reasonCode: 'cooldown', cooldownMinutes: 60 });
       await cooldown.ref.update({ lastDeliveredAt: Date.now() - 86400001 });
       // Expiration permits a fresh evaluation, not delivery from the old result.
       if (kind === 'owner') await listing.update({ publicationStatus: 'hidden' });

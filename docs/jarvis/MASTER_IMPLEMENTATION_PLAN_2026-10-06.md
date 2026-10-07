@@ -1083,3 +1083,17 @@ Validări: 1515/1515 teste de regresie în 123 de fișiere și 255/255 probe emu
 TypeScript, ESLint, paritatea și suita UI au trecut; UI verifică explicația pauzei în preview-urile ambelor monitorizări. Probele sunt sintetice, nu scenarii originale noi acceptate. Cooldown-ul configurabil și repetarea în cadrul aceleiași monitorizări, folosirea feedbackului în recomandări și restul planului rămân deschise.
 
 Buildul complet a trecut cu TypeScript și 227/227 pagini. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut. Lotul nu este publicat în producție; ultima producție verificată rămâne 97ac8248 / build-2026-10-07-002. Planul integral rămâne deschis.
+
+## 7 octombrie: pauză configurabilă pentru monitorizări
+
+owner_watch și matching_watch acceptă cooldownMinutes între 30 și 43200 de minute, implicit 1440. Editorul pregătește această valoare în planul normal de creare/editare; preview-ul o afișează prin câmpul existent. Workerul transmite durata aprobată în tranzacția de livrare. Versiunea uneltelor este 41.
+
+Starea comună memorează și durata ultimei alerte livrate. Înainte de o nouă livrare se respectă maximul dintre durata curentă și cea memorată, calculat de la aceeași ultimă livrare. Astfel, o monitorizare cu pauză mai scurtă nu ocolește pauza deja începută de alta. După expirare, următoarea livrare salvează propria durată. Verificările omise nu prelungesc pauza. Înregistrările și automatizările legacy fără câmp folosesc 1440; o durată memorată nevalidă oprește livrarea.
+
+Configurarea nu reactivează alerte retrase și nu introduce repetarea în aceeași monitorizare: deduplicarea permanentă existentă rămâne. Pentru durate diferite, câștigătorul tranzacției concurente stabilește ultima livrare; o configurație cu pauză mai lungă poate aștepta mai mult decât alta. Nu există negociere globală a configurațiilor tuturor monitorizărilor. Plafonul comun și intervalele de liniște rămân aplicabile.
+
+Validări: 1522/1522 teste de regresie în 124 de fișiere și 255/255 probe emulator în 18 fișiere. Șapte teste noi acoperă contractele ambelor monitorizări, limitele, migrarea implicită, combinațiile de durate, expirarea și starea coruptă. Probele worker verifică persistența valorilor 90/120 minute din configurația automatizării. Cele două probe Firestore de concurență verifică acum o durată explicită de 60 de minute și refuzul scurtării la 30 după 31 de minute.
+
+UI confirmă defaultul de 1440 și transmiterea valorii 90 în plan pentru ambele monitorizări. TypeScript, ESLint și paritatea au trecut; rămâne avertismentul preexistent useEffect/load din editor. Probele sunt sintetice și nu cresc numărul scenariilor originale acceptate. Repetarea în aceeași monitorizare și folosirea feedbackului pentru recomandări rămân deschise, împreună cu restul planului.
+
+Buildul complet a trecut cu TypeScript și 227/227 pagini; rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Lotul nu este publicat în producție; ultima producție verificată rămâne 97ac8248 / build-2026-10-07-002. Planul integral rămâne deschis.

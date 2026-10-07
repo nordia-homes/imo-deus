@@ -203,6 +203,11 @@ try {
       await page.getByRole('form', { name: 'Configurare automatizare' }).getByLabel('Până la', { exact: true }).fill('13:00');
       await page.screenshot({ path: path.join(output, 'insight-cooldown.png'), fullPage: true });
     }
+    if (['owner_watch', 'matching_watch'].includes(kind)) {
+      const pause = page.getByLabel('Pauză între alertele monitorizărilor, minute', { exact: true });
+      assert.equal(await pause.inputValue(), '1440');
+      await pause.fill('90');
+    }
     if (kind === 'whatsapp_template') {
       await page.getByRole('option', { name: 'Proprietar · whatsapp', exact: true }).waitFor({ state: 'attached' });
       await page.getByLabel('Conversație', { exact: true }).selectOption('conversation');
@@ -218,11 +223,12 @@ try {
     if (kind === 'owner_watch') { assert.equal(prepared.automation.search.source, 'owners'); assert.equal(prepared.automation.search.priceMax, 130000); }
     if (kind === 'matching_watch') assert.equal(prepared.automation.threshold, 75);
     if (['owner_watch', 'matching_watch'].includes(kind)) {
+      assert.equal(prepared.automation.cooldownMinutes, 90);
       await page.getByText('Maximum 10 alerte din rapoarte și monitorizări', { exact: false }).last().waitFor();
       await page.getByText('omisiunile nu prelungesc pauza', { exact: false }).last().waitFor();
     }
     if (['owner_watch', 'matching_watch'].includes(kind)) { assert.deepEqual(prepared.automation.quietHours, { timezone: 'Europe/Bucharest', start: '22:00', end: '08:00' }); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
-    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).last().waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
+    if (kind === 'insight_report') { await page.getByText('Plafon alerte', { exact: true }).last().waitFor(); assert.equal(prepared.automation.cooldownMinutes, 60); assert.deepEqual(prepared.automation.quietHours, { timezone: 'UTC', start: '12:00', end: '13:00' }); await page.getByText('Pauză între alerte (minute)', { exact: true }).last().waitFor(); await page.getByText('Interval de liniște', { exact: true }).last().waitFor(); }
     if (['followup_task', 'matching_watch'].includes(kind)) { assert.equal(prepared.automation.contactId, 'client'); assert.deepEqual(prepared.automation.stopOnContactStatuses, ['Câștigat']); }
     if (kind === 'whatsapp_template') { assert.deepEqual(prepared.automation.template.parameters, ['Cristian']); assert.equal(prepared.automation.stopOnReply, true); }
   }

@@ -27,7 +27,7 @@ function database(automation: any, patch: any = {}) {
   return { db, rows };
 }
 it.each([false, true])('owner worker rechecks fresh listing state after search (changed: %s)', async changed => {
-  const { db, rows } = database({ type: 'owner_watch', nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, search: { scopeKey: 'brasov', priceMax: 120000 } });
+  const { db, rows } = database({ type: 'owner_watch', cooldownMinutes: 90, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1, search: { scopeKey: 'brasov', priceMax: 120000 } });
   rows.set('ownerListings/p', { title: 'Live title', scopeKey: 'brasov', publicationStatus: 'ready', isCanonical: true, transactionType: 'sale', price: '100000 EUR' });
   vi.mocked(searchProperties).mockImplementationOnce(async () => {
     if (changed) rows.set('ownerListings/p', { ...rows.get('ownerListings/p'), price: '200000 EUR' });
@@ -37,13 +37,14 @@ it.each([false, true])('owner worker rechecks fresh listing state after search (
   expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', scanCursor: 'continuation', lastResult: { partial: true, notificationResults: [{ status: changed ? 'skipped' : 'created' }] } });
   expect(rows.has('users/u/notifications/job-p')).toBe(!changed);
   if (!changed) expect(rows.get('users/u/notifications/job-p').body).toBe('Live title');
+  if (!changed) expect([...rows].find(([key]) => key.includes('/watch-cooldown-'))?.[1].cooldownMinutes).toBe(90);
 });
 const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z', contactId: 'c', description: 'Follow up', maxRuns: 1 };
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe('approved automation execution', () => {
   it.each([false, true])('verifies matching sources after calculation and audits omission (changed: %s)', async changed => {
-    const { db, rows } = database({ type: 'matching_watch', contactId: 'c', threshold: 80, limit: 5, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1 });
+    const { db, rows } = database({ type: 'matching_watch', cooldownMinutes: 120, contactId: 'c', threshold: 80, limit: 5, nextRunAt: '2020-01-01T00:00:00Z', maxRuns: 1 });
     const contact = { status: 'Nou', budget: 150000 }, property = { status: 'Activ', price: 120000 };
     rows.set('agencies/a/contacts/c', contact); rows.set('agencies/a/properties/p', property);
     vi.mocked(matchContact).mockImplementationOnce(async () => {
@@ -54,6 +55,7 @@ describe('approved automation execution', () => {
     expect(rows.has('users/u/notifications/job-p')).toBe(!changed);
     expect(rows.get('assistantAutomationJobs/job').lastResult.notificationResults[0]).toMatchObject(changed ? { status: 'skipped', reasonCode: 'state_changed' } : { status: 'created' });
     expect([...rows.entries()].find(([key]) => key.includes('/audit/'))?.[1].result.notificationResults).toHaveLength(1);
+    if (!changed) expect([...rows].find(([key]) => key.includes('/watch-cooldown-'))?.[1].cooldownMinutes).toBe(120);
   });
   it.each([false, true])('defers a one-shot report without consuming its run and rereads current tasks (resolved: %s)', async resolved => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-07T19:30:00Z'));

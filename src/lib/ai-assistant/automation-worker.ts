@@ -113,7 +113,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
             if (notificationResult.status === 'deferred') break;
             continue;
           }
-          const notificationResult = await createMatchingNotification(ctx, claim.id, id, automation.contactId, row, automation.quietHours);
+          const notificationResult = await createMatchingNotification(ctx, claim.id, id, automation.contactId, row, automation.quietHours, automation.cooldownMinutes);
           notificationResults.push(notificationResult);
           if (notificationResult.status === 'deferred') break;
         }
@@ -124,7 +124,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         const page = result as Awaited<ReturnType<typeof searchProperties>>;
         const notificationResults = [];
         for (const row of page.rows) {
-          const notificationResult = await createOwnerWatchNotification(ctx, claim.id, `${claim.id}-${String(row.id)}`, String(row.id), search, automation.quietHours);
+          const notificationResult = await createOwnerWatchNotification(ctx, claim.id, `${claim.id}-${String(row.id)}`, String(row.id), search, automation.quietHours, automation.cooldownMinutes);
           notificationResults.push(notificationResult);
           if (notificationResult.status === 'deferred') break;
         }

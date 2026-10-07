@@ -6,7 +6,7 @@ export const INSIGHT_NOTIFICATION_LIMIT = 10;
 export const INSIGHT_NOTIFICATION_WINDOW_MS = 24 * 60 * 60 * 1000;
 export const INSIGHT_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte și monitorizări în ultimele 24 de ore, cumulat pentru tine în această agenție. Alertele peste plafon sunt omise; următoarea execuție reevaluează prioritățile.';
 
-export const WATCH_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte și monitorizări în ultimele 24 de ore, cumulat pentru tine în această agenție. La atingerea plafonului, monitorizarea se amână fără să consume o execuție și reverifică datele la reluare. Termenul de oprire rămâne aplicabil. Același anunț sau aceeași pereche client–proprietate nu generează alerte din monitorizări diferite mai des de 24 de ore; omisiunile nu prelungesc pauza.';
+export const WATCH_NOTIFICATION_CAP_NOTE = 'Maximum 10 alerte din rapoarte și monitorizări în ultimele 24 de ore, cumulat pentru tine în această agenție. La atingerea plafonului, monitorizarea se amână fără să consume o execuție și reverifică datele la reluare. Termenul de oprire rămâne aplicabil. Același anunț sau aceeași pereche client–proprietate folosește o pauză comună între monitorizări, implicit 1440 minute (24 de ore). Se respectă pauza mai mare dintre configurația curentă și ultima alertă livrată; omisiunile nu prelungesc pauza.';
 
 export function insightNotificationBudget(value: unknown, now: number) {
   const parsed = z.array(z.number().int().nonnegative()).max(INSIGHT_NOTIFICATION_LIMIT).safeParse(value);
