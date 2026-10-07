@@ -7,6 +7,7 @@ import { CommunicationError } from '@/lib/communications/server';
 import { summarizeOutcome } from './outcome';
 import { goalCoverageOutcome } from './goal-coverage';
 import type { VerifiedOutputs } from './verified-outputs';
+import { prospectingOutcome } from './prospecting-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -26,7 +27,13 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
       let completionSatisfied: boolean | undefined;
       const outputs: VerifiedOutputs = {};
       const read = (operation: string, params: Record<string, string>) => { refreshAttempted = true; return invokeOperation(ctx, { operation, params, query: {}, body: {} }, true); };
-      if (action.operation === 'video_script') {
+      const listingId = id(action.body.listingId);
+      if (action.operation === 'owner_prospect' && listingId) {
+        refreshAttempted = true;
+        const prospect = await getResource(ctx, 'ownerListingFavorites', listingId);
+        return { ...base, ...prospectingOutcome(action.body.action, original, prospect) };
+      }
+      else if (action.operation === 'video_script') {
         refreshAttempted = true;
         await getResource(ctx, 'properties', action.params.propertyId);
         const valid = typeof original.script === 'string' && original.script.trim().length > 0 && original.script.length <= 12000;

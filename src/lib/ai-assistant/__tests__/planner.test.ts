@@ -15,7 +15,10 @@ import type { AssistantContext } from '../access';
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 function provider(operation: string, payload: unknown) {
   vi.stubEnv('OPENAI_API_KEY', 'test-only');
-  const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ output: [{ type: 'function_call', name: 'crm', call_id: 'call', arguments: JSON.stringify({ operation, payload: JSON.stringify(payload) }) }] }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({text: 'Plan pregătit.', intentStatus: 'answer'}) }] }] }) });
+  // These fixtures test tool validation. Report usage like the normal API so
+  // prompt growth cannot switch them into the separate missing-usage budget path.
+  const reportedUsage = { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 0 } };
+  const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ usage: reportedUsage, output: [{ type: 'function_call', name: 'crm', call_id: 'call', arguments: JSON.stringify({ operation, payload: JSON.stringify(payload) }) }] }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ usage: reportedUsage, output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({text: 'Plan pregătit.', intentStatus: 'answer'}) }] }] }) });
   vi.stubGlobal('fetch', fetch); return fetch;
 }
 const ctx = { agencyId: 'a', uid: 'u', role: 'agent' } as AssistantContext;

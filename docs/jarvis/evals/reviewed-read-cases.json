@@ -717,5 +717,17 @@
         }
       }
     ]
+  },
+  {
+    "id": "master-0249",
+    "tool": "search_properties",
+    "subset": {
+      "source": "owners",
+      "zone": "Drumul Taberei",
+      "rooms": 3,
+      "priceMax": 150000
+    },
+    "readOnly": false,
+    "workflow": "owner_prospect_all_search_results"
   }
 ]

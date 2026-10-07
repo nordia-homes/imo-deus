@@ -7,3 +7,10 @@ export function validatePreference(key: string, value: string) {
   if (['preferred_brief_time', 'preferred_followup_time'].includes(key) && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new Error('Ora preferată trebuie să fie HH:mm.');
   return value.trim().slice(0, 200);
 }
+
+// Stored memory is data, including legacy/corrupt rows. A row cannot impersonate
+// another preference just by occupying its deterministic document ID.
+export function storedPreference(row: Record<string, unknown> | undefined, key: string, ownerId: string, now = Date.now()) {
+  if (!row || row.ownerId !== ownerId || row.key !== key || typeof row.expiresAt !== 'number' || !Number.isFinite(row.expiresAt) || row.expiresAt <= now || typeof row.value !== 'string' || !row.value.trim() || row.value.length > 200) return null;
+  try { return { key, value: validatePreference(key, row.value) }; } catch { return null; }
+}

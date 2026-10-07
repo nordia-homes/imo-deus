@@ -103,6 +103,7 @@ for (const model of models) {
               const offset = parsed.cursor?.startsWith('fixture:') ? Number(parsed.cursor.slice(8)) : 0;
               const complete = offset + parsed.limit >= found.length;
               data = { rows: found.slice(offset, offset + parsed.limit).map(row => ({ ...row, ...constructionYearEvidence(row), yearFilterSatisfied: parsed.yearMin !== undefined || parsed.yearMax !== undefined ? constructionYearFilterSatisfied(row, parsed) === true : null })), complete, nextCursor: complete ? null : `fixture:${offset + parsed.limit}`, fixtureScope: 'synthetic planning; no provider or CRM execution' };
+              trace.at(-1).returnedIds = data.rows.map(row => row.id);
               if (parsed.excludeImported) data.crmComparison = { mode: 'exact_references', checked: true, semanticDuplicateDetection: false, note: 'Synthetic known imports excluded by reference; unlinked manual duplicates remain unverified.' };
             }
             trace.at(-1).fixtureSucceeded = !data.error && (data.complete !== false || call.name === 'search_properties');
@@ -115,8 +116,18 @@ for (const model of models) {
     } catch (caught) { error = String(caught.category || caught.name || 'failure'); }
     const validAlternative = (scenario.alternatives || []).some(expected => trace.some(call => call.fixtureSucceeded !== false && call.tool === expected.tool && subset(call.payload, expected.subset)));
     const validExpected = validAlternative || trace.some(call => call.fixtureSucceeded !== false && call.tool === scenario.tool && (scenario.absentFields || []).every(field => call.payload[field] === undefined) && (scenario.action ? call.payload.actions?.some(action => subset(action, scenario.action)) : scenario.tool === 'discover_tools' ? String(call.payload.category).replace(/_+$/, '') === scenario.subset.category.replace(/_+$/, '') && call.payload.limit === scenario.subset.limit : subset(call.payload, scenario.subset)));
-    const pass = !error && Boolean(text.trim()) && (!scenario.readOnly || !trace.some(call => call.tool === 'propose_actions' || ['remember_preference','forget_preference'].includes(call.tool))) && (scenario.tool === null ? trace.length === 0 && !!text : validExpected || scenario.id === 'unknown-id' && trace.length === 0 && !!text);
-    const row = { id: scenario.id, model, pass, toolCalls: trace.map(call => call.tool), latencyMs: Date.now() - started, costUsd: cost, tokens, cachedTokens, ...(error ? { error } : {}), fixtureTrace: trace, invalidTrace, fixtureResponse: text };
+    let workflowCheck;
+    if (scenario.workflow === 'owner_prospect_all_search_results') {
+      const query = coreToolSchemas.search_properties[0].parse(scenario.subset);
+      const expectedIds = searchRows.filter(row => searchMatches(row, query)).map(row => row.id).sort();
+      const proposedIds = preparedActions.map(action => action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add' ? action.body.listingId : null).sort();
+      const observedIds = new Set(trace.filter(call => call.tool === 'search_properties' && call.fixtureSucceeded && subset(call.payload, scenario.subset)).flatMap(call => call.returnedIds || []));
+      const lastProposal = trace.findLastIndex(call => call.tool === 'propose_actions');
+      const coverage = trace.findLastIndex(call => call.tool === 'goal_coverage' && call.fixtureSucceeded);
+      workflowCheck = { expectedIds, proposedIds, pass: expectedIds.length > 0 && expectedIds.every(id => observedIds.has(id)) && JSON.stringify(expectedIds) === JSON.stringify(proposedIds) && coverage > lastProposal && lastProposal >= 0 };
+    }
+    const pass = !error && Boolean(text.trim()) && (!workflowCheck || workflowCheck.pass) && (!scenario.readOnly || !trace.some(call => call.tool === 'propose_actions' || ['remember_preference','forget_preference'].includes(call.tool))) && (scenario.tool === null ? trace.length === 0 && !!text : validExpected || scenario.id === 'unknown-id' && trace.length === 0 && !!text);
+    const row = { id: scenario.id, model, pass, toolCalls: trace.map(call => call.tool), latencyMs: Date.now() - started, costUsd: cost, tokens, cachedTokens, ...(error ? { error } : {}), ...(workflowCheck ? { workflowCheck } : {}), fixtureTrace: trace, invalidTrace, fixtureResponse: text };
     report.results.push(row); console.log(JSON.stringify(row));
     await fs.writeFile(path.join(output, 'live-benchmark.json'), JSON.stringify(report, null, 2));
     if (error === 'configuration') { report.errors.push('Provider configuration/access rejected; no production claims'); break; }

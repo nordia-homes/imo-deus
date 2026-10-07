@@ -1,0 +1,222 @@
+{
+  "verifiedAt": "2026-10-07T01:04:06.37Z",
+  "scope": "Live model planning for source case 249 with synthetic fixtures; no production mutations. Handler/ledger effects are verified separately on the emulator; this harness does not certify production planner budgets.",
+  "sourceSha256": "c6838925c268b043274556545097d9f28ec1b76deae58d4f29e12f7b056a7f17",
+  "versions": {
+    "prompt": "jarvis-28",
+    "routing": "luna-first-2",
+    "policy": "tenant-approval-6",
+    "tools": "26",
+    "memory": "2",
+    "skills": "3"
+  },
+  "models": {
+    "gpt-6-luna": {
+      "tasks": 1,
+      "passed": 1,
+      "successPercent": 100,
+      "averageCostUsd": 0.0033335300000000003,
+      "averageLatencyMs": 32825,
+      "cachedTokens": 91243
+    }
+  },
+  "totalCostUsd": 0.0033335300000000003,
+  "results": [
+    {
+      "id": "master-0249",
+      "model": "gpt-6-luna",
+      "pass": true,
+      "toolCalls": [
+        "search_properties",
+        "discover_tools",
+        "propose_actions",
+        "goal_coverage"
+      ],
+      "latencyMs": 32825,
+      "costUsd": 0.0033335300000000003,
+      "tokens": 108246,
+      "cachedTokens": 91243,
+      "workflowCheck": {
+        "expectedIds": [
+          "owner-5-3-0",
+          "owner-5-3-1",
+          "owner-5-3-2",
+          "owner-5-3-3",
+          "owner-5-3-4",
+          "owner-5-3-5",
+          "owner-5-3-6"
+        ],
+        "proposedIds": [
+          "owner-5-3-0",
+          "owner-5-3-1",
+          "owner-5-3-2",
+          "owner-5-3-3",
+          "owner-5-3-4",
+          "owner-5-3-5",
+          "owner-5-3-6"
+        ],
+        "pass": true
+      },
+      "fixtureTrace": [
+        {
+          "tool": "search_properties",
+          "payload": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "priceMax": 150000,
+            "limit": 100
+          },
+          "returnedIds": [
+            "owner-5-3-0",
+            "owner-5-3-1",
+            "owner-5-3-2",
+            "owner-5-3-3",
+            "owner-5-3-4",
+            "owner-5-3-5",
+            "owner-5-3-6"
+          ],
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "discover_tools",
+          "payload": {
+            "category": "owner_",
+            "cursor": 0,
+            "limit": 20
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "propose_actions",
+          "payload": {
+            "actions": [
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-0",
+                  "action": "add"
+                }
+              },
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-1",
+                  "action": "add"
+                }
+              },
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-2",
+                  "action": "add"
+                }
+              },
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-3",
+                  "action": "add"
+                }
+              },
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-4",
+                  "action": "add"
+                }
+              },
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-5",
+                  "action": "add"
+                }
+              },
+              {
+                "kind": "existing_operation",
+                "operation": "owner_prospect",
+                "params": {},
+                "query": {},
+                "body": {
+                  "listingId": "owner-5-3-6",
+                  "action": "add"
+                }
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        },
+        {
+          "tool": "goal_coverage",
+          "payload": {
+            "requirements": [
+              {
+                "id": "search_properties",
+                "sourceQuote": "Găsește trei camere în Drumul Taberei sub 150.000 €",
+                "description": "Căutare apartamente de vânzare cu 3 camere în Drumul Taberei până la 150.000 EUR",
+                "resolution": "answered",
+                "steps": [],
+                "evidenceCallIds": [
+                  "call_eodBA19ExsQLPTkr05q00XWR"
+                ]
+              },
+              {
+                "id": "create_prospecting_list",
+                "sourceQuote": "creează-mi lista de prospectare",
+                "description": "Adăugarea rezultatelor găsite în lista de prospectare",
+                "resolution": "planned",
+                "steps": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7
+                ],
+                "evidenceCallIds": [
+                  "call_eodBA19ExsQLPTkr05q00XWR"
+                ]
+              }
+            ]
+          },
+          "fixtureSucceeded": true
+        }
+      ],
+      "invalidTrace": [
+        {
+          "tool": "discover_tools",
+          "payload": {
+            "category": "owner_",
+            "limit": 50
+          },
+          "error": [
+            "limit: Number must be less than or equal to 20"
+          ]
+        }
+      ],
+      "fixtureResponse": "Am găsit 7 apartamente cu 3 camere în Drumul Taberei, toate listate la 110.000 € — sub plafonul de 150.000 €. Am pregătit adăugarea tuturor celor 7 în lista de prospectare; pașii așteaptă confirmarea ta și nu au fost executați încă."
+    }
+  ]
+}

@@ -2,15 +2,15 @@ import { createHash, randomUUID } from 'node:crypto';
 import { normalized, safeData, type AssistantMessage, type AccessReference } from './contracts';
 import { collectionFor, referencesAllowed, getResource, type AssistantContext } from './access';
 import { matchingRevision } from './matching-revision';
-import { preferenceKeys, validatePreference } from './preferences';
+import { preferenceKeys, validatePreference, storedPreference } from './preferences';
 import { DEFAULT_TIMEZONE, timezoneSchema } from './timezone';
 
 export async function preferredTimezone(ctx: AssistantContext) {
   if (!ctx.adminDb || process.env.JARVIS_MEMORY === 'false') return DEFAULT_TIMEZONE;
   const id = createHash('sha256').update(`${ctx.uid}:preferred_timezone`).digest('hex').slice(0, 32);
   const row = (await collectionFor(ctx, 'assistantMemory').doc(id).get()).data();
-  const parsed = timezoneSchema.safeParse(row?.value);
-  return row?.ownerId === ctx.uid && row?.expiresAt > Date.now() && parsed.success ? parsed.data : DEFAULT_TIMEZONE;
+  const parsed = timezoneSchema.safeParse(storedPreference(row, 'preferred_timezone', ctx.uid)?.value);
+  return parsed.success ? parsed.data : DEFAULT_TIMEZONE;
 }
 
 export function compressedResult(result: unknown, maxBytes = 14000) {
@@ -54,7 +54,10 @@ export async function relevantMemory(ctx: AssistantContext) {
   // The vocabulary is bounded; exact reads cannot let expired/arbitrary rows
   // crowd a valid preference out of the first query page.
   const rows = await Promise.all(preferenceKeys.map(key => collectionFor(ctx, 'assistantMemory').doc(createHash('sha256').update(`${ctx.uid}:${key}`).digest('hex').slice(0, 32)).get()));
-  return rows.map(doc => doc.data()).filter(row => row?.ownerId === ctx.uid && row.expiresAt > Date.now()).map(row => ({ key: row!.key, value: row!.value }));
+  return rows.flatMap((doc, index) => {
+    const preference = storedPreference(doc.data(), preferenceKeys[index], ctx.uid);
+    return preference ? [preference] : [];
+  });
 }
 export async function forgetPreference(ctx: AssistantContext, key: string) {
   const id = createHash('sha256').update(`${ctx.uid}:${key}`).digest('hex').slice(0, 32);

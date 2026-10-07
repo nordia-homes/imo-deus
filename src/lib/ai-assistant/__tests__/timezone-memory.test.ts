@@ -16,6 +16,16 @@ it('uses exactly the timezone key saved by text/voice memory, and forgets it con
   const instructions = buildInstructions(ctx, { readiness: {}, memory });
   const dynamic = JSON.parse(instructions.split('\n').at(-1)!);
   expect(dynamic.timezone).toBe('America/New_York');
+  const saved = [...rows.values()].find(row => row.key === 'preferred_timezone');
+  saved.value = 'invalid/timezone';
+  expect(await preferredTimezone(ctx)).toBe('Europe/Bucharest');
+  expect(await relevantMemory(ctx)).toEqual([]);
+  saved.value = 'America/New_York'; saved.key = 'preferred_message_tone';
+  expect(await preferredTimezone(ctx)).toBe('Europe/Bucharest');
+  expect(await relevantMemory(ctx)).toEqual([]);
+  saved.key = 'preferred_timezone'; saved.expiresAt = 0;
+  expect(await preferredTimezone(ctx)).toBe('Europe/Bucharest');
+  expect(await relevantMemory(ctx)).toEqual([]);
   await forgetPreference(ctx, 'preferred_timezone');
   expect(await preferredTimezone(ctx)).toBe('Europe/Bucharest');
 });
