@@ -38,7 +38,7 @@ describe('TikTok workspace mapping', () => {
   });
   it('maps video views and account-local schedule to TikTok values', () => {
     const inputs = buildAdInputs({ ...emptyAdDraft, objective: 'VIDEO_VIEWS', start: '2026-10-01T12:30', end: '2026-10-02T12:30', budget: '50.00' }, { AD_CREATE: object([]), CAMPAIGN_CREATE: object(['objective_type']), CREATIVE_UPLOAD: object([]), ADGROUP_CREATE: object(['optimization_goal', 'promotion_type', 'billing_event', 'schedule_start_time', 'schedule_end_time', 'budget']) });
-    expect(inputs.adGroup).toEqual({ optimization_goal: 'ENGAGED_VIEW', billing_event: 'CPV', schedule_start_time: '2026-10-01 12:30:00', schedule_end_time: '2026-10-02 12:30:00', budget: '50.00' });
+    expect(inputs.adGroup).toEqual({ optimization_goal: 'ENGAGED_VIEW', billing_event: 'CPV', schedule_start_time: '2026-10-01 09:30:00', schedule_end_time: '2026-10-02 09:30:00', budget: '50.00' });
   });
   it('constructs native creative arrays using only discovered fields', () => {
     const schema: JsonSchema = { type: 'object', properties: { creatives: { type: 'array', items: { type: 'object', required: ['ad_name', 'video_id'], properties: { ad_name: { type: 'string' }, video_id: { type: 'string' } } } } } };

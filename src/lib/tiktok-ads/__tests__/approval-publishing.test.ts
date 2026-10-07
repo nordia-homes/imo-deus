@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyAdDraft } from '../workspace-model';
+const accountZone = vi.hoisted(() => ({ value: 'Europe/Bucharest' }));
 
 const state = vi.hoisted(() => ({ docs: new Map<string, Record<string, unknown>>(), resources: { ad: [] as Record<string, unknown>[], adgroup: [] as Record<string, unknown>[], campaign: [] as Record<string, unknown>[] }, calls: [] as Array<Record<string, unknown>>, creationCount: 0, cache: new Map<string, unknown>(), failActivation: false, failCreation: false, failRead: false, budget: '50' }));
 vi.mock('@/firebase/admin', () => {
@@ -10,7 +11,7 @@ vi.mock('firebase-admin/firestore', () => ({ FieldValue: { arrayUnion: (...items
 vi.mock('../policy', () => ({ assertActorPolicy: vi.fn(), assertAdvertiserWriteEligibility: vi.fn(), assertKillSwitches: vi.fn() }));
 const caps = ['AD_CREATE', 'CREATIVE_UPLOAD', 'SPARK_NEW_VIDEO_AD_ONLY', 'AD_RESUME', 'ADGROUP_RESUME', 'CAMPAIGN_RESUME', 'AD_READ', 'ADGROUP_READ', 'CAMPAIGN_READ'];
 vi.mock('../store', () => ({
-  getAdvertiser: async () => ({ currency: 'RON', timezone: 'UTC', version: 1, billingReadiness: 'ready' }),
+  getAdvertiser: async () => ({ currency: 'RON', timezone: accountZone.value, version: 1, billingReadiness: 'ready' }),
   getOwnedStudioVideoAsset: async () => ({ id: 'video', propertyId: 'property', url: 'https://example.com/video.mp4' }),
   loadToolCache: async () => ['AD_CREATE', 'CREATIVE_UPLOAD', 'AD_RESUME', 'ADGROUP_RESUME', 'CAMPAIGN_RESUME', 'AD_READ', 'ADGROUP_READ', 'CAMPAIGN_READ'].map(name => ({ name, inputSchema: { type: 'object', properties: Object.fromEntries(['adgroup_id', 'adgroup_ids', 'ad_id', 'ad_ids', 'campaign_id', 'campaign_ids', 'ad_name', 'page', 'page_size'].map(key => [key, {}])) } })),
 }));
@@ -50,12 +51,30 @@ vi.mock('@/lib/tiktok-ads', () => ({
 import { previewPublication, publishApprovedDraft } from '../approval-publishing';
 const path = 'agencies/agency/tiktokWorkspaceDrafts/draft';
 beforeEach(() => {
+  accountZone.value = 'Europe/Bucharest';
   state.docs.clear(); state.cache.clear(); state.calls = []; state.creationCount = 0; state.failActivation = false; state.failCreation = false; state.failRead = false; state.budget = '50';
   state.docs.set('agencies/agency/properties/property', {});
   state.docs.set(path, { id: 'draft', advertiserId: 'account', ownerUid: 'agent', version: 1, status: 'submitted', data: { ...emptyAdDraft, name: 'Home', propertyId: 'property', identityId: 'profile', text: 'Home tour', assetId: 'video', url: 'https://example.com', adgroupId: 'group' } });
   state.resources = { campaign: [{ campaign_id: 'campaign', campaign_name: 'Campaign', operation_status: 'DISABLE' }], adgroup: [{ adgroup_id: 'group', campaign_id: 'campaign', adgroup_name: 'Group', operation_status: 'DISABLE', budget: '50' }], ad: [{ ad_id: 'other-ad', ad_name: 'Other', adgroup_id: 'group', operation_status: 'ENABLE' }] };
 });
 describe('Approved publication orchestrator (mocked provider)', () => {
+  it('blocks incompatible account timezones before issuing publication approval', async () => {
+    accountZone.value = 'UTC';
+    const original = structuredClone(state.docs.get(path));
+    await expect(previewPublication('agency', 'admin', 'admin', 'draft', 1)).rejects.toThrow('Europe/Bucharest');
+    expect(state.docs.get(path)).toEqual(original);
+    expect(state.creationCount).toBe(0);
+    expect(state.calls.every(call => ['ADVERTISER_STATUS', 'BILLING_READINESS'].includes(String(call.capability)))).toBe(true);
+  });
+  it('rechecks the account timezone after preview without starting a write or altering the draft', async () => {
+    const preview = await previewPublication('agency', 'admin', 'admin', 'draft', 1);
+    const original = structuredClone(state.docs.get(path));
+    accountZone.value = 'UTC'; state.calls = [];
+    await expect(publishApprovedDraft('agency', 'admin', 'admin', 'draft', 1, preview.token)).rejects.toThrow('Europe/Bucharest');
+    expect(state.docs.get(path)).toEqual(original);
+    expect(state.creationCount).toBe(0);
+    expect(state.calls.every(call => ['ADVERTISER_STATUS', 'BILLING_READINESS'].includes(String(call.capability)))).toBe(true);
+  });
   it('denies agents before any provider call', async () => {
     await expect(previewPublication('agency', 'agent', 'agent', 'draft', 1)).rejects.toThrow(/administrator/);
     await expect(publishApprovedDraft('agency', 'agent', 'agent', 'draft', 1, 'x')).rejects.toThrow(/administrator/);

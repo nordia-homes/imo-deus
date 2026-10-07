@@ -1189,3 +1189,15 @@ Contractele generate și manifestul de paritate au fost actualizate. Versiunea u
 Validări: 1611/1611 teste de regresie în 130 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 12 probe noi verifică normalizarea setărilor legacy, respingerea altor fusuri fără scriere, citirea și salvarea setărilor, intervalul permis iarna/vara, plafonul în ziua de 25 de ore și costurile la granița lunii locale. Providerul este simulat; nu se apelează numere reale. Nu s-au relansat emulatorul sau verificarea vizuală în browser; modificarea simplă a controlului UI este verificată prin analiza statică și build. Scenariile originale acceptate rămân 63 din 1000.
 
 Buildul complet a trecut cu 227/227 pagini, cu avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Dovezile producției rămân neschimbate.
+
+## 8 octombrie: programări București în editorul TikTok Ads
+
+Constructorii de reclame și grupuri folosesc Europe/Bucharest ca fus implicit și refuză alt fus de cont înainte de generarea payloadului. Fluxul de aprobare/publicare din workspace reverifică pe server fusul sincronizat al contului atât înainte de emiterea confirmării, cât și la publicare. Un cont incompatibil trebuie înlocuit cu unul configurat Europe/Bucharest; nu se schimbă setarea la provider și nu se reinterpretează orele drafturilor existente. Mesajele editorului explică această limită.
+
+Conversia existentă a orelor locale în timestampurile UTC ale adaptorului păstrează schimbarea vară/iarnă și respinge orele ambigue/inexistente. Utilitarul tehnic de conversie generică rămâne disponibil pentru citirea datelor; nu este o opțiune de configurare în editor. Metadatele istorice ale contului extern rămân adevărate, inclusiv atunci când contul nu poate fi folosit la publicare. Nu se migrează campanii sau programări deja lansate și nu se schimbă operațiile de oprire a livrării.
+
+Acest lot acoperă constructorii editorului și publicarea cu aprobarea workspace. Nu declară închis auditul tuturor operațiilor tehnice directe TikTok, al afișării programelor grupurilor externe sau al tuturor modulelor de marketing. Versiunea uneltelor este 49. Producția rămâne neschimbată; planul integral și acceptarea corpusului original sunt încă deschise.
+
+Validări: 1624/1624 teste în 131 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 13 probe noi acoperă conturile incompatibile, conversia vară/iarnă, orele DST ambigue/inexistente și schimbarea fusului între preview și publicare fără pornirea scrierilor. Două probe inițiale aveau date de draft incomplete; după corectarea fixturelor, regresia integrală a trecut. Providerii sunt simulați. Emulatorul și verificarea vizuală nu au fost relansate pentru acest lot; mesajele UI sunt verificate static și prin build. Aceste teste nu cresc numărul scenariilor originale acceptate.
+
+Buildul complet a trecut cu 227/227 pagini. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut; dovezile ultimei publicări în producție nu au fost modificate.

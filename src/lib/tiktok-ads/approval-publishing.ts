@@ -5,7 +5,7 @@ import { authorizeTikTokSpend, discoverTikTokAdsCapabilities, executeTikTokAdsOp
 import { getAdvertiser, getOwnedStudioVideoAsset, loadToolCache } from './store';
 import { assertActorPolicy, assertAdvertiserWriteEligibility, assertKillSwitches } from './policy';
 import { approvalCreateIntent, isApprovalAdmin, type ApprovalDraft } from './approval-model';
-import { records, rowsFor, schemaInput, type TikTokRow } from './workspace-model';
+import { assertAdsScheduleTimezone, records, rowsFor, schemaInput, type TikTokRow } from './workspace-model';
 import type { JsonSchema, TikTokActor, TikTokCapability } from './types';
 
 export type PublishPreview = {
@@ -30,6 +30,7 @@ async function context(agencyId: string, uid: string, role: TikTokActor['role'],
   assertAdvertiserWriteEligibility(advertiser);
   if (advertiser.billingReadiness !== 'ready') throw new Error('Facturarea contului trebuie verificată înainte de publicare.');
   if (!advertiser.timezone || !advertiser.currency) throw new Error('Sincronizează moneda și fusul orar.');
+  assertAdsScheduleTimezone(advertiser.timezone);
   const resolutions = await discoverTikTokAdsCapabilities(agencyId);
   const tools = await loadToolCache(agencyId);
   const schemas = Object.fromEntries(resolutions.flatMap(item => {

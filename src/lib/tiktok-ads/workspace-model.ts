@@ -1,4 +1,8 @@
 import type { JsonSchema } from './types';
+export const ADS_SCHEDULE_TIMEZONE = 'Europe/Bucharest';
+export function assertAdsScheduleTimezone(timezone: string | undefined) {
+  if (timezone !== ADS_SCHEDULE_TIMEZONE) throw new Error('Programările imoDeus folosesc Europe/Bucharest. Selectează și sincronizează un cont publicitar configurat în acest fus; programul existent nu a fost modificat.');
+}
 
 export type TikTokRow = { id: string; name: string; status: string; objectiveType?: string; campaignId?: string; adgroupId?: string; propertyId?: string | null; budget?: string; scheduleEnd?: string; rejection?: string; url?: string; metrics?: Record<string, string>; };
 export type AdDraft = { name: string; propertyId: string; assetId: string; identityId: string; objective: 'TRAFFIC' | 'LEAD_GENERATION' | 'VIDEO_VIEWS'; text: string; url: string; formId: string; locationIds: string[]; budget: string; start: string; end: string; cta: string; mode: 'video' | 'post'; postId: string; adgroupId: string; };
@@ -95,7 +99,8 @@ export function accountTimeToUtc(value: string, timezone: string): string | unde
   return new Date(candidates[0]).toISOString().slice(0, 19).replace('T', ' ');
 }
 
-export function buildAdInputs(draft: AdDraft, schemas: Partial<Record<string, JsonSchema>>, timezone = 'UTC') {
+export function buildAdInputs(draft: AdDraft, schemas: Partial<Record<string, JsonSchema>>, timezone = ADS_SCHEDULE_TIMEZONE) {
+  assertAdsScheduleTimezone(timezone);
   const ad = schemaInput(schemas.AD_CREATE, { ad_name: draft.name, ad_text: draft.text, ad_format: 'SINGLE_VIDEO', call_to_action: draft.cta, landing_page_url: draft.url || undefined, page_id: draft.formId || undefined, adgroup_id: draft.adgroupId || undefined, tiktok_item_id: draft.mode === 'post' ? draft.postId : undefined });
   if (draft.adgroupId && !records(ad).some(row => row.adgroup_id === draft.adgroupId)) throw new Error('Configurația TikTok nu permite asocierea reclamei cu grupul selectat.');
   if (draft.mode === 'post') return { campaign: {}, adGroup: {}, video: {}, ad };
@@ -110,6 +115,7 @@ export function buildCampaignInput(draft: Pick<AdDraft, 'name' | 'objective'>, s
 }
 
 export function buildAdGroupInput(draft: AdDraft, schema: JsonSchema | undefined, timezone: string, campaignId?: string) {
+  assertAdsScheduleTimezone(timezone);
   const scheduleTime = (value: string) => accountTimeToUtc(value, timezone);
   return schemaInput(schema, { campaign_id: campaignId || undefined, campaignId: campaignId || undefined, adgroup_name: draft.name, budget: draft.budget, budget_mode: 'BUDGET_MODE_DAY', schedule_type: draft.end ? 'SCHEDULE_START_END' : 'SCHEDULE_FROM_NOW', schedule_start_time: scheduleTime(draft.start), schedule_end_time: scheduleTime(draft.end), location_ids: draft.locationIds, placement_type: 'PLACEMENT_TYPE_NORMAL', placements: ['PLACEMENT_TIKTOK'], promotion_type: draft.objective === 'LEAD_GENERATION' ? 'LEAD_GENERATION' : draft.objective === 'VIDEO_VIEWS' ? undefined : 'WEBSITE', promotion_target_type: draft.objective === 'LEAD_GENERATION' ? 'INSTANT_PAGE' : undefined, optimization_goal: draft.objective === 'TRAFFIC' ? 'CLICK' : draft.objective === 'VIDEO_VIEWS' ? 'ENGAGED_VIEW' : 'LEAD_GENERATION', billing_event: draft.objective === 'VIDEO_VIEWS' ? 'CPV' : draft.objective === 'TRAFFIC' ? 'CPC' : 'OCPM', bid_type: 'BID_TYPE_NO_BID', pacing: 'PACING_MODE_SMOOTH' });
 }
