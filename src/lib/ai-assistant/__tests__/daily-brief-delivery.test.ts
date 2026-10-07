@@ -41,6 +41,7 @@ async function queuedBrief(crash = false) {
   let receipt: any;
   vi.mocked(queueMessage).mockImplementationOnce(async (_db, _actor, _id, input: any) => {
     receipt = [...fixture.rows].find(([key]) => key.includes('/assistantArtifacts/'))![1];
+    expect(input.personalRecipient).toMatchObject({ role: 'agent', recipientRevision: receipt.delivery.recipientRevision });
     expect(receipt).toMatchObject({ status: 'prepared', delivery: { requestId: input.requestId, template: input.template } });
     fixture.rows.set(`communicationOutboundJobs/${receipt.delivery.messageId}`, { agencyId: 'a', uid: 'u', conversationId: 'own', connectionId: 'connection', recipientRevision: receipt.delivery.recipientRevision, input: { ...input, text: '' } });
     fixture.rows.set(`agencies/a/conversations/own/messages/${receipt.delivery.messageId}`, { agencyId: 'a', conversationId: 'own', authorId: 'u', direction: 'sent', origin: 'imodeus', status: 'queued' });
@@ -124,7 +125,7 @@ it('blocks revoked membership before any notification write', async () => {
 });
 it('never sends a personal brief to a client conversation', async () => {
   const { ctx, rows } = database();
-  vi.mocked(getConversation).mockResolvedValue({ channel: 'whatsapp', phone: '+40722999999' } as any);
+  vi.mocked(getConversation).mockResolvedValue({ channel: 'whatsapp', phone: '+40722123456', externalParticipantId: '40722999999' } as any);
   await expect(deliverDailyBrief(ctx, whatsapp, now)).rejects.toThrow('numărul tău');
   expect(queueMessage).not.toHaveBeenCalled(); expect(rows.size).toBe(1);
 });

@@ -8,7 +8,7 @@ import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
 import { isDemoAgencyId } from '@/lib/demo/guards';
-import { normalizedContactFields } from '@/lib/crm/contact-identity';
+import { personalRecipientProof, personalRecipientSchema } from '@/lib/communications/personal-recipient';
 import { stableId } from '@/lib/communications/crypto';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { readBriefDelivery, briefDeliverySchema } from './brief-delivery';
@@ -35,12 +35,12 @@ export async function deliverDailyBrief(ctx: AssistantContext, settings: BriefSe
   const notification = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(digest);
   const requestId = `${digest.slice(0, 8)}-${digest.slice(8, 12)}-4${digest.slice(13, 16)}-8${digest.slice(17, 20)}-${digest.slice(20, 32)}`;
   let delivery: z.infer<typeof briefDeliverySchema> | undefined;
+  let personalRecipient: z.infer<typeof personalRecipientSchema> | undefined;
   if (settings.deliveryChannel === 'whatsapp') {
     if (isDemoAgencyId(ctx.agencyId)) throw new Error('Livrarea externă este indisponibilă în demo.');
     const conversation = await getConversation(ctx.adminDb, ctx, settings.conversationId!);
     const actor = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
-    const ownPhone = normalizedContactFields({ phone: actor?.phone }).normalizedPhone;
-    if (conversation.channel !== 'whatsapp' || !ownPhone || ownPhone !== normalizedContactFields({ phone: conversation.phone || conversation.externalParticipantId }).normalizedPhone) throw new Error('Brief-ul poate fi trimis numai la numărul tău configurat în profil. Alege conversația corespunzătoare.');
+    personalRecipient = personalRecipientProof(ctx, { ...conversation, id: settings.conversationId }, actor);
     delivery = briefDeliverySchema.parse({ conversationId: settings.conversationId, requestId, messageId: stableId(ctx.agencyId, requestId), recipientRevision: recipientRevision({ ...conversation, id: settings.conversationId }), template: { name: settings.templateName, language: settings.templateLanguage, parameters: [body] } });
   }
   const claimed = await ctx.adminDb.runTransaction(async tx => {
@@ -55,7 +55,7 @@ export async function deliverDailyBrief(ctx: AssistantContext, settings: BriefSe
   if (!claimed) return { deduplicated: true, receiptId: digest, ...await readBriefDelivery(ctx, digest) };
   if (settings.deliveryChannel === 'whatsapp') {
     try {
-      const result = await queueMessage(ctx.adminDb, ctx, settings.conversationId!, { requestId, template: { name: settings.templateName!, language: settings.templateLanguage, parameters: [body] } });
+      const result = await queueMessage(ctx.adminDb, ctx, settings.conversationId!, { requestId, personalRecipient, template: { name: settings.templateName!, language: settings.templateLanguage, parameters: [body] } });
       await receipt.update({ status: result.status || 'queued', updatedAt: new Date().toISOString() });
       return { receiptId: digest, complete: report.complete, ...await readBriefDelivery(ctx, digest) };
     } catch {

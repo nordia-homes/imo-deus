@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { personalRecipientProof } from '@/lib/communications/personal-recipient';
+vi.mock('@/lib/communications/whatsapp-config', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/communications/whatsapp-config')>(), assertWhatsAppAccess: () => {}, whatsappAppId: () => 'fixture-app' }));
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ token: vi.fn(), graph: vi.fn() }));
@@ -21,6 +23,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     db = new Firestore({ projectId: 'demo-imodeus-outbound-recipient' });
   });
   beforeEach(() => {
+    vi.stubEnv('META_TOKEN_ENCRYPTION_KEY', 'synthetic-receipt-key');
     mocks.token.mockReset(); mocks.graph.mockReset();
     mocks.token.mockImplementation(async (_db, _actor, id) => ({ connection: { id, channel: 'messenger', externalId: 'fixture-page' }, token: 'fixture-token' }));
     mocks.graph.mockResolvedValue({ message_id: randomUUID() });
@@ -34,6 +37,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       for (const doc of docs.docs) await doc.ref.delete();
     }
     await db.terminate();
+    vi.unstubAllEnvs();
   });
   async function fixture() {
     const agencyId = randomUUID(), uid = randomUUID(), id = randomUUID(); agencies.push(agencyId); users.push(uid);
@@ -211,5 +215,60 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     await drainOutbound(db as any);
     expect(mocks.graph).toHaveBeenCalledTimes(1);
     expect((await f.ref.collection('messages').doc(result.messageId!).get()).data()?.status).toBe('accepted');
+  });
+  async function personalFixture() {
+    const f = await fixture();
+    const profileRef = db.collection('users').doc(f.actor.uid);
+    const profile = { agencyId: f.actor.agencyId, role: 'agent', phone: '+40722123456' };
+    const conversation = { ...f.conversation, channel: 'whatsapp', externalParticipantId: '40722123456', phone: '+40722123456' };
+    await profileRef.set(profile); await f.ref.set(conversation);
+    const rate = db.collection('communicationRates').doc(f.actor.uid);
+    await rate.set({ category: 'service', prefix: '40', currency: 'EUR', amountMicros: 0, validFrom: '2020-01-01T00:00:00Z', validUntil: '2099-01-01T00:00:00Z' });
+    mocks.token.mockReset();
+    const token = async () => ({ connection: { id: conversation.connectionId, channel: 'whatsapp', externalId: 'fixture-number', appId: 'fixture-app', currency: 'EUR' }, token: 'fixture-token' });
+    mocks.token.mockImplementation(token);
+    mocks.graph.mockResolvedValue({ messages: [{ id: randomUUID() }] });
+    const input = { text: 'Brief sintetic', requestId: randomUUID(), personalRecipient: personalRecipientProof(f.actor, conversation, profile) };
+    return { ...f, profileRef, rate, token, input };
+  }
+  it.each(['phone', 'role', 'destination'])('refuses a changed personal %s in the queue transaction', async change => {
+    const f = await personalFixture();
+    mocks.token.mockImplementationOnce(async () => {
+      if (change === 'phone') await f.profileRef.update({ phone: '+40722999999' });
+      if (change === 'role') await f.profileRef.update({ role: 'admin' });
+      if (change === 'destination') await f.ref.update({ externalParticipantId: '40722999999' });
+      return f.token();
+    });
+    try {
+      await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow();
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect((await db.collection('communicationOutboundJobs').where('uid', '==', f.actor.uid).get()).empty).toBe(true);
+      expect(mocks.graph).not.toHaveBeenCalled();
+    } finally { await f.rate.delete(); }
+  });
+  it.each(['phone', 'role', 'during-estimate'])('stops personal delivery after queueing: %s', async change => {
+    const f = await personalFixture();
+    try {
+      const result = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+      if (change === 'phone') await f.profileRef.update({ phone: '+40722999999' });
+      if (change === 'role') await f.profileRef.update({ role: 'admin' });
+      if (change === 'during-estimate') mocks.token.mockImplementationOnce(async () => { await f.profileRef.update({ phone: '+40722999999' }); return f.token(); });
+      await drainOutbound(db as any);
+      expect(mocks.graph).not.toHaveBeenCalled();
+      expect((await db.collection('communicationOutboundJobs').doc(result.messageId!).get()).data()?.status).toBe('failed');
+      expect((await f.ref.collection('messages').doc(result.messageId!).get()).data()?.status).toBe('failed');
+      await drainOutbound(db as any); expect(mocks.graph).not.toHaveBeenCalled();
+    } finally { await f.rate.delete(); }
+  });
+  it('sends an unchanged personal recipient once through the normal queue and worker', async () => {
+    const f = await personalFixture();
+    try {
+      const result = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+      expect((await db.collection('communicationOutboundJobs').doc(result.messageId!).get()).data()?.input.personalRecipient).toEqual(f.input.personalRecipient);
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(mocks.graph, String((await db.collection('communicationOutboundJobs').doc(result.messageId!).get()).data()?.error || '')).toHaveBeenCalledTimes(1);
+      expect(mocks.graph.mock.calls[0][2]).toMatchObject({ to: '40722123456' });
+      expect((await f.ref.collection('messages').doc(result.messageId!).get()).data()?.status).toBe('accepted');
+    } finally { await f.rate.delete(); }
   });
 });

@@ -14,8 +14,9 @@ import { recipientRevision, assertRecipientRevision } from './recipient-revision
 import { sendApprovalSchema, assertSendApproval } from './send-approval';
 import { matchingSendSchema, assertMatchingSend } from './matching-send';
 import { assertNoReplySince } from '@/lib/ai-assistant/reply-stop';
+import { personalRecipientSchema, assertPersonalRecipient } from './personal-recipient';
 
-const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 export async function estimateSend(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput) {
   const { connection, token } = await connectionToken(db, actor, conversation.connectionId, 'send');
@@ -77,6 +78,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     }
   }
   if (input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, input.expectedRecipientRevision);
+  await assertPersonalRecipient(db, actor, conversation, input.personalRecipient);
   const recipient = recipientRevision(conversation);
   assertNoReplySince(conversation, input.stopOnReplySince);
   await assertMatchingSend(db, actor, conversation, input.matchingSelection);
@@ -97,6 +99,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     }
     if (!canReadConversation(actor, fresh.data() as Conversation)) throw new CommunicationError('Acces revocat.', 403);
     assertRecipientRevision({ ...fresh.data(), id }, recipient);
+    await assertPersonalRecipient(db, actor, { ...fresh.data(), id }, input.personalRecipient, tx);
     assertNoReplySince(fresh.data()!, input.stopOnReplySince);
     await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
     if (estimate.amount > 0) tx.set(budgetRef, { currency: estimate.currency, limitMicros: budget.data()?.limitMicros || 0, spentMicros: budget.data()?.spentMicros || 0,
@@ -156,12 +159,14 @@ export async function drainOutbound(db: Firestore) {
       const conversation = await getConversation(db, actor, job.conversationId);
       assertRecipientRevision(conversation, job.recipientRevision);
       if (job.input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, job.input.expectedRecipientRevision);
+      await assertPersonalRecipient(db, actor, conversation, job.input.personalRecipient);
       const estimate = await estimateSend(db, actor, conversation, job.input);
       if (job.input.sendApproval !== undefined || job.input.expectedRecipientRevision !== undefined) assertSendApproval(job.input.sendApproval, estimate);
       if (estimate.currency !== job.estimate.currency || estimate.amount > job.estimate.amount) throw new CommunicationError('Tariful s-a modificat. Pregătește din nou trimiterea.');
       const { connection, token } = await connectionToken(db, actor, job.connectionId, 'send');
       const latestConversation = await getConversation(db, actor, job.conversationId);
       assertRecipientRevision(latestConversation, job.recipientRevision);
+      await assertPersonalRecipient(db, actor, latestConversation, job.input.personalRecipient);
       assertNoReplySince(latestConversation, job.input.stopOnReplySince);
       await assertMatchingSend(db, actor, latestConversation, job.input.matchingSelection);
       await messageRef.update({ status: 'sending' });
