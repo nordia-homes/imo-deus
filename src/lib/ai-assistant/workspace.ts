@@ -177,17 +177,22 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
     });
   }
   const executionId = randomUUID();
-  await ctx.adminDb.runTransaction(async tx => {
-    const snap = await tx.get(ref);
+  const claimed = await ctx.adminDb.runTransaction(async tx => {
+    const [snap, member] = await Promise.all([tx.get(ref), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
+    if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
     if (snap.data()?.ownerId !== ctx.uid || !(cancel ? ['pending', 'failed', 'paused'] : ['pending', 'failed']).includes(snap.data()?.status)) throw new CommunicationError('Planul este deja în execuție sau necesită verificarea rezultatului. Repetarea automată este blocată.', 409);
     const currentRevision = snap.updateTime ? `${snap.updateTime.seconds}:${snap.updateTime.nanoseconds}` : null;
     if (!revision || currentRevision !== revision) throw new CommunicationError('Planul s-a modificat înainte de pornire. Reîncarcă rezultatul.', 409);
-    if (Number(snap.data()?.expiresAt) < Date.now()) throw new CommunicationError('Planul a expirat. Cere un plan nou cu date actuale.', 409);
+    if (!cancel && Number(snap.data()?.expiresAt) < Date.now()) throw new CommunicationError('Planul a expirat. Cere un plan nou cu date actuale.', 409);
     if (!cancel) validateApproval(snap.data()?.approval, ctx.uid, ctx.agencyId, id, snap.data()?.actions || []);
-    tx.update(ref, { status: cancel ? 'cancelled' : 'running', startedAt: new Date().toISOString(), ...(cancel ? {} : { executionId, approvalUsedAt: snap.data()?.approvalUsedAt || new Date().toISOString(), approvedBy: ctx.uid }) });
+    const now = new Date().toISOString();
+    const patch = cancel ? { status: 'cancelled' as const, completedAt: now, cancelRequestedAt: now, waitUntil: 0 }
+      : { status: 'running' as const, startedAt: now, executionId, approvalUsedAt: snap.data()?.approvalUsedAt || now, approvedBy: ctx.uid };
+    tx.update(ref, patch);
     if (snap.data()?.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(snap.data()!.telemetryId), { approval: !cancel, approvalStatus: cancel ? 'cancelled' : 'approved', executionStatus: cancel ? 'cancelled' : 'running' }, { merge: true });
+    return patch;
   });
-  if (cancel) return { ...data, status: 'cancelled' as const };
+  if (cancel) return { ...data, ...claimed };
   let results: Record<string, unknown>[] = [...(data.results || [])];
   const accessRefs = [...((data as any).accessRefs || []), ...actionReferences(data.actions)];
   const checkpointStarted = Date.now(), initialCount = results.length;

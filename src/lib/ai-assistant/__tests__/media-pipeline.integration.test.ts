@@ -63,6 +63,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const ready = () => vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'succeeded', job: { id: 'job', propertyId: 'p', agencyId: id, requestedByUid: id, status: 'completed', videoUrl: url } });
     return { ctx, agency, plan, ready, url };
   }
+  it.each(['pending', 'failed', 'paused'])('cancels an expired %s plan and preserves its existing receipt', async status => {
+    const f = await fixture();
+    const results = [{ step: 1, kind: 'existing_operation', result: { script: 'Saved script' } }];
+    const startedAt = '2026-01-01T00:00:00.000Z';
+    await f.plan.update({ status, results, startedAt, approval: null, expiresAt: Date.now() - 60000, waitUntil: Date.now() + 60000 });
+    expect(await runPlan(f.ctx, 'plan', true)).toMatchObject({ status: 'cancelled', results, startedAt, waitUntil: 0 });
+    expect((await f.plan.get()).data()).toMatchObject({ status: 'cancelled', results, startedAt, waitUntil: 0, completedAt: expect.any(String), cancelRequestedAt: expect.any(String) });
+    expect(executeAction).not.toHaveBeenCalled();
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+  }, 20000);
+  it.each(['agency', 'role', 'deleted'].flatMap(change => [false, true].map(cancel => ({ change, cancel }))))('refuses a claim after concurrent membership $change (cancel=$cancel)', async ({ change, cancel }) => {
+    const f = await fixture();
+    const before = (await f.plan.get()).data();
+    const racedDb = new Proxy(db, { get(target, property) {
+      if (property === 'runTransaction') return async (work: any) => {
+        const member = db.collection('users').doc(f.ctx.uid);
+        if (change === 'deleted') await member.delete();
+        else await member.update(change === 'agency' ? { agencyId: 'other' } : { role: 'admin' });
+        return db.runTransaction(work);
+      };
+      const value = Reflect.get(target, property);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    await expect(runPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan', cancel)).rejects.toMatchObject({ status: 403 });
+    expect((await f.plan.get()).data()).toEqual(before);
+    expect(executeAction).not.toHaveBeenCalled();
+  }, 20000);
   it.each(['running', 'pending', 'failed', 'paused', 'unknown', 'completed', 'cancelled', 'revoked'])('persists or resolves cancellation after a concurrent %s transition', async status => {
     const f = await fixture();
     await f.plan.update({ status: 'running' });

@@ -76,6 +76,29 @@ function executionFixture() {
 }
 afterEach(() => vi.clearAllMocks());
 describe('durable batch checkpoints and controls', () => {
+  it.each(['pending', 'failed', 'paused'])('cancels an expired %s plan without requiring renewed approval', async status => {
+    const { ctx, plan } = executionFixture();
+    Object.assign(plan, { status, expiresAt: Date.now() - 60000, approval: null, waitUntil: Date.now() + 60000,
+      startedAt: '2026-01-01T00:00:00.000Z', results: [{ step: 1, kind: 'create_task', result: { taskId: 'saved' } }] });
+    expect(await runPlan(ctx, 'p', true)).toMatchObject({ status: 'cancelled', waitUntil: 0, completedAt: expect.any(String), cancelRequestedAt: expect.any(String) });
+    expect(plan).toMatchObject({ status: 'cancelled', waitUntil: 0, startedAt: '2026-01-01T00:00:00.000Z' });
+    expect(plan.results[0].result.taskId).toBe('saved');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it.each(['pending', 'failed'])('still refuses to execute an expired %s plan', async status => {
+    const { ctx, plan } = executionFixture();
+    Object.assign(plan, { status, expiresAt: Date.now() - 60000 });
+    await expect(runPlan(ctx, 'p')).rejects.toMatchObject({ status: 409 });
+    expect(plan.executionId).toBeUndefined();
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it.each([false, true])('checks membership before claiming a plan (cancel=%s)', async cancel => {
+    const { ctx, plan } = executionFixture();
+    ctx.role = 'admin';
+    await expect(runPlan(ctx, 'p', cancel)).rejects.toMatchObject({ status: 403 });
+    expect(plan.status).toBe('pending');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it.each(['running', 'pending', 'failed', 'paused', 'unknown', 'completed', 'cancelled'])('keeps cancellation truthful when running becomes %s before the transaction', async status => {
     const { ctx, plan } = executionFixture();
     plan.status = 'running';

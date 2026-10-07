@@ -791,3 +791,11 @@ O cerere de anulare citită inițial pe un plan running tratează acum starea re
 Opt teste de unitate și opt probe Firestore acoperă cele șapte stări posibile și revocarea drepturilor între citire și tranzacție. Probele verifică păstrarea rezultatelor, absența acțiunilor și a drafturilor noi și refuzul reluării incerte. Acestea sunt probe sintetice, nu scenarii originale noi acceptate din corpus.
 
 Au trecut 60/60 teste țintite, 181/181 teste pe emulator în 17 fișiere, 1227/1227 teste de regresie în 107 fișiere, TypeScript și ESLint. Testul calendarului cu trei runde concurente a trecut din nou. Emulatorul a emis un avertisment de timeout la căutarea metadatelor de mediu, fără eșecuri ale probelor. Buildul complet nu a fost repetat; ultimul validat rămâne `b4215e42`. Lotul nu este publicat, producția verificată rămâne `7f2da840`, iar planul integral rămâne deschis.
+
+## 7 octombrie: anularea planurilor expirate și autorizarea preluării
+
+Expirarea planului împiedică execuția, dar nu mai împiedică anularea unui plan pending/failed/paused. Anularea nu cere reînnoirea aprobării, păstrează rezultatele și startedAt existent, salvează completedAt/cancelRequestedAt și șterge waitUntil. Răspunsul include aceleași metadate ca documentul salvat. Verificarea reviziei rămâne obligatorie, astfel încât o cerere bazată pe un plan modificat concurent cere reîncărcare.
+
+Tranzacția de preluare recitește acum și utilizatorul, atât pentru pornire cât și pentru anulare: schimbarea agenției, rolului ori ștergerea profilului refuză operația înainte de modificarea planului. Șapte teste de unitate acoperă anularea expirată, refuzul execuției expirate și rolul schimbat. Nouă probe Firestore verifică păstrarea rezultatelor și cele trei modificări concurente de acces pe ambele căi. Probele sunt sintetice și nu se adaugă corpusului original acceptat.
+
+Au trecut 76/76 teste țintite (recuperare și flux asincron), 190/190 teste pe emulator în 17 fișiere, 1234/1234 teste de regresie în 107 fișiere, TypeScript și ESLint. Buildul complet nu a fost repetat; ultimul validat rămâne `b4215e42`. Lotul nu este publicat, producția verificată rămâne `7f2da840`, iar planul integral rămâne deschis.
