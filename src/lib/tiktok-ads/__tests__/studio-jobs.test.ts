@@ -21,6 +21,7 @@ const state = vi.hoisted(() => {
 vi.mock('@/firebase/admin', () => ({ adminDb: state.db }));
 vi.mock('@/lib/tiktok-marketing', () => ({ renderTikTokStudioProject: state.render, publishTikTokPostDraft: state.publish }));
 import { cancelScheduledTikTokPost, drainStudioRenders, enqueueStudioRender, scheduleTikTokPost } from '@/lib/tiktok-studio-jobs';
+import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 
 const projectPath = 'agencies/org/tiktokStudioProjects/project';
 const postPath = 'agencies/org/tiktokPostDrafts/post';
@@ -31,6 +32,16 @@ beforeEach(() => {
   state.documents.set(postPath, { agencyId: 'org', createdByUid: 'user', status: 'draft', consentedAt: new Date().toISOString() });
 });
 describe('Durable property video and publishing queue', () => {
+  it('checks the approved revision inside scheduling before any write', async () => {
+    const revision = tikTokScheduleRevision(state.documents.get(postPath)!);
+    state.documents.get(postPath)!.description = 'Changed after approval';
+    const runAt = new Date(Date.now() + 3600000).toISOString();
+    await expect(scheduleTikTokPost('org', 'user', 'post', runAt, revision)).rejects.toThrow('după aprobare');
+    expect(state.documents.has('tiktokStudioJobs/publish_org_post')).toBe(false);
+    for (const invalid of [null, 12, 'bad']) await expect(scheduleTikTokPost('org', 'user', 'post', runAt, invalid)).rejects.toThrow();
+    await scheduleTikTokPost('org', 'user', 'post', runAt, tikTokScheduleRevision(state.documents.get(postPath)!));
+    expect(state.documents.get('tiktokStudioJobs/publish_org_post')!.draftRevision).toBe(tikTokScheduleRevision(state.documents.get(postPath)!));
+  });
   it.each([false, true])('does not overwrite a replaced claim after provider completion (failure=%s)', async fails => {
     await scheduleTikTokPost('org', 'user', 'post', new Date(Date.now() + 3600000).toISOString());
     const job = state.documents.get('tiktokStudioJobs/publish_org_post')!;

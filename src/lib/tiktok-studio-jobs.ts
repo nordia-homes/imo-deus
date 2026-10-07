@@ -116,12 +116,13 @@ export async function drainTikTokPostStatuses() {
   return { checked };
 }
 
-export async function scheduleTikTokPost(agencyId: string, uid: string, draftId: string, runAt: string) {
+export async function scheduleTikTokPost(agencyId: string, uid: string, draftId: string, runAt: string, expectedDraftRevision?: unknown) {
   if (!Number.isFinite(Date.parse(runAt)) || Date.parse(runAt) < Date.now() + 60000) throw new Error('Alege o dată viitoare pentru publicare.');
   const ref = adminDb.collection('agencies').doc(agencyId).collection('tiktokPostDrafts').doc(draftId);
   await adminDb.runTransaction(async tx => {
     const snapshot = await tx.get(ref);
     const draft = snapshot.data();
+    if (expectedDraftRevision !== undefined && (typeof expectedDraftRevision !== 'string' || !/^[a-f0-9]{64}$/.test(expectedDraftRevision) || !draft || tikTokScheduleRevision(draft) !== expectedDraftRevision)) throw new Error('Draftul TikTok s-a schimbat după aprobare. Pregătește din nou programarea.');
     if (!draft || draft.createdByUid !== uid || draft.agencyId !== agencyId || draft.status !== 'draft' || !draft.consentedAt || draft.publishId || draft.publishOutcomeUnknown || draft.manualReviewRequired) throw new Error('Postarea nu poate fi programată de acest utilizator fără acordul pentru publicare.');
     const jobRef = jobs().doc(`publish_${agencyId}_${draftId}`);
     const previous = await tx.get(jobRef);

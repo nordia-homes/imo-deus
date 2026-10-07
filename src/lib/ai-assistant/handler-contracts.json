@@ -807,6 +807,7 @@
     "validation": "",
     "bodyFields": [
       "confirm",
+      "expectedDraftRevision",
       "runAt"
     ],
     "queryFields": [],
@@ -1217,6 +1218,7 @@
     "validation": "",
     "bodyFields": [
       "confirm",
+      "expectedDraftRevision",
       "runAt"
     ],
     "queryFields": [],

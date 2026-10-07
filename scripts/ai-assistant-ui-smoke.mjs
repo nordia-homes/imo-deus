@@ -75,6 +75,7 @@ try {
       { id: 'unknown', title: 'An necunoscut', constructionYearEvidenceKind: 'unknown', constructionYear: null, yearFilterSatisfied: false },
     ] }]) };
     else if (body.kind === 'chat' && body.prompt === 'Selectează a doua potrivire.') result = { message: message('Datele proprietății au fost recitite.', [{ type: 'results', source: 'crm', title: 'Proprietatea selectată', complete: true, rows: [{ id: 'match-second', title: 'Apartament Titan', status: 'Activ', price: 130000, matchScore: 91, scoreMayBeStale: true }] }]) };
+    else if (body.kind === 'chat' && body.prompt === 'Programează draftul TikTok.') result = { message: message('Programare pregătită.', [], { planId, actions: [{ kind: 'existing_operation', operation: 'tiktok_post_schedule', params: { draftId: 'draft' }, query: {}, body: { runAt: '2030-01-01T10:00:00Z', confirm: true, expectedDraftRevision: 'd'.repeat(64), draftPreview: { description: 'Postarea concretă pentru TikTok.', videoTourUrl: 'https://example.test/video.mp4', privacyLevel: 'SELF_ONLY', hashtags: ['imobiliare'] } } }] }) };
     else if (body.kind === 'chat' && body.prompt === 'Pregătește mesajul verificat.') result = { message: message('Mesaj pregătit pentru confirmare.', [], { planId, actions: [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conversation' }, query: {}, body: { text: 'Oferta concretă pentru clientul selectat.', expectedRecipientRevision: 'a'.repeat(64), matchingSelection: { resultSetId: 'selection', propertyId: 'chosen-property', contactId: 'chosen-client', propertyRevision: 'b'.repeat(64), contactRevision: 'c'.repeat(64) }, sendApproval: { amountMicros: 12000, currency: 'EUR', renderedText: 'Oferta concretă pentru clientul selectat.', expiresAt: Date.now() + 3600000 } } }] }) };
     else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
     else if (body.kind === 'search') {
@@ -251,6 +252,12 @@ try {
   await page.getByText('Mesaj: Oferta concretă pentru clientul selectat.', { exact: true }).waitFor();
   assert.equal(await page.getByText('expectedRecipientRevision', { exact: true }).count(), 0);
   assert.equal(await page.getByText('a'.repeat(64), { exact: true }).count(), 0);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
+  await page.getByLabel('Comandă pentru AI Assistant').fill('Programează draftul TikTok.');
+  await page.getByRole('button', { name: 'Trimite comanda' }).click();
+  await page.getByText('Postarea concretă pentru TikTok.', { exact: true }).waitFor();
+  await page.getByText('SELF_ONLY', { exact: true }).waitFor();
+  assert.equal(await page.getByText('d'.repeat(64), { exact: true }).count(), 0);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
   background = true; await page.reload();
   await page.getByRole('heading', { name: 'AI Assistant', exact: true }).waitFor();

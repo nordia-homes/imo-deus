@@ -5,10 +5,33 @@ import { getResource } from '../access';
 import { bindBusinessRevisions } from '../business-revisions';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import type { AssistantContext } from '../access';
+import { approvalEnvelope, validateApproval } from '../approval';
+import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx = {} as AssistantContext;
 const recipient = { id: 'conv', agencyId: 'agency', channel: 'messenger', connectionId: 'connection', externalParticipantId: 'participant', contactId: 'contact' };
 const send = { kind: 'existing_operation' as const, operation: 'message_send', params: { conversationId: 'conv' }, query: {}, body: { text: 'Oferta concretă' } };
 beforeEach(() => vi.mocked(getResource).mockReset());
+const schedule = { kind: 'existing_operation' as const, operation: 'tiktok_post_schedule', params: { draftId: 'draft' }, query: {}, body: { confirm: true, runAt: '2030-01-01T10:00:00Z' } };
+const draft = { agencyId: 'a', createdByUid: 'u', status: 'draft', consentedAt: '2026-01-01', description: 'Postare aprobată', videoTourUrl: 'https://example.test/video.mp4', privacyLevel: 'SELF_ONLY' };
+const owner = { agencyId: 'a', uid: 'u' } as AssistantContext;
+it('binds scheduling to a shared authorized draft snapshot and replaces forged preview data', async () => {
+  vi.mocked(getResource).mockResolvedValue(draft);
+  const actions = await bindBusinessRevisions(owner, [schedule, { ...schedule, body: { ...schedule.body, draftPreview: { description: 'invented' } } }]);
+  expect(getResource).toHaveBeenCalledTimes(1);
+  expect(actions[0]).toMatchObject({ body: { expectedDraftRevision: tikTokScheduleRevision(draft), draftPreview: { description: draft.description } } });
+  expect(actions[1]).toEqual(actions[0]);
+  validateApproval(approvalEnvelope('u', 'a', 'plan', actions, Date.now() + 60000), 'u', 'a', 'plan', actions);
+  expect(() => validateApproval(approvalEnvelope('u', 'a', 'plan', [schedule], Date.now() + 60000), 'u', 'a', 'plan', [schedule])).toThrow('nu fixează');
+});
+it('refuses future draft references and stale supplied revisions', async () => {
+  vi.mocked(getResource).mockResolvedValue(draft);
+  await expect(bindBusinessRevisions(owner, [{ ...schedule, params: { draftId: '@step:1:draftId' } }])).rejects.toThrow('draft existent');
+  await expect(bindBusinessRevisions(owner, [{ ...schedule, body: { ...schedule.body, expectedDraftRevision: 'a'.repeat(64) } }])).rejects.toThrow('s-a schimbat');
+});
+it.each([{ agencyId: 'other' }, { createdByUid: 'other' }, { status: 'publishing' }, { consentedAt: null }, { description: '' }, { videoTourUrl: null }])('refuses unavailable or unprepared drafts %j', patch => {
+  vi.mocked(getResource).mockResolvedValue({ ...draft, ...patch });
+  return expect(bindBusinessRevisions(owner, [schedule])).rejects.toThrow('nu este pregătit');
+});
 it('pins message recipients from authorized server data and shares one snapshot per conversation', async () => {
   vi.mocked(getResource).mockResolvedValue(recipient);
   const prepared = await bindBusinessRevisions(ctx, [send, send]);

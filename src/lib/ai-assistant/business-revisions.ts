@@ -2,10 +2,22 @@ import { getResource, type AssistantContext } from './access';
 import type { AssistantAction } from './contracts';
 import { recipientRevision, assertRecipientRevision } from '@/lib/communications/recipient-revision';
 import { prepareMessage } from './message-preparation';
+import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 
 export async function bindBusinessRevisions(ctx: AssistantContext, actions: AssistantAction[]): Promise<AssistantAction[]> {
   const snapshots = new Map<string, Promise<Record<string, any>>>();
   return Promise.all(actions.map(async action => {
+    if (action.kind === 'existing_operation' && action.operation === 'tiktok_post_schedule') {
+      const id = action.params.draftId;
+      if (!id || id.startsWith('@step:')) throw new Error('Programarea TikTok necesită un draft existent. Creează draftul, apoi pregătește programarea pentru aprobare.');
+      const key = `tiktokPostDrafts/${id}`;
+      if (!snapshots.has(key)) snapshots.set(key, getResource(ctx, 'tiktokPostDrafts', id));
+      const draft = await snapshots.get(key)!;
+      if (draft.agencyId !== ctx.agencyId || draft.createdByUid !== ctx.uid || draft.status !== 'draft' || !draft.consentedAt || !draft.description?.trim() || !draft.videoTourUrl) throw new Error('Draftul TikTok nu este pregătit sau nu aparține autorului. Verifică materialul și acordul de publicare.');
+      const revision = tikTokScheduleRevision(draft);
+      if (action.body.expectedDraftRevision !== undefined && action.body.expectedDraftRevision !== revision) throw new Error('Draftul TikTok s-a schimbat. Pregătește un plan nou pentru aprobare.');
+      return { ...action, body: { ...action.body, expectedDraftRevision: revision, draftPreview: { description: draft.description, videoTourUrl: draft.videoTourUrl, privacyLevel: draft.privacyLevel || null, hashtags: draft.hashtags || [] } } };
+    }
     if (action.kind === 'existing_operation' && action.operation === 'message_send') {
       const id = action.params.conversationId;
       if (!id || id.startsWith('@step:')) throw new Error('Mesajul necesită o conversație existentă și un destinatar concret înainte de aprobare. Creează conversația, apoi pregătește trimiterea.');

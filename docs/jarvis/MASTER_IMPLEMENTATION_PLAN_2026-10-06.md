@@ -570,3 +570,15 @@ Compatibilitate: joburile programate anterior fără revizie trebuie revizuite �
 Validări: 970/970 teste în 102 fișiere din Jarvis, comunicări și TikTok, inclusiv cele 134 de scenarii deterministe existente. Lotul adaugă 21 de teste ale reviziei și 8 cazuri în workerul Studio (conținut schimbat, trimitere unică și claim înlocuit). Suitele folosesc stocare simulată pentru aceste tranzacții; emulatorul Firestore nu a fost rerulat. Testul de randare produce un MP4 real folosind voce și imagini sintetice, fără provider plătit. ESLint și manifestul de paritate au trecut. Numărul de teste nu reprezintă numărul de cereri originale validate cap-coadă.
 
 Build-ul final a trecut: TypeScript și 225 pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu reprezintă validare de deployment.
+
+## 7 octombrie: aprobarea Jarvis fixează draftul înainte de programarea TikTok
+
+Continuare E3/E4. Pregătirea `tiktok_post_schedule` citește un draft existent, deținut de autor în aceeași agenție, cu text, video și acord deja înregistrat. Revizia sursei intră în payloadul aprobat; o revizie veche explicită este refuzată. Drafturile viitoare `@step` cer întâi executarea creării și apoi o aprobare separată. Previzualizarea este construită din datele serverului și afișează textul, URL-ul video, vizibilitatea și hashtagurile, fără hashul intern.
+
+Validarea aprobării refuză planurile Jarvis neexecutate fără revizia draftului. Ruta existentă transmite revizia serviciului comun, care o verifică în tranzacție înainte de orice scriere a programării. Interfața manuală poate folosi în continuare contractul existent fără acest câmp. Verificarea rezultatului leagă revizia aprobată de job și de draftul curent; nu confirmă o programare înlocuită cu alt conținut. Contractele generate au fost actualizate pentru handlerul existent.
+
+Testele noi acoperă sursa autorizată, citirea comună pentru același draft, previzualizare inventată, revizie învechită, referință viitoare, draft incomplet, alt autor/agenție și refuzul tranzacțional înainte de scriere. Proba Chromium verifică previzualizarea TikTok și absența hashului intern pe mobil. Datele sunt sintetice; nu s-a programat sau publicat o postare reală. Limitele privind URL-ul video, joburile vechi, rolloutul coordonat și probele externe din etapa precedentă rămân aplicabile. Planul integral rămâne deschis, iar lotul nu este publicat în producție.
+
+Validări trecute: 979/979 teste în 102 fișiere (Jarvis, comunicări și TikTok), incluzând cele 134 de scenarii deterministe existente; ESLint, contractele generate, manifestul de paritate și proba Chromium. Sunt 9 cazuri noi în suitele de pregătire și programare. Testele tranzacționale ale acestui lot folosesc stocare simulată; emulatorul nu a fost rerulat.
+
+Build-ul final a trecut cu TypeScript și 225 pagini; rămân avertismentele locale cunoscute Jaeger, Tailwind și standalone. Nu este o dovadă de deployment.

@@ -9,7 +9,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ dr
     const { draftId } = await context.params;
     const body = await request.json();
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(draftId) || body.confirm !== true || typeof body.runAt !== 'string') return NextResponse.json({ message: 'Confirmă data și publicarea.' }, { status: 400 });
-    return NextResponse.json(await scheduleTikTokPost(agencyId, uid, draftId, body.runAt));
+    return NextResponse.json(await scheduleTikTokPost(agencyId, uid, draftId, body.runAt, body.expectedDraftRevision));
   } catch (error) { return NextResponse.json({ message: error instanceof Error ? error.message : 'Programarea a eșuat.' }, { status: 400 }); }
 }
 export async function DELETE(request: NextRequest, context: { params: Promise<{ draftId: string }> }) {
