@@ -14,7 +14,7 @@ import type { AssistantContext } from '../access';
 
 function fixture(status: string, ledger?: Record<string, unknown>, recent = false) {
   const plan: any = { ownerId: 'u', sessionId: 'session', status, startedAt: new Date(Date.now() - (recent ? 0 : 20 * 60000)).toISOString(), actions: [{ kind: 'create_contact', name: 'Client', phone: '', email: '', contactType: 'Cumparator' }] };
-  const planRef = { id: 'p', get: async () => ({ exists: true, data: () => structuredClone(plan), id: 'p' }) };
+  const planRef = { id: 'p', get: async () => ({ exists: true, updateTime: { seconds: 100, nanoseconds: 1 }, data: () => structuredClone(plan), id: 'p' }) };
   const ctx = { uid: 'u', collection: (name: string) => ({ doc: () => name === 'assistantPlans' ? planRef : { get: async () => ({ exists: !!ledger, data: () => ledger }) } }), adminDb: { runTransaction: async (callback: any) => callback({ get: (ref: any) => ref.get(), update: (_: any, patch: any) => Object.assign(plan, patch) }) } } as unknown as AssistantContext;
   return { ctx, plan };
 }

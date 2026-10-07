@@ -5,7 +5,7 @@ vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('../planner', () => ({ planTurn: vi.fn() }));
 vi.mock('../actions', () => ({ executeAction: vi.fn() }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
-import { runPlan } from '../workspace';
+import { inspectPlan, runPlan } from '../workspace';
 import { readPlanOutcomes } from '../plan-outcomes';
 import { approvalEnvelope } from '../approval';
 import { actionSchema } from '../contracts';
@@ -92,6 +92,44 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
     await f.agency.collection('tiktokPostDrafts').doc('draft').update(patch);
     expect(await readPlanOutcomes(f.ctx, 'plan')).toMatchObject({ executionStatus: 'completed', outcome: { state: 'BLOCKED' }, pollAfterMs: null });
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
+  async function interruptedFixture() {
+    const f = await fixture(); f.ready();
+    await runPlan(f.ctx, 'plan');
+    const results = (await f.plan.get()).data()!.results;
+    for (const [index, step] of results.entries()) await f.agency.collection('assistantExecutions').doc(`plan-${index}`).set({ status: 'completed', result: step.result });
+    await f.plan.update({ status: 'unknown' });
+    return { ...f, results };
+  }
+  it('recovers verified media bindings from matching receipts without rerunning the pipeline', async () => {
+    const f = await interruptedFixture();
+    expect(await inspectPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', results: f.results });
+    expect((await f.plan.get()).data()!.results).toEqual(f.results);
+    expect(await readPlanOutcomes(f.ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' } });
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
+  it('does not bind old verified media to a different ledger receipt', async () => {
+    const f = await interruptedFixture();
+    await f.agency.collection('assistantExecutions').doc('plan-1').update({ result: { jobId: 'replacement', executionState: 'queued' } });
+    await expect(inspectPlan(f.ctx, 'plan')).rejects.toThrow('reconciliere');
+    expect((await f.plan.get()).data()).toMatchObject({ status: 'unknown', results: f.results });
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
+  it('refuses to overwrite an intervening same-status plan update during recovery', async () => {
+    const f = await interruptedFixture();
+    const racedDb = new Proxy(db, { get(target, property) {
+      if (property === 'runTransaction') return async (work: any) => {
+        await f.plan.update({ recoveryNote: 'new evidence', results: [...f.results.slice(0, -1), { ...f.results.at(-1), annotation: 'preserve' }] });
+        return db.runTransaction(work);
+      };
+      const value = Reflect.get(target, property);
+      return typeof value === 'function' ? value.bind(target) : value;
+    } });
+    await expect(inspectPlan({ ...f.ctx, adminDb: racedDb as any }, 'plan')).rejects.toMatchObject({ status: 409 });
+    const saved = (await f.plan.get()).data()!;
+    expect(saved).toMatchObject({ status: 'unknown', recoveryNote: 'new evidence' });
+    expect(saved.results.at(-1).annotation).toBe('preserve');
     expect(executeAction).toHaveBeenCalledTimes(4);
   }, 20000);
 });

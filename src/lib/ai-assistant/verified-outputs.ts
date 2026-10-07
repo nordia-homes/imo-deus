@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isDeepStrictEqual } from 'node:util';
 
 const outputsSchema = z.object({
   assetId: z.string().regex(/^[A-Za-z0-9_.:-]{1,180}$/).optional(),
@@ -27,4 +28,18 @@ export function bindVerifiedOutputs(results: Record<string, unknown>[], rows: { 
 
 export function verifiedOutput(step: Record<string, unknown> | undefined, field: keyof VerifiedOutputs) {
   return outputsSchema.parse(step?.outputs || {})[field];
+}
+
+// Recovery rebuilds receipts from the execution ledger. Keep already verified
+// media only when the exact same step and immutable receipt were recovered.
+export function restoreVerifiedOutputs(recovered: Record<string, unknown>[], previous: Record<string, unknown>[]) {
+  const bindings = previous.filter(step => step.outputs != null);
+  for (const prior of bindings) {
+    const matches = recovered.filter(step => step.step === prior.step && step.kind === prior.kind && isDeepStrictEqual(step.result, prior.result));
+    if (matches.length !== 1 || bindings.filter(step => step.step === prior.step).length !== 1) throw new Error('Dovezile media nu corespund istoricului recuperat. Planul necesită reconciliere.');
+  }
+  return recovered.map(step => {
+    const prior = bindings.find(previous => previous.step === step.step);
+    return prior ? { ...step, outputs: outputsSchema.parse(prior.outputs) } : step;
+  });
 }

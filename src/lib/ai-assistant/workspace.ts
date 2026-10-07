@@ -6,7 +6,7 @@ import { planTurn } from './planner';
 import { executeAction } from './actions';
 import { CommunicationError } from '@/lib/communications/server';
 import { resolveAction } from './dependencies';
-import { bindVerifiedOutputs } from './verified-outputs';
+import { bindVerifiedOutputs, restoreVerifiedOutputs } from './verified-outputs';
 import { operations, isReadOperation } from './operations';
 import { approvalEnvelope, validateApproval } from './approval';
 import { telemetryDocument, type AgentEvent, type TurnMetrics } from './telemetry';
@@ -273,16 +273,17 @@ export async function controlPlan(ctx: AssistantContext, id: string, command: 'p
 
 // Reconcile confirmed ledgers after an interrupted HTTP response; never retry a provider.
 export async function inspectPlan(ctx: AssistantContext, id: string) {
-  const { ref, data } = await getPlan(ctx, id);
+  const { ref, data, revision } = await getPlan(ctx, id);
   if (!['running', 'unknown'].includes(data.status)) return data;
   const started = Date.parse(String((data as unknown as Record<string, unknown>).startedAt || ''));
   if (data.status === 'running' && Number.isFinite(started) && Date.now() - started < 10 * 60000) return data;
   const ledgers = await Promise.all(data.actions.map((_, index) => collectionFor(ctx, 'assistantExecutions').doc(`${id}-${index}`).get()));
-  const results: Record<string, unknown>[] = [];
+  let results: Record<string, unknown>[] = [];
   for (const [index, ledger] of ledgers.entries()) {
     if (ledger.data()?.status !== 'completed') break;
     results.push({ step: index + 1, kind: data.actions[index].kind, result: ledger.data()?.result });
   }
+  results = restoreVerifiedOutputs(results, data.results || []);
   const uncertain = ledgers.some(ledger => ['running', 'unknown'].includes(ledger.data()?.status));
   const accessRefs = [...((data as any).accessRefs || []), ...results.flatMap(step => typeof (step.result as any)?.conversationId === 'string' ? [{ resource: 'conversations' as const, id: (step.result as any).conversationId as string }] : [])];
   if (!(await referencesAllowed(ctx, accessRefs))) throw new CommunicationError('Accesul la rezultatele execuției a fost revocat.', 403);
@@ -290,7 +291,8 @@ export async function inspectPlan(ctx: AssistantContext, id: string) {
   const error = status === 'completed' ? null : status === 'unknown' ? 'Rezultatul unei acțiuni externe trebuie verificat în modulul corespunzător. Trimiterea nu se repetă automat.' : 'Execuția a fost întreruptă. Poți relua planul; pașii confirmați nu se repetă.';
   await ctx.adminDb.runTransaction(async tx => {
     const fresh = await tx.get(ref);
-    if (fresh.data()?.status !== data.status || fresh.data()?.startedAt !== (data as any).startedAt) throw new CommunicationError('Starea planului s-a schimbat. Reîncarcă rezultatul.', 409);
+    const currentRevision = fresh.updateTime ? `${fresh.updateTime.seconds}:${fresh.updateTime.nanoseconds}` : null;
+    if (!revision || currentRevision !== revision || fresh.data()?.status !== data.status || fresh.data()?.startedAt !== (data as any).startedAt) throw new CommunicationError('Starea planului s-a schimbat. Reîncarcă rezultatul.', 409);
     tx.update(ref, { status, results, accessRefs, error, inspectedAt: new Date().toISOString() });
   });
   return { ...data, status, results, error };

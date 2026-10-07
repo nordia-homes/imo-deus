@@ -663,3 +663,14 @@ Compatibilitate: un receipt legacy fără snapshot poate confirma numai sursa cu
 Au fost adăugate 29 de teste de unitate ale verificatorului și trei probe Firestore pentru modificarea descrierii, materialului sau URL-ului după încheierea execuției. Suitele țintite au trecut 56/56 teste, iar emulatorul 115/115 teste în 17 fișiere. Nu sunt scenarii originale noi acceptate din corpusul de 1000. Planul integral și validarea externă rămân deschise; lotul nu este publicat în producție.
 Regresia generală a trecut 1070/1070 teste în 104 fișiere; TypeScript separat și ESLint au trecut pe forma finală.
 Buildul final a trecut, inclusiv TypeScript și 225 de pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu s-a efectuat deployment.
+
+## 7 octombrie: recuperarea planului fără pierderea dovezilor media
+
+Continuare E3/E4. `inspectPlan` reconstruia rezultatele din ledgerul execuției, dar elimina câmpurile `outputs` confirmate ulterior de verificatorul de domeniu. Într-un flux video → import → draft, această pierdere împiedica rezolvarea dependențelor deja executate și putea bloca recitirea rezultatului după recuperare.
+
+Recuperarea păstrează acum URL-urile și ID-urile media numai dacă pasul, tipul acțiunii și întregul rezultat imutabil coincid cu ledgerul recuperat. Dovezile duplicate, invalide ori legate de un rezultat diferit opresc reconcilierea fără rescrierea planului. Dovezile lipsă nu sunt inventate, iar acțiunile nu sunt executate din nou. Salvarea recuperării verifică și revizia Firestore a planului, nu doar statusul și startedAt; o modificare concurentă care lasă statusul neschimbat este păstrată.
+
+Șase cazuri noi de unitate verifică păstrarea dovezii, independența de ordinea cheilor JSON, rezultate lipsă/diferite, pas sau tip diferit, duplicate și URL invalid. Trei probe noi pe Firestore emulat verifică recuperarea întregului flux cu dovezile intacte, refuzul unui ledger diferit și refuzul suprascrierii unei modificări concurente. Acestea folosesc provideri simulați și nu extind numărul scenariilor originale acceptate. Planul integral și acceptanța externă rămân deschise; nu s-a efectuat deployment.
+Validări trecute: 30/30 teste țintite, 118/118 teste pe emulator în 17 fișiere, TypeScript separat și ESLint. Prima rulare a tabelului de cazuri negative a identificat o eroare de parametrizare în test; cazurile au fost împachetate explicit pentru a transmite lista completă de receipts, apoi toate aserțiunile au trecut.
+Regresia generală Jarvis, Communications și TikTok a trecut 1076/1076 teste în 104 fișiere.
+Buildul final a trecut cu TypeScript și 225 de pagini. Avertismentele Jaeger/standalone sunt cele cunoscute; nu s-a efectuat deployment.
