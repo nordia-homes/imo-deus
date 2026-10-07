@@ -1,18 +1,24 @@
 {
-  "verifiedAt": "2026-10-07T05:35:05.553Z",
+  "firestoreRules": {
+    "rulesetName": "projects/studio-652232171-42fb6/rulesets/214e1f71-708f-4945-a28c-d21f5aa8a449",
+    "updateTime": "2026-10-07T15:43:53.352728Z",
+    "matchesLocalSource": true,
+    "sha256": "ce70a9a3dc0031b25561710ec0ea916560916272f839ee609ac4402d4ce63731"
+  },
+  "verifiedAt": "2026-10-07T15:57:39.361Z",
   "project": "studio-652232171-42fb6",
   "traffic": {
     "splits": [
       {
-        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-07-001",
+        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-07-002",
         "percent": 100
       }
     ]
   },
   "build": {
-    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-07-001",
+    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-07-002",
     "state": "READY",
-    "commit": "7f2da840a9f1b22dbd6219702e69695ac8c17919"
+    "commit": "97ac82486d705a4ebc3edb25064baaae8f5a9409"
   },
   "jevMode": "shadow",
   "jevSecretBound": true,
@@ -48,6 +54,16 @@
       "status": 401
     },
     {
+      "path": "/api/notifications/feedback",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "path": "/api/notifications/reconcile",
+      "method": "POST",
+      "status": 401
+    },
+    {
       "path": "/api/crm/actions",
       "method": "POST",
       "status": 401
@@ -65,10 +81,8 @@
   ],
   "validation": {
     "localBuild": "PASS",
-    "unitTests": 1115,
-    "emulatorTests": 131,
-    "uiChecks": 21,
-    "parityManifest": "PASS"
+    "unitTests": 1451,
+    "emulatorTests": 236
   },
   "secretValuesPrinted": false,
   "outboundTestMessagesSent": 0
