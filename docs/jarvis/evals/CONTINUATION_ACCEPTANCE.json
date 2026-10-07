@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-10-07T01:33:15.893Z",
+  "verifiedAt": "2026-10-07T01:50:44.386Z",
   "scope": "Deterministic production-code scenarios with synthetic inputs; sourceNumber is a related requirement, not certification of the entire original prompt. No external provider effects.",
   "suiteSha256": "036fe4732c0cc69db787e23be9415779a6bc6fd7acaf5f216587bdda95d1a8f1",
   "codeSha256": "d28c3d6eecf35c78af91a746718bade1de2efa093cb8307834974d973ea198a7",
@@ -18,7 +18,7 @@
       "name": "an ulterior pragului",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 5.766399999999976
+      "durationMs": 5.475499999999556
     },
     {
       "id": "continuation-002",
@@ -26,7 +26,7 @@
       "name": "an exact la limita exclusă",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.5289999999999964
+      "durationMs": 0.500199999999495
     },
     {
       "id": "continuation-003",
@@ -34,7 +34,7 @@
       "name": "an anterior pragului",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.4238999999997759
+      "durationMs": 0.4367000000002008
     },
     {
       "id": "continuation-004",
@@ -42,7 +42,7 @@
       "name": "an necunoscut exclus implicit",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.40650000000005093
+      "durationMs": 0.391500000000633
     },
     {
       "id": "continuation-005",
@@ -50,7 +50,7 @@
       "name": "an necunoscut inclus separat",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.5219999999999345
+      "durationMs": 0.5375999999996566
     },
     {
       "id": "continuation-006",
@@ -58,7 +58,7 @@
       "name": "numai an necunoscut",
       "relatedSourceNumber": 244,
       "status": "passed",
-      "durationMs": 0.3633999999997286
+      "durationMs": 0.3242999999993117
     },
     {
       "id": "continuation-007",
@@ -66,7 +66,7 @@
       "name": "an cunoscut exclus din necunoscute",
       "relatedSourceNumber": 244,
       "status": "passed",
-      "durationMs": 0.22159999999985303
+      "durationMs": 0.19070000000010623
     },
     {
       "id": "continuation-008",
@@ -74,7 +74,7 @@
       "name": "interval textual nu este an exact",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.6707999999998719
+      "durationMs": 0.5270000000000437
     },
     {
       "id": "continuation-009",
@@ -82,7 +82,7 @@
       "name": "interval textual rămâne necunoscut",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.46039999999993597
+      "durationMs": 0.2834000000002561
     },
     {
       "id": "continuation-010",
@@ -90,7 +90,7 @@
       "name": "după 1977 declară o limită fără să inventeze an exact",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.4635000000002947
+      "durationMs": 0.5351000000000568
     },
     {
       "id": "continuation-011",
@@ -98,7 +98,7 @@
       "name": "renovare nu dovedește construcția",
       "relatedSourceNumber": 225,
       "status": "passed",
-      "durationMs": 0.23509999999987485
+      "durationMs": 0.19509999999991123
     },
     {
       "id": "continuation-012",
@@ -106,7 +106,7 @@
       "name": "proiecție veche nu înlocuiește sursa",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.21729999999979555
+      "durationMs": 0.25720000000001164
     },
     {
       "id": "continuation-013",
@@ -114,7 +114,7 @@
       "name": "an numeric din proiecție când sursa lipsește",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.19030000000020664
+      "durationMs": 0.1890000000003056
     },
     {
       "id": "continuation-014",
@@ -122,7 +122,7 @@
       "name": "an alternativ year",
       "relatedSourceNumber": 226,
       "status": "passed",
-      "durationMs": 0.21550000000024738
+      "durationMs": 0.16110000000026048
     },
     {
       "id": "continuation-015",
@@ -130,7 +130,7 @@
       "name": "an exact text cu spații",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.23440000000027794
+      "durationMs": 0.1412000000000262
     },
     {
       "id": "continuation-016",
@@ -138,7 +138,7 @@
       "name": "an fracționar invalid",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.22640000000001237
+      "durationMs": 0.14019999999982247
     },
     {
       "id": "continuation-017",
@@ -146,7 +146,7 @@
       "name": "an numeric prea mare",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.17849999999998545
+      "durationMs": 0.11959999999999127
     },
     {
       "id": "continuation-018",
@@ -154,7 +154,7 @@
       "name": "an text prea mare",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.2062999999998283
+      "durationMs": 0.14459999999962747
     },
     {
       "id": "continuation-019",
@@ -162,7 +162,7 @@
       "name": "an foarte vechi cunoscut",
       "relatedSourceNumber": 228,
       "status": "passed",
-      "durationMs": 0.2203999999996995
+      "durationMs": 0.1466999999993277
     },
     {
       "id": "continuation-020",
@@ -170,7 +170,7 @@
       "name": "an zero invalid",
       "relatedSourceNumber": 228,
       "status": "passed",
-      "durationMs": 0.1799999999998363
+      "durationMs": 0.1135999999996784
     },
     {
       "id": "continuation-021",
@@ -178,7 +178,7 @@
       "name": "interval inclusiv limita inferioară",
       "relatedSourceNumber": 227,
       "status": "passed",
-      "durationMs": 0.20919999999978245
+      "durationMs": 0.14090000000032887
     },
     {
       "id": "continuation-022",
@@ -186,7 +186,7 @@
       "name": "interval inclusiv limita superioară",
       "relatedSourceNumber": 227,
       "status": "passed",
-      "durationMs": 0.17399999999997817
+      "durationMs": 0.12430000000040309
     },
     {
       "id": "continuation-023",
@@ -194,7 +194,7 @@
       "name": "interval respinge anul 1979",
       "relatedSourceNumber": 227,
       "status": "passed",
-      "durationMs": 0.16649999999981446
+      "durationMs": 0.09589999999934662
     },
     {
       "id": "continuation-024",
@@ -202,7 +202,7 @@
       "name": "interval respinge anul 1991",
       "relatedSourceNumber": 227,
       "status": "passed",
-      "durationMs": 0.15079999999989013
+      "durationMs": 0.10539999999946303
     },
     {
       "id": "continuation-025",
@@ -210,7 +210,7 @@
       "name": "fără filtru permite an necunoscut",
       "relatedSourceNumber": 239,
       "status": "passed",
-      "durationMs": 0.21550000000024738
+      "durationMs": 0.14309999999932188
     },
     {
       "id": "continuation-026",
@@ -218,7 +218,7 @@
       "name": "include nu admite an cunoscut neeligibil",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.1608000000001084
+      "durationMs": 0.12259999999969295
     },
     {
       "id": "continuation-027",
@@ -226,7 +226,7 @@
       "name": "două camere din două sau trei",
       "relatedSourceNumber": 236,
       "status": "passed",
-      "durationMs": 0.613800000000083
+      "durationMs": 0.4404000000004089
     },
     {
       "id": "continuation-028",
@@ -234,7 +234,7 @@
       "name": "trei camere din două sau trei",
       "relatedSourceNumber": 236,
       "status": "passed",
-      "durationMs": 0.2013000000001739
+      "durationMs": 0.15080000000034488
     },
     {
       "id": "continuation-029",
@@ -242,7 +242,7 @@
       "name": "patru camere excluse din două sau trei",
       "relatedSourceNumber": 236,
       "status": "passed",
-      "durationMs": 0.19310000000041327
+      "durationMs": 0.11900000000059663
     },
     {
       "id": "continuation-030",
@@ -250,7 +250,7 @@
       "name": "camere lipsă nu sunt potrivire",
       "relatedSourceNumber": 236,
       "status": "passed",
-      "durationMs": 0.34449999999969805
+      "durationMs": 0.20939999999973224
     },
     {
       "id": "continuation-031",
@@ -258,7 +258,7 @@
       "name": "garsonieră din una sau două",
       "relatedSourceNumber": 237,
       "status": "passed",
-      "durationMs": 0.23489999999992506
+      "durationMs": 0.1481999999996333
     },
     {
       "id": "continuation-032",
@@ -266,7 +266,7 @@
       "name": "preț egal limitei inclusive",
       "relatedSourceNumber": 211,
       "status": "passed",
-      "durationMs": 0.4942999999998392
+      "durationMs": 0.3334999999997308
     },
     {
       "id": "continuation-033",
@@ -274,7 +274,7 @@
       "name": "preț peste limita strictă",
       "relatedSourceNumber": 211,
       "status": "passed",
-      "durationMs": 0.2593000000001666
+      "durationMs": 0.18229999999948632
     },
     {
       "id": "continuation-034",
@@ -282,7 +282,7 @@
       "name": "monedă RON nu este EUR",
       "relatedSourceNumber": 211,
       "status": "passed",
-      "durationMs": 0.32569999999986976
+      "durationMs": 0.21420000000034634
     },
     {
       "id": "continuation-035",
@@ -290,7 +290,7 @@
       "name": "monedă necunoscută nu este EUR",
       "relatedSourceNumber": 211,
       "status": "passed",
-      "durationMs": 0.23940000000038708
+      "durationMs": 0.14220000000022992
     },
     {
       "id": "continuation-036",
@@ -298,7 +298,7 @@
       "name": "zona din descriere nu schimbă locația",
       "relatedSourceNumber": 201,
       "status": "passed",
-      "durationMs": 1.185699999999997
+      "durationMs": 0.8161000000000058
     },
     {
       "id": "continuation-037",
@@ -306,7 +306,7 @@
       "name": "an bun dar zonă greșită",
       "relatedSourceNumber": 221,
       "status": "passed",
-      "durationMs": 0.26650000000017826
+      "durationMs": 0.1669000000001688
     },
     {
       "id": "continuation-038",
@@ -314,7 +314,7 @@
       "name": "an bun dar preț prea mare",
       "relatedSourceNumber": 229,
       "status": "passed",
-      "durationMs": 0.2201999999997497
+      "durationMs": 0.17079999999987194
     },
     {
       "id": "continuation-039",
@@ -322,7 +322,7 @@
       "name": "an necunoscut nu relaxează camerele",
       "relatedSourceNumber": 242,
       "status": "passed",
-      "durationMs": 0.23260000000027503
+      "durationMs": 0.13850000000002183
     },
     {
       "id": "continuation-040",
@@ -330,7 +330,7 @@
       "name": "an necunoscut nu relaxează publicarea",
       "relatedSourceNumber": 241,
       "status": "passed",
-      "durationMs": 0.18190000000004147
+      "durationMs": 0.11189999999987776
     },
     {
       "id": "continuation-041",
@@ -338,7 +338,7 @@
       "name": "duplicat necanonic exclus",
       "relatedSourceNumber": 245,
       "status": "passed",
-      "durationMs": 0.1833000000001448
+      "durationMs": 0.1320000000005166
     },
     {
       "id": "continuation-042",
@@ -346,7 +346,7 @@
       "name": "CRM activ eligibil",
       "relatedSourceNumber": 2,
       "status": "passed",
-      "durationMs": 0.1981999999998152
+      "durationMs": 0.12699999999949796
     },
     {
       "id": "continuation-043",
@@ -354,7 +354,7 @@
       "name": "CRM rezervat exclus din oferte active",
       "relatedSourceNumber": 2,
       "status": "passed",
-      "durationMs": 0.14629999999988286
+      "durationMs": 0.09380000000055588
     },
     {
       "id": "continuation-044",
@@ -362,7 +362,7 @@
       "name": "chirie respectă tipul tranzacției",
       "relatedSourceNumber": 14,
       "status": "passed",
-      "durationMs": 0.23270000000002256
+      "durationMs": 0.15270000000055006
     },
     {
       "id": "continuation-045",
@@ -370,7 +370,7 @@
       "name": "plan pregătit fără execuție",
       "relatedSourceNumber": 802,
       "status": "passed",
-      "durationMs": 0.9726000000000568
+      "durationMs": 0.7272999999995591
     },
     {
       "id": "continuation-046",
@@ -378,7 +378,7 @@
       "name": "executor terminat fără dovezi",
       "relatedSourceNumber": 858,
       "status": "passed",
-      "durationMs": 0.16649999999981446
+      "durationMs": 0.13449999999920692
     },
     {
       "id": "continuation-047",
@@ -386,7 +386,7 @@
       "name": "worker activ fără rezultate",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.14550000000008367
+      "durationMs": 0.09749999999985448
     },
     {
       "id": "continuation-048",
@@ -394,7 +394,7 @@
       "name": "plan necunoscut fără rezultat",
       "relatedSourceNumber": 858,
       "status": "passed",
-      "durationMs": 0.14330000000018117
+      "durationMs": 0.09310000000004948
     },
     {
       "id": "continuation-049",
@@ -402,7 +402,7 @@
       "name": "provider în coadă verificabil",
       "relatedSourceNumber": 860,
       "status": "passed",
-      "durationMs": 0.1993999999999687
+      "durationMs": 0.14860000000044238
     },
     {
       "id": "continuation-050",
@@ -410,7 +410,7 @@
       "name": "provider rulează verificabil",
       "relatedSourceNumber": 860,
       "status": "passed",
-      "durationMs": 0.16150000000016007
+      "durationMs": 0.09739999999965221
     },
     {
       "id": "continuation-051",
@@ -418,7 +418,7 @@
       "name": "coadă fără verificator",
       "relatedSourceNumber": 858,
       "status": "passed",
-      "durationMs": 0.16150000000016007
+      "durationMs": 0.10429999999996653
     },
     {
       "id": "continuation-052",
@@ -426,7 +426,7 @@
       "name": "receipt acceptat neconfirmat",
       "relatedSourceNumber": 834,
       "status": "passed",
-      "durationMs": 0.19110000000000582
+      "durationMs": 0.1168999999999869
     },
     {
       "id": "continuation-053",
@@ -434,7 +434,7 @@
       "name": "receipt succes fără sursă",
       "relatedSourceNumber": 858,
       "status": "passed",
-      "durationMs": 0.16489999999976135
+      "durationMs": 0.09869999999955326
     },
     {
       "id": "continuation-054",
@@ -442,7 +442,7 @@
       "name": "succes cu dovadă",
       "relatedSourceNumber": 865,
       "status": "passed",
-      "durationMs": 0.17439999999987776
+      "durationMs": 0.09310000000004948
     },
     {
       "id": "continuation-055",
@@ -450,7 +450,7 @@
       "name": "dovadă explicit insuficientă",
       "relatedSourceNumber": 858,
       "status": "passed",
-      "durationMs": 0.1332999999999629
+      "durationMs": 0.09010000000034779
     },
     {
       "id": "continuation-056",
@@ -458,7 +458,7 @@
       "name": "programare confirmată chiar dacă în coadă",
       "relatedSourceNumber": 852,
       "status": "passed",
-      "durationMs": 0.12950000000000728
+      "durationMs": 0.08579999999983556
     },
     {
       "id": "continuation-057",
@@ -466,7 +466,7 @@
       "name": "provider eșuat",
       "relatedSourceNumber": 854,
       "status": "passed",
-      "durationMs": 0.13169999999990978
+      "durationMs": 0.0826999999999316
     },
     {
       "id": "continuation-058",
@@ -474,7 +474,7 @@
       "name": "provider anulat",
       "relatedSourceNumber": 854,
       "status": "passed",
-      "durationMs": 0.14029999999957
+      "durationMs": 0.09110000000055152
     },
     {
       "id": "continuation-059",
@@ -482,7 +482,7 @@
       "name": "acces revocat la rezultat",
       "relatedSourceNumber": 741,
       "status": "passed",
-      "durationMs": 0.15430000000014843
+      "durationMs": 0.0864000000001397
     },
     {
       "id": "continuation-060",
@@ -490,7 +490,7 @@
       "name": "succes parțial și eroare",
       "relatedSourceNumber": 849,
       "status": "passed",
-      "durationMs": 0.13609999999971478
+      "durationMs": 0.08719999999993888
     },
     {
       "id": "continuation-061",
@@ -498,7 +498,7 @@
       "name": "succes parțial și așteptare",
       "relatedSourceNumber": 860,
       "status": "passed",
-      "durationMs": 0.18389999999999418
+      "durationMs": 0.11680000000069413
     },
     {
       "id": "continuation-062",
@@ -506,7 +506,7 @@
       "name": "pas lipsă nu încheie obiectivul",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.14820000000008804
+      "durationMs": 0.09580000000005384
     },
     {
       "id": "continuation-063",
@@ -514,7 +514,7 @@
       "name": "pauză prevalează asupra succesului",
       "relatedSourceNumber": 872,
       "status": "passed",
-      "durationMs": 0.1497999999996864
+      "durationMs": 0.0772000000006301
     },
     {
       "id": "continuation-064",
@@ -522,7 +522,7 @@
       "name": "anulare prevalează asupra succesului",
       "relatedSourceNumber": 872,
       "status": "passed",
-      "durationMs": 0.1226000000001477
+      "durationMs": 0.07640000000083091
     },
     {
       "id": "continuation-065",
@@ -530,7 +530,7 @@
       "name": "cerință planificată ancorată",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 2.2531000000003587
+      "durationMs": 1.6471999999994296
     },
     {
       "id": "continuation-066",
@@ -538,7 +538,7 @@
       "name": "citat inventat",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.49250000000029104
+      "durationMs": 0.356300000000374
     },
     {
       "id": "continuation-067",
@@ -546,7 +546,7 @@
       "name": "pas inexistent",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.3550000000000182
+      "durationMs": 0.20640000000003056
     },
     {
       "id": "continuation-068",
@@ -554,7 +554,7 @@
       "name": "pas zero",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 1.4908000000000357
+      "durationMs": 0.9256999999997788
     },
     {
       "id": "continuation-069",
@@ -562,7 +562,7 @@
       "name": "pas duplicat",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.3702999999995882
+      "durationMs": 0.1908000000003085
     },
     {
       "id": "continuation-070",
@@ -570,7 +570,7 @@
       "name": "plan fără pas",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.30840000000034706
+      "durationMs": 0.1650999999992564
     },
     {
       "id": "continuation-071",
@@ -578,7 +578,7 @@
       "name": "acțiune suplimentară neacoperită",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.334400000000187
+      "durationMs": 0.17550000000028376
     },
     {
       "id": "continuation-072",
@@ -586,7 +586,7 @@
       "name": "răspuns cu citire reală",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.4067000000000007
+      "durationMs": 0.2746999999999389
     },
     {
       "id": "continuation-073",
@@ -594,7 +594,7 @@
       "name": "răspuns fără citire",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.35029999999960637
+      "durationMs": 0.208400000000438
     },
     {
       "id": "continuation-074",
@@ -602,7 +602,7 @@
       "name": "răspuns cu dovadă inventată",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.37429999999994834
+      "durationMs": 0.20389999999952124
     },
     {
       "id": "continuation-075",
@@ -610,7 +610,7 @@
       "name": "clarificare nu declară pași",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.3251000000000204
+      "durationMs": 0.1694999999999709
     },
     {
       "id": "continuation-076",
@@ -618,7 +618,7 @@
       "name": "nesuportat explicit fără pași",
       "relatedSourceNumber": 850,
       "status": "passed",
-      "durationMs": 0.3178000000002612
+      "durationMs": 0.16849999999976717
     },
     {
       "id": "continuation-077",
@@ -626,7 +626,7 @@
       "name": "ID material verificat",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 2.0090000000000146
+      "durationMs": 1.760099999999511
     },
     {
       "id": "continuation-078",
@@ -634,7 +634,7 @@
       "name": "URL HTTPS verificat",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 1.1541999999999462
+      "durationMs": 2.3976000000002387
     },
     {
       "id": "continuation-079",
@@ -642,7 +642,7 @@
       "name": "ID material neconfirmat ignorat",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.36619999999993524
+      "durationMs": 0.39570000000003347
     },
     {
       "id": "continuation-080",
@@ -650,7 +650,7 @@
       "name": "URL neconfirmat ignorat",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.26739999999972497
+      "durationMs": 0.2699000000002343
     },
     {
       "id": "continuation-081",
@@ -658,7 +658,7 @@
       "name": "URL file respins",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.8775000000000546
+      "durationMs": 0.9224999999996726
     },
     {
       "id": "continuation-082",
@@ -666,7 +666,7 @@
       "name": "URL HTTP respins",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.5868000000000393
+      "durationMs": 0.42069999999966967
     },
     {
       "id": "continuation-083",
@@ -674,7 +674,7 @@
       "name": "URL cu user respins",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.5125000000002728
+      "durationMs": 0.31819999999970605
     },
     {
       "id": "continuation-084",
@@ -682,7 +682,7 @@
       "name": "URL cu parolă respins",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.40899999999965075
+      "durationMs": 0.26789999999982683
     },
     {
       "id": "continuation-085",
@@ -690,7 +690,7 @@
       "name": "ID cu slash respins",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.6007999999997082
+      "durationMs": 0.38429999999971187
     },
     {
       "id": "continuation-086",
@@ -698,7 +698,7 @@
       "name": "câmp suplimentar respins",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.5760000000000218
+      "durationMs": 0.45380000000022847
     },
     {
       "id": "continuation-087",
@@ -706,7 +706,7 @@
       "name": "material identic la reluare",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.3172999999997046
+      "durationMs": 0.36710000000039145
     },
     {
       "id": "continuation-088",
@@ -714,7 +714,7 @@
       "name": "material schimbat la reluare",
       "relatedSourceNumber": 885,
       "status": "passed",
-      "durationMs": 0.36750000000029104
+      "durationMs": 0.41929999999956635
     },
     {
       "id": "continuation-089",
@@ -722,7 +722,7 @@
       "name": "ora dinaintea liniștii",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.28250000000025466
+      "durationMs": 0.24070000000028813
     },
     {
       "id": "continuation-090",
@@ -730,7 +730,7 @@
       "name": "început inclus în liniște",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.09920000000010987
+      "durationMs": 0.12120000000049913
     },
     {
       "id": "continuation-091",
@@ -738,7 +738,7 @@
       "name": "miezul nopții în liniște",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.0886000000000422
+      "durationMs": 0.12920000000030996
     },
     {
       "id": "continuation-092",
@@ -746,7 +746,7 @@
       "name": "ultimul minut de liniște",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.10590000000001965
+      "durationMs": 0.11599999999998545
     },
     {
       "id": "continuation-093",
@@ -754,7 +754,7 @@
       "name": "sfârșit exclus din liniște",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.08370000000013533
+      "durationMs": 0.11620000000038999
     },
     {
       "id": "continuation-094",
@@ -762,7 +762,7 @@
       "name": "prânz permis",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.0850999999997839
+      "durationMs": 0.11189999999987776
     },
     {
       "id": "continuation-095",
@@ -770,7 +770,7 @@
       "name": "pauză de zi început",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.12130000000024665
+      "durationMs": 0.11279999999987922
     },
     {
       "id": "continuation-096",
@@ -778,7 +778,7 @@
       "name": "pauză de zi sfârșit",
       "relatedSourceNumber": 904,
       "status": "passed",
-      "durationMs": 0.09819999999990614
+      "durationMs": 0.11450000000058935
     },
     {
       "id": "continuation-097",
@@ -786,7 +786,7 @@
       "name": "Ministerul Justiției permis",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.4046000000003005
+      "durationMs": 0.4149999999999636
     },
     {
       "id": "continuation-098",
@@ -794,7 +794,7 @@
       "name": "ANCPI permis",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.19770000000016807
+      "durationMs": 0.23689999999987776
     },
     {
       "id": "continuation-099",
@@ -802,7 +802,7 @@
       "name": "ANAF permis",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.2078999999998814
+      "durationMs": 0.23319999999966967
     },
     {
       "id": "continuation-100",
@@ -810,7 +810,7 @@
       "name": "domeniu imitat respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.2395000000001346
+      "durationMs": 0.3338000000003376
     },
     {
       "id": "continuation-101",
@@ -818,7 +818,7 @@
       "name": "userinfo nu ascunde domeniul",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.20160000000032596
+      "durationMs": 0.21079999999983556
     },
     {
       "id": "continuation-102",
@@ -826,7 +826,7 @@
       "name": "HTTP respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.1801999999997861
+      "durationMs": 0.18499999999949068
     },
     {
       "id": "continuation-103",
@@ -834,7 +834,7 @@
       "name": "port alternativ respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.21019999999998618
+      "durationMs": 0.2746000000006461
     },
     {
       "id": "continuation-104",
@@ -842,7 +842,7 @@
       "name": "fragment respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.21460000000024593
+      "durationMs": 0.15579999999954453
     },
     {
       "id": "continuation-105",
@@ -850,7 +850,7 @@
       "name": "IP local respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.633600000000115
+      "durationMs": 0.5871999999999389
     },
     {
       "id": "continuation-106",
@@ -858,7 +858,7 @@
       "name": "URL javascript respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.21720000000004802
+      "durationMs": 0.14499999999952706
     },
     {
       "id": "continuation-107",
@@ -866,7 +866,7 @@
       "name": "URL file respins",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.20919999999978245
+      "durationMs": 0.1334000000006199
     },
     {
       "id": "continuation-108",
@@ -874,7 +874,7 @@
       "name": "sursă comercială neoficială respinsă",
       "relatedSourceNumber": 994,
       "status": "passed",
-      "durationMs": 0.22240000000010696
+      "durationMs": 0.13869999999951688
     },
     {
       "id": "continuation-109",
@@ -882,7 +882,7 @@
       "name": "fus București",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 60.839800000000196
+      "durationMs": 41.92869999999948
     },
     {
       "id": "continuation-110",
@@ -890,7 +890,7 @@
       "name": "fus New York",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.8627999999998792
+      "durationMs": 0.6121000000002823
     },
     {
       "id": "continuation-111",
@@ -898,7 +898,7 @@
       "name": "fus invalid",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.40029999999978827
+      "durationMs": 0.4361000000008062
     },
     {
       "id": "continuation-112",
@@ -906,7 +906,7 @@
       "name": "ora brief validă",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.32150000000001455
+      "durationMs": 0.2118000000000393
     },
     {
       "id": "continuation-113",
@@ -914,7 +914,7 @@
       "name": "ora brief invalidă",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.25680000000011205
+      "durationMs": 0.21529999999984284
     },
     {
       "id": "continuation-114",
@@ -922,7 +922,7 @@
       "name": "minut follow-up invalid",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.3161000000000058
+      "durationMs": 0.14349999999922147
     },
     {
       "id": "continuation-115",
@@ -930,7 +930,7 @@
       "name": "cheie CRM interzisă",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.5744999999997162
+      "durationMs": 0.5788999999995212
     },
     {
       "id": "continuation-116",
@@ -938,7 +938,7 @@
       "name": "preferință nu salvează chei",
       "relatedSourceNumber": 946,
       "status": "passed",
-      "durationMs": 0.3459000000002561
+      "durationMs": 0.5990999999994528
     },
     {
       "id": "continuation-117",
@@ -946,7 +946,7 @@
       "name": "interval întreg după prag",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.2800999999999476
+      "durationMs": 0.3407999999999447
     },
     {
       "id": "continuation-118",
@@ -954,7 +954,7 @@
       "name": "interval întreg înaintea pragului",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.1910000000002583
+      "durationMs": 0.21600000000034925
     },
     {
       "id": "continuation-119",
@@ -962,7 +962,7 @@
       "name": "interval suprapus rămâne neconfirmat",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.18600000000014916
+      "durationMs": 0.20390000000043074
     },
     {
       "id": "continuation-120",
@@ -970,7 +970,7 @@
       "name": "interval suprapus inclus cu incertitudine",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.4292000000000371
+      "durationMs": 0.2701999999999316
     },
     {
       "id": "continuation-121",
@@ -978,7 +978,7 @@
       "name": "interval deschis after_1977",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.4011000000000422
+      "durationMs": 0.1738999999997759
     },
     {
       "id": "continuation-122",
@@ -986,7 +986,7 @@
       "name": "interval deschis nu dovedește limita superioară",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.23900000000003274
+      "durationMs": 0.22920000000067375
     },
     {
       "id": "continuation-123",
@@ -994,7 +994,7 @@
       "name": "înainte de 1990 confirmă limita 1989",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.29359999999996944
+      "durationMs": 0.2513999999991938
     },
     {
       "id": "continuation-124",
@@ -1002,7 +1002,7 @@
       "name": "înainte de 1990 nu confirmă minimul 1980",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.20540000000028158
+      "durationMs": 0.13989999999921565
     },
     {
       "id": "continuation-125",
@@ -1010,7 +1010,7 @@
       "name": "interval închis în limite exacte",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.7040000000001783
+      "durationMs": 0.2460000000000946
     },
     {
       "id": "continuation-126",
@@ -1018,7 +1018,7 @@
       "name": "interval inversat necunoscut",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.21250000000009095
+      "durationMs": 0.13540000000011787
     },
     {
       "id": "continuation-127",
@@ -1026,7 +1026,7 @@
       "name": "text promoțional nu devine interval",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.22859999999991487
+      "durationMs": 0.12850000000071304
     },
     {
       "id": "continuation-128",
@@ -1034,7 +1034,7 @@
       "name": "an exact nu substituie eticheta explicită",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.2721999999998843
+      "durationMs": 0.19549999999981083
     },
     {
       "id": "continuation-129",
@@ -1042,7 +1042,7 @@
       "name": "eticheta explicită după 1977",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.203899999999976
+      "durationMs": 0.15869999999995343
     },
     {
       "id": "continuation-130",
@@ -1050,7 +1050,7 @@
       "name": "eticheta explicită alt prag exclus",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.18100000000004002
+      "durationMs": 0.12290000000029977
     },
     {
       "id": "continuation-131",
@@ -1058,7 +1058,7 @@
       "name": "interval declarat nu este an necunoscut",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.12889999999970314
+      "durationMs": 0.1320000000005166
     },
     {
       "id": "continuation-132",
@@ -1066,7 +1066,7 @@
       "name": "eticheta sursei bate proiecția veche",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.18790000000035434
+      "durationMs": 0.1338000000005195
     },
     {
       "id": "continuation-133",
@@ -1074,7 +1074,7 @@
       "name": "interval complet în afară rămâne exclus cu include",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.23009999999976571
+      "durationMs": 0.15980000000035943
     },
     {
       "id": "continuation-134",
@@ -1082,7 +1082,7 @@
       "name": "excludere explicită a necunoscutelor fără prag",
       "relatedSourceNumber": 243,
       "status": "passed",
-      "durationMs": 0.19619999999986248
+      "durationMs": 0.10859999999956926
     }
   ]
 }

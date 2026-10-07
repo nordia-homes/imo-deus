@@ -466,3 +466,21 @@ Validare: **651/651 teste unitare în 70 fișiere**, **48/48 teste în 14 fișie
 Acest lot nu certifică integral fluxul conversațional de pregătire/aprobare/trimitere la un furnizor real. Un mesaj care include URL-ul creat de recomandare trebuie pregătit cu acel conținut concret și aprobat prin mecanismul existent. Cele 937 de cereri fără fixtures individuale, verificările externe, validitatea juridică temporală și calibrarea Jev rămân deschise. Modificările acestui lot nu sunt publicate în producție.
 
 Build-ul final a trecut cu TypeScript și 225 pagini, după adăugarea explicită a clientului în tipul referințelor de acces. ESLint a trecut; avertismentele cunoscute Jaeger/Tailwind și copierea omisă a browserului standalone local rămân. Aceste rezultate nu constituie probe de deployment sau de livrare la un furnizor real.
+
+## 7 octombrie: destinatar fixat de la pregătire până la trimitere
+
+Continuare E2/E3/E4. Auditul cozii comune a identificat că workerul reconstruia destinatarul din conversația curentă; un ID de conversație singur nu dovedea păstrarea destinatarului aprobat.
+
+- Pregătirea `message_send` citește conversația autorizată și include o revizie deterministă a agenției, conversației, canalului, conexiunii, participantului extern și clientului asociat. Revizia intră în payloadul aprobat; o revizie explicită veche este refuzată, nu înlocuită cu cea nouă. Modificările de nume, status, mesaje primite sau citire nu invalidează identitatea.
+- Conversațiile create într-un pas viitor cer un plan separat pentru trimitere, după identificarea destinatarului concret. Instrucțiunea instrumentului explică acest lucru și păstrează cerința de preview pentru eligibilitate/cost. Acest lot nu adaugă un control obligatoriu server al previewului și nu certifică încă toate criteriile fluxului pilot.
+- Serviciul comun validează revizia înainte de estimare, apoi din nou în tranzacția care creează mesajul și jobul. Joburile noi, inclusiv cele inițiate manual, păstrează identitatea din acel moment. Workerul o verifică înainte de estimare și de apelarea furnizorului. Un destinatar, client sau o conexiune schimbată oprește expedierea.
+- Verificarea rezultatului pentru planurile noi cere aceeași revizie în acțiunea aprobată, job, inputul jobului și conversația curentă. Mesajul deja acceptat nu este retrimis; citirea unui rezultat anterior prin cheia de idempotency rămâne posibilă cu acces autorizat.
+- Previewul de produs păstrează textul concret și identificatorul conversației, fără a afișa hashul intern ca un câmp de completat. Proba Chromium verifică textul și absența câmpului tehnic din previewul vizibil, inclusiv pe mobil.
+
+Compatibilitate la lansare: planurile de trimitere încă neexecutate, fără revizia destinatarului, cer pregătire/aprobare nouă. Joburile vechi încă queued, fără identitate verificabilă, se încheie failed înainte de furnizor; rezervarea este decontată ca eșec prin mecanismul existent. Nu se completează automat identitatea lor din datele curente și nu se retrimit mesajele accepted/delivered/read. Webul și workerul trebuie lansate coordonat pentru a evita producerea continuă a joburilor vechi de un proces neactualizat. Acest comportament necesită verificarea cozii înaintea rolloutului.
+
+Validări trecute: **765/765 teste unitare în 82 fișiere** din Jarvis și comunicări; **56/56 teste pe emulator în 15 fișiere**, incluzând opt probe ale cozii/workerului reale cu transport Meta simulat; **134/134 scenarii deterministe**, **155/155 teste în runnerul dedicat**; ESLint, manifestul de paritate și proba Chromium. Testele includ schimbarea identității între estimare și tranzacție, acces revocat, job legacy, reluare fără al doilea apel extern și actualizări inofensive în inbox. Nu s-au folosit destinatari reali.
+
+Corpusul live nu a fost extins în acest lot. Cele 937 de cereri fără fixtures individuale și criteriile rămase ale planului integral sunt în continuare deschise. Modificările nu sunt publicate în producție.
+
+Build-ul final a trecut, inclusiv TypeScript și 225 pagini. Bundle-ul rezultat conține și ascunderea reviziei interne din preview. Avertismentele Jaeger/Tailwind și copierea omisă a browserului standalone local rămân cele documentate anterior.

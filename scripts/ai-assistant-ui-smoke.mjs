@@ -75,6 +75,7 @@ try {
       { id: 'unknown', title: 'An necunoscut', constructionYearEvidenceKind: 'unknown', constructionYear: null, yearFilterSatisfied: false },
     ] }]) };
     else if (body.kind === 'chat' && body.prompt === 'Selectează a doua potrivire.') result = { message: message('Datele proprietății au fost recitite.', [{ type: 'results', source: 'crm', title: 'Proprietatea selectată', complete: true, rows: [{ id: 'match-second', title: 'Apartament Titan', status: 'Activ', price: 130000, matchScore: 91, scoreMayBeStale: true }] }]) };
+    else if (body.kind === 'chat' && body.prompt === 'Pregătește mesajul verificat.') result = { message: message('Mesaj pregătit pentru confirmare.', [], { planId, actions: [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conversation' }, query: {}, body: { text: 'Oferta concretă pentru clientul selectat.', expectedRecipientRevision: 'a'.repeat(64) } }] }) };
     else if (body.kind === 'chat') result = { message: message('Vizionarea este pregătită; verifică planul.', [], { planId, actions: [action] }) };
     else if (body.kind === 'search') {
       const rows = [{ id: body.query.source === 'owners' ? 'listing' : 'property', title: body.query.source === 'owners' ? 'Apartament Titan proprietar' : 'Apartament Titan CRM', price: '120.000 €', location: 'Titan', rooms: 2 }];
@@ -241,6 +242,12 @@ try {
   await page.getByText('Datele s-au schimbat. Refă matchingul pentru un scor actualizat.', { exact: true }).waitFor();
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
   await page.screenshot({ path: path.join(output, 'matching-stale-mobile.png'), fullPage: true });
+  await page.getByLabel('Comandă pentru AI Assistant').fill('Pregătește mesajul verificat.');
+  await page.getByRole('button', { name: 'Trimite comanda' }).click();
+  await page.getByText('Oferta concretă pentru clientul selectat.', { exact: true }).waitFor();
+  assert.equal(await page.getByText('expectedRecipientRevision', { exact: true }).count(), 0);
+  assert.equal(await page.getByText('a'.repeat(64), { exact: true }).count(), 0);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
   background = true; await page.reload();
   await page.getByRole('heading', { name: 'AI Assistant', exact: true }).waitFor();
   await page.getByLabel('Comandă pentru AI Assistant').fill('Pregătește o vizionare pe server.');

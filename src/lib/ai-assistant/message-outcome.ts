@@ -1,10 +1,17 @@
 import { isDeepStrictEqual } from 'node:util';
+import { assertRecipientRevision } from '@/lib/communications/recipient-revision';
 
 // Compare the immutable outbound job input, including template parameters and
 // attachment identity. Never use matching text alone as a delivery receipt.
 export function messageOutcome(actor: { uid: string; agencyId: string }, conversationId: string, body: Record<string, unknown>, conversation: Record<string, any>, job: Record<string, any> | undefined, message: Record<string, any>) {
   const evidence = (executionState: string, businessStatus: string, completionSatisfied: boolean, watchable: boolean, note: string) => ({ executionState, businessStatus, completionSatisfied, watchable, note, evidenceSource: 'current_domain_state', verifiedAt: new Date().toISOString() });
   const template = (value: any) => value ? { name: value.name, language: value.language, parameters: value.parameters || [] } : null;
+  if (body.expectedRecipientRevision !== undefined) {
+    try {
+      assertRecipientRevision(conversation, body.expectedRecipientRevision);
+      if (job?.recipientRevision !== body.expectedRecipientRevision || job?.input?.expectedRecipientRevision !== body.expectedRecipientRevision) throw new Error('Recipient mismatch');
+    } catch { return evidence('unknown', 'message_identity_unconfirmed', false, false, 'Identitatea destinatarului aprobat nu mai poate fi confirmată. Mesajul nu este retrimis automat.'); }
+  }
   const identityMatches = job?.agencyId === actor.agencyId && job?.uid === actor.uid && job?.conversationId === conversationId && job?.connectionId === conversation.connectionId && message.agencyId === actor.agencyId && message.conversationId === conversationId && message.authorId === actor.uid && message.direction === 'sent' && message.origin === 'imodeus';
   const inputMatches = identityMatches && job?.input && job.input.text === (typeof body.text === 'string' ? body.text.trim() : '') && (job.input.attachmentId || null) === (body.attachmentId || null) && isDeepStrictEqual(template(job.input.template), template(body.template));
   if (!inputMatches) return evidence('unknown', 'message_identity_unconfirmed', false, false, 'Mesajul nu poate fi legat de conversația, autorul și conținutul aprobate. Nu se retrimite automat.');

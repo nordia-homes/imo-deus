@@ -2,9 +2,23 @@ import { beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ getResource: vi.fn() }));
 import { getResource } from '../access';
 import { bindBusinessRevisions } from '../business-revisions';
+import { recipientRevision } from '@/lib/communications/recipient-revision';
 import type { AssistantContext } from '../access';
 const ctx = {} as AssistantContext;
+const recipient = { id: 'conv', agencyId: 'agency', channel: 'messenger', connectionId: 'connection', externalParticipantId: 'participant', contactId: 'contact' };
+const send = { kind: 'existing_operation' as const, operation: 'message_send', params: { conversationId: 'conv' }, query: {}, body: { text: 'Oferta concretă' } };
 beforeEach(() => vi.mocked(getResource).mockReset());
+it('pins message recipients from authorized server data and shares one snapshot per conversation', async () => {
+  vi.mocked(getResource).mockResolvedValue(recipient);
+  const prepared = await bindBusinessRevisions(ctx, [send, send]);
+  expect(prepared).toEqual([send, send].map(action => ({ ...action, body: { ...action.body, expectedRecipientRevision: recipientRevision(recipient) } })));
+  expect(getResource).toHaveBeenCalledTimes(1);
+});
+it('does not refresh stale approval identity or prepare unknown future recipients', async () => {
+  vi.mocked(getResource).mockResolvedValue({ ...recipient, externalParticipantId: 'different' });
+  await expect(bindBusinessRevisions(ctx, [{ ...send, body: { ...send.body, expectedRecipientRevision: recipientRevision(recipient) } }])).rejects.toThrow('s-a schimbat');
+  await expect(bindBusinessRevisions(ctx, [{ ...send, params: { conversationId: '@step:1:conversationId' } }])).rejects.toThrow('destinatar concret');
+});
 it('binds floor-plan replacement and property editing to one shared snapshot', async () => {
   vi.mocked(getResource).mockResolvedValue({ updatedAt: '2026-10-06T10:00:00Z' });
   const actions = await bindBusinessRevisions(ctx, [{ kind: 'update_property', propertyId: 'p', patch: { price: 130000 } }, { kind: 'existing_operation', operation: 'file_apply', params: { uploadId: 'upload' }, query: {}, body: { destination: 'property_rlv', propertyId: 'p' } }]);

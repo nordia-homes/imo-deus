@@ -10,8 +10,9 @@ import { bodyParameterCount, listWhatsAppTemplates, renderTemplateBody, template
 import { isDeepStrictEqual } from 'node:util';
 import { assertWhatsAppAccess, whatsappAppId } from './whatsapp-config';
 import { receiptCorrelation } from './receipt-correlation';
+import { recipientRevision, assertRecipientRevision } from './recipient-revision';
 
-const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 export async function estimateSend(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput) {
   const { connection, token } = await connectionToken(db, actor, conversation.connectionId, 'send');
@@ -72,6 +73,8 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
       return { messageId: previousJobId, status: existing.data()!.status };
     }
   }
+  if (input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, input.expectedRecipientRevision);
+  const recipient = recipientRevision(conversation);
   const estimate = await estimateSend(db, actor, conversation, input);
   const attachment = input.attachmentId ? (await agencyCollection(db, actor.agencyId, 'communicationMedia').doc(input.attachmentId).get()).data() : null;
   if (preview) return { estimate: { amountMicros: estimate.amount, currency: estimate.currency, category: estimate.category }, withinWindow: withinResponseWindow(conversation.lastInboundAt), renderedText: estimate.renderedText };
@@ -87,12 +90,13 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
       return;
     }
     if (!canReadConversation(actor, fresh.data() as Conversation)) throw new CommunicationError('Acces revocat.', 403);
+    assertRecipientRevision({ ...fresh.data(), id }, recipient);
     if (estimate.amount > 0) tx.set(budgetRef, { currency: estimate.currency, limitMicros: budget.data()?.limitMicros || 0, spentMicros: budget.data()?.spentMicros || 0,
       reservedMicros: budgetReservation(budget.data()?.limitMicros || 0, budget.data()?.spentMicros || 0, budget.data()?.reservedMicros || 0, estimate.amount) }, { merge: true });
     const message: Message = { id: jobId, agencyId: actor.agencyId, conversationId: id, externalId: null, direction: 'sent', origin: 'imodeus', text: input.template ? estimate.renderedText || `[${input.template.name}] ${input.template.parameters.join(' · ')}` : input.text, createdAt: nowIso(), authorId: actor.uid, status: 'queued', attachments: [] };
     if (input.attachmentId && attachment) message.attachments = [{ localId: input.attachmentId, name: attachment.name, type: attachment.mime }];
     tx.create(conversationRef.collection('messages').doc(jobId), message);
-    tx.create(job, { agencyId: actor.agencyId, uid: actor.uid, conversationId: id, connectionId: conversation.connectionId, input,
+    tx.create(job, { agencyId: actor.agencyId, uid: actor.uid, conversationId: id, connectionId: conversation.connectionId, input, recipientRevision: recipient,
       estimate: { amount: estimate.amount, currency: estimate.currency, rateId: estimate.rateId }, budgetId: budgetRef.id, budgetSettled: false, status: 'queued', createdAt: nowIso() });
   });
   return { messageId: jobId, status: 'queued' };
@@ -142,6 +146,8 @@ export async function drainOutbound(db: Firestore) {
       if (user.data()?.agencyId !== job.agencyId) throw new CommunicationError('Agentul nu mai aparține agenției.');
       const actor = { uid: job.uid, agencyId: job.agencyId, role: user.data()?.role };
       const conversation = await getConversation(db, actor, job.conversationId);
+      assertRecipientRevision(conversation, job.recipientRevision);
+      if (job.input.expectedRecipientRevision !== undefined) assertRecipientRevision(conversation, job.input.expectedRecipientRevision);
       const estimate = await estimateSend(db, actor, conversation, job.input);
       if (estimate.currency !== job.estimate.currency || estimate.amount > job.estimate.amount) throw new CommunicationError('Tariful s-a modificat. Pregătește din nou trimiterea.');
       const { connection, token } = await connectionToken(db, actor, job.connectionId, 'send');

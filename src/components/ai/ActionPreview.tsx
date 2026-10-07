@@ -8,7 +8,7 @@ export function ActionPreview({action,resolveName}:{action:AssistantAction;resol
   if(typeof value==='object') {
    if(depth>8) return '[Valoare prea adâncă]';
    const entries=Array.isArray(value)?value.map((item,index)=>[String(index+1),item] as const):Object.entries(value as Record<string,unknown>);
-   return <dl className="space-y-2">{entries.filter(([,item])=>item!==undefined).map(([field,item])=><div key={field} className="border-l-2 border-sky-100 pl-3"><dt className="text-xs text-muted-foreground">{fieldNames[field]||field}</dt><dd className="whitespace-pre-wrap break-words">{render(item,field,depth+1)}</dd></div>)}</dl>;
+   return <dl className="space-y-2">{entries.filter(([field,item])=>field!=='expectedRecipientRevision'&&item!==undefined).map(([field,item])=><div key={field} className="border-l-2 border-sky-100 pl-3"><dt className="text-xs text-muted-foreground">{fieldNames[field]||field}</dt><dd className="whitespace-pre-wrap break-words">{render(item,field,depth+1)}</dd></div>)}</dl>;
   }
   if(key.endsWith('Id')&&typeof value==='string') return value.startsWith('@step:')?`Creat în pasul anterior (${value})`:`${resolveName(value)} (${value})`;
   if(['viewingDate','dueDate','nextRunAt'].includes(key)) return resultDate(value);

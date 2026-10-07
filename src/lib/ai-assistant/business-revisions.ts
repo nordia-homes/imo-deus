@@ -1,9 +1,19 @@
 import { getResource, type AssistantContext } from './access';
 import type { AssistantAction } from './contracts';
+import { recipientRevision, assertRecipientRevision } from '@/lib/communications/recipient-revision';
 
 export async function bindBusinessRevisions(ctx: AssistantContext, actions: AssistantAction[]): Promise<AssistantAction[]> {
   const snapshots = new Map<string, Promise<Record<string, any>>>();
   return Promise.all(actions.map(async action => {
+    if (action.kind === 'existing_operation' && action.operation === 'message_send') {
+      const id = action.params.conversationId;
+      if (!id || id.startsWith('@step:')) throw new Error('Mesajul necesită o conversație existentă și un destinatar concret înainte de aprobare. Creează conversația, apoi pregătește trimiterea.');
+      const key = `conversations/${id}`;
+      if (!snapshots.has(key)) snapshots.set(key, getResource(ctx, 'conversations', id));
+      const record = await snapshots.get(key)!;
+      if (action.body.expectedRecipientRevision !== undefined) assertRecipientRevision(record, action.body.expectedRecipientRevision);
+      return { ...action, body: { ...action.body, expectedRecipientRevision: recipientRevision(record) } };
+    }
     if (action.kind === 'existing_operation' && action.operation === 'file_apply' && action.body.destination === 'property_rlv') {
       const id = action.body.propertyId;
       if (typeof id !== 'string' || id.startsWith('@step:') || action.body.expectedUpdatedAt !== undefined) return action;

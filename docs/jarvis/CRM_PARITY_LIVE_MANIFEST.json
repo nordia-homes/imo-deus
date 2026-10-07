@@ -196,7 +196,7 @@
       "method": "POST",
       "path": "/api/communications/conversations/{conversationId}/messages",
       "handler": "src/app/api/communications/[...path]/route.ts",
-      "description": "Trimite mesaj prin coada existentă. text sau template {name,language,parameters}; requestId injectat de executor.",
+      "description": "Trimite mesaj prin coada existentă. Cere conversație existentă și destinatar concret înainte de aprobare; nu conversationId dintr-un pas viitor. text sau template {name,language,parameters}; requestId injectat de executor, identitatea destinatarului fixată de server. Verifică eligibilitatea și costul prin message_preview.",
       "readOnly": false,
       "externallySensitive": true,
       "verification": "registered_handler_not_provider_certification"

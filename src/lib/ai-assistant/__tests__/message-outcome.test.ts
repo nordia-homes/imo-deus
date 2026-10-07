@@ -1,8 +1,18 @@
 import { expect, it } from 'vitest';
 import { messageOutcome } from '../message-outcome';
+import { recipientRevision } from '@/lib/communications/recipient-revision';
 const actor = { uid: 'u', agencyId: 'a' }, conversation = { connectionId: 'connection' }, body = { text: 'Oferta aprobată' };
 const job = { ...actor, conversationId: 'c', connectionId: 'connection', input: { text: body.text } };
 const message = { agencyId: 'a', authorId: 'u', conversationId: 'c', direction: 'sent', origin: 'imodeus', status: 'delivered', externalId: 'provider-id' };
+it('requires the approved recipient revision in the job and current conversation', () => {
+  const current = { ...conversation, id: 'c', agencyId: 'a', channel: 'messenger', externalParticipantId: 'participant', contactId: 'contact' };
+  const revision = recipientRevision(current), approved = { ...body, expectedRecipientRevision: revision };
+  const pinned = { ...job, input: approved, recipientRevision: revision };
+  expect(messageOutcome(actor, 'c', approved, current, pinned, message).completionSatisfied).toBe(true);
+  expect(messageOutcome(actor, 'c', approved, { ...current, contactId: 'other' }, pinned, message).completionSatisfied).toBe(false);
+  expect(messageOutcome(actor, 'c', approved, current, { ...pinned, recipientRevision: undefined }, message).completionSatisfied).toBe(false);
+  expect(messageOutcome(actor, 'c', approved, current, { ...pinned, input: body }, message).completionSatisfied).toBe(false);
+});
 it.each(['queued', 'sending', 'accepted', 'unknown'])('does not equate %s with delivery', status => {
   expect(messageOutcome(actor, 'c', body, conversation, job, { ...message, status })).toMatchObject({ completionSatisfied: false, watchable: true, businessStatus: status });
 });
