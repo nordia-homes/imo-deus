@@ -45,4 +45,35 @@ describe('event rules: filtering, delayed delivery and idempotency', () => {
     expect(automationSchema.safeParse({ ...rule, effects: [{ kind: 'existing_operation', operation: 'send' }] }).success).toBe(false);
     expect(automationSchema.safeParse({ ...rule, trigger: { resource: 'tasks', change: 'created' } }).success).toBe(false);
   });
+  it.each(['Câștigat', undefined])('records a skipped notification when live status becomes %s', async status => {
+    const { db, rows } = database([event()]);
+    rows.set('agencies/a/contacts/c', { status });
+    const ctx = { adminDb: db, agencyId: 'a', uid: 'u', role: 'agent' } as any;
+    await runEventRule(ctx, { id: 'r', createdAt: startedAt }, { ...rule, effects: [rule.effects[1]] }, vi.fn(), async () => {});
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(0);
+    const receipt = [...rows].find(([key]) => key.includes('/events/') && !key.includes('/effects/'))![1];
+    expect(receipt.effects).toEqual([{ status: 'skipped', reasonCode: 'state_changed', entityId: 'c' }]);
+  });
+  it('keeps a committed skip after interruption even if the old status returns', async () => {
+    const { db, rows } = database([event()]);
+    const ctx = { adminDb: db, agencyId: 'a', uid: 'u', role: 'agent' } as any;
+    const notificationFirst = { ...rule, effects: [rule.effects[1], rule.effects[0]] };
+    rows.set('agencies/a/contacts/c', { status: 'Câștigat' });
+    let checks = 0;
+    await expect(runEventRule(ctx, { id: 'r', createdAt: startedAt }, notificationFirst, vi.fn(), async () => {
+      if (++checks === 3) throw new Error('Interrupted');
+    })).rejects.toThrow('Interrupted');
+    rows.set('agencies/a/contacts/c', { status: 'Contactat' });
+    await runEventRule(ctx, { id: 'r', createdAt: startedAt }, notificationFirst, vi.fn(async () => ({ taskId: 't' })), async () => {});
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(0);
+    const receipt = [...rows].find(([key]) => key.includes('/events/') && !key.includes('/effects/'))![1];
+    expect(receipt.effects[0]).toMatchObject({ status: 'skipped', reasonCode: 'state_changed' });
+  });
+  it('allows status changes for rules without a status condition', async () => {
+    const { db, rows } = database([event()]);
+    rows.set('agencies/a/contacts/c', { status: 'Câștigat' });
+    await runEventRule({ adminDb: db, agencyId: 'a', uid: 'u', role: 'agent' } as any, { id: 'r', createdAt: startedAt },
+      { ...rule, trigger: { resource: 'contacts', change: 'updated' }, effects: [rule.effects[1]] }, vi.fn(), async () => {});
+    expect([...rows.keys()].filter(key => key.includes('/notifications/'))).toHaveLength(1);
+  });
 });

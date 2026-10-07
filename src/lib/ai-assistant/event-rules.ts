@@ -54,14 +54,25 @@ export async function runEventRule(ctx: AssistantContext, claim: Record<string, 
                 results.push(await execute(ctx, { kind: 'create_task', description: effect.description, dueDate, ...(effect.agentId ? { agentId: effect.agentId } : {}), ...(contactId ? { contactId } : {}), ...(propertyId ? { propertyId } : {}) }, key));
               } else {
                 const notification = ctx.adminDb.collection('users').doc(ctx.uid).collection('notifications').doc(key);
-                await ctx.adminDb.runTransaction(async tx => {
+                const outcome = receipt.collection('effects').doc(key);
+                const result = await ctx.adminDb.runTransaction(async tx => {
                   await assertAutomationFence(ctx.adminDb, tx, ctx);
                   const member = await tx.get(ctx.adminDb.collection('users').doc(ctx.uid)), existing = await tx.get(notification), entity = await tx.get(collectionFor(ctx, rule.trigger.resource).doc(targetId));
                   if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Permisiunile automatizării au fost revocate.');
                   if (!entity.exists || !canReadResource(ctx, rule.trigger.resource, entity.data()!)) throw new Error('Accesul la entitatea regulii a fost revocat.');
+                  const previous = await tx.get(outcome);
+                  if (previous.exists) return previous.data()!;
+                  // Preserve already committed notifications when recovering older receipts.
+                  if (existing.exists) return { notificationId: key };
+                  if (rule.trigger.statusTo !== undefined && entity.data()!.status !== rule.trigger.statusTo) {
+                    const skipped = { status: 'skipped', reasonCode: 'state_changed', entityId: targetId };
+                    tx.create(outcome, skipped);
+                    return skipped;
+                  }
                   if (!existing.exists) tx.create(notification, { eventId: key, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: effect.title, body: effect.body, actionUrl: '/ai-assistant', entityId: targetId, isRead: false, createdAt: new Date().toISOString(), automationId: claim.id, sourceEventId: doc.id });
+                  return { notificationId: key };
                 });
-                results.push({ notificationId: key });
+                results.push(result);
               }
             }
             await ctx.adminDb.runTransaction(async tx => { await assertAutomationFence(ctx.adminDb, tx, ctx); if (!(await tx.get(receipt)).exists) tx.create(receipt, { id: receiptId, sourceEventId: doc.id, occurredAt: event.occurredAt, completedAt: new Date().toISOString(), effects: safeData(results), actorId: ctx.uid }); });

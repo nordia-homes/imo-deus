@@ -322,6 +322,31 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await agency.collection('assistantAutomations').doc('r').collection('events').get()).size).toBe(1);
     } finally { await db.recursiveDelete(profile); }
   }, 20000);
+  it.each([false, true])('suppresses a stale rule alert with real transactions (interrupted: %s)', async interrupted => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const startedAt = '2030-01-02T10:00:00.000Z', contact = agency.collection('contacts').doc('c');
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await contact.set({ name: 'Emulator client', status: 'Contactat' });
+    await agency.collection('crmEvents').doc('e').set({ source: 'firestore_change', actorId: ctx.uid, capability: 'contacts.updated', occurredAt: startedAt, recordedAt: startedAt, entities: { contactId: 'c' }, ruleState: { after: { status: 'Contactat' } } });
+    const rule = automationSchema.parse({ type: 'event_rule', nextRunAt: startedAt, intervalMinutes: 30, maxRuns: 10, trigger: { resource: 'contacts', change: 'updated', statusTo: 'Contactat' }, effects: [{ kind: 'notify', title: 'Client contactat' }, { kind: 'create_task', description: 'Follow-up emulator', dueAfterMinutes: 60 }] }) as EventRule;
+    const claim = { id: 'r', createdAt: startedAt };
+    let checks = 0;
+    try {
+      const execution = runEventRule(ctx, claim, rule, executeAction, async () => {
+        if (++checks === 2) await contact.update({ status: 'Câștigat' });
+        if (interrupted && checks === 3) throw new Error('Interrupted after skipped alert');
+      });
+      if (interrupted) await expect(execution).rejects.toThrow('Interrupted after skipped alert');
+      else await execution;
+      await contact.update({ status: 'Contactat' });
+      await runEventRule(ctx, claim, rule, executeAction, async () => {});
+      expect((await profile.collection('notifications').get()).size).toBe(0);
+      const receipts = await agency.collection('assistantAutomations').doc('r').collection('events').get();
+      expect(receipts.size).toBe(1);
+      expect(receipts.docs[0].data().effects[0]).toMatchObject({ status: 'skipped', reasonCode: 'state_changed', entityId: 'c' });
+      expect((await agency.collection('tasks').get()).size).toBe(1);
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
   it('recovers an interrupted rule without repeating its committed task', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const startedAt = '2030-01-02T10:00:00.000Z';
