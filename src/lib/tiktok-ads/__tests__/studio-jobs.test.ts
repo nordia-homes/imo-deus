@@ -31,6 +31,37 @@ beforeEach(() => {
   state.documents.set(postPath, { agencyId: 'org', createdByUid: 'user', status: 'draft', consentedAt: new Date().toISOString() });
 });
 describe('Durable property video and publishing queue', () => {
+  it.each([false, true])('does not overwrite a replaced claim after provider completion (failure=%s)', async fails => {
+    await scheduleTikTokPost('org', 'user', 'post', new Date(Date.now() + 3600000).toISOString());
+    const job = state.documents.get('tiktokStudioJobs/publish_org_post')!;
+    job.runAt = '2020-01-01T00:00:00Z'; state.documents.get(postPath)!.scheduledAt = job.runAt;
+    state.publish.mockImplementationOnce(async () => {
+      state.documents.get('tiktokStudioJobs/publish_org_post')!.owner = 'replacement';
+      state.documents.get(postPath)!.scheduleStatus = 'replacement-state';
+      if (fails) throw new Error('provider timeout');
+    });
+    await drainStudioRenders();
+    expect(state.documents.get(postPath)!.scheduleStatus).toBe('replacement-state');
+    expect(state.documents.get('tiktokStudioJobs/publish_org_post')!.status).toBe('running');
+  });
+  it.each(['description', 'videoTourUrl', 'targetOpenId', 'privacyLevel', 'consentedAt'])('refuses a changed scheduled %s without calling the provider', async field => {
+    await scheduleTikTokPost('org', 'user', 'post', new Date(Date.now() + 3600000).toISOString());
+    const job = state.documents.get('tiktokStudioJobs/publish_org_post')!;
+    job.runAt = '2020-01-01T00:00:00Z';
+    state.documents.get(postPath)!.scheduledAt = job.runAt;
+    state.documents.get(postPath)![field] = 'changed';
+    await drainStudioRenders(); await drainStudioRenders();
+    expect(state.publish).not.toHaveBeenCalled();
+    expect(state.documents.get('tiktokStudioJobs/publish_org_post')?.status).toBe('failed');
+  });
+  it('publishes an unchanged scheduled draft once with its exact claim', async () => {
+    await scheduleTikTokPost('org', 'user', 'post', new Date(Date.now() + 3600000).toISOString());
+    const job = state.documents.get('tiktokStudioJobs/publish_org_post')!;
+    job.runAt = '2020-01-01T00:00:00Z'; state.documents.get(postPath)!.scheduledAt = job.runAt;
+    state.publish.mockResolvedValue({});
+    await drainStudioRenders(); await drainStudioRenders();
+    expect(state.publish).toHaveBeenCalledExactlyOnceWith({ agencyId: 'org', draftId: 'post', requestedByUid: 'user', fromSchedule: true, scheduleOwner: expect.any(String) });
+  });
   it('cancels a queued post without deleting its draft, but never interrupts a started publish', async () => {
     await scheduleTikTokPost('org', 'user', 'post', new Date(Date.now() + 3600000).toISOString());
     await expect(cancelScheduledTikTokPost('org', 'other', 'post')).rejects.toThrow();

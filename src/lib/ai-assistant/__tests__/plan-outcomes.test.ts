@@ -4,6 +4,7 @@ vi.mock('../workspace', () => ({ getPlan: mocks.plan }));
 vi.mock('../operations', () => ({ invokeOperation: mocks.invoke }));
 vi.mock('../access', () => ({ getResource: mocks.resource, referencesAllowed: mocks.allowed, collectionFor: (ctx: any, name: string) => ctx.adminDb.collection(name) }));
 import { readPlanOutcomes } from '../plan-outcomes';
+import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx: any = { uid: 'u', role: 'agent', agencyId: 'a', adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ role: 'agent', agencyId: 'a' }) }) }) }) } };
 const action = { kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: {} };
 beforeEach(() => { vi.clearAllMocks(); mocks.allowed.mockResolvedValue(true); mocks.plan.mockResolvedValue({ data: { actions: [action], status: 'completed', results: [{ step: 1, result: { jobId: 'j', executionState: 'queued' } }] } }); });
@@ -101,8 +102,9 @@ it('does not equate a finished Facebook submission job with published posts', as
 it('verifies TikTok scheduling against both draft and owned queue record', async () => {
   const runAt = '2030-01-01T10:00:00.000Z';
   mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'tiktok_post_schedule', params: { draftId: 'd' }, body: { runAt } }], results: [{ step: 1, result: {} }] } });
-  mocks.resource.mockResolvedValue({ scheduledAt: runAt, scheduleStatus: 'scheduled' });
-  const row = { uid: 'u', agencyId: 'a', draftId: 'd', runAt, status: 'queued' };
+  const draft = { agencyId: 'a', createdByUid: 'u', scheduledAt: runAt, scheduleStatus: 'scheduled' };
+  mocks.resource.mockResolvedValue(draft);
+  const row = { kind: 'publish', draftRevision: tikTokScheduleRevision(draft), uid: 'u', agencyId: 'a', draftId: 'd', runAt, status: 'queued' };
   const scoped = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => row }) }) } } };
   expect((await readPlanOutcomes(scoped, 'plan')).outcome.state).toBe('COMPLETED');
   row.runAt = '2030-01-01T12:00:00.000Z';

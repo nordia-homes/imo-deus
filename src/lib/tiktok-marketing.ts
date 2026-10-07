@@ -1004,12 +1004,18 @@ export async function publishTikTokPostDraft(input: {
   draftId: string;
   requestedByUid: string;
   fromSchedule?: boolean;
+  scheduleOwner?: string;
 }) {
   const ref = getDraftRef(input.agencyId, input.draftId);
   let draft = await adminDb.runTransaction(async tx => {
     const snapshot = await tx.get(ref);
     if (!snapshot.exists) throw new Error('Draftul TikTok nu a fost gasit.');
     const current = { id: snapshot.id, ...snapshot.data() } as TikTokPostDraft;
+    if (input.fromSchedule) {
+      const { assertTikTokSchedule } = await import('./tiktok-schedule-revision');
+      const job = await tx.get(adminDb.collection('tiktokStudioJobs').doc(`publish_${input.agencyId}_${input.draftId}`));
+      assertTikTokSchedule(current, job.data(), { agencyId: input.agencyId, uid: input.requestedByUid, draftId: input.draftId, owner: input.scheduleOwner || '' });
+    }
     if (current.createdByUid !== input.requestedByUid) throw new Error('Numai autorul poate publica pe profilul conectat.');
     if (current.scheduleStatus === 'scheduled' && !input.fromSchedule) throw new Error('Postarea este programată. Anulează programarea înainte de publicarea manuală.');
     if (current.publishId || current.publishOutcomeUnknown || current.manualReviewRequired || ['publishing', 'processing', 'published'].includes(current.status)) throw new Error('Publicarea a fost deja inițiată. Verifică starea fără a retrimite.');

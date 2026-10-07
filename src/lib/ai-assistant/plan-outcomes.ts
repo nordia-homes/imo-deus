@@ -11,6 +11,7 @@ import { prospectingOutcome } from './prospecting-outcome';
 import { recommendationOutcome } from './recommendation-outcome';
 import { messageOutcome } from './message-outcome';
 import { facebookOutcome } from './facebook-outcome';
+import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -96,7 +97,7 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         const job = await ctx.adminDb.collection('tiktokStudioJobs').doc(`publish_${ctx.agencyId}_${action.params.draftId}`).get();
         const row = job.data();
         if (!row || row.uid !== ctx.uid || row.agencyId !== ctx.agencyId || row.draftId !== action.params.draftId) throw new CommunicationError('Programare inaccesibilă.', 403);
-        completionSatisfied = Date.parse(String(action.body.runAt)) === Date.parse(row.runAt) && Date.parse(draft.scheduledAt) === Date.parse(row.runAt) && draft.scheduleStatus === 'scheduled' && row.status === 'queued';
+        completionSatisfied = draft.agencyId === ctx.agencyId && draft.createdByUid === ctx.uid && row.kind === 'publish' && row.draftRevision === tikTokScheduleRevision(draft) && Date.parse(String(action.body.runAt)) === Date.parse(row.runAt) && Date.parse(draft.scheduledAt) === Date.parse(row.runAt) && draft.scheduleStatus === 'scheduled' && row.status === 'queued';
         current = operationResult(action.operation, { status: row.status }, true);
       }
       else if (['tiktok_post_draft', 'meta_campaign_draft'].includes(action.operation)) {

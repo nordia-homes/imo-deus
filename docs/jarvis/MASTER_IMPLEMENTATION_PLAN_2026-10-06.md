@@ -556,3 +556,17 @@ Validări: **825/825 teste unitare în 86 fișiere**, incluzând **134 de scenar
 Limite: confirmarea se referă la programarea din CRM, nu certifică eligibilitatea curentă a conexiunii, disponibilitatea laptopului sau accesul Facebook la grupuri. Acestea rămân verificate de fluxul de execuție existent. Nu există o probă nouă de publicare la furnizor, iar cele trei fluxuri pilot și planul integral rămân deschise. Corpusul live și calibrarea Jev nu au fost extinse. Acest lot nu este publicat în producție.
 
 Build-ul final a trecut cu TypeScript și 225 pagini. Avertismentele locale Jaeger și browser standalone rămân cele cunoscute; buildul nu reprezintă deployment.
+
+## 7 octombrie: draftul TikTok fixat la programare
+
+Continuare E3/E4. Programarea păstra anterior numai ID-ul draftului, iar workerul publica versiunea curentă. Joburile noi păstrează acum o revizie SHA-256 a intrărilor de publicare: autor/agenție, proprietate, URL video și proprietarul video, contul țintă, descriere, hashtaguri, vizibilitate, interacțiuni, marcaje comerciale/AI, acord și copertă. Telemetria și statusurile nu schimbă această revizie.
+
+Workerul validează draftul și revendicarea jobului înainte de publicare. Serviciul comun repetă verificarea în tranzacția care schimbă draftul în `publishing`, înaintea efectelor externe: aceeași revizie, autor, agenție, job, oră scadentă, programare activă, owner de execuție și lease neexpirat. O modificare sau un job vechi fără revizie oprește publicarea și cere programare nouă. Selectarea unui job scadent este reverificată după citirea tranzacțională, pentru a nu porni o programare mutată între timp în viitor.
+
+Starea finală a draftului este actualizată în aceeași tranzacție cu rezultatul jobului, numai de ownerul încă activ. Un worker înlocuit nu poate marca draftul `sent` sau `error`. Verificatorul Jarvis nu mai confirmă programarea dacă draftul nu mai corespunde reviziei stocate. Publicarea manuală păstrează verificările ei existente.
+
+Compatibilitate: joburile programate anterior fără revizie trebuie revizuite și reprogramate explicit; workerul nu completează revizia din conținutul curent. Lansarea coordonată web/worker și inventarierea cozii rămân necesare. Revizia fixează URL-ul video, nu hashul octeților de la acel URL; disponibilitatea și validarea media rămân în serviciul de publicare existent. Legarea conținutului are loc la programare și nu certifică singură că modelul a prezentat acel conținut în toate variantele de aprobare. Probele acestui lot folosesc provideri simulați; fluxul pilot integral, probele externe și corpusul restant rămân deschise. Lotul nu este publicat în producție.
+
+Validări: 970/970 teste în 102 fișiere din Jarvis, comunicări și TikTok, inclusiv cele 134 de scenarii deterministe existente. Lotul adaugă 21 de teste ale reviziei și 8 cazuri în workerul Studio (conținut schimbat, trimitere unică și claim înlocuit). Suitele folosesc stocare simulată pentru aceste tranzacții; emulatorul Firestore nu a fost rerulat. Testul de randare produce un MP4 real folosind voce și imagini sintetice, fără provider plătit. ESLint și manifestul de paritate au trecut. Numărul de teste nu reprezintă numărul de cereri originale validate cap-coadă.
+
+Build-ul final a trecut: TypeScript și 225 pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu reprezintă validare de deployment.
