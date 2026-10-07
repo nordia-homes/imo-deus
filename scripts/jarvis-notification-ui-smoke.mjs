@@ -31,7 +31,7 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(() => {
     const base = { eventId: 'e', recipientId: 'fixture', agencyId: 'a', type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', body: 'Fixture', actionUrl: '/ai-assistant', entityId: 'c', createdAt: '2026-10-07T09:00:00Z', isRead: false };
-    window.fixtureNotifications = ['Stale', 'Active', 'Legacy', 'Withdrawn'].map(title => ({ ...base, id: title, title, ...(title !== 'Legacy' ? { ruleCondition: { resource: 'contacts', id: 'c', status: 'Contactat' } } : {}), ...(title === 'Withdrawn' ? { withdrawnAt: '2026-10-07T09:01:00Z' } : {}) }));
+    window.fixtureNotifications = ['Stale', 'Active', 'Legacy', 'Withdrawn'].map(title => ({ ...base, id: title, title, ...(title === 'Stale' ? { insightCondition: { kind: 'task', id: 't' } } : title !== 'Legacy' ? { ruleCondition: { resource: 'contacts', id: 'c', status: 'Contactat' } } : {}), ...(title === 'Withdrawn' ? { withdrawnAt: '2026-10-07T09:01:00Z' } : {}) }));
   });
   let fail = true;
   await page.route('**/api/notifications/reconcile', async route => {

@@ -1,5 +1,5 @@
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { Firestore } from 'firebase-admin/firestore';
 import { automationSchema, safeData } from './contracts';
 import { collectionFor, getResource, type AssistantContext } from './access';
@@ -14,6 +14,7 @@ import { runEventRule } from './event-rules';
 import { deliverDailyBrief } from './daily-brief';
 import { nextBriefRun, briefSettingsSchema } from './daily-brief-contract';
 import { assertNoReplySince } from './reply-stop';
+import { createInsightNotification } from './insight-notifications';
 
 export async function drainAssistantAutomations(db: Firestore, limit = 10) {
   if (!featureFlags().automations) return { processed: 0, results: [], disabled: true };
@@ -97,11 +98,17 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
       } else if (automation.type === 'insight_report' || automation.type === 'matching_watch') {
         const report = automation.type === 'insight_report' ? await getInsights(ctx, automation.limit) : { rows: (await matchContact(ctx, automation.contactId, automation.limit)).filter(row => row.matchScore >= automation.threshold), complete: true };
         result = report;
+        const notificationResults: unknown[] = [];
         for (const row of report.rows) {
-          const id = automation.type === 'matching_watch' ? `${claim.id}-${row.id}` : `${claim.id}-run-${run}-${row.id}`;
+          const id = automation.type === 'matching_watch' ? `${claim.id}-${row.id}` : `insight-${createHash('sha256').update(JSON.stringify([claim.id, run, row.id])).digest('hex')}`;
+          if (automation.type === 'insight_report') {
+            notificationResults.push(await createInsightNotification(ctx, claim.id, id, row, `${claim.id}-run-${run}-${row.id}`));
+            continue;
+          }
           const notification = db.collection('users').doc(ctx.uid).collection('notifications').doc(id);
           await db.runTransaction(async tx => { await assertAutomationFence(db, tx, ctx); if ((await tx.get(notification)).exists) return; tx.create(notification, { eventId: id, recipientId: ctx.uid, agencyId: ctx.agencyId, type: 'ai_assistant', category: 'propertyAssignments', priority: 'action_required', title: automation.type === 'matching_watch' ? 'Potrivire ImoDeus peste pragul configurat' : String(row.title), body: automation.type === 'matching_watch' ? String(row.title) : 'Verifică insight-ul în AI Assistant.', actionUrl: '/ai-assistant', entityId: row.id, isRead: false, createdAt: now }); });
         }
+        if (automation.type === 'insight_report') result = { ...report, notificationResults };
       } else {
         const search = { ...automation.search, source: 'owners' as const, cursor: claim.scanCursor || undefined, limit: 100 };
         result = await searchProperties(ctx, search);

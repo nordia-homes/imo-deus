@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { idSchema } from './contracts';
 import { canReadResource, collectionFor, type AssistantContext } from './access';
+import { insightConditionSchema, readInsightRelevance } from './insight-relevance';
 
 export const ruleConditionSchema = z.object({
   resource: z.enum(['contacts', 'properties', 'viewings', 'sales', 'ownerListingFavorites']),
@@ -22,12 +23,20 @@ export async function reconcileRuleNotifications(ctx: AssistantContext, input: u
       }
       const snapshot = await tx.get(ref), row = snapshot.data();
       if (!row || row.type !== 'ai_assistant' || row.recipientId !== ctx.uid || row.agencyId !== ctx.agencyId || row.withdrawnAt) return false;
-      const condition = ruleConditionSchema.safeParse(row.ruleCondition);
-      if (!condition.success || !row.automationId || !row.sourceEventId) return false;
-      const entity = await tx.get(collectionFor(ctx, condition.data.resource).doc(condition.data.id));
-      const reason = !entity.exists ? 'entity_deleted'
-        : !canReadResource(ctx, condition.data.resource, entity.data()!) ? 'access_revoked'
-          : entity.data()!.status !== condition.data.status ? 'state_changed' : null;
+      if (!row.automationId) return false;
+      let reason: 'entity_deleted' | 'access_revoked' | 'state_changed' | null;
+      if (row.insightCondition !== undefined) {
+        const condition = insightConditionSchema.safeParse(row.insightCondition);
+        if (!condition.success) return false;
+        reason = await readInsightRelevance(ctx, tx, condition.data);
+      } else {
+        const condition = ruleConditionSchema.safeParse(row.ruleCondition);
+        if (!condition.success || !row.sourceEventId) return false;
+        const entity = await tx.get(collectionFor(ctx, condition.data.resource).doc(condition.data.id));
+        reason = !entity.exists ? 'entity_deleted'
+          : !canReadResource(ctx, condition.data.resource, entity.data()!) ? 'access_revoked'
+            : entity.data()!.status !== condition.data.status ? 'state_changed' : null;
+      }
       if (!reason) return false;
       tx.update(ref, { withdrawnAt: new Date().toISOString(), withdrawalReason: reason, isRead: true });
       return true;

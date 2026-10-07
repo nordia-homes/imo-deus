@@ -69,6 +69,7 @@ export type AppNotification = {
   withdrawnAt?: string;
   withdrawalReason?: 'state_changed' | 'entity_deleted' | 'access_revoked';
   ruleCondition?: { resource: string; id: string; status: string };
+  insightCondition?: { kind: string; id: string; otherId?: string };
 };
 
 export type MessagingRegistration = {

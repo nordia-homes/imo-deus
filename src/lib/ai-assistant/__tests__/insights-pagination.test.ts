@@ -4,6 +4,10 @@ import { readResource } from '../access';
 import { getInsights } from '../insights';
 import type { AssistantContext } from '../access';
 beforeEach(() => { vi.mocked(readResource).mockReset(); });
+it.each(['resolved', 'spam', 'snoozed'])('excludes %s conversations even with stale needsReply', async status => {
+  vi.mocked(readResource).mockImplementation(async (_ctx, input) => ({ rows: input.resource === 'conversations' ? [{ id: 'c', status, needsReply: true, lastInboundAt: '2020-01-01' }] : [], complete: true, nextCursor: null }));
+  expect((await getInsights({ uid: 'u' } as AssistantContext)).rows).toEqual([]);
+});
 it('finds an overdue task beyond the first UI page and reports output truncation separately', async () => {
   vi.mocked(readResource).mockImplementation(async (_ctx, input) => {
     if (input.resource !== 'tasks') return { rows: [], complete: true, nextCursor: null };

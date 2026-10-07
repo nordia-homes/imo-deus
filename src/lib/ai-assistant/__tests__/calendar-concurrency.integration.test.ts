@@ -26,6 +26,8 @@ import { readBriefDelivery } from '../brief-delivery';
 import { stableId } from '@/lib/communications/crypto';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { reconcileRuleNotifications } from '../notification-relevance';
+import { createInsightNotification } from '../insight-notifications';
+import * as insightReports from '../insights';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -373,6 +375,49 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await reconcileRuleNotifications(ctx, { ids: [notification.id] })).withdrawn).toBe(0);
       expect((await notification.ref.get()).data()?.withdrawnAt).toBeTruthy();
     } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it.each(['task', 'reply', 'conflict'])('creates once and withdraws a resolved %s insight with actual transactions', async kind => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const resource = kind === 'task' ? 'tasks' : kind === 'reply' ? 'conversations' : 'viewings';
+    const entity = agency.collection(resource).doc('c');
+    const live = kind === 'task' ? { status: 'open', agentId: ctx.uid, dueDate: '2020-01-01' }
+      : kind === 'reply' ? { agencyId: ctx.agencyId, status: 'open', needsReply: true, lastInboundAt: '2020-01-01', assigneeId: ctx.uid, collaboratorIds: [] }
+        : { status: 'scheduled', agentId: ctx.uid, viewingDate: new Date(Date.now() + 86400000).toISOString(), duration: 60 };
+    const card = { id: 'priority', title: 'Fixture priority', ...(kind === 'task' ? { taskId: 'c' } : kind === 'reply' ? { conversationId: 'c' } : { viewingIds: ['c', 'd'] }) };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await entity.set(live);
+    if (kind === 'conflict') await agency.collection(resource).doc('d').set(live);
+    try {
+      await Promise.all([1, 2].map(() => createInsightNotification(ctx, 'r', 'n', card)));
+      expect((await profile.collection('notifications').get()).size).toBe(1);
+      expect((await agency.collection('assistantAutomations').doc('r').collection('insightEffects').get()).size).toBe(1);
+      expect((await reconcileRuleNotifications(ctx, { ids: ['n'] })).withdrawn).toBe(0);
+      await entity.update(kind === 'reply' ? { lastOutboundAt: new Date().toISOString() } : { status: kind === 'task' ? 'completed' : 'cancelled' });
+      const results = await Promise.all([1, 2].map(() => reconcileRuleNotifications(ctx, { ids: ['n'] })));
+      expect(results.reduce((sum, result) => sum + result.withdrawn, 0)).toBe(1);
+      expect((await profile.collection('notifications').doc('n').get()).data()).toMatchObject({ withdrawalReason: 'state_changed', isRead: true });
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it.each([false, true])('revalidates report rows in the actual automation worker (resolved during report: %s)', async resolved => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const job = db.collection('assistantAutomationJobs').doc(ctx.uid), mirror = agency.collection('assistantAutomations').doc(ctx.uid);
+    const task = agency.collection('tasks').doc('t'), due = '2020-01-01T00:00:00.000Z';
+    const data = { id: ctx.uid, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: 'agent', status: 'active', nextRunAt: due, automation: { type: 'insight_report', nextRunAt: due, maxRuns: 1, limit: 5 } };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await task.set({ status: 'open', agentId: ctx.uid, dueDate: due, description: 'Fixture task' });
+    await job.set(data); await mirror.set(data);
+    const original = insightReports.getInsights;
+    const spy = vi.spyOn(insightReports, 'getInsights').mockImplementationOnce(async (actor, limit) => {
+      const report = await original(actor, limit);
+      if (resolved) await task.update({ status: 'completed' });
+      return report;
+    });
+    try {
+      await drainAssistantAutomations(db as any);
+      expect((await job.get()).data()).toMatchObject({ status: 'completed', lastResult: { notificationResults: [expect.objectContaining({ status: resolved ? 'skipped' : 'created' })] } });
+      expect((await profile.collection('notifications').get()).size).toBe(resolved ? 0 : 1);
+      expect((await mirror.collection('insightEffects').get()).size).toBe(1);
+    } finally { spy.mockRestore(); await job.delete(); await db.recursiveDelete(profile); }
   }, 20000);
   it('recovers an interrupted rule without repeating its committed task', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);

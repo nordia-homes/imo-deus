@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn() }));
+vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection(name), getResource: vi.fn(), canReadResource: vi.fn(() => true) }));
 vi.mock('../actions', () => ({ executeAction: vi.fn(async () => ({ taskId: 'task' })), matchContact: vi.fn() }));
 vi.mock('../insights', () => ({ getInsights: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
@@ -26,6 +26,17 @@ const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z',
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
 afterEach(() => { vi.clearAllMocks(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe('approved automation execution', () => {
+  it.each([false, true])('uses live task state and bounded notification IDs (resolved: %s)', async resolved => {
+    const taskId = 't'.repeat(180);
+    const { db, rows } = database({ type: 'insight_report', nextRunAt: '2020-01-01T00:00:00.000Z', maxRuns: 1, limit: 5 });
+    rows.set(`agencies/a/tasks/${taskId}`, { status: resolved ? 'completed' : 'open', agentId: 'u', dueDate: '2020-01-01' });
+    vi.mocked(getInsights).mockResolvedValueOnce({ rows: [{ id: `task-${taskId}`, taskId, title: 'Overdue' }], complete: true } as any);
+    await drainAssistantAutomations(db as any);
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'completed', lastResult: { notificationResults: [expect.objectContaining({ status: resolved ? 'skipped' : 'created' })] } });
+    const notifications = [...rows].filter(([key]) => key.includes('/notifications/'));
+    expect(notifications).toHaveLength(resolved ? 0 : 1);
+    if (!resolved) expect(notifications[0][1].eventId).toMatch(/^insight-[a-f0-9]{64}$/);
+  });
   it('keeps the receipt visible after an ambiguous brief delivery without retrying it', async () => {
     const brief = await import('../daily-brief');
     const receiptId = 'a'.repeat(64);
