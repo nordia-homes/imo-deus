@@ -1177,3 +1177,15 @@ Aceasta este dovada pregătirii cu parametrii ceruți, nu dovada publicării, pe
 Validări: 1599/1599 teste de regresie în 129 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 28 de probe noi acoperă drafturi valide, schimbări de identitate și parametri, valori invalide, lipsa receiptului, opțiuni omise, normalizarea numerelor și integrarea în readPlanOutcomes, inclusiv acces revocat și absența mutațiilor. Nu s-au apelat provideri reali. Emulatorul și UI nu au fost relansate: lotul schimbă numai verificarea pe citire și reducerea rezultatului. Numărul scenariilor originale acceptate nu crește prin aceste teste sintetice.
 
 Buildul complet a trecut cu 227/227 pagini; avertismentul Jaeger și omiterea copierii Playwright în standalone rămân cele cunoscute. git diff --check a trecut. Dovezile publicării în producție nu au fost modificate.
+
+## 7 octombrie: București obligatoriu și în Apeluri AI
+
+Extinderea cerinței E2 a identificat o excepție în modulul manual Apeluri AI: setările permiteau UTC/Chișinău și serviciul utiliza valoarea salvată pentru intervalul permis și plafoane. Acum setările returnate și consumate sunt normalizate la Europe/Bucharest, API-ul respinge explicit alt fus, iar interfața afișează o valoare fixă. Setările legacy sunt normalizate în memorie la citire și persistate la următoarea salvare; nu există o migrare în masă sau rescriere a instantelor ISO deja programate.
+
+Verificarea intervalului orar, zilei și lunii folosește direct București inclusiv când un apel intern primește setări legacy. Lookbackul pentru plafonul zilnic include 25 de ore, apoi filtrează ziua locală, astfel încât prima oră a zilei de toamnă de 25 de ore nu dispare din numărătoare. Afișarea datelor, filtrarea după dată și statisticile paginii folosesc București indiferent de fusul browserului. Schimbările DST sunt aplicate de Intl, fără offset UTC fix.
+
+Contractele generate și manifestul de paritate au fost actualizate. Versiunea uneltelor este 48. Lotul nu lansează apeluri reale și nu actualizează producția. Regula trebuie urmărită în continuare și la granițele providerilor publicitari: fusul tehnic al unui cont extern nu poate fi etichetat fals ca București; conversia prezentării și programării necesită audit separat. Planul integral rămâne deschis.
+
+Validări: 1611/1611 teste de regresie în 130 de fișiere, TypeScript, ESLint și paritatea au trecut. Cele 12 probe noi verifică normalizarea setărilor legacy, respingerea altor fusuri fără scriere, citirea și salvarea setărilor, intervalul permis iarna/vara, plafonul în ziua de 25 de ore și costurile la granița lunii locale. Providerul este simulat; nu se apelează numere reale. Nu s-au relansat emulatorul sau verificarea vizuală în browser; modificarea simplă a controlului UI este verificată prin analiza statică și build. Scenariile originale acceptate rămân 63 din 1000.
+
+Buildul complet a trecut cu 227/227 pagini, cu avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Dovezile producției rămân neschimbate.

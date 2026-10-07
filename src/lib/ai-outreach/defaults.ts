@@ -1,4 +1,5 @@
 import type { AiOutreachSettings } from '@/lib/ai-outreach/types';
+export const AI_OUTREACH_TIMEZONE = 'Europe/Bucharest';
 
 export const DEFAULT_AI_OUTREACH_SETTINGS: Omit<AiOutreachSettings, 'agencyId'> = {
   enabled: false,
@@ -11,7 +12,7 @@ export const DEFAULT_AI_OUTREACH_SETTINGS: Omit<AiOutreachSettings, 'agencyId'> 
   defaultTemplateId: 'owner_acquisition',
   callWindowStart: '09:00',
   callWindowEnd: '18:00',
-  timezone: 'Europe/Bucharest',
+  timezone: AI_OUTREACH_TIMEZONE,
   maxDailyCalls: 50,
   monthlyBudgetCap: null,
   recordCalls: true,
@@ -22,6 +23,7 @@ export function withDefaultAiOutreachSettings(agencyId: string, partial?: Partia
   return {
     ...DEFAULT_AI_OUTREACH_SETTINGS,
     ...partial,
+    timezone: AI_OUTREACH_TIMEZONE,
     agencyId,
   };
 }

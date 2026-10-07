@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAgencyAdminFromBearerToken, requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
-import { DEFAULT_AI_OUTREACH_SETTINGS, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
+import { AI_OUTREACH_TIMEZONE, DEFAULT_AI_OUTREACH_SETTINGS, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +16,7 @@ const settingsSchema = z.object({
   defaultTemplateId: z.string().trim().min(1).optional(),
   callWindowStart: z.string().trim().min(1).optional(),
   callWindowEnd: z.string().trim().min(1).optional(),
-  timezone: z.string().trim().min(1).optional(),
+  timezone: z.literal(AI_OUTREACH_TIMEZONE).optional(),
   maxDailyCalls: z.coerce.number().int().min(1).max(10000).optional(),
   monthlyBudgetCap: z.coerce.number().min(0).nullable().optional(),
   recordCalls: z.boolean().optional(),

@@ -57,7 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { DEFAULT_AI_OUTREACH_SETTINGS } from '@/lib/ai-outreach/defaults';
+import { AI_OUTREACH_TIMEZONE, DEFAULT_AI_OUTREACH_SETTINGS } from '@/lib/ai-outreach/defaults';
 import {
   AI_OUTREACH_OUTCOME_META,
   getAiOutreachOutcomeMeta,
@@ -81,12 +81,6 @@ const SORT_OPTIONS = [
   { value: 'cost_asc', label: 'Cost crescător' },
   { value: 'duration_desc', label: 'Durată descrescătoare' },
 ] as const;
-
-const TIMEZONE_OPTIONS = [
-  { value: 'Europe/Bucharest', label: 'Europe/Bucharest' },
-  { value: 'Europe/Chisinau', label: 'Europe/Chisinau' },
-  { value: 'UTC', label: 'UTC' },
-];
 
 const TEMPLATE_OPTIONS = [
   { value: 'owner_acquisition', label: 'Achiziție proprietar' },
@@ -160,6 +154,7 @@ function formatDateTime(value?: string | null) {
   if (Number.isNaN(date.getTime())) return '-';
 
   return new Intl.DateTimeFormat('ro-RO', {
+    timeZone: AI_OUTREACH_TIMEZONE,
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date);
@@ -206,7 +201,7 @@ function dateKeyInTimezone(value: string | null | undefined, timezone: string, m
 
 function getDateOnly(value: string | null | undefined) {
   if (!value) return '';
-  return new Date(value).toISOString().slice(0, 10);
+  return dateKeyInTimezone(value, AI_OUTREACH_TIMEZONE, 'day');
 }
 
 function validateSettings(settings: AiOutreachSettings) {
@@ -362,7 +357,7 @@ export default function AiCallsPage() {
     );
     const totalCost = list.reduce((sum, call) => sum + (typeof call.cost === 'number' ? call.cost : 0), 0);
     const doNotCall = completed.filter((call) => call.outcome === 'do_not_call').length;
-    const timezone = settings?.timezone || 'Europe/Bucharest';
+    const timezone = AI_OUTREACH_TIMEZONE;
     const todayKey = dateKeyInTimezone(new Date().toISOString(), timezone, 'day');
     const currentMonthKey = dateKeyInTimezone(new Date().toISOString(), timezone, 'month');
     const dailyUsed = list.filter(
@@ -390,7 +385,7 @@ export default function AiCallsPage() {
       dailyUsed,
       monthlyCost,
     };
-  }, [calls, settings?.timezone]);
+  }, [calls]);
 
   const filteredCalls = useMemo(() => {
     const list = calls ?? [];
@@ -1052,22 +1047,8 @@ export default function AiCallsPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <Label>Timezone</Label>
-                    <Select
-                      value={settings.timezone}
-                      onValueChange={(value) => updateSetting('timezone', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIMEZONE_OPTIONS.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Fus orar</Label>
+                    <Input value={AI_OUTREACH_TIMEZONE} readOnly aria-label="Fus orar București" />
                   </div>
                   <div>
                     <Label>Template apel</Label>

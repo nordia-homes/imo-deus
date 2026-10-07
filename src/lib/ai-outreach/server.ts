@@ -1,5 +1,5 @@
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
-import { withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
+import { AI_OUTREACH_TIMEZONE, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import { createVapiOutboundCall, VapiDispatchError } from '@/lib/ai-outreach/vapi';
 import type { AiOutreachCall, AiOutreachSettings, AiOwnerListingSnapshot } from '@/lib/ai-outreach/types';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
@@ -57,9 +57,9 @@ function parseTimeToMinutes(value: string) {
   return hours * 60 + minutes;
 }
 
-function getLocalParts(date: Date, timezone: string) {
+function getLocalParts(date: Date) {
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
+    timeZone: AI_OUTREACH_TIMEZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -85,7 +85,7 @@ function isWithinCallWindow(date: Date, settings: AiOutreachSettings) {
     throw new AiOutreachGuardError('Intervalul orar pentru apeluri AI este invalid.', 400);
   }
 
-  const current = getLocalParts(date, settings.timezone).minuteOfDay;
+  const current = getLocalParts(date).minuteOfDay;
   if (start === end) return true;
   if (start < end) return current >= start && current <= end;
   return current >= start || current <= end;
@@ -164,11 +164,12 @@ export async function assertCanCreateAiOutreachCall(input: CallGuardInput) {
     throw new AiOutreachGuardError('Proprietarul este marcat Do Not Call pentru aceasta agentie.', 409);
   }
 
-  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  // The Bucharest day can last 25 hours when daylight saving ends.
+  const dayAgo = new Date(now.getTime() - 25 * 60 * 60 * 1000);
   const recentCalls = (await getAgencyCalls(adminDb, agencyId, dayAgo)).filter((call) => call.id !== excludeCallId);
-  const currentDateKey = getLocalParts(now, settings.timezone).dateKey;
-  const currentMonthKey = getLocalParts(now, settings.timezone).monthKey;
-  const dailyCalls = recentCalls.filter((call) => call.createdAt && getLocalParts(new Date(call.createdAt), settings.timezone).dateKey === currentDateKey);
+  const currentDateKey = getLocalParts(now).dateKey;
+  const currentMonthKey = getLocalParts(now).monthKey;
+  const dailyCalls = recentCalls.filter((call) => call.createdAt && getLocalParts(new Date(call.createdAt)).dateKey === currentDateKey);
   const listingCalls = dailyCalls.filter((call) => call.ownerListingId === ownerListingId);
   const activeListingCall = recentCalls.find((call) => call.ownerListingId === ownerListingId && ACTIVE_CALL_STATUSES.has(String(call.status)));
 
@@ -188,7 +189,7 @@ export async function assertCanCreateAiOutreachCall(input: CallGuardInput) {
     const monthAgo = new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000);
     const monthCalls = await getAgencyCalls(adminDb, agencyId, monthAgo);
     const monthlyCost = monthCalls
-      .filter((call) => call.createdAt && getLocalParts(new Date(call.createdAt), settings.timezone).monthKey === currentMonthKey)
+      .filter((call) => call.createdAt && getLocalParts(new Date(call.createdAt)).monthKey === currentMonthKey)
       .reduce((total, call) => total + (typeof call.cost === 'number' ? call.cost : 0), 0);
 
     if (monthlyCost >= settings.monthlyBudgetCap) {
