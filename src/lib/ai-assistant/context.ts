@@ -82,9 +82,13 @@ export function filterMatches(rows: Record<string, any>[], input: { priceMax?: n
   if (input.sortBy === 'price') selected.sort((a, b) => Number(a.row.price) - Number(b.row.price) || a.index - b.index);
   return selected.slice(0, input.limit).map(({ row }) => row);
 }
+export async function readMatchingResultSet(ctx: AssistantContext, resultSetId: string) {
+  const record = (await collectionFor(ctx, 'assistantResultSets').doc(resultSetId).get()).data();
+  if (!record || record.ownerId !== ctx.uid || record.kind !== 'existing_matches' || !Number.isFinite(record.expiresAt) || record.expiresAt <= Date.now() || !Array.isArray(record.rows) || !(await referencesAllowed(ctx, record.accessRefs || []))) throw new Error('Setul contextual a expirat sau nu este accesibil.');
+  return record;
+}
 export async function filterResultSet(ctx: AssistantContext, input: { resultSetId: string; priceMax?: number; zone?: string; limit: number; sortBy?: 'existing_order' | 'score' | 'price' }) {
-  const doc = await collectionFor(ctx, 'assistantResultSets').doc(input.resultSetId).get(), record = doc.data();
-  if (!record || record.ownerId !== ctx.uid || record.expiresAt < Date.now() || !(await referencesAllowed(ctx, record.accessRefs))) throw new Error('Setul contextual a expirat sau nu este accesibil.');
+  const record = await readMatchingResultSet(ctx, input.resultSetId);
   // Refresh existence/status/current price without recalculating any stored matching score.
   const contactChanged = record.contactId ? record.contactRevision !== matchingRevision(await getResource(ctx, 'contacts', record.contactId)) : false;
   const eligible = await Promise.all((record.rows || []).map(async (row: any) => { try { const property = await getResource(ctx, 'properties', row.id); return property.status === 'Activ' ? { ...row, price: property.price, location: property.location, scoreMayBeStale: contactChanged || row.matchingRevision !== matchingRevision(property) } : null; } catch (error: any) { if ([403, 404].includes(error.status)) return null; throw error; } }));

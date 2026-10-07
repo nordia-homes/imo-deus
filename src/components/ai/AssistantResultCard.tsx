@@ -255,7 +255,7 @@ export function AssistantResultCard({
                     )}
                     {row.matchScore != null && (
                       <span className="absolute right-3 top-3 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
-                        {String(row.matchScore)}% potrivire
+                        {String(row.matchScore)}% {row.scoreMayBeStale === true ? '· calcul anterior' : 'potrivire'}
                       </span>
                     )}
                     {row.status != null && (
@@ -266,6 +266,11 @@ export function AssistantResultCard({
                   </div>
                 )}
                 <div className="p-4">
+                  {row.scoreMayBeStale === true && (
+                    <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
+                      Datele s-au schimbat. Refă matchingul pentru un scor actualizat.
+                    </p>
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h4 className="text-sm font-semibold leading-5">

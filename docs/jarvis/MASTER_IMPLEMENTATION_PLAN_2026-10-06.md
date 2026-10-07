@@ -450,3 +450,19 @@ Validare: **615/615 teste în 67 fișiere**, **45/45 teste în 13 fișiere pe em
 Build-ul final a trecut cu TypeScript și 225 pagini statice, după corectarea tipului ID-ului validat din verificator. Avertismentele Jaeger/standalone locale rămân cele documentate anterior; nu există validare nouă a unui deployment.
 
 Lotul nu este publicat în producție. Rămân deschise criteriile de închidere ale planului integral, inclusiv verificările externe, validitatea juridică temporală, matricea semantică completă și evaluarea corpusului rămas.
+
+## 7 octombrie: matching → selecție → portal → dovezi de livrare
+
+Continuare în E1/E3/E4/E5, cu date sintetice:
+
+- Selecția ordinală verifică proprietarul, tipul, expirarea numerică și accesul setului de matching salvat. Ordinea rămâne cea afișată; proprietatea este recitită și trebuie să fie activă. Un set expirat sau un rezultat indisponibil oprește selecția, fără substituire automată. Clientul asociat este păstrat în rezultat și în referințele de acces.
+- Scorul și explicația originale sunt păstrate. Modificarea proprietății sau a clientului marchează scorul ca posibil învechit; cardul afișează „calcul anterior” și solicită refacerea matchingului. Proba Chromium verifică avertismentul și lățimea pe mobil.
+- Recomandarea cere receiptul cu aceleași proprietăți, clientul și portalul autorizat, documentele de recomandare existente și proprietățile active. Recitirea finală respinge un portal realocat în timpul verificării. O recomandare confirmată nu dovedește trimiterea mesajului.
+- Livrarea cere legătura dintre mesaj, jobul de trimitere, agenție, autor, conversație, conexiune și conținutul aprobat, inclusiv șablonul și atașamentul. Nu sunt returnate aceste date în dovadă. Acceptarea rămâne în așteptarea furnizorului; delivered/read cer și ID extern, iar livrarea este diferențiată de citire. O identitate neconfirmată nu declanșează retrimiterea. Mesajele istorice fără jobul necesar rămân explicit neconfirmate.
+- Testul de integrare folosește motorul real de matching, selecția și executorul tranzacțional real pentru recomandarea în portal; repetarea execuției produce aceeași recomandare. Mesajele și confirmările furnizorului sunt sintetice. Sunt verificate eliminarea recomandării, schimbarea portalului, revocarea accesului, schimbarea conținutului și trecerea accepted → delivered.
+
+Validare: **651/651 teste unitare în 70 fișiere**, **48/48 teste în 14 fișiere pe emulator**, **134/134 scenarii deterministe**, **155/155 teste în runnerul dedicat**, proba Chromium și manifestul de paritate. Nu au fost trimise mesaje reale. Corpusul revizuit și probele live anterioare nu au fost extinse prin aceste teste.
+
+Acest lot nu certifică integral fluxul conversațional de pregătire/aprobare/trimitere la un furnizor real. Un mesaj care include URL-ul creat de recomandare trebuie pregătit cu acel conținut concret și aprobat prin mecanismul existent. Cele 937 de cereri fără fixtures individuale, verificările externe, validitatea juridică temporală și calibrarea Jev rămân deschise. Modificările acestui lot nu sunt publicate în producție.
+
+Build-ul final a trecut cu TypeScript și 225 pagini, după adăugarea explicită a clientului în tipul referințelor de acces. ESLint a trecut; avertismentele cunoscute Jaeger/Tailwind și copierea omisă a browserului standalone local rămân. Aceste rezultate nu constituie probe de deployment sau de livrare la un furnizor real.

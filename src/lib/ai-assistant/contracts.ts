@@ -95,7 +95,7 @@ export type AssistantSearch = z.infer<typeof searchSchema>;
 export type AssistantRead = z.infer<typeof readSchema>;
 export type StructuredOutputType = 'TEXT' | 'PROPERTY_CARD' | 'PROPERTY_LIST' | 'PROPERTY_MATCH_LIST' | 'CLIENT_CARD' | 'CLIENT_LIST' | 'VIEWING_CARD' | 'TASK_CARD' | 'CAMPAIGN_CARD' | 'CONFIRMATION_CARD' | 'ACTION_RESULT' | 'PROGRESS_EVENT' | 'ERROR_EVENT' | 'INSIGHT_CARD' | 'ANALYTICS_CARD';
 export type AssistantCard = { crmComparison?: { mode: 'exact_references'; checked: boolean; excludedOnThisPage: number; semanticDuplicateDetection: false; note: string }; note?: string | null; scoreMayBeStale?: boolean; freshness?: string; type: 'results' | 'data'; outputType?: StructuredOutputType; resultSetId?: string; title: string; source: string; rows: Record<string, unknown>[]; nextCursor?: string | null; search?: AssistantSearch; complete?: boolean; summary?: { count: number; label: string; period?: string; scope?: string }; query?: z.infer<typeof queryRecordsSchema>; timeline?: z.infer<typeof import('./timeline').timelineSchema> };
-export type AccessReference = { resource: 'sales' | 'conversations' | 'socialPosts' | 'salesTemplateAudit' | 'assistantAutomations'; id: string };
+export type AccessReference = { resource: 'contacts' | 'sales' | 'conversations' | 'socialPosts' | 'salesTemplateAudit' | 'assistantAutomations'; id: string };
 export function uniqueReferences(references: AccessReference[]) {
   return [...new Map(references.map(ref => [JSON.stringify([ref.resource, ref.id]), ref])).values()];
 }

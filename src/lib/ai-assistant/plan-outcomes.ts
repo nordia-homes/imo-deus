@@ -8,6 +8,8 @@ import { summarizeOutcome } from './outcome';
 import { goalCoverageOutcome } from './goal-coverage';
 import type { VerifiedOutputs } from './verified-outputs';
 import { prospectingOutcome } from './prospecting-outcome';
+import { recommendationOutcome } from './recommendation-outcome';
+import { messageOutcome } from './message-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -21,6 +23,10 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
     let refreshAttempted = false;
     try {
       const action = resolveAction(plan.actions[index], plan.results || []);
+      if (action.kind === 'recommend_properties') {
+        refreshAttempted = true;
+        return { ...base, ...await recommendationOutcome(ctx, action.contactId, action.propertyIds, original) };
+      }
       if (action.kind !== 'existing_operation') return { ...base, executionState: step === plan.stoppedStep ? 'unknown' : 'succeeded', evidenceSource: step === plan.stoppedStep ? 'unconfirmed_step' : 'execution_ledger' };
       const id = (value: unknown) => typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,180}$/.test(value) ? value : undefined;
       let current: Record<string, any> | undefined;
@@ -134,8 +140,9 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         await getResource(ctx, 'conversations', action.params.conversationId);
         const message = await collectionFor(ctx, 'conversations').doc(action.params.conversationId).collection('messages').doc(original.messageId).get();
         if (!message.exists) throw new CommunicationError('Mesajul nu mai există.', 404);
-        current = operationResult(action.operation, { status: message.data()?.status || 'unknown' }, true);
-        await getResource(ctx, 'conversations', action.params.conversationId);
+        const job = await ctx.adminDb.collection('communicationOutboundJobs').doc(original.messageId).get();
+        const conversation = await getResource(ctx, 'conversations', action.params.conversationId);
+        return { ...base, ...messageOutcome(ctx, action.params.conversationId, action.body, conversation, job.data(), message.data()!) };
       }
       if (!current) return { ...base, evidenceSource: 'execution_receipt', note: 'Starea inițială a handlerului. Verificarea curentă se face în modulul dedicat; efectul extern nu se repetă.' };
       return { ...base, executionState: current.executionState, businessStatus: current.businessStatus || null, verifiedAt: current.verifiedAt, evidenceSource: 'current_domain_state', watchable: true, ...(completionSatisfied !== undefined ? { completionSatisfied } : {}), outputs, note: current.note || null };
