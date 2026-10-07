@@ -674,3 +674,12 @@ Recuperarea păstrează acum URL-urile și ID-urile media numai dacă pasul, tip
 Validări trecute: 30/30 teste țintite, 118/118 teste pe emulator în 17 fișiere, TypeScript separat și ESLint. Prima rulare a tabelului de cazuri negative a identificat o eroare de parametrizare în test; cazurile au fost împachetate explicit pentru a transmite lista completă de receipts, apoi toate aserțiunile au trecut.
 Regresia generală Jarvis, Communications și TikTok a trecut 1076/1076 teste în 104 fișiere.
 Buildul final a trecut cu TypeScript și 225 de pagini. Avertismentele Jaeger/standalone sunt cele cunoscute; nu s-a efectuat deployment.
+
+## 7 octombrie: pauza și anularea opresc verificarea periodică
+
+Continuare E3/E4. Rezultatul unui plan paused/cancelled nu mai solicită polling automat, chiar dacă un job extern deja pornit este încă queued/running. Dovezile externe și numărul pașilor în așteptare rămân vizibile; oprirea urmăririi planului nu pretinde anularea efectului extern. Workerul are aceeași protecție și nu mai înlocuiește PAUSED/CANCELLED cu BLOCKED când termenul de verificare expiră sau este invalid. O reluare concurentă este protejată de verificarea existentă a reviziei, fără salvarea rezultatului vechi de pauză peste planul reluat.
+
+Nouă cazuri noi de unitate verifică oprirea pollingului, păstrarea stării la termene viitoare/expirate/invalide și o reluare intervenită în timpul verificării. Cinci probe noi pe Firestore emulat folosesc comenzile reale de pauză/anulare/reluare: patru combinații stare/termen și reluarea fluxului video fără repetarea primilor doi pași. Providerii sunt simulați; nu sunt noi scenarii originale acceptate. Planul integral și validarea externă rămân deschise; nu s-a efectuat deployment.
+Validări trecute: 36/36 teste țintite, 123/123 teste pe emulator în 17 fișiere, TypeScript separat și ESLint.
+Regresia generală Jarvis, Communications și TikTok a trecut 1085/1085 teste în 104 fișiere.
+Buildul final a trecut, inclusiv TypeScript și generarea celor 225 de pagini. Rămân avertismentele locale cunoscute Jaeger/standalone; nu s-a efectuat deployment.

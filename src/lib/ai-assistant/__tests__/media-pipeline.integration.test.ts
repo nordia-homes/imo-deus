@@ -5,7 +5,8 @@ vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('../planner', () => ({ planTurn: vi.fn() }));
 vi.mock('../actions', () => ({ executeAction: vi.fn() }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, invokeOperation: vi.fn() }));
-import { inspectPlan, runPlan } from '../workspace';
+import { controlPlan, inspectPlan, runPlan } from '../workspace';
+import { verifyPlanOutcome } from '../outcome-watcher';
 import { readPlanOutcomes } from '../plan-outcomes';
 import { approvalEnvelope } from '../approval';
 import { actionSchema } from '../contracts';
@@ -130,6 +131,28 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     const saved = (await f.plan.get()).data()!;
     expect(saved).toMatchObject({ status: 'unknown', recoveryNote: 'new evidence' });
     expect(saved.results.at(-1).annotation).toBe('preserve');
+    expect(executeAction).toHaveBeenCalledTimes(4);
+  }, 20000);
+  it.each(['paused', 'cancelled'].flatMap(status => [false, true].map(expired => ({ status, expired }))))('preserves $status while video remains queued (expired=$expired)', async ({ status, expired }) => {
+    const f = await fixture();
+    vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'queued', job: { id: 'job', propertyId: 'p' } });
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'pending' });
+    if (status === 'paused') await controlPlan(f.ctx, 'plan', 'pause');
+    else await runPlan(f.ctx, 'plan', true);
+    expect(await verifyPlanOutcome(f.ctx, 'plan', expired ? 0 : Date.now() + 60000)).toMatchObject({ status: 'completed', planStatus: status.toUpperCase(), notBefore: 0 });
+    expect((await f.plan.get()).data()).toMatchObject({ status, outcome: { state: status.toUpperCase(), pending: 1 } });
+    expect(executeAction).toHaveBeenCalledTimes(2);
+    expect((await f.agency.collection('tiktokStudioAssets').get()).empty).toBe(true);
+  }, 20000);
+  it('resumes a paused video pipeline through explicit control without redoing committed steps', async () => {
+    const f = await fixture();
+    vi.mocked(invokeOperation).mockResolvedValue({ executionState: 'queued', job: { id: 'job', propertyId: 'p' } });
+    await runPlan(f.ctx, 'plan');
+    await controlPlan(f.ctx, 'plan', 'pause');
+    await verifyPlanOutcome(f.ctx, 'plan', Date.now() + 60000);
+    await controlPlan(f.ctx, 'plan', 'resume');
+    await f.plan.update({ waitUntil: 0 }); f.ready();
+    expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
     expect(executeAction).toHaveBeenCalledTimes(4);
   }, 20000);
 });

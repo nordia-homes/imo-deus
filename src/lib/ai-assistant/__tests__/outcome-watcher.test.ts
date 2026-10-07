@@ -51,3 +51,16 @@ it.each([NaN, Infinity, -Infinity])('ends an invalid deadline %s even during con
   expect(await verifyPlanOutcome(ctx, 'p', deadline)).toMatchObject({ status: 'completed', planStatus: 'BLOCKED', notBefore: 0 });
   expect(update).not.toHaveBeenCalled();
 });
+it.each(['paused', 'cancelled'].flatMap(status => ['future', 'expired', 'invalid'].map(deadline => ({ status, deadline }))))('preserves $status with a $deadline deadline instead of polling or declaring BLOCKED', async ({ status, deadline }) => {
+  const { ctx, update } = context(status);
+  const outcome = { state: status.toUpperCase(), note: 'Existing stop state', pending: 1 };
+  mocks.read.mockResolvedValue({ planRevision: '100:1', executionStatus: status, outcome, pollAfterMs: 15000 });
+  expect(await verifyPlanOutcome(ctx, 'p', deadline === 'future' ? Date.now() + 60000 : deadline === 'expired' ? 0 : NaN)).toMatchObject({ status: 'completed', planStatus: status.toUpperCase(), notBefore: 0, outcome });
+  expect(update).toHaveBeenCalledWith(expect.anything(), { outcome });
+});
+it('does not save a paused snapshot after the user has resumed the plan', async () => {
+  const { ctx, update } = context('pending', 'a', 2);
+  mocks.read.mockResolvedValue({ planRevision: '100:1', executionStatus: 'paused', outcome: { state: 'PAUSED' }, pollAfterMs: null });
+  expect(await verifyPlanOutcome(ctx, 'p', Date.now() + 60000)).toMatchObject({ status: 'pending', planStatus: 'RUNNING' });
+  expect(update).not.toHaveBeenCalled();
+});

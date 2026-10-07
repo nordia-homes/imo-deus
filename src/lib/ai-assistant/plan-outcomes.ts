@@ -162,6 +162,6 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
   const finalMember = await ctx.adminDb.collection('users').doc(ctx.uid).get();
   if (finalMember.data()?.agencyId !== ctx.agencyId || finalMember.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
   const outcome = goalCoverageOutcome(summarizeOutcome(plan.status, plan.actions.length, rows), plan.goal?.coverage, rows, plan.goal?.coverageRequired === true);
-  const awaiting = rows.some(row => 'watchable' in row && row.watchable && !('completionSatisfied' in row && row.completionSatisfied) && ['queued', 'running', 'unknown', 'observed', 'accepted_unverified'].includes(row.executionState));
+  const awaiting = !['paused', 'cancelled'].includes(plan.status) && rows.some(row => 'watchable' in row && row.watchable && !('completionSatisfied' in row && row.completionSatisfied) && ['queued', 'running', 'unknown', 'observed', 'accepted_unverified'].includes(row.executionState));
   return { planId, planRevision, executionStatus: plan.status, outcome, rows, pollAfterMs: awaiting ? 15000 : null, checkedAt: outcome.checkedAt, note: 'Starea execuției planului și rezultatele de business sunt verificate separat. Starea CRM nu înlocuiește un receipt extern.' };
 }

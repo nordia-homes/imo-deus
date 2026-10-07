@@ -35,6 +35,12 @@ it('tracks pending results but stops polling terminal evidence and unsupported r
   mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'message_send' }], results: [{ step: 1, result: { executionState: 'queued' } }] } });
   expect((await readPlanOutcomes(ctx, 'plan')).pollAfterMs).toBeNull();
 });
+it.each(['paused', 'cancelled'])('stops automatic polling for a %s plan while retaining provider evidence', async status => {
+  mocks.plan.mockResolvedValue({ data: { status, actions: [action], results: [{ step: 1, result: { jobId: 'j' } }] } });
+  mocks.invoke.mockResolvedValue({ executionState: 'queued', businessStatus: 'queued' });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ executionStatus: status, outcome: { state: status.toUpperCase(), pending: 1 }, pollAfterMs: null, rows: [{ executionState: 'queued' }] });
+  expect(mocks.invoke.mock.calls.every(args => args[1].operation === 'video_job' && args[2] === true)).toBe(true);
+});
 it('reads the exact authorized Studio render job and refuses another owner or project', async () => {
   mocks.plan.mockResolvedValue({ data: { actions: [{ ...action, operation: 'tiktok_studio_render', params: { projectId: 'project' } }], results: [{ step: 1, result: { jobId: 'job' } }] } });
   mocks.resource.mockImplementation(async (_ctx, resource) => resource === 'tiktokStudioProjects' ? { ownerUid: 'u', outputAssetId: 'asset', version: 1, status: 'ready' } : { ownerUid: 'u', agencyId: 'a', studioProjectId: 'project', version: 1, type: 'video', status: 'ready', url: 'https://storage.example/video.mp4' });

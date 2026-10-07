@@ -21,8 +21,9 @@ export async function enqueueOutcomeWatch(ctx: AssistantContext, planId: string)
 export async function verifyPlanOutcome(ctx: AssistantContext, planId: string, deadline: number) {
   const expired = () => !Number.isFinite(deadline) || Date.now() >= deadline;
   const verification = await readPlanOutcomes(ctx, planId);
-  const keepWatching = Boolean(verification.pollAfterMs) && !expired();
-  const outcome = !keepWatching && verification.pollAfterMs
+  const watchRequested = Boolean(verification.pollAfterMs) && !['paused', 'cancelled'].includes(verification.executionStatus);
+  const keepWatching = watchRequested && !expired();
+  const outcome = !keepWatching && watchRequested
     ? { ...verification.outcome, state: 'BLOCKED' as const, note: 'Verificarea automată a ajuns la termen. Efectul nu se repetă; verifică starea în modulul dedicat.' }
     : verification.outcome;
   const plan = collectionFor(ctx, 'assistantPlans').doc(planId);
