@@ -19,6 +19,7 @@ import {
   UserRoundCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { InsightFeedback } from './InsightFeedback';
 import type { AppNotification, NotificationCategory } from '@/lib/notifications/types';
 
 type CategoryVisual = {
@@ -164,6 +165,7 @@ export function NotificationItem({
   const timeLabel = compact ? notificationRelativeLabel(item.createdAt) : notificationDateLabel(item.createdAt);
 
   return (
+    <div>
     <button
       type="button"
       onClick={() => onOpen(item)}
@@ -217,5 +219,7 @@ export function NotificationItem({
         {item.category === 'facebookCompleted' ? <Send className="h-3.5 w-3.5" /> : <ChevronRight className="h-4 w-4" />}
       </span>
     </button>
+    <InsightFeedback item={item} />
+    </div>
   );
 }

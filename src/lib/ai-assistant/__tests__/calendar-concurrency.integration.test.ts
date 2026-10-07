@@ -28,6 +28,7 @@ import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { reconcileRuleNotifications } from '../notification-relevance';
 import { createInsightNotification } from '../insight-notifications';
 import * as insightReports from '../insights';
+import { saveNotificationFeedback } from '../notification-feedback';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -42,6 +43,24 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('serializes feedback revisions and preserves a concurrent withdrawal', async () => {
+    const ctx = context(), profile = db.collection('users').doc(ctx.uid), notification = profile.collection('notifications').doc('feedback');
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await notification.set({ type: 'ai_assistant', recipientId: ctx.uid, agencyId: ctx.agencyId, automationId: 'r', insightCondition: { kind: 'task', id: 't' }, isRead: false });
+    try {
+      const results = await Promise.allSettled(['useful', 'not_useful'].map(value => saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 0 })));
+      expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+      const rejected = results.find(result => result.status === 'rejected') as PromiseRejectedResult;
+      expect(rejected.reason.status).toBe(409);
+      const prior = (await notification.get()).data()!.feedback;
+      expect(prior.revision).toBe(1);
+      const value = prior.value === 'useful' ? 'not_useful' : 'useful';
+      await Promise.all([saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 }), notification.update({ withdrawnAt: '2026-10-07T10:00:00Z', isRead: true })]);
+      expect((await notification.get()).data()).toMatchObject({ feedback: { value, revision: 2 }, withdrawnAt: '2026-10-07T10:00:00Z', isRead: true });
+      await saveNotificationFeedback(ctx, { notificationId: 'feedback', value, expectedRevision: 1 });
+      expect((await notification.get()).data()!.feedback.revision).toBe(2);
+    } finally { await db.recursiveDelete(profile); }
+  }, 20000);
   async function reserve(ctx: AssistantContext, kind: 'tasks' | 'viewings', id: string, record: Record<string, unknown>) {
     return db.runTransaction(async tx => {
       await assertCalendarSlot(ctx, tx as any, kind, id, record);
