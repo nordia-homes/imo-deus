@@ -67,7 +67,7 @@ export async function drainAssistantAutomations(db: Firestore, limit = 10) {
         result = await watchOfficialSources(ctx, claim.id, automation.sourceUrls, claim.lastResult?.versions);
       } else if (automation.type === 'daily_sales_brief') {
         const settings = briefSettingsSchema.parse(Object.fromEntries(Object.keys(briefSettingsSchema.shape).map(key => [key, (automation as Record<string, unknown>)[key]])));
-        result = await deliverDailyBrief(ctx, settings);
+        result = await deliverDailyBrief(ctx, settings, new Date(), claim.nextRunAt);
       } else if (automation.type === 'event_rule') {
         result = await runEventRule(ctx, claim, automation, executeAction, async () => {
           const fresh = (await doc.ref.get()).data();

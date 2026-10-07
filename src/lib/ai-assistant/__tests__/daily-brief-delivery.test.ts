@@ -47,6 +47,34 @@ it('produces no notification when there are no priorities', async () => {
   expect(await deliverDailyBrief(ctx, settings, now)).toMatchObject({ empty: true });
   expect(rows.size).toBe(1);
 });
+it.each(['app', 'whatsapp'] as const)('does not replay a missed local day through %s', async deliveryChannel => {
+  const { ctx, rows } = database();
+  expect(await deliverDailyBrief(ctx, { ...whatsapp, deliveryChannel }, now, '2026-10-05T05:30:00Z')).toMatchObject({ deferred: true, reasonCode: 'missed_local_day', scheduledDate: '2026-10-05', currentDate: '2026-10-06' });
+  expect(rows.size).toBe(1);
+  expect(getInsights).not.toHaveBeenCalled(); expect(getConversation).not.toHaveBeenCalled(); expect(queueMessage).not.toHaveBeenCalled();
+});
+it('allows same-local-day catch-up across UTC midnight', async () => {
+  const { ctx } = database();
+  const local = { ...settings, timezone: 'America/Los_Angeles', deliveryTime: '16:00', daysOfWeek: [1, 2, 3, 4, 5, 6, 0] };
+  expect(await deliverDailyBrief(ctx, local, new Date('2026-10-07T01:00:00Z'), '2026-10-06T23:00:00Z')).toMatchObject({ status: 'delivered' });
+});
+it('rejects a missed local day even when UTC dates match', async () => {
+  const { ctx } = database();
+  const local = { ...settings, deliveryTime: '00:00', quietStart: '00:00', quietEnd: '00:00' };
+  expect(await deliverDailyBrief(ctx, local, new Date('2026-10-06T22:00:00Z'), '2026-10-06T05:30:00Z')).toMatchObject({ reasonCode: 'missed_local_day' });
+  expect(getInsights).not.toHaveBeenCalled();
+});
+it('does not deliver before the scheduled instant or during quiet hours', async () => {
+  const { ctx } = database();
+  expect(await deliverDailyBrief(ctx, settings, now, '2026-10-06T07:00:00Z')).toMatchObject({ reasonCode: 'not_due' });
+  expect(await deliverDailyBrief(ctx, settings, new Date('2026-10-06T20:00:00Z'), '2026-10-06T05:30:00Z')).toMatchObject({ deferred: true });
+  expect(getInsights).not.toHaveBeenCalled(); expect(queueMessage).not.toHaveBeenCalled();
+});
+it.each(['invalid', '2026-10-06', '2026-10-06T08:30:00'])('fails closed for an invalid scheduled instant: %s', async scheduledFor => {
+  const { ctx } = database();
+  await expect(deliverDailyBrief(ctx, settings, now, scheduledFor)).rejects.toThrow('invalidă');
+  expect(getInsights).not.toHaveBeenCalled();
+});
 it('blocks revoked membership before any notification write', async () => {
   const { ctx, rows } = database(); rows.set('users/u', { agencyId: 'other', role: 'agent' });
   await expect(deliverDailyBrief(ctx, settings, now)).rejects.toThrow('Acces revocat');

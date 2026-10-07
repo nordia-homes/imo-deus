@@ -20,6 +20,8 @@ import { searchProperties } from '../search';
 import { searchSchema } from '../contracts';
 import { readPlanOutcomes } from '../plan-outcomes';
 import { verifyPlanOutcome, enqueueOutcomeWatch } from '../outcome-watcher';
+import { drainAssistantAutomations } from '../automation-worker';
+import { nextBriefRun } from '../daily-brief-contract';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -159,6 +161,28 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       await deliverDailyBrief(ctx, settings, new Date('2026-10-06T07:00:00Z'));
       expect((await profile.collection('notifications').get()).size).toBe(1);
     } finally { await db.recursiveDelete(profile); }
+  }, 20000);
+  it.each(['app', 'whatsapp'] as const)('persists a missed %s brief run and advances the worker without delivery', async deliveryChannel => {
+    const ctx = context(), profile = db.collection('users').doc(ctx.uid), agency = db.collection('agencies').doc(ctx.agencyId);
+    const job = db.collection('assistantAutomationJobs').doc(ctx.uid), mirror = agency.collection('assistantAutomations').doc(ctx.uid);
+    const settings = briefSettingsSchema.parse({ timezone: 'Europe/Bucharest', deliveryTime: '08:30', daysOfWeek: [1, 2, 3, 4, 5], deliveryChannel, conversationId: 'own', templateName: 'daily' });
+    const due = '2026-01-01T06:30:00.000Z';
+    const data = { id: ctx.uid, agencyId: ctx.agencyId, actorId: ctx.uid, actorRole: 'agent', status: 'active', nextRunAt: due, automation: { type: 'daily_sales_brief', ...settings, nextRunAt: due, maxRuns: 10 } };
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent' });
+    await job.set(data); await mirror.set(data);
+    try {
+      await drainAssistantAutomations(db as any);
+      const saved = (await job.get()).data()!;
+      expect(saved).toMatchObject({ status: 'active', runCount: 1, nextRunAt: nextBriefRun(settings), lastResult: { deferred: true, reasonCode: 'missed_local_day', scheduledFor: due } });
+      expect((await mirror.get()).data()).toMatchObject({ nextRunAt: saved.nextRunAt, lastResult: saved.lastResult });
+      const audit = await mirror.collection('audit').get();
+      expect(audit.size).toBe(1); expect(audit.docs[0].data()).toMatchObject({ result: { reasonCode: 'missed_local_day' } });
+      await drainAssistantAutomations(db as any);
+      expect((await job.get()).data()?.runCount).toBe(1);
+      expect((await profile.collection('notifications').get()).empty).toBe(true);
+      expect((await agency.collection('assistantArtifacts').get()).empty).toBe(true);
+      expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', ctx.agencyId).get()).empty).toBe(true);
+    } finally { await job.delete(); await db.recursiveDelete(profile); }
   }, 20000);
   it('notifies once for a changed official source and blocks a stale automation lease', async () => {
     const ctx = context(), profile = db.collection('users').doc(ctx.uid), job = db.collection('assistantAutomationJobs').doc(ctx.uid);

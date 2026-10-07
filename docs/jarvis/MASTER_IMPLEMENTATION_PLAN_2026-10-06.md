@@ -819,3 +819,13 @@ Opt teste de unitate verifică cele trei poziții ale citirii și păstrarea cel
 Au trecut 15/15 teste țintite, 199/199 probe pe emulator în 17 fișiere, 1248/1248 teste de regresie în 107 fișiere, TypeScript și ESLint. Jurnalul emulatorului a înregistrat din nou invalidări în runQueryStandardEdition în timpul rulării, iar cele 16 teste ale suitei calendarului au trecut. Acest lot tratează eroarea exactă de citire observată; nu pretinde eliminarea tuturor cauzelor de contention ori a erorilor la commit.
 
 Buildul complet a trecut cu 225/225 pagini generate, incluzând toate modificările acumulate după `b4215e42`. Rămân avertismentul cunoscut pentru exportatorul opțional Jaeger și mesajul privind omiterea copierii browserului Playwright în standalone. Lotul nu este publicat; producția verificată rămâne `7f2da840`, iar planul integral rămâne deschis.
+
+## 7 octombrie: politica Daily Brief pentru zile ratate
+
+Workerul transmite acum momentul nextRunAt al execuției preluate către livrarea brief-ului. O execuție restantă dintr-o zi locală anterioară este consemnată cu deferred și reasonCode missed_local_day, inclusiv data programată, data curentă și timezone. Nu recuperează brief-uri vechi prin notificări ori trimiteri WhatsApp. Automatizarea continuă la următorul slot valid după momentul curent, în limita maxRuns existentă; încercarea ratată este numărată ca execuție, nu ca livrare. Zilele intermediare nu sunt parcurse sau retrimise. Rezultatul este salvat în job, copia agenției și audit.
+
+Întârzierea în aceeași zi locală rămâne permisă după ora programată, în afara quiet hours și în zilele configurate. Un moment încă viitor este amânat; o dată fără timezone ori invalidă este refuzată. Comparația folosește timezone-ul brief-ului, nu ziua UTC. Dedupe-ul existent per agenție/utilizator/zi locală rămâne în vigoare. Apelurile fără un slot explicit păstrează comportamentul existent pentru ziua curentă.
+
+Opt teste de livrare noi acoperă cele două canale, traversarea miezului nopții UTC/local, momentul viitor, liniștea și trei date invalide. Un test de worker verifică auditul, avansarea programării și lipsa repetării la următoarea golire a cozii. Două probe Firestore verifică aceleași efecte persistente pentru app și WhatsApp, fără notificări, artefacte sau joburi de trimitere. Probele sunt sintetice, nu scenarii originale noi acceptate din corpus.
+
+Au trecut 28/28 teste țintite, 201/201 probe pe emulator în 17 fișiere, 1257/1257 teste de regresie în 107 fișiere, TypeScript și ESLint. Buildul complet nu a fost repetat pentru acest lot; ultimul validat este `ceaa5b51`. Modificările nu sunt publicate; producția verificată rămâne `7f2da840`. Etapa E8 și planul integral rămân deschise.

@@ -12,6 +12,7 @@ import { getConversation } from '@/lib/communications/server';
 import { queueMessage } from '@/lib/communications/outbound';
 import { getResource } from '../access';
 import { runEventRule } from '../event-rules';
+import { getInsights } from '../insights';
 function database(automation: any, patch: any = {}) {
   const job = { id: 'job', agencyId: 'a', actorId: 'u', actorRole: 'agent', createdAt: '2026-01-01T00:00:00.000Z', status: 'active', nextRunAt: '2026-01-01T00:00:00.000Z', automation, ...patch };
   const rows = new Map<string, any>([['assistantAutomationJobs/job', job], ['agencies/a/assistantAutomations/job', { ...job }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
@@ -23,8 +24,19 @@ function database(automation: any, patch: any = {}) {
 }
 const followup = { type: 'followup_task', nextRunAt: '2026-01-01T00:00:00.000Z', contactId: 'c', description: 'Follow up', maxRuns: 1 };
 const whatsapp = { type: 'whatsapp_template', nextRunAt: '2026-01-01T00:00:00.000Z', conversationId: 'conv', stopOnReply: true, template: { name: 'approved', language: 'ro', parameters: [] }, maxRuns: 1 };
-afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
+afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); vi.useRealTimers(); });
 describe('approved automation execution', () => {
+  it('records a missed brief day and schedules the next local slot without delivering catch-up', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-06T06:00:00Z'));
+    const due = '2026-10-05T05:30:00.000Z';
+    const { db, rows } = database({ type: 'daily_sales_brief', nextRunAt: due, timezone: 'Europe/Bucharest', deliveryTime: '08:30', daysOfWeek: [1, 2, 3, 4, 5], maxRuns: 10 }, { nextRunAt: due });
+    expect(await drainAssistantAutomations(db as any)).toMatchObject({ processed: 1, results: [{ status: 'active' }] });
+    expect(rows.get('assistantAutomationJobs/job')).toMatchObject({ status: 'active', runCount: 1, nextRunAt: '2026-10-07T05:30:00.000Z', lastResult: { deferred: true, reasonCode: 'missed_local_day', scheduledFor: due } });
+    expect(rows.get('agencies/a/assistantAutomations/job')).toMatchObject({ status: 'active', nextRunAt: '2026-10-07T05:30:00.000Z' });
+    expect([...rows].filter(([key]) => key.includes('/audit/')).map(([, value]) => value)).toEqual([expect.objectContaining({ result: expect.objectContaining({ reasonCode: 'missed_local_day' }) })]);
+    expect(await drainAssistantAutomations(db as any)).toMatchObject({ processed: 0 });
+    expect(getInsights).not.toHaveBeenCalled(); expect(queueMessage).not.toHaveBeenCalled();
+  });
   it('persists event-rule cursor and stops at the event limit', async () => {
     const { db, rows } = database({ type: 'event_rule', nextRunAt: '2026-01-01T00:00:00.000Z', intervalMinutes: 30, maxRuns: 10, trigger: { resource: 'contacts', change: 'updated' }, effects: [{ kind: 'notify', title: 'Client actualizat' }] });
     vi.mocked(runEventRule).mockImplementationOnce(async (_ctx, _claim, _rule, _execute, assertLease) => { await assertLease(); return { eventCursor: { recordedAt: '2026-01-01T00:01:00Z', id: 'e' }, eventCount: 100, limitReached: true, handled: 100, inaccessible: 0, scanned: 100, complete: false, note: '' }; });

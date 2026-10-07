@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import { validateBriefSettings, quietAt, type BriefSettings } from './daily-brief-contract';
 import { zonedParts } from './zoned-time';
 import { getInsights } from './insights';
@@ -9,9 +10,16 @@ import { queueMessage } from '@/lib/communications/outbound';
 import { isDemoAgencyId } from '@/lib/demo/guards';
 import { normalizedContactFields } from '@/lib/crm/contact-identity';
 
-export async function deliverDailyBrief(ctx: AssistantContext, settings: BriefSettings, now = new Date()) {
+export async function deliverDailyBrief(ctx: AssistantContext, settings: BriefSettings, now = new Date(), scheduledFor = now.toISOString()) {
   validateBriefSettings(settings);
+  const scheduledAt = Date.parse(scheduledFor);
+  if (!z.string().datetime({ offset: true }).safeParse(scheduledFor).success || !Number.isFinite(scheduledAt)) throw new Error('Data programată a brief-ului este invalidă.');
   const local = zonedParts(now, settings.timezone), weekday = new Date(local.date + 'T12:00:00Z').getUTCDay();
+  const scheduledDate = zonedParts(new Date(scheduledAt), settings.timezone).date;
+  // Missed local days are not replayed after scheduler downtime. Keep the
+  // automation active for its next valid slot, without sending a stale brief.
+  if (scheduledDate < local.date) return { deferred: true, reasonCode: 'missed_local_day', reason: 'Ziua locală programată a fost ratată; brief-ul nu se recuperează prin trimitere întârziată.', scheduledFor, scheduledDate, currentDate: local.date, timezone: settings.timezone };
+  if (scheduledAt > now.getTime()) return { deferred: true, reasonCode: 'not_due', reason: 'Momentul programat nu a fost atins.', scheduledFor };
   if (!settings.daysOfWeek.includes(weekday) || quietAt(local.time, settings.quietStart, settings.quietEnd) || local.time < settings.deliveryTime) return { deferred: true, reason: 'În afara ferestrei de livrare.' };
   const digest = createHash('sha256').update(`${ctx.agencyId}:${ctx.uid}:${local.date}:daily-sales-brief`).digest('hex');
   const receipt = collectionFor(ctx, 'assistantArtifacts').doc(`brief-${digest}`);
