@@ -544,3 +544,15 @@ Validări: **797/797 teste unitare în 85 fișiere**, inclusiv cele **134 scenar
 Limite de rollout: joburile deja create fără `stopOnReplySince` nu pot fi reinterpretate drept follow-upuri; verificarea cozii și lansarea coordonată a workerelor rămân necesare. Protecția se bazează pe răspunsurile deja persistate în conversație; un webhook întârziat sau un răspuns sosit după ultima verificare nu poate fi oprit atomic împreună cu un apel extern. Aceasta nu închide integral fluxurile pilot, corpusul live, verificările externe, validitatea juridică sau calibrarea Jev. Lotul nu este publicat în producție.
 
 Build-ul final a trecut: TypeScript și 225 pagini. Rămân avertismentele locale cunoscute pentru Jaeger și copierea browserului standalone; acestea nu sunt probe de deployment.
+
+## 7 octombrie: dovezi precise pentru programarea în grupurile Facebook
+
+Continuare E3/E4. Verificarea `facebook_job_create` folosește acum un evaluator separat al rezultatului: ID job, agenție, autor, proprietate, conexiune, lista exactă a grupurilor și momentul programat. Cererea este deduplicată ca în handlerul existent de creare; grupurile duplicate din jobul salvat sunt refuzate. Astfel, o cerere cu două apariții ale aceluiași grup nu mai poate confirma un job care conține și alt grup. Ordinea grupurilor nu schimbă identitatea setului.
+
+Programarea confirmată este raportată explicit separat de publicare. Sunt expuse numai URL-ul și statusul fiecărui grup, fără erorile interne ale runnerului, cu publicarea neconfirmată. `submitted`, `pending_approval` și finalizarea runnerului nu sunt transformate în receipt de publicare. `cooldown` rămâne procesare urmărită pentru o trimitere imediată și este compatibil cu o programare deja înregistrată. Anularea, eroarea și cererea de reautentificare nu confirmă o programare activă. O reprogramare a trimiterii imediate sau o modificare de oră/grupuri este raportată ca neconfirmată fără reluarea mutației.
+
+Validări: **825/825 teste unitare în 86 fișiere**, incluzând **134 de scenarii deterministe existente**; 28 teste noi ale evaluatorului și integrarea în citirea rezultatelor planului. Sunt acoperite identități diferite, duplicate, date malformate, grupuri lipsă, aceeași oră cu offset diferit, stări terminale, procesare parțială și absența divulgării erorilor runnerului. ESLint și manifestul de paritate au trecut. Nu s-au schimbat regulile Firestore ori handlerul de publicare; emulatorul nu a fost rerulat pentru acest evaluator pur.
+
+Limite: confirmarea se referă la programarea din CRM, nu certifică eligibilitatea curentă a conexiunii, disponibilitatea laptopului sau accesul Facebook la grupuri. Acestea rămân verificate de fluxul de execuție existent. Nu există o probă nouă de publicare la furnizor, iar cele trei fluxuri pilot și planul integral rămân deschise. Corpusul live și calibrarea Jev nu au fost extinse. Acest lot nu este publicat în producție.
+
+Build-ul final a trecut cu TypeScript și 225 pagini. Avertismentele locale Jaeger și browser standalone rămân cele cunoscute; buildul nu reprezintă deployment.

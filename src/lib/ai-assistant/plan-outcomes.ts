@@ -10,6 +10,7 @@ import type { VerifiedOutputs } from './verified-outputs';
 import { prospectingOutcome } from './prospecting-outcome';
 import { recommendationOutcome } from './recommendation-outcome';
 import { messageOutcome } from './message-outcome';
+import { facebookOutcome } from './facebook-outcome';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -115,17 +116,7 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
         const job = await collectionFor(ctx, 'facebookCloudPublishingJobs').doc(original.jobId).get();
         const row = job.data();
         if (!row || row.ownerUid !== ctx.uid || row.propertyId !== action.body.propertyId || row.connectionId !== action.body.connectionId) throw new CommunicationError('Job inaccesibil.', 403);
-        current = operationResult(action.operation, { status: row.status }, true);
-        if (current && !action.body.scheduledAt && row.status === 'completed') {
-          current.executionState = 'accepted_unverified';
-          current.note = 'Jobul de trimitere s-a încheiat. Starea fiecărui grup și dovada publicării trebuie verificate separat.';
-        }
-        if (action.body.scheduledAt) {
-          const sameTime = Date.parse(row.scheduledAt) === Date.parse(String(action.body.scheduledAt));
-          const groups = Array.isArray(action.body.groupUrls) ? action.body.groupUrls as string[] : [];
-          const actual = Array.isArray(row.groups) ? row.groups.map((group: { url: string }) => group.url) : [];
-          completionSatisfied = sameTime && groups.length > 0 && groups.length === actual.length && groups.every(group => actual.includes(group)) && ['scheduled', 'queued', 'running', 'completed'].includes(row.status);
-        }
+        return { ...base, ...facebookOutcome(ctx, original.jobId, action.body, row) };
       }
       else if (action.operation === 'outreach_start' && id(original.callId)) {
         refreshAttempted = true;

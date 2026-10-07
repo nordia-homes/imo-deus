@@ -82,7 +82,7 @@ it('confirms Facebook scheduling only for the requested time and exact groups', 
   const body = { propertyId: 'p', connectionId: 'c', scheduledAt: '2030-01-01T10:00:00Z', groupUrls: ['https://facebook.com/groups/one'] };
   mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'facebook_job_create', body }], results: [{ step: 1, result: { jobId: 'j' } }] } });
   mocks.resource.mockResolvedValue({ id: 'p' });
-  const row: any = { ownerUid: 'u', propertyId: 'p', connectionId: 'c', status: 'scheduled', scheduledAt: body.scheduledAt, groups: [{ url: body.groupUrls[0] }] };
+  const row: any = { id: 'j', agencyId: 'a', ownerUid: 'u', propertyId: 'p', connectionId: 'c', status: 'scheduled', scheduledAt: body.scheduledAt, groups: [{ url: body.groupUrls[0] }] };
   const scoped = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => row }) }) } } };
   expect(await readPlanOutcomes(scoped, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, pollAfterMs: null });
   row.groups = [{ url: 'https://facebook.com/groups/other' }];
@@ -92,9 +92,9 @@ it('confirms Facebook scheduling only for the requested time and exact groups', 
   expect(mocks.invoke).not.toHaveBeenCalled();
 });
 it('does not equate a finished Facebook submission job with published posts', async () => {
-  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'facebook_job_create', body: { propertyId: 'p', connectionId: 'c' } }], results: [{ step: 1, result: { jobId: 'j' } }] } });
+  mocks.plan.mockResolvedValue({ data: { status: 'completed', actions: [{ ...action, operation: 'facebook_job_create', body: { propertyId: 'p', connectionId: 'c', groupUrls: ['https://facebook.com/groups/one'] } }], results: [{ step: 1, result: { jobId: 'j' } }] } });
   mocks.resource.mockResolvedValue({ id: 'p' });
-  const row = { ownerUid: 'u', propertyId: 'p', connectionId: 'c', status: 'completed' };
+  const row = { id: 'j', agencyId: 'a', ownerUid: 'u', propertyId: 'p', connectionId: 'c', status: 'completed', groups: [{ url: 'https://facebook.com/groups/one', status: 'submitted' }] };
   const scoped = { ...ctx, adminDb: { collection: (name: string) => name === 'users' ? ctx.adminDb.collection(name) : { doc: () => ({ get: async () => ({ data: () => row }) }) } } };
   expect(await readPlanOutcomes(scoped, 'plan')).toMatchObject({ outcome: { state: 'BLOCKED' }, rows: [{ executionState: 'accepted_unverified' }] });
 });
