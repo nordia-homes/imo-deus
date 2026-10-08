@@ -6,6 +6,8 @@ Audit curent: [matricea E0–E9 și ordinea revizuită din 8 octombrie](MASTER_A
 
 Obiectivul este ca agentul să poată delega un rezultat în limbaj natural, iar Jarvis să identifice entitățile, să pregătească și să execute pașii autorizați, să urmărească rezultatele și să comunice exact ce s-a realizat. Implementarea extinde nucleul existent din imoDeus, inclusiv memoria, Voice, automatizările și serviciile de domeniu.
 
+Prioritatea explicită ulterioară a utilizatorului: toate cele 1.000 de scenarii originale, implementate și verificate pe loturi până la rezultatul final. [Registrul loturilor](MASTER_BATCH_PROGRESS.md) urmărește această cerință. Ordinea începe cu fluxurile compuse 801–900; remedierea blocajelor de infrastructură rămâne parte din loturile care depind de ele. Succesul unui prim pas, testele scriptate și inventarierea nu sunt acceptanță 100%.
+
 ## Baza de lucru
 
 - Specificație de produs: documentul utilizatorului `jarvis_master_codex_imodeus_v2.docx`, inclusiv cele 1000 de exemple și fazele 0–15.

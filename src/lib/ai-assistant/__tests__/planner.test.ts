@@ -12,6 +12,7 @@ import { readResource } from '../access';
 import { ProviderError, type ProviderResult, type ModelProvider } from '../provider';
 import { AgentBudget, DEFAULT_LIMITS } from '../budget';
 import type { AssistantContext } from '../access';
+import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 function provider(operation: string, payload: unknown) {
   vi.stubEnv('OPENAI_API_KEY', 'test-only');
@@ -19,6 +20,7 @@ function provider(operation: string, payload: unknown) {
   // prompt growth cannot switch them into the separate missing-usage budget path.
   const reportedUsage = { input_tokens: 100, output_tokens: 20, input_tokens_details: { cached_tokens: 0 } };
   const fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ usage: reportedUsage, output: [{ type: 'function_call', name: 'crm', call_id: 'call', arguments: JSON.stringify({ operation, payload: JSON.stringify(payload) }) }] }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ usage: reportedUsage, output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({text: 'Plan pregătit.', intentStatus: 'answer'}) }] }] }) });
+  fetch.mockResolvedValue({ ok: true, json: async () => ({ usage: reportedUsage, output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify({ text: 'Plan pregătit.', intentStatus: 'answer' }) }] }] }) });
   vi.stubGlobal('fetch', fetch); return fetch;
 }
 const ctx = { agencyId: 'a', uid: 'u', role: 'agent' } as AssistantContext;
@@ -30,9 +32,42 @@ function call(name: string, payload: unknown): ProviderResult {
 const final: ProviderResult = { calls: [], items: [], text: 'Rezultate confirmate.', intentStatus: 'answer', usage, status: 'completed', latencyMs: 1 };
 function scripted(...responses: (ProviderResult | Error)[]) {
   const respond = vi.fn(); for (const response of responses) response instanceof Error ? respond.mockRejectedValueOnce(response) : respond.mockResolvedValueOnce(response);
+  respond.mockResolvedValue(final);
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('master-0806 continues after the first read and prepares the missing follow-up before finalizing', async () => {
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0806')!.text;
+    vi.mocked(readResource).mockResolvedValue({ rows: [{ id: 'v', status: 'completed' }], complete: true } as any);
+    const first = call('read', { resource: 'viewings' });
+    const model = scripted(first, final,
+      call('resolve_datetime', { date: '2030-01-01', time: '12:00' }),
+      call('propose_actions', { actions: [{ kind: 'create_task', description: 'Follow-up vizionare v', dueDate: '2030-01-01T10:00:00.000Z' }] }),
+      call('goal_coverage', { requirements: [{ id: 'followup', sourceQuote: prompt, description: 'Verifică vizionările și pregătește follow-up', resolution: 'planned', steps: [1], evidenceCallIds: [first.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(result.actions).toMatchObject([{ kind: 'create_task', description: 'Follow-up vizionare v' }]);
+    expect(model.respond).toHaveBeenCalledTimes(6);
+    expect(model.respond.mock.calls[2][0].input.some((item: any) => item.role === 'developer' && item.content.includes('Nu încheia după primul pas'))).toBe(true);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it.each(['master-0801', 'master-0850'])('%s does not certify completion when a model keeps stopping after the first lookup', async id => {
+    vi.mocked(readResource).mockResolvedValue({ rows: [{ id: 'p' }], complete: true } as any);
+    const model = scripted(call('read', { resource: 'properties' }), final, final, final);
+    const result = await planTurn(ctx, corpus.scenarios.find(row => row.id === id)!.text, [], { provider: model });
+    expect(result.metrics.status).toBe('partial');
+    expect(result.text).toContain('Acoperirea cererii nu a putut fi verificată');
+    expect(model.respond).toHaveBeenCalledTimes(4);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it('master-0849 reports an unsupported remainder as partial instead of success', async () => {
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0849')!.text;
+    const model = scripted(call('goal_coverage', { requirements: [{ id: 'remaining', sourceQuote: prompt, description: 'Lipsește contextul obiectivului anterior', resolution: 'needs_clarification', steps: [], evidenceCallIds: [] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('clarification');
+    expect(result.text).toContain('Lipsește contextul obiectivului anterior');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('does not mark an empty final model response as successful', async () => {
     const result = await planTurn(ctx, 'Arată rezultatele.', [], { provider: scripted({ ...final, text: '   ' }) });
     expect(result.metrics.status).toBe('partial');
@@ -55,7 +90,8 @@ describe('Responses tool planning', () => {
       call('propose_actions', { actions: [{ kind: 'create_task', description: 'Al doilea pas', dueDate: '2030-01-01T10:00:00.000Z' }] }), final);
     const result = await planTurn(ctx, 'Creează două sarcini pentru 2030-01-01T10:00:00Z.', [], { provider: model });
     expect(result.actions).toHaveLength(2);
-    expect(model.respond).toHaveBeenCalledTimes(3);
+    expect(model.respond).toHaveBeenCalledTimes(5);
+    expect(result.metrics.status).toBe('partial');
     expect(executeAction).not.toHaveBeenCalled();
   });
   it('does not multiply inherited access references across successive replies', async () => {
@@ -96,8 +132,8 @@ describe('Responses tool planning', () => {
     vi.mocked(readResource).mockResolvedValue({ rows: [{ id: 'c1', name: 'Client' }], complete: true } as any);
     const model = scripted(call('read', { resource: 'contacts', id: 'c1' }), final);
     const result = await planTurn(ctx, 'Citește clientul c1.', [], { provider: model });
-    expect(model.respond).toHaveBeenCalledTimes(2);
-    expect(model.respond.mock.calls[1][0].input.at(-1)).toMatchObject({ type: 'function_call_output' });
+    expect(model.respond).toHaveBeenCalledTimes(4);
+    expect(model.respond.mock.calls[1][0].input.some((item: any) => item.type === 'function_call_output')).toBe(true);
     expect(result.cards[0]).toMatchObject({ outputType: 'CLIENT_LIST', rows: [{ id: 'c1' }] });
   });
   it('retries one provider outage on Luna and records its cost/error without escalating', async () => {
@@ -156,7 +192,7 @@ describe('Responses tool planning', () => {
     const result = await planTurn(ctx, 'Analizează contactele.', [], { provider: model });
     expect(readResource).toHaveBeenCalledWith(ctx, expect.objectContaining({ resource: 'contacts' }));
     expect(model.respond.mock.calls[1][0].tools.map((tool: any) => tool.name)).toEqual(['read', 'operation_contract']);
-    expect(result.metrics.status).toBe('success'); expect(result.metrics.models).toHaveLength(4);
+    expect(result.metrics.status).toBe('partial'); expect(result.metrics.models).toHaveLength(6);
   });
   it('retries a transient read once without invoking a mutation', async () => {
     vi.mocked(searchProperties).mockRejectedValueOnce(Object.assign(new Error('Unavailable'), { status: 503 })).mockResolvedValueOnce({ rows: [], complete: true } as any);

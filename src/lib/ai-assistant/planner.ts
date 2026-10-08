@@ -29,6 +29,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
   const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation }) };
   const finish = (text: string, status = 'success') => {
+    if (status === 'success' && goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) status = goalCoverage.requirements.some(row => row.resolution === 'needs_clarification') ? 'clarification' : 'partial';
     metrics.status = status; metrics.elapsedMs = Date.now() - childStarted;
     for (const card of cards) card.outputType ||= card.title.includes('Matching') ? 'PROPERTY_MATCH_LIST' : ['owners', 'crm', 'properties'].includes(card.source) ? 'PROPERTY_LIST' : card.source === 'contacts' ? 'CLIENT_LIST' : card.source === 'viewings' ? 'VIEWING_CARD' : card.source === 'tasks' ? 'TASK_CARD' : card.source === 'insights' ? 'INSIGHT_CARD' : /campaign|meta|tiktok/.test(card.source) ? 'CAMPAIGN_CARD' : 'ANALYTICS_CARD';
     if (actions.length && status === 'success') text = `Am pregătit ${actions.length} acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.`;
@@ -47,7 +48,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
-  let invalidCalls = 0, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
+  let invalidCalls = 0, closureAttempts = 0, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
   try {
     // Shadow calls never alter the approved execution path. Skip injected test
     // providers and child planners; reserve conservatively before network I/O.
@@ -80,7 +81,16 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       metrics.models.push(usageRecord(decision, result.usage, usageCost(decision.model, result.usage), result.latencyMs)); budget.record(decision.model, result.usage);
       previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
       input.push(...result.items);
-      if (!result.calls.length) return finish(result.text?.trim() || 'Răspuns incomplet; nu am executat acțiuni.', !result.text?.trim() || result.status === 'incomplete' ? 'partial' : result.intentStatus === 'clarification' ? 'clarification' : result.intentStatus === 'refusal' ? 'refused' : 'success');
+      if (!result.calls.length) {
+        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && metrics.tools.some(tool => tool.status === 'success');
+        if (needsCoverage && result.text?.trim() && result.status !== 'incomplete' && !['clarification', 'refusal'].includes(result.intentStatus || '')) {
+          if (closureAttempts++ >= 2) return finish('Acoperirea cererii nu a putut fi verificată. Rezultatele sunt parțiale, iar acțiunile pregătite nu au fost executate.', 'partial');
+          input.push({ role: 'developer', content: 'Verificarea serverului: cererea nu are încă goal_coverage valid. Nu încheia după primul pas. Compară TOATĂ cererea utilizatorului cu citirile și acțiunile deja pregătite; continuă numai pașii lipsă, fără să repeți propunerile existente. Apelează goal_coverage cu citate exacte și dovezi reale. Dacă lipsesc date, acces sau capabilități, declară explicit cerințele neacoperite. Nu inventa succesul și nu ocoli aprobările.' });
+          await emit('verify_request_coverage', 'Verific cerințele rămase înainte de încheierea răspunsului.');
+          continue;
+        }
+        return finish(result.text?.trim() || 'Răspuns incomplet; nu am executat acțiuni.', !result.text?.trim() || result.status === 'incomplete' ? 'partial' : result.intentStatus === 'clarification' ? 'clarification' : result.intentStatus === 'refusal' ? 'refused' : 'success');
+      }
       for (const call of result.calls) {
         budget.tool(); const started = Date.now(); let name = call.name, status = 'success', data: unknown;
         try {
