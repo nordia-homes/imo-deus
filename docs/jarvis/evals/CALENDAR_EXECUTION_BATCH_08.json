@@ -1,0 +1,596 @@
+{
+  "scope": "Original scenarios 0182-0184; actual model and isolated Firestore, not production certification. Task deletion uses the enabled optional task policy and a selected duplicate.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0182",
+      "prompt": "Șterge taskul duplicat.",
+      "versions": {
+        "prompt": "jarvis-45",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "75",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:45:39.894Z",
+      "context": [
+        {
+          "id": "selected-task-context",
+          "role": "assistant",
+          "text": "Taskul selectat este task-selected: Sună-l pe Andrei.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "tasks",
+              "title": "Task selectat",
+              "rows": [
+                {
+                  "id": "task-selected",
+                  "description": "Sună-l pe Andrei",
+                  "dueDate": "2026-10-09T07:00:00.000Z",
+                  "startTime": "10:00",
+                  "duration": 30,
+                  "contactId": "andrei",
+                  "contactName": "Andrei",
+                  "agentId": "8d6da8f7-92c8-47dd-aaa2-b71d9c297599",
+                  "status": "open",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T10:45:39.893Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "delete_task",
+          "taskId": "task-selected",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 793,
+          "version": "75",
+          "argumentsHash": "df2a89cd0693beb56586c45f26731b401aa558af80afee10f1eeca5a91204db8"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 20,
+          "version": "75",
+          "argumentsHash": "55108bb1d67c2df5d93af40d17e05fb925efddae9a179d252ba72cae391594ce"
+        },
+        {
+          "name": "delete_task",
+          "status": "success",
+          "latencyMs": 27,
+          "version": "75",
+          "argumentsHash": "2d60afc5e4758df1de12a994f2006e143e1a1d02b5bb011d11b2ae9e27846e36"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 23,
+          "version": "75",
+          "argumentsHash": "d3152e40764d0be0e2e862749d856a8ae52ad6eb1f66f6c847145e1dbde6c93a"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9954,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9951,
+            "estimated": false
+          },
+          "costUsd": 0.001261175,
+          "latencyMs": 3242,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10141,
+            "outputTokens": 25,
+            "cachedTokens": 9951,
+            "cacheWriteTokens": 187,
+            "estimated": false
+          },
+          "costUsd": 0.000135685,
+          "latencyMs": 1747,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10289,
+            "outputTokens": 45,
+            "cachedTokens": 10138,
+            "cacheWriteTokens": 148,
+            "estimated": false
+          },
+          "costUsd": 0.00014268,
+          "latencyMs": 1880,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10360,
+            "outputTokens": 76,
+            "cachedTokens": 10286,
+            "cacheWriteTokens": 71,
+            "estimated": false
+          },
+          "costUsd": 0.000150035,
+          "latencyMs": 2637,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10461,
+            "outputTokens": 46,
+            "cachedTokens": 10357,
+            "cacheWriteTokens": 101,
+            "estimated": false
+          },
+          "costUsd": 0.000139495,
+          "latencyMs": 2368,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00182907,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "delete_task",
+            "result": {
+              "id": "task-selected",
+              "deleted": true,
+              "link": "/tasks"
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task șters. ID: task-selected.",
+      "retainedTask": {
+        "id": "task-original",
+        "description": "Sună-l pe Andrei",
+        "dueDate": "2026-10-09T07:00:00.000Z",
+        "startTime": "10:00",
+        "duration": 30,
+        "contactId": "andrei",
+        "contactName": "Andrei",
+        "agentId": "8d6da8f7-92c8-47dd-aaa2-b71d9c297599",
+        "status": "open",
+        "updatedAt": "2026-01-01T00:00:00.000Z"
+      }
+    },
+    {
+      "scenarioId": "master-0183",
+      "prompt": "Arată-mi taskurile scadente azi.",
+      "versions": {
+        "prompt": "jarvis-45",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "75",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:45:55.239Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Taskurile deschise scadente azi, 8 octombrie 2026:\n\n- **Sarcină today-clock**\n- **Sarcină today-date**",
+      "actions": [],
+      "tools": [
+        {
+          "name": "task_agenda",
+          "status": "success",
+          "latencyMs": 34,
+          "version": "75",
+          "argumentsHash": "e0dc69abadeb9b7283025637d195221866addbafef1245c300df648380d81832"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 7,
+          "version": "75",
+          "argumentsHash": "d8706f2d1daf489434c8a7785871f8ad579f7cb2bb8ff3a4d344508445c1a1f5"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9777,
+            "outputTokens": 51,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9774,
+            "estimated": false
+          },
+          "costUsd": 0.00124755,
+          "latencyMs": 2589,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10071,
+            "outputTokens": 92,
+            "cachedTokens": 9774,
+            "cacheWriteTokens": 294,
+            "estimated": false
+          },
+          "costUsd": 0.00018079,
+          "latencyMs": 2911,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10188,
+            "outputTokens": 57,
+            "cachedTokens": 10068,
+            "cacheWriteTokens": 117,
+            "estimated": false
+          },
+          "costUsd": 0.00014410500000000003,
+          "latencyMs": 2270,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0015724450000000002,
+      "confirmation": "Taskurile deschise scadente azi, 8 octombrie 2026:\n\n- **Sarcină today-clock**\n- **Sarcină today-date**",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Sarcinile agentului",
+          "source": "tasks",
+          "rows": [
+            {
+              "id": "today-clock",
+              "description": "Sarcină today-clock",
+              "status": "open",
+              "dueDate": "2026-10-08T14:00:00.000Z",
+              "dueLocal": "2026-10-08",
+              "startTime": null,
+              "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186",
+              "contactId": null,
+              "propertyId": null
+            },
+            {
+              "id": "today-date",
+              "description": "Sarcină today-date",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "dueLocal": "2026-10-08",
+              "startTime": null,
+              "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186",
+              "contactId": null,
+              "propertyId": null
+            }
+          ],
+          "complete": true,
+          "outputType": "TASK_CARD"
+        }
+      ],
+      "storedTasks": [
+        {
+          "id": "colleague",
+          "description": "Sarcină colleague",
+          "dueDate": "2026-10-08T09:00:00.000Z",
+          "status": "open",
+          "agentId": "other-agent"
+        },
+        {
+          "id": "completed",
+          "description": "Sarcină completed",
+          "dueDate": "2026-10-08T09:00:00.000Z",
+          "status": "completed",
+          "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186"
+        },
+        {
+          "id": "old",
+          "description": "Sarcină old",
+          "dueDate": "2026-08-09",
+          "status": "open",
+          "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186"
+        },
+        {
+          "id": "today-clock",
+          "description": "Sarcină today-clock",
+          "dueDate": "2026-10-08T14:00:00.000Z",
+          "status": "open",
+          "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186"
+        },
+        {
+          "id": "today-date",
+          "description": "Sarcină today-date",
+          "dueDate": "2026-10-08",
+          "status": "open",
+          "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186"
+        },
+        {
+          "id": "tomorrow",
+          "description": "Sarcină tomorrow",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "status": "open",
+          "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186"
+        },
+        {
+          "id": "yesterday",
+          "description": "Sarcină yesterday",
+          "dueDate": "2026-10-07",
+          "status": "open",
+          "agentId": "b16089c0-d87e-4c7c-a6c3-a96a01fd8186"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0184",
+      "prompt": "Arată-mi taskurile restante.",
+      "versions": {
+        "prompt": "jarvis-45",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "75",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:46:03.237Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Taskurile restante:\n- **Sarcină old** — scadență 09.08.2026\n- **Sarcină yesterday** — scadență 07.10.2026",
+      "actions": [],
+      "tools": [
+        {
+          "name": "task_agenda",
+          "status": "success",
+          "latencyMs": 24,
+          "version": "75",
+          "argumentsHash": "322168e3c90e0cf886e8fd0bfce03bf55a82aa1692e75387a0c6080b74fb4552"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 8,
+          "version": "75",
+          "argumentsHash": "acc4b81895368e8fba329c8f1e7d80ce9625046c2d2e1c86d8e53c9ed7aad42b"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9772,
+            "outputTokens": 50,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9769,
+            "estimated": false
+          },
+          "costUsd": 0.001246425,
+          "latencyMs": 2388,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10076,
+            "outputTokens": 91,
+            "cachedTokens": 9769,
+            "cacheWriteTokens": 304,
+            "estimated": false
+          },
+          "costUsd": 0.00018149,
+          "latencyMs": 2450,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10192,
+            "outputTokens": 60,
+            "cachedTokens": 10073,
+            "cacheWriteTokens": 116,
+            "estimated": false
+          },
+          "costUsd": 0.00014553,
+          "latencyMs": 2553,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0015734450000000001,
+      "confirmation": "Taskurile restante:\n- **Sarcină old** — scadență 09.08.2026\n- **Sarcină yesterday** — scadență 07.10.2026",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Sarcinile agentului",
+          "source": "tasks",
+          "rows": [
+            {
+              "id": "old",
+              "description": "Sarcină old",
+              "status": "open",
+              "dueDate": "2026-08-09",
+              "dueLocal": "2026-08-09",
+              "startTime": null,
+              "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752",
+              "contactId": null,
+              "propertyId": null
+            },
+            {
+              "id": "yesterday",
+              "description": "Sarcină yesterday",
+              "status": "open",
+              "dueDate": "2026-10-07",
+              "dueLocal": "2026-10-07",
+              "startTime": null,
+              "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752",
+              "contactId": null,
+              "propertyId": null
+            }
+          ],
+          "complete": true,
+          "outputType": "TASK_CARD"
+        }
+      ],
+      "storedTasks": [
+        {
+          "id": "colleague",
+          "description": "Sarcină colleague",
+          "dueDate": "2026-10-08T09:00:00.000Z",
+          "status": "open",
+          "agentId": "other-agent"
+        },
+        {
+          "id": "completed",
+          "description": "Sarcină completed",
+          "dueDate": "2026-10-08T09:00:00.000Z",
+          "status": "completed",
+          "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752"
+        },
+        {
+          "id": "old",
+          "description": "Sarcină old",
+          "dueDate": "2026-08-09",
+          "status": "open",
+          "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752"
+        },
+        {
+          "id": "today-clock",
+          "description": "Sarcină today-clock",
+          "dueDate": "2026-10-08T14:00:00.000Z",
+          "status": "open",
+          "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752"
+        },
+        {
+          "id": "today-date",
+          "description": "Sarcină today-date",
+          "dueDate": "2026-10-08",
+          "status": "open",
+          "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752"
+        },
+        {
+          "id": "tomorrow",
+          "description": "Sarcină tomorrow",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "status": "open",
+          "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752"
+        },
+        {
+          "id": "yesterday",
+          "description": "Sarcină yesterday",
+          "dueDate": "2026-10-07",
+          "status": "open",
+          "agentId": "1146b50c-18ab-4781-93cd-a3e0007d5752"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "unitTests": 1863,
+    "unitFiles": 150,
+    "emulatorRegressions": 267,
+    "emulatorFiles": 18,
+    "liveScenarios": 3,
+    "previous26LiveScenariosRerun": false
+  }
+}

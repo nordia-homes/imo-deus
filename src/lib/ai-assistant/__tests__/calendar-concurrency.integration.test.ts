@@ -1,3 +1,4 @@
+import { taskAgenda } from '../task-agenda';
 import { viewingFollowups } from '../viewing-followups';
 import { propertyViewings } from '../property-viewings';
 import { createHash, randomUUID } from 'node:crypto';
@@ -59,6 +60,22 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('paginates the full task agenda and excludes completed, foreign-agent and invalid dates', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
+    const batch = db.batch();
+    for (let i = 0; i < 102; i++) batch.set(root.collection('tasks').doc(String(i).padStart(3, '0')), { agentId: ctx.uid, status: 'open', dueDate: i % 2 ? '2026-10-08' : '2026-10-07T21:30:00Z', description: 'Today' });
+    batch.set(root.collection('tasks').doc('invalid'), { agentId: ctx.uid, status: 'open', dueDate: '2026-02-30' });
+    batch.set(root.collection('tasks').doc('done'), { agentId: ctx.uid, status: 'completed', dueDate: '2026-10-08' });
+    batch.set(root.collection('tasks').doc('colleague'), { agentId: 'other', status: 'open', dueDate: '2026-10-08' });
+    batch.set(root.collection('tasks').doc('old'), { agentId: ctx.uid, status: 'open', dueDate: '2026-01-01' });
+    await batch.commit();
+    const first = await taskAgenda(ctx, { mode: 'today' }, now);
+    expect(first.rows).toHaveLength(100); expect(first.complete).toBe(false);
+    const next = await taskAgenda(ctx, { mode: 'today', cursor: first.nextCursor! }, now);
+    expect(next.rows).toHaveLength(2); expect(next.complete).toBe(true); expect(next.invalidDates).toBe(1);
+    expect((await taskAgenda(ctx, { mode: 'overdue' }, now)).rows.map(row => row.id)).toEqual(['old']);
+    expect((await taskAgenda(context(), { mode: 'today' }, now)).rows).toEqual([]);
+  });
   it('creates one linked follow-up across concurrent requests and rechecks viewing relationships', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });

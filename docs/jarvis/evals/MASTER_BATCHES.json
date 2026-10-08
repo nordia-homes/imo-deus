@@ -1439,21 +1439,33 @@
           "sourceNumber": 182,
           "request": "Șterge taskul duplicat.",
           "requestSha256": "1af5b12fb715a7180fa1c417bf59dc001d5d51bce5b6b93a58842da37b2824f0",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0183",
           "sourceNumber": 183,
           "request": "Arată-mi taskurile scadente azi.",
           "requestSha256": "e9ade356234cd80643af6f856b0310e513eb685f0f34738c1e965b3ae5cd6b75",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0184",
           "sourceNumber": 184,
           "request": "Arată-mi taskurile restante.",
           "requestSha256": "574ec083a4d590a82c0732a182f417251bb13c0b171a05366c91f6a1dc908afb",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0185",

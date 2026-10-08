@@ -4,6 +4,7 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (step.kind === 'delete_task' && receipt?.deleted === true && typeof receipt.id === 'string' && receipt.id) return `Task șters. ID: ${receipt.id}.`;
     if (step.kind === 'delete_viewing' && receipt?.deleted === true && typeof receipt.id === 'string' && receipt.id) return `Vizionare ștearsă. ID: ${receipt.id}.`;
     if (!['create_task', 'update_task'].includes(String(step.kind)) || !receipt || typeof receipt.taskId !== 'string' || !receipt.taskId) return '';
     const verb = receipt.alreadyExists === true ? 'deja existent' : step.kind === 'create_task' ? 'creat' : receipt.status === 'completed' ? 'finalizat' : 'actualizat';

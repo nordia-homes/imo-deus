@@ -4,6 +4,18 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — duplicatul și agenda taskurilor
+
+Scenariile originale **0182–0184** au trecut cu model real și Firestore local, fără erori de instrument (prompt jarvis-45 / tools 75). Dovezi: [CALENDAR_EXECUTION_BATCH_08.json](evals/CALENDAR_EXECUTION_BATCH_08.json). 0182 primește în context ID-ul duplicatului selectat, șterge numai acel task, păstrează originalul cu aceeași descriere, înregistrează copia anterioară în audit și confirmă din receipt «Task șters». Replay-ul aceleiași cereri păstrează un singur efect și un singur audit. Nu se presupune că două descrieri identice autorizează ștergerea ambelor înregistrări.
+
+`delete_task` este disponibil în execuția opțională a sarcinilor, numai la o cerere explicită de ștergere și cu politica de taskuri activată. Nu a fost extinsă autorizarea CRM implicită la toate taskurile generale. Rolul, agenția și revizia înregistrării rămân verificate de executor; selecția/cererea agentului nu autorizează o altă înregistrare.
+
+`task_agenda` citește taskurile open ale agentului. `today` compară ziua locală cu azi; `overdue` include zilele anterioare, inclusiv taskuri mai vechi de 30 zile. Definiția este calendaristică: o oră depășită azi nu mută taskul în categoria zilelor restante. Datele simple YYYY-MM-DD nu se transformă în ziua precedentă, iar ISO cu offset este convertit în București. Datele invalide sunt numărate separat. Citirea continuă prin cursor pe pagini de 100, cu scanare limitată la 5.000 documente/12 secunde între pagini per apel; nu declară lista completă la atingerea plafonului. Proba Firestore verifică 102 taskuri pe două pagini, finalizări, alt agent, date invalide și izolarea agenției.
+
+Validare: **1.863 teste unitare**, **267 regresii Firestore** și cele **3 comenzi cu model real** trecute. Lint, TypeScript, inventarele și compilarea aplicației (227 pagini) au trecut.
+
+Total curent: **29 de scenarii originale cu dovezi locale folosind modelul real**, **971 fără această dovadă**. Cele 26 de scenarii live anterioare nu au fost rerulate în acest lot. Nu este certificare în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — follow-up după vizionare
 
 Scenariile originale **0176–0177**: identificarea vizionărilor efectuate fără sarcină asociată și crearea follow-up-urilor pentru ieri. `viewing_followups` compară vizionările completed ale agentului cu taskurile open/completed legate explicit prin `viewingId`, folosind ziua Bucureștiului. Citește contactul și proprietatea actuale și propune scadența azi fără oră când nu se cere alta. Nu presupune că o sarcină veche fără legătură sau contactarea manuală nu există. Scanarea fiecărei colecții este limitată la 5.000 documente/12 secunde între pagini; rezultatul incomplet nu certifică lista. Relațiile CRM lipsă necesită remediere; nu sunt inventate.

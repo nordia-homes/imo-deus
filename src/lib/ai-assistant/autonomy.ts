@@ -5,7 +5,7 @@ import { resolveAction } from './dependencies';
 import { continuePlanRevision } from './plan-revisions';
 import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { featureFlags } from './skills';
-const SAFE_KINDS = new Set(['create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
+const SAFE_KINDS = new Set(['delete_task', 'create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
 // These CRM commands are authorized by the agent's request, without a saved opt-in.
 const CRM_VERBS: Record<string, string> = {
   create_contact: 'creeaza|creaza|adauga|inregistreaza|programeaza|create|add|schedule',
@@ -42,7 +42,7 @@ export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: s
   if (/\b(pregateste|preview|propune|arata|verifica|analizeaza)\b/.test(text)) return false;
   if (['create_contact', 'schedule_viewing'].includes(action.kind) && /\bnu\s+(?:mai\s+)?(?:crea|creati|programa|programati|adauga|adaugati)\b/.test(text)) return false;
   if (requestAuthorizedCrmAction(action) && /\bnu\s+(?:mai\s+)?(?:anula|reprograma|muta|sterge|elimina|arhiva|dezarhiva|modifica|schimba|actualiza|crea|adauga|programa)\b/.test(text)) return false;
-  const verbs = CRM_VERBS[action.kind] || (action.kind === 'assign_record' ? 'atribuie|reasigneaza|asigneaza|aloca|transfera|assign' : action.kind === 'update_task' ? 'marcheaza|finalizeaza|completeaza|actualizeaza|modifica|redeschide|muta|replanifica|complete|update' : 'creeaza|creaza|adauga|programeaza|fa|create|add|schedule');
+  const verbs = CRM_VERBS[action.kind] || (action.kind === 'assign_record' ? 'atribuie|reasigneaza|asigneaza|aloca|transfera|assign' : action.kind === 'delete_task' ? 'sterge|elimina|delete|remove' : action.kind === 'update_task' ? 'marcheaza|finalizeaza|completeaza|actualizeaza|modifica|redeschide|muta|replanifica|complete|update' : 'creeaza|creaza|adauga|programeaza|fa|create|add|schedule');
   return new RegExp(`\\b(${verbs})\\b`).test(text) && !new RegExp(`\\b(nu|not|dont)\\s+(?:\\w+\\s+){0,2}(${verbs})\\b`).test(text);
 }
 export async function autonomyPolicy(ctx: AssistantContext) {

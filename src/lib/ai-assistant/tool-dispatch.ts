@@ -1,3 +1,4 @@
+import { taskAgenda } from './task-agenda';
 import { viewingFollowups } from './viewing-followups';
 import { propertyViewings } from './property-viewings';
 import { viewingDetails } from './viewing-details';
@@ -28,7 +29,10 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'viewing_followups') {
+  if (name === 'task_agenda') {
+    data = await taskAgenda(ctx, payload);
+    cards.push({ type: 'data', title: 'Sarcinile agentului', source: 'tasks', rows: data.rows, complete: data.complete });
+  } else if (name === 'viewing_followups') {
     data = await viewingFollowups(ctx, payload);
     cards.push({ type: 'data', title: 'Vizionări fără sarcină follow-up', source: 'viewings', rows: data.rows, complete: data.complete });
     for (const row of data.rows) refs.push({ resource: 'contacts', id: row.contactId });
