@@ -41,6 +41,7 @@ export function safeAutonomousAction(action: AssistantAction) {
 }
 export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: string) {
   const text = normalized(prompt);
+  if (action.kind === 'schedule_viewing' && action.firstAvailable && !/\bprim(?:ul|a)\b.*\b(?:interval|ora)\b|\bfirst\b.*\b(?:slot|available)\b/.test(text)) return false;
   if (/\b(pregateste|preview|propune|arata|verifica|analizeaza)\b/.test(text)) return false;
   if (['create_contact', 'schedule_viewing'].includes(action.kind) && /\bnu\s+(?:mai\s+)?(?:crea|creati|programa|programati|adauga|adaugati)\b/.test(text)) return false;
   if (requestAuthorizedCrmAction(action) && /\bnu\s+(?:mai\s+)?(?:anula|reprograma|muta|sterge|elimina|arhiva|dezarhiva|modifica|schimba|actualiza|crea|adauga|programa)\b/.test(text)) return false;

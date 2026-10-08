@@ -1,0 +1,746 @@
+{
+  "scope": "Original 0192-0193, actual model plus local Firestore. Scenario 0193 has explicit prior context for buyer/property, tomorrow 16:00-20:00 and duration 60 minutes. No assistantPolicies opt-in. Includes saved viewing, unchanged existing records, replay and Bucharest display assertions. Not production/voice/full variant certification.",
+  "previousAttempts": [
+    {
+      "scenarioId": "master-0193",
+      "prompt": "Programează vizionarea în primul interval potrivit.",
+      "versions": {
+        "prompt": "jarvis-49",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "79",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:57:40.739Z",
+      "context": [
+        {
+          "id": "viewing-constraints",
+          "role": "user",
+          "text": "Pentru următoarea vizionare: clientul Andrei (andrei), proprietatea Apartament Titan (titan), durata 60 de minute, mâine între 16:00 și 20:00. Alege primul interval liber pentru mine, client și proprietate.",
+          "createdAt": "2026-10-08T11:57:40.796Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "plannerStatus": "partial",
+      "text": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.",
+      "actions": [
+        {
+          "kind": "schedule_viewing",
+          "firstAvailable": {
+            "start": "2026-10-09T13:00:00.000Z",
+            "end": "2026-10-09T17:00:00.000Z"
+          },
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "viewingDate": "2026-10-09T16:00:00.000Z",
+          "duration": 60,
+          "notes": ""
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 29,
+          "version": "79",
+          "argumentsHash": "7b2278cc5b2f9b9368dcc20eb94840bb3e7e1d156906b5cbda1b80f6b75546cb"
+        },
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 29,
+          "version": "79",
+          "argumentsHash": "587733a26ff9d3107a81d1c8df102fa7b08fc633d59923fd437ec9b1b918ba77"
+        },
+        {
+          "name": "calendar_availability",
+          "status": "success",
+          "latencyMs": 73,
+          "version": "79",
+          "argumentsHash": "12962f0c9ae30b7623f2d11ae5eb36d18286948bfaaefacc8e12603a237e9c46"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 22,
+          "version": "79",
+          "argumentsHash": "630b853ed1d1683bf570ffaa68cf5644b33824ba0f0cc662cebb094f02f8314b"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 12,
+          "version": "79",
+          "argumentsHash": "81bb5ee73c1c4d9ffe6081255291125760cba9672cbb93a1d2369aa53cafaffb"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11102,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 11099,
+            "estimated": false
+          },
+          "costUsd": 0.001404675,
+          "latencyMs": 1972,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11211,
+            "outputTokens": 34,
+            "cachedTokens": 11099,
+            "cacheWriteTokens": 109,
+            "estimated": false
+          },
+          "costUsd": 0.00014191500000000003,
+          "latencyMs": 2355,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11333,
+            "outputTokens": 54,
+            "cachedTokens": 11208,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00015463,
+          "latencyMs": 3840,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11692,
+            "outputTokens": 27,
+            "cachedTokens": 11330,
+            "cacheWriteTokens": 359,
+            "estimated": false
+          },
+          "costUsd": 0.000171975,
+          "latencyMs": 2132,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11949,
+            "outputTokens": 109,
+            "cachedTokens": 11689,
+            "cacheWriteTokens": 257,
+            "estimated": false
+          },
+          "costUsd": 0.00020381499999999999,
+          "latencyMs": 3381,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_MHAgDJQlW5pooPtyFZLFdgks",
+          "name": "read",
+          "arguments": "{\"resource\":\"contacts\",\"id\":null,\"search\":\"andrei\",\"cursor\":null,\"limit\":100}"
+        },
+        {
+          "id": "call_nQORDBwdE1UBGk5fq7RWxbUj",
+          "name": "read",
+          "arguments": "{\"resource\":\"properties\",\"id\":null,\"search\":\"titan\",\"cursor\":null,\"limit\":100}"
+        },
+        {
+          "id": "call_hDEoaSKG4kWdALxVP8GyKyKu",
+          "name": "calendar_availability",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"fromTime\":\"16:00\",\"untilTime\":\"20:00\",\"duration\":60,\"contactId\":\"andrei\",\"propertyId\":\"titan\"}"
+        },
+        {
+          "id": "call_7jKphYsHRab5g8I6gCVIMR2K",
+          "name": "operation_contract",
+          "arguments": "{\"operation\":\"schedule_viewing\",\"actionKind\":\"schedule_viewing\"}"
+        },
+        {
+          "id": "call_eyvnmnv1bhcrXIALBwSnI4DP",
+          "name": "propose_actions",
+          "arguments": "{\"payload\":\"{\\\"actions\\\":[{\\\"kind\\\":\\\"schedule_viewing\\\",\\\"contactId\\\":\\\"andrei\\\",\\\"propertyId\\\":\\\"titan\\\",\\\"viewingDate\\\":\\\"2026-10-09T16:00:00.000Z\\\",\\\"duration\\\":60,\\\"notes\\\":\\\"\\\",\\\"firstAvailable\\\":{\\\"start\\\":\\\"2026-10-09T13:00:00.000Z\\\",\\\"end\\\":\\\"2026-10-09T17:00:00.000Z\\\"}}]}\"}"
+        }
+      ],
+      "costUsd": 0.00207701,
+      "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality"
+    },
+    {
+      "scenarioId": "master-0193",
+      "prompt": "Programează vizionarea în primul interval potrivit.",
+      "versions": {
+        "prompt": "jarvis-49",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "79",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T12:02:32.735Z",
+      "context": [
+        {
+          "id": "viewing-constraints",
+          "role": "user",
+          "text": "Pentru următoarea vizionare: clientul Andrei (andrei), proprietatea Apartament Titan (titan), durata 60 de minute, mâine între 16:00 și 20:00. Alege primul interval liber pentru mine, client și proprietate.",
+          "createdAt": "2026-10-08T12:02:32.802Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "schedule_viewing",
+          "firstAvailable": {
+            "start": "2026-10-09T13:00:00.000Z",
+            "end": "2026-10-09T17:00:00.000Z"
+          },
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "viewingDate": "2026-10-09T16:00:00.000Z",
+          "duration": 60,
+          "notes": ""
+        }
+      ],
+      "tools": [
+        {
+          "name": "calendar_availability",
+          "status": "success",
+          "latencyMs": 81,
+          "version": "79",
+          "argumentsHash": "12962f0c9ae30b7623f2d11ae5eb36d18286948bfaaefacc8e12603a237e9c46"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 38,
+          "version": "79",
+          "argumentsHash": "81bb5ee73c1c4d9ffe6081255291125760cba9672cbb93a1d2369aa53cafaffb"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 8,
+          "version": "79",
+          "argumentsHash": "df3476a6eb2cf2890ab25b5fc2015afb18cc4c63e8312bac2eab4afc6c1126ca"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11206,
+            "outputTokens": 54,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 11203,
+            "estimated": false
+          },
+          "costUsd": 0.001427675,
+          "latencyMs": 2271,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11600,
+            "outputTokens": 128,
+            "cachedTokens": 11203,
+            "cacheWriteTokens": 394,
+            "estimated": false
+          },
+          "costUsd": 0.00022558,
+          "latencyMs": 3066,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11755,
+            "outputTokens": 90,
+            "cachedTokens": 11597,
+            "cacheWriteTokens": 155,
+            "estimated": false
+          },
+          "costUsd": 0.00018064499999999998,
+          "latencyMs": 2870,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11870,
+            "outputTokens": 67,
+            "cachedTokens": 11752,
+            "cacheWriteTokens": 115,
+            "estimated": false
+          },
+          "costUsd": 0.000165695,
+          "latencyMs": 3485,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_yDcwwXggacBdCklNOvyTsQi5",
+          "name": "calendar_availability",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"fromTime\":\"16:00\",\"untilTime\":\"20:00\",\"duration\":60,\"contactId\":\"andrei\",\"propertyId\":\"titan\"}"
+        },
+        {
+          "id": "call_ZkKFUF0ykLRV4Xj3SNofi94U",
+          "name": "propose_actions",
+          "arguments": "{\"payload\":\"{\\\"actions\\\":[{\\\"kind\\\":\\\"schedule_viewing\\\",\\\"contactId\\\":\\\"andrei\\\",\\\"propertyId\\\":\\\"titan\\\",\\\"viewingDate\\\":\\\"2026-10-09T16:00:00.000Z\\\",\\\"duration\\\":60,\\\"notes\\\":\\\"\\\",\\\"firstAvailable\\\":{\\\"start\\\":\\\"2026-10-09T13:00:00.000Z\\\",\\\"end\\\":\\\"2026-10-09T17:00:00.000Z\\\"}}]}\"}"
+        },
+        {
+          "id": "call_om5cFzB3MB1frAW5rjEATVAr",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"schedule_first_free\",\"sourceQuote\":\"Programează vizionarea în primul interval potrivit.\",\"description\":\"Programează vizionarea în primul interval potrivit pentru mine, client și proprietate, conform intervalului și duratei precizate în context.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]}]}"
+        }
+      ],
+      "costUsd": 0.001999595,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "schedule_viewing",
+            "result": {
+              "viewingId": "96560c0f-ca47-4353-b01b-a2bd0515cdc9-safe-0",
+              "viewingDate": "2026-10-09T16:00:00.000Z",
+              "status": "scheduled",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "link": "/viewings"
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "failure": "expected 4 to be 5 // Object.is equality"
+    }
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0192",
+      "prompt": "Ce intervale libere am mâine după ora 16?",
+      "versions": {
+        "prompt": "jarvis-49",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "79",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T12:10:35.278Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Mâine, vineri 9 octombrie, ai libere în calendarul CRM:\n- 17:00–17:30\n- 18:30–00:00 (până la miezul nopții)\n\nVerificarea acoperă taskurile deschise cu oră și vizionările programate. Nu include calendare externe sau timp de deplasare.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "calendar_availability",
+          "status": "success",
+          "latencyMs": 746,
+          "version": "79",
+          "argumentsHash": "75b1246b21e7a948b1a2a863b69fe045b484cf75ae52121be4611305e2d0225f"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 40,
+          "version": "79",
+          "argumentsHash": "828d454d4f100f31a1e401e5b6e21aa2fd5b0ef6a689ab0c70ae73ed99b5a494"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10700,
+            "outputTokens": 52,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10697,
+            "estimated": false
+          },
+          "costUsd": 0.001363425,
+          "latencyMs": 2321,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11052,
+            "outputTokens": 95,
+            "cachedTokens": 10697,
+            "cacheWriteTokens": 352,
+            "estimated": false
+          },
+          "costUsd": 0.00019876999999999997,
+          "latencyMs": 2907,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11172,
+            "outputTokens": 102,
+            "cachedTokens": 11049,
+            "cacheWriteTokens": 120,
+            "estimated": false
+          },
+          "costUsd": 0.00017679000000000002,
+          "latencyMs": 3219,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_hRdBDYTmSpWzbdSuD9EbSqzo",
+          "name": "calendar_availability",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"fromTime\":\"16:00\",\"untilTime\":\"24:00\",\"duration\":1,\"contactId\":null,\"propertyId\":null}"
+        },
+        {
+          "id": "call_fMoOeDzaWvVsDgBIpxDKqIe0",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"availability\",\"sourceQuote\":\"Ce intervale libere am mâine după ora 16?\",\"description\":\"Afișează intervalele libere din calendarul CRM mâine, după ora 16:00.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_hRdBDYTmSpWzbdSuD9EbSqzo\"]}]}"
+        }
+      ],
+      "costUsd": 0.001738985,
+      "confirmation": "Mâine, vineri 9 octombrie, ai libere în calendarul CRM:\n- 17:00–17:30\n- 18:30–00:00 (până la miezul nopții)\n\nVerificarea acoperă taskurile deschise cu oră și vizionările programate. Nu include calendare externe sau timp de deplasare.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Intervale libere · București",
+          "source": "calendar",
+          "rows": [
+            {
+              "start": "2026-10-09T14:00:00.000Z",
+              "end": "2026-10-09T14:30:00.000Z",
+              "startLocal": "2026-10-09 17:00",
+              "endLocal": "2026-10-09 17:30",
+              "title": "2026-10-09 17:00 – 2026-10-09 17:30 · București"
+            },
+            {
+              "start": "2026-10-09T15:30:00.000Z",
+              "end": "2026-10-09T21:00:00.000Z",
+              "startLocal": "2026-10-09 18:30",
+              "endLocal": "2026-10-10 00:00",
+              "title": "2026-10-09 18:30 – 2026-10-10 00:00 · București"
+            }
+          ],
+          "complete": true,
+          "note": "Calendar CRM: taskuri open cu oră și vizionări scheduled. Fără timp de deplasare sau calendare externe. Limita implicită este sfârșitul zilei, nu programul de lucru.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0193",
+      "prompt": "Programează vizionarea în primul interval potrivit.",
+      "versions": {
+        "prompt": "jarvis-49",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "79",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T12:10:47.321Z",
+      "context": [
+        {
+          "id": "viewing-constraints",
+          "role": "user",
+          "text": "Pentru următoarea vizionare: clientul Andrei (andrei), proprietatea Apartament Titan (titan), durata 60 de minute, mâine între 16:00 și 20:00. Alege primul interval liber pentru mine, client și proprietate.",
+          "createdAt": "2026-10-08T12:10:47.389Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "schedule_viewing",
+          "firstAvailable": {
+            "start": "2026-10-09T13:00:00.000Z",
+            "end": "2026-10-09T17:00:00.000Z"
+          },
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "viewingDate": "2026-10-09T16:00:00.000Z",
+          "duration": 60,
+          "notes": ""
+        }
+      ],
+      "tools": [
+        {
+          "name": "calendar_availability",
+          "status": "success",
+          "latencyMs": 78,
+          "version": "79",
+          "argumentsHash": "12962f0c9ae30b7623f2d11ae5eb36d18286948bfaaefacc8e12603a237e9c46"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 10,
+          "version": "79",
+          "argumentsHash": "81bb5ee73c1c4d9ffe6081255291125760cba9672cbb93a1d2369aa53cafaffb"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 13,
+          "version": "79",
+          "argumentsHash": "0148cb1332d13297543c1b9f7c037ae02a82d9a03e559b8bed4ecc42368e0e01"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11207,
+            "outputTokens": 54,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 11204,
+            "estimated": false
+          },
+          "costUsd": 0.0014278,
+          "latencyMs": 2077,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11603,
+            "outputTokens": 109,
+            "cachedTokens": 11204,
+            "cacheWriteTokens": 396,
+            "estimated": false
+          },
+          "costUsd": 0.00021634,
+          "latencyMs": 2892,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11739,
+            "outputTokens": 99,
+            "cachedTokens": 11600,
+            "cacheWriteTokens": 136,
+            "estimated": false
+          },
+          "costUsd": 0.0001828,
+          "latencyMs": 3405,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11863,
+            "outputTokens": 88,
+            "cachedTokens": 11736,
+            "cacheWriteTokens": 124,
+            "estimated": false
+          },
+          "costUsd": 0.00017716,
+          "latencyMs": 4229,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_L64qBsjilkW4iMDlyuOjbDzP",
+          "name": "calendar_availability",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"fromTime\":\"16:00\",\"untilTime\":\"20:00\",\"duration\":60,\"contactId\":\"andrei\",\"propertyId\":\"titan\"}"
+        },
+        {
+          "id": "call_h3aI5ehkz8MmlnqQap2g04fx",
+          "name": "propose_actions",
+          "arguments": "{\"payload\":\"{\\\"actions\\\":[{\\\"kind\\\":\\\"schedule_viewing\\\",\\\"contactId\\\":\\\"andrei\\\",\\\"propertyId\\\":\\\"titan\\\",\\\"viewingDate\\\":\\\"2026-10-09T16:00:00.000Z\\\",\\\"duration\\\":60,\\\"notes\\\":\\\"\\\",\\\"firstAvailable\\\":{\\\"start\\\":\\\"2026-10-09T13:00:00.000Z\\\",\\\"end\\\":\\\"2026-10-09T17:00:00.000Z\\\"}}]}\"}"
+        },
+        {
+          "id": "call_JGxri0MCg5J87rbEaf8IFSu4",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"schedule_first_free_viewing\",\"sourceQuote\":\"Programează vizionarea în primul interval potrivit.\",\"description\":\"Programează vizionarea în primul interval liber potrivit mâine între 16:00 și 20:00, pentru Andrei și Apartament Titan, durata 60 de minute.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]}]}"
+        }
+      ],
+      "costUsd": 0.0020041,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "schedule_viewing",
+            "result": {
+              "viewingId": "d31e3ced-4415-4569-950a-80de18f104ba-safe-0",
+              "viewingDate": "2026-10-09T16:00:00.000Z",
+              "status": "scheduled",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "link": "/viewings"
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Vizionare programată pentru „Apartament Titan” cu Andrei: 09.10.2026, 19:00, ora Bucureștiului. ID: d31e3ced-4415-4569-950a-80de18f104ba-safe-0.",
+      "storedViewing": {
+        "agentId": "d31e3ced-4415-4569-950a-80de18f104ba",
+        "notes": "",
+        "contactId": "andrei",
+        "propertyAddress": "Titan",
+        "contactName": "Andrei",
+        "agentName": "Agent local",
+        "viewingDate": "2026-10-09T16:00:00.000Z",
+        "duration": 60,
+        "createdAt": "2026-10-08T12:11:00.176Z",
+        "id": "d31e3ced-4415-4569-950a-80de18f104ba-safe-0",
+        "propertyId": "titan",
+        "propertyTitle": "Apartament Titan",
+        "status": "scheduled",
+        "updatedAt": "2026-10-08T12:11:00.176Z"
+      }
+    }
+  ],
+  "validation": {
+    "unitTests": 2094,
+    "unitFiles": 187,
+    "unitSkipped": 319,
+    "emulatorRegressions": 271,
+    "emulatorFiles": 18,
+    "liveScenarios": 2,
+    "combinedPassed": 273,
+    "previous35LiveScenariosRerun": false,
+    "productionBuild": true,
+    "staticPages": 227,
+    "finalDisplayLiveScenarios": 2
+  }
+}

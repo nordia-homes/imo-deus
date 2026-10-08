@@ -1,3 +1,4 @@
+import { readCalendarAvailability } from './calendar-availability';
 import { taskParticipant } from './task-participant';
 import { deferralBlocked } from './task-deferral';
 import { resolveDatetime } from './datetime';
@@ -529,10 +530,16 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const propertyId = action.propertyId || String(old?.propertyId);
       const [contact, property] = await Promise.all([read('contacts', contactId), read('properties', propertyId)]);
       const status = action.kind === 'schedule_viewing' ? 'scheduled' : action.status;
-      const viewingDate = action.viewingDate || String(old?.viewingDate);
+      let viewingDate = action.viewingDate || String(old?.viewingDate);
       const duration = action.duration || Number(old?.duration || 60);
       const agentId = action.agentId || String(old?.agentId || ctx.uid);
       const assignment = action.agentId ? await propertyAssignment(action.agentId) : null;
+      if (action.kind === 'schedule_viewing' && action.firstAvailable) {
+        if (agentId !== ctx.uid) throw new CommunicationError('Primul interval se calculează pentru agentul curent.');
+        const available = await readCalendarAvailability(ctx, action.firstAvailable, duration, contactId, propertyId, tx);
+        if (!available.complete || !available.rows.length) throw new CommunicationError('Nu mai există un interval confirmat în fereastra cerută. Alege alt interval.', 409);
+        viewingDate = available.rows[0].start;
+      }
       const calendarChanged = !old || Date.parse(viewingDate) !== Date.parse(String(old.viewingDate)) || duration !== Number(old.duration || 60) || action.agentId !== undefined && action.agentId !== old.agentId || propertyId !== old.propertyId || contactId !== old.contactId || status !== old.status;
       if (action.kind === 'update_viewing' && action.appendNotes !== undefined && action.notes !== undefined) throw new CommunicationError('Alege adăugarea unei note sau înlocuirea notelor, nu ambele.');
       const notes = action.kind === 'update_viewing' && action.appendNotes !== undefined ? [old?.notes, action.appendNotes].filter(Boolean).join('\n') : action.notes ?? old?.notes ?? '';

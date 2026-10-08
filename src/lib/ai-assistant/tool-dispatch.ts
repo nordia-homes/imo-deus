@@ -1,3 +1,4 @@
+import { calendarAvailability } from './calendar-availability';
 import { taskDeferral } from './task-deferral';
 import { taskPriorities } from './task-priorities';
 import { taskAgenda } from './task-agenda';
@@ -31,7 +32,11 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'task_deferral') {
+  if (name === 'calendar_availability') {
+    data = await calendarAvailability(ctx, payload);
+    cards.push({ type: 'data', title: 'Intervale libere · București', source: 'calendar', rows: data.rows.map((row: Record<string, unknown>) => ({ ...row, title: `${row.startLocal} – ${row.endLocal} · București` })), complete: data.complete, note: data.scope });
+    if (payload.contactId) refs.push({ resource: 'contacts', id: payload.contactId });
+  } else if (name === 'task_deferral') {
     data = await taskDeferral(ctx);
     cards.push({ type: 'data', title: 'Taskuri eligibile pentru mâine', source: 'tasks', rows: data.rows, complete: data.complete });
   } else if (name === 'task_priorities') {

@@ -4,6 +4,24 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — disponibilitate și primul interval potrivit
+
+Scenariile originale **0192–0193** au trecut cu model real și Firestore local (prompt jarvis-49 / tools 79), fără opt-in separat. Dovezi: [CALENDAR_EXECUTION_BATCH_12.json](evals/CALENDAR_EXECUTION_BATCH_12.json). 0192 găsește exact golurile 17:00–17:30 și 18:30–00:00 din calendarul agentului pentru mâine după 16:00. Textul și cardurile afișează orele din București și precizează că limita implicită este sfârșitul zilei, nu programul de lucru.
+
+Pentru 0193 contextul furnizează explicit clientul, proprietatea, ziua de mâine, fereastra 16:00–20:00 și durata de 60 de minute. Taskul agentului și vizionarea existentă blochează prima parte; o vizionare a proprietății cu alt agent blochează 18:30–19:00. Jarvis salvează vizionarea la **19:00**, confirmă ora din receipt și păstrează toate înregistrările anterioare. Replay-ul aceleiași cereri nu creează încă o vizionare.
+
+`calendar_availability` calculează intervalele pe server, unind suprapunerile și comparând instanții reali, inclusiv date cu offset diferit. Pentru o întrebare personală verifică agentul; pentru programare verifică suplimentar clientul și proprietatea. Taskurile open cu oră și vizionările scheduled ocupă calendarul; taskurile fără oră sunt numărate separat, fără a bloca artificial întreaga zi. Clientul și proprietatea sunt citite și autorizate în același instrument; o proprietate inactivă nu produce suggestedViewing.
+
+`schedule_viewing.firstAvailable` păstrează fereastra autorizată, ale cărei două limite sunt verificate de politica temporală. Executorul recalculează primul interval în tranzacția de salvare și folosește blocarea existentă a calendarului. Două cereri concurente au salvat intervale distincte, la 18:00 și 19:00, fără suprapunere; reluarea aceleiași cereri păstrează un singur efect. Marcajul nu se persistă în vizionare. O cerere pentru o oră fixă nu autorizează automat alegerea altei ore.
+
+Limite explicite: disponibilitate în CRM, fără calendare externe, confirmarea participanților sau timp de deplasare. Fereastra are maximum 25 de ore pentru ziua cu schimbare de oră. Citirea este limitată la 5.000 de documente din fiecare colecție; la depășire sau date calendaristice invalide pentru înregistrări active relevante, nu sunt propuse intervale ca fiind confirmate. Lipsa unui interval potrivit nu permite extinderea ferestrei fără o nouă cerere. 0194 nu este numărat separat doar pentru că protecția suprapunerilor există.
+
+Încercările anterioare 0193 sunt păstrate: prima a repetat citiri și contracte deja verificate, atingând bugetul înainte de goal_coverage. Instrumentul returnează acum identitățile și sugestia completă, iar instrucțiunile folosesc direct acest rezultat, fără relaxarea bugetelor. A doua a salvat corect vizionarea, dar testul aștepta greșit cinci înregistrări în loc de patru; aserțiunea verifică acum totalul anterior plus unu și păstrarea fiecărei vizionări anterioare. Rularea combinată și cea finală cu afișarea cardurilor au trecut.
+
+Validare: **2.094 teste locale**, **271 regresii Firestore și două comenzi cu model real** (273 trecute împreună), inclusiv concurență, replay, ziua de 25 de ore, scanare parțială și limite temporale neverificate. Cele 319 teste locale condiționate de alte medii nu sunt incluse în numărul de teste trecute. Lint, inventarele și buildul final cu TypeScript și 227 de pagini au trecut.
+
+Total curent: **37 de scenarii originale cu dovezi locale folosind modelul real**, **963 fără această dovadă**. Cele 35 de scenarii live anterioare nu au fost rerulate. Nu este certificare integrală, în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — participantul și proprietatea taskului
 
 Scenariile originale **0189–0191** au trecut cu model real și Firestore local (prompt jarvis-48 / tools 78 / request-crm-8), fără document `assistantPolicies`: task pentru proprietarul proprietății deschise, task pentru clientul deschis și corectarea proprietății asociate unui task selectat. Probe: [CALENDAR_EXECUTION_BATCH_11.json](evals/CALENDAR_EXECUTION_BATCH_11.json). Contextul precizează explicit descrierea, scadența mâine la 10:00 și durata de 30 de minute pentru creări; nu sunt presupuneri despre cererile originale. Probele suplimentare fără aceste detalii cer clarificare și verifică absența scrierilor.

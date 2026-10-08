@@ -1,3 +1,4 @@
+import { calendarAvailability } from '../calendar-availability';
 import { taskDeferral } from '../task-deferral';
 import { taskPriorities } from '../task-priorities';
 import { taskAgenda } from '../task-agenda';
@@ -62,6 +63,25 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('recalculates the first available slot atomically when two requests compete', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });
+    try {
+      const at = (time: string) => resolveDatetime({ dayOffset: 1, time }).iso;
+      await root.collection('properties').doc('p').set({ title: 'Titan', status: 'Activ' });
+      await root.collection('contacts').doc('c').set({ name: 'Alin' });
+      await root.collection('tasks').doc('busy').set({ status: 'open', agentId: ctx.uid, dueDate: at('16:00'), startTime: '16:00', duration: 60 });
+      await root.collection('viewings').doc('property-busy').set({ status: 'scheduled', agentId: 'other', propertyId: 'p', viewingDate: at('17:00'), duration: 60 });
+      const available = await calendarAvailability(ctx, { dayOffset: 1, fromTime: '16:00', untilTime: '21:00', duration: 60, contactId: 'c', propertyId: 'p' });
+      expect(available.complete).toBe(true); expect(available.rows[0].start).toBe(at('18:00'));
+      const action = { kind: 'schedule_viewing' as const, contactId: 'c', propertyId: 'p', viewingDate: available.rows[0].start, duration: 60, notes: '', firstAvailable: available.window };
+      const results = await Promise.all([executeAction(ctx, action, 'first-one'), executeAction(ctx, action, 'first-two')]);
+      expect(results.map(row => row.viewingDate).sort()).toEqual([at('18:00'), at('19:00')].sort());
+      expect(await executeAction(ctx, action, 'first-one')).toEqual(results[0]);
+      expect((await root.collection('viewings').get()).size).toBe(3);
+      for (const receipt of results) expect((await root.collection('viewings').doc(String(receipt.viewingId)).get()).data()?.firstAvailable).toBeUndefined();
+    } finally { await profile.delete(); }
+  }, 30000);
   it('resolves the task participant from current CRM data and preserves unrelated fields on relinking', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });

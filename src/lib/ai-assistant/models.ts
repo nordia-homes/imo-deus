@@ -5,7 +5,7 @@ export const MODEL_IDS = ['gpt-6-luna', 'gpt-6.1-sol'] as const;
 export type ModelId = typeof MODEL_IDS[number];
 export type LogicalModel = 'LUNA' | 'SOL';
 export type ReasoningEffort = 'none' | 'low' | 'medium' | 'high';
-export const VERSIONS = { prompt: 'jarvis-48', routing: 'luna-first-2', policy: 'request-crm-8', tools: '78', memory: '2', skills: '3' } as const;
+export const VERSIONS = { prompt: 'jarvis-49', routing: 'luna-first-2', policy: 'request-crm-8', tools: '79', memory: '2', skills: '3' } as const;
 export function allowedModel(id: string): ModelId { return z.enum(MODEL_IDS).parse(id); }
 export type RoutingSignals = { dependencyDepth?: number; estimatedTools?: number; planningFailures?: number; invalidCalls?: number; ambiguity?: boolean; risk?: 'READ' | 'SAFE_WRITE' | 'SENSITIVE' | 'CRITICAL'; elapsedMs?: number; remainingCost?: number; evaluationRequiresSol?: boolean; infrastructureFailure?: boolean };
 export type RoutingDecision = { logical: LogicalModel; model: ModelId; effort: ReasoningEffort; reason: string; version: string };

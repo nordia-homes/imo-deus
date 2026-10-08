@@ -1545,14 +1545,22 @@
           "sourceNumber": 192,
           "request": "Ce intervale libere am mâine după ora 16?",
           "requestSha256": "6ea50aa5bc7422278812ea6b5b3a49d8558907df2656891a927848b3c1de6769",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0193",
           "sourceNumber": 193,
           "request": "Programează vizionarea în primul interval potrivit.",
           "requestSha256": "bc6e4f46a21e1564092fe6e2f09b17509d5dac1170f8a8fff742dc1dbd792eb0",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0194",

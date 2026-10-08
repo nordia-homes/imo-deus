@@ -5,7 +5,7 @@ import { resolveDatetime } from '@/lib/ai-assistant/datetime';
 import { bucharestInputFromIso } from '@/lib/bucharest-time';
 import { CommunicationError } from '@/lib/communications/server';
 
-async function calendarRead<T>(read: () => Promise<T>): Promise<T> {
+export async function calendarRead<T>(read: () => Promise<T>): Promise<T> {
   try { return await read(); } catch (error) {
     // The emulator reports an invalidated transaction as INVALID_ARGUMENT,
     // which the SDK does not retry. Only normalize this exact read failure:

@@ -12,6 +12,11 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  it('does not turn an exact-time instruction into permission to pick another slot', async () => {
+    const action: AssistantAction = { kind: 'schedule_viewing', contactId: 'c', propertyId: 'p', viewingDate: '2030-01-02T14:00:00Z', duration: 60, notes: '', firstAvailable: { start: '2030-01-02T14:00:00Z', end: '2030-01-02T20:00:00Z' } };
+    expect((await runSafePrefix(ctx(), 'fixed', [action], 'Programează vizionarea la 16.')).results).toHaveLength(0);
+    expect((await runSafePrefix(ctx(), 'first', [action], 'Programează vizionarea în primul interval potrivit.')).results).toHaveLength(1);
+  });
   it('executes CRM participant tasks and property links without opt-in, but keeps unrelated edits gated', async () => {
     const context = ctx(); (context as any).policy = undefined;
     vi.stubEnv('JARVIS_AUTONOMOUS', 'false');

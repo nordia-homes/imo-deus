@@ -144,6 +144,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             const date = row.suggestedTask?.dueDate;
             if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) verifiedDates.add(new Date(date).toISOString());
           }
+          if (name === 'calendar_availability' && response.data.complete === true) {
+            const window = response.data.window as { start?: string; end?: string } | undefined;
+            const suggestion = response.data.suggestedViewing as { viewingDate?: string } | null;
+            for (const date of [window?.start, window?.end, suggestion?.viewingDate]) if (typeof date === 'string') verifiedDates.add(date);
+          }
           if (['resolve_datetime', 'shift_datetime'].includes(name) && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
           if (actions.length + response.actions.length > MAX_PLAN_ACTIONS) throw new Error(`Planul depășește ${MAX_PLAN_ACTIONS} acțiuni.`);
           cards.push(...response.cards); actions.push(...response.actions); accessRefs.push(...response.refs);
