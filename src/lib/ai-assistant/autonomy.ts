@@ -13,7 +13,7 @@ export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: s
   const text = normalized(prompt);
   if (/\b(pregateste|preview|propune|arata|verifica|analizeaza)\b/.test(text)) return false;
   if (VIEWING_KINDS.has(action.kind) && /\bnu\s+(?:mai\s+)?(?:crea|creati|programa|programati|adauga|adaugati)\b/.test(text)) return false;
-  const verbs = action.kind === 'import_owner_listing' ? 'importa|import|salveaza' : action.kind === 'recommend_properties' ? 'recomanda|adauga|recommend|add' : action.kind === 'update_task' ? 'marcheaza|finalizeaza|completeaza|actualizeaza|modifica|complete|update' : action.kind === 'add_interaction' ? 'noteaza|adauga|inregistreaza|add|record' : 'creeaza|creaza|adauga|programeaza|fa|create|add|schedule';
+  const verbs = action.kind === 'import_owner_listing' ? 'importa|import|salveaza' : action.kind === 'recommend_properties' ? 'recomanda|adauga|recommend|add' : action.kind === 'update_task' ? 'marcheaza|finalizeaza|completeaza|actualizeaza|modifica|redeschide|muta|replanifica|complete|update' : action.kind === 'add_interaction' ? 'noteaza|adauga|inregistreaza|add|record' : 'creeaza|creaza|adauga|programeaza|fa|create|add|schedule';
   return new RegExp(`\\b(${verbs})\\b`).test(text) && !new RegExp(`\\b(nu|not|dont)\\s+(?:\\w+\\s+){0,2}(${verbs})\\b`).test(text);
 }
 export async function autonomyPolicy(ctx: AssistantContext) {

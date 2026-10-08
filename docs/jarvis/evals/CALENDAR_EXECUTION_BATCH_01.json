@@ -1,0 +1,2992 @@
+{
+  "schemaVersion": 1,
+  "scope": "Five unchanged original corpus prompts; real model, normal tool selection and CRM executor transactions against isolated local Firestore. Global search uses the production route with fixture auth. External catalog, live production, browser/voice and full variant coverage are not certified.",
+  "fixture": "Unique synthetic agency and actor per case, explicit task/viewing autonomy policy. Existing Andrei and Titan property. Existing task for edits; selected-task conversation context for 0180/0181. All fixture data removed after readback and idempotent replay.",
+  "source": "docs/jarvis/evals/master-scenarios.json",
+  "test": "src/lib/ai-assistant/__tests__/corpus-calendar.live.integration.test.ts",
+  "command": "npm run test:jarvis:rules -- --corpus-calendar-live",
+  "outcomeChecks": [
+    "exact original prompt",
+    "requested action kind",
+    "all actions executed",
+    "stored relationships and statuses",
+    "Bucharest calendar instant",
+    "committed receipt confirmation",
+    "same request replay returns same receipts and counts"
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0156",
+      "prompt": "Programează apartamentul din Titan cu Andrei mâine la 17.",
+      "versions": {
+        "prompt": "jarvis-33",
+        "routing": "luna-first-2",
+        "policy": "tenant-approval-6",
+        "tools": "60",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T07:41:25.815Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "schedule_viewing",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "viewingDate": "2026-10-09T14:00:00.000Z",
+          "duration": 60,
+          "notes": ""
+        }
+      ],
+      "tools": [
+        {
+          "name": "query_records",
+          "status": "success",
+          "latencyMs": 714,
+          "version": "60",
+          "argumentsHash": "26d23499e9f626965050f2d856e1497af836de52d1d2af1273550de793eaf896"
+        },
+        {
+          "name": "query_records",
+          "status": "success",
+          "latencyMs": 36,
+          "version": "60",
+          "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 26,
+          "version": "60",
+          "argumentsHash": "bd9fe1b6591d9f90b9705043c4ad362d5a1228f3b08f23de23d7a4c56eead73a"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 17,
+          "version": "60",
+          "argumentsHash": "630b853ed1d1683bf570ffaa68cf5644b33824ba0f0cc662cebb094f02f8314b"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 11,
+          "version": "60",
+          "argumentsHash": "ed3064170cb12a18d8ab1cf1f53f5142ff4a62dfb663b292d3dca715fd49c939"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 9,
+          "version": "60",
+          "argumentsHash": "f216eaf468a238351785f778c0f0d1f6d2c5e89a2833b4d619184c36d08f6576"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7796,
+            "outputTokens": 80,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 7793,
+            "estimated": false
+          },
+          "costUsd": 0.001014425,
+          "latencyMs": 2364,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7983,
+            "outputTokens": 81,
+            "cachedTokens": 7793,
+            "cacheWriteTokens": 187,
+            "estimated": false
+          },
+          "costUsd": 0.000142105,
+          "latencyMs": 1627,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8171,
+            "outputTokens": 42,
+            "cachedTokens": 7980,
+            "cacheWriteTokens": 188,
+            "estimated": false
+          },
+          "costUsd": 0.0001246,
+          "latencyMs": 1512,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8288,
+            "outputTokens": 27,
+            "cachedTokens": 8168,
+            "cacheWriteTokens": 117,
+            "estimated": false
+          },
+          "costUsd": 0.000110105,
+          "latencyMs": 1541,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8498,
+            "outputTokens": 64,
+            "cachedTokens": 8285,
+            "cacheWriteTokens": 210,
+            "estimated": false
+          },
+          "costUsd": 0.0001414,
+          "latencyMs": 2643,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8584,
+            "outputTokens": 158,
+            "cachedTokens": 8495,
+            "cacheWriteTokens": 86,
+            "estimated": false
+          },
+          "costUsd": 0.000175,
+          "latencyMs": 2543,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8767,
+            "outputTokens": 72,
+            "cachedTokens": 8581,
+            "cacheWriteTokens": 183,
+            "estimated": false
+          },
+          "costUsd": 0.000144985,
+          "latencyMs": 3188,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0018526200000000004,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "schedule_viewing",
+            "result": {
+              "viewingId": "9ac0e36f-7640-49e2-8ca0-464cb6d16087-safe-0",
+              "viewingDate": "2026-10-09T14:00:00.000Z",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "link": "/viewings"
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Vizionare programată pentru „Apartament Titan” cu Andrei: 09.10.2026, 17:00, ora Bucureștiului. ID: 9ac0e36f-7640-49e2-8ca0-464cb6d16087-safe-0.",
+      "storedTasks": [],
+      "storedViewings": [
+        {
+          "agentId": "9ac0e36f-7640-49e2-8ca0-464cb6d16087",
+          "notes": "",
+          "contactId": "andrei",
+          "propertyAddress": "Titan",
+          "contactName": "Andrei",
+          "agentName": "Agent local",
+          "viewingDate": "2026-10-09T14:00:00.000Z",
+          "duration": 60,
+          "createdAt": "2026-10-08T07:41:44.081Z",
+          "id": "9ac0e36f-7640-49e2-8ca0-464cb6d16087-safe-0",
+          "propertyId": "titan",
+          "propertyTitle": "Apartament Titan",
+          "status": "scheduled",
+          "updatedAt": "2026-10-08T07:41:44.081Z"
+        }
+      ],
+      "promptSha256": "0c5c69c53582c98b6fadad6fd89d234aef4a4f821181ce2e6de9c5973c404e14"
+    },
+    {
+      "scenarioId": "master-0178",
+      "prompt": "Creează-mi un task să îl sun pe Andrei mâine la 10.",
+      "versions": {
+        "prompt": "jarvis-33",
+        "routing": "luna-first-2",
+        "policy": "tenant-approval-6",
+        "tools": "60",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T07:41:44.547Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "description": "Sună-l pe Andrei",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "contactId": "andrei"
+        }
+      ],
+      "tools": [
+        {
+          "name": "search_global",
+          "status": "success",
+          "latencyMs": 93,
+          "version": "60",
+          "argumentsHash": "1c18beaceb114c0033a8670702aa31b191419642fe286e75e2e6bab9cbf44820"
+        },
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 27,
+          "version": "60",
+          "argumentsHash": "7a9965dfa3f0ca67ea7982bb4582668dd60b524567982b77ba3d5bc73bb0853f"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 12,
+          "version": "60",
+          "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 10,
+          "version": "60",
+          "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+        },
+        {
+          "name": "create_task",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "60",
+          "argumentsHash": "3bf7043657fc57b556aace480e479dd2a6652c822aa427c28ff95d0216a00d34"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 6,
+          "version": "60",
+          "argumentsHash": "e2554c9e33139be7936ec37b902d5a4178fc54e394a92e9e243749d2a99b7a0f"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7794,
+            "outputTokens": 19,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 7791,
+            "estimated": false
+          },
+          "costUsd": 0.000983675,
+          "latencyMs": 2073,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7909,
+            "outputTokens": 34,
+            "cachedTokens": 7791,
+            "cacheWriteTokens": 115,
+            "estimated": false
+          },
+          "costUsd": 0.00010958499999999999,
+          "latencyMs": 1909,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8015,
+            "outputTokens": 42,
+            "cachedTokens": 7906,
+            "cacheWriteTokens": 106,
+            "estimated": false
+          },
+          "costUsd": 0.00011361,
+          "latencyMs": 1778,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8130,
+            "outputTokens": 25,
+            "cachedTokens": 8012,
+            "cacheWriteTokens": 115,
+            "estimated": false
+          },
+          "costUsd": 0.000107295,
+          "latencyMs": 1448,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8406,
+            "outputTokens": 54,
+            "cachedTokens": 8127,
+            "cacheWriteTokens": 276,
+            "estimated": false
+          },
+          "costUsd": 0.00014307,
+          "latencyMs": 2482,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8481,
+            "outputTokens": 121,
+            "cachedTokens": 8403,
+            "cacheWriteTokens": 75,
+            "estimated": false
+          },
+          "costUsd": 0.00015420499999999998,
+          "latencyMs": 2918,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8627,
+            "outputTokens": 71,
+            "cachedTokens": 8478,
+            "cacheWriteTokens": 146,
+            "estimated": false
+          },
+          "costUsd": 0.00013883,
+          "latencyMs": 2078,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00175027,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "a2884488-6181-44b5-a610-3a5f4ae775d0-safe-0",
+              "link": "/tasks",
+              "description": "Sună-l pe Andrei",
+              "status": "open",
+              "dueDate": "2026-10-09T07:00:00.000Z",
+              "startTime": "10:00"
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task creat: „Sună-l pe Andrei”. Data: 2026-10-09, 10:00, ora Bucureștiului. ID: a2884488-6181-44b5-a610-3a5f4ae775d0-safe-0.",
+      "storedTasks": [
+        {
+          "description": "Sună-l pe Andrei",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "contactId": "andrei",
+          "startTime": "10:00",
+          "id": "a2884488-6181-44b5-a610-3a5f4ae775d0-safe-0",
+          "status": "open",
+          "agentId": "a2884488-6181-44b5-a610-3a5f4ae775d0",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T07:41:59.531Z",
+          "contactName": "Andrei"
+        }
+      ],
+      "storedViewings": [],
+      "promptSha256": "4f6e69f28965723319bdc90c6715efc9e19ecf563c03cd83a1c57bb9c29c04ed"
+    },
+    {
+      "scenarioId": "master-0179",
+      "prompt": "Modifică taskul de mâine la ora 11.",
+      "versions": {
+        "prompt": "jarvis-33",
+        "routing": "luna-first-2",
+        "policy": "tenant-approval-6",
+        "tools": "60",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T07:41:59.840Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "update_task",
+          "startTime": "11:00",
+          "taskId": "task-selected",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "dueDate": "2026-10-09T08:00:00.000Z"
+        }
+      ],
+      "tools": [
+        {
+          "name": "query_records",
+          "status": "success",
+          "latencyMs": 105,
+          "version": "60",
+          "argumentsHash": "5b21ae939880c06431d76fe1a9a0ef0aa2968e92ead29f09701fb3c7c5b10b29"
+        },
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 35,
+          "version": "60",
+          "argumentsHash": "df2a89cd0693beb56586c45f26731b401aa558af80afee10f1eeca5a91204db8"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 10,
+          "version": "60",
+          "argumentsHash": "1f5f59358a0a30e37f8345a739351fbced1b00f7e6b6b3d63281c75878f238b5"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "60",
+          "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+        },
+        {
+          "name": "update_task",
+          "status": "success",
+          "latencyMs": 29,
+          "version": "60",
+          "argumentsHash": "4453235fb91a2d7dee6b0aedb499bb0e9d1dcff2e7cd462322fe54d054d832f1"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 24,
+          "version": "60",
+          "argumentsHash": "86d59cc070d1e820f24b054e49547958ffa6ffd1aeb5223206c9513471e9217c"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7788,
+            "outputTokens": 104,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 7785,
+            "estimated": false
+          },
+          "costUsd": 0.001025425,
+          "latencyMs": 2404,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8102,
+            "outputTokens": 34,
+            "cachedTokens": 7785,
+            "cacheWriteTokens": 314,
+            "estimated": false
+          },
+          "costUsd": 0.00013440000000000001,
+          "latencyMs": 2290,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8288,
+            "outputTokens": 47,
+            "cachedTokens": 8099,
+            "cacheWriteTokens": 186,
+            "estimated": false
+          },
+          "costUsd": 0.00012804,
+          "latencyMs": 1694,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8409,
+            "outputTokens": 25,
+            "cachedTokens": 8285,
+            "cacheWriteTokens": 121,
+            "estimated": false
+          },
+          "costUsd": 0.00011077500000000001,
+          "latencyMs": 1872,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8728,
+            "outputTokens": 71,
+            "cachedTokens": 8406,
+            "cacheWriteTokens": 319,
+            "estimated": false
+          },
+          "costUsd": 0.00015973500000000001,
+          "latencyMs": 1697,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8820,
+            "outputTokens": 149,
+            "cachedTokens": 8725,
+            "cacheWriteTokens": 92,
+            "estimated": false
+          },
+          "costUsd": 0.00017355000000000002,
+          "latencyMs": 4311,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8994,
+            "outputTokens": 67,
+            "cachedTokens": 8817,
+            "cacheWriteTokens": 174,
+            "estimated": false
+          },
+          "costUsd": 0.00014371999999999999,
+          "latencyMs": 1925,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001875645,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "update_task",
+            "result": {
+              "taskId": "task-selected",
+              "link": "/tasks",
+              "description": "Sună-l pe Andrei",
+              "status": "open",
+              "dueDate": "2026-10-09T08:00:00.000Z",
+              "startTime": "11:00",
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "task-selected",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T07:42:16.380Z"
+              }
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task actualizat: „Sună-l pe Andrei”. Data: 2026-10-09, 11:00, ora Bucureștiului. ID: task-selected.",
+      "storedTasks": [
+        {
+          "id": "task-selected",
+          "description": "Sună-l pe Andrei",
+          "duration": 30,
+          "contactId": "andrei",
+          "contactName": "Andrei",
+          "agentId": "2e647647-2d78-437b-9c3b-157822ce084d",
+          "status": "open",
+          "dueDate": "2026-10-09T08:00:00.000Z",
+          "startTime": "11:00",
+          "updatedAt": "2026-10-08T07:42:16.380Z"
+        }
+      ],
+      "storedViewings": [],
+      "promptSha256": "04991deabef5487a9427638c964912b24947abcf14d82563e31995e1726be853"
+    },
+    {
+      "scenarioId": "master-0180",
+      "prompt": "Marchează taskul acesta ca finalizat.",
+      "versions": {
+        "prompt": "jarvis-33",
+        "routing": "luna-first-2",
+        "policy": "tenant-approval-6",
+        "tools": "60",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T07:42:16.663Z",
+      "context": [
+        {
+          "role": "assistant",
+          "text": "Taskul selectat este task-selected: Sună-l pe Andrei.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "tasks",
+              "title": "Task selectat",
+              "rows": [
+                {
+                  "id": "task-selected",
+                  "description": "Sună-l pe Andrei",
+                  "dueDate": "2026-10-09T07:00:00.000Z",
+                  "startTime": "10:00",
+                  "duration": 30,
+                  "contactId": "andrei",
+                  "contactName": "Andrei",
+                  "agentId": "8b177658-d5c7-4ce3-9b66-7e179845c204",
+                  "status": "open",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T07:42:16.663Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "update_task",
+          "taskId": "task-selected",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "status": "completed"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 25,
+          "version": "60",
+          "argumentsHash": "df2a89cd0693beb56586c45f26731b401aa558af80afee10f1eeca5a91204db8"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "60",
+          "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+        },
+        {
+          "name": "update_task",
+          "status": "success",
+          "latencyMs": 33,
+          "version": "60",
+          "argumentsHash": "77dc177ba0498fabae38d2c69c9d58e71483d0c7c4fc065ca5d4bfbff0b5f207"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 22,
+          "version": "60",
+          "argumentsHash": "432ae0f61bb0061a218b41ed06e1953296761447f5221092a928399e5eef41cc"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7853,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 7850,
+            "estimated": false
+          },
+          "costUsd": 0.00099855,
+          "latencyMs": 1896,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8041,
+            "outputTokens": 25,
+            "cachedTokens": 7850,
+            "cacheWriteTokens": 188,
+            "estimated": false
+          },
+          "costUsd": 0.0001148,
+          "latencyMs": 1545,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8361,
+            "outputTokens": 49,
+            "cachedTokens": 8038,
+            "cacheWriteTokens": 320,
+            "estimated": false
+          },
+          "costUsd": 0.00014518000000000002,
+          "latencyMs": 2144,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8431,
+            "outputTokens": 86,
+            "cachedTokens": 8358,
+            "cacheWriteTokens": 70,
+            "estimated": false
+          },
+          "costUsd": 0.00013563,
+          "latencyMs": 3527,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8542,
+            "outputTokens": 62,
+            "cachedTokens": 8428,
+            "cacheWriteTokens": 111,
+            "estimated": false
+          },
+          "costUsd": 0.00012945499999999997,
+          "latencyMs": 2742,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0015236149999999999,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "update_task",
+            "result": {
+              "taskId": "task-selected",
+              "link": "/tasks",
+              "description": "Sună-l pe Andrei",
+              "status": "completed",
+              "dueDate": "2026-10-09T07:00:00.000Z",
+              "startTime": "10:00",
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "task-selected",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T07:42:28.757Z"
+              }
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task finalizat: „Sună-l pe Andrei”. Data: 2026-10-09, 10:00, ora Bucureștiului. ID: task-selected.",
+      "storedTasks": [
+        {
+          "id": "task-selected",
+          "description": "Sună-l pe Andrei",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "startTime": "10:00",
+          "duration": 30,
+          "contactId": "andrei",
+          "contactName": "Andrei",
+          "agentId": "8b177658-d5c7-4ce3-9b66-7e179845c204",
+          "status": "completed",
+          "updatedAt": "2026-10-08T07:42:28.757Z"
+        }
+      ],
+      "storedViewings": [],
+      "promptSha256": "7f44cd90e279aa712500a4b70524fc1da3a7035cd359e5cc4977838cd401949b"
+    },
+    {
+      "scenarioId": "master-0181",
+      "prompt": "Redeschide taskul acesta.",
+      "versions": {
+        "prompt": "jarvis-33",
+        "routing": "luna-first-2",
+        "policy": "tenant-approval-6",
+        "tools": "60",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T07:42:28.974Z",
+      "context": [
+        {
+          "role": "assistant",
+          "text": "Taskul selectat este task-selected: Sună-l pe Andrei.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "tasks",
+              "title": "Task selectat",
+              "rows": [
+                {
+                  "id": "task-selected",
+                  "description": "Sună-l pe Andrei",
+                  "dueDate": "2026-10-09T07:00:00.000Z",
+                  "startTime": "10:00",
+                  "duration": 30,
+                  "contactId": "andrei",
+                  "contactName": "Andrei",
+                  "agentId": "1e12629a-8eed-4531-84a6-70581e1321e0",
+                  "status": "completed",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T07:42:28.974Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "update_task",
+          "taskId": "task-selected",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "status": "open"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 399,
+          "version": "60",
+          "argumentsHash": "df2a89cd0693beb56586c45f26731b401aa558af80afee10f1eeca5a91204db8"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 17,
+          "version": "60",
+          "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+        },
+        {
+          "name": "update_task",
+          "status": "success",
+          "latencyMs": 30,
+          "version": "60",
+          "argumentsHash": "519ffc76ba68ffba1a878b028ec2ee5a1797430d2fef494f6c10fa1c389ea357"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 16,
+          "version": "60",
+          "argumentsHash": "8b769ae23d38bf0b78b443b5f123de106876f6f34aaed63ed84c5b741368b98e"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 7850,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 7847,
+            "estimated": false
+          },
+          "costUsd": 0.000998175,
+          "latencyMs": 1608,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8038,
+            "outputTokens": 25,
+            "cachedTokens": 7847,
+            "cacheWriteTokens": 188,
+            "estimated": false
+          },
+          "costUsd": 0.00011477,
+          "latencyMs": 1579,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8355,
+            "outputTokens": 49,
+            "cachedTokens": 8035,
+            "cacheWriteTokens": 317,
+            "estimated": false
+          },
+          "costUsd": 0.000144775,
+          "latencyMs": 2549,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8425,
+            "outputTokens": 86,
+            "cachedTokens": 8352,
+            "cacheWriteTokens": 70,
+            "estimated": false
+          },
+          "costUsd": 0.00013557,
+          "latencyMs": 2246,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8536,
+            "outputTokens": 67,
+            "cachedTokens": 8422,
+            "cacheWriteTokens": 111,
+            "estimated": false
+          },
+          "costUsd": 0.00013189499999999998,
+          "latencyMs": 2171,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0015251849999999999,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "update_task",
+            "result": {
+              "taskId": "task-selected",
+              "link": "/tasks",
+              "description": "Sună-l pe Andrei",
+              "status": "open",
+              "dueDate": "2026-10-09T07:00:00.000Z",
+              "startTime": "10:00",
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "task-selected",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T07:42:39.686Z"
+              }
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task actualizat: „Sună-l pe Andrei”. Data: 2026-10-09, 10:00, ora Bucureștiului. ID: task-selected.",
+      "storedTasks": [
+        {
+          "id": "task-selected",
+          "description": "Sună-l pe Andrei",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "startTime": "10:00",
+          "duration": 30,
+          "contactId": "andrei",
+          "contactName": "Andrei",
+          "agentId": "1e12629a-8eed-4531-84a6-70581e1321e0",
+          "status": "open",
+          "updatedAt": "2026-10-08T07:42:39.686Z"
+        }
+      ],
+      "storedViewings": [],
+      "promptSha256": "36cdaab611cf80c4e922866cf47bf6f3cdcfcdb3f9aed278d17c4621f496074e"
+    }
+  ],
+  "previousAttempts": [
+    {
+      "attempt": 1,
+      "cases": [
+        {
+          "scenarioId": "master-0156",
+          "runAt": "2026-10-08T07:16:42.546Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Nu am putut căuta în CRM — căutarea globală nu este disponibilă. Ca să programez vizionarea, spune-mi care apartament din Titan și care Andrei (de exemplu, numărul de telefon al clientului).\nCerințe încă neacoperite: Identifică apartamentul din Titan și contactul Andrei, rezolvă data/ora de mâine 17:00 și pregătește programarea vizionării.: expected 'clarification' to be 'success' // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "failed",
+              "latencyMs": 720,
+              "version": "59",
+              "argumentsHash": "b827d0dde122c29efbbe2bf29a4953c8e99387012a9c103e5487a41504650ada"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 10,
+              "version": "59",
+              "argumentsHash": "9d75d2108e930182c587de47cd81792042a9460663b1018f16dcc2d660d9f35f"
+            }
+          ],
+          "costUsd": 0.001126
+        },
+        {
+          "scenarioId": "master-0178",
+          "runAt": "2026-10-08T07:16:53.869Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "59",
+              "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+            },
+            {
+              "name": "search_global",
+              "status": "failed",
+              "latencyMs": 22,
+              "version": "59",
+              "argumentsHash": "1c18beaceb114c0033a8670702aa31b191419642fe286e75e2e6bab9cbf44820"
+            },
+            {
+              "name": "query_records",
+              "status": "failed",
+              "latencyMs": 17,
+              "version": "59",
+              "argumentsHash": "da5db0c9c7f76142d671f88a485a1fead7df31cd7e8537d010719495fd20dfc0"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 29,
+              "version": "59",
+              "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+            },
+            {
+              "name": "create_task",
+              "status": "failed",
+              "latencyMs": 13,
+              "version": "59",
+              "argumentsHash": "746cde537804f6eebbb90094b2f8d1a585df99457588a8f93b6a2556f0256ebe"
+            },
+            {
+              "name": "create_task",
+              "status": "failed",
+              "latencyMs": 23,
+              "version": "59",
+              "argumentsHash": "f008c4c5d3ee23872c84665982048213ccaf084dbe8a092d41a83a06dd1c1cd5"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 21,
+              "version": "59",
+              "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+            }
+          ],
+          "costUsd": 0.02508742
+        },
+        {
+          "scenarioId": "master-0179",
+          "runAt": "2026-10-08T07:17:14.497Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "failed",
+              "latencyMs": 21,
+              "version": "59",
+              "argumentsHash": "b6243591bdaa8df090f0056b3efedbc8d9979836b0b4f8a2df39a11ff2184564"
+            },
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 29,
+              "version": "59",
+              "argumentsHash": "7d6558379a8a018da4183e2c1978e71d939f9af574ec16fd3a3f04b0e25f93b6"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 106,
+              "version": "59",
+              "argumentsHash": "68c7a25f48a1e5faac6f63384bdbf41ad28c8b5e0aff0998aa8f52a5a621056d"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "59",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "59",
+              "argumentsHash": "1f5f59358a0a30e37f8345a739351fbced1b00f7e6b6b3d63281c75878f238b5"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 28,
+              "version": "59",
+              "argumentsHash": "122c7a00f49b65d2aa6e3b1d40c42fc2e861672bfe842870b91835d491e42c53"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "59",
+              "argumentsHash": "368da12e4916d5cdf4284dd1e150cb8fb779be571153580b7aa75d7dd2a09632"
+            }
+          ],
+          "costUsd": 0.0019560199999999997
+        },
+        {
+          "scenarioId": "master-0180",
+          "runAt": "2026-10-08T07:17:33.404Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "expected true to be false // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 18,
+              "version": "59",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 7,
+              "version": "59",
+              "argumentsHash": "79135c242ce03bef6db79a96fec6d67d865cfa77b1ca927948c95f5f9c67f930"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 6,
+              "version": "59",
+              "argumentsHash": "19984941d13b0572db23b2c9708672a50bb48972e20bd0d8a9f64a303d93f342"
+            }
+          ],
+          "costUsd": 0.001501275
+        },
+        {
+          "scenarioId": "master-0181",
+          "runAt": "2026-10-08T07:17:43.458Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "expected [ { kind: 'update_task', …(7) } ] to deeply equal []",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 24,
+              "version": "59",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 29,
+              "version": "59",
+              "argumentsHash": "717787c15328dff7bbacb776c01801103e157ed323894e161d5353b15c7e5742"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 6,
+              "version": "59",
+              "argumentsHash": "11599c63ecc633300c896caa38c96678a592ecbadc0b11cc0dac42b6bb59210a"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 18,
+              "version": "59",
+              "argumentsHash": "8cd3211016715650e68364ccfe4f1caff58194b1720e4daffff9c48278ac27a6"
+            }
+          ],
+          "costUsd": 0.0016416550000000001
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "cases": [
+        {
+          "scenarioId": "master-0156",
+          "runAt": "2026-10-08T07:24:38.410Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality",
+          "diagnostics": [
+            {
+              "callId": "call_Kl1BXt1Qrv5RwzbqcVCBwz8m",
+              "error": "Argumente/rezultat invalid: calls.0.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.0.payload: Required; calls.0: Unrecognized key(s) in object: 'params', 'query', 'body'; calls.1.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.1.payload: Required; calls.1: Unrecognized key(s) in object: 'params', 'query', 'body'"
+            },
+            {
+              "callId": "call_Kl1BXt1Qrv5RwzbqcVCBwz8m",
+              "error": "Argumente/rezultat invalid: calls.0.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.0.payload: Required; calls.0: Unrecognized key(s) in object: 'params', 'query', 'body'; calls.1.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.1.payload: Required; calls.1: Unrecognized key(s) in object: 'params', 'query', 'body'"
+            },
+            {
+              "callId": "call_ARkmR1lKeH1EQD4kh4uVKu7D",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_Kl1BXt1Qrv5RwzbqcVCBwz8m",
+              "error": "Argumente/rezultat invalid: calls.0.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.0.payload: Required; calls.0: Unrecognized key(s) in object: 'params', 'query', 'body'; calls.1.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.1.payload: Required; calls.1: Unrecognized key(s) in object: 'params', 'query', 'body'"
+            },
+            {
+              "callId": "call_ARkmR1lKeH1EQD4kh4uVKu7D",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_Kl1BXt1Qrv5RwzbqcVCBwz8m",
+              "error": "Argumente/rezultat invalid: calls.0.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.0.payload: Required; calls.0: Unrecognized key(s) in object: 'params', 'query', 'body'; calls.1.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.1.payload: Required; calls.1: Unrecognized key(s) in object: 'params', 'query', 'body'"
+            },
+            {
+              "callId": "call_ARkmR1lKeH1EQD4kh4uVKu7D",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_Kl1BXt1Qrv5RwzbqcVCBwz8m",
+              "error": "Argumente/rezultat invalid: calls.0.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.0.payload: Required; calls.0: Unrecognized key(s) in object: 'params', 'query', 'body'; calls.1.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.1.payload: Required; calls.1: Unrecognized key(s) in object: 'params', 'query', 'body'"
+            },
+            {
+              "callId": "call_ARkmR1lKeH1EQD4kh4uVKu7D",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_Kl1BXt1Qrv5RwzbqcVCBwz8m",
+              "error": "Argumente/rezultat invalid: calls.0.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.0.payload: Required; calls.0: Unrecognized key(s) in object: 'params', 'query', 'body'; calls.1.operation: Invalid enum value. Expected 'read' | 'read_related' | 'search_properties' | 'match_contact' | 'match_property' | 'insights', received 'query_records'; calls.1.payload: Required; calls.1: Unrecognized key(s) in object: 'params', 'query', 'body'"
+            },
+            {
+              "callId": "call_ARkmR1lKeH1EQD4kh4uVKu7D",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            }
+          ],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 697,
+              "version": "59",
+              "argumentsHash": "b827d0dde122c29efbbe2bf29a4953c8e99387012a9c103e5487a41504650ada"
+            },
+            {
+              "name": "parallel_read",
+              "status": "failed",
+              "latencyMs": 30,
+              "version": "59",
+              "argumentsHash": "f9e003a125112e7dc14a691f4e534257744aa77ff0dbb9866a501e2fb5496d9d"
+            },
+            {
+              "name": "query_records",
+              "status": "failed",
+              "latencyMs": 20,
+              "version": "59",
+              "argumentsHash": "8597a402fc39443f31cfdf72559d988c75ac60d116eb9ac0e20542422292f79f"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 31,
+              "version": "59",
+              "argumentsHash": "26d23499e9f626965050f2d856e1497af836de52d1d2af1273550de793eaf896"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 28,
+              "version": "59",
+              "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "59",
+              "argumentsHash": "bd9fe1b6591d9f90b9705043c4ad362d5a1228f3b08f23de23d7a4c56eead73a"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "59",
+              "argumentsHash": "630b853ed1d1683bf570ffaa68cf5644b33824ba0f0cc662cebb094f02f8314b"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 11,
+              "version": "59",
+              "argumentsHash": "3970d3c665855989ec0fb1fea2e9d215182ad95baad90df651a4500f77b37ae9"
+            }
+          ],
+          "costUsd": 0.00186667
+        },
+        {
+          "scenarioId": "master-0178",
+          "runAt": "2026-10-08T07:25:02.025Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "expected undefined to be '2026-10-09T07:00:00.000Z' // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 38,
+              "version": "59",
+              "argumentsHash": "1c18beaceb114c0033a8670702aa31b191419642fe286e75e2e6bab9cbf44820"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "59",
+              "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "59",
+              "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 21,
+              "version": "59",
+              "argumentsHash": "8f5a8471f4db594bc28c3e4cf551e7c4bb488e2e0fa23f8de77d6e5f731f3fbc"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 13,
+              "version": "59",
+              "argumentsHash": "3fcf00f80420a965d0c1d518c0be3cfa23a30c5f153501803521d8d3b98d0190"
+            }
+          ],
+          "costUsd": 0.00155114
+        },
+        {
+          "scenarioId": "master-0179",
+          "runAt": "2026-10-08T07:25:14.733Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [
+            {
+              "callId": "call_PVctG6KLxzUDleyTudOsopHh",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_PVctG6KLxzUDleyTudOsopHh",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_PVctG6KLxzUDleyTudOsopHh",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_PVctG6KLxzUDleyTudOsopHh",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_PVctG6KLxzUDleyTudOsopHh",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            },
+            {
+              "callId": "call_PVctG6KLxzUDleyTudOsopHh",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 30"
+            }
+          ],
+          "tools": [
+            {
+              "name": "query_records",
+              "status": "failed",
+              "latencyMs": 8,
+              "version": "59",
+              "argumentsHash": "d3100595ee8e9cc320f612c919b719ba8baebf206806fc054fe1b5a05b8994de"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 104,
+              "version": "59",
+              "argumentsHash": "a73bae27c8f30d7fe4327b22ffe2195d799350f57d8470cd78cb5aacef3e4073"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "59",
+              "argumentsHash": "1f5f59358a0a30e37f8345a739351fbced1b00f7e6b6b3d63281c75878f238b5"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 15,
+              "version": "59",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "59",
+              "argumentsHash": "e46c3a7e32fb3de9191422db9186cd49255d9936b9fbe255dc34e60130ff6286"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "59",
+              "argumentsHash": "51af165f3b44e0e80fa850955bd422151c54527dfed28f929dafbc0cf0329445"
+            }
+          ],
+          "costUsd": 0.0018823400000000001
+        },
+        {
+          "scenarioId": "master-0180",
+          "runAt": "2026-10-08T07:25:34.752Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 11,
+              "version": "59",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 27,
+              "version": "59",
+              "argumentsHash": "bc63a38dd2b42eca2e779e736dcafb59e9a4ae048f81366a079a6acc351edf2b"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 7,
+              "version": "59",
+              "argumentsHash": "1f3b7663357de737f1ee604f53b6c2280aafd11bf1eab06e4091912af59dcfda"
+            }
+          ],
+          "costUsd": 0.001277305
+        },
+        {
+          "scenarioId": "master-0181",
+          "runAt": "2026-10-08T07:25:43.322Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "59",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [
+            {
+              "callId": "call_TBoNXNrTN4nJbrno5LuYDtpB",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 20"
+            },
+            {
+              "callId": "call_TBoNXNrTN4nJbrno5LuYDtpB",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 20"
+            },
+            {
+              "callId": "call_TBoNXNrTN4nJbrno5LuYDtpB",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 20"
+            },
+            {
+              "callId": "call_TBoNXNrTN4nJbrno5LuYDtpB",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 20"
+            },
+            {
+              "callId": "call_TBoNXNrTN4nJbrno5LuYDtpB",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 20"
+            },
+            {
+              "callId": "call_TBoNXNrTN4nJbrno5LuYDtpB",
+              "error": "Argumente/rezultat invalid: limit: Number must be less than or equal to 20"
+            }
+          ],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "failed",
+              "latencyMs": 9,
+              "version": "59",
+              "argumentsHash": "4c73a6a5e2f6cda8ecf23d4a4eb2088d8f5782c584d86b35f9cd15b941e988ef"
+            },
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 25,
+              "version": "59",
+              "argumentsHash": "0e08d087e8d4dfc47cff70feed619bc39428538c9a95f87f6d59846e984e75b6"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 13,
+              "version": "59",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 36,
+              "version": "59",
+              "argumentsHash": "717787c15328dff7bbacb776c01801103e157ed323894e161d5353b15c7e5742"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 12,
+              "version": "59",
+              "argumentsHash": "14c5d46ff996da9c56771e7300a6938d32b28753847ccf85f13eee6f64811302"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 12,
+              "version": "59",
+              "argumentsHash": "fe7a61a8bce28e8f2f351ebe45039472952d76fc683635f42194f1c737cadb6b"
+            }
+          ],
+          "costUsd": 0.0016110000000000002
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "cases": [
+        {
+          "scenarioId": "master-0156",
+          "runAt": "2026-10-08T07:28:21.195Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Am găsit un singur contact „Andrei” și am stabilit ora pentru mâine, 9 octombrie 2026, la 17:00 (Europe/Bucharest). Nu am putut identifica apartamentul: căutarea în Titan necesită să precizezi orașul. În ce oraș este apartamentul?\nCerințe încă neacoperite: Pregătește programarea vizionării apartamentului Titan cu contactul Andrei pentru mâine la 17:00.: expected 'clarification' to be 'success' // Object.is equality",
+          "diagnostics": [
+            {
+              "callId": "call_R4GkEdXzY7bPHg5lHbJpoGJg",
+              "error": "Precizează orașul/scopeKey; orașul agenției nu este configurat."
+            }
+          ],
+          "tools": [
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 543,
+              "version": "60",
+              "argumentsHash": "bd9fe1b6591d9f90b9705043c4ad362d5a1228f3b08f23de23d7a4c56eead73a"
+            },
+            {
+              "name": "search_properties",
+              "status": "failed",
+              "latencyMs": 27,
+              "version": "60",
+              "argumentsHash": "7bb70a890256f57e2678d82e802e208a74e34bd0adb0ad39c2a72cae7ec211da"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 92,
+              "version": "60",
+              "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 12,
+              "version": "60",
+              "argumentsHash": "bf1c31239bff926fc44859581e0ff72b6c512d7592787ebbe4706fec835014f8"
+            }
+          ],
+          "costUsd": 0.0016023749999999998
+        },
+        {
+          "scenarioId": "master-0178",
+          "runAt": "2026-10-08T07:28:38.680Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [
+            {
+              "callId": "call_hvQRMgbQum7TmGMGIgze7QAv",
+              "error": "Argumente/rezultat invalid: startTime: Invalid"
+            }
+          ],
+          "tools": [
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 32,
+              "version": "60",
+              "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 28,
+              "version": "60",
+              "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 20,
+              "version": "60",
+              "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+            },
+            {
+              "name": "create_task",
+              "status": "failed",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "4928f104be0b8e440fefc8247a58b5f1e7421ebb6788f8be38620fc6db34e844"
+            },
+            {
+              "name": "create_task",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "60",
+              "argumentsHash": "1c9c313ff066da08b5bbeca88c20253782daeab99635bda35110c06ec849f5a1"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 23,
+              "version": "60",
+              "argumentsHash": "4a3aeaac727ad9a38629803a10ef2b31c485365292f91ce29eaafd1a09da74bc"
+            }
+          ],
+          "costUsd": 0.0018423099999999996
+        },
+        {
+          "scenarioId": "master-0179",
+          "runAt": "2026-10-08T07:29:04.962Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 93,
+              "version": "60",
+              "argumentsHash": "6e38ef6239e43932b6b0e3700ade7bc082cc7aa0d4bb98e7f963d31c6d17242c"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 6,
+              "version": "60",
+              "argumentsHash": "1f5f59358a0a30e37f8345a739351fbced1b00f7e6b6b3d63281c75878f238b5"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 5,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 13,
+              "version": "60",
+              "argumentsHash": "e46c3a7e32fb3de9191422db9186cd49255d9936b9fbe255dc34e60130ff6286"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 21,
+              "version": "60",
+              "argumentsHash": "f5732ba66e28cf3eb1916b60a55e2361d337f151fb977f2979069a305e750e39"
+            }
+          ],
+          "costUsd": 0.00175213
+        },
+        {
+          "scenarioId": "master-0180",
+          "runAt": "2026-10-08T07:29:23.931Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 24,
+              "version": "60",
+              "argumentsHash": "87b054511571e3009c6f6c7ca27d46f41a02820c146fc5ce3527aaa734bee8bb"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 25,
+              "version": "60",
+              "argumentsHash": "e542c999c6eadca5636c1a2f581149c876a8d4cf0c257a6c92c3135853994530"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 6,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "60",
+              "argumentsHash": "bc63a38dd2b42eca2e779e736dcafb59e9a4ae048f81366a079a6acc351edf2b"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "60",
+              "argumentsHash": "fdc5f941bd11f83aef361fd50f3aa7bc77fd709870af7ceedaf9bb57bee3ab90"
+            }
+          ],
+          "costUsd": 0.001658295
+        },
+        {
+          "scenarioId": "master-0181",
+          "runAt": "2026-10-08T07:29:37.294Z",
+          "versions": {
+            "prompt": "jarvis-32",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "60",
+              "argumentsHash": "87b054511571e3009c6f6c7ca27d46f41a02820c146fc5ce3527aaa734bee8bb"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 20,
+              "version": "60",
+              "argumentsHash": "bf46deffb97aed3fd4060aa69ffde7af05065152d8c2af817362bf8ed375d17a"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 33,
+              "version": "60",
+              "argumentsHash": "14c5d46ff996da9c56771e7300a6938d32b28753847ccf85f13eee6f64811302"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "13c087903cf1dd01613f17a22a8a15f61f20357a8919849790cba60b0475878c"
+            }
+          ],
+          "costUsd": 0.0015820749999999998
+        }
+      ]
+    },
+    {
+      "attempt": 4,
+      "cases": [
+        {
+          "scenarioId": "master-0156",
+          "runAt": "2026-10-08T07:31:03.042Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 622,
+              "version": "60",
+              "argumentsHash": "26d23499e9f626965050f2d856e1497af836de52d1d2af1273550de793eaf896"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 43,
+              "version": "60",
+              "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 15,
+              "version": "60",
+              "argumentsHash": "bd9fe1b6591d9f90b9705043c4ad362d5a1228f3b08f23de23d7a4c56eead73a"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "60",
+              "argumentsHash": "8e4663217ba8e294cca6db4935cc092129c0cd8e343fbd1129b9361ef328338e"
+            },
+            {
+              "name": "schedule_viewing",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "7f4151cca4a13b864ff43902183451cea5608b62b7d165955618909c037e7f52"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 13,
+              "version": "60",
+              "argumentsHash": "adc8663474db36f45dba805e5de9bd2ef5f930bb9ad94acb2929cd7c87669e2a"
+            }
+          ],
+          "costUsd": 0.001798465
+        },
+        {
+          "scenarioId": "master-0178",
+          "runAt": "2026-10-08T07:31:21.681Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 90,
+              "version": "60",
+              "argumentsHash": "1c18beaceb114c0033a8670702aa31b191419642fe286e75e2e6bab9cbf44820"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 12,
+              "version": "60",
+              "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 36,
+              "version": "60",
+              "argumentsHash": "7a9965dfa3f0ca67ea7982bb4582668dd60b524567982b77ba3d5bc73bb0853f"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 21,
+              "version": "60",
+              "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+            },
+            {
+              "name": "create_task",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "5feaa942ee2f054e6dc806a6ccffd92ecf97d53a3a254cd9c815a1f31ab4a439"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 12,
+              "version": "60",
+              "argumentsHash": "e172276d180e2558539c7dc300500eef589fa32c415f71924aee53fa9ee8ec38"
+            }
+          ],
+          "costUsd": 0.0017540049999999999
+        },
+        {
+          "scenarioId": "master-0179",
+          "runAt": "2026-10-08T07:31:39.744Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality",
+          "diagnostics": [
+            {
+              "callId": "call_SQtk5tctDcNulJXSzMABwpcC",
+              "error": "Argumente/rezultat invalid: listingId: Required; patch: Required"
+            }
+          ],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 31,
+              "version": "60",
+              "argumentsHash": "29d2b864edb07f8cfabb2fb45af055c4566e15848ae32736b576d5fcb41e2fd3"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 110,
+              "version": "60",
+              "argumentsHash": "d803d0a6ef054bb267ede650dd05af82f4ec0ac15a81e65e7615480e1d12f905"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "1f5f59358a0a30e37f8345a739351fbced1b00f7e6b6b3d63281c75878f238b5"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 15,
+              "version": "60",
+              "argumentsHash": "717787c15328dff7bbacb776c01801103e157ed323894e161d5353b15c7e5742"
+            },
+            {
+              "name": "update_prospect",
+              "status": "failed",
+              "latencyMs": 7,
+              "version": "60",
+              "argumentsHash": "387fe611f323f711e24a506a3037605a044cb50feec97a00e0e3a33614821514"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "60",
+              "argumentsHash": "e46c3a7e32fb3de9191422db9186cd49255d9936b9fbe255dc34e60130ff6286"
+            }
+          ],
+          "costUsd": 0.0019344100000000001
+        },
+        {
+          "scenarioId": "master-0180",
+          "runAt": "2026-10-08T07:32:33.865Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [
+            {
+              "callId": "call_NavLtF3nTQKYOjbd9aa5PR2n",
+              "error": "Argumente/rezultat invalid: : Unrecognized key(s) in object: 'kind'"
+            }
+          ],
+          "tools": [
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 7,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "failed",
+              "latencyMs": 5,
+              "version": "60",
+              "argumentsHash": "84de8aead37730ea1b11de8861ab4f38f3cd8c1759d8ec4e664fbdc94c7787d6"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 28,
+              "version": "60",
+              "argumentsHash": "bc63a38dd2b42eca2e779e736dcafb59e9a4ae048f81366a079a6acc351edf2b"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "60",
+              "argumentsHash": "31e0b53d9fadf239e6ae8fc054c5787f4331833553e17ab74304c987794fac19"
+            }
+          ],
+          "costUsd": 0.0014882250000000001
+        },
+        {
+          "scenarioId": "master-0181",
+          "runAt": "2026-10-08T07:32:48.404Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 28,
+              "version": "60",
+              "argumentsHash": "87b054511571e3009c6f6c7ca27d46f41a02820c146fc5ce3527aaa734bee8bb"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 20,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 26,
+              "version": "60",
+              "argumentsHash": "14c5d46ff996da9c56771e7300a6938d32b28753847ccf85f13eee6f64811302"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 7,
+              "version": "60",
+              "argumentsHash": "94aefcb3c0d6bbe0055e4b7dce51019d00d3b9fcb493c65a5ed3fda49da6b642"
+            }
+          ],
+          "costUsd": 0.001477375
+        }
+      ]
+    },
+    {
+      "attempt": 5,
+      "cases": [
+        {
+          "scenarioId": "master-0156",
+          "runAt": "2026-10-08T07:35:01.049Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 612,
+              "version": "60",
+              "argumentsHash": "2f9980810cd7c6a82cf01a0a13d190e4b71fa99af8cb12ed7fdc5a1de45e0c07"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 15,
+              "version": "60",
+              "argumentsHash": "bd9fe1b6591d9f90b9705043c4ad362d5a1228f3b08f23de23d7a4c56eead73a"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 32,
+              "version": "60",
+              "argumentsHash": "97457580c9aadef47c6d5bf4a5f769536fd8f77b3fd3eca804270e00a50594e5"
+            },
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 20,
+              "version": "60",
+              "argumentsHash": "6b68a7524b7ac2e0f3b560fc046d349c0212df939959e522c04b020fd219ac91"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "60",
+              "argumentsHash": "630b853ed1d1683bf570ffaa68cf5644b33824ba0f0cc662cebb094f02f8314b"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 26,
+              "version": "60",
+              "argumentsHash": "7168816df3501c6bd880f6b54d46940cac3e9407b2a631da87c63062716593a4"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 14,
+              "version": "60",
+              "argumentsHash": "b043b54a7ef8193fd3cbae943d3ca38eba8ba997f762d43c696b7553137e758e"
+            }
+          ],
+          "costUsd": 0.001785515
+        },
+        {
+          "scenarioId": "master-0178",
+          "runAt": "2026-10-08T07:35:21.956Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 61,
+              "version": "60",
+              "argumentsHash": "1c18beaceb114c0033a8670702aa31b191419642fe286e75e2e6bab9cbf44820"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 27,
+              "version": "60",
+              "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "60",
+              "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+            },
+            {
+              "name": "create_task",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "60",
+              "argumentsHash": "5feaa942ee2f054e6dc806a6ccffd92ecf97d53a3a254cd9c815a1f31ab4a439"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 14,
+              "version": "60",
+              "argumentsHash": "e820a16bfa584ece750054f89f06ce3fe210cc9a9464e7f818307c9778a744a2"
+            }
+          ],
+          "costUsd": 0.001637125
+        },
+        {
+          "scenarioId": "master-0179",
+          "runAt": "2026-10-08T07:35:35.423Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 84,
+              "version": "60",
+              "argumentsHash": "cf1edc460e5285b5b38e51e9a96ff9f4f7ad410b1e90d86e65d1d715160fe089"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 21,
+              "version": "60",
+              "argumentsHash": "1f5f59358a0a30e37f8345a739351fbced1b00f7e6b6b3d63281c75878f238b5"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 15,
+              "version": "60",
+              "argumentsHash": "4453235fb91a2d7dee6b0aedb499bb0e9d1dcff2e7cd462322fe54d054d832f1"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "60",
+              "argumentsHash": "b08df417c6614e0ca6012639d72e482deeac2a7da6871f147301fd7afd830791"
+            }
+          ],
+          "costUsd": 0.001725805
+        },
+        {
+          "scenarioId": "master-0180",
+          "runAt": "2026-10-08T07:36:09.096Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "7d6558379a8a018da4183e2c1978e71d939f9af574ec16fd3a3f04b0e25f93b6"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 11,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 36,
+              "version": "60",
+              "argumentsHash": "bc63a38dd2b42eca2e779e736dcafb59e9a4ae048f81366a079a6acc351edf2b"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "60",
+              "argumentsHash": "a711cb8b93267b1af4dfa12dfd81fa7d1390beb1b275f812d836e8bccbbfa717"
+            }
+          ],
+          "costUsd": 0.0014951349999999999
+        },
+        {
+          "scenarioId": "master-0181",
+          "runAt": "2026-10-08T07:36:26.174Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 28,
+              "version": "60",
+              "argumentsHash": "717787c15328dff7bbacb776c01801103e157ed323894e161d5353b15c7e5742"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 46,
+              "version": "60",
+              "argumentsHash": "14c5d46ff996da9c56771e7300a6938d32b28753847ccf85f13eee6f64811302"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 12,
+              "version": "60",
+              "argumentsHash": "ddccee4844c2499d8af7131feacccdf817a77915ac5bad0049614b2ebdf042da"
+            }
+          ],
+          "costUsd": 0.00150102
+        }
+      ]
+    },
+    {
+      "attempt": 6,
+      "cases": [
+        {
+          "scenarioId": "master-0156",
+          "runAt": "2026-10-08T07:38:47.677Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 1034,
+              "version": "60",
+              "argumentsHash": "b827d0dde122c29efbbe2bf29a4953c8e99387012a9c103e5487a41504650ada"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 18,
+              "version": "60",
+              "argumentsHash": "bd9fe1b6591d9f90b9705043c4ad362d5a1228f3b08f23de23d7a4c56eead73a"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 37,
+              "version": "60",
+              "argumentsHash": "26d23499e9f626965050f2d856e1497af836de52d1d2af1273550de793eaf896"
+            },
+            {
+              "name": "query_records",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "60",
+              "argumentsHash": "f3315e910fe32b1017c83e9f6e32b63f70081b73986600bc5a010e2cbb5c8186"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 18,
+              "version": "60",
+              "argumentsHash": "630b853ed1d1683bf570ffaa68cf5644b33824ba0f0cc662cebb094f02f8314b"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "60",
+              "argumentsHash": "ed3064170cb12a18d8ab1cf1f53f5142ff4a62dfb663b292d3dca715fd49c939"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "60",
+              "argumentsHash": "c715b053c74fa42ff90d4d72bc93d04a85e4320a40f46618268e062d03649352"
+            }
+          ],
+          "costUsd": 0.0018352349999999997
+        },
+        {
+          "scenarioId": "master-0178",
+          "runAt": "2026-10-08T07:39:08.038Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "search_global",
+              "status": "success",
+              "latencyMs": 37,
+              "version": "60",
+              "argumentsHash": "1c18beaceb114c0033a8670702aa31b191419642fe286e75e2e6bab9cbf44820"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "60",
+              "argumentsHash": "27cce0101f8558ef1d012d799a0bba5e12bc629451904218eb6d1bab754e727e"
+            },
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 29,
+              "version": "60",
+              "argumentsHash": "7a9965dfa3f0ca67ea7982bb4582668dd60b524567982b77ba3d5bc73bb0853f"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 20,
+              "version": "60",
+              "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+            },
+            {
+              "name": "create_task",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "60",
+              "argumentsHash": "c8b37210bd216b864e55fa41f7689443a1b711855a1894085b5345ed25d6682f"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 31,
+              "version": "60",
+              "argumentsHash": "7e32c0a2de8e376abe45615803c6ff9dd5b4e9d675f1679e98af574dd8dcfda8"
+            }
+          ],
+          "costUsd": 0.0017676750000000002
+        },
+        {
+          "scenarioId": "master-0179",
+          "runAt": "2026-10-08T07:39:25.235Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "read",
+              "status": "success",
+              "latencyMs": 31,
+              "version": "60",
+              "argumentsHash": "439a9c675d511e808a3c0efc30b54bf91aa8aa08e45e052609c84faea0acf572"
+            },
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 32,
+              "version": "60",
+              "argumentsHash": "454f6306c973f1ea4700739e613c99f0dde45022417ac6af09372c9c129dbaaa"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "60",
+              "argumentsHash": "4453235fb91a2d7dee6b0aedb499bb0e9d1dcff2e7cd462322fe54d054d832f1"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "60",
+              "argumentsHash": "6ae832b1fa7fe4fcb30dd54f7b324d8149f328dba8629b2b7471e95e21eea5bd"
+            }
+          ],
+          "costUsd": 0.0016617200000000002
+        },
+        {
+          "scenarioId": "master-0180",
+          "runAt": "2026-10-08T07:39:38.823Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": true,
+          "failure": null,
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 10,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "update_task",
+              "status": "success",
+              "latencyMs": 37,
+              "version": "60",
+              "argumentsHash": "bc63a38dd2b42eca2e779e736dcafb59e9a4ae048f81366a079a6acc351edf2b"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "60",
+              "argumentsHash": "6e148ac0a0716866e1172b5464072ba78f98cfc8f7400ff753d6ca6a26ce9dfe"
+            }
+          ],
+          "costUsd": 0.001371405
+        },
+        {
+          "scenarioId": "master-0181",
+          "runAt": "2026-10-08T07:39:47.495Z",
+          "versions": {
+            "prompt": "jarvis-33",
+            "routing": "luna-first-2",
+            "policy": "tenant-approval-6",
+            "tools": "60",
+            "memory": "2",
+            "skills": "3"
+          },
+          "executionVerified": false,
+          "failure": "Am schema pentru redeschiderea taskurilor, dar referința disponibilă („task-selected”) nu este un ID CRM valid. Trimite ID-ul real al taskului, ca să pot pregăti schimbarea statusului în „open” pentru aprobare.\nCerințe încă neacoperite: Redeschide taskul selectat prin schimbarea statusului în open.: expected 'clarification' to be 'success' // Object.is equality",
+          "diagnostics": [],
+          "tools": [
+            {
+              "name": "discover_tools",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "60",
+              "argumentsHash": "08a8feb8845fd436bbb38c32a9c20394d16cf114df132eca2cb8c515d80188eb"
+            },
+            {
+              "name": "operation_contract",
+              "status": "success",
+              "latencyMs": 20,
+              "version": "60",
+              "argumentsHash": "feddc80b458aa6af1ff8b376f1d965566a51fb17f14b226ac875537c10cc7ad9"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "60",
+              "argumentsHash": "2192dc7b94cf44b83a65b90eb5c7d55e40a2eac966eab31be489312734876d37"
+            }
+          ],
+          "costUsd": 0.0014056799999999999
+        }
+      ]
+    }
+  ],
+  "remaining": [
+    "Other 995 original scenarios",
+    "Repeated natural-language and voice variants",
+    "Full UI/workspace route and production environment",
+    "Failure/recovery variants for each scenario",
+    "External-provider effects for applicable scenarios"
+  ]
+}

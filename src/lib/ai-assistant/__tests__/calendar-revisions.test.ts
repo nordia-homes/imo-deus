@@ -5,6 +5,15 @@ import { bindCalendarRevisions } from '../calendar-revisions';
 import type { AssistantContext } from '../access';
 const ctx = {} as AssistantContext;
 beforeEach(() => { vi.mocked(getResource).mockReset(); });
+it('accepts equal ISO instants without refreshing a genuinely stale revision', async () => {
+  vi.mocked(getResource).mockResolvedValue({ updatedAt: '2026-10-06T08:00:00.000Z' });
+  const actions = await bindCalendarRevisions(ctx, [
+    { kind: 'update_task', taskId: 't', status: 'open', expectedUpdatedAt: '2026-10-06T11:00:00+03:00' },
+    { kind: 'update_task', taskId: 't', status: 'open', expectedUpdatedAt: '2026-10-06T07:00:00Z' },
+  ]);
+  expect(actions[0]).toHaveProperty('expectedUpdatedAt', '2026-10-06T08:00:00.000Z');
+  expect(actions[1]).toHaveProperty('expectedUpdatedAt', '2026-10-06T07:00:00Z');
+});
 it('freezes existing task/viewing revisions once per target when preparing a plan', async () => {
   vi.mocked(getResource).mockResolvedValue({ updatedAt: '2026-10-06T08:00:00Z' });
   const actions = await bindCalendarRevisions(ctx, [

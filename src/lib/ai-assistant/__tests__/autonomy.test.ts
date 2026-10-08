@@ -11,6 +11,13 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  it.each(['Redeschide taskul.', 'Mută taskul la 11.', 'Replanifică taskul.'])('executes explicit task edits and respects their negation: %s', async prompt => {
+    const action: AssistantAction = { kind: 'update_task', taskId: 't', status: 'open' };
+    expect((await runSafePrefix(ctx(), 'edit', [action], prompt)).results).toHaveLength(1);
+    vi.mocked(executeAction).mockClear();
+    expect((await runSafePrefix(ctx(), 'negated', [action], `Nu ${prompt}`)).results).toHaveLength(0);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('creates the buyer and schedules the viewing in the same authorized command', async () => {
     const context = ctx(); (context as any).policy.viewings = true;
     vi.mocked(executeAction).mockResolvedValueOnce({ contactId: 'new-buyer' }).mockResolvedValueOnce({ viewingId: 'new-viewing' });

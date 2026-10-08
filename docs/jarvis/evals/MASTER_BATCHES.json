@@ -1111,7 +1111,7 @@
     {
       "id": "batch-04",
       "category": "Vizionări, calendar și taskuri",
-      "status": "pending",
+      "status": "in_progress",
       "scenarios": [
         {
           "id": "master-0151",
@@ -1153,7 +1153,11 @@
           "sourceNumber": 156,
           "request": "Programează apartamentul din Titan cu Andrei mâine la 17.",
           "requestSha256": "0c5c69c53582c98b6fadad6fd89d234aef4a4f821181ce2e6de9c5973c404e14",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0157",
@@ -1307,28 +1311,44 @@
           "sourceNumber": 178,
           "request": "Creează-mi un task să îl sun pe Andrei mâine la 10.",
           "requestSha256": "4f6e69f28965723319bdc90c6715efc9e19ecf563c03cd83a1c57bb9c29c04ed",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0179",
           "sourceNumber": 179,
           "request": "Modifică taskul de mâine la ora 11.",
           "requestSha256": "04991deabef5487a9427638c964912b24947abcf14d82563e31995e1726be853",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0180",
           "sourceNumber": 180,
           "request": "Marchează taskul acesta ca finalizat.",
           "requestSha256": "7f44cd90e279aa712500a4b70524fc1da3a7035cd359e5cc4977838cd401949b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0181",
           "sourceNumber": 181,
           "request": "Redeschide taskul acesta.",
           "requestSha256": "36cdaab611cf80c4e922866cf47bf6f3cdcfcdb3f9aed278d17c4621f496074e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0182",

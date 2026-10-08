@@ -12,14 +12,17 @@ function strictSchema(schema: z.ZodTypeAny): Record<string, unknown> {
   if (schema instanceof z.ZodLiteral) return { const: schema.value, type: typeof schema.value };
   if (schema instanceof z.ZodArray) return { type: 'array', items: strictSchema(def.type) };
   if (schema instanceof z.ZodString) return { type: 'string' };
-  if (schema instanceof z.ZodNumber) return { type: schema.isInt ? 'integer' : 'number' };
+  if (schema instanceof z.ZodNumber) return { type: schema.isInt ? 'integer' : 'number', ...(schema.minValue !== null ? { minimum: schema.minValue } : {}), ...(schema.maxValue !== null ? { maximum: schema.maxValue } : {}) };
   if (schema instanceof z.ZodBoolean) return { type: 'boolean' };
   throw new Error('Schema cannot be advertised as a strict native function.');
 }
 export function functionDefinition(name: string) {
   const definition = coreToolSchemas[name as keyof typeof coreToolSchemas] || actionToolSchemas[name];
   if (!definition) throw new Error('Unknown core tool');
-  return { type: 'function', name, description: definition[2], strict: true, parameters: native.has(name) ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
+  // A required nullable field in a strict function cannot distinguish omission
+  // from an intentional clear. Sparse action JSON preserves that distinction.
+  const action = Object.hasOwn(actionToolSchemas, name);
+  return { type: 'function', name, description: definition[2] + (action ? ' payload: JSON cu câmpurile acțiunii, fără kind. Omite câmpurile neschimbate; null numai pentru ștergere cerută explicit.' : ''), strict: true, parameters: native.has(name) && !action ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
 }
 function cleanArguments(value: unknown, schema: z.ZodTypeAny): unknown {
   // Strict function schemas use null for omitted optional fields. Actual nullable
@@ -41,7 +44,7 @@ function cleanArguments(value: unknown, schema: z.ZodTypeAny): unknown {
 }
 export function functionPayload(name: string, args: string) {
   const parsed = JSON.parse(args);
-  // Recorded compatibility fixtures only; native tool definitions reject payload wrappers.
+  // Sparse action payloads preserve omitted fields; reads also accept recorded wrappers.
   if (typeof parsed?.payload === 'string' && Object.keys(parsed).length === 1) {
     const payload = JSON.parse(parsed.payload);
     const definition = coreToolSchemas[name as keyof typeof coreToolSchemas] || actionToolSchemas[name];

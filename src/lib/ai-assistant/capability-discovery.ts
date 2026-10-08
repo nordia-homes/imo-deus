@@ -20,8 +20,16 @@ const aliases: Record<string, string> = {
   profile: 'profil nume telefon avatar poza', domain: 'domeniu site dns', contract: 'contract template sablon document',
 };
 const ignored = new Set(['si', 'sa', 'de', 'in', 'din', 'pentru', 'care', 'cum', 'vreau', 'arata', 'toate', 'mi', 'un', 'o', 'the', 'a']);
+const inflections: Record<string, string> = Object.fromEntries(Object.entries({
+  task: ['taskul', 'taskurile', 'taskului', 'taskurilor', 'tasks'],
+  sarcina: ['sarcini', 'sarcinile', 'sarcinii', 'sarcinilor'],
+  vizionare: ['vizionarea', 'vizionari', 'vizionarile', 'vizionarii', 'vizionarilor'],
+  proprietate: ['proprietatea', 'proprietati', 'proprietatile', 'proprietatii', 'proprietatilor'],
+  client: ['clientul', 'clientului', 'clienti', 'clientii', 'clientilor'],
+  apartament: ['apartamentul', 'apartamentului', 'apartamente', 'apartamentele'],
+}).flatMap(([root, forms]) => forms.map(form => [form, root])));
 export function capabilityScore(query: string, id: string, description = '') {
-  const tokens = normalized(query).split(/[^a-z0-9]+/).filter(token => token.length > 2 && !ignored.has(token));
+  const tokens = normalized(query).split(/[^a-z0-9]+/).map(token => inflections[token] || token).filter(token => token.length > 2 && !ignored.has(token));
   const words = id.split('_');
   const haystack = normalized([id.replaceAll('_', ' '), description, ...words.map(word => aliases[word] || '')].join(' '));
   return tokens.reduce((score, token) => score + (haystack.includes(token) ? (id.includes(token) ? 3 : 1) : 0), 0);

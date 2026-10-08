@@ -24,7 +24,7 @@ import { prepareContactIdentity } from '@/lib/crm/contact-identity-server';
 import { contactIdentityKeys, normalizedContactFields } from '@/lib/crm/contact-identity';
 import { shouldAutoArchiveContact } from '@/lib/contact-aging';
 import { matchingRevision } from './matching-revision';
-import { assertCalendarSlot } from '@/lib/crm/calendar';
+import { assertCalendarSlot, taskClockPatch } from '@/lib/crm/calendar';
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/lib/notifications/types';
 import { saleEmailContentHash } from '@/lib/crm/sale-email-hash';
 import { revisionTarget } from './plan-revisions';
@@ -466,16 +466,18 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const contact = action.contactId ? await read('contacts', action.contactId) : null;
       const property = action.propertyId ? await read('properties', action.propertyId) : null;
       const ref = collectionFor(ctx, 'tasks').doc(key);
-      const { kind: _, ...taskData } = action;
+      const { kind: _, ...inputTask } = action;
+      const taskData = taskClockPatch(inputTask);
       const agentId = action.agentId === undefined ? ctx.uid : action.agentId;
       const assignment = await propertyAssignment(agentId);
       await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId });
       tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId, agentName: assignment.agentName, createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
-      result = { taskId: ref.id, link: '/tasks' };
+      result = safeData({ taskId: ref.id, link: '/tasks', description: taskData.description, status: 'open', dueDate: taskData.dueDate, startTime: taskData.startTime });
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);
       if (action.expectedUpdatedAt !== undefined && (oldTask.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Sarcina s-a modificat între timp. Reîncarcă datele înainte de salvare.', 409);
-      const {kind: _, taskId: __, expectedUpdatedAt: ___, ...patch} = action;
+      const {kind: _, taskId: __, expectedUpdatedAt: ___, ...inputPatch} = action;
+      const patch = taskClockPatch(inputPatch);
       if (!Object.keys(patch).length) throw new CommunicationError('Precizează modificarea sarcinii.');
       const contact = action.contactId ? await read('contacts', action.contactId) : null;
       const property = action.propertyId ? await read('properties', action.propertyId) : null;
@@ -483,7 +485,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       tx.update(collectionFor(ctx, 'tasks').doc(action.taskId), { ...patch, updatedAt: now,
         ...(action.contactId !== undefined ? { contactName: contact?.name || null } : {}),
         ...(action.propertyId !== undefined ? { propertyTitle: property?.title || null } : {}) });
-      result = { taskId: action.taskId, link: '/tasks' };
+      const savedTask = { ...oldTask, ...patch };
+      result = safeData({ taskId: action.taskId, link: '/tasks', description: savedTask.description, status: savedTask.status, dueDate: savedTask.dueDate, startTime: savedTask.startTime });
     } else if (action.kind === 'delete_task' || action.kind === 'delete_viewing') {
       const resource = action.kind === 'delete_task' ? 'tasks' : 'viewings', id = action.kind === 'delete_task' ? action.taskId : action.viewingId;
       const previous = await read(resource, id);

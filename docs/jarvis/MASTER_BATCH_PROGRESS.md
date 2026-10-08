@@ -47,6 +47,27 @@ Acesta este un exemplu suplimentar al utilizatorului, nu 1.000/1.000 și nici ac
 
 ## Verificări curente
 
+### Lot calendar — execuție practică pentru cinci scenarii originale (08.10.2026)
+
+[Dovada completă](evals/CALENDAR_EXECUTION_BATCH_01.json) leagă comenzile originale 0156, 0178, 0179, 0180 și 0181 de apelurile modelului real, acțiunile executorului CRM, documentele recitite și confirmările generate din tranzacții. Ultima rulare: **5/5**, zero apeluri de instrument eșuate, cost model estimat total 0,008527335 USD. Repetarea aceleiași comenzi produce aceleași rezultate fără documente suplimentare. Contextul pentru „taskul acesta” este furnizat explicit; prompturile originale nu sunt rescrise.
+
+Rezultatele salvate: vizionare Titan/Andrei pe 09.10.2026 la 17:00; task Andrei la 10:00; mutare la 11:00; finalizare; redeschidere cu păstrarea contactului. Toate orele sunt Europe/Bucharest. Modelul și executorul sunt reale, iar Firestore este emulatorul local cu agenții izolate. Catalogul extern este exclus; căutarea globală folosește ruta de produs cu autentificare de fixture. Proba nu certifică traseul complet browser/voce/producție.
+
+Corecții rezultate din execuții, aplicate produsului:
+
+- Parametrii acțiunilor păstrează distincția dintre câmp omis și `null` explicit; schimbarea statusului nu mai șterge accidental contactul sau revizia taskului.
+- Instantul ISO al taskului este salvat și în câmpul de oră folosit de calendar; actualizările fără dată păstrează ora existentă. Confirmarea include starea și ora salvate.
+- Formele românești „taskul”, „sarcinile”, „vizionările” sunt recunoscute la selectarea instrumentelor. Redeschiderea, mutarea și replanificarea intră în execuția taskurilor deja autorizată; negațiile rămân respectate.
+- Identificarea proprietății pentru o vizionare caută CRM-ul, fără a cere inutil orașul sursei externe de proprietari. ID-urile contextuale se verifică prin citire, nu după aspectul șirului.
+- Limitele numerice ale instrumentelor sunt comunicate modelului. Contractul citirilor paralele precizează operațiile și structura acceptată.
+- Reviziile ISO care reprezintă același instant sunt echivalate; reviziile realmente vechi și `null` explicit nu sunt înlocuite cu starea nouă.
+- Un plan cu acoperirea integrală a mutațiilor deja verificată nu se pierde când numai apelul următor pentru formularea previzualizării depășește bugetul. Această închidere se aplică înainte de apel, nu după răspunsuri neprocesate, expirare sau contabilizare invalidă. Execuția și confirmarea efectelor rămân separate.
+- Citirile delegate primesc instrucțiuni specifice citirii, pentru a încăpea în bugetul existent; permisiunile și limitele nu sunt mărite.
+
+Șase încercări anterioare sunt păstrate în dovadă, inclusiv eșecurile și recuperările parțiale. Nu există acceptanță de fiabilitate 100% dintr-o singură rulare. Inventarul marchează lotul 04 în lucru și adaugă cinci legături de execuție locală; nu transformă acestea în 1.000 de scenarii certificate. Rămân 995 de scenarii originale fără această probă practică, plus variantele și traseele externe/voce/producție ale celor cinci.
+
+Versiune: prompt 33, unelte 60. Regresia generală a trecut 1769/1769 în 137 fișiere; ulterior, verificarea suplimentară a limitei înainte/după răspuns a trecut împreună cu toate cele 28 de probe ale plannerului. Suita Firestore/Storage a trecut 260/260 în 18 fișiere. Buildul a trecut cu 227/227 pagini; ESLint nu are erori în fișierele de produs modificate. Paritatea și inventarul au trecut. Rămân avertismentul Jaeger și omiterea cunoscută a copierii Playwright în standalone. Bugetele de producție au rămas neschimbate. Nu s-a publicat în producție.
+
 1757/1757 teste de regresie în 136 de fișiere au trecut pentru versiunea 59 a uneltelor / prompt 32. Suita Firestore/Storage a trecut 260/260 verificări în 18 fișiere, inclusiv salvarea cumpărătorului și vizionării în emulator. Pilotul separat cu model real a trecut după remedierea celor două defecte documentate mai sus. UI Text a trecut inclusiv activarea/dezactivarea noii autorizări; captura viewing-autonomy.png a fost inspectată. ESLint nu are erori; rămâne avertismentul preexistent useEffect/openSession. Paritatea și inventarul loturilor au trecut. Nu s-au trimis mesaje sau lansat campanii reale.
 
 Buildul versiunii 59 a trecut cu TypeScript și 227/227 pagini, după corectarea unei referințe de istoric incompatibile cu schema TypeScript. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Nu s-a publicat în producție.

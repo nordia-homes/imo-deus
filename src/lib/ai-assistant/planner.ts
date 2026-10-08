@@ -29,6 +29,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const verifiedDates = options.verifiedDates || explicitInstants(prompt);
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
   const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation }) };
+  const verifiedMutationPlan = () => actions.length > 0 && !!goalCoverage?.requirements.every(row => row.resolution === 'planned') && metrics.tools.at(-1)?.name === 'goal_coverage' && metrics.tools.at(-1)?.status === 'success';
   const finish = (text: string, status = 'success') => {
     if (status === 'success' && goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) status = goalCoverage.requirements.some(row => row.resolution === 'needs_clarification') ? 'clarification' : 'partial';
     metrics.status = status; metrics.elapsedMs = Date.now() - childStarted;
@@ -46,10 +47,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
   const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
-  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary });
+  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
-  let invalidCalls = 0, closureAttempts = 0, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
+  let invalidCalls = 0, closureAttempts = 0, reservingNextTurn = false, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
   try {
     // Shadow calls never alter the approved execution path. Skip injected test
     // providers and child planners; reserve conservatively before network I/O.
@@ -59,12 +60,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       if (observation) { metrics.jev = observation; budget.recordAuxiliary(observation.costUsd, observation.inputTokens + observation.outputTokens); }
     }
     for (let turn = 0; turn < (options.child ? 3 : budget.limits.maxSteps); turn++) {
+      reservingNextTurn = true;
       budget.step(); await emit('planning', 'Interpretez cererea și aleg următorul pas.');
       let decision = routeModel({ invalidCalls, remainingCost: budget.limits.maxCost - budget.cost });
       const reservation = requestReservation(instructions,input,tools,previousReservation), inputBytes = reservation.tokens;
       const outputLimit = options.child ? 1200 : budget.limits.maxOutputTokens;
       budget.reserve(decision.model, inputBytes, outputLimit);
       if (options.child && (budget.tokens - initialTokens + inputBytes + outputLimit > 16000 || budget.cost - initialCost + usageCost(decision.model, { inputTokens: inputBytes, outputTokens: outputLimit, cachedTokens: 0, cacheWriteTokens: inputBytes, estimated: true }) > 0.03 || Date.now() - childStarted >= 30000)) throw new BudgetExceeded('buget subagent');
+      reservingNextTurn = false;
       let result;
       for (let attempt = 0; ; attempt++) {
         try { result = await provider.respond({ decision, instructions, input, tools, maxOutputTokens: outputLimit, timeoutMs: Math.max(1, Math.min(45000, budget.limits.maxExecutionMs - (Date.now() - budget.started), options.child ? 30000 - (Date.now() - childStarted) : Infinity)), tenant: ctx }); break; }
@@ -153,9 +156,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       // proposal. Proposals are inert until the resulting plan is approved.
     }
   } catch (error) {
+    // All mutations are already validated and coverage is the last accepted tool.
+    // A further model call would only replace our deterministic plan preview.
+    // Do not discard an executable plan because that redundant call cannot fit.
+    if (error instanceof BudgetExceeded && reservingNextTurn && ['tokens', 'cost', 'pași'].includes(error.dimension) && verifiedMutationPlan()) return finish('Plan verificat.');
     if (error instanceof BudgetExceeded) return finish(error.message + ' Acțiunile pregătite nu au fost executate.', 'partial');
     if (error instanceof ProviderError) return finish('Serviciul AI nu a confirmat răspunsul. Nu am executat acțiuni; rezultatele confirmate sunt păstrate.', 'failed');
     throw error;
   }
+  if (verifiedMutationPlan()) return finish('Plan verificat.');
   return finish('Limita de pași a fost atinsă. Rezultatele sunt parțiale; poți continua. Acțiunile pregătite nu au fost executate.', 'partial');
 }

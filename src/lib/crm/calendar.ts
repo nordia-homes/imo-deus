@@ -18,6 +18,13 @@ async function calendarRead<T>(read: () => Promise<T>): Promise<T> {
   }
 }
 
+// An explicit instant already contains a clock. Persist it in the calendar's
+// Bucharest field as well; date-only tasks remain untimed.
+export function taskClockPatch<T extends { dueDate?: string; startTime?: string | null }>(patch: T): T {
+  if (patch.startTime !== undefined || !patch.dueDate?.includes('T')) return patch;
+  return { ...patch, startTime: bucharestInputFromIso(patch.dueDate).time };
+}
+
 export function taskInterval(row: Record<string, any>) {
   if (row.status === 'completed' || !row.startTime || !row.dueDate) return null;
   const date = /^\d{4}-\d{2}-\d{2}$/.test(row.dueDate) ? row.dueDate : bucharestInputFromIso(row.dueDate).date;

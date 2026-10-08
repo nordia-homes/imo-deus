@@ -12,10 +12,15 @@ export async function bindCalendarRevisions(ctx: AssistantContext, actions: Assi
     const id = 'taskId' in guarded ? guarded.taskId : guarded.viewingId;
     // Step references denote records produced within this plan, not existing
     // rows that can be read now. Execution still checks current permissions.
-    if (guarded.expectedUpdatedAt !== undefined || id.startsWith('@step:')) return action;
+    if (guarded.expectedUpdatedAt === null || id.startsWith('@step:')) return action;
     const key = `${resource}/${id}`;
     if (!snapshots.has(key)) snapshots.set(key, getResource(ctx, resource, id));
     const record = await snapshots.get(key)!;
+    if (guarded.expectedUpdatedAt !== undefined) {
+      // Equal instants can have different ISO spellings (.000Z / Z / offset).
+      // Preserve genuinely stale revisions and explicit null for the executor.
+      if (typeof guarded.expectedUpdatedAt !== 'string' || typeof record.updatedAt !== 'string' || !Number.isFinite(Date.parse(record.updatedAt)) || Date.parse(guarded.expectedUpdatedAt) !== Date.parse(record.updatedAt)) return action;
+    }
     return { ...guarded, expectedUpdatedAt: record.updatedAt || null };
   }));
 }

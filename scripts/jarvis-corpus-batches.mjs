@@ -8,6 +8,10 @@ const corpus = JSON.parse(fs.readFileSync(source, 'utf8'));
 assert.equal(corpus.scenarios.length, 1000);
 assert.equal(new Set(corpus.scenarios.map(row => row.id)).size, 1000);
 const regressionIds = new Set(['master-0801', 'master-0806', 'master-0849', 'master-0850']);
+const calendarEvidenceFile = 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json';
+const calendarEvidence = JSON.parse(fs.readFileSync(calendarEvidenceFile, 'utf8'));
+const liveIds = new Set(calendarEvidence.finalRuns.filter(row => row.executionVerified).map(row => row.scenarioId));
+for (const row of calendarEvidence.finalRuns) assert.equal(row.prompt, corpus.scenarios.find(scenario => scenario.id === row.scenarioId)?.text);
 const batches = Array.from({ length: 20 }, (_, index) => {
   const scenarios = corpus.scenarios.slice(index * 50, (index + 1) * 50);
   scenarios.forEach((row, offset) => {
@@ -17,11 +21,12 @@ const batches = Array.from({ length: 20 }, (_, index) => {
   return {
     id: `batch-${String(index + 1).padStart(2, '0')}`,
     category: scenarios[0].category,
-    status: index === 16 ? 'in_progress' : 'pending',
+    status: [3, 16].includes(index) ? 'in_progress' : 'pending',
     scenarios: scenarios.map(row => ({
       id: row.id, sourceNumber: row.sourceNumber, request: row.text,
       requestSha256: crypto.createHash('sha256').update(row.text).digest('hex'),
       endToEnd: 'not_verified',
+      ...(liveIds.has(row.id) ? { liveExecutionEvidence: { file: calendarEvidenceFile, scope: 'Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification.' } } : {}),
       ...(regressionIds.has(row.id) ? { deterministicCoverage: { file: 'src/lib/ai-assistant/__tests__/planner.test.ts', scope: 'Planner continuation / truthful incomplete result with a scripted provider. Does not certify execution, natural-language reliability or provider effects.' } } : {}),
     })),
   };
@@ -37,4 +42,4 @@ const result = {
 const output = JSON.stringify(result, null, 2) + '\n';
 if (process.argv.includes('--check')) assert.equal(fs.readFileSync(target, 'utf8').replace(/\r\n/g, '\n'), output, 'Corpus batch inventory is stale');
 else fs.writeFileSync(target, output);
-console.log('20 batches / 1000 unique scenarios; 4 planner regression links; 0 end-to-end certifications in this inventory.');
+console.log(`20 batches / 1000 unique scenarios; 4 planner regression links; ${liveIds.size} local real-model execution links; 0 full end-to-end certifications in this inventory.`);

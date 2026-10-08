@@ -10,7 +10,7 @@ import { executeAction } from '../actions';
 import { searchProperties } from '../search';
 import { readResource } from '../access';
 import { ProviderError, type ProviderResult, type ModelProvider } from '../provider';
-import { AgentBudget, DEFAULT_LIMITS } from '../budget';
+import { AgentBudget, BudgetExceeded, DEFAULT_LIMITS } from '../budget';
 import type { AssistantContext } from '../access';
 import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
@@ -134,6 +134,32 @@ describe('Responses tool planning', () => {
     expect(result.metrics.status).toBe('partial');
     expect(executeAction).not.toHaveBeenCalled();
   });
+  it('retains a fully covered mutation plan when only the final wording call exceeds the step ceiling', async () => {
+    const prompt = 'Creează o sarcină la 2030-01-01T10:00:00Z.';
+    const proposal = call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });
+    const coverage = call('goal_coverage', { requirements: [{ id: 'task', sourceQuote: prompt, description: 'Sarcina cerută', resolution: 'planned', steps: [1], evidenceCallIds: [] }] });
+    const model = scripted(proposal, coverage);
+    const result = await planTurn(ctx, prompt, [], { provider: model, budget: new AgentBudget({ ...DEFAULT_LIMITS, maxSteps: 2 }) });
+    expect(result.metrics.status).toBe('success'); expect(result.actions).toHaveLength(1);
+    expect(result.text).toContain('nu au fost executate'); expect(model.respond).toHaveBeenCalledTimes(2);
+    expect(executeAction).not.toHaveBeenCalled();
+    const incomplete = await planTurn(ctx, prompt, [], { provider: scripted(proposal), budget: new AgentBudget({ ...DEFAULT_LIMITS, maxSteps: 1 }) });
+    expect(incomplete.metrics.status).toBe('partial'); expect(incomplete.goalCoverage).toBeUndefined();
+  });
+  it('finalizes only before an unneeded call, never after an unprocessed over-budget response', async () => {
+    const prompt = 'Creează o sarcină la 2030-01-01T10:00:00Z.';
+    const proposal = call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });
+    const coverage = call('goal_coverage', { requirements: [{ id: 'task', sourceQuote: prompt, description: 'Sarcina cerută', resolution: 'planned', steps: [1], evidenceCallIds: [] }] });
+    const budget = new AgentBudget();
+    const reserve = budget.reserve.bind(budget); let reservations = 0;
+    vi.spyOn(budget, 'reserve').mockImplementation((...args) => { if (++reservations === 3) throw new BudgetExceeded('tokens'); reserve(...args); });
+    const model = scripted(proposal, coverage);
+    expect((await planTurn(ctx, prompt, [], { provider: model, budget })).metrics.status).toBe('success');
+    expect(model.respond).toHaveBeenCalledTimes(2);
+    const overBudget = scripted(proposal, coverage, { ...final, usage: { ...usage, inputTokens: 70001 } });
+    expect((await planTurn(ctx, prompt, [], { provider: overBudget })).metrics.status).toBe('partial');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('does not multiply inherited access references across successive replies', async () => {
     const history: any[] = [{ role: 'assistant', text: 'Rezultat', accessRefs: Array.from({ length: 6192 }, () => ({ resource: 'sales', id: 's' })) }];
     for (let turn = 0; turn < 5; turn++) {
@@ -201,7 +227,8 @@ describe('Responses tool planning', () => {
   });
   it('uses Sol only after repeated invalid provider output, not the first failure', async () => {
     const model = scripted(new ProviderError('invalid_output', false), new ProviderError('invalid_output', false), final);
-    const result = await planTurn(ctx, 'Salut', [], { provider: model, budget: new AgentBudget({ ...DEFAULT_LIMITS, maxTokens: 120000 }) });
+    // Isolate routing from conservative byte reservations for unmetered failures.
+    const result = await planTurn(ctx, 'Salut', [], { provider: model, allowedTools: ['read'], budget: new AgentBudget({ ...DEFAULT_LIMITS, maxTokens: 120000 }) });
     expect(model.respond.mock.calls.map(([request]) => request.decision.model), result.text).toEqual(['gpt-6-luna', 'gpt-6-luna', 'gpt-6.1-sol']);
     expect(result.metrics.status).toBe('success');
   });

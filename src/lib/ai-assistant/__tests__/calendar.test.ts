@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ collectionFor: (_ctx: unknown, resource: string) => ({ resource, doc: (id: string) => ({ resource, id }), where() { return this; } }) }));
-import { assertCalendarSlot, taskInterval } from '@/lib/crm/calendar';
+import { assertCalendarSlot, taskInterval, taskClockPatch } from '@/lib/crm/calendar';
 import type { AssistantContext } from '../access';
 
 const ctx = {} as AssistantContext;
@@ -13,6 +13,16 @@ function transaction(tasks: Record<string, any>[] = [], viewings: Record<string,
   } } as any;
 }
 describe('shared task and viewing calendar', () => {
+  it('keeps an explicit instant in the Bucharest calendar, including winter and summer time', () => {
+    for (const [dueDate, expected] of [['2027-01-12T08:00:00Z', '10:00'], ['2026-10-09T07:00:00Z', '10:00']]) {
+      const task = taskClockPatch({ dueDate });
+      expect(task).toMatchObject({ startTime: expected });
+      expect(taskInterval(task)?.start).toBe(new Date(dueDate).toISOString());
+    }
+    expect(taskClockPatch({ dueDate: '2027-01-12' })).not.toHaveProperty('startTime');
+    expect(taskClockPatch({ dueDate: '2027-01-12T08:00:00Z', startTime: '11:00' }).startTime).toBe('11:00');
+    expect(taskClockPatch({ status: 'completed' } as { dueDate?: string; status: string })).toEqual({ status: 'completed' });
+  });
   it.each([1, 2, 3])('aborts the whole transaction after a closed calendar read %s without retrying that read', async position => {
     const tx = transaction(), original = tx.get;
     const failure = Object.assign(new Error('3 INVALID_ARGUMENT: Transaction is invalid or closed.'), { code: 3 });

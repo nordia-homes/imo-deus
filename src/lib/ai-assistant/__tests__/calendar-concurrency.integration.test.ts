@@ -368,11 +368,11 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       const old = await plans[0].get();
       await plans[0].update({ sameStatusConcurrentChange: true });
       const outcome = { schemaVersion: 1 as const, state: 'COMPLETED' as const, confirmed: 1, total: 1, pending: 0, uncertain: 0, failed: 0, checkedAt: new Date().toISOString(), note: 'Synthetic provider evidence' };
-      vi.mocked(readPlanOutcomes).mockResolvedValue({ planId: 'same-plan-id', planRevision: `${old.updateTime!.seconds}:${old.updateTime!.nanoseconds}`, executionStatus: 'completed', pollAfterMs: null, outcome, rows: [], checkedAt: outcome.checkedAt, note: '' });
+      vi.mocked(readPlanOutcomes).mockResolvedValue({ planId: 'same-plan-id', planRevision: `${old.updateTime!.seconds}:${old.updateTime!.nanoseconds}`, executionStatus: 'completed', pollAfterMs: null, outcome, requirements: { status: 'missing', rows: [], note: 'Legacy plan' }, rows: [], checkedAt: outcome.checkedAt, note: '' });
       expect(await verifyPlanOutcome(ctx, 'same-plan-id', Date.now() + 60000)).toMatchObject({ status: 'pending' });
       expect((await plans[0].get()).data()?.outcome.state).toBe('WAITING_PROVIDER');
       const fresh = await plans[0].get();
-      vi.mocked(readPlanOutcomes).mockResolvedValue({ planId: 'same-plan-id', planRevision: `${fresh.updateTime!.seconds}:${fresh.updateTime!.nanoseconds}`, executionStatus: 'completed', pollAfterMs: null, outcome, rows: [], checkedAt: outcome.checkedAt, note: '' });
+      vi.mocked(readPlanOutcomes).mockResolvedValue({ planId: 'same-plan-id', planRevision: `${fresh.updateTime!.seconds}:${fresh.updateTime!.nanoseconds}`, executionStatus: 'completed', pollAfterMs: null, outcome, requirements: { status: 'missing', rows: [], note: 'Legacy plan' }, rows: [], checkedAt: outcome.checkedAt, note: '' });
       expect(await verifyPlanOutcome(ctx, 'same-plan-id', Date.now() + 60000)).toMatchObject({ status: 'completed', planStatus: 'COMPLETED' });
       expect((await plans[0].get()).data()?.outcome.state).toBe('COMPLETED');
     } finally {
