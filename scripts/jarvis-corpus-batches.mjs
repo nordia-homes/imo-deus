@@ -9,7 +9,7 @@ assert.equal(corpus.scenarios.length, 1000);
 assert.equal(new Set(corpus.scenarios.map(row => row.id)).size, 1000);
 const regressionIds = new Set(['master-0801', 'master-0806', 'master-0849', 'master-0850']);
 const liveIds = new Map();
-for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_10.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_13.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_14.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_15.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_16.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_17.json']) {
+for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_10.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_13.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_14.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_15.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_16.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_17.json', 'docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_01.json']) {
   const evidence = JSON.parse(fs.readFileSync(file, 'utf8'));
   for (const row of [...evidence.finalRuns, ...(evidence.combinedRegression?.runs || [])]) {
     assert.equal(row.prompt, corpus.scenarios.find(scenario => scenario.id === row.scenarioId)?.text);
@@ -25,7 +25,7 @@ const batches = Array.from({ length: 20 }, (_, index) => {
   return {
     id: `batch-${String(index + 1).padStart(2, '0')}`,
     category: scenarios[0].category,
-    status: [3, 16].includes(index) ? 'in_progress' : 'pending',
+    status: [3, 4, 16].includes(index) ? 'in_progress' : 'pending',
     scenarios: scenarios.map(row => ({
       id: row.id, sourceNumber: row.sourceNumber, request: row.text,
       requestSha256: crypto.createHash('sha256').update(row.text).digest('hex'),

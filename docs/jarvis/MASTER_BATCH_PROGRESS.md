@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — căutări în Titan, Cișmigiu și Floreasca
+
+Scenariile originale **0201–0205** au trecut cu model real, planificatorul aplicației și Firestore local (prompt jarvis-55 / tools 85). Dovezi: [OWNER_SEARCH_EXECUTION_BATCH_01.json](evals/OWNER_SEARCH_EXECUTION_BATCH_01.json). Jarvis găsește anunțurile de proprietari în zona cerută, aplică numărul de camere și tipul apartament numai când sunt cerute și returnează linkurile sursă.
+
+Căutarea nu mai presupune vânzarea când cererea nu precizează tranzacția. Atât scanarea, cât și căutarea indexată includ vânzări și închirieri; un filtru explicit rămâne respectat. Tipul tranzacției este păstrat în rezultatele oferite modelului. Potrivirea zonelor folosește cuvinte întregi normalizate: Cișmigiu/Cismigiu sunt echivalente, Titan/Titanium nu. Anunțurile care menționează zona doar în titlu, cele nepublicate/necanonice și cele din alt oraș nu sunt rezultate eligibile.
+
+Fiecare probă cu model real plasează rezultatele după peste 260 de anunțuri nepotrivite, verifică exact ID-urile și linkurile returnate și recitește datele pentru a confirma că nu au fost modificate. Scenariile pentru două/trei camere includ și anunțuri cu număr de camere sau tip greșit. Nu sunt trimise mesaje și nu este accesat CRM-ul de producție.
+
+Validare finală: **2.158 teste locale**, **286 regresii pe emulator**, **5 comenzi originale cu model real**, lint, inventare și build cu TypeScript/227 pagini trecute.
+
+Total: **48 de scenarii originale cu dovezi locale folosind model real**, **952 fără această dovadă**. Cele 43 de scenarii live anterioare nu au fost rerulate. Aceste probe nu certifică actualitatea portalurilor externe sau identitatea reală a autorului anunțului: folosesc anunțuri locale eligibile conform fluxului existent de colectare. Lotul nu este încă publicat în producție.
+
 ## Lot calendar — ordinea activităților de mâine, fără schimbarea programărilor
 
 Scenariul original **0200**, „Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.”, a trecut cu model real și Firestore local, prompt jarvis-54 / tools 84. Dovezi: [CALENDAR_EXECUTION_BATCH_17.json](evals/CALENDAR_EXECUTION_BATCH_17.json). Jarvis recitește calendarul agentului și propune o ordine cronologică, separând programările fixe de sarcinile fără oră. Orele existente, inclusiv cele din afara ferestrei orientative sau începute în seara precedentă, sunt păstrate. Nu se fac scrieri și nu se trimit mesaje.

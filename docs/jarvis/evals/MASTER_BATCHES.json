@@ -1640,42 +1640,62 @@
     {
       "id": "batch-05",
       "category": "Owner Listings — căutare externă de la proprietar",
-      "status": "pending",
+      "status": "in_progress",
       "scenarios": [
         {
           "id": "master-0201",
           "sourceNumber": 201,
           "request": "Găsește anunțuri direct de la proprietar în Titan.",
           "requestSha256": "484d5b522d7058e5b12d82ea3a0ca20e54f89f7284c64ec83fab1a42ea32f599",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0202",
           "sourceNumber": 202,
           "request": "Găsește apartamente de proprietar cu două camere în Titan.",
           "requestSha256": "dbcab6431a0f4ebfde0239a3fa2a6af864214dc802bbe896252280fab6555313",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0203",
           "sourceNumber": 203,
           "request": "Găsește apartamente de proprietar cu trei camere în Titan.",
           "requestSha256": "704715151d128d4a74a91c2577ddf6477048dde83e5d74dc0b3c1076177de25c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0204",
           "sourceNumber": 204,
           "request": "Găsește proprietăți de proprietar în Cișmigiu.",
           "requestSha256": "581d28ea10b4730a570f9d74370f40aa71971e67ad8f645f8da4a4aa2b50b317",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0205",
           "sourceNumber": 205,
           "request": "Găsește proprietăți de proprietar în Floreasca.",
           "requestSha256": "b8ca75ceed384cd54b142d45e6966724a0fe2560bfe4c224221dc6678032296b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0206",

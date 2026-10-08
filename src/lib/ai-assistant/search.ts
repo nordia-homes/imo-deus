@@ -20,7 +20,7 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   if (owners && (row.publicationStatus !== 'ready' || row.isCanonical !== true)) return false;
   const location = normalized(owners ? row.location : `${row.zone || ''} ${row.location || ''} ${row.address || ''}`);
   // A zone mentioned in marketing prose is not evidence of the property's location.
-  if (input.zone && !(owners ? ownerZoneKey(row.location).includes(ownerZoneKey(input.zone)) : location.includes(normalized(input.zone)))) return false;
+  if (input.zone && !(owners ? (` ${ownerZoneKey(row.location)} `).includes(` ${ownerZoneKey(input.zone)} `) : location.includes(normalized(input.zone)))) return false;
   const rooms = Number(owners ? row.roomsValue ?? parseOptionalNumber(row.rooms) : row.rooms);
   if (input.rooms !== undefined && rooms !== input.rooms) return false;
   if (input.roomsAny && !input.roomsAny.includes(rooms)) return false;
@@ -29,7 +29,7 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   const aliases: Record<string, string[]> = { apartment: ['apartment', 'apartament', 'garsoniera'], house: ['house', 'casa', 'vila'], land: ['land', 'teren'], commercial: ['commercial', 'comercial', 'birou'] };
   if (input.propertyType && !aliases[input.propertyType].some(v => type.includes(v))) return false;
   const transaction = normalized(row.transactionType);
-  if (!(input.transactionType === 'sale' ? ['sale', 'vanzare'] : ['rent', 'inchiriere']).some(v => transaction.includes(v))) return false;
+  if (input.transactionType && !(input.transactionType === 'sale' ? ['sale', 'vanzare'] : ['rent', 'inchiriere']).some(v => transaction.includes(v))) return false;
   const price = owners ? parseOwnerPrice(row.price) : Number(row.price);
   if ((input.priceMin !== undefined || input.priceMax !== undefined) && owners && listingCurrency(row.price) !== 'EUR') return false;
   if (input.priceMin !== undefined && (price === null || !Number.isFinite(price) || price < input.priceMin)) return false;
@@ -72,7 +72,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
   }
   if (indexed) {
     base = base.where('searchVersion', '==', OWNER_SEARCH_VERSION).where('searchCurrency', '==', 'EUR').where('searchPrice', '>=', input.priceMin ?? 0);
-    base = base.where('searchTransaction', '==', input.transactionType);
+    if (input.transactionType) base = base.where('searchTransaction', '==', input.transactionType);
     if (input.zone) base = base.where('searchZones','array-contains',ownerZoneKey(input.zone));
     if (input.propertyType) base = base.where('searchType','==',input.propertyType);
     if (input.rooms !== undefined) base = base.where('searchRooms','==',input.rooms);
@@ -101,7 +101,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
       if (input.source === 'owners' && listingCurrency(row.price) === 'unknown') uncertainCurrency++;
       if (!searchMatches(row, input)) continue;
       if (imported.has(doc.id)) { excludedImported++; continue; }
-      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearFilterSatisfied(row, input) === true : null, id: doc.id, title: row.title || '', location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
+      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearFilterSatisfied(row, input) === true : null, id: doc.id, title: row.title || '', transactionType: row.transactionType || null, location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
       if (rows.length === input.limit) break;
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }

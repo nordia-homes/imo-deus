@@ -21,6 +21,20 @@ const context = (rows: Record<string, any>[]) => ({ agencyId: 'a', uid: 'agent',
 const listing = { publicationStatus: 'ready', isCanonical: true, scopeKey: 'bucuresti-ilfov', price: '120.000 €', priceValue: 120000, roomsValue: 2, propertyType: 'apartment', transactionType: 'sale', location: 'București Titan', title: 'Apartament', ownerPhone: 'PRIVATE' };
 
 describe('authorized complete pagination', () => {
+  it.each([false, true])('includes sale and rent unless requested, indexed=%s', async indexed => {
+    const rows = ['sale', 'rent'].map((transactionType, i) => {
+      const row = { ...listing, transactionType, id: String(i) };
+      return indexed ? { ...row, ...ownerSearchFields(row) } : row;
+    });
+    const query = searchSchema.parse({ zone: 'Titan', ...(indexed ? { priceMax: 130000 } : {}) });
+    expect(query.transactionType).toBeUndefined();
+    expect((await searchProperties(context(rows), query)).rows.map(row => row.id)).toEqual(['0', '1']);
+    expect((await searchProperties(context(rows), { ...query, transactionType: 'rent' })).rows.map(row => row.id)).toEqual(['1']);
+    expect((await searchProperties(context(rows), { ...query, transactionType: 'sale' })).rows.map(row => row.id)).toEqual(['0']);
+  });
+  it.each([['Cișmigiu', 'Bucureşti – Cismigiu', true], ['Cismigiu', 'București Cișmigiu', true], ['Titan', 'Titanium', false], ['Titan', 'București, Titan', true], ['Titan', 'PreTitan', false]])('matches whole normalized zone %s in %s', (zone, location, expected) => {
+    expect(searchMatches({ ...listing, location }, searchSchema.parse({ zone }))).toBe(expected);
+  });
   it('preserves unknown-year evidence and binds pagination to year and room filters', async () => {
     const rows = [
       { ...listing, id: '0001', constructionYear: 1960 },

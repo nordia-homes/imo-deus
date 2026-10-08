@@ -16,7 +16,7 @@ function fixture(onRead: (path: string) => void = () => {}) {
     }, create: (r: any, value: any) => writes.push(() => rows.set(r.path, value)), update: (r: any, value: any) => writes.push(() => rows.set(r.path, { ...rows.get(r.path), ...value })) }); writes.forEach(fn => fn()); return result;
   } };
   const ctx = { uid: 'u', agencyId: 'a', role: 'agent', adminDb: db } as any;
-  const search = searchSchema.parse({ priceMax: 120000, rooms: 2, excludeImported: true });
+  const search = searchSchema.parse({ transactionType: 'sale', priceMax: 120000, rooms: 2, excludeImported: true });
   return { ctx, rows, search };
 }
 const changes = [
@@ -27,6 +27,13 @@ const changes = [
   ['agencies/a/properties/import', { ownerListingId: 'p' }], ['agencies/a/properties/import', { ownerListingUrl: 'https://example.test/listing' }],
 ] as const;
 describe('owner watch notification relevance', () => {
+  it('keeps a rental eligible when the watch has no transaction filter', async () => {
+    const { ctx, rows, search } = fixture();
+    delete search.transactionType;
+    rows.set('ownerListings/p', { ...rows.get('ownerListings/p'), transactionType: 'rent' });
+    expect(await createOwnerWatchNotification(ctx, 'r', 'n', 'p', search)).toMatchObject({ status: 'created' });
+    expect((await reconcileRuleNotifications(ctx, { ids: ['n'] })).withdrawn).toBe(0);
+  });
   it('creates once with live title and stores criteria without pagination', async () => {
     const { ctx, rows, search } = fixture();
     expect(await createOwnerWatchNotification(ctx, 'r', 'n', 'p', search)).toMatchObject({ status: 'created' });

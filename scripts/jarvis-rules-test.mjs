@@ -48,5 +48,10 @@ if (process.argv.includes('--corpus-calendar-live')) {
   command += ' src/lib/ai-assistant/__tests__/corpus-calendar.live.integration.test.ts';
 }
 if (process.argv.includes('--viewing-replies')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/viewing-whatsapp.integration.test.ts src/lib/ai-assistant/__tests__/firestore-rules.test.ts';
+if (process.argv.includes('--corpus-owner-search-live')) {
+  process.env.JARVIS_OWNER_SEARCH_LIVE = 'true';
+  if (!process.argv.includes('--with-regressions')) command = command.slice(0, command.indexOf(' src/lib/'));
+  command += ' src/lib/ai-assistant/__tests__/corpus-owner-search.live.integration.test.ts';
+}
 const child = spawn(process.execPath, ['node_modules/firebase-tools/lib/bin/firebase.js', 'emulators:exec', '--project', 'demo-imodeus-ai-assistant', '--only', 'firestore,storage', command], { stdio: 'inherit', windowsHide: true, env: { ...process.env, JAVA_HOME: javaHome, PATH: [path.join(javaHome, 'bin'), path.dirname(process.execPath), path.join(process.env.SystemRoot || 'C:/Windows', 'System32'), process.env.PATH].join(path.delimiter) } });
 process.exitCode = await new Promise(resolve => child.on('exit', code => resolve(code || 0)));

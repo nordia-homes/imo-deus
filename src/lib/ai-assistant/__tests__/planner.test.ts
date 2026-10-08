@@ -205,7 +205,7 @@ describe('Responses tool planning', () => {
   it('retries one provider outage on Luna and records its cost/error without escalating', async () => {
     const model = scripted(new ProviderError('temporary', true), final);
     // Isolate routing from schema byte growth; budget limits have a separate test.
-    const result = await planTurn(ctx, 'Salut', [], { provider: model, budget: new AgentBudget({ ...DEFAULT_LIMITS, maxTokens: 120000 }) });
+    const result = await planTurn(ctx, 'Salut', [], { provider: model, allowedTools: ['read'], budget: new AgentBudget({ ...DEFAULT_LIMITS, maxTokens: 120000 }) });
     expect(model.respond.mock.calls.map(([request]) => request.decision.model)).toEqual(['gpt-6-luna', 'gpt-6-luna']);
     expect(result.metrics.models[0]).toMatchObject({ outcome: 'failed', errorCategory: 'temporary', usage: { estimated: true } });
     expect(result.metrics.models[0].costUsd).toBeGreaterThan(0);
