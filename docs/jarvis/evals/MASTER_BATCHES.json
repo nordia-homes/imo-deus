@@ -1148,7 +1148,7 @@
           "requestSha256": "8fec169e1a8b734f3cec67ccc30d9cd9ccaa98ab1c6ea2090cb20c4ed057115c",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1159,7 +1159,7 @@
           "requestSha256": "0c5c69c53582c98b6fadad6fd89d234aef4a4f821181ce2e6de9c5973c404e14",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1177,7 +1177,7 @@
           "requestSha256": "83a9f521d7e18263748a138fd0a00d1762373f7ba204c0debb0c27c9cca37500",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1188,7 +1188,7 @@
           "requestSha256": "99acd2d5cef4616bdec53f732fff93da3b03df0343bb72f96abb2046d9e4423e",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1199,7 +1199,7 @@
           "requestSha256": "6e546df43b0ed43f34120b37a64ced54435dc061567ab3f1df5b3042c097ebf9",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1210,7 +1210,7 @@
           "requestSha256": "4db91f018c76ed8e61639b932225ceea310573431528d2d552af6f54f3b3769a",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1221,7 +1221,7 @@
           "requestSha256": "45580b52f0697f2f560a006b57d8078ff2779a35265862a62301e00fe03137fb",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1232,7 +1232,7 @@
           "requestSha256": "baa03fe8a65491a238c1b50121241e822da75df4d9bb06e1a6834cf7327058e9",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1243,7 +1243,7 @@
           "requestSha256": "d756fbe5fc1a560d737fdd762bce18967009b30e983809c3d1549aee591256bf",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1254,7 +1254,7 @@
           "requestSha256": "d487475153797e9286912faff82ab565f40b58c4f246fb3f22d640ce3996b616",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1263,14 +1263,22 @@
           "sourceNumber": 166,
           "request": "Șterge vizionarea introdusă greșit.",
           "requestSha256": "fd1772e9d3c52b8920c2af572acaba8980cbd4a40acd3264e14447ca2f2646f9",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0167",
           "sourceNumber": 167,
           "request": "Adaugă o notă la vizionarea aceasta.",
           "requestSha256": "892bb34870c2850b2d7ffb5a8ae9076949a4db531f3cbd8a73bd4f3129dca21f",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0168",
@@ -1349,7 +1357,7 @@
           "requestSha256": "4f6e69f28965723319bdc90c6715efc9e19ecf563c03cd83a1c57bb9c29c04ed",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1360,7 +1368,7 @@
           "requestSha256": "04991deabef5487a9427638c964912b24947abcf14d82563e31995e1726be853",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1371,7 +1379,7 @@
           "requestSha256": "7f44cd90e279aa712500a4b70524fc1da3a7035cd359e5cc4977838cd401949b",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },
@@ -1382,7 +1390,7 @@
           "requestSha256": "36cdaab611cf80c4e922866cf47bf6f3cdcfcdb3f9aed278d17c4621f496074e",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json",
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
             "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
           }
         },

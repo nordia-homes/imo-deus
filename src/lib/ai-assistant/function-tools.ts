@@ -22,7 +22,8 @@ export function functionDefinition(name: string) {
   // A required nullable field in a strict function cannot distinguish omission
   // from an intentional clear. Sparse action JSON preserves that distinction.
   const action = Object.hasOwn(actionToolSchemas, name);
-  return { type: 'function', name, description: definition[2] + (name === 'update_task' ? ' Pentru reprogramare include taskId, dueDate ISO verificat și startTime HH:mm. Pentru finalizare/redeschidere include status. Numai taskId nu modifică nimic.' : '') + (action ? ' payload: JSON cu câmpurile acțiunii, fără kind. Omite câmpurile neschimbate; null numai pentru ștergere cerută explicit.' : ''), strict: true, parameters: native.has(name) && !action ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
+  const required = action ? Object.entries((definition[0] as z.AnyZodObject).shape).filter(([, field]) => !(field as z.ZodTypeAny).isOptional()).map(([field]) => field).join(', ') : '';
+  return { type: 'function', name, description: definition[2] + (required ? ` Câmpuri obligatorii: ${required}.` : '') + (name === 'update_task' ? ' Pentru reprogramare include taskId, dueDate ISO verificat și startTime HH:mm. Pentru finalizare/redeschidere include status. Numai taskId nu modifică nimic.' : '') + (action ? ' payload: JSON cu câmpurile acțiunii, fără kind. Omite câmpurile neschimbate; null numai pentru ștergere cerută explicit.' : ''), strict: true, parameters: native.has(name) && !action ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
 }
 function cleanArguments(value: unknown, schema: z.ZodTypeAny): unknown {
   // Strict function schemas use null for omitted optional fields. Actual nullable
@@ -47,7 +48,22 @@ export function functionPayload(name: string, args: string) {
   // Sparse action payloads preserve omitted fields; reads also accept recorded wrappers.
   if (typeof parsed?.payload === 'string' && Object.keys(parsed).length === 1) {
     const payload = JSON.parse(parsed.payload);
+    // Contracts may include the discriminator; accept only the exact native tool name.
+    if (Object.hasOwn(actionToolSchemas, name) && payload?.kind !== undefined) {
+      if (payload.kind !== name) throw new Error('Tipul acțiunii nu corespunde instrumentului apelat.');
+      delete payload.kind;
+    }
     const definition = coreToolSchemas[name as keyof typeof coreToolSchemas] || actionToolSchemas[name];
+    if (Object.hasOwn(actionToolSchemas, name) && payload?.id !== undefined) {
+      const shape = (definition[0] as z.AnyZodObject).shape;
+      const identifiers = Object.entries(shape).filter(([field, schema]) => field.endsWith('Id') && !(schema as z.ZodTypeAny).isOptional()).map(([field]) => field);
+      // A generic id is unambiguous only for exactly one required identifier.
+      if (!Object.hasOwn(shape, 'id') && identifiers.length === 1) {
+        const field = identifiers[0];
+        if (payload[field] !== undefined && payload[field] !== payload.id) throw new Error('Identificatorii acțiunii sunt contradictorii.');
+        payload[field] = payload.id; delete payload.id;
+      }
+    }
     return definition ? cleanArguments(payload, definition[0]) : payload;
   }
   if (!native.has(name)) throw new Error('Instrumentul necesită payload JSON.');

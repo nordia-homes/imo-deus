@@ -4,6 +4,16 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar următor — ștergere și note
+
+Scenariile originale **0166–0167** au dovezi locale cu model real în [CALENDAR_EXECUTION_BATCH_04.json](evals/CALENDAR_EXECUTION_BATCH_04.json). 0166 șterge vizionarea selectată, păstrează auditul și confirmă ștergerea din receipt; repetarea cererii nu produce un al doilea efect. 0167 folosește textul notei oferit explicit într-un mesaj anterior și adaugă numai acel text, atomic, fără înlocuirea notelor existente. Nu se inventează conținutul lipsă din cererea originală.
+
+`update_viewing.appendNotes` păstrează notele existente în tranzacție. Dacă nu se schimbă calendarul, o vizionare trecută la o proprietate inactivă poate primi nota; se scriu numai notes/updatedAt, fără completarea unor câmpuri legacy de atribuire/durată. Verificarea reviziei și ledgerul rămân active. Conflictul dintre înlocuirea și adăugarea notelor este respins.
+
+Validare finală: **1.846 teste unitare și 263 regresii Firestore** trecute. Prima rulare live combinată a trecut 15/16; 0165 salva corect anularea și nota, dar confirma numai nota. Mesajul confirmă acum ambele efecte. Rularea live completă ulterioară a trecut **16/16** (tools 66), cu o reîncercare pentru `id` în loc de `viewingId`. Parserul acceptă acum discriminatorul `kind` redundant numai dacă se potrivește instrumentului și aliasul `id` numai când există un singur identificator obligatoriu; parametrii contradictorii, ambigui și câmpurile necunoscute rămân respinse. Instrumentele afișează câmpurile obligatorii. Cele două scenarii noi au trecut din nou fără erori de instrument pe tools 67. Lotul întreg nu a fost rerulat după această ultimă normalizare; încercările anterioare sunt păstrate. Compilarea (227 pagini) a trecut; nu s-a publicat în producție.
+
+Total curent: **16 scenarii originale cu dovezi locale folosind modelul real**, 984 fără acest tip de dovadă. Nu este certificare în producție sau acoperire integrală a variantelor celor 1.000 de scenarii. Autorizarea prin cererea agentului rămâne implicită pentru operațiile CRM.
+
 ## Actualizare 8 octombrie — autorizare prin cerere și modificarea vizionărilor
 
 Conform cererii explicite a utilizatorului, operațiile CRM native pentru proprietăți, cumpărători și vizionări se execută pe baza comenzii agentului, fără activare UI sau document assistantPolicies. Aceasta înlocuiește cerința anterioară de opt-in pentru cumpărători/vizionări. Rămân verificările de rol, agenție, înregistrare, revizie, conflicte calendaristice și idempotență. Mesajele externe, publicările și alte domenii păstrează fluxurile existente. Cererile de previzualizare și negațiile nu autorizează scrieri.

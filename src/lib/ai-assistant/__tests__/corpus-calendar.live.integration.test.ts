@@ -31,10 +31,11 @@ import type { AssistantMessage } from '../contracts';
 
 const contextCases = ['master-0155', 'master-0158', 'master-0159'];
 const editCases = ['master-0160', 'master-0161', 'master-0162', 'master-0163', 'master-0164', 'master-0165'];
-const cases = [...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const noteCases = ['master-0166', 'master-0167'];
+const cases = [...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -45,15 +46,18 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
-    const isEdit = editCases.includes(scenarioId);
+    const isDelete = scenarioId === 'master-0166', isNote = scenarioId === 'master-0167';
+    const newNote = 'Clientul dorește să revină împreună cu familia.';
+    const isEdit = editCases.includes(scenarioId) || noteCases.includes(scenarioId);
     const isViewing = isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
     const viewingTime = scenarioId === 'master-0158' ? '10:00' : ['master-0160', 'master-0161'].includes(scenarioId) ? '18:00' : scenarioId === 'master-0162' ? '17:30' : '17:00';
-    const viewingDate = resolveDatetime(scenarioId === 'master-0158' ? { weekday: 'friday', time: viewingTime } : { dayOffset: scenarioId === 'master-0164' ? -1 : 1, time: viewingTime }).iso;
+    const viewingDate = resolveDatetime(scenarioId === 'master-0158' ? { weekday: 'friday', time: viewingTime } : { dayOffset: ['master-0164', 'master-0167'].includes(scenarioId) ? -1 : 1, time: viewingTime }).iso;
     const seedTask = { id: 'task-selected', description: 'Sună-l pe Andrei', dueDate: date.iso, startTime: '10:00', duration: 30, contactId: 'andrei', contactName: 'Andrei', agentId: id, status: scenarioId === 'master-0181' ? 'completed' : 'open', updatedAt: '2026-01-01T00:00:00.000Z' };
     const history: AssistantMessage[] = ['master-0180', 'master-0181'].includes(scenarioId) ? [{ id: 'selected-task-context', role: 'assistant', text: 'Taskul selectat este task-selected: Sună-l pe Andrei.', cards: [{ type: 'data', source: 'tasks', title: 'Task selectat', rows: [seedTask] }], createdAt: new Date().toISOString() }] : [];
     const contactName = scenarioId === 'master-0163' ? 'Maria' : 'Andrei';
-    const seedViewing = { id: 'viewing-selected', contactId: 'andrei', contactName, propertyId: 'titan', propertyTitle: 'Apartament Titan', viewingDate: resolveDatetime({ dayOffset: scenarioId === 'master-0164' ? -1 : 1, time: '17:00' }).iso, duration: 60, status: 'scheduled', notes: 'Acces pe intrarea principală.', agentId: id, updatedAt: '2026-01-01T00:00:00.000Z' };
-    if (['master-0162', 'master-0164', 'master-0165'].includes(scenarioId)) history.push({ id: 'viewing-selection', role: 'assistant', text: 'Vizionarea selectată este viewing-selected.', cards: [{ type: 'data', source: 'viewings', title: 'Vizionare selectată', rows: [seedViewing] }], createdAt: new Date().toISOString() });
+    const seedViewing = { id: 'viewing-selected', contactId: 'andrei', contactName, propertyId: 'titan', propertyTitle: 'Apartament Titan', viewingDate: resolveDatetime({ dayOffset: ['master-0164', 'master-0167'].includes(scenarioId) ? -1 : 1, time: '17:00' }).iso, duration: 60, status: 'scheduled', notes: 'Acces pe intrarea principală.', agentId: id, updatedAt: '2026-01-01T00:00:00.000Z' };
+    if (['master-0162', 'master-0164', 'master-0165', ...noteCases].includes(scenarioId)) history.push({ id: 'viewing-selection', role: 'assistant', text: 'Vizionarea selectată este viewing-selected.', cards: [{ type: 'data', source: 'viewings', title: 'Vizionare selectată', rows: [seedViewing] }], createdAt: new Date().toISOString() });
+    if (isNote) history.unshift({ id: 'note-content', role: 'user', text: `Textul notei pentru vizionare este: ${newNote}`, createdAt: new Date().toISOString() });
     if (scenarioId === 'master-0162') history.unshift({ id: 'shift-direction', role: 'user', text: 'Vreau să amân vizionarea selectată, adică să o mut mai târziu.', createdAt: new Date().toISOString() });
     if (contextCases.includes(scenarioId)) {
       if (scenarioId === 'master-0159') history.push({ id: 'previous-time', role: 'user', text: 'Pentru următoarea programare vreau mâine la ora 17.', createdAt: new Date().toISOString() });
@@ -69,7 +73,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       if (!isViewing) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
       await agency.collection('contacts').doc('andrei').set({ name: contactName, phone: '0700000001', contactType: 'Cumparator' });
-      await agency.collection('properties').doc('titan').set({ title: 'Apartament Titan', location: 'Titan', status: 'Activ' });
+      await agency.collection('properties').doc('titan').set({ title: 'Apartament Titan', location: 'Titan', status: isNote ? 'Inactiv' : 'Activ' });
       if (isEdit) await agency.collection('viewings').doc(seedViewing.id).set(seedViewing);
       if (scenarioId === 'master-0159') {
         const currentRecord = currentRecordFromPath('/leads/andrei')!;
@@ -84,19 +88,24 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
-      expect(planned.actions.map(action => action.kind)).toEqual([isEdit ? 'update_viewing' : isViewing ? 'schedule_viewing' : scenarioId === 'master-0178' ? 'create_task' : 'update_task']);
+      expect(planned.actions.map(action => action.kind)).toEqual([isDelete ? 'delete_viewing' : isEdit ? 'update_viewing' : isViewing ? 'schedule_viewing' : scenarioId === 'master-0178' ? 'create_task' : 'update_task']);
       const executed = await executeSafePrefix(ctx, id, planned.actions, prompt);
       report = { ...report, execution: executed };
       expect(executed.blocked).toBe(false); expect(executed.actions).toEqual([]); expect(executed.results).toHaveLength(1);
       const tasks = await agency.collection('tasks').get(), viewings = await agency.collection('viewings').get(), contacts = await agency.collection('contacts').get();
       expect(contacts.size).toBe(1);
-      if (isViewing) {
+      if (isDelete) {
+        expect(viewings.size).toBe(0); expect(tasks.size).toBe(0);
+        const deleted = await agency.collection('assistantDeletedRecords').get();
+        expect(deleted.size).toBe(1); expect(deleted.docs[0].data()).toMatchObject({ resource: 'viewings', id: seedViewing.id, previous: seedViewing });
+      } else if (isViewing) {
         expect(tasks.size).toBe(0); expect(viewings.size).toBe(1);
         expect(viewings.docs[0].data()).toMatchObject({ contactId: 'andrei', propertyId: 'titan', status: scenarioId === 'master-0164' ? 'completed' : ['master-0163', 'master-0165'].includes(scenarioId) ? 'cancelled' : 'scheduled', viewingDate });
         if (isEdit) {
           expect(viewings.docs[0].id).toBe(seedViewing.id);
           expect(viewings.docs[0].data()).toMatchObject({ agentId: id, duration: 60 });
           expect(viewings.docs[0].data().notes).toContain(seedViewing.notes);
+          if (isNote) expect(viewings.docs[0].data().notes).toBe(`${seedViewing.notes}\n${newNote}`);
           if (scenarioId === 'master-0165') expect(viewings.docs[0].data().notes).toMatch(/client/i);
         }
       } else {
@@ -112,8 +121,10 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       expect((await agency.collection('tasks').get()).size).toBe(tasks.size);
       expect((await agency.collection('viewings').get()).size).toBe(viewings.size);
       const confirmation = executionConfirmation(executed.results);
-      expect(confirmation).toContain(isEdit ? 'Vizionare' : isViewing ? 'Vizionare programată' : 'Task');
-      if (isViewing || ['master-0178', 'master-0179'].includes(scenarioId)) expect(confirmation).toContain(isViewing ? viewingTime : scenarioId === 'master-0179' ? '11:00' : '10:00');
+      expect(confirmation).toContain(isDelete ? 'Vizionare ștearsă' : isNote ? 'Notă adăugată' : isEdit ? 'Vizionare' : isViewing ? 'Vizionare programată' : 'Task');
+      if (isViewing && !isDelete && !isNote || ['master-0178', 'master-0179'].includes(scenarioId)) expect(confirmation).toContain(isViewing ? viewingTime : scenarioId === 'master-0179' ? '11:00' : '10:00');
+      if (isNote) expect(confirmation).toContain(newNote);
+      if (isDelete) expect((await agency.collection('assistantDeletedRecords').get()).size).toBe(1);
       report = { ...report, executionVerified: true, confirmation, storedTasks: tasks.docs.map(doc => doc.data()), storedViewings: viewings.docs.map(doc => doc.data()) };
     } catch (error) {
       report = { ...report, failure: error instanceof Error ? error.message : String(error) }; throw error;

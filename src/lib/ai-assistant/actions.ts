@@ -507,16 +507,20 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const duration = action.duration || Number(old?.duration || 60);
       const agentId = action.agentId || String(old?.agentId || ctx.uid);
       const assignment = action.agentId ? await propertyAssignment(action.agentId) : null;
-      if (status === 'scheduled') {
+      const calendarChanged = !old || Date.parse(viewingDate) !== Date.parse(String(old.viewingDate)) || duration !== Number(old.duration || 60) || action.agentId !== undefined && action.agentId !== old.agentId || propertyId !== old.propertyId || contactId !== old.contactId || status !== old.status;
+      if (action.kind === 'update_viewing' && action.appendNotes !== undefined && action.notes !== undefined) throw new CommunicationError('Alege adăugarea unei note sau înlocuirea notelor, nu ambele.');
+      const notes = action.kind === 'update_viewing' && action.appendNotes !== undefined ? [old?.notes, action.appendNotes].filter(Boolean).join('\n') : action.notes ?? old?.notes ?? '';
+      if (calendarChanged && status === 'scheduled') {
         if (Date.parse(viewingDate) <= Date.now()) throw new CommunicationError('Vizionarea trebuie programată în viitor.');
         if (!['Activ', 'Rezervat'].includes(property.status)) throw new CommunicationError('Proprietatea nu este disponibilă pentru vizionare.');
 
       }
       const ref = collectionFor(ctx, 'viewings').doc(action.kind === 'update_viewing' ? action.viewingId : key);
-      const record = { contactId, contactName: contact.name, propertyId, propertyTitle: property.title, propertyAddress: property.address || property.location || '', agentId, agentName: assignment?.agentName || old?.agentName || profile.data()?.name || '', viewingDate, duration, status, notes: action.notes ?? old?.notes ?? '', updatedAt: now };
-      await assertCalendarSlot(ctx, tx, 'viewings', ref.id, record);
-      tx.set(ref, { ...record, ...(old ? {} : { id: ref.id, createdAt: now }) }, { merge: true });
-      result = { viewingId: ref.id, viewingDate, status, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
+      const record = { contactId, contactName: contact.name, propertyId, propertyTitle: property.title, propertyAddress: property.address || property.location || '', agentId, agentName: assignment?.agentName || old?.agentName || profile.data()?.name || '', viewingDate, duration, status, notes, updatedAt: now };
+      if (calendarChanged) await assertCalendarSlot(ctx, tx, 'viewings', ref.id, record);
+      if (old && !calendarChanged) tx.update(ref, { notes, updatedAt: now });
+      else tx.set(ref, { ...record, ...(old ? {} : { id: ref.id, createdAt: now }) }, { merge: true });
+      result = { ...(action.kind === 'update_viewing' && action.appendNotes !== undefined ? { appendedNote: action.appendNotes } : {}), viewingId: ref.id, viewingDate, status, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
     } else if (action.kind === 'recommend_properties') {
       const contact = await read('contacts', action.contactId);
       const ids = [...new Set(action.propertyIds)];

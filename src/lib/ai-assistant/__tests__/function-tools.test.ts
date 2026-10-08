@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { functionDefinition, functionPayload } from '../function-tools';
-import { coreToolSchemas } from '../tool-schemas';
+import { coreToolSchemas, actionToolSchemas } from '../tool-schemas';
 import { explicitInstants, validateActionDates } from '../temporal-policy';
 describe('strict native Responses tool contracts', () => {
   it('advertises query and discovery limits before the model calls them', () => {
@@ -29,4 +29,17 @@ describe('strict native Responses tool contracts', () => {
   it('preserves complex action validation behind the strict payload wrapper', () => { const tool = functionDefinition('propose_actions'); expect((tool.parameters as any).properties.payload.type).toBe('string'); expect(() => coreToolSchemas.propose_actions[0].parse(functionPayload('propose_actions', JSON.stringify({ payload: JSON.stringify({ actions: [{ kind: 'grant_whatsapp_consent' }] }) })))).toThrow(); });
   it('rejects arbitrary tool schemas and malformed argument bodies', () => { expect(() => functionDefinition('attacker')).toThrow(); expect(() => functionPayload('search_properties', 'null')).toThrow(); expect(() => functionPayload('propose_actions', '{}')).toThrow(); });
   it('requires deterministic provenance for dates, including nested automations', () => { const action = { kind: 'create_task' as const, dueDate: '2026-10-10T11:00:00.000Z', description: 'Follow up' }; expect(() => validateActionDates([action], explicitInstants('10 octombrie la 14:00'))).toThrow('resolve_datetime'); expect(() => validateActionDates([action], explicitInstants('2026-10-10T14:00:00+03:00'))).not.toThrow(); });
+});
+
+it('accepts a redundant matching native discriminator without changing the action', () => {
+  expect(functionPayload('update_viewing', JSON.stringify({ payload: JSON.stringify({ kind: 'update_viewing', viewingId: 'v', status: 'scheduled', appendNotes: 'Revine.' }) }))).toEqual({ viewingId: 'v', status: 'scheduled', appendNotes: 'Revine.' });
+  expect(() => functionPayload('update_viewing', JSON.stringify({ payload: JSON.stringify({ kind: 'delete_viewing', viewingId: 'v' }) }))).toThrow('nu corespunde');
+});
+
+it('normalizes id only for a single required native identifier and rejects contradictions', () => {
+  expect(functionDefinition('delete_viewing').description).toContain('Câmpuri obligatorii: viewingId');
+  expect(functionPayload('delete_viewing', JSON.stringify({ payload: JSON.stringify({ id: 'v' }) }))).toEqual({ viewingId: 'v' });
+  expect(() => functionPayload('delete_viewing', JSON.stringify({ payload: JSON.stringify({ id: 'v', viewingId: 'other' }) }))).toThrow('contradictorii');
+  expect(actionToolSchemas.delete_offer[0].safeParse(functionPayload('delete_offer', JSON.stringify({ payload: JSON.stringify({ id: 'ambiguous' }) }))).success).toBe(false);
+  expect(actionToolSchemas.delete_viewing[0].safeParse(functionPayload('delete_viewing', JSON.stringify({ payload: JSON.stringify({ id: 'v', unrelated: true }) }))).success).toBe(false);
 });

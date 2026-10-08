@@ -86,6 +86,26 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect((await agency.collection('assistantPolicies').doc(ctx.uid).get()).exists).toBe(false);
     } finally { await profile.delete(); }
   });
+  it('appends a note to a past viewing at an inactive property without changing the calendar or repeating it', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    const viewing = agency.collection('viewings').doc('v');
+    await profile.set({ agencyId: ctx.agencyId, role: ctx.role });
+    await agency.collection('properties').doc('p').set({ title: 'Titan', status: 'Inactiv' });
+    await agency.collection('contacts').doc('c').set({ name: 'Andrei' });
+    const original = { contactId: 'c', propertyId: 'p', viewingDate: '2026-01-01T10:00:00.000Z', status: 'scheduled', notes: 'Nota inițială.', updatedAt: '2026-01-01T09:00:00.000Z' };
+    await viewing.set(original);
+    try {
+      const action = { kind: 'update_viewing' as const, viewingId: 'v', status: 'scheduled' as const, appendNotes: 'Revine cu familia.', expectedUpdatedAt: original.updatedAt };
+      const result = await executeSafePrefix(ctx, 'append-note', [action], 'Adaugă o notă la vizionare.');
+      expect(result.blocked).toBe(false); expect(result.actions).toEqual([]);
+      expect((await viewing.get()).data()).toEqual({ ...original, updatedAt: expect.any(String), notes: 'Nota inițială.\nRevine cu familia.' });
+      expect((await executeSafePrefix(ctx, 'append-note', [action], 'Adaugă o notă la vizionare.')).results).toEqual(result.results);
+      expect((await viewing.get()).data()?.notes).toBe('Nota inițială.\nRevine cu familia.');
+      await expect(executeAction(ctx, { ...action, appendNotes: 'Altă notă.' }, 'stale-note')).rejects.toThrow('modificat');
+      await expect(executeAction(ctx, { ...action, expectedUpdatedAt: undefined, notes: 'Înlocuire' }, 'conflicting-note')).rejects.toThrow('nu ambele');
+      expect((await viewing.get()).data()?.notes).toBe('Nota inițială.\nRevine cu familia.');
+    } finally { await profile.delete(); }
+  });
   it('finds the Romanian title, creates Matei Alin and commits tomorrow at 07:30 before confirming', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent emulator' });
