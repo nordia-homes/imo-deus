@@ -552,7 +552,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const record = { contactId, contactName: contact.name, propertyId, propertyTitle: property.title, propertyAddress: property.address || property.location || '', agentId, agentName: assignment?.agentName || old?.agentName || profile.data()?.name || '', viewingDate, duration, status, notes, updatedAt: now };
       if (calendarChanged) await assertCalendarSlot(ctx, tx, 'viewings', ref.id, record);
       if (old && !calendarChanged) tx.update(ref, { notes, updatedAt: now });
-      else tx.set(ref, { ...record, ...(old ? {} : { id: ref.id, createdAt: now }) }, { merge: true });
+      else tx.set(ref, { ...record, confirmations: null, confirmationRevision: now, ...(old ? {} : { id: ref.id, createdAt: now }) }, { merge: true });
       result = { ...(action.kind === 'update_viewing' && action.appendNotes !== undefined ? { appendedNote: action.appendNotes } : {}), viewingId: ref.id, viewingDate, status, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
     } else if (action.kind === 'recommend_properties') {
       const contact = await read('contacts', action.contactId);

@@ -4,6 +4,22 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — confirmarea participanților prin WhatsApp
+
+Cerință explicitată de utilizator: clientul și proprietarul confirmă prin răspuns la șablonul WhatsApp, după aprobarea aplicației Meta. Declarația agentului și stările trimis/livrat/citit nu confirmă participarea. Implementarea de confirmare manuală începută în acest lot a fost eliminată.
+
+Scenariul **0197** a trecut cu model real și Firestore local: lista conține exact patru programări fără confirmarea actuală a ambilor participanți, inclusiv un refuz și o confirmare devenită veche. Cele complet confirmate, anulate, efectuate, ale altui agent sau din altă zi sunt excluse. Cinci formulări libere au fost interpretate cu modelul real: acceptare, refuz, altă oră, condiție și simplu mulțumesc. Dovezi: [CALENDAR_EXECUTION_BATCH_14.json](evals/CALENDAR_EXECUTION_BATCH_14.json).
+
+Trimiterea păstrează legătura dintre șablon, vizionare și participant; verifică telefonul și datele actuale înaintea punerii în coadă și înaintea apelului Meta. Webhookul păstrează referința mesajului la care s-a răspuns. Workerul salvează separat pentru client și proprietar confirmat/refuzat/solicită reprogramare/neclar, cu identificatorii mesajelor sursă. Reprogramarea nu se execută automat. Răspunsurile duplicate sunt idempotente, cele mai vechi nu suprascriu răspunsuri noi, iar răspunsurile contradictorii cu același timestamp rămân neclare. Reprogramarea prin executor invalidează confirmările și șabloanele anterioare, inclusiv după revenirea la ora inițială.
+
+Un răspuns fără citat poate fi legat numai de o singură programare activă identificabilă în conversație. La mai multe programări sau la scanarea incompletă a istoricului, Inbox afișează necesitatea clarificării. Pentru text liber se folosește modelul fără instrumente de execuție; indisponibilitatea lui nu păstrează fals o confirmare anterioară, ci lasă starea necunoscută și reîncearcă. Fișierele audio/imagine nu sunt interpretate în acest lot. Nicio trimitere reală nu a fost efectuată.
+
+Inbox afișează rezultatul lângă mesaj, pe mobil și desktop. Regulile Firestore păstrează citirea vizionărilor pentru agenție, dar scrierile trec prin executorul CRM existent; browserul nu poate falsifica dovada WhatsApp. Nu sunt necesare acțiuni de acordare a permisiunilor CRM din partea agenților.
+
+Validare: **2.125 teste locale**, **280 probe Firestore și model real** în rularea combinată; ulterior **17 probe țintite** (8 WhatsApp și 9 reguli Firestore) au trecut cu cazurile suplimentare și protecția finală. Lint, inventarele și buildul cu TypeScript/227 pagini au trecut. Cele 39 de scenarii live anterioare nu au fost rerulate. Total: **40 de scenarii originale cu dovezi locale folosind model real**, **960 fără această dovadă**. Nu este certificare în producție, pe voce sau cu Meta real; aprobarea și proba reală WhatsApp rămân necesare.
+
+Configurarea șablonului: corpul trebuie să solicite confirmarea și să conțină titlul proprietății, data DD.MM.YYYY sau YYYY-MM-DD și ora HH:mm din București. Exemplu: „Confirmați vizionarea {{1}}, {{2}}, ora {{3}}, București.” Butoanele pot fi „Confirm vizionarea”, „Nu pot veni”, „Reprogramează”. Trimiterea prin message_send include viewingConfirmation={viewingId, participant:client|owner}; fără această legătură, un mesaj generic nu constituie solicitare de confirmare urmărită. Aprobarea Meta și verificările existente de canal/șablon/destinatar rămân active.
+
 ## Lot calendar — mesaje de confirmare pentru client și proprietar
 
 Scenariile originale **0195–0196** au trecut cu model real și Firestore local (prompt jarvis-50 / tools 80), fără opt-in separat. Dovezi: [CALENDAR_EXECUTION_BATCH_13.json](evals/CALENDAR_EXECUTION_BATCH_13.json). Rezultatul cerut este mesajul integral pregătit și netrimis, pentru vizionarea selectată în conversație. Nu reprezintă trimiterea mesajului sau confirmarea participării.

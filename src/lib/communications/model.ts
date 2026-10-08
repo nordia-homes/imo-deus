@@ -16,6 +16,7 @@ export type Conversation = {
   externalUrl?: string; version: number; createdAt: string;
 };
 export type Message = {
+  viewingReply?: { viewingId?: string; participant?: 'client' | 'owner'; status: 'confirmed' | 'declined' | 'reschedule_requested' | 'unknown'; reason?: string; method?: string };
   id: string; externalId: string | null; conversationId: string; agencyId: string;
   direction: 'received' | 'sent'; origin: 'imodeus' | 'native' | 'unknown'; text: string;
   createdAt: string; authorId: string | null;

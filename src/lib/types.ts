@@ -1743,6 +1743,7 @@ export type PortalRecommendation = {
 };
 
 export type Viewing = {
+  confirmations?: Partial<Record<'client' | 'owner', import('./crm/viewing-attendance').AttendanceRecord>> | null;
   id: string;
   updatedAt?: string;
   propertyId: string;

@@ -1596,7 +1596,11 @@
           "sourceNumber": 197,
           "request": "Ce vizionări de mâine sunt neconfirmate?",
           "requestSha256": "5c8d0fa2326678469a21bebf87adf0892088b4a3d5c2697efcb1d1ae54e47d5c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_14.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0198",

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { afterAll, beforeAll, describe, it } from 'vitest';
-import { initializeTestEnvironment, assertFails, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
+import { initializeTestEnvironment, assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('assistant server-managed records', () => {
   let env: RulesTestEnvironment;
@@ -9,6 +9,13 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('assistant server-managed 
     await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'users', 'agent'), { agencyId: 'a', role: 'agent' }); await setDoc(doc(c.firestore(), 'users', 'admin'), { agencyId: 'a', role: 'admin' }); await setDoc(doc(c.firestore(), 'users', 'other'), { agencyId: 'b', role: 'agent' }); });
   });
   afterAll(async () => { await env?.cleanup(); });
+  it.each(['agent', 'admin', 'other'])('protects WhatsApp viewing evidence for %s', async actor => {
+    await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'agencies', 'a', 'viewings', 'v'), { status: 'scheduled' }); });
+    const db = env.authenticatedContext(actor).firestore(), ref = doc(db, 'agencies', 'a', 'viewings', 'v');
+    await assertFails(updateDoc(ref, { confirmations: { client: { status: 'confirmed', source: 'whatsapp_reply' } } }));
+    await assertFails(setDoc(doc(db, 'communicationViewingReplies', 'fake'), { status: 'queued' }));
+    if (actor === 'other') await assertFails(getDoc(ref)); else await assertSucceeds(getDoc(ref));
+  });
   it.each(['agent', 'admin', 'other'])('refuses direct feedback writes for %s', async actor => {
     await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), 'users', actor, 'notifications', 'feedback'), { recipientId: actor, agencyId: actor === 'other' ? 'b' : 'a', type: 'ai_assistant', isRead: false }); });
     const db = env.authenticatedContext(actor).firestore();

@@ -1,3 +1,5 @@
+import { bindViewingConfirmation, assertViewingTemplate } from './viewing-confirmation';
+import { viewingConfirmationLinkSchema } from '@/lib/crm/viewing-attendance';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import type { Firestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
@@ -16,7 +18,7 @@ import { matchingSendSchema, assertMatchingSend } from './matching-send';
 import { assertNoReplySince } from '@/lib/ai-assistant/reply-stop';
 import { personalRecipientSchema, assertPersonalRecipient } from './personal-recipient';
 
-const inputSchema = z.object({ text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 export async function estimateSend(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput) {
   const { connection, token } = await connectionToken(db, actor, conversation.connectionId, 'send');
@@ -82,7 +84,9 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   const recipient = recipientRevision(conversation);
   assertNoReplySince(conversation, input.stopOnReplySince);
   await assertMatchingSend(db, actor, conversation, input.matchingSelection);
+  const binding = await bindViewingConfirmation(db, actor.agencyId, conversation, input.viewingConfirmation);
   const estimate = await estimateSend(db, actor, conversation, input);
+  assertViewingTemplate(binding, estimate.renderedText, Boolean(input.template));
   if (input.sendApproval !== undefined || (!preview && input.expectedRecipientRevision !== undefined)) assertSendApproval(input.sendApproval, estimate);
   const attachment = input.attachmentId ? (await agencyCollection(db, actor.agencyId, 'communicationMedia').doc(input.attachmentId).get()).data() : null;
   if (preview) return { estimate: { amountMicros: estimate.amount, currency: estimate.currency, category: estimate.category }, withinWindow: withinResponseWindow(conversation.lastInboundAt), renderedText: estimate.renderedText };
@@ -102,13 +106,15 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     await assertPersonalRecipient(db, actor, { ...fresh.data(), id }, input.personalRecipient, tx);
     assertNoReplySince(fresh.data()!, input.stopOnReplySince);
     await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
+    const currentBinding = await bindViewingConfirmation(db, actor.agencyId, { ...fresh.data(), id }, input.viewingConfirmation, tx);
+    if (JSON.stringify(currentBinding) !== JSON.stringify(binding)) throw new CommunicationError('Programarea s-a schimbat înaintea trimiterii.', 409);
     if (estimate.amount > 0) tx.set(budgetRef, { currency: estimate.currency, limitMicros: budget.data()?.limitMicros || 0, spentMicros: budget.data()?.spentMicros || 0,
       reservedMicros: budgetReservation(budget.data()?.limitMicros || 0, budget.data()?.spentMicros || 0, budget.data()?.reservedMicros || 0, estimate.amount) }, { merge: true });
     const message: Message = { id: jobId, agencyId: actor.agencyId, conversationId: id, externalId: null, direction: 'sent', origin: 'imodeus', text: input.template ? estimate.renderedText || `[${input.template.name}] ${input.template.parameters.join(' · ')}` : input.text, createdAt: nowIso(), authorId: actor.uid, status: 'queued', attachments: [] };
     if (input.attachmentId && attachment) message.attachments = [{ localId: input.attachmentId, name: attachment.name, type: attachment.mime }];
-    tx.create(conversationRef.collection('messages').doc(jobId), message);
+    tx.create(conversationRef.collection('messages').doc(jobId), { ...message, ...(binding ? { viewingConfirmation: binding } : {}) });
     tx.create(job, { agencyId: actor.agencyId, uid: actor.uid, conversationId: id, connectionId: conversation.connectionId, input, recipientRevision: recipient,
-      estimate: { amount: estimate.amount, currency: estimate.currency, rateId: estimate.rateId }, budgetId: budgetRef.id, budgetSettled: false, status: 'queued', createdAt: nowIso() });
+      ...(binding ? { viewingConfirmation: binding } : {}), estimate: { amount: estimate.amount, currency: estimate.currency, rateId: estimate.rateId }, budgetId: budgetRef.id, budgetSettled: false, status: 'queued', createdAt: nowIso() });
   });
   return { messageId: jobId, status: 'queued' };
 }
@@ -169,6 +175,9 @@ export async function drainOutbound(db: Firestore) {
       await assertPersonalRecipient(db, actor, latestConversation, job.input.personalRecipient);
       assertNoReplySince(latestConversation, job.input.stopOnReplySince);
       await assertMatchingSend(db, actor, latestConversation, job.input.matchingSelection);
+      const currentBinding = await bindViewingConfirmation(db, actor.agencyId, latestConversation, job.input.viewingConfirmation);
+      if (JSON.stringify(currentBinding) !== JSON.stringify(job.viewingConfirmation || null)) throw new CommunicationError('Programarea sau participantul s-a schimbat.', 409);
+      assertViewingTemplate(currentBinding, estimate.renderedText, Boolean(job.input.template));
       await messageRef.update({ status: 'sending' });
       attempted = true;
       const response = await graph(`/${connection.externalId}/messages`, token, { ...estimate.body, ...(connection.channel === 'whatsapp' ? { biz_opaque_callback_data: receiptCorrelation(row.id, connection.id) } : {}) });

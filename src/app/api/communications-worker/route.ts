@@ -4,6 +4,7 @@ import { secretMatches, stableId } from '@/lib/communications/crypto';
 import { isExternalSocialEcho, normalizeWebhookSafely } from '@/lib/communications/normalize';
 import { agencyCollection, ingestMessage, migrateStoria, nowIso } from '@/lib/communications/server';
 import { drainOutbound } from '@/lib/communications/outbound';
+import { drainViewingReplies } from '@/lib/communications/viewing-confirmation';
 import { drainSearch } from '@/lib/communications/search';
 import { drainSocial } from '@/lib/communications/social';
 import { recordInboundOptOut } from '@/lib/communications/optout';
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
     }
   }
   const results = await Promise.allSettled([drainOutbound(adminDb), drainSearch(adminDb), drainSocial(adminDb)]);
+  results.push(...await Promise.allSettled([drainViewingReplies(adminDb)]));
   return NextResponse.json({ webhookEvents: rows.size, workers: [...stageErrors, ...results.map(r => r.status === 'fulfilled' ? { completed: r.value } : { error: r.reason instanceof Error ? r.reason.message : 'Worker failed' })] });
   } finally {
     await adminDb.runTransaction(async tx => { const snap = await tx.get(lease); if (snap.data()?.owner === owner) tx.delete(lease); });

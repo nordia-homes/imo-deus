@@ -153,6 +153,9 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
       ...(event.direction === 'sent' && map.data()?.pendingStatus === 'failed' && map.data()?.pendingError ? { error: map.data()!.pendingError } : {}) };
     tx.set(ref, { ...row, accessUids: [...new Set([row.assigneeId, ...row.collaboratorIds].filter(Boolean))] }, { merge: true });
     tx.create(messageRef, message);
+    if (event.channel === 'whatsapp' && event.direction === 'received' && !event.imported) {
+      tx.create(db.collection('communicationViewingReplies').doc(stableId(connection.id, event.externalId)), { agencyId: connection.agencyId, connectionId: connection.id, conversationId: id, messageId, participantId: event.participantId, externalId: event.externalId, replyTo: event.replyTo || null, text: event.attachments.length ? '' : event.text, createdAt: event.createdAt, status: 'queued', attempts: 0 });
+    }
     tx.set(mapping, { messageId, conversationId: id, connectionId: connection.id }, { merge: true });
     tx.set(db.collection('communicationSearchJobs').doc(stableId(id, messageId)), { agencyId: connection.agencyId, conversationId: id, messageId, status: 'queued', updatedAt: nowIso() });
   });

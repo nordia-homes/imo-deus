@@ -1,6 +1,7 @@
 import type { Channel, Message } from './model';
 type ObjectValue = Record<string, any>; // Provider payloads are validated field-by-field below.
 export type IncomingEvent = {
+  replyTo?: string;
   channel: Channel; accountId: string; participantId: string; externalId: string;
   text: string; name?: string; direction: 'received' | 'sent'; createdAt: string;
   attachments: Message['attachments']; status?: Message['status']; error?: string; imported?: boolean; nativeEcho?: boolean; socialEcho?: boolean; sourceAppId?: string; correlation?: string;
@@ -18,6 +19,7 @@ function waMessage(message: ObjectValue, accountId: string, imported = false, ec
   const type = String(message.type || 'text');
   const media = ['image', 'video', 'audio', 'document', 'sticker'].includes(type) ? message[type] : null;
   return { channel: 'whatsapp', accountId, participantId, externalId: message.id,
+    ...(typeof message.context?.id === 'string' ? { replyTo: message.context.id } : {}),
     direction: sent ? 'sent' : 'received', text: String(message.text?.body || media?.caption || message.button?.text || message.interactive?.button_reply?.title || message.interactive?.list_reply?.title || (media ? '' : `[${type}]`)),
     createdAt: time(message.timestamp), imported, nativeEcho: echo && !imported,
     attachments: media?.id ? [{ id: String(media.id), name: String(media.filename || type), type }] : [] };

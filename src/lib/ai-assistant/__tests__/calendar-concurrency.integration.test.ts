@@ -1,4 +1,6 @@
 import { viewingConfirmationDraft } from '../viewing-confirmation-draft';
+import { viewingAttendance } from '../viewing-attendance';
+
 import { calendarAvailability } from '../calendar-availability';
 import { taskDeferral } from '../task-deferral';
 import { taskPriorities } from '../task-priorities';
@@ -64,6 +66,26 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('paginates unconfirmed viewings and excludes other days, statuses and agents', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), batch = db.batch();
+    batch.set(root.collection('contacts').doc('c'), { name: 'Client' });
+    batch.set(root.collection('properties').doc('p'), { title: 'Proprietate', status: 'Activ', ownerName: 'Proprietar' });
+    const row = { contactId: 'c', propertyId: 'p', agentId: ctx.uid, status: 'scheduled', viewingDate: resolveDatetime({ dayOffset: 1, time: '18:00' }).iso };
+    for (let index = 0; index < 102; index++) batch.set(root.collection('viewings').doc(`v-${String(index).padStart(3, '0')}`), row);
+    batch.set(root.collection('viewings').doc('other-agent'), { ...row, agentId: 'other' });
+    batch.set(root.collection('viewings').doc('cancelled'), { ...row, status: 'cancelled' });
+    batch.set(root.collection('viewings').doc('completed'), { ...row, status: 'completed' });
+    batch.set(root.collection('viewings').doc('other-day'), { ...row, viewingDate: resolveDatetime({ dayOffset: 2, time: '18:00' }).iso });
+    await batch.commit();
+    const first = await viewingAttendance(ctx, { dayOffset: 1 });
+    expect(first.count).toBe(102); expect(first.rows).toHaveLength(100); expect(first.complete).toBe(false);
+    const last = await viewingAttendance(ctx, { dayOffset: 1, cursor: first.nextCursor! });
+    expect(last.rows).toHaveLength(2); expect(last.complete).toBe(true);
+    expect(new Set([...first.rows, ...last.rows].map(row => row.id)).size).toBe(102);
+    expect((await viewingAttendance(context(), { dayOffset: 1 })).count).toBe(0);
+    await root.collection('viewings').doc('invalid-date').set({ ...row, viewingDate: 'invalid' });
+    expect(await viewingAttendance(ctx, { dayOffset: 1 })).toMatchObject({ complete: false, count: null, status: 'invalid_date' });
+  });
   it('prepares confirmations from fresh relationship data without changing the viewing or queuing messages', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId);
     await root.collection('contacts').doc('c').set({ name: 'Alin actual', phone: '0700000001' });

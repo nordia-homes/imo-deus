@@ -219,9 +219,15 @@ service cloud.firestore {
       allow update, delete: if isUserAdminForAgency(agencyId);
     }
 
+    // Viewing mutations use the CRM executor; participant evidence is webhook-only.
+    match /agencies/{agencyId}/viewings/{viewingId} {
+      allow read: if isUserInAgency(agencyId);
+      allow write: if false;
+    }
+
     // --- Generic Rule for other Agency Subcollections ---
     match /agencies/{agencyId}/{collectionId}/{document=**} {
-      allow read, write: if collectionId != 'properties' && collectionId != 'sales' &&
+      allow read, write: if collectionId != 'viewings' && collectionId != 'properties' && collectionId != 'sales' &&
                             collectionId != 'salesEmailTemplates' &&
                             collectionId != 'salesSettings' &&
                             collectionId != 'salesTemplateAudit' &&
