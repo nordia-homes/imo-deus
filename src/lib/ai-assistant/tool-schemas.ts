@@ -1,6 +1,7 @@
 import { viewingConfirmationDraftSchema } from './viewing-confirmation-draft';
 import { viewingAttendanceSchema } from './viewing-attendance';
 import { viewingRiskSchema } from './viewing-risk';
+import { todayReviewSchema } from './today-review';
 import { calendarAvailabilitySchema } from './calendar-availability';
 import { taskDeferralSchema } from './task-deferral';
 import { taskPrioritiesSchema } from './task-priorities';
@@ -22,6 +23,7 @@ const objectOutput = z.record(z.unknown());
 const rowsOutput = z.object({ rows: z.array(z.record(z.unknown())) }).passthrough();
 const operationInput = z.object({ operation: idSchema, params: z.record(z.string().max(180)).default({}), query: z.record(z.string().max(2000)).default({}), body: z.record(z.unknown()).default({}) }).strict();
 export const coreToolSchemas = {
+  today_review: [todayReviewSchema, rowsOutput, 'Pentru Ce am ratat astăzi?: bilanț actual al taskurilor și vizionărilor agentului, azi București. Separă overdue_task, viewing_outcome_missing și untimed_task. Fără scrieri. Explică lipsa rezultatului, nu declara no-show sau neexecutare dovedită. Citește toate paginile nextCursor, semnalează datele invalide; complete=false nu certifică un bilanț complet. Limitează răspunsul la calendarul CRM. Pentru momentul bilanțului copiază checkedLocal, NICIODATĂ checkedAt (intern). Folosește activityLocal pentru activități. Explică limitele în limbaj natural, fără nume de câmpuri/API/complete/issue.'],
   viewing_risk: [viewingRiskSchema, rowsOutput, 'Pentru care dintre ele au risc mai mare de no-show: compară lista de vizionări afișată anterior, recitind CRM și răspunsurile WhatsApp actuale. Fără parametri/ID-uri presupuse. Explică reasons, priority și viewingLocal, fără procente sau probabilități inventate. unknown nu este refuz; refuzul proprietarului afectează accesul. Explică excluded și limitează concluziile la această listă. needs_clarification cere lista, fără căutare arbitrară. Nu modifică și nu trimite mesaje.'],
   viewing_attendance: [viewingAttendanceSchema, rowsOutput, 'Vizionări neconfirmate ale agentului: dayOffset=1 pentru mâine. Verifică separat clientul și proprietarul, pe date actuale. Lipsa confirmării în CRM NU dovedește refuzul sau neprezentarea. Citește toate paginile nextCursor; complete=false nu este rezultat integral. Afișează viewingLocal și stările participanților. Nu modifica programările.'],
   viewing_confirmation_draft: [viewingConfirmationDraftSchema, rowsOutput, 'Pregătește mesajul de confirmare pentru vizionarea selectată: recipient=client sau owner. Citește vizionarea și datele actuale CRM, separă numele/telefonul proprietarului de client, ora exclusiv București. Afișează description integral ca mesaj pregătit și netrimis; semnalează missingFields fără să inventezi datele lipsă. Nu propune acțiuni de trimitere, nu confirmă participarea, nu modifică CRM. Pentru status diferit de prepared explică datele/starea lipsă și cere clarificare. ID-ul selectat din context poate fi transmis direct, fără read suplimentar.'],

@@ -1618,7 +1618,11 @@
           "sourceNumber": 199,
           "request": "Ce am ratat astăzi?",
           "requestSha256": "6114a421a5a4222ad44dcc3e7a0e3a74c67b867a049c9dae079393eee70acf45",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_16.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0200",

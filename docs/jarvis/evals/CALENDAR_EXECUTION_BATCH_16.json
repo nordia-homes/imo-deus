@@ -1,0 +1,348 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0199",
+      "prompt": "Ce am ratat astăzi?",
+      "versions": {
+        "prompt": "jarvis-53",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "83",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T15:47:46.017Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Bilanțul calendarului CRM de azi, verificat la 18:47 (ora București), 8 octombrie 2026. Este complet pentru calendarul CRM consultat; nu au fost semnalate date invalide.\n\n- **Sarcină cu ora depășită: 1** — „Sună clientul pentru acte”, la 00:00. Sarcina este încă deschisă în CRM; asta nu dovedește că nu a fost efectuată.\n- **Vizionare încheiată fără rezultat înregistrat: 1** — „Andrei — Apartament Titan”, la 00:00. Vizionarea apare încă programată în CRM; lipsa rezultatului nu dovedește neprezentarea.\n- **Sarcină fără oră, încă deschisă azi: 1** — „Verifică documentele”. Nu este declarată întârziată.\n\nAcest bilanț se limitează la calendarul CRM de azi; nu stabilește dacă sarcinile au fost efectuate sau dacă vizionarea a avut loc.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "today_review",
+          "status": "success",
+          "latencyMs": 249,
+          "version": "83",
+          "argumentsHash": "6e1bd7c51c66ac15d7827cad1fb01d23344d2d08d564a36a75d4b784c46e8889"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "83",
+          "argumentsHash": "057ad8dbd162fc39c7f57dfd8ce8c5ea7d38ea3339762b87c1611aadc7fbf8c0"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11900,
+            "outputTokens": 18,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 11897,
+            "estimated": false
+          },
+          "costUsd": 0.001496425,
+          "latencyMs": 2449,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12617,
+            "outputTokens": 133,
+            "cachedTokens": 11897,
+            "cacheWriteTokens": 717,
+            "estimated": false
+          },
+          "costUsd": 0.000275395,
+          "latencyMs": 3856,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12775,
+            "outputTokens": 251,
+            "cachedTokens": 12614,
+            "cacheWriteTokens": 158,
+            "estimated": false
+          },
+          "costUsd": 0.00027169,
+          "latencyMs": 4216,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_ZeuEaRksC36YibXUZ3eKuzqN",
+          "name": "today_review",
+          "arguments": "{\"cursor\":0}"
+        },
+        {
+          "id": "call_dPPEFc6QS6cp5GXLuxWMCWVv",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Ce am ratat astăzi?\",\"description\":\"Bilanțul calendarului CRM de azi, împărțit în sarcini cu ora depășită, vizionări încheiate fără rezultat înregistrat și sarcini fără oră; include momentul bilanțului, orele Bucureștiului, limite și date invalide.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_ZeuEaRksC36YibXUZ3eKuzqN\"]}]}"
+        }
+      ],
+      "costUsd": 0.00204351,
+      "cards": [
+        {
+          "type": "data",
+          "title": "Sarcini de verificat azi",
+          "source": "tasks",
+          "rows": [
+            {
+              "id": "overdue",
+              "resource": "tasks",
+              "category": "overdue_task",
+              "title": "Sună clientul pentru acte",
+              "description": "Ora programată a trecut, iar sarcina este încă deschisă în CRM; verifică efectuarea.",
+              "at": "2026-10-07T21:00:00Z",
+              "activityLocal": "2026-10-08 00:00 (ora București)",
+              "contactId": null,
+              "propertyId": null
+            },
+            {
+              "id": "untimed",
+              "resource": "tasks",
+              "category": "untimed_task",
+              "title": "Verifică documentele",
+              "description": "Sarcină deschisă pentru azi, fără oră; nu poate fi declarată întârziată.",
+              "at": null,
+              "activityLocal": "2026-10-08 fără oră (ora București)",
+              "contactId": null,
+              "propertyId": null
+            }
+          ],
+          "complete": true,
+          "note": "Bilanț al calendarului CRM al agentului, azi în Europe/Bucharest, la momentul checkedAt. Taskurile open cu ora de început depășită necesită verificare; nu dovedește că nu au fost executate. Vizionările scheduled al căror interval s-a încheiat necesită înregistrarea rezultatului; nu sunt declarate neprezentări. Taskurile open fără oră sunt încă de făcut azi, nu întârzieri demonstrate. Nu include zile anterioare, activități viitoare, mesaje sau alte sisteme. Confirmarea WhatsApp nu dovedește efectuarea vizionării.",
+          "outputType": "TASK_CARD"
+        },
+        {
+          "type": "data",
+          "title": "Vizionări cu rezultat de verificat",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "elapsed",
+              "resource": "viewings",
+              "category": "viewing_outcome_missing",
+              "title": "Andrei — Apartament Titan",
+              "description": "Intervalul s-a încheiat, dar vizionarea este încă programată în CRM; rezultatul trebuie verificat. Nu dovedește neprezentarea.",
+              "at": "2026-10-07T21:00:00Z",
+              "activityLocal": "2026-10-08 00:00 (ora București)",
+              "contactId": "andrei",
+              "propertyId": "titan",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan"
+            }
+          ],
+          "complete": true,
+          "note": "Bilanț al calendarului CRM al agentului, azi în Europe/Bucharest, la momentul checkedAt. Taskurile open cu ora de început depășită necesită verificare; nu dovedește că nu au fost executate. Vizionările scheduled al căror interval s-a încheiat necesită înregistrarea rezultatului; nu sunt declarate neprezentări. Taskurile open fără oră sunt încă de făcut azi, nu întârzieri demonstrate. Nu include zile anterioare, activități viitoare, mesaje sau alte sisteme. Confirmarea WhatsApp nu dovedește efectuarea vizionării.",
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "verification": "Original prompt with actual model and local CRM: elapsed open task, untimed task and elapsed viewing without recorded outcome; ongoing/completed/cancelled/other-day/colleague records excluded. Collections unchanged; no outbound messages. Not production certification."
+    }
+  ],
+  "rejectedTrials": [
+    {
+      "run": {
+        "scenarioId": "master-0199",
+        "prompt": "Ce am ratat astăzi?",
+        "versions": {
+          "prompt": "jarvis-53",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "83",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-08T15:43:52.321Z",
+        "context": [],
+        "environment": "actual model + local Firestore; external catalog excluded",
+        "executionVerified": false,
+        "plannerStatus": "success",
+        "text": "Bilanțul calendarului CRM de azi, joi 8 octombrie, la 15:43 (ora Bucureștiului):\n\n- **Sarcină cu ora depășită — 1:** „Sună clientul pentru acte”. Ora programată a trecut, dar sarcina este încă deschisă în CRM; verifică dacă a fost efectuată. **Nu este dovadă de neexecutare.** Ora: 00:00.\n- **Vizionare încheiată fără rezultat înregistrat — 1:** „Andrei — Apartament Titan”. Intervalul s-a încheiat, dar vizionarea apare încă programată în CRM; rezultatul lipsește și trebuie verificat. **Nu deduc că a fost no-show.** Ora: 00:00.\n- **Sarcină fără oră, încă deschisă azi — 1:** „Verifică documentele”. Nu poate fi clasificată drept întârziată.\n\n**Limite:** bilanțul acoperă calendarul CRM al agentului pentru azi, în fusul Europe/Bucharest; nu include alte zile, mesaje sau sisteme. Toate paginile au fost citite (`complete=true`, 3 înregistrări). **Date invalide / issues:** niciuna raportată.",
+        "actions": [],
+        "tools": [
+          {
+            "name": "today_review",
+            "status": "success",
+            "latencyMs": 275,
+            "version": "83",
+            "argumentsHash": "6e1bd7c51c66ac15d7827cad1fb01d23344d2d08d564a36a75d4b784c46e8889"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 7,
+            "version": "83",
+            "argumentsHash": "61c58d5931218205df6bf06f92939f604cca5fed4ec66f34c4e27f75d7400419"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 11853,
+              "outputTokens": 18,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 11850,
+              "estimated": false
+            },
+            "costUsd": 0.00149055,
+            "latencyMs": 5776,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12552,
+              "outputTokens": 122,
+              "cachedTokens": 11850,
+              "cacheWriteTokens": 699,
+              "estimated": false
+            },
+            "costUsd": 0.00026717500000000003,
+            "latencyMs": 3599,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12699,
+              "outputTokens": 298,
+              "cachedTokens": 12549,
+              "cacheWriteTokens": 147,
+              "estimated": false
+            },
+            "costUsd": 0.000293165,
+            "latencyMs": 4662,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "diagnostics": [],
+        "toolCalls": [
+          {
+            "id": "call_pkwlClXa8g5E7IGW5B21QHMS",
+            "name": "today_review",
+            "arguments": "{\"cursor\":0}"
+          },
+          {
+            "id": "call_yMXAnwJ44aNzB9QTXoyj2a9o",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"summary\",\"sourceQuote\":\"Ce am ratat astăzi?\",\"description\":\"Bilanțul de azi din calendarul CRM, separat în sarcini cu ora depășită, vizionări fără rezultat înregistrat și sarcini fără oră încă deschise; include limitele și datele invalide.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_pkwlClXa8g5E7IGW5B21QHMS\"]}]}"
+          }
+        ],
+        "costUsd": 0.00205089,
+        "cards": [
+          {
+            "type": "data",
+            "title": "Sarcini de verificat azi",
+            "source": "tasks",
+            "rows": [
+              {
+                "id": "overdue",
+                "resource": "tasks",
+                "category": "overdue_task",
+                "title": "Sună clientul pentru acte",
+                "description": "Ora programată a trecut, iar sarcina este încă deschisă în CRM; verifică efectuarea.",
+                "at": "2026-10-07T21:00:00Z",
+                "activityLocal": "2026-10-08 00:00 (ora București)",
+                "contactId": null,
+                "propertyId": null
+              },
+              {
+                "id": "untimed",
+                "resource": "tasks",
+                "category": "untimed_task",
+                "title": "Verifică documentele",
+                "description": "Sarcină deschisă pentru azi, fără oră; nu poate fi declarată întârziată.",
+                "at": null,
+                "activityLocal": "2026-10-08 fără oră (ora București)",
+                "contactId": null,
+                "propertyId": null
+              }
+            ],
+            "complete": true,
+            "note": "Bilanț al calendarului CRM al agentului, azi în Europe/Bucharest, la momentul checkedAt. Taskurile open cu ora de început depășită necesită verificare; nu dovedește că nu au fost executate. Vizionările scheduled al căror interval s-a încheiat necesită înregistrarea rezultatului; nu sunt declarate neprezentări. Taskurile open fără oră sunt încă de făcut azi, nu întârzieri demonstrate. Nu include zile anterioare, activități viitoare, mesaje sau alte sisteme. Confirmarea WhatsApp nu dovedește efectuarea vizionării.",
+            "outputType": "TASK_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Vizionări cu rezultat de verificat",
+            "source": "viewings",
+            "rows": [
+              {
+                "id": "elapsed",
+                "resource": "viewings",
+                "category": "viewing_outcome_missing",
+                "title": "Andrei — Apartament Titan",
+                "description": "Intervalul s-a încheiat, dar vizionarea este încă programată în CRM; rezultatul trebuie verificat. Nu dovedește neprezentarea.",
+                "at": "2026-10-07T21:00:00Z",
+                "activityLocal": "2026-10-08 00:00 (ora București)",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "contactName": "Andrei",
+                "propertyTitle": "Apartament Titan"
+              }
+            ],
+            "complete": true,
+            "note": "Bilanț al calendarului CRM al agentului, azi în Europe/Bucharest, la momentul checkedAt. Taskurile open cu ora de început depășită necesită verificare; nu dovedește că nu au fost executate. Vizionările scheduled al căror interval s-a încheiat necesită înregistrarea rezultatului; nu sunt declarate neprezentări. Taskurile open fără oră sunt încă de făcut azi, nu întârzieri demonstrate. Nu include zile anterioare, activități viitoare, mesaje sau alte sisteme. Confirmarea WhatsApp nu dovedește efectuarea vizionării.",
+            "outputType": "VIEWING_CARD"
+          }
+        ],
+        "verification": "Original prompt with actual model and local CRM: elapsed open task, untimed task and elapsed viewing without recorded outcome; ongoing/completed/cancelled/other-day/colleague records excluded. Collections unchanged; no outbound messages. Not production certification."
+      },
+      "reason": "Human review found UTC checkedAt rendered as Bucharest local time despite passing the initial assertions. Added checkedLocal and local-clock assertions; final trial below supersedes this attempt."
+    }
+  ],
+  "scope": "Original 0199 with actual model and local Firestore. Calendar-only review, separate elapsed open tasks, untimed tasks and elapsed viewings without recorded outcomes. No mutations or customer messages. Not production certification."
+}

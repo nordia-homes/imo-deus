@@ -4,6 +4,18 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — bilanțul activităților de azi
+
+Scenariul original **0199**, „Ce am ratat astăzi?”, a trecut cu model real și Firestore local, prompt jarvis-53 / tools 83. Dovezi: [CALENDAR_EXECUTION_BATCH_16.json](evals/CALENDAR_EXECUTION_BATCH_16.json). Instrumentul recitește calendarul agentului și separă sarcinile deschise cu ora depășită, sarcinile de azi fără oră și vizionările al căror interval s-a încheiat fără rezultat înregistrat. Nu declară neexecutarea sau neprezentarea pe baza acestor stări; confirmarea WhatsApp nu dovedește efectuarea vizionării. Activitățile viitoare, în desfășurare, anulate/finalizate, din alte zile sau ale altui agent sunt excluse. Întrebarea nu modifică statusuri, nu creează taskuri și nu trimite mesaje.
+
+Bilanțul este limitat explicit la calendarul CRM. Citirea este paginată și semnalează datele invalide sau scanarea incompletă, fără a prezenta un calendar gol ca rezultat certificat. Numele clientului și titlul proprietății sunt recitite. Orele activităților și momentul verificării sunt calculate în București. O sarcină fără oră nu este tratată drept întârziată; o oră locală ambiguă necesită clarificare, iar un moment ISO explicit este păstrat inclusiv în ora repetată la trecerea la ora de iarnă.
+
+Prima probă a selectat corect activitățile, dar examinarea răspunsului a descoperit ora internă prezentată greșit ca oră București. Raportul păstrează încercarea respinsă; implementarea oferă acum separat momentul local, iar proba finală verifică și ora afișată, nu doar existența cuvântului București.
+
+Validare: **2.140 teste în suita locală**, apoi **8 teste țintite** pentru clasificare și ore; **286 probe Firestore/model real** în prima rulare, urmate de **70 probe finale** pentru calendar și comanda originală după corecția orei. Lint și inventarele au trecut. Cele 41 de scenarii live anterioare nu au fost rerulate. Total: **42 de scenarii originale cu dovezi locale folosind model real**, **958 fără această dovadă**. Nu este certificare integrală în producție și nu a existat trimitere reală WhatsApp.
+
+Buildul final a trecut, inclusiv TypeScript și cele 227 de pagini. Acest lot nu a fost publicat în producție.
+
 ## Lot calendar — prioritizarea vizionărilor după răspunsurile participanților
 
 Scenariul original **0198**, „Spune-mi care dintre ele au risc mai mare de no-show.”, a trecut cu model real și Firestore local, prompt jarvis-52 / tools 82. Dovezi: [CALENDAR_EXECUTION_BATCH_15.json](evals/CALENDAR_EXECUTION_BATCH_15.json). Jarvis compară exclusiv ultima listă afișată în conversație (maximum 100 de vizionări), inclusiv din contextul compactat, și recitește programările și răspunsurile WhatsApp actuale. Fără listă cere clarificare; instrumentul nu acceptă ID-uri alese de model. O listă goală mai nouă invalidează selecția veche.

@@ -1,5 +1,6 @@
 import { viewingConfirmationDraft } from '../viewing-confirmation-draft';
 import { viewingAttendance } from '../viewing-attendance';
+import { todayReview } from '../today-review';
 
 import { calendarAvailability } from '../calendar-availability';
 import { taskDeferral } from '../task-deferral';
@@ -66,6 +67,30 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('reviews the actual calendar with pagination, tenant isolation and invalid data disclosure', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
+    const batch = db.batch(), row = { agentId: ctx.uid, status: 'open', dueDate: '2026-10-08', startTime: '09:00', description: 'De verificat' };
+    for (let i = 0; i < 101; i++) batch.set(root.collection('tasks').doc(`t${String(i).padStart(3, '0')}`), row);
+    batch.set(root.collection('tasks').doc('colleague'), { ...row, agentId: 'other' });
+    batch.set(root.collection('tasks').doc('future'), { ...row, startTime: '19:00' });
+    batch.set(root.collection('tasks').doc('done'), { ...row, status: 'completed' });
+    batch.set(root.collection('viewings').doc('v'), { agentId: ctx.uid, status: 'scheduled', viewingDate: '2026-10-08T09:00:00Z', duration: 60, contactId: 'c', propertyId: 'p' });
+    batch.set(root.collection('contacts').doc('c'), { name: 'Nume actual' });
+    batch.set(root.collection('properties').doc('p'), { title: 'Titlu actual' });
+    await batch.commit();
+    const first = await todayReview(ctx, {}, now), last = await todayReview(ctx, { cursor: first.nextCursor! }, now);
+    expect(first).toMatchObject({ count: 102, complete: false, nextCursor: 100 });
+    expect(first.checkedLocal).toBe('2026-10-08 13:00 (ora București)');
+    expect(first.rows).toHaveLength(100); expect(last.rows).toHaveLength(2); expect(last.complete).toBe(true);
+    expect(last.rows[1]).toMatchObject({ title: 'Nume actual — Titlu actual', category: 'viewing_outcome_missing' });
+    expect((await todayReview(context(), {}, now)).count).toBe(0);
+    await root.collection('tasks').doc('broken').set({ ...row, dueDate: 'bad-date' });
+    const broken = await todayReview(ctx, {}, now);
+    expect(broken).toMatchObject({ status: 'invalid_data', complete: false });
+    expect(broken.issues).toEqual([{ resource: 'tasks', id: 'broken', reason: 'Dată lipsă sau invalidă.' }]);
+    expect((await root.collection('viewings').doc('v').get()).data()?.status).toBe('scheduled');
+    expect((await root.collection('tasks').get()).size).toBe(105);
+  });
   it('paginates unconfirmed viewings and excludes other days, statuses and agents', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), batch = db.batch();
     batch.set(root.collection('contacts').doc('c'), { name: 'Client' });

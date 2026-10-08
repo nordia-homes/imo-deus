@@ -1,6 +1,7 @@
 import { viewingConfirmationDraft } from './viewing-confirmation-draft';
 import { viewingAttendance } from './viewing-attendance';
 import { viewingRisk } from './viewing-risk';
+import { todayReview } from './today-review';
 import { hasViewingSelection } from './viewing-selection';
 import { calendarAvailability } from './calendar-availability';
 import { taskDeferral } from './task-deferral';
@@ -36,7 +37,10 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'viewing_risk') {
+  if (name === 'today_review') {
+    data = await todayReview(ctx, payload);
+    for (const source of ['tasks', 'viewings']) cards.push({ type: 'data', title: source === 'tasks' ? 'Sarcini de verificat azi' : 'Vizionări cu rezultat de verificat', source, rows: data.rows.filter((row: Record<string, unknown>) => row.resource === source), complete: data.complete, note: data.note });
+  } else if (name === 'viewing_risk') {
     data = await viewingRisk(ctx, options.selectedViewingIds || []);
     cards.push({ type: 'data', title: 'Priorități de verificare a vizionărilor', source: 'viewings', rows: data.rows, complete: data.complete, note: data.note });
   } else if (name === 'viewing_attendance') {

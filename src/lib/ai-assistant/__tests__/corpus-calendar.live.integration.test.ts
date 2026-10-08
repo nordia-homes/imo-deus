@@ -24,6 +24,7 @@ function recordAttendance(change: any, row: any, contact: any, property: any, _a
 }
 
 import { viewingAttendance } from '../viewing-attendance';
+import { zonedParts } from '../zoned-time';
 import { OpenAIAdapter } from '../provider';
 import { executeSafePrefix } from '../autonomy';
 import { resolveDatetime } from '../datetime';
@@ -51,7 +52,7 @@ const confirmationCases = ['master-0195', 'master-0196'];
 const attendanceCases = ['master-0197'];
 const riskCase = 'master-0198';
 const cases = [...attendanceCases, ...confirmationCases, ...availabilityCases, ...taskContextCases, ...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
-cases.push(riskCase);
+cases.push(riskCase, 'master-0199');
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
 for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'attendance' || attendanceCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'confirmations' || confirmationCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'availability' || availabilityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-context' || taskContextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
@@ -66,6 +67,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
     const isRisk = scenarioId === riskCase;
+    const isReview = scenarioId === 'master-0199';
     const isAttendance = attendanceCases.includes(scenarioId); const isConfirmation = confirmationCases.includes(scenarioId); const isAvailability = availabilityCases.includes(scenarioId); const isDeferral = deferralCases.includes(scenarioId);
     const isTaskContext = taskContextCases.includes(scenarioId);
     const isPriority = priorityCases.includes(scenarioId);
@@ -103,9 +105,17 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), context: history, environment: 'actual model + local Firestore; external catalog excluded', executionVerified: false };
     try {
       await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
-      if (!isViewing && !isTaskContext) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
+      if (!isViewing && !isTaskContext && !isReview) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
       await agency.collection('contacts').doc('andrei').set({ name: contactName, phone: '0700000001', contactType: 'Cumparator' });
       await agency.collection('properties').doc('titan').set({ title: 'Apartament Titan', location: 'Titan', ownerName: 'Proprietar local', ownerPhone: '0700000002', status: isNote ? 'Inactiv' : 'Activ' });
+      if (isReview) {
+        const early = resolveDatetime({ dayOffset: 0, time: '00:00' });
+        expect(Date.now() - Date.parse(early.iso), 'Run this live fixture after 00:02 Bucharest').toBeGreaterThan(120000);
+        for (const [key, extra] of Object.entries({ overdue: { startTime: '00:00' }, untimed: {}, done: { status: 'completed' }, colleague: { agentId: 'other' }, yesterday: { dueDate: resolveDatetime({ dayOffset: -1, time: '12:00' }).local.slice(0, 10) }, future: { dueDate: date.iso } })) {
+          await agency.collection('tasks').doc(key).set({ description: key === 'overdue' ? 'Sună clientul pentru acte' : 'Verifică documentele', status: 'open', agentId: id, dueDate: early.local.slice(0, 10), ...extra });
+        }
+        for (const [key, extra] of Object.entries({ elapsed: {}, done: { status: 'completed' }, cancelled: { status: 'cancelled' }, colleague: { agentId: 'other' }, tomorrow: { viewingDate: date.iso }, ongoing: { viewingDate: new Date().toISOString(), duration: 60 } })) await agency.collection('viewings').doc(key).set({ ...seedViewing, viewingDate: early.iso, duration: 1, ...extra });
+      }
       if (isAttendance || isRisk) {
         const contact = (await agency.collection('contacts').doc('andrei').get()).data()!, property = (await agency.collection('properties').doc('titan').get()).data()!;
         const now = new Date().toISOString();
@@ -202,6 +212,8 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       }
       if (['master-0179', 'master-0180', 'master-0181'].includes(scenarioId)) await agency.collection('tasks').doc(seedTask.id).set(seedTask);
       const provider = new OpenAIAdapter(), diagnostics: unknown[] = [], toolCalls: unknown[] = [], seenErrors = new Set<string>();
+      const reviewBefore = isReview ? await Promise.all(['tasks', 'viewings'].map(async source => (await agency.collection(source).orderBy('__name__').get()).docs.map(doc => doc.data()))) : null;
+      const reviewClockBefore = zonedParts(new Date(), 'Europe/Bucharest').time;
       const attendanceBefore = isAttendance || isRisk ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : null;
       if (isConfirmation || isRisk) {
         const missing = await planTurn(ctx, prompt, [], { provider, budget: new AgentBudget() });
@@ -222,6 +234,24 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, toolCalls, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isReview) {
+        expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
+        expect(planned.metrics.tools.some(tool => tool.name === 'today_review')).toBe(true);
+        const rows = planned.cards.flatMap(card => card.rows);
+        expect(rows).toHaveLength(3);
+        expect(rows.find(row => row.id === 'overdue')).toMatchObject({ category: 'overdue_task' });
+        expect(rows.find(row => row.id === 'untimed')).toMatchObject({ category: 'untimed_task' });
+        expect(rows.find(row => row.id === 'elapsed')).toMatchObject({ category: 'viewing_outcome_missing', contactName: 'Andrei', propertyTitle: 'Apartament Titan' });
+        expect(planned.text).toContain('București');
+        expect(planned.text).toContain('Sună clientul pentru acte');
+        expect(planned.text).toContain('Apartament Titan');
+        expect([reviewClockBefore, zonedParts(new Date(), 'Europe/Bucharest').time].some(clock => planned.text.includes(clock))).toBe(true);
+        expect(planned.text).not.toMatch(/checkedAt|complete=true|issues/);
+        expect(await Promise.all(['tasks', 'viewings'].map(async source => (await agency.collection(source).orderBy('__name__').get()).docs.map(doc => doc.data())))).toEqual(reviewBefore);
+        expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', id).get()).empty).toBe(true);
+        report = { ...report, executionVerified: true, cards: planned.cards, verification: 'Original prompt with actual model and local CRM: elapsed open task, untimed task and elapsed viewing without recorded outcome; ongoing/completed/cancelled/other-day/colleague records excluded. Collections unchanged; no outbound messages. Not production certification.' };
+        return;
+      }
       if (isRisk) {
         expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
         expect(planned.metrics.tools.some(tool => tool.name === 'viewing_risk')).toBe(true);
