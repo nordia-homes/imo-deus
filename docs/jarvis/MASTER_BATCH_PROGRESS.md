@@ -4,6 +4,18 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — istoricul unei proprietăți
+
+Scenariile originale **0172–0175** au fost executate cu modelul real și Firestore local: toate vizionările proprietății selectate, cine a vizionat apartamentul din Cișmigiu, numărul vizitelor efectuate și ultima vizită efectuată. [CALENDAR_EXECUTION_BATCH_06.json](evals/CALENDAR_EXECUTION_BATCH_06.json) păstrează prima încercare și rulările finale. Proprietatea este selectată explicit în context pentru 0172/0174/0175; 0173 o identifică prin căutare normalizată, cu titlul CRM fără diacritice. Nu sunt efectuate mutații.
+
+Prima încercare a trecut 3/4: 0173 folosea căutarea de oferte, al cărei filtru obligatoriu de tranzacție excludea înregistrarea. Instrucțiunile și descrierile instrumentelor separă acum identificarea CRM prin `read properties search` de căutarea comercială `search_properties`. Rerularea a trecut **4/4**, fără erori de instrument, cu toate orele răspunsurilor finale în București (prompt jarvis-40 / tools 70).
+
+`property_viewings` citește proprietatea autorizată și vizionările sale pentru toți agenții. `all` păstrează toate stările; modurile istorice folosesc numai `completed`, cu dată validă cel târziu acum. Programările trecute neconfirmate nu constituie dovadă că vizita s-a efectuat. Totalul numără vizionări, nu clienți unici. Ultimul instant este comparat cronologic și păstrează egalitățile. Numele clienților se citesc din contactele actuale, fără reutilizarea numelor copiate vechi. Listele au pagini de 100 și cursor; proba Firestore verifică 102 înregistrări pe două pagini. Scanarea este plafonată la 5.000 de documente/12 secunde între pagini; la depășire nu se confirmă un total sau o ultimă vizită. Acest plafon rămâne o limită de implementare.
+
+Validare: **1.858 teste unitare** și **269 probe combinate** (265 regresii Firestore + cele patru comenzi cu model real) trecute. Lint, inventarele, TypeScript și compilarea aplicației (227 pagini) au trecut.
+
+Total curent: **24 scenarii originale cu dovezi locale folosind modelul real**, **976 fără această dovadă**. Cele 20 de scenarii live anterioare nu au fost rerulate în acest lot. Nu este certificare în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — identificarea vizionării și telefoanele asociate
 
 Scenariile originale **0168–0171** au trecut cu modelul real și date Firestore locale: cine vine la ora 17, ce proprietate se vizionează la ora 17, telefonul clientului următoarei vizionări și telefonul proprietarului vizionării selectate. Dovezi: [CALENDAR_EXECUTION_BATCH_05.json](evals/CALENDAR_EXECUTION_BATCH_05.json). Toate cele patru rulări au folosit `viewing_details` și `goal_coverage`, fără erori de instrument și fără mutații CRM. Datele includ nume denormalizate vechi, o programare ulterioară, o programare anulată și o programare a altui agent. Pentru 0171, selecția este furnizată explicit prin contextul conversației.

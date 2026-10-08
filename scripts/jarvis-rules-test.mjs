@@ -30,6 +30,7 @@ if (process.argv.includes('--corpus-calendar-live')) {
   process.env.JARVIS_CORPUS_LIVE = 'true';
   const selected = process.argv.find(arg => /^--case=master-\d{4}$/.test(arg));
   if (selected) process.env.JARVIS_CORPUS_CASE = selected.slice(7);
+  if (process.argv.includes('--batch=property-history')) process.env.JARVIS_CORPUS_BATCH = 'property-history';
   if (process.argv.includes('--batch=viewing-details')) process.env.JARVIS_CORPUS_BATCH = 'viewing-details';
   if (process.argv.includes('--batch=viewing-notes')) process.env.JARVIS_CORPUS_BATCH = 'viewing-notes';
   if (process.argv.includes('--batch=viewing-edits')) process.env.JARVIS_CORPUS_BATCH = 'viewing-edits';

@@ -33,10 +33,11 @@ const contextCases = ['master-0155', 'master-0158', 'master-0159'];
 const editCases = ['master-0160', 'master-0161', 'master-0162', 'master-0163', 'master-0164', 'master-0165'];
 const noteCases = ['master-0166', 'master-0167'];
 const readCases = ['master-0168', 'master-0169', 'master-0170', 'master-0171'];
-const cases = [...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const historyCases = ['master-0172', 'master-0173', 'master-0174', 'master-0175'];
+const cases = [...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -47,7 +48,8 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
-    const isRead = readCases.includes(scenarioId);
+    const isHistory = historyCases.includes(scenarioId);
+    const isRead = readCases.includes(scenarioId) || isHistory;
     const isDelete = scenarioId === 'master-0166', isNote = scenarioId === 'master-0167';
     const newNote = 'Clientul dorește să revină împreună cu familia.';
     const isEdit = editCases.includes(scenarioId) || noteCases.includes(scenarioId);
@@ -72,6 +74,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
         ...(scenarioId === 'master-0158' ? [{ type: 'data' as const, source: 'contacts', title: 'Client selectat', rows: [{ id: 'andrei', name: 'Andrei' }], complete: true }] : []),
       ], createdAt: new Date().toISOString() });
     }
+    if (isHistory && scenarioId !== 'master-0173') history.push({ id: 'property-selection', role: 'assistant', text: 'Proprietatea selectată este Apartament Cismigiu (titan).', cards: [{ type: 'data', source: 'properties', title: 'Proprietate selectată', rows: [{ id: 'titan', title: 'Apartament Cismigiu' }], complete: true }], createdAt: new Date().toISOString() });
     const budget = new AgentBudget(), previous = process.env.JARVIS_AUTONOMOUS;
     process.env.JARVIS_AUTONOMOUS = 'true';
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), context: history, environment: 'actual model + local Firestore; external catalog excluded', executionVerified: false };
@@ -85,6 +88,14 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
         for (const [key, extra] of Object.entries({ later: { viewingDate: new Date(Date.parse(seedViewing.viewingDate) + 3600000).toISOString() }, cancelled: { status: 'cancelled' }, colleague: { agentId: 'other-agent' } })) {
           await agency.collection('viewings').doc(key).set({ ...seedViewing, id: key, ...extra });
         }
+      }
+      if (isHistory) {
+        await agency.collection('properties').doc('titan').update({ title: 'Apartament Cismigiu', location: 'Cismigiu' });
+        await agency.collection('contacts').doc('maria').set({ name: 'Maria', contactType: 'Cumparator' });
+        await agency.collection('viewings').doc('viewing-selected').set({ ...seedViewing, status: 'completed', viewingDate: resolveDatetime({ dayOffset: -3, time: '17:00' }).iso });
+        await agency.collection('viewings').doc('colleague').set({ ...seedViewing, id: 'colleague', status: 'completed', agentId: 'other-agent', viewingDate: resolveDatetime({ dayOffset: -2, time: '17:00' }).iso });
+        await agency.collection('viewings').doc('last-maria').set({ ...seedViewing, id: 'last-maria', contactId: 'maria', status: 'completed', viewingDate: resolveDatetime({ dayOffset: -1, time: '17:00' }).iso });
+        await agency.collection('viewings').doc('unrelated').set({ ...seedViewing, id: 'unrelated', propertyId: 'other-property', status: 'completed', viewingDate: resolveDatetime({ dayOffset: -1, time: '18:00' }).iso });
       }
       const beforeRead = isRead ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       if (scenarioId === 'master-0159') {
@@ -102,13 +113,21 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       expect(planned.metrics.status, planned.text).toBe('success');
       if (isRead) {
         expect(planned.actions).toEqual([]);
-        const expected = scenarioId === 'master-0168' ? 'Andrei' : scenarioId === 'master-0169' ? 'Apartament Titan' : scenarioId === 'master-0170' ? '0700000001' : '0700000002';
+        if (isHistory) {
+          const output = JSON.stringify(planned.cards || []);
+          if (scenarioId === 'master-0172') for (const key of ['viewing-selected', 'colleague', 'last-maria', 'later', 'cancelled']) expect(output).toContain(key);
+          if (scenarioId === 'master-0173') { expect(planned.text).toContain('Andrei'); expect(planned.text).toContain('Maria'); }
+          if (scenarioId === 'master-0174') expect(planned.text).toMatch(/\b3\b|trei/i);
+          if (scenarioId === 'master-0175') { expect(planned.text).toContain('Maria'); expect(output).toContain('last-maria'); }
+          expect(output).not.toContain('unrelated');
+        }
+        const expected = isHistory ? '' : scenarioId === 'master-0168' ? 'Andrei' : scenarioId === 'master-0169' ? 'Apartament Titan' : scenarioId === 'master-0170' ? '0700000001' : '0700000002';
         expect(planned.text.replace(/[\s().-]/g, '')).toContain(expected.replace(/[\s().-]/g, ''));
         expect(planned.text).not.toMatch(/Nume vechi|Titlu vechi/);
         expect(diagnostics).toEqual([]);
         expect((await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data())).toEqual(beforeRead);
         expect((await agency.collection('tasks').get()).size).toBe(0);
-        report = { ...report, executionVerified: true, confirmation: planned.text, storedViewings: beforeRead, verification: 'Actual model response matches fresh CRM relationship data; no mutations.' };
+        report = { ...report, executionVerified: true, confirmation: planned.text, cards: planned.cards, storedViewings: beforeRead, verification: 'Actual model response matches fresh CRM relationship data; no mutations.' };
         return;
       }
       expect(planned.actions.map(action => action.kind)).toEqual([isDelete ? 'delete_viewing' : isEdit ? 'update_viewing' : isViewing ? 'schedule_viewing' : scenarioId === 'master-0178' ? 'create_task' : 'update_task']);

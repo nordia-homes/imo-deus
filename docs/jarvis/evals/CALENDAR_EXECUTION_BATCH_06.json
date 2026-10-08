@@ -1,0 +1,2053 @@
+{
+  "scope": "Original property-history scenarios 0172-0175, actual model and isolated Firestore. Not production certification.",
+  "initialAttempt": [
+    {
+      "scenarioId": "master-0172",
+      "prompt": "Arată-mi toate vizionările acestei proprietăți.",
+      "versions": {
+        "prompt": "jarvis-39",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "69",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:11:34.785Z",
+      "context": [
+        {
+          "id": "property-selection",
+          "role": "assistant",
+          "text": "Proprietatea selectată este Apartament Cismigiu (titan).",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate selectată",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Cismigiu"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "createdAt": "2026-10-08T10:11:34.785Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Toate cele 5 vizionări ale proprietății **Apartament Cismigiu**:\n\n| Data și ora | Client | Status | Agent |\n|---|---|---|---|\n| 5 octombrie 2026, 17:00 | Andrei | Efectuată | Tu |\n| 6 octombrie 2026, 17:00 | Andrei | Efectuată | Alt agent |\n| 7 octombrie 2026, 17:00 | Maria | Efectuată | Tu |\n| 8 octombrie 2026, 17:00 | Andrei | Anulată | Tu |\n| 8 octombrie 2026, 18:00 | Andrei | Programată | Tu |\n\nOrele sunt afișate în fusul Europe/București.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 909,
+          "version": "69",
+          "argumentsHash": "8435d52deeaffbc320bbbf6467959986f8cce59a898f4ff6d6053210b646836b"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 22,
+          "version": "69",
+          "argumentsHash": "459e1e9c0d56cf7a1c53af5a0c7220890802997270e0252bd6c24816c3468fcb"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9078,
+            "outputTokens": 29,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9075,
+            "estimated": false
+          },
+          "costUsd": 0.001149175,
+          "latencyMs": 1976,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9607,
+            "outputTokens": 101,
+            "cachedTokens": 9075,
+            "cacheWriteTokens": 529,
+            "estimated": false
+          },
+          "costUsd": 0.00020767500000000002,
+          "latencyMs": 2299,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9733,
+            "outputTokens": 205,
+            "cachedTokens": 9604,
+            "cacheWriteTokens": 126,
+            "estimated": false
+          },
+          "costUsd": 0.00021459,
+          "latencyMs": 4438,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00157144,
+      "confirmation": "Toate cele 5 vizionări ale proprietății **Apartament Cismigiu**:\n\n| Data și ora | Client | Status | Agent |\n|---|---|---|---|\n| 5 octombrie 2026, 17:00 | Andrei | Efectuată | Tu |\n| 6 octombrie 2026, 17:00 | Andrei | Efectuată | Alt agent |\n| 7 octombrie 2026, 17:00 | Maria | Efectuată | Tu |\n| 8 octombrie 2026, 17:00 | Andrei | Anulată | Tu |\n| 8 octombrie 2026, 18:00 | Andrei | Programată | Tu |\n\nOrele sunt afișate în fusul Europe/București.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "cancelled",
+              "viewingDate": "2026-10-08T14:00:00.000Z",
+              "status": "cancelled",
+              "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "colleague",
+              "viewingDate": "2026-10-06T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "other-agent",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "last-maria",
+              "viewingDate": "2026-10-07T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+              "contactId": "maria",
+              "contactName": "Maria",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "later",
+              "viewingDate": "2026-10-08T15:00:00.000Z",
+              "status": "scheduled",
+              "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "viewing-selected",
+              "viewingDate": "2026-10-05T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "36f02cd4-65d5-4857-bcf4-e17e30c1b938",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0173",
+      "prompt": "Cine a vizionat apartamentul din Cișmigiu?",
+      "versions": {
+        "prompt": "jarvis-39",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "69",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:11:47.231Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "plannerStatus": "clarification",
+      "text": "Nu am găsit în CRM un apartament în Cișmigiu. Ai un nume, o adresă sau alt detaliu ca să-l identific?\nCerințe încă neacoperite: Identifică proprietatea CRM pentru a consulta istoricul vizionărilor.; Află clienții care au efectuat vizionarea proprietății identificate.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "69",
+          "argumentsHash": "57002792229675e41854451eae7e26395d5c8f56755fb9e145f00332155b8dca"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "69",
+          "argumentsHash": "42acb30e16b10e8977f780d2547f68768b5d23e2fc31b83d74833daa929b9f7c"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9006,
+            "outputTokens": 93,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9003,
+            "estimated": false
+          },
+          "costUsd": 0.001172175,
+          "latencyMs": 2567,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9219,
+            "outputTokens": 136,
+            "cachedTokens": 9003,
+            "cacheWriteTokens": 213,
+            "estimated": false
+          },
+          "costUsd": 0.000184955,
+          "latencyMs": 3041,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9385,
+            "outputTokens": 52,
+            "cachedTokens": 9216,
+            "cacheWriteTokens": 166,
+            "estimated": false
+          },
+          "costUsd": 0.00013921,
+          "latencyMs": 2937,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0014963399999999999,
+      "failure": "Nu am găsit în CRM un apartament în Cișmigiu. Ai un nume, o adresă sau alt detaliu ca să-l identific?\nCerințe încă neacoperite: Identifică proprietatea CRM pentru a consulta istoricul vizionărilor.; Află clienții care au efectuat vizionarea proprietății identificate.: expected 'clarification' to be 'success' // Object.is equality"
+    },
+    {
+      "scenarioId": "master-0174",
+      "prompt": "De câte ori a fost vizionat apartamentul?",
+      "versions": {
+        "prompt": "jarvis-39",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "69",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:11:56.070Z",
+      "context": [
+        {
+          "id": "property-selection",
+          "role": "assistant",
+          "text": "Proprietatea selectată este Apartament Cismigiu (titan).",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate selectată",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Cismigiu"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "createdAt": "2026-10-08T10:11:56.070Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Apartamentul Cismigiu a fost vizionat de 3 ori. Am numărat doar vizionările marcate ca efectuate („completed”); programările neconfirmate sau anulate nu sunt incluse.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 37,
+          "version": "69",
+          "argumentsHash": "47e660672d94dfa47f3ff33b89ace7fc77bb2c250425e345331443ea2632d1d2"
+        },
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 30,
+          "version": "69",
+          "argumentsHash": "ec498ad396109ec2d28b34159a968e21e40d16ac332f0543a8359f0341e703db"
+        },
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 48,
+          "version": "69",
+          "argumentsHash": "adf9364dfdaffba76c030155cdd4ac884edc06b15747ff3d60fd80fc96ab5e12"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 17,
+          "version": "69",
+          "argumentsHash": "b735c24f3996954351bc60fb645fd12ea747f23e6e325ab86c3c2ebe8b2bda08"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9076,
+            "outputTokens": 93,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9073,
+            "estimated": false
+          },
+          "costUsd": 0.001180925,
+          "latencyMs": 2133,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9293,
+            "outputTokens": 34,
+            "cachedTokens": 9073,
+            "cacheWriteTokens": 217,
+            "estimated": false
+          },
+          "costUsd": 0.000135155,
+          "latencyMs": 2942,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9416,
+            "outputTokens": 30,
+            "cachedTokens": 9290,
+            "cacheWriteTokens": 123,
+            "estimated": false
+          },
+          "costUsd": 0.000123575,
+          "latencyMs": 1873,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9557,
+            "outputTokens": 106,
+            "cachedTokens": 9413,
+            "cacheWriteTokens": 141,
+            "estimated": false
+          },
+          "costUsd": 0.000165055,
+          "latencyMs": 4890,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9688,
+            "outputTokens": 62,
+            "cachedTokens": 9554,
+            "cacheWriteTokens": 131,
+            "estimated": false
+          },
+          "costUsd": 0.000143215,
+          "latencyMs": 3486,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001747925,
+      "confirmation": "Apartamentul Cismigiu a fost vizionat de 3 ori. Am numărat doar vizionările marcate ca efectuate („completed”); programările neconfirmate sau anulate nu sunt incluse.",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Potriviri din CRM",
+          "source": "crm",
+          "search": {
+            "source": "crm",
+            "zone": "Cismigiu",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "limit": 20
+          },
+          "rows": [],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 1,
+          "uncertainCurrency": 0,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-08T10:11:58.508Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        },
+        {
+          "type": "data",
+          "title": "properties",
+          "source": "properties",
+          "rows": [
+            {
+              "ownerName": "Proprietar local",
+              "ownerPhone": "0700000002",
+              "status": "Activ",
+              "location": "Cismigiu",
+              "title": "Apartament Cismigiu",
+              "id": "titan"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "outputType": "PROPERTY_LIST"
+        },
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "294c05ec-4a04-425b-a685-31bbf7d23f3d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "294c05ec-4a04-425b-a685-31bbf7d23f3d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "294c05ec-4a04-425b-a685-31bbf7d23f3d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "294c05ec-4a04-425b-a685-31bbf7d23f3d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "294c05ec-4a04-425b-a685-31bbf7d23f3d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0175",
+      "prompt": "Care a fost ultima vizionare pentru proprietate?",
+      "versions": {
+        "prompt": "jarvis-39",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "69",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:12:11.880Z",
+      "context": [
+        {
+          "id": "property-selection",
+          "role": "assistant",
+          "text": "Proprietatea selectată este Apartament Cismigiu (titan).",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate selectată",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Cismigiu"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "createdAt": "2026-10-08T10:12:11.880Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Ultima vizionare efectuată pentru Apartament Cismigiu a fost pe 7 octombrie 2026, la 17:00, ora București (14:00 UTC). A vizionat-o Maria. În total, sunt 3 vizionări efectuate înregistrate.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 63,
+          "version": "69",
+          "argumentsHash": "ad164b0305ee621cb2f2ef9acf02c65b16989abdcfba8a3fc539ac768236cd11"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 13,
+          "version": "69",
+          "argumentsHash": "8eceba25a93107801613a7a25dc5e56cbdd59d4f05a108b2417f4d5f5ff55c5b"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9079,
+            "outputTokens": 30,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9076,
+            "estimated": false
+          },
+          "costUsd": 0.0011497999999999999,
+          "latencyMs": 1815,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9312,
+            "outputTokens": 89,
+            "cachedTokens": 9076,
+            "cacheWriteTokens": 233,
+            "estimated": false
+          },
+          "costUsd": 0.000164685,
+          "latencyMs": 2192,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9426,
+            "outputTokens": 80,
+            "cachedTokens": 9309,
+            "cacheWriteTokens": 114,
+            "estimated": false
+          },
+          "costUsd": 0.00014764,
+          "latencyMs": 2151,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0014621249999999999,
+      "confirmation": "Ultima vizionare efectuată pentru Apartament Cismigiu a fost pe 7 octombrie 2026, la 17:00, ora București (14:00 UTC). A vizionat-o Maria. În total, sunt 3 vizionări efectuate înregistrate.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "last-maria",
+              "viewingDate": "2026-10-07T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "a0acd3cc-9c6c-4f73-a5c9-f27ba8b29a51",
+              "contactId": "maria",
+              "contactName": "Maria",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a0acd3cc-9c6c-4f73-a5c9-f27ba8b29a51",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a0acd3cc-9c6c-4f73-a5c9-f27ba8b29a51",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a0acd3cc-9c6c-4f73-a5c9-f27ba8b29a51",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a0acd3cc-9c6c-4f73-a5c9-f27ba8b29a51",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a0acd3cc-9c6c-4f73-a5c9-f27ba8b29a51",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    }
+  ],
+  "repair": "Identity lookup uses normalized CRM read without commercial transaction/status filters instead of offer search.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0172",
+      "prompt": "Arată-mi toate vizionările acestei proprietăți.",
+      "versions": {
+        "prompt": "jarvis-40",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "70",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:14:29.261Z",
+      "context": [
+        {
+          "id": "property-selection",
+          "role": "assistant",
+          "text": "Proprietatea selectată este Apartament Cismigiu (titan).",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate selectată",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Cismigiu"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "createdAt": "2026-10-08T10:14:29.261Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Toate cele 5 vizionări ale proprietății **Apartament Cismigiu** (toți agenții și toate stările):\n\n| Data și ora | Client | Stare |\n|---|---|---|\n| 5 octombrie 2026, 17:00 | Andrei | Finalizată |\n| 6 octombrie 2026, 17:00 | Andrei | Finalizată |\n| 7 octombrie 2026, 17:00 | Maria | Finalizată |\n| 8 octombrie 2026, 17:00 | Andrei | Anulată |\n| 8 octombrie 2026, 18:00 | Andrei | Programată |\n\nOrele sunt afișate în fusul Europe/București.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 322,
+          "version": "70",
+          "argumentsHash": "ec498ad396109ec2d28b34159a968e21e40d16ac332f0543a8359f0341e703db"
+        },
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 66,
+          "version": "70",
+          "argumentsHash": "8435d52deeaffbc320bbbf6467959986f8cce59a898f4ff6d6053210b646836b"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 7,
+          "version": "70",
+          "argumentsHash": "f8648358a29998b9596e2b733439e73a2c134727739de0a7f880e7f436df41d1"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9237,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9234,
+            "estimated": false
+          },
+          "costUsd": 0.00117155,
+          "latencyMs": 1995,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9359,
+            "outputTokens": 29,
+            "cachedTokens": 9234,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00012239,
+          "latencyMs": 1583,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9884,
+            "outputTokens": 109,
+            "cachedTokens": 9356,
+            "cacheWriteTokens": 525,
+            "estimated": false
+          },
+          "costUsd": 0.000213985,
+          "latencyMs": 2675,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10018,
+            "outputTokens": 205,
+            "cachedTokens": 9881,
+            "cacheWriteTokens": 134,
+            "estimated": false
+          },
+          "costUsd": 0.00021836000000000002,
+          "latencyMs": 3482,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0017262850000000001,
+      "confirmation": "Toate cele 5 vizionări ale proprietății **Apartament Cismigiu** (toți agenții și toate stările):\n\n| Data și ora | Client | Stare |\n|---|---|---|\n| 5 octombrie 2026, 17:00 | Andrei | Finalizată |\n| 6 octombrie 2026, 17:00 | Andrei | Finalizată |\n| 7 octombrie 2026, 17:00 | Maria | Finalizată |\n| 8 octombrie 2026, 17:00 | Andrei | Anulată |\n| 8 octombrie 2026, 18:00 | Andrei | Programată |\n\nOrele sunt afișate în fusul Europe/București.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "properties",
+          "source": "properties",
+          "rows": [
+            {
+              "ownerName": "Proprietar local",
+              "ownerPhone": "0700000002",
+              "status": "Activ",
+              "location": "Cismigiu",
+              "title": "Apartament Cismigiu",
+              "id": "titan"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "outputType": "PROPERTY_LIST"
+        },
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "cancelled",
+              "viewingDate": "2026-10-08T14:00:00.000Z",
+              "status": "cancelled",
+              "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "colleague",
+              "viewingDate": "2026-10-06T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "other-agent",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "last-maria",
+              "viewingDate": "2026-10-07T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+              "contactId": "maria",
+              "contactName": "Maria",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "later",
+              "viewingDate": "2026-10-08T15:00:00.000Z",
+              "status": "scheduled",
+              "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "viewing-selected",
+              "viewingDate": "2026-10-05T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "4e239aa2-79f6-42fd-8471-08e398c0086d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0173",
+      "prompt": "Cine a vizionat apartamentul din Cișmigiu?",
+      "versions": {
+        "prompt": "jarvis-40",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "70",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:14:40.503Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Apartamentul din Cișmigiu a fost vizionat de **Andrei** și **Maria**. Andrei a avut două vizionări confirmate, iar Maria una.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 14,
+          "version": "70",
+          "argumentsHash": "6ed40879350fd385e11ab1df5840fbfcf71b9f9fb9ea95d0c71371d01379e57d"
+        },
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 90,
+          "version": "70",
+          "argumentsHash": "798d3bb0ac790b855d1a1f429ae6bed173ef2ae9e3e78e689569ca7d4ef1cc7e"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 25,
+          "version": "70",
+          "argumentsHash": "b7fd6e5a5cf95d9f40ed563238791507336fd7e9a6c389e07dce149d52e68f2b"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9163,
+            "outputTokens": 36,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9160,
+            "estimated": false
+          },
+          "costUsd": 0.0011633,
+          "latencyMs": 3813,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9293,
+            "outputTokens": 29,
+            "cachedTokens": 9160,
+            "cacheWriteTokens": 130,
+            "estimated": false
+          },
+          "costUsd": 0.00012265,
+          "latencyMs": 3117,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9672,
+            "outputTokens": 120,
+            "cachedTokens": 9290,
+            "cacheWriteTokens": 379,
+            "estimated": false
+          },
+          "costUsd": 0.00020057499999999998,
+          "latencyMs": 2826,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9817,
+            "outputTokens": 60,
+            "cachedTokens": 9669,
+            "cacheWriteTokens": 145,
+            "estimated": false
+          },
+          "costUsd": 0.00014511500000000002,
+          "latencyMs": 2638,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0016316399999999997,
+      "confirmation": "Apartamentul din Cișmigiu a fost vizionat de **Andrei** și **Maria**. Andrei a avut două vizionări confirmate, iar Maria una.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "properties",
+          "source": "properties",
+          "rows": [
+            {
+              "ownerName": "Proprietar local",
+              "ownerPhone": "0700000002",
+              "status": "Activ",
+              "location": "Cismigiu",
+              "title": "Apartament Cismigiu",
+              "id": "titan"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 1,
+          "outputType": "PROPERTY_LIST"
+        },
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "colleague",
+              "viewingDate": "2026-10-06T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "other-agent",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "last-maria",
+              "viewingDate": "2026-10-07T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+              "contactId": "maria",
+              "contactName": "Maria",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            },
+            {
+              "id": "viewing-selected",
+              "viewingDate": "2026-10-05T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "49518145-e95d-4338-8d44-5c2890c0916b",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0174",
+      "prompt": "De câte ori a fost vizionat apartamentul?",
+      "versions": {
+        "prompt": "jarvis-40",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "70",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:14:53.235Z",
+      "context": [
+        {
+          "id": "property-selection",
+          "role": "assistant",
+          "text": "Proprietatea selectată este Apartament Cismigiu (titan).",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate selectată",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Cismigiu"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "createdAt": "2026-10-08T10:14:53.235Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Apartamentul a fost vizionat de **3 ori**. Numărătoarea include doar vizionările marcate „completed” și cu dată validă, cel târziu astăzi.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 12,
+          "version": "70",
+          "argumentsHash": "ec498ad396109ec2d28b34159a968e21e40d16ac332f0543a8359f0341e703db"
+        },
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 44,
+          "version": "70",
+          "argumentsHash": "adf9364dfdaffba76c030155cdd4ac884edc06b15747ff3d60fd80fc96ab5e12"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 10,
+          "version": "70",
+          "argumentsHash": "644d3d3bc7a46dee8bd555d35083b2a09ebddec8e4c1540467144aae17f710c0"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9240,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9237,
+            "estimated": false
+          },
+          "costUsd": 0.0011719249999999999,
+          "latencyMs": 2993,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9365,
+            "outputTokens": 30,
+            "cachedTokens": 9237,
+            "cacheWriteTokens": 125,
+            "estimated": false
+          },
+          "costUsd": 0.000123295,
+          "latencyMs": 1838,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9506,
+            "outputTokens": 109,
+            "cachedTokens": 9362,
+            "cacheWriteTokens": 141,
+            "estimated": false
+          },
+          "costUsd": 0.00016604500000000003,
+          "latencyMs": 3490,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9640,
+            "outputTokens": 58,
+            "cachedTokens": 9503,
+            "cacheWriteTokens": 134,
+            "estimated": false
+          },
+          "costUsd": 0.00014107999999999997,
+          "latencyMs": 2923,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001602345,
+      "confirmation": "Apartamentul a fost vizionat de **3 ori**. Numărătoarea include doar vizionările marcate „completed” și cu dată validă, cel târziu astăzi.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "properties",
+          "source": "properties",
+          "rows": [
+            {
+              "ownerName": "Proprietar local",
+              "ownerPhone": "0700000002",
+              "status": "Activ",
+              "location": "Cismigiu",
+              "title": "Apartament Cismigiu",
+              "id": "titan"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "outputType": "PROPERTY_LIST"
+        },
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "9c22b3f6-28d8-4966-875c-0a8a634d7c7d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "9c22b3f6-28d8-4966-875c-0a8a634d7c7d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "9c22b3f6-28d8-4966-875c-0a8a634d7c7d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "9c22b3f6-28d8-4966-875c-0a8a634d7c7d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "9c22b3f6-28d8-4966-875c-0a8a634d7c7d",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0175",
+      "prompt": "Care a fost ultima vizionare pentru proprietate?",
+      "versions": {
+        "prompt": "jarvis-40",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "70",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:15:04.790Z",
+      "context": [
+        {
+          "id": "property-selection",
+          "role": "assistant",
+          "text": "Proprietatea selectată este Apartament Cismigiu (titan).",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate selectată",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Cismigiu"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "createdAt": "2026-10-08T10:15:04.790Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Ultima vizionare efectuată pentru Apartament Cismigiu a fost cu Maria, pe 7 octombrie 2026, la ora 17:00 (ora București).",
+      "actions": [],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "70",
+          "argumentsHash": "ec498ad396109ec2d28b34159a968e21e40d16ac332f0543a8359f0341e703db"
+        },
+        {
+          "name": "property_viewings",
+          "status": "success",
+          "latencyMs": 83,
+          "version": "70",
+          "argumentsHash": "ad164b0305ee621cb2f2ef9acf02c65b16989abdcfba8a3fc539ac768236cd11"
+        },
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 31,
+          "version": "70",
+          "argumentsHash": "2e0cf297b815a1b80b84ffa464b790aa20af65ce0a6fc16ed6ac1201e4a008b1"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 6,
+          "version": "70",
+          "argumentsHash": "a1599e91cf7c39ffe8a5a108336244cc607f32e8d0dc6e6a7306a9298216a998"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9235,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9232,
+            "estimated": false
+          },
+          "costUsd": 0.0011713,
+          "latencyMs": 1851,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9358,
+            "outputTokens": 30,
+            "cachedTokens": 9232,
+            "cacheWriteTokens": 123,
+            "estimated": false
+          },
+          "costUsd": 0.000122995,
+          "latencyMs": 1744,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9587,
+            "outputTokens": 34,
+            "cachedTokens": 9355,
+            "cacheWriteTokens": 229,
+            "estimated": false
+          },
+          "costUsd": 0.000139475,
+          "latencyMs": 3139,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9681,
+            "outputTokens": 125,
+            "cachedTokens": 9584,
+            "cacheWriteTokens": 94,
+            "estimated": false
+          },
+          "costUsd": 0.00017038999999999997,
+          "latencyMs": 4144,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9831,
+            "outputTokens": 59,
+            "cachedTokens": 9678,
+            "cacheWriteTokens": 150,
+            "estimated": false
+          },
+          "costUsd": 0.00014533,
+          "latencyMs": 2740,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0017494899999999998,
+      "confirmation": "Ultima vizionare efectuată pentru Apartament Cismigiu a fost cu Maria, pe 7 octombrie 2026, la ora 17:00 (ora București).",
+      "cards": [
+        {
+          "type": "data",
+          "title": "properties",
+          "source": "properties",
+          "rows": [
+            {
+              "ownerName": "Proprietar local",
+              "ownerPhone": "0700000002",
+              "status": "Activ",
+              "location": "Cismigiu",
+              "title": "Apartament Cismigiu",
+              "id": "titan"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "outputType": "PROPERTY_LIST"
+        },
+        {
+          "type": "data",
+          "title": "Istoric vizionări proprietate",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "last-maria",
+              "viewingDate": "2026-10-07T14:00:00.000Z",
+              "status": "completed",
+              "agentId": "a170e668-6e78-4e5c-a6cb-c274c74b9228",
+              "contactId": "maria",
+              "contactName": "Maria",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Cismigiu"
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        },
+        {
+          "type": "data",
+          "title": "contacts",
+          "source": "contacts",
+          "rows": [
+            {
+              "name": "Maria",
+              "contactType": "Cumparator",
+              "id": "maria"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "outputType": "CLIENT_LIST"
+        }
+      ],
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a170e668-6e78-4e5c-a6cb-c274c74b9228",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-06T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "last-maria",
+          "contactId": "maria",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a170e668-6e78-4e5c-a6cb-c274c74b9228",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a170e668-6e78-4e5c-a6cb-c274c74b9228",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "unrelated",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "other-property",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-07T15:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a170e668-6e78-4e5c-a6cb-c274c74b9228",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-05T14:00:00.000Z",
+          "duration": 60,
+          "status": "completed",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "a170e668-6e78-4e5c-a6cb-c274c74b9228",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    }
+  ],
+  "validation": {
+    "unitTestsPassed": 1858,
+    "unitFilesPassed": 148,
+    "combinedTestsPassed": 269,
+    "combinedFilesPassed": 19,
+    "emulatorRegressions": 265,
+    "liveScenarios": 4,
+    "previous20LiveScenariosRerun": false
+  }
+}

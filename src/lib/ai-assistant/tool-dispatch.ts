@@ -1,3 +1,4 @@
+import { propertyViewings } from './property-viewings';
 import { viewingDetails } from './viewing-details';
 import { assertTaskEdit } from './task-edit';
 import { shiftDatetime } from './datetime';
@@ -26,7 +27,11 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'viewing_details') {
+  if (name === 'property_viewings') {
+    data = await propertyViewings(ctx, payload);
+    cards.push({ type: 'data', title: 'Istoric vizionări proprietate', source: 'viewings', rows: data.rows, complete: data.complete });
+    for (const id of data.contactIds) refs.push({ resource: 'contacts', id });
+  } else if (name === 'viewing_details') {
     data = await viewingDetails(ctx, payload);
     cards.push({ type: 'data', title: 'Detalii vizionare', source: 'viewings', rows: data.rows, complete: data.complete });
     if (data.contactId) refs.push({ resource: 'contacts', id: data.contactId });

@@ -1,3 +1,4 @@
+import { propertyViewings } from '../property-viewings';
 import { createHash, randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -57,6 +58,27 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('lists all property visits across pages, counts completed visits and keeps latest ties', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId);
+    const now = new Date('2026-10-08T10:00:00Z');
+    await root.collection('properties').doc('p').set({ title: 'Cismigiu' });
+    await root.collection('contacts').doc('c').set({ name: 'Fresh name' });
+    const batch = db.batch();
+    for (let i = 0; i < 102; i++) batch.set(root.collection('viewings').doc(String(i).padStart(3, '0')), { propertyId: 'p', contactId: 'c', contactName: 'Stale name', agentId: 'colleague', status: i < 3 ? 'completed' : 'cancelled', viewingDate: i === 0 ? '2026-10-07T09:00:00Z' : '2026-10-07T13:00:00+03:00' });
+    batch.set(root.collection('viewings').doc('foreign-property'), { propertyId: 'other', status: 'completed', viewingDate: '2026-10-08T09:00:00Z' });
+    await batch.commit();
+    const first = await propertyViewings(ctx, { propertyId: 'p', mode: 'all' }, now);
+    expect(first).toMatchObject({ count: 102, complete: false, nextCursor: '099' });
+    expect(first.rows).toHaveLength(100);
+    const second = await propertyViewings(ctx, { propertyId: 'p', mode: 'all', cursor: first.nextCursor! }, now);
+    expect(second).toMatchObject({ count: 102, complete: true, nextCursor: null }); expect(second.rows).toHaveLength(2);
+    const count = await propertyViewings(ctx, { propertyId: 'p', mode: 'count_completed' }, now);
+    expect(count).toMatchObject({ count: 3, complete: true, rows: [] });
+    const latest = await propertyViewings(ctx, { propertyId: 'p', mode: 'latest_completed' }, now);
+    expect(latest.status).toBe('tied_latest'); expect(latest.rows).toHaveLength(2);
+    expect(latest.rows.every(row => row.contactName === 'Fresh name')).toBe(true);
+    await expect(propertyViewings(context(), { propertyId: 'p', mode: 'all' }, now)).rejects.toMatchObject({ status: 404 });
+  });
   it('reads fresh viewing relationships, distinguishes phones, preserves ties and agency isolation', async () => {
     const ctx = context(), foreign = context();
     const root = db.collection('agencies').doc(ctx.agencyId);
