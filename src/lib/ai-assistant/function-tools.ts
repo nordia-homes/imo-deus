@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { coreToolSchemas, actionToolSchemas } from './tool-schemas';
-const native = new Set(['integration_status', 'search_global', 'goal_coverage', 'resolve_matching_recipient', 'select_context', 'knowledge_search', 'legal_source_read', 'legal_source_search', 'data_catalog', 'capability_status', 'query_records', 'read', 'read_related', 'read_field', 'search_properties', 'match_contact', 'match_property', 'filter_existing_matches', 'operation_contract', 'discover_tools', 'remember_preference', 'forget_preference', 'insights', 'resolve_datetime', ...Object.keys(actionToolSchemas)]);
+const native = new Set(['integration_status', 'search_global', 'goal_coverage', 'resolve_matching_recipient', 'select_context', 'knowledge_search', 'legal_source_read', 'legal_source_search', 'data_catalog', 'capability_status', 'query_records', 'read', 'read_related', 'read_field', 'search_properties', 'match_contact', 'match_property', 'filter_existing_matches', 'operation_contract', 'discover_tools', 'remember_preference', 'forget_preference', 'insights', 'resolve_datetime', 'shift_datetime', ...Object.keys(actionToolSchemas)]);
 function strictSchema(schema: z.ZodTypeAny): Record<string, unknown> {
   const def = schema._def;
   if (schema instanceof z.ZodOptional || schema instanceof z.ZodDefault) return { anyOf: [strictSchema(def.innerType), { type: 'null' }] };
@@ -22,7 +22,7 @@ export function functionDefinition(name: string) {
   // A required nullable field in a strict function cannot distinguish omission
   // from an intentional clear. Sparse action JSON preserves that distinction.
   const action = Object.hasOwn(actionToolSchemas, name);
-  return { type: 'function', name, description: definition[2] + (action ? ' payload: JSON cu câmpurile acțiunii, fără kind. Omite câmpurile neschimbate; null numai pentru ștergere cerută explicit.' : ''), strict: true, parameters: native.has(name) && !action ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
+  return { type: 'function', name, description: definition[2] + (name === 'update_task' ? ' Pentru reprogramare include taskId, dueDate ISO verificat și startTime HH:mm. Pentru finalizare/redeschidere include status. Numai taskId nu modifică nimic.' : '') + (action ? ' payload: JSON cu câmpurile acțiunii, fără kind. Omite câmpurile neschimbate; null numai pentru ștergere cerută explicit.' : ''), strict: true, parameters: native.has(name) && !action ? strictSchema(definition[0]) : { type: 'object', properties: { payload: { type: 'string', description: 'JSON conform operation_contract pentru unealta selectată.' } }, required: ['payload'], additionalProperties: false } };
 }
 function cleanArguments(value: unknown, schema: z.ZodTypeAny): unknown {
   // Strict function schemas use null for omitted optional fields. Actual nullable

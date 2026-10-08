@@ -137,7 +137,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             successfulReads.add(call.id);
             response.data = { ...response.data, evidenceCallId: call.id };
           }
-          if (name === 'resolve_datetime' && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
+          if (['resolve_datetime', 'shift_datetime'].includes(name) && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
           if (actions.length + response.actions.length > MAX_PLAN_ACTIONS) throw new Error(`Planul depășește ${MAX_PLAN_ACTIONS} acțiuni.`);
           cards.push(...response.cards); actions.push(...response.actions); accessRefs.push(...response.refs);
           if (response.childMetrics) { metrics.models.push(...response.childMetrics.models); metrics.tools.push(...response.childMetrics.tools as typeof metrics.tools); }

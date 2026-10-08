@@ -1,3 +1,4 @@
+import { z as schema } from 'zod';
 import type { z } from 'zod';
 import { datetimeSchema } from './deterministic-contracts';
 import { zonedParts, zonedInstant } from './zoned-time';
@@ -16,4 +17,12 @@ export function resolveDatetime(input: z.infer<typeof datetimeSchema>, now = new
   }
   const date = input.date || new Date(midnight + offset * 86400000).toISOString().slice(0, 10);
   return { iso: zonedInstant(date, input.time, timezone, input.utcOffsetMinutes), timezone, local: `${date} ${input.time}` };
+}
+
+export const shiftDatetimeSchema = schema.object({ iso: schema.string().datetime({ offset: true }), minutes: schema.number().int().min(-525600).max(525600) }).strict();
+export function shiftDatetime(input: schema.infer<typeof shiftDatetimeSchema>) {
+  const { iso, minutes } = shiftDatetimeSchema.parse(input);
+  const instant = new Date(Date.parse(iso) + minutes * 60000);
+  const local = zonedParts(instant, 'Europe/Bucharest');
+  return { iso: instant.toISOString(), timezone: 'Europe/Bucharest', local: `${local.date} ${local.time}` };
 }

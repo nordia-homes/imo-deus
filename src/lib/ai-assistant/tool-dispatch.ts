@@ -1,3 +1,5 @@
+import { assertTaskEdit } from './task-edit';
+import { shiftDatetime } from './datetime';
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { VERSIONS } from './models';
@@ -63,7 +65,8 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     const { readTimeline } = await import('./timeline'); data = await readTimeline(ctx, payload);
     cards.push({ type: 'data', title: 'Istoric CRM verificat', source: 'timeline', timeline: payload, ...data } as AssistantCard);
     refs.push({ resource: payload.resource, id: payload.id });
-  } else if (name === 'resolve_datetime') data = resolveDatetime({ ...payload, timezone: payload.timezone || await preferredTimezone(ctx) });
+  } else if (name === 'shift_datetime') data = shiftDatetime(payload);
+  else if (name === 'resolve_datetime') data = resolveDatetime({ ...payload, timezone: payload.timezone || await preferredTimezone(ctx) });
   else if (name === 'query_records') {
     data = await queryRecords(ctx, payload); cards.push({ type: 'data', title: ({viewings:'Agenda vizionărilor',tasks:'Sarcinile tale',contacts:'Clienți',properties:'Portofoliu CRM',sales:'Dosare Sales'} as Record<string,string>)[payload.resource], source: payload.resource, query: payload, ...data } as AssistantCard);
     if (payload.resource === 'sales') refs.push(...data.rows.map((row: any) => ({ resource: 'sales' as const, id: row.id })));
@@ -97,6 +100,7 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     if (payload.params.saleId) refs.push({ resource: 'sales', id: payload.params.saleId }); if (payload.params.conversationId) refs.push({ resource: 'conversations', id: payload.params.conversationId });
     for (const row of data.conversations || []) refs.push({ resource: 'conversations', id: row.id }); for (const row of data.results || []) if (row.conversationId) refs.push({ resource: 'conversations', id: row.conversationId });
   } else if (name === 'propose_actions') {
+    payload.actions.forEach(assertTaskEdit);
     validateActionDates(payload.actions, options.verifiedDates || new Set());
     for (const action of payload.actions as AssistantAction[]) if (action.kind === 'update_property_status' && action.status === 'Vândut' && !action.soldPrice) throw new Error('Cere agentului prețul real de vânzare înainte de pregătirea planului.');
     for (const action of payload.actions as AssistantAction[]) if (action.kind === 'existing_operation') { requireTool(action.operation, ctx.role || ''); if (!Object.hasOwn(operations, action.operation) || isReadOperation(action.operation)) throw new Error('Acțiune handler invalidă.'); }

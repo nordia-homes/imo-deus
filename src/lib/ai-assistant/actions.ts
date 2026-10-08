@@ -1,3 +1,4 @@
+import { assertTaskEdit } from './task-edit';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { briefSettingsSchema, validateBriefSettings } from './daily-brief-contract';
 import { authProfileOutbox, pendingAuthProfile } from '@/lib/crm/profile-auth';
@@ -44,6 +45,7 @@ export async function matchProperty(ctx: AssistantContext, propertyId: string, l
 // Only internal mutations below are retried automatically in Firestore transactions.
 // External effects go through their own domain ledger; ambiguous outcomes stop the plan.
 export async function executeAction(ctx: AssistantContext, action: AssistantAction, key: string) {
+  assertTaskEdit(action);
   if ((process.env.JARVIS_DISABLED_TOOLS || '').split(',').map(value => value.trim()).includes(action.kind)) throw new CommunicationError('Această acțiune este dezactivată de administrator.', 403);
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   if (action.kind === 'existing_operation') {
@@ -514,7 +516,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const record = { contactId, contactName: contact.name, propertyId, propertyTitle: property.title, propertyAddress: property.address || property.location || '', agentId, agentName: assignment?.agentName || old?.agentName || profile.data()?.name || '', viewingDate, duration, status, notes: action.notes ?? old?.notes ?? '', updatedAt: now };
       await assertCalendarSlot(ctx, tx, 'viewings', ref.id, record);
       tx.set(ref, { ...record, ...(old ? {} : { id: ref.id, createdAt: now }) }, { merge: true });
-      result = { viewingId: ref.id, viewingDate, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
+      result = { viewingId: ref.id, viewingDate, status, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
     } else if (action.kind === 'recommend_properties') {
       const contact = await read('contacts', action.contactId);
       const ids = [...new Set(action.propertyIds)];

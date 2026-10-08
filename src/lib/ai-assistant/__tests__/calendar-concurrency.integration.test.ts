@@ -67,6 +67,25 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     await local.delete();
     await expect(currentRecordMessage(first, { resource: 'contacts', id: 'same-id' })).rejects.toThrow('nu există');
   });
+  it('commits property and buyer edits without a saved autonomy policy, preserving replay', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: ctx.role });
+    await agency.collection('properties').doc('p').set({ title: 'Titan', price: 100000, status: 'Activ' });
+    await agency.collection('contacts').doc('c').set({ name: 'Andrei', contactType: 'Cumparator', phone: '0700000001' });
+    try {
+      const actions = [
+        { kind: 'update_property' as const, propertyId: 'p', patch: { price: 110000 } },
+        { kind: 'update_contact' as const, contactId: 'c', patch: { phone: '0700000002' } },
+      ];
+      const prompt = 'Modifică prețul proprietății la 110000 și telefonul cumpărătorului la 0700000002.';
+      const result = await executeSafePrefix(ctx, 'crm-command', actions, prompt);
+      expect(result.blocked).toBe(false); expect(result.actions).toEqual([]); expect(result.results).toHaveLength(2);
+      expect((await agency.collection('properties').doc('p').get()).data()?.price).toBe(110000);
+      expect((await agency.collection('contacts').doc('c').get()).data()?.phone).toBe('0700000002');
+      expect((await executeSafePrefix(ctx, 'crm-command', actions, prompt)).results).toEqual(result.results);
+      expect((await agency.collection('assistantPolicies').doc(ctx.uid).get()).exists).toBe(false);
+    } finally { await profile.delete(); }
+  });
   it('finds the Romanian title, creates Matei Alin and commits tomorrow at 07:30 before confirming', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent emulator' });

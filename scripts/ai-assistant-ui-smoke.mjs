@@ -149,12 +149,9 @@ try {
   await page.getByRole('button', { name: 'Autorizează pașii safe', exact: true }).click();
   await page.getByRole('button', { name: 'Oprește pașii safe automați', exact: true }).waitFor();
   assert.equal(requests.filter(r => r.body?.kind === 'autonomy')[0].body.enabled, true);
-  await page.getByRole('button', { name: 'Autorizează cumpărători și vizionări', exact: true }).click();
-  await page.getByRole('button', { name: 'Oprește programarea automată', exact: true }).waitFor();
-  assert.equal(requests.filter(r => r.body?.kind === 'autonomy').at(-1).body.viewings, true);
+  assert.equal(await page.getByRole('button', { name: 'Autorizează cumpărători și vizionări', exact: true }).count(), 0);
+  await page.getByText('Acțiunile CRM pentru proprietăți, cumpărători și vizionări se execută la cererea ta, fără activare separată.', { exact: true }).waitFor();
   await page.screenshot({ path: path.join(output, 'viewing-autonomy.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Oprește programarea automată', exact: true }).click();
-  await page.getByRole('button', { name: 'Autorizează cumpărători și vizionări', exact: true }).waitFor();
   assert.deepEqual(errors, []);
   await page.getByRole('button', { name: 'Vezi automatizările', exact: true }).click();
   await page.getByText('1 verificări / 48', { exact: false }).waitFor();
@@ -356,5 +353,5 @@ try {
     if (type === 'owner_watch') for (const key of ['scopeKey', 'yearMin', 'unknownYear', 'excludeImported', 'roomsAny']) assert.deepEqual(edited.search[key], watchEdit.automation.search[key]);
   }
   assert.deepEqual(errors, []);
-  console.log(JSON.stringify({ passed: true, checks: ['Sales card stage, price, next action and dossier link', 'event rule editor preserves exact schedule and prepares multiple editable effects', 'all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'verified delivery labels remain distinct from automation status', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'explicit scoped autonomy', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
+  console.log(JSON.stringify({ passed: true, checks: ['Sales card stage, price, next action and dossier link', 'event rule editor preserves exact schedule and prepares multiple editable effects', 'all five automation configuration forms prepare saved approval plans', 'automation editor preserves untouched assignments and filters', 'automation editor prepares a saved plan', 'automation history', 'verified delivery labels remain distinct from automation status', 'Gmail Desktop handoff', 'send evidence only after runner callback', 'authenticated requests', 'preview before mutation', 'execution status', 'owner-first search', 'separate CRM results', 'explicit phone consent', 'mobile width', 'no browser exceptions', 'risk/cost preview', 'CRM commands need no opt-in; optional task policy remains', 'background turn SSE', 'background execution', 'unknown outcome blocks replay'], screenshots: output }));
 } finally { await browser?.close(); await new Promise(resolve => server.close(resolve)); }

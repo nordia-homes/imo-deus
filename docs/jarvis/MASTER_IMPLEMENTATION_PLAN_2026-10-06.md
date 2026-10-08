@@ -8,6 +8,8 @@ Obiectivul este ca agentul să poată delega un rezultat în limbaj natural, iar
 
 Prioritatea explicită ulterioară a utilizatorului: toate cele 1.000 de scenarii originale, implementate și verificate pe loturi până la rezultatul final. [Registrul loturilor](MASTER_BATCH_PROGRESS.md) urmărește această cerință. Ordinea începe cu fluxurile compuse 801–900; remedierea blocajelor de infrastructură rămâne parte din loturile care depind de ele. Succesul unui prim pas, testele scriptate și inventarierea nu sunt acceptanță 100%.
 
+Cerință explicită ulterioară, 8 octombrie: permisiunile pentru acțiunile CRM asupra proprietăților, cumpărătorilor și vizionărilor sunt implicite prin solicitarea agentului; nu se cere activare separată în aplicație. Verificările de acces la agenție și înregistrări rămân obligatorii. Această cerință înlocuiește prevederile istorice de opt-in pentru aceste operații. Implementarea și probele sunt în registrul loturilor.
+
 ## Baza de lucru
 
 - Specificație de produs: documentul utilizatorului `jarvis_master_codex_imodeus_v2.docx`, inclusiv cele 1000 de exemple și fazele 0–15.

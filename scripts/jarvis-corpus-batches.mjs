@@ -9,9 +9,9 @@ assert.equal(corpus.scenarios.length, 1000);
 assert.equal(new Set(corpus.scenarios.map(row => row.id)).size, 1000);
 const regressionIds = new Set(['master-0801', 'master-0806', 'master-0849', 'master-0850']);
 const liveIds = new Map();
-for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json']) {
+for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json']) {
   const evidence = JSON.parse(fs.readFileSync(file, 'utf8'));
-  for (const row of evidence.finalRuns) {
+  for (const row of [...evidence.finalRuns, ...(evidence.combinedRegression?.runs || [])]) {
     assert.equal(row.prompt, corpus.scenarios.find(scenario => scenario.id === row.scenarioId)?.text);
     if (row.executionVerified) liveIds.set(row.scenarioId, file);
   }

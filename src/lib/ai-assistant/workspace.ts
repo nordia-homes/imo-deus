@@ -97,10 +97,10 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       }) };
     }
     if (autonomous.results.length || autonomous.blocked) {
-      result.text = `Pași safe confirmați: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
+      result.text = `Acțiuni executate: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       const confirmation = executionConfirmation(autonomous.results);
       if (confirmation) result.text = `${confirmation}\n${result.text}`;
-      result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Execuție autonomă autorizată', source: 'autonomy', rows: autonomous.results });
+      result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Rezultatele cererii', source: 'autonomy', rows: autonomous.results });
       if (autonomous.blocked) result.metrics.status = 'partial';
     }
     const planId = result.actions.length ? randomUUID() : undefined;

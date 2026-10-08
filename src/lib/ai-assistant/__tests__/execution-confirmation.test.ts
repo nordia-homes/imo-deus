@@ -12,3 +12,7 @@ it('confirms the saved viewing with buyer, property and Bucharest time', () => {
 it('does not confirm proposals or unrelated receipts', () => {
   expect(viewingConfirmation([{ kind: 'schedule_viewing', viewingDate: '2030-01-01T05:30:00Z' }, { kind: 'create_contact', result: { contactId: 'c' } }])).toBe('');
 });
+
+it.each([['scheduled', 'actualizată'], ['completed', 'efectuată'], ['cancelled', 'anulată']])('confirms committed viewing state %s', (status, label) => {
+  expect(executionConfirmation([{ kind: 'update_viewing', result: { viewingId: 'v', viewingDate: '2030-01-01T05:30:00Z', status } }])).toContain(`Vizionare ${label}`);
+});

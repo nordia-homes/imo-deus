@@ -4,6 +4,18 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Actualizare 8 octombrie — autorizare prin cerere și modificarea vizionărilor
+
+Conform cererii explicite a utilizatorului, operațiile CRM native pentru proprietăți, cumpărători și vizionări se execută pe baza comenzii agentului, fără activare UI sau document assistantPolicies. Aceasta înlocuiește cerința anterioară de opt-in pentru cumpărători/vizionări. Rămân verificările de rol, agenție, înregistrare, revizie, conflicte calendaristice și idempotență. Mesajele externe, publicările și alte domenii păstrează fluxurile existente. Cererile de previzualizare și negațiile nu autorizează scrieri.
+
+Lot nou: **0160–0165**, șase cereri originale executate cu modelul real și executorii aplicației într-un emulator Firestore izolat, fără politică salvată pentru vizionări. Reprogramarea modifică aceeași înregistrare; decalarea relativă folosește un calculator server-side de minute; anularea de către client păstrează motivul în note. Confirmarea folosește starea și ora din receipt-ul tranzacției. Sunt verificate păstrarea relațiilor/duratei/notelor, absența duplicatelor și replay-ul aceleiași cereri.
+
+Dovada: [CALENDAR_EXECUTION_BATCH_03.json](evals/CALENDAR_EXECUTION_BATCH_03.json). Pentru 0162, contextul anterior precizează că mutarea este mai târziu; pentru 0162/0164/0165 există o vizionare selectată. Nu sunt inventate direcția sau înregistrarea selectată din comanda izolată. Primele șase rulări nu au avut erori de instrument. Regresia combinată ulterioară a găsit un eșec la 0160: potrivirea pe fragmente de cuvinte putea exclude update_viewing și modelul epuiza bugetul după un instrument greșit. Selecția folosește acum cuvinte întregi și aliasuri pentru mutare/anulare. Încercarea nereușită este păstrată în raport. O altă regresie a găsit la 0179 o acțiune update_task fără câmpuri modificate și o acoperire invalidă; acum plannerul și executorul resping editările goale, iar contractul instrumentului precizează dueDate/startTime pentru reprogramare. Rerularea izolată 0179 a trecut, apoi regresia combinată finală a trecut **14/14**, fără erori de instrument (prompt jarvis-36, tools 64).
+
+Validare finală: 1.841 teste unitare; 276 probe Firestore + model real în 19 fișiere; compilare 227 pagini; TypeScript, interfață și inventare verificate. Nu s-a publicat în producție în această etapă.
+
+Total: **14 ID-uri originale cu dovadă de execuție locală folosind modelul real**, 986 fără acest tip de dovadă. Nu reprezintă acceptanță în producție, validarea vocală sau certificarea tuturor variantelor celor 1.000 de scenarii.
+
 ## Lot 17 — continuarea plannerului
 
 Implementat: răspunsul final după încercarea instrumentelor, inclusiv când primul instrument eșuează, nu mai încheie cu succes o execuție principală fără goal_coverage valid. Serverul cere continuarea cerințelor rămase, păstrează rezultatele existente și admite cel mult două reveniri pentru verificarea acoperirii, în același buget. Nu repropune automat acțiuni și nu execută mutații din evaluator. O cerință declarată nesuportată produce rezultat parțial, iar una ce necesită clarificare produce starea aferentă. Subplanificatorii limitați la citire și răspunsurile explicite de clarificare/refuz păstrează comportamentul lor.

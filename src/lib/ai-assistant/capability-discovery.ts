@@ -1,7 +1,7 @@
 import { normalized } from './contracts';
 
 const aliases: Record<string, string> = {
-  create: 'creeaza adauga nou noua', update: 'modifica schimba actualizeaza editeaza',
+  create: 'creeaza adauga nou noua', update: 'modifica schimba actualizeaza editeaza muta reprogrameaza replanifica marcheaza anuleaza redeschide finalizeaza',
   delete: 'sterge elimina', remove: 'sterge elimina retrage', start: 'porneste initiaza incepe',
   schedule: 'programeaza calendar', activate: 'activeaza', archive: 'arhiveaza dezarhiveaza reactiveaza',
   read: 'citeste consulta arata', pause: 'opreste pauza suspenda', featured: 'promovata evidentiata recomandata site',
@@ -31,8 +31,9 @@ const inflections: Record<string, string> = Object.fromEntries(Object.entries({
 export function capabilityScore(query: string, id: string, description = '') {
   const tokens = normalized(query).split(/[^a-z0-9]+/).map(token => inflections[token] || token).filter(token => token.length > 2 && !ignored.has(token));
   const words = id.split('_');
-  const haystack = normalized([id.replaceAll('_', ' '), description, ...words.map(word => aliases[word] || '')].join(' '));
-  return tokens.reduce((score, token) => score + (haystack.includes(token) ? (id.includes(token) ? 3 : 1) : 0), 0);
+  const haystack = new Set(normalized([id.replaceAll('_', ' '), description, ...words.map(word => aliases[word] || '')].join(' ')).split(/[^a-z0-9]+/).map(token => inflections[token] || token));
+  // Match words, not fragments: ora must not match colaborare and displace update_viewing.
+  return tokens.reduce((score, token) => score + (haystack.has(token) ? (words.includes(token) ? 3 : 1) : 0), 0);
 }
 export function selectActionTools(query: string, names: string[], limit = 4) {
   return names.map(name => ({ name, score: capabilityScore(query, name) })).filter(row => row.score > 0)

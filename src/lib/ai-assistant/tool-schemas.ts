@@ -1,3 +1,4 @@
+import { shiftDatetimeSchema } from './datetime';
 import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { z } from 'zod';
 import { actionSchema, readSchema, relatedSchema, fieldSchema, searchSchema, idSchema, queryRecordsSchema } from './contracts';
@@ -23,6 +24,7 @@ export const coreToolSchemas = {
   capability_status: [z.object({ operation: idSchema }).strict(), objectOutput, 'Verifică drepturi, feature flags, worker și pașii de eligibilitate/provider ai unei capabilități înainte de execuție. Nu confundă înregistrarea cu disponibilitatea integrării.'],
   timeline: [timelineSchema, rowsOutput, 'Istoric autorizat al clientului/proprietății/dosarului/conversației/apelului; paginare și surse explicite.'],
   analyze_records: [analysisSchema, rowsOutput, 'Filtrare, sortare și statistici deterministe pe ID-uri autorizate deja identificate. Nu este un total al agenției.'],
+  shift_datetime: [shiftDatetimeSchema, objectOutput, 'Deplasează un ISO verificat cu minutes minute (pozitiv = mai târziu, negativ = mai devreme). Returnează ISO și ora Europe/Bucharest, inclusiv peste schimbarea DST.'],
   resolve_datetime: [datetimeSchema, objectOutput, 'Dată și oră convertite determinist în ISO, exclusiv Europe/Bucharest. Alege exact unul: date, dayOffset (mâine=1) sau weekday (monday..sunday; vineri=friday), plus time HH:mm. weekday alege următoarea apariție la ora cerută, inclusiv azi dacă ora nu a trecut. Detectează ambiguitatea DST.'],
   read: [readSchema, rowsOutput, 'Citește înregistrări autorizate, cu paginare.'],
   query_records: [queryRecordsSchema, rowsOutput, 'Filtrează CRM PE SERVER și numără prin agregare. sales numără numai dosarele autorizate ca agent/colaborator sau administrator; filtrează etapa cu stage, nu status; datele Sales folosesc createdAt. countScope=query indică totalul interogării; countScope=segment este numărul din porțiunea scanată, nu totalul agenției. Nu prezenta un count segment drept total chiar dacă nextCursor=null. Pentru câte vizionări mâine: resource=viewings, dayOffset=1, mode=count. Pentru liste folosește mode=list și nextCursor până la final. Datele relative folosesc timezone explicit, apoi preferința agentului, apoi Europe/Bucharest; cursorul expiră când ziua relativă, fusul sau rolul se schimbă.'],
