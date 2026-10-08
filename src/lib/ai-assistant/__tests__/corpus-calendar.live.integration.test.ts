@@ -36,10 +36,11 @@ const readCases = ['master-0168', 'master-0169', 'master-0170', 'master-0171'];
 const historyCases = ['master-0172', 'master-0173', 'master-0174', 'master-0175'];
 const followupCases = ['master-0176', 'master-0177'];
 const agendaCases = ['master-0182', 'master-0183', 'master-0184'];
-const cases = [...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const priorityCases = ['master-0185', 'master-0186'];
+const cases = [...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -50,6 +51,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
+    const isPriority = priorityCases.includes(scenarioId);
     const isAgenda = agendaCases.includes(scenarioId);
     const isFollowup = followupCases.includes(scenarioId);
     const isHistory = historyCases.includes(scenarioId);
@@ -117,6 +119,15 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
           for (const [key, dueDate] of Object.entries(dates)) await agency.collection('tasks').doc(key).set({ id: key, description: `Sarcină ${key}`, dueDate, status: key === 'completed' ? 'completed' : 'open', agentId: key === 'colleague' ? 'other-agent' : id });
         }
       }
+      const priorityNames: Record<string, string> = { accepted: 'Finalizează oferta acceptată', pending: 'Discută oferta în așteptare', negotiation: 'Revino la negociere', viewing: 'Cere feedback după vizionare', priority: 'Sună clientul prioritar', overdue: 'Recuperează documentele restante', today: 'Verifică documentele de azi', future: 'Organizează arhiva' };
+      if (isPriority) {
+        for (const [contactId, extra] of Object.entries({ accepted: { offers: [{ propertyId: 'titan', status: 'Acceptată' }] }, pending: { offers: [{ propertyId: 'titan', status: 'În așteptare' }] }, negotiation: { status: 'În negociere' }, viewing: {}, priority: { priority: 'Ridicată' } })) await agency.collection('contacts').doc(contactId).set({ name: contactId, status: 'Nou', ...extra });
+        await agency.collection('viewings').doc('done-viewing').set({ contactId: 'viewing', propertyId: 'titan', agentId: id, status: 'completed', viewingDate: resolveDatetime({ dayOffset: -1, time: '17:00' }).iso });
+        for (const [key, description] of Object.entries(priorityNames)) await agency.collection('tasks').doc(key).set({ id: key, description, agentId: id, status: 'open', contactId: ['overdue', 'today', 'future'].includes(key) ? 'andrei' : key, propertyId: 'titan', dueDate: resolveDatetime({ dayOffset: key === 'overdue' ? -1 : key === 'today' ? 0 : 1, time: '12:00' }).local.slice(0, 10), ...(key === 'viewing' ? { viewingId: 'done-viewing' } : {}) });
+        await agency.collection('tasks').doc('completed').set({ description: 'Task finalizat', status: 'completed', agentId: id, dueDate: '2026-01-01' });
+        await agency.collection('tasks').doc('colleague').set({ description: 'Task coleg', status: 'open', agentId: 'colleague', dueDate: '2026-01-01' });
+      }
+      const beforePriorities = isPriority ? (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       const beforeAgenda = isAgenda ? (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       const beforeRead = isRead ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       if (scenarioId === 'master-0159') {
@@ -132,6 +143,17 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isPriority) {
+        expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
+        const expected = scenarioId === 'master-0185' ? ['overdue', 'today', 'priority'] : ['accepted', 'pending', 'negotiation', 'viewing', 'priority', 'overdue', 'today', 'future'];
+        const rows = (planned.cards || []).filter(card => card.source === 'tasks').flatMap(card => card.rows || []);
+        expect(rows.map(row => row.id)).toEqual(expected);
+        for (const key of expected) expect(planned.text).toContain(priorityNames[key]);
+        expect(planned.text).not.toMatch(/UTC|GMT/);
+        expect((await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data())).toEqual(beforePriorities);
+        report = { ...report, executionVerified: true, confirmation: planned.text, cards: planned.cards, storedTasks: beforePriorities };
+        return;
+      }
       if (isAgenda) {
         expect(diagnostics).toEqual([]);
         if (scenarioId === 'master-0182') {

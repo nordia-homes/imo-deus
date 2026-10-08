@@ -1,3 +1,4 @@
+import { taskPriorities } from '../task-priorities';
 import { taskAgenda } from '../task-agenda';
 import { viewingFollowups } from '../viewing-followups';
 import { propertyViewings } from '../property-viewings';
@@ -60,6 +61,24 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('ranks all tasks before pagination and reads fresh CRM priority evidence', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
+    await root.collection('contacts').doc('high').set({ name: 'Actual client', status: 'Nou', priority: 'Ridicată' });
+    const batch = db.batch();
+    for (let i = 0; i < 102; i++) batch.set(root.collection('tasks').doc(String(i).padStart(3, '0')), { agentId: ctx.uid, status: 'open', dueDate: '2026-10-09', description: 'Task', ...(i === 101 ? { contactId: 'high', contactName: 'Old name' } : {}) });
+    batch.set(root.collection('tasks').doc('foreign'), { agentId: 'other', status: 'open', dueDate: '2026-01-01', contactId: 'high' });
+    batch.set(root.collection('tasks').doc('done'), { agentId: ctx.uid, status: 'completed', dueDate: '2026-01-01', contactId: 'high' });
+    await batch.commit();
+    const first = await taskPriorities(ctx, { mode: 'commercial' }, now);
+    expect(first.rows).toHaveLength(100); expect(first.rows[0]).toMatchObject({ id: '101', rank: 1, contactName: 'Actual client', impact: 10 });
+    const second = await taskPriorities(ctx, { mode: 'commercial', cursor: first.nextCursor! }, now);
+    expect(second.rows).toHaveLength(2); expect(second.complete).toBe(true);
+    expect(new Set([...first.rows, ...second.rows].map(row => row.id)).size).toBe(102);
+    expect((await taskPriorities(ctx, { mode: 'urgent' }, now)).rows.map(row => row.id)).toEqual(['101']);
+    await root.collection('contacts').doc('high').update({ priority: 'Scăzută' });
+    expect((await taskPriorities(ctx, { mode: 'urgent' }, now)).rows).toEqual([]);
+    expect((await taskPriorities(context(), { mode: 'commercial' }, now)).rows).toEqual([]);
+  }, 20000);
   it('paginates the full task agenda and excludes completed, foreign-agent and invalid dates', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
     const batch = db.batch();

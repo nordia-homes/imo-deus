@@ -4,6 +4,20 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — urgență și impact comercial
+
+Scenariile originale **0185–0186** au trecut cu model real și Firestore local, fără erori de instrument (prompt jarvis-46 / tools 76). Dovezi: [CALENDAR_EXECUTION_BATCH_09.json](evals/CALENDAR_EXECUTION_BATCH_09.json). 0185 returnează cele trei taskuri urgente din fixture; 0186 ordonează toate cele opt taskuri deschise proprii și explică motivele. Înregistrările CRM rămân neschimbate: Task nu are câmp de prioritate, iar aceste două cereri produc recomandări ordonate, nu mutații ale unui câmp inventat.
+
+`task_priorities` citește datele actuale ale clienților, proprietăților și vizionărilor asociate, fără folosirea numelor denormalizate vechi. Urgența recomandată înseamnă scadență azi/depășită sau client activ cu prioritate Ridicată. Ordinea comercială este o regulă explicită: ofertă acceptată pentru proprietatea taskului > ofertă în așteptare pentru aceeași proprietate > client în negociere > follow-up legat de vizionare efectuată > client cu prioritate Ridicată > lipsa unui semnal confirmat dintre aceste criterii. Egalitățile folosesc scadența și ID-ul. Nu este model predictiv, scor calibrat, calcul al venitului sau probabilitate de vânzare. Taskurile fără semnale rămân în listă, iar relațiile lipsă sunt indicate.
+
+Ofertele refuzate, ofertele pentru alte proprietăți și clienții pierduți/arhivați nu ridică scorul comercial. Pentru semnalul de ofertă proprietatea trebuie să fie Activ/Rezervat. Legătura unui follow-up trebuie să corespundă clientului/proprietății vizionării efectuate. Termenul depășit poate face urgent un task fără impact comercial dovedit. Datele sunt interpretate în București.
+
+Clasamentul se calculează înainte de paginare (100 rezultate/pagină); proba Firestore folosește 102 taskuri, cu taskul important la finalul ordinii ID-urilor, verifică date actualizate și izolarea agenției. Citirea are plafon de 5.000 documente și buget de 12 secunde verificat între citiri; la depășire returnează explicit parțial, fără clasament global certificat. Ordinea este live și se poate schimba dacă CRM-ul se modifică între pagini.
+
+Validare: **1.866 teste unitare**, **268 regresii Firestore** și cele **două comenzi originale cu model real** trecute. Lint, TypeScript, inventarele și compilarea aplicației (227 pagini) au trecut.
+
+Total curent: **31 de scenarii originale cu dovezi locale folosind modelul real**, **969 fără această dovadă**. Cele 29 de scenarii live anterioare nu au fost rerulate în acest lot. Nu este certificare în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — duplicatul și agenda taskurilor
 
 Scenariile originale **0182–0184** au trecut cu model real și Firestore local, fără erori de instrument (prompt jarvis-45 / tools 75). Dovezi: [CALENDAR_EXECUTION_BATCH_08.json](evals/CALENDAR_EXECUTION_BATCH_08.json). 0182 primește în context ID-ul duplicatului selectat, șterge numai acel task, păstrează originalul cu aceeași descriere, înregistrează copia anterioară în audit și confirmă din receipt «Task șters». Replay-ul aceleiași cereri păstrează un singur efect și un singur audit. Nu se presupune că două descrieri identice autorizează ștergerea ambelor înregistrări.

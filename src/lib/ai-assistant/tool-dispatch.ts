@@ -1,3 +1,4 @@
+import { taskPriorities } from './task-priorities';
 import { taskAgenda } from './task-agenda';
 import { viewingFollowups } from './viewing-followups';
 import { propertyViewings } from './property-viewings';
@@ -29,7 +30,11 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'task_agenda') {
+  if (name === 'task_priorities') {
+    data = await taskPriorities(ctx, payload);
+    cards.push({ type: 'data', title: 'Prioritățile taskurilor', source: 'tasks', rows: data.rows, complete: data.complete });
+    for (const row of data.rows) if (row.contactId) refs.push({ resource: 'contacts', id: row.contactId });
+  } else if (name === 'task_agenda') {
     data = await taskAgenda(ctx, payload);
     cards.push({ type: 'data', title: 'Sarcinile agentului', source: 'tasks', rows: data.rows, complete: data.complete });
   } else if (name === 'viewing_followups') {

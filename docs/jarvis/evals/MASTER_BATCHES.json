@@ -1472,14 +1472,22 @@
           "sourceNumber": 185,
           "request": "Care sunt taskurile urgente?",
           "requestSha256": "1692f87057d963199348079e1398aca7ee182796b4cdc3eac1f0b9ded00a1635",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0186",
           "sourceNumber": 186,
           "request": "Prioritizează-mi taskurile după impact comercial.",
           "requestSha256": "583fc150d1acba6d7707c21ecfb9b0f10a60867ae3bae12e938702ac729ccd32",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0187",

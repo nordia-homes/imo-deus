@@ -1,0 +1,608 @@
+{
+  "scope": "Original scenarios 0185-0186, actual model with isolated Firestore data; explained recommendations, no CRM mutations or production certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0185",
+      "prompt": "Care sunt taskurile urgente?",
+      "versions": {
+        "prompt": "jarvis-46",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "76",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:58:44.849Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Taskurile urgente, în ordinea recomandată:\n\n1. **Recuperează documentele restante** — pentru Andrei, Apartament Titan. Scadentă: **7 octombrie 2026** (depășită).\n2. **Verifică documentele de azi** — pentru Andrei, Apartament Titan. Scadentă: **8 octombrie 2026** (azi).\n3. **Sună clientul prioritar** — clientul „priority”, Apartament Titan. Scadentă: **9 octombrie 2026**; motiv: prioritate ridicată în CRM.\n\nCriteriul de urgență este scadență depășită/azi sau client cu prioritate ridicată. Este o recomandare de ordonare, fără modificarea taskurilor.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "task_priorities",
+          "status": "success",
+          "latencyMs": 859,
+          "version": "76",
+          "argumentsHash": "2d1f3dddcd54f3ac9dcfdda6f89bd6691535d4b0c6050b6f9d314456b2a9048e"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 21,
+          "version": "76",
+          "argumentsHash": "db519c1047ce833679a49736b0c2ba9daa863c8388600d5954db80dade372dcf"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10025,
+            "outputTokens": 23,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10022,
+            "estimated": false
+          },
+          "costUsd": 0.00126455,
+          "latencyMs": 3248,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10521,
+            "outputTokens": 93,
+            "cachedTokens": 10022,
+            "cacheWriteTokens": 496,
+            "estimated": false
+          },
+          "costUsd": 0.00020901999999999997,
+          "latencyMs": 2176,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10639,
+            "outputTokens": 196,
+            "cachedTokens": 10518,
+            "cacheWriteTokens": 118,
+            "estimated": false
+          },
+          "costUsd": 0.00021823000000000003,
+          "latencyMs": 3453,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.0016918,
+      "confirmation": "Taskurile urgente, în ordinea recomandată:\n\n1. **Recuperează documentele restante** — pentru Andrei, Apartament Titan. Scadentă: **7 octombrie 2026** (depășită).\n2. **Verifică documentele de azi** — pentru Andrei, Apartament Titan. Scadentă: **8 octombrie 2026** (azi).\n3. **Sună clientul prioritar** — clientul „priority”, Apartament Titan. Scadentă: **9 octombrie 2026**; motiv: prioritate ridicată în CRM.\n\nCriteriul de urgență este scadență depășită/azi sau client cu prioritate ridicată. Este o recomandare de ordonare, fără modificarea taskurilor.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Prioritățile taskurilor",
+          "source": "tasks",
+          "rows": [
+            {
+              "id": "overdue",
+              "description": "Recuperează documentele restante",
+              "dueLocal": "2026-10-07",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "impact": 0,
+              "reasons": [
+                "Nu există un semnal comercial confirmat dintre criteriile folosite."
+              ],
+              "urgencyReasons": [
+                "Scadență depășită."
+              ],
+              "urgent": true,
+              "dueDay": "2026-10-07",
+              "missingRelations": [],
+              "rank": 1
+            },
+            {
+              "id": "today",
+              "description": "Verifică documentele de azi",
+              "dueLocal": "2026-10-08",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "impact": 0,
+              "reasons": [
+                "Nu există un semnal comercial confirmat dintre criteriile folosite."
+              ],
+              "urgencyReasons": [
+                "Scadență azi."
+              ],
+              "urgent": true,
+              "dueDay": "2026-10-08",
+              "missingRelations": [],
+              "rank": 2
+            },
+            {
+              "id": "priority",
+              "description": "Sună clientul prioritar",
+              "dueLocal": "2026-10-09",
+              "contactId": "priority",
+              "contactName": "priority",
+              "propertyTitle": "Apartament Titan",
+              "impact": 10,
+              "reasons": [
+                "Client cu prioritate Ridicată în CRM."
+              ],
+              "urgencyReasons": [
+                "Client cu prioritate Ridicată în CRM."
+              ],
+              "urgent": true,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 3
+            }
+          ],
+          "complete": true,
+          "outputType": "TASK_CARD"
+        }
+      ],
+      "storedTasks": [
+        {
+          "id": "accepted",
+          "description": "Finalizează oferta acceptată",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "accepted",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "description": "Task coleg",
+          "status": "open",
+          "agentId": "colleague",
+          "dueDate": "2026-01-01"
+        },
+        {
+          "description": "Task finalizat",
+          "status": "completed",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "dueDate": "2026-01-01"
+        },
+        {
+          "id": "future",
+          "description": "Organizează arhiva",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "negotiation",
+          "description": "Revino la negociere",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "negotiation",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "overdue",
+          "description": "Recuperează documentele restante",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "dueDate": "2026-10-07"
+        },
+        {
+          "id": "pending",
+          "description": "Discută oferta în așteptare",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "pending",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "priority",
+          "description": "Sună clientul prioritar",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "priority",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "today",
+          "description": "Verifică documentele de azi",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "dueDate": "2026-10-08"
+        },
+        {
+          "id": "viewing",
+          "description": "Cere feedback după vizionare",
+          "agentId": "b244a6fe-db95-4e4b-971b-c5cce188fa53",
+          "status": "open",
+          "contactId": "viewing",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09",
+          "viewingId": "done-viewing"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0186",
+      "prompt": "Prioritizează-mi taskurile după impact comercial.",
+      "versions": {
+        "prompt": "jarvis-46",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "76",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:58:57.081Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Prioritizare după impact comercial (fără modificarea taskurilor):\n\n1. **Finalizează oferta acceptată** — Apartament Titan; scadent 9 octombrie 2026. Motiv: ofertă acceptată pentru proprietate.\n2. **Discută oferta în așteptare** — Apartament Titan; scadent 9 octombrie 2026. Motiv: ofertă în așteptare.\n3. **Revino la negociere** — Apartament Titan; scadent 9 octombrie 2026. Motiv: client în negociere.\n4. **Cere feedback după vizionare** — Apartament Titan; scadent 9 octombrie 2026. Motiv: follow-up după vizionare efectuată.\n5. **Sună clientul prioritar** — Apartament Titan; scadent 9 octombrie 2026. Motiv: client cu prioritate ridicată în CRM.\n6. **Recuperează documentele restante** — Andrei; scadent 7 octombrie 2026. Nu există un semnal comercial confirmat dintre criteriile folosite; este restant.\n7. **Verifică documentele de azi** — Andrei; scadent 8 octombrie 2026. Nu există un semnal comercial confirmat dintre criteriile folosite; este scadent azi.\n8. **Organizează arhiva** — Andrei; scadent 9 octombrie 2026. Nu există un semnal comercial confirmat dintre criteriile folosite.\n\nCriteriul: ofertă acceptată > ofertă în așteptare > client în negociere > follow-up după vizionare efectuată > client prioritar > fără semnal comercial confirmat. Scadența depășită sau de azi indică urgență, dar nu schimbă ordinea impactului comercial; egalitățile se departajează după scadență, apoi ID. Este o recomandare, nu un scor calibrat și nu estimează venituri, probabilități sau comisioane.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "task_priorities",
+          "status": "success",
+          "latencyMs": 103,
+          "version": "76",
+          "argumentsHash": "56dab0d3ee7bb06c537b4f2a2b16b0a9fba653a7c817ed67a15ec6072f08c332"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 17,
+          "version": "76",
+          "argumentsHash": "39b7f5d85ba6b3560c2d42407e7f7f8f90f9fb4e40cd061fe3c0eb433ae5a425"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10028,
+            "outputTokens": 23,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10025,
+            "estimated": false
+          },
+          "costUsd": 0.0012649249999999999,
+          "latencyMs": 2511,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10971,
+            "outputTokens": 99,
+            "cachedTokens": 10025,
+            "cacheWriteTokens": 943,
+            "estimated": false
+          },
+          "costUsd": 0.000267925,
+          "latencyMs": 3110,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11095,
+            "outputTokens": 474,
+            "cachedTokens": 10968,
+            "cacheWriteTokens": 124,
+            "estimated": false
+          },
+          "costUsd": 0.00036248000000000004,
+          "latencyMs": 6552,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00189533,
+      "confirmation": "Prioritizare după impact comercial (fără modificarea taskurilor):\n\n1. **Finalizează oferta acceptată** — Apartament Titan; scadent 9 octombrie 2026. Motiv: ofertă acceptată pentru proprietate.\n2. **Discută oferta în așteptare** — Apartament Titan; scadent 9 octombrie 2026. Motiv: ofertă în așteptare.\n3. **Revino la negociere** — Apartament Titan; scadent 9 octombrie 2026. Motiv: client în negociere.\n4. **Cere feedback după vizionare** — Apartament Titan; scadent 9 octombrie 2026. Motiv: follow-up după vizionare efectuată.\n5. **Sună clientul prioritar** — Apartament Titan; scadent 9 octombrie 2026. Motiv: client cu prioritate ridicată în CRM.\n6. **Recuperează documentele restante** — Andrei; scadent 7 octombrie 2026. Nu există un semnal comercial confirmat dintre criteriile folosite; este restant.\n7. **Verifică documentele de azi** — Andrei; scadent 8 octombrie 2026. Nu există un semnal comercial confirmat dintre criteriile folosite; este scadent azi.\n8. **Organizează arhiva** — Andrei; scadent 9 octombrie 2026. Nu există un semnal comercial confirmat dintre criteriile folosite.\n\nCriteriul: ofertă acceptată > ofertă în așteptare > client în negociere > follow-up după vizionare efectuată > client prioritar > fără semnal comercial confirmat. Scadența depășită sau de azi indică urgență, dar nu schimbă ordinea impactului comercial; egalitățile se departajează după scadență, apoi ID. Este o recomandare, nu un scor calibrat și nu estimează venituri, probabilități sau comisioane.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Prioritățile taskurilor",
+          "source": "tasks",
+          "rows": [
+            {
+              "id": "accepted",
+              "description": "Finalizează oferta acceptată",
+              "dueLocal": "2026-10-09",
+              "contactId": "accepted",
+              "contactName": "accepted",
+              "propertyTitle": "Apartament Titan",
+              "impact": 50,
+              "reasons": [
+                "Ofertă acceptată pentru proprietatea acestui task."
+              ],
+              "urgencyReasons": [],
+              "urgent": false,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 1
+            },
+            {
+              "id": "pending",
+              "description": "Discută oferta în așteptare",
+              "dueLocal": "2026-10-09",
+              "contactId": "pending",
+              "contactName": "pending",
+              "propertyTitle": "Apartament Titan",
+              "impact": 40,
+              "reasons": [
+                "Ofertă în așteptare pentru proprietatea acestui task."
+              ],
+              "urgencyReasons": [],
+              "urgent": false,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 2
+            },
+            {
+              "id": "negotiation",
+              "description": "Revino la negociere",
+              "dueLocal": "2026-10-09",
+              "contactId": "negotiation",
+              "contactName": "negotiation",
+              "propertyTitle": "Apartament Titan",
+              "impact": 30,
+              "reasons": [
+                "Client în negociere în CRM."
+              ],
+              "urgencyReasons": [],
+              "urgent": false,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 3
+            },
+            {
+              "id": "viewing",
+              "description": "Cere feedback după vizionare",
+              "dueLocal": "2026-10-09",
+              "contactId": "viewing",
+              "contactName": "viewing",
+              "propertyTitle": "Apartament Titan",
+              "impact": 20,
+              "reasons": [
+                "Follow-up legat de o vizionare efectuată."
+              ],
+              "urgencyReasons": [],
+              "urgent": false,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 4
+            },
+            {
+              "id": "priority",
+              "description": "Sună clientul prioritar",
+              "dueLocal": "2026-10-09",
+              "contactId": "priority",
+              "contactName": "priority",
+              "propertyTitle": "Apartament Titan",
+              "impact": 10,
+              "reasons": [
+                "Client cu prioritate Ridicată în CRM."
+              ],
+              "urgencyReasons": [
+                "Client cu prioritate Ridicată în CRM."
+              ],
+              "urgent": true,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 5
+            },
+            {
+              "id": "overdue",
+              "description": "Recuperează documentele restante",
+              "dueLocal": "2026-10-07",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "impact": 0,
+              "reasons": [
+                "Nu există un semnal comercial confirmat dintre criteriile folosite."
+              ],
+              "urgencyReasons": [
+                "Scadență depășită."
+              ],
+              "urgent": true,
+              "dueDay": "2026-10-07",
+              "missingRelations": [],
+              "rank": 6
+            },
+            {
+              "id": "today",
+              "description": "Verifică documentele de azi",
+              "dueLocal": "2026-10-08",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "impact": 0,
+              "reasons": [
+                "Nu există un semnal comercial confirmat dintre criteriile folosite."
+              ],
+              "urgencyReasons": [
+                "Scadență azi."
+              ],
+              "urgent": true,
+              "dueDay": "2026-10-08",
+              "missingRelations": [],
+              "rank": 7
+            },
+            {
+              "id": "future",
+              "description": "Organizează arhiva",
+              "dueLocal": "2026-10-09",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyTitle": "Apartament Titan",
+              "impact": 0,
+              "reasons": [
+                "Nu există un semnal comercial confirmat dintre criteriile folosite."
+              ],
+              "urgencyReasons": [],
+              "urgent": false,
+              "dueDay": "2026-10-09",
+              "missingRelations": [],
+              "rank": 8
+            }
+          ],
+          "complete": true,
+          "outputType": "TASK_CARD"
+        }
+      ],
+      "storedTasks": [
+        {
+          "id": "accepted",
+          "description": "Finalizează oferta acceptată",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "accepted",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "description": "Task coleg",
+          "status": "open",
+          "agentId": "colleague",
+          "dueDate": "2026-01-01"
+        },
+        {
+          "description": "Task finalizat",
+          "status": "completed",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "dueDate": "2026-01-01"
+        },
+        {
+          "id": "future",
+          "description": "Organizează arhiva",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "negotiation",
+          "description": "Revino la negociere",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "negotiation",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "overdue",
+          "description": "Recuperează documentele restante",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "dueDate": "2026-10-07"
+        },
+        {
+          "id": "pending",
+          "description": "Discută oferta în așteptare",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "pending",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "priority",
+          "description": "Sună clientul prioritar",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "priority",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "today",
+          "description": "Verifică documentele de azi",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "dueDate": "2026-10-08"
+        },
+        {
+          "id": "viewing",
+          "description": "Cere feedback după vizionare",
+          "agentId": "3244729a-edeb-4eae-bc14-0e772aa0c245",
+          "status": "open",
+          "contactId": "viewing",
+          "propertyId": "titan",
+          "dueDate": "2026-10-09",
+          "viewingId": "done-viewing"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "unitTests": 1866,
+    "unitFiles": 151,
+    "emulatorRegressions": 268,
+    "emulatorFiles": 18,
+    "liveScenarios": 2,
+    "previous29LiveScenariosRerun": false
+  }
+}
