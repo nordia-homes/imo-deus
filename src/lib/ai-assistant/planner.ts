@@ -82,7 +82,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
       input.push(...result.items);
       if (!result.calls.length) {
-        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && metrics.tools.some(tool => tool.status === 'success');
+        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && metrics.tools.length > 0;
         if (needsCoverage && result.text?.trim() && result.status !== 'incomplete' && !['clarification', 'refusal'].includes(result.intentStatus || '')) {
           if (closureAttempts++ >= 2) return finish('Acoperirea cererii nu a putut fi verificată. Rezultatele sunt parțiale, iar acțiunile pregătite nu au fost executate.', 'partial');
           input.push({ role: 'developer', content: 'Verificarea serverului: cererea nu are încă goal_coverage valid. Nu încheia după primul pas. Compară TOATĂ cererea utilizatorului cu citirile și acțiunile deja pregătite; continuă numai pașii lipsă, fără să repeți propunerile existente. Apelează goal_coverage cu citate exacte și dovezi reale. Dacă lipsesc date, acces sau capabilități, declară explicit cerințele neacoperite. Nu inventa succesul și nu ocoli aprobările.' });

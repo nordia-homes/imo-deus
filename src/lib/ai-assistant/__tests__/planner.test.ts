@@ -60,12 +60,40 @@ describe('Responses tool planning', () => {
     expect(model.respond).toHaveBeenCalledTimes(4);
     expect(executeAction).not.toHaveBeenCalled();
   });
-  it('master-0849 reports an unsupported remainder as partial instead of success', async () => {
+  it('master-0849 requests clarification when the previous goal context is missing', async () => {
     const prompt = corpus.scenarios.find(row => row.id === 'master-0849')!.text;
     const model = scripted(call('goal_coverage', { requirements: [{ id: 'remaining', sourceQuote: prompt, description: 'Lipsește contextul obiectivului anterior', resolution: 'needs_clarification', steps: [], evidenceCallIds: [] }] }), final);
     const result = await planTurn(ctx, prompt, [], { provider: model });
     expect(result.metrics.status).toBe('clarification');
     expect(result.text).toContain('Lipsește contextul obiectivului anterior');
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it('continues after an unsuccessful first read and accepts only evidence from the recovered read', async () => {
+    const prompt = 'Citește clientul c1.';
+    vi.mocked(readResource).mockRejectedValueOnce(new Error('Citire indisponibilă')).mockResolvedValueOnce({ rows: [{ id: 'c1', name: 'Client' }], complete: true } as any);
+    const failed = call('read', { resource: 'contacts', id: 'c1' });
+    const recovered = call('read', { resource: 'contacts', id: 'c1' });
+    const model = scripted(failed, final, recovered,
+      call('goal_coverage', { requirements: [{ id: 'client', sourceQuote: prompt, description: 'Datele clientului', resolution: 'answered', steps: [], evidenceCallIds: [recovered.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(result.metrics.tools.map(tool => tool.status)).toEqual(['failed', 'success', 'success']);
+    expect(model.respond).toHaveBeenCalledTimes(5);
+    expect(result.goalCoverage?.requirements[0].evidenceCallIds).toEqual([recovered.calls[0].id]);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
+  it('does not accept a failed first read as proof or certify its repeated final answer', async () => {
+    const prompt = 'Citește clientul c1.';
+    vi.mocked(readResource).mockRejectedValueOnce(new Error('Citire indisponibilă'));
+    const failed = call('read', { resource: 'contacts', id: 'c1' });
+    const model = scripted(failed,
+      call('goal_coverage', { requirements: [{ id: 'client', sourceQuote: prompt, description: 'Datele clientului', resolution: 'answered', steps: [], evidenceCallIds: [failed.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('partial');
+    expect(result.metrics.tools.map(tool => tool.status)).toEqual(['failed', 'failed']);
+    expect(result.goalCoverage).toBeUndefined();
+    expect(model.respond).toHaveBeenCalledTimes(5);
+    expect(readResource).toHaveBeenCalledTimes(1);
     expect(executeAction).not.toHaveBeenCalled();
   });
   it('does not mark an empty final model response as successful', async () => {
@@ -155,7 +183,8 @@ describe('Responses tool planning', () => {
     const model = scripted(call('unknown_tool', {}), call('unknown_tool', {}), call('unknown_tool', {}), final);
     const budget = new AgentBudget();
     const result = await planTurn(ctx, 'Citește datele.', [], { provider: model, budget });
-    expect(model.respond.mock.calls.map(([request]) => request.decision.model)).toEqual(['gpt-6-luna', 'gpt-6-luna', 'gpt-6-luna', 'gpt-6.1-sol']);
+    expect(model.respond.mock.calls.map(([request]) => request.decision.model)).toEqual(['gpt-6-luna', 'gpt-6-luna', 'gpt-6-luna', 'gpt-6.1-sol', 'gpt-6.1-sol', 'gpt-6.1-sol']);
+    expect(result.metrics.status).toBe('partial');
     expect(budget.calls).toBe(3); expect(result.metrics.tools.every(tool => tool.name === 'unknown_tool')).toBe(true);
   });
   it('uses Sol only after repeated invalid provider output, not the first failure', async () => {

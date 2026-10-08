@@ -6,7 +6,7 @@ Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 
 
 ## Lot 17 — continuarea plannerului
 
-Implementat: răspunsul final după instrumente reușite nu mai încheie cu succes o execuție principală fără goal_coverage valid. Serverul cere continuarea cerințelor rămase, păstrează rezultatele existente și admite cel mult două reveniri pentru verificarea acoperirii, în același buget. Nu repropune automat acțiuni și nu execută mutații din evaluator. O cerință declarată nesuportată produce rezultat parțial, iar una ce necesită clarificare produce starea aferentă. Subplanificatorii limitați la citire și răspunsurile explicite de clarificare/refuz păstrează comportamentul lor.
+Implementat: răspunsul final după încercarea instrumentelor, inclusiv când primul instrument eșuează, nu mai încheie cu succes o execuție principală fără goal_coverage valid. Serverul cere continuarea cerințelor rămase, păstrează rezultatele existente și admite cel mult două reveniri pentru verificarea acoperirii, în același buget. Nu repropune automat acțiuni și nu execută mutații din evaluator. O cerință declarată nesuportată produce rezultat parțial, iar una ce necesită clarificare produce starea aferentă. Subplanificatorii limitați la citire și răspunsurile explicite de clarificare/refuz păstrează comportamentul lor.
 
 | ID | Probă deterministă adăugată | Limită |
 |---|---|---|
@@ -23,6 +23,6 @@ Fiecare ID necesită fixtures și aserțiuni proprii, contextul conversației da
 
 ## Verificări curente
 
-23/23 teste planner și 1719/1719 teste de regresie în 134 de fișiere au trecut. ESLint și paritatea au trecut. Primele două eșecuri ale suitei țintite proveneau din fixtures limitate la două răspunsuri, incompatibile cu noua continuare; fixtures au fost extinse, apoi suita și regresia au trecut. Providerii au fost simulați; nu s-au trimis mesaje sau lansat campanii reale. Versiunea uneltelor: 56.
+25/25 teste planner și 1721/1721 teste de regresie în 134 de fișiere au trecut. ESLint și paritatea au trecut. Primele două eșecuri ale suitei țintite proveneau din fixtures limitate la două răspunsuri, incompatibile cu noua continuare; fixtures au fost extinse, apoi suita și regresia au trecut. Două probe suplimentare verifică recuperarea după prima citire eșuată și respingerea unei citiri eșuate ca dovadă; ele nu adaugă scenarii originale certificate. Providerii au fost simulați; nu s-au trimis mesaje sau lansat campanii reale. Versiunea uneltelor: 57.
 
-Buildul complet a trecut cu TypeScript și 227/227 pagini. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Inventarul a fost regenerat și verificat; git diff --check a trecut. Nu s-au relansat UI sau emulatorul pentru modificarea plannerului. Nu s-a publicat în producție.
+Buildul complet a trecut cu TypeScript și 227/227 pagini pentru versiunea 56; nu a fost repetat pentru extinderea condiției de continuare din versiunea 57, verificată prin suita completă și ESLint. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Inventarul a fost regenerat și verificat; git diff --check a trecut. Nu s-au relansat UI sau emulatorul pentru modificarea plannerului. Nu s-a publicat în producție.
