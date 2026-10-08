@@ -1607,7 +1607,11 @@
           "sourceNumber": 198,
           "request": "Spune-mi care dintre ele au risc mai mare de no-show.",
           "requestSha256": "dcf7ce07526d24f10aef9cc1925a342996875bcebe439fa34ac505665d69f12b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_15.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0199",

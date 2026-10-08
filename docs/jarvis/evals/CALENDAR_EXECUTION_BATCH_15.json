@@ -1,0 +1,272 @@
+{
+  "scope": "Original 0198 with actual model and local Firestore WhatsApp-evidence fixtures. Contextual list read from server history; current refusal, stale evidence and newly confirmed participation verified. No production or Meta delivery certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0198",
+      "prompt": "Spune-mi care dintre ele au risc mai mare de no-show.",
+      "versions": {
+        "prompt": "jarvis-52",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "82",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T15:24:53.351Z",
+      "context": [
+        {
+          "id": "previous-unconfirmed-list",
+          "role": "assistant",
+          "text": "Acestea sunt vizionările discutate anterior, atunci fără confirmare.",
+          "createdAt": "2026-10-08T15:24:53.84Z",
+          "cards": [
+            {
+              "type": "data",
+              "source": "viewings",
+              "title": "Vizionări",
+              "rows": [
+                {
+                  "id": "unknown",
+                  "clientConfirmation": {
+                    "status": "unknown"
+                  },
+                  "ownerConfirmation": {
+                    "status": "unknown"
+                  }
+                },
+                {
+                  "id": "declined",
+                  "clientConfirmation": {
+                    "status": "unknown"
+                  },
+                  "ownerConfirmation": {
+                    "status": "unknown"
+                  }
+                },
+                {
+                  "id": "stale",
+                  "clientConfirmation": {
+                    "status": "unknown"
+                  },
+                  "ownerConfirmation": {
+                    "status": "unknown"
+                  }
+                },
+                {
+                  "id": "confirmed",
+                  "clientConfirmation": {
+                    "status": "unknown"
+                  },
+                  "ownerConfirmation": {
+                    "status": "unknown"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "missingSelectionTrial": {
+        "status": "clarification",
+        "text": "Nu am lista vizionărilor la care te referi în contextul disponibil. Trimite-mi lista sau identifică vizionările, iar le voi compara pe baza răspunsurilor WhatsApp și a datelor actuale din CRM. Lipsa confirmării nu o voi considera refuz.\nCerințe încă neacoperite: Compară riscul de no-show pentru vizionările indicate anterior",
+        "actions": []
+      },
+      "plannerStatus": "success",
+      "text": "Pe baza vizionărilor afișate anterior, ordinea priorităților de verificare este:\n\n1. **Andrei — Apartament Titan, 9 octombrie, 14:00 (ora Bucureștiului): urgent.** Cumpărătorul a refuzat explicit participarea prin WhatsApp. Proprietarul a confirmat, deci problema indicată este participarea cumpărătorului.\n2. **Andrei — Apartament Titan, 9 octombrie, 10:00 (ora Bucureștiului): verificare necesară.** Nu există confirmare WhatsApp valabilă nici de la cumpărător, nici de la proprietar; lipsa confirmării nu înseamnă refuz.\n3. **Andrei — Apartament Titan, 9 octombrie, 17:00 (ora Bucureștiului): verificare necesară.** Confirmările ambilor participanți sunt absente sau nevalide pentru programarea actuală; aceasta nu dovedește un refuz.\n4. **Andrei — Apartament Titan, 9 octombrie, 18:00 (ora Bucureștiului): fără avertisment cunoscut.** Ambii au confirmat prin WhatsApp, dar confirmarea nu garantează prezența.\n\nComparația se limitează la această listă și indică priorități de verificare, nu probabilități de no-show.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_risk",
+          "status": "success",
+          "latencyMs": 91,
+          "version": "82",
+          "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 5,
+          "version": "82",
+          "argumentsHash": "e41900126d3499058d538cc3e4d1b561adcc985756720716ec75cb21c7199025"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12033,
+            "outputTokens": 16,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12030,
+            "estimated": false
+          },
+          "costUsd": 0.00151205,
+          "latencyMs": 1661,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12985,
+            "outputTokens": 108,
+            "cachedTokens": 12030,
+            "cacheWriteTokens": 952,
+            "estimated": false
+          },
+          "costUsd": 0.00029360000000000003,
+          "latencyMs": 2939,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13118,
+            "outputTokens": 317,
+            "cachedTokens": 12982,
+            "cacheWriteTokens": 133,
+            "estimated": false
+          },
+          "costUsd": 0.000305245,
+          "latencyMs": 6510,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_SSgfS7r9REYaujLIY566TG0z",
+          "name": "viewing_risk",
+          "arguments": "{}"
+        },
+        {
+          "id": "call_2gUcK6pkl9ItOfkhhhxNATT6",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"risk\",\"sourceQuote\":\"Spune-mi care dintre ele au risc mai mare de no-show.\",\"description\":\"Compară riscul/prioritatea de verificare doar pentru vizionările afișate anterior, folosind datele actuale și explicând motivele și orele locale.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_SSgfS7r9REYaujLIY566TG0z\"]}]}"
+        }
+      ],
+      "costUsd": 0.002110895,
+      "cards": [
+        {
+          "type": "data",
+          "title": "Priorități de verificare a vizionărilor",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "declined",
+              "title": "Andrei — Apartament Titan",
+              "description": "Cumpărătorul a refuzat explicit participarea prin WhatsApp.",
+              "reasons": [
+                "Cumpărătorul a refuzat explicit participarea prin WhatsApp."
+              ],
+              "priority": "urgent",
+              "clientConfirmation": {
+                "status": "declined",
+                "reason": "whatsapp_reply",
+                "replyId": "fixture-client",
+                "recordedAt": "2026-10-08T15:24:53.84Z"
+              },
+              "ownerConfirmation": {
+                "status": "confirmed",
+                "reason": "whatsapp_reply",
+                "replyId": "fixture-owner",
+                "recordedAt": "2026-10-08T15:24:53.84Z"
+              },
+              "viewingDate": "2026-10-09T11:00:00Z",
+              "viewingLocal": "2026-10-09 14:00 (ora București)"
+            },
+            {
+              "id": "unknown",
+              "title": "Andrei — Apartament Titan",
+              "description": "Cumpărătorul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz. Proprietarul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz.",
+              "reasons": [
+                "Cumpărătorul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz.",
+                "Proprietarul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz."
+              ],
+              "priority": "verification_needed",
+              "clientConfirmation": {
+                "status": "unknown",
+                "reason": "missing"
+              },
+              "ownerConfirmation": {
+                "status": "unknown",
+                "reason": "missing"
+              },
+              "viewingDate": "2026-10-09T07:00:00Z",
+              "viewingLocal": "2026-10-09 10:00 (ora București)"
+            },
+            {
+              "id": "stale",
+              "title": "Andrei — Apartament Titan",
+              "description": "Cumpărătorul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz. Proprietarul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz.",
+              "reasons": [
+                "Cumpărătorul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz.",
+                "Proprietarul nu are confirmare WhatsApp valabilă pentru programarea actuală; nu este un refuz."
+              ],
+              "priority": "verification_needed",
+              "clientConfirmation": {
+                "status": "unknown",
+                "reason": "stale_or_invalid"
+              },
+              "ownerConfirmation": {
+                "status": "unknown",
+                "reason": "stale_or_invalid"
+              },
+              "viewingDate": "2026-10-09T14:00:00Z",
+              "viewingLocal": "2026-10-09 17:00 (ora București)"
+            },
+            {
+              "id": "confirmed",
+              "title": "Andrei — Apartament Titan",
+              "description": "Ambii participanți au confirmat prin WhatsApp; prezența nu este garantată.",
+              "reasons": [
+                "Ambii participanți au confirmat prin WhatsApp; prezența nu este garantată."
+              ],
+              "priority": "no_known_warning",
+              "clientConfirmation": {
+                "status": "confirmed",
+                "reason": "whatsapp_reply",
+                "replyId": "fixture-client",
+                "recordedAt": "2026-10-08T15:24:53.84Z"
+              },
+              "ownerConfirmation": {
+                "status": "confirmed",
+                "reason": "whatsapp_reply",
+                "replyId": "fixture-owner",
+                "recordedAt": "2026-10-08T15:24:53.84Z"
+              },
+              "viewingDate": "2026-10-09T15:00:00Z",
+              "viewingLocal": "2026-10-09 18:00 (ora București)"
+            }
+          ],
+          "complete": true,
+          "note": "Priorități de verificare exclusiv pentru lista afișată anterior, recitită din CRM. Nu sunt probabilități de no-show. Lipsa confirmării nu înseamnă refuz; confirmarea nu garantează prezența. Refuzul proprietarului privește accesul, nu comportamentul cumpărătorului.",
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "verification": "Original contextual request with actual model and fresh local CRM WhatsApp evidence. Unknown, stale and explicit refusal distinguished; unrelated appointments excluded; no writes or outbound messages. Missing context requests clarification. No production or Meta delivery certification."
+    }
+  ]
+}

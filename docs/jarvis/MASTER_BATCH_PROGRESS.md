@@ -4,6 +4,16 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — prioritizarea vizionărilor după răspunsurile participanților
+
+Scenariul original **0198**, „Spune-mi care dintre ele au risc mai mare de no-show.”, a trecut cu model real și Firestore local, prompt jarvis-52 / tools 82. Dovezi: [CALENDAR_EXECUTION_BATCH_15.json](evals/CALENDAR_EXECUTION_BATCH_15.json). Jarvis compară exclusiv ultima listă afișată în conversație (maximum 100 de vizionări), inclusiv din contextul compactat, și recitește programările și răspunsurile WhatsApp actuale. Fără listă cere clarificare; instrumentul nu acceptă ID-uri alese de model. O listă goală mai nouă invalidează selecția veche.
+
+Refuzul explicit sau cererea de reprogramare au prioritate de intervenție. Problemele semnalate de proprietar privesc accesul, separat de participarea cumpărătorului. Confirmarea lipsă, neclară sau devenită veche cere verificare și nu este tratată ca refuz. Confirmarea ambilor participanți nu garantează prezența. Rezultatul explică motivele și orele din București, fără procente inventate. Programările anulate, trecute sau inaccesibile sunt excluse explicit; o eroare de infrastructură nu este convertită în „confirmare lipsă”. Evaluarea nu modifică CRM și nu trimite mesaje.
+
+Proba cu model real folosește intenționat un istoric cu stări vechi: rezultatul recunoaște refuzul actual, confirmarea nouă și dovada invalidată prin reprogramare, fără includerea altor programări. Proba fără context cere clarificare. Verificări: **2.133 teste locale**, **285 probe Firestore și model real**, lint pentru fișierele modificate și verificările inventarului/parității. Cele 40 de scenarii live anterioare nu au fost rerulate. Total: **41 de scenarii originale cu dovezi locale folosind model real**, **959 fără această dovadă**, zero certificări integrale în producție. Aprobarea Meta și proba cu WhatsApp real rămân necesare.
+
+Buildul final a trecut, inclusiv TypeScript și generarea celor 227 de pagini. Modificările din acest lot nu au fost publicate în producție.
+
 ## Lot calendar — confirmarea participanților prin WhatsApp
 
 Cerință explicitată de utilizator: clientul și proprietarul confirmă prin răspuns la șablonul WhatsApp, după aprobarea aplicației Meta. Declarația agentului și stările trimis/livrat/citit nu confirmă participarea. Implementarea de confirmare manuală începută în acest lot a fost eliminată.

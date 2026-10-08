@@ -49,7 +49,9 @@ const taskContextCases = ['master-0189', 'master-0190', 'master-0191'];
 const availabilityCases = ['master-0192', 'master-0193'];
 const confirmationCases = ['master-0195', 'master-0196'];
 const attendanceCases = ['master-0197'];
+const riskCase = 'master-0198';
 const cases = [...attendanceCases, ...confirmationCases, ...availabilityCases, ...taskContextCases, ...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+cases.push(riskCase);
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
 for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'attendance' || attendanceCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'confirmations' || confirmationCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'availability' || availabilityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-context' || taskContextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
@@ -63,6 +65,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
+    const isRisk = scenarioId === riskCase;
     const isAttendance = attendanceCases.includes(scenarioId); const isConfirmation = confirmationCases.includes(scenarioId); const isAvailability = availabilityCases.includes(scenarioId); const isDeferral = deferralCases.includes(scenarioId);
     const isTaskContext = taskContextCases.includes(scenarioId);
     const isPriority = priorityCases.includes(scenarioId);
@@ -73,7 +76,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     const isDelete = scenarioId === 'master-0166', isNote = scenarioId === 'master-0167';
     const newNote = 'Clientul dorește să revină împreună cu familia.';
     const isEdit = editCases.includes(scenarioId) || noteCases.includes(scenarioId);
-    const isViewing = isAttendance || isConfirmation || isAvailability || isFollowup || isRead || isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
+    const isViewing = isRisk || isAttendance || isConfirmation || isAvailability || isFollowup || isRead || isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
     const viewingTime = scenarioId === 'master-0158' ? '10:00' : ['master-0160', 'master-0161'].includes(scenarioId) ? '18:00' : scenarioId === 'master-0162' ? '17:30' : '17:00';
     const viewingDate = resolveDatetime(scenarioId === 'master-0158' ? { weekday: 'friday', time: viewingTime } : { dayOffset: ['master-0164', 'master-0167'].includes(scenarioId) ? -1 : 1, time: viewingTime }).iso;
     const seedTask = { id: 'task-selected', description: 'Sună-l pe Andrei', dueDate: date.iso, startTime: '10:00', duration: 30, contactId: 'andrei', contactName: 'Andrei', agentId: id, status: scenarioId === 'master-0181' ? 'completed' : 'open', updatedAt: '2026-01-01T00:00:00.000Z' };
@@ -103,7 +106,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       if (!isViewing && !isTaskContext) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
       await agency.collection('contacts').doc('andrei').set({ name: contactName, phone: '0700000001', contactType: 'Cumparator' });
       await agency.collection('properties').doc('titan').set({ title: 'Apartament Titan', location: 'Titan', ownerName: 'Proprietar local', ownerPhone: '0700000002', status: isNote ? 'Inactiv' : 'Activ' });
-      if (isAttendance) {
+      if (isAttendance || isRisk) {
         const contact = (await agency.collection('contacts').doc('andrei').get()).data()!, property = (await agency.collection('properties').doc('titan').get()).data()!;
         const now = new Date().toISOString();
         for (const [viewingId, time] of [['unknown', '10:00'], ['client-only', '12:00'], ['declined', '14:00'], ['stale', '16:00'], ['confirmed', '18:00']]) {
@@ -116,6 +119,8 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
         await agency.collection('viewings').doc('completed').set({ ...seedViewing, status: 'completed' });
         await agency.collection('viewings').doc('other-agent').set({ ...seedViewing, agentId: 'another-agent' });
         await agency.collection('viewings').doc('other-day').set({ ...seedViewing, viewingDate: resolveDatetime({ dayOffset: 2, time: '17:00' }).iso });
+        if (isRisk) history.push({ id: 'previous-unconfirmed-list', role: 'assistant', text: 'Acestea sunt vizionările discutate anterior, atunci fără confirmare.', createdAt: now,
+          cards: [{ type: 'data', source: 'viewings', title: 'Vizionări', rows: ['unknown', 'declined', 'stale', 'confirmed'].map(id => ({ id, clientConfirmation: { status: 'unknown' }, ownerConfirmation: { status: 'unknown' } })) }] });
       }
       if (isConfirmation) {
         history.push({ id: 'selected-viewing-for-message', role: 'assistant', text: 'Vizionarea selectată este viewing-selected.', cards: [{ type: 'data', source: 'viewings', title: 'Selecție anterioară', rows: [{ ...seedViewing, contactName: 'Nume vechi', propertyTitle: 'Titlu vechi' }] }], createdAt: new Date().toISOString() });
@@ -197,8 +202,8 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       }
       if (['master-0179', 'master-0180', 'master-0181'].includes(scenarioId)) await agency.collection('tasks').doc(seedTask.id).set(seedTask);
       const provider = new OpenAIAdapter(), diagnostics: unknown[] = [], toolCalls: unknown[] = [], seenErrors = new Set<string>();
-      const attendanceBefore = isAttendance ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : null;
-      if (isConfirmation) {
+      const attendanceBefore = isAttendance || isRisk ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : null;
+      if (isConfirmation || isRisk) {
         const missing = await planTurn(ctx, prompt, [], { provider, budget: new AgentBudget() });
         report = { ...report, missingSelectionTrial: { status: missing.metrics.status, text: missing.text, actions: missing.actions } };
         expect(missing.actions).toEqual([]); expect(missing.metrics.status, missing.text).toBe('clarification');
@@ -217,6 +222,21 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, toolCalls, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isRisk) {
+        expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
+        expect(planned.metrics.tools.some(tool => tool.name === 'viewing_risk')).toBe(true);
+        const rows = planned.cards.filter(card => card.source === 'viewings').flatMap(card => card.rows);
+        expect(rows.map(row => row.id)).toEqual(['declined', 'unknown', 'stale', 'confirmed']);
+        expect(rows[0]).toMatchObject({ priority: 'urgent', clientConfirmation: { status: 'declined' } });
+        expect(rows[2]).toMatchObject({ priority: 'verification_needed', clientConfirmation: { status: 'unknown', reason: 'stale_or_invalid' } });
+        expect(rows[3].priority).toBe('no_known_warning');
+        expect(planned.text).toContain('București'); expect(planned.text).not.toMatch(/\d+\s*%/);
+        expect(planned.text.toLowerCase()).toContain('refuz');
+        expect((await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data())).toEqual(attendanceBefore);
+        expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', id).get()).empty).toBe(true);
+        report = { ...report, executionVerified: true, cards: planned.cards, verification: 'Original contextual request with actual model and fresh local CRM WhatsApp evidence. Unknown, stale and explicit refusal distinguished; unrelated appointments excluded; no writes or outbound messages. Missing context requests clarification. No production or Meta delivery certification.' };
+        return;
+      }
       if (isAttendance) {
         expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
         const rows = planned.cards.filter(card => card.source === 'viewings').flatMap(card => card.rows);
