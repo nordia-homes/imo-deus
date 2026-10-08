@@ -1,0 +1,306 @@
+{
+  "rejectedTrials": [
+    {
+      "run": {
+        "scenarioId": "master-0200",
+        "prompt": "Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.",
+        "versions": {
+          "prompt": "jarvis-54",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "84",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-08T17:00:05.066Z",
+        "context": [],
+        "environment": "actual model + local Firestore; external catalog excluded",
+        "executionVerified": false,
+        "plannerStatus": "success",
+        "text": "Propunere nesalvată pentru mâine, 9 octombrie 2026. Programările existente sunt păstrate; orele sarcinilor fără oră sunt orientative.\n\n- **09:00–09:30 — Verifică actele** *(oră propusă)*\n- **10:00–11:00 — Vizionare: Andrei — Apartament Titan** *(programare existentă)*\n- **12:00–13:00 — Apel stabilit** *(programare existentă)*\n- **13:00–14:00 — Pregătește dosarul** *(oră propusă)*\n\n**Nu încape:** „Raport extins” are durata estimată de 10 ore și nu încape integral în fereastra orientativă 09:00–18:00.\n\nNu au fost raportate conflicte existente. Metoda folosește fereastra 09:00–18:00, presupune 30 de minute pentru sarcinile fără durată indicată și rezervă 15 minute înainte și după vizionări. Nu este optimizare rutieră și nu verifică timpul real de deplasare. Nimic nu a fost modificat sau trimis.",
+        "actions": [],
+        "tools": [
+          {
+            "name": "tomorrow_order",
+            "status": "success",
+            "latencyMs": 855,
+            "version": "84",
+            "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 15,
+            "version": "84",
+            "argumentsHash": "c8910f8939f87df719afb32fe905b3dde38a4f713c7fb409327985de230b0d61"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12177,
+              "outputTokens": 15,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12174,
+              "estimated": false
+            },
+            "costUsd": 0.00152955,
+            "latencyMs": 3254,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12897,
+              "outputTokens": 122,
+              "cachedTokens": 12174,
+              "cacheWriteTokens": 720,
+              "estimated": false
+            },
+            "costUsd": 0.00027304,
+            "latencyMs": 3040,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13044,
+              "outputTokens": 287,
+              "cachedTokens": 12894,
+              "cacheWriteTokens": 147,
+              "estimated": false
+            },
+            "costUsd": 0.000291115,
+            "latencyMs": 4799,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "diagnostics": [],
+        "toolCalls": [
+          {
+            "id": "call_62bMWDBHY1BTnDW9Gv0GpbQm",
+            "name": "tomorrow_order",
+            "arguments": "{}"
+          },
+          {
+            "id": "call_U4iadNzHRpZgVGtYUxwMLhK1",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"order\",\"sourceQuote\":\"Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.\",\"description\":\"Recomandă ordinea cronologică activităților mâine, păstrând programările și distingând orele propuse; explică ipotezele, ce nu încape și conflictele.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_62bMWDBHY1BTnDW9Gv0GpbQm\"]}]}"
+          }
+        ],
+        "costUsd": 0.002093705,
+        "failure": "expected 'Propunere nesalvată pentru mâine, 9 o…' to contain 'București'"
+      },
+      "reason": "Initial response omitted the explicit Bucharest label; final instructions and calendar card title now label the timezone. Initial live assertion failed."
+    }
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0200",
+      "prompt": "Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.",
+      "versions": {
+        "prompt": "jarvis-54",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "84",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T17:02:32.642Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Propunere nesalvată pentru mâine, orele sunt în București.\n\n**Program cronologic**\n- **09:00–09:30 — propus:** Verifică actele.\n- **10:00–11:00 — fix:** Vizionare cu Andrei — Apartament Titan. Programare existentă, păstrată.\n- **12:00–13:00 — fix:** Apel stabilit. Programare existentă, păstrată.\n- **13:00–14:00 — propus:** Pregătește dosarul.\n\n**Nu încape în fereastra orientativă 09:00–18:00:** Raport extins, estimat la 10 ore.\n\n**Metodă și ipoteze:** Sarcinile fără oră sunt așezate orientativ în intervalul 09:00–18:00, încercând întâi sarcinile mai scurte în primul interval suficient. Duratele disponibile au fost folosite; când lipsesc, se presupun 30 de minute pentru o sarcină și 60 de minute pentru o vizionare. Se păstrează o rezervă de 15 minute înainte și după vizionări. Nu au fost raportate conflicte sau alte probleme. Aceasta nu este o optimizare matematică și nu ține cont de trasee, deplasări reale ori disponibilitatea externă a participanților.\n\nProgramările nu au fost modificate; orele propuse pentru sarcini sunt orientative și nesalvate.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "tomorrow_order",
+          "status": "success",
+          "latencyMs": 929,
+          "version": "84",
+          "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 15,
+          "version": "84",
+          "argumentsHash": "89bbeb1680b204ec14f5909303c510096e66aaa324131d0b916004c932eeaf63"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12192,
+            "outputTokens": 15,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12189,
+            "estimated": false
+          },
+          "costUsd": 0.0015314249999999999,
+          "latencyMs": 4410,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12923,
+            "outputTokens": 130,
+            "cachedTokens": 12189,
+            "cacheWriteTokens": 731,
+            "estimated": false
+          },
+          "costUsd": 0.000278565,
+          "latencyMs": 8811,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13078,
+            "outputTokens": 353,
+            "cachedTokens": 12920,
+            "cacheWriteTokens": 155,
+            "estimated": false
+          },
+          "costUsd": 0.000325375,
+          "latencyMs": 6777,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_Lo7YDRL3sQZ0cRf5EYUaTooO",
+          "name": "tomorrow_order",
+          "arguments": "{}"
+        },
+        {
+          "id": "call_JyCrLC5UkhRjlETbDYXnXOAC",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"tomorrow_order\",\"sourceQuote\":\"Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.\",\"description\":\"Recomandă ordinea cronologică pentru mâine, păstrând programările existente și distingând activitățile fixe de sarcinile propuse; explică ipotezele, ce nu încape și conflictele.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_Lo7YDRL3sQZ0cRf5EYUaTooO\"]}]}"
+        }
+      ],
+      "costUsd": 0.0021353649999999997,
+      "cards": [
+        {
+          "type": "data",
+          "source": "calendar",
+          "title": "Ordine propusă pentru mâine · București · nesalvată",
+          "rows": [
+            {
+              "id": "short",
+              "resource": "tasks",
+              "title": "Verifică actele",
+              "contactId": null,
+              "propertyId": null,
+              "duration": 30,
+              "assumedDuration": false,
+              "kind": "suggested",
+              "at": 1791525600000,
+              "until": 1791527400000,
+              "startLocal": "2026-10-09 09:00 (ora București)",
+              "endLocal": "2026-10-09 09:30 (ora București)",
+              "description": "Oră propusă, nesalvată."
+            },
+            {
+              "id": "fixed-viewing",
+              "resource": "viewings",
+              "title": "Andrei — Apartament Titan",
+              "contactId": "andrei",
+              "propertyId": "titan",
+              "duration": 60,
+              "assumedDuration": false,
+              "kind": "fixed",
+              "at": 1791529200000,
+              "until": 1791532800000,
+              "startLocal": "2026-10-09 10:00 (ora București)",
+              "endLocal": "2026-10-09 11:00 (ora București)",
+              "description": "Programare existentă, păstrată."
+            },
+            {
+              "id": "fixed",
+              "resource": "tasks",
+              "title": "Apel stabilit",
+              "contactId": null,
+              "propertyId": null,
+              "duration": 60,
+              "assumedDuration": false,
+              "kind": "fixed",
+              "at": 1791536400000,
+              "until": 1791540000000,
+              "startLocal": "2026-10-09 12:00 (ora București)",
+              "endLocal": "2026-10-09 13:00 (ora București)",
+              "description": "Programare existentă, păstrată."
+            },
+            {
+              "id": "long",
+              "resource": "tasks",
+              "title": "Pregătește dosarul",
+              "contactId": null,
+              "propertyId": null,
+              "duration": 60,
+              "assumedDuration": false,
+              "kind": "suggested",
+              "at": 1791540000000,
+              "until": 1791543600000,
+              "startLocal": "2026-10-09 13:00 (ora București)",
+              "endLocal": "2026-10-09 14:00 (ora București)",
+              "description": "Oră propusă, nesalvată."
+            }
+          ],
+          "complete": true,
+          "note": "Propunere de ordine, nesalvată. Programările existente își păstrează orele. Pentru sarcinile fără oră folosim orientativ 09:00–18:00 București, 30 minute pentru sarcini sau 60 pentru vizionări dacă durata lipsește și o rezervă de 15 minute înainte/după vizionări. Încercăm întâi sarcinile mai scurte, în primul interval suficient; nu este un optim matematic sau un traseu rutier. Nu verifică disponibilitatea clienților, calendarele externe sau timpul real de deplasare. Explică separat sarcinile care nu încap și suprapunerile deja existente.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "verification": "Original prompt with actual model and local CRM. Fixed viewing/task hours preserved; flexible tasks proposed in buffered gaps; oversized task disclosed; fresh participant/property titles; completed/cancelled/colleague records excluded. Calendar unchanged and no messages sent. Not production certification."
+    }
+  ],
+  "scope": "Original 0200 with actual model and local Firestore. Recommendation only: fixed appointments preserved, untimed tasks fitted into buffered gaps and oversized task disclosed. No calendar mutation or outbound messages. Not production or route optimization certification."
+}

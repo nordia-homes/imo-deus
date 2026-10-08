@@ -1629,7 +1629,11 @@
           "sourceNumber": 200,
           "request": "Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.",
           "requestSha256": "1c8cb8fd7b38f018d9458152c879f4b0276341f5e86df09fd61e88736b728e80",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_17.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         }
       ]
     },

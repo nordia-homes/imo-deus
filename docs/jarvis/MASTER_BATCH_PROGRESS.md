@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — ordinea activităților de mâine, fără schimbarea programărilor
+
+Scenariul original **0200**, „Optimizează-mi ordinea activităților de mâine fără să schimbi programările existente.”, a trecut cu model real și Firestore local, prompt jarvis-54 / tools 84. Dovezi: [CALENDAR_EXECUTION_BATCH_17.json](evals/CALENDAR_EXECUTION_BATCH_17.json). Jarvis recitește calendarul agentului și propune o ordine cronologică, separând programările fixe de sarcinile fără oră. Orele existente, inclusiv cele din afara ferestrei orientative sau începute în seara precedentă, sunt păstrate. Nu se fac scrieri și nu se trimit mesaje.
+
+Pentru sarcinile fără oră este folosită explicit o fereastră orientativă 09:00–18:00 București. Duratele lipsă sunt declarate: 30 minute pentru sarcini, 60 pentru vizionări. Se rezervă orientativ 15 minute înainte și după vizionări; sarcinile mai scurte sunt încercate întâi în primul interval suficient, fără fragmentare. Suprapunerile existente și activitățile care nu încap sunt raportate. Aceasta este o recomandare de organizare, nu un optim matematic, rezervare de interval sau calcul al deplasărilor. Datele invalide și depășirea limitelor de citire/afișare nu produc un plan declarat complet.
+
+Proba reală a păstrat vizionarea de la 10:00 și apelul de la 12:00, a propus două sarcini la 09:00 și 13:00 și a explicat de ce un raport de 10 ore nu încape. Numele și titlul proprietății sunt recitite; testul compară integral calendarul înainte și după. Prima încercare a omis eticheta București în text și a fost respinsă; raportul păstrează încercarea și proba finală trecută.
+
+Validare: **2.149 teste locale**, **286 regresii Firestore**, apoi **comanda originală cu model real trecută** după corecția prezentării. Ulterior, **21 de teste țintite** au verificat și cardul final: ore locale lizibile, fără afișarea marcajelor numerice interne. Lint și paritatea au trecut. Cele 42 de scenarii live anterioare nu au fost rerulate. Total: **43 de scenarii originale cu dovezi locale folosind model real**, **957 fără această dovadă**. Acest lot este ulterior publicării din 8 octombrie și nu este încă în producție.
+
+Buildul final, după corecția cardului, a trecut cu TypeScript și generarea celor 227 de pagini. Inventarul reproductibil confirmă 43 de legături de evaluare locală, fără certificări integrale de producție.
+
 ## Lot calendar — bilanțul activităților de azi
 
 Scenariul original **0199**, „Ce am ratat astăzi?”, a trecut cu model real și Firestore local, prompt jarvis-53 / tools 83. Dovezi: [CALENDAR_EXECUTION_BATCH_16.json](evals/CALENDAR_EXECUTION_BATCH_16.json). Instrumentul recitește calendarul agentului și separă sarcinile deschise cu ora depășită, sarcinile de azi fără oră și vizionările al căror interval s-a încheiat fără rezultat înregistrat. Nu declară neexecutarea sau neprezentarea pe baza acestor stări; confirmarea WhatsApp nu dovedește efectuarea vizionării. Activitățile viitoare, în desfășurare, anulate/finalizate, din alte zile sau ale altui agent sunt excluse. Întrebarea nu modifică statusuri, nu creează taskuri și nu trimite mesaje.

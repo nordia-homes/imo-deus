@@ -1,6 +1,7 @@
 import { viewingConfirmationDraft } from '../viewing-confirmation-draft';
 import { viewingAttendance } from '../viewing-attendance';
 import { todayReview } from '../today-review';
+import { tomorrowOrder } from '../tomorrow-order';
 
 import { calendarAvailability } from '../calendar-availability';
 import { taskDeferral } from '../task-deferral';
@@ -67,6 +68,22 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('orders tomorrow from fresh CRM data without changing fixed or flexible activities', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
+    await root.collection('tasks').doc('fixed').set({ agentId: ctx.uid, status: 'open', description: 'Apel', dueDate: '2026-10-09', startTime: '12:00', duration: 60 });
+    await root.collection('tasks').doc('flex').set({ agentId: ctx.uid, status: 'open', description: 'Acte', dueDate: '2026-10-09', duration: 30 });
+    await root.collection('viewings').doc('v').set({ agentId: ctx.uid, status: 'scheduled', viewingDate: '2026-10-09T07:00:00Z', duration: 60, contactId: 'c', propertyId: 'p', contactName: 'Vechi' });
+    await root.collection('contacts').doc('c').set({ name: 'Client actual' });
+    await root.collection('properties').doc('p').set({ title: 'Titlu actual' });
+    const before = await Promise.all(['tasks', 'viewings'].map(async source => (await root.collection(source).get()).docs.map(doc => doc.data())));
+    const result = await tomorrowOrder(ctx, now);
+    expect(result.rows.map(row => row.id)).toEqual(['flex', 'v', 'fixed']);
+    expect(result.rows[1].title).toBe('Client actual — Titlu actual');
+    expect(await Promise.all(['tasks', 'viewings'].map(async source => (await root.collection(source).get()).docs.map(doc => doc.data())))).toEqual(before);
+    expect((await tomorrowOrder(context(), now)).rows).toEqual([]);
+    await root.collection('tasks').doc('invalid').set({ agentId: ctx.uid, status: 'open', dueDate: 'invalid' });
+    expect(await tomorrowOrder(ctx, now)).toMatchObject({ rows: [], complete: false, status: 'invalid_calendar' });
+  });
   it('reviews the actual calendar with pagination, tenant isolation and invalid data disclosure', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
     const batch = db.batch(), row = { agentId: ctx.uid, status: 'open', dueDate: '2026-10-08', startTime: '09:00', description: 'De verificat' };

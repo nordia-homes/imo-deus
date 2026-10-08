@@ -2,6 +2,7 @@ import { viewingConfirmationDraft } from './viewing-confirmation-draft';
 import { viewingAttendance } from './viewing-attendance';
 import { viewingRisk } from './viewing-risk';
 import { todayReview } from './today-review';
+import { tomorrowOrder } from './tomorrow-order';
 import { hasViewingSelection } from './viewing-selection';
 import { calendarAvailability } from './calendar-availability';
 import { taskDeferral } from './task-deferral';
@@ -37,7 +38,14 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'today_review') {
+  if (name === 'tomorrow_order') {
+    data = await tomorrowOrder(ctx);
+    const displayRows = data.rows.map((row: Record<string, any>) => {
+      const { at: _at, until: _until, duration: _duration, ...display } = row;
+      return { ...display, description: `${row.startLocal} – ${row.endLocal}. ${row.description}` };
+    });
+    cards.push({ type: 'data', source: 'calendar', title: 'Ordine propusă pentru mâine · București · nesalvată', rows: displayRows, complete: data.complete, note: data.method });
+  } else if (name === 'today_review') {
     data = await todayReview(ctx, payload);
     for (const source of ['tasks', 'viewings']) cards.push({ type: 'data', title: source === 'tasks' ? 'Sarcini de verificat azi' : 'Vizionări cu rezultat de verificat', source, rows: data.rows.filter((row: Record<string, unknown>) => row.resource === source), complete: data.complete, note: data.note });
   } else if (name === 'viewing_risk') {

@@ -3,6 +3,7 @@ vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readF
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
 vi.mock('../viewing-confirmation-draft', () => ({ viewingConfirmationDraft: vi.fn() }));
 vi.mock('../viewing-risk', () => ({ viewingRisk: vi.fn() }));
+vi.mock('../tomorrow-order', () => ({ tomorrowOrder: vi.fn() }));
 vi.mock('../actions', () => ({ matchContact: vi.fn(), matchProperty: vi.fn() }));
 vi.mock('../watch-feedback', () => ({ annotateWatchFeedback: vi.fn() }));
 vi.mock('../context', () => ({ saveResultSet: vi.fn() }));
@@ -13,6 +14,7 @@ vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extend
 import { dispatchTool } from '../tool-dispatch';
 import { viewingConfirmationDraft } from '../viewing-confirmation-draft';
 import { viewingRisk } from '../viewing-risk';
+import { tomorrowOrder } from '../tomorrow-order';
 import { invokeOperation } from '../operations';
 import { requireTool } from '../registry';
 import { annotateWatchFeedback } from '../watch-feedback';
@@ -21,6 +23,15 @@ import { matchContact, matchProperty } from '../actions';
 import { saveResultSet } from '../context';
 const ctx: any = { uid: 'u', agencyId: 'a', role: 'agent' };
 afterEach(() => vi.resetAllMocks());
+it('shows local times and proposed status without exposing internal epoch numbers in calendar cards', async () => {
+  vi.mocked(tomorrowOrder).mockResolvedValue({ rows: [{ id: 't', title: 'Acte', at: 1791525600000, until: 1791527400000, duration: 30, startLocal: '2026-10-09 09:00 (ora București)', endLocal: '2026-10-09 09:30 (ora București)', description: 'Oră propusă, nesalvată.' }], complete: true, method: '' } as any);
+  const result = await dispatchTool('tomorrow_order', ctx, {}, '', {});
+  expect(result.cards[0].rows[0].description).toContain('09:00 (ora București)');
+  expect(result.cards[0].rows[0].description).toContain('Oră propusă, nesalvată.');
+  expect(result.cards[0].rows[0]).not.toHaveProperty('at');
+  expect(result.cards[0].rows[0]).not.toHaveProperty('until');
+  expect(result.actions).toEqual([]);
+});
 it('risk comparison uses only server-bound previous IDs, never tool payload IDs', async () => {
   vi.mocked(viewingRisk).mockResolvedValue({ rows: [], excluded: [], complete: true, status: 'resolved', definition: '', note: '' });
   await dispatchTool('viewing_risk', ctx, { ids: ['guessed'] }, '', { selectedViewingIds: ['a', 'b'] });
