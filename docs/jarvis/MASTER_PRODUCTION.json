@@ -1,28 +1,92 @@
 {
-  "firestoreRules": {
-    "rulesetName": "projects/studio-652232171-42fb6/rulesets/214e1f71-708f-4945-a28c-d21f5aa8a449",
-    "updateTime": "2026-10-07T15:43:53.352728Z",
-    "matchesLocalSource": true,
-    "sha256": "ce70a9a3dc0031b25561710ec0ea916560916272f839ee609ac4402d4ce63731"
-  },
-  "verifiedAt": "2026-10-07T15:57:39.361Z",
+  "verifiedAt": "2026-10-08T16:28:04.668Z",
   "project": "studio-652232171-42fb6",
-  "traffic": {
-    "splits": [
-      {
-        "build": "projects/552699648501/locations/us-central1/backends/studio/builds/build-2026-10-07-002",
-        "percent": 100
-      }
-    ]
+  "expectedCommit": "033d7d05ab74b83266ded71c55430da37a1716cb",
+  "trafficReconciling": false,
+  "builds": [
+    {
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-08-001",
+      "state": "READY",
+      "commit": "033d7d05ab74b83266ded71c55430da37a1716cb",
+      "percent": 100
+    }
+  ],
+  "firestoreRules": {
+    "rulesetName": "projects/studio-652232171-42fb6/rulesets/565d8af6-2919-4a1c-a877-c1ed9bab3450",
+    "updateTime": "2026-10-08T16:18:04.818156Z",
+    "matchesLocalSource": true,
+    "sha256": "80c71af315db0405b85850b19ade831b5ec2e33a775e7c0f7b5bee0b6f82ab97"
   },
-  "build": {
-    "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-2026-10-07-002",
-    "state": "READY",
-    "commit": "97ac82486d705a4ebc3edb25064baaae8f5a9409"
+  "functions": [
+    {
+      "name": "aiAssistantAutomationsDrain",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisCrmChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisAgencyChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisUserChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisUploadRetention",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisAuthProfileSync",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "communicationsMinuteTick",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "communicationMessageSearchProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "communicationStoriaProjection",
+      "state": "ACTIVE"
+    }
+  ],
+  "schedulers": [
+    {
+      "name": "aiAssistantAutomationsDrain",
+      "state": "ENABLED",
+      "lastAttemptTime": "2026-10-08T16:27:02.138215Z",
+      "schedule": "every 5 minutes",
+      "statusCode": 0
+    },
+    {
+      "name": "jarvisAuthProfileSync",
+      "state": "ENABLED",
+      "lastAttemptTime": "2026-10-08T16:25:04.587424Z",
+      "schedule": "every 5 minutes",
+      "statusCode": 0
+    },
+    {
+      "name": "communicationsMinuteTick",
+      "state": "ENABLED",
+      "lastAttemptTime": "2026-10-08T16:27:02.140426Z",
+      "schedule": "every 1 minutes",
+      "statusCode": 0
+    }
+  ],
+  "heartbeat": {
+    "lastSuccessAt": "2026-10-08T16:27:02.713Z",
+    "hasError": false,
+    "observedAfterActivation": true
   },
-  "jevMode": "shadow",
-  "jevSecretBound": true,
-  "conditions": [
+  "indexStates": {
+    "READY": 72
+  },
+  "runConditions": [
     {
       "type": "RoutesReady",
       "state": "CONDITION_SUCCEEDED"
@@ -32,6 +96,25 @@
       "state": "CONDITION_SUCCEEDED"
     }
   ],
+  "configuration": {
+    "jevMode": "shadow",
+    "secretsBound": [
+      {
+        "name": "OPENAI_API_KEY",
+        "bound": true
+      },
+      {
+        "name": "TYPESAFE_API_KEY",
+        "bound": true
+      },
+      {
+        "name": "COMMUNICATIONS_WORKER_SECRET",
+        "bound": true
+      }
+    ]
+  },
+  "outboundTestMessagesSent": 0,
+  "scope": "Deployment/infrastructure and unauthenticated HTTP probes only; does not certify all 1000 scenarios or actual WhatsApp delivery.",
   "probes": [
     {
       "path": "/ai-assistant",
@@ -54,36 +137,15 @@
       "status": 401
     },
     {
-      "path": "/api/notifications/feedback",
-      "method": "POST",
-      "status": 401
-    },
-    {
-      "path": "/api/notifications/reconcile",
-      "method": "POST",
-      "status": 401
-    },
-    {
       "path": "/api/crm/actions",
       "method": "POST",
       "status": 401
     },
     {
-      "path": "/api/sales/probe/read",
+      "path": "/api/communications-worker",
       "method": "POST",
-      "status": 401
-    },
-    {
-      "path": "/api/sales/probe/messages/probe/gmail-session",
-      "method": "GET",
-      "status": 401
+      "status": 403
     }
   ],
-  "validation": {
-    "localBuild": "PASS",
-    "unitTests": 1451,
-    "emulatorTests": 236
-  },
-  "secretValuesPrinted": false,
-  "outboundTestMessagesSent": 0
+  "verified": true
 }

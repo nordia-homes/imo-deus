@@ -1,5 +1,13 @@
 # Corpus Jarvis — implementare pe loturi
 
+## Publicare în producție — 8 octombrie 2026
+
+Toate modificările de aplicație până la commitul **033d7d05ab74b83266ded71c55430da37a1716cb** au fost publicate pe **https://imodeus.ro**, prin buildul **build-2026-10-08-001**, READY cu **100% trafic**. Acest release include cele 41 de commituri de după versiunea activă anterior, 323893ca. Mențiunile „nepublicat” din loturile de mai jos descriu situația istorică la implementarea lor; ele sunt acum incluse în acest release.
+
+Regulile Firestore au fost publicate și comparate cu sursa validată. Au fost verificate cele 9 funcții necesare, 3 schedulere, 72 de indexuri și răspunsurile HTTP/autentificarea rutelor de intrare. Funcțiile, indexurile, configurația secretelor și installerul desktop nu aveau modificări față de producție și nu au necesitat republicare. Dovada verificării: [RELEASE_2026_10_08.json](RELEASE_2026_10_08.json).
+
+Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale folosind model real. Nu au fost trimise mesaje de test către clienți; utilizarea WhatsApp real rămâne condiționată de aprobarea Meta și verificarea fluxului extern.
+
 Ținta solicitată: fiecare dintre cele 1.000 de scenarii originale îndeplinit până la rezultatul cerut, fără oprire nejustificată după primul pas. Aprobările, clarificările necesare și accesul autorizat fac parte din scenariul complet; nu se elimină pentru a declara succes.
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
