@@ -1,7 +1,8 @@
 import type { z } from 'zod';
 import { collectionFor, getResource, canReadResource, type AssistantContext } from './access';
 import { Filter } from 'firebase-admin/firestore';
-import { normalized, safeData, queryRecordsSchema } from './contracts';
+import { safeData, queryRecordsSchema } from './contracts';
+import { matchesCrmSearch } from '@/lib/crm/search-text';
 import { resolveDatetime } from './datetime';
 import { createHash } from 'node:crypto';
 import { preferredTimezone } from './context';
@@ -62,7 +63,7 @@ export async function queryRecords(ctx: AssistantContext, input: z.infer<typeof 
       lastConsumedId = doc.id;
       cursor = Buffer.from(JSON.stringify({ hash: fingerprint, id: doc.id, value: range.from || range.to ? row[field] : undefined })).toString('base64url');
       if (!canReadResource(ctx, input.resource, row)) continue;
-      if (!clauses.every(([key, value]) => row[key] === value) || input.search && !normalized(JSON.stringify(row)).includes(normalized(input.search))) continue;
+      if (!clauses.every(([key, value]) => row[key] === value) || input.search && !matchesCrmSearch(row, input.search)) continue;
       if (!indexed) count = (count || 0) + 1;
       if (rows.length < input.limit) rows.push(row);
       if (input.mode === 'list' && rows.length === input.limit) break;

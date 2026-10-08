@@ -4,6 +4,20 @@ import { verifiedOutput } from './verified-outputs';
 const reference = /^@step:(\d+):([A-Za-z][A-Za-z0-9]*)$/;
 const identifierKeys = new Set(['saleId', 'messageId', 'contactId', 'propertyId', 'conversationId', 'viewingId', 'taskId', 'automationId', 'templateId', 'campaignId', 'connectionId', 'draftId', 'jobId', 'portalId', 'projectId', 'assetId']);
 export function isStepReference(value: string) { return reference.test(value); }
+export function validatePlannedDependencies(actions: AssistantAction[], previousCount = 0) {
+  function visit(value: unknown, key: string, position: number) {
+    if (typeof value === 'string' && value.startsWith('@step:') && (identifierKeys.has(key) || ['url', 'aiPresenterScript'].includes(key))) {
+      const match = reference.exec(value), step = Number(match?.[1]);
+      if (!match || step < 1 || step >= position) throw new Error(`Pasul ${position} depinde de un pas anterior inexistent. Propune întâi crearea entității, apoi acțiunea care o folosește, împreună în propose_actions.`);
+      if (identifierKeys.has(key) && match[2] !== key) throw new Error('Tipul referinței nu corespunde câmpului cerut.');
+    }
+    if (Array.isArray(value)) {
+      const itemKey = key === 'sourceAssetIds' ? 'assetId' : key.endsWith('Ids') && identifierKeys.has(key.slice(0, -1)) ? key.slice(0, -1) : key;
+      value.forEach(item => visit(item, itemKey, position));
+    } else if (value && typeof value === 'object') Object.entries(value).forEach(([field, item]) => visit(item, field, position));
+  }
+  actions.forEach((action, index) => visit(action, '', previousCount + index + 1));
+}
 export function resolveAction(action: AssistantAction, previous: Record<string, unknown>[]): AssistantAction {
   const priorStep = (number: number) => {
     const row = previous[number - 1];

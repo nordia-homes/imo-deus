@@ -29,8 +29,24 @@ Aceste probe verifică mecanismul de recuperare, nu certifică întregul scenari
 
 Fiecare ID necesită fixtures și aserțiuni proprii, contextul conversației dacă este o continuare, variante de limbaj, actor/rol, timp controlat în București, pașii autorizați, dovezi ale rezultatului final și efecte interzise. Se testează eroare, întrerupere, reluare și lipsa duplicatelor. Raportul identifică versiunea codului/modelului, sursele și mediul: determinist, emulator, model real pe fixtures, furnizor de test sau producție. Straturile nu sunt substituibile și nu se însumează ca scenarii distincte.
 
+## Pilot practic — exemplul utilizatorului cu Matei Alin
+
+Prioritatea precizată ulterior: comanda trebuie să salveze cumpărătorul și vizionarea, apoi să confirme rezultatul. Nu este suficientă pregătirea planului sau înregistrarea erorilor. [Dovada pilotului](evals/VIEWING_EXECUTION_PILOT.json) păstrează o rulare cu modelul real, selecția normală a uneltelor native/core și Firestore local. Catalogul operațiilor externe este exclus din acest pilot; nu sunt apelate canale externe și nu sunt modificate înregistrări de producție.
+
+Rezultat recitit din baza de date: Matei Alin / 0123123123 / Cumparator; proprietatea Apartament – Cișmigiu; vizionare scheduled la 2026-10-09T04:30:00Z, adică 09.10.2026 07:30 Europe/Bucharest. Confirmarea este generată din rezultatul tranzacției. Politica locală de execuție a fost activată explicit în fixture. Proba separată cu executorul real verifică și reluarea aceleiași comenzi fără duplicate.
+
+Modificări de produs:
+- Căutare comună CRM/globală/read/query_records, tolerantă la diacritice românești, punctuație, spații și ordinea cuvintelor; telefoanele formatate și formele românești 0/+40/0040 sunt comparate în interiorul aceluiași câmp. Valorile stocate nu se rescriu. Nu este un sistem de transcriere vocală sau sinonimizare fonetică.
+- Opțiune distinctă „Autorizează cumpărători și vizionări”, valabilă 30 zile pentru actor/rol, în limita configurației serverului. După activare, comanda poate crea contactul și vizionarea în aceeași execuție. Politicile existente nu primesc implicit noul scop.
+- Confirmare cu proprietate, cumpărător, dată și ora Bucureștiului din rezultatele salvate; referința noului contact este păstrată pentru verificarea accesului la istoricul conversației. Vizionările păstrează accesul la nivel de agenție definit în CRM.
+- Plannerul respinge o referință către un pas viitor înainte de a o adăuga în plan și poate pregăti apoi ordinea corectă, fără pasul invalid rămas în listă.
+
+Defecte găsite prin modelul real, apoi corectate: prima încercare a creat tipul Client în loc de Cumparator; a doua a propus vizionarea înaintea contactului și a consumat bugetul încercând acoperirea unui plan greșit. După corectarea instrucțiunii și validarea dependențelor, pilotul a trecut întâi cu unelte restrânse și apoi cu selecția obișnuită de unelte core/native (8 apeluri model, cost estimat 0,00195629 USD la ultima rulare). Rezultatele anterioare nu sunt rescrise drept succese.
+
+Acesta este un exemplu suplimentar al utilizatorului, nu 1.000/1.000 și nici acceptanță integrală a lotului calendar. Rămân verificările pe conversațiile originale, variantele de formulare și voce, proprietăți ambigue, contacte deja existente și mediul de producție. Nu s-a publicat în producție.
+
 ## Verificări curente
 
-109/109 teste de coadă și recuperare și 1732/1732 teste de regresie în 134 de fișiere au trecut pentru versiunea 58 a uneltelor. ESLint, paritatea și inventarul loturilor au trecut. Providerii au fost simulați; nu s-au trimis mesaje sau lansat campanii reale. Numărul scenariilor originale certificate nu a crescut prin testele mecanismelor de recuperare.
+1757/1757 teste de regresie în 136 de fișiere au trecut pentru versiunea 59 a uneltelor / prompt 32. Suita Firestore/Storage a trecut 260/260 verificări în 18 fișiere, inclusiv salvarea cumpărătorului și vizionării în emulator. Pilotul separat cu model real a trecut după remedierea celor două defecte documentate mai sus. UI Text a trecut inclusiv activarea/dezactivarea noii autorizări; captura viewing-autonomy.png a fost inspectată. ESLint nu are erori; rămâne avertismentul preexistent useEffect/openSession. Paritatea și inventarul loturilor au trecut. Nu s-au trimis mesaje sau lansat campanii reale.
 
-Buildul complet a trecut cu TypeScript și 227/227 pagini pentru versiunea 58. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut. Nu s-au relansat UI sau emulatorul pentru modificarea cozii. Nu s-a publicat în producție.
+Buildul versiunii 59 a trecut cu TypeScript și 227/227 pagini, după corectarea unei referințe de istoric incompatibile cu schema TypeScript. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Nu s-a publicat în producție.

@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
 import type { Contact, Property, Task } from '@/lib/types';
+import { matchesCrmSearch, normalizeCrmSearch } from '@/lib/crm/search-text';
 
 export const runtime = 'nodejs';
 
-function normalizeSearchText(value?: string | null) {
-  return (value ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function matchesQuery(parts: Array<string | number | null | undefined>, query: string) {
-  const searchable = normalizeSearchText(parts.filter((part) => part !== null && part !== undefined).join(' '));
-  return searchable.includes(query);
+  return matchesCrmSearch(parts, query);
 }
 
 function formatError(error: unknown) {
@@ -41,8 +32,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Utilizatorul nu este asociat unei agentii.' }, { status: 403 });
     }
 
-    const query = normalizeSearchText(request.nextUrl.searchParams.get('q'));
-    if (query.length < 2) {
+    const query = request.nextUrl.searchParams.get('q') || '';
+    if (normalizeCrmSearch(query).length < 2) {
       return NextResponse.json({ contacts: [], properties: [], tasks: [] }, { status: 200 });
     }
 

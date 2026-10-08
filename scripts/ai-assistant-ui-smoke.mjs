@@ -38,7 +38,7 @@ try {
   const action = { kind: 'schedule_viewing', contactId: 'contact', propertyId: 'property', viewingDate: '2027-01-01T12:00:00+02:00', duration: 60, notes: '' };
   const pendingPlan = { id: planId, actions: [action], status: 'pending', risks: ['SAFE_WRITE'], externalCostNote: 'Costul canalului trebuie verificat înainte de confirmare.' };
   let watchEdit = null;
-  let background = false, autonomyEnabled = false, outcomeReads = 0, outcomeDenied = false;
+  let background = false, autonomyEnabled = false, viewingAutonomy = false, outcomeReads = 0, outcomeDenied = false;
   const message = (text, cards = [], extra = {}) => ({ id: crypto.randomUUID(), role: 'assistant', text, cards, createdAt: new Date().toISOString(), ...extra });
   await page.route('**/api/**', async route => {
     const request = route.request();
@@ -59,11 +59,11 @@ try {
       result = { jobId: 'plan-job', status: 'completed', plan: { ...pendingPlan, status: 'unknown', results: [], error: 'Verifică starea canalului înainte de repetare.' } };
     }
     else if(request.method()==='GET'&&url.searchParams.has('sessionId')) result={messages:[],nextCursor:null};
-    else if (request.method() === 'GET') result = { sessions: [], aiConfigured: true, backgroundConfigured: background, autonomy: { available: true, enabled: autonomyEnabled } };
+    else if (request.method() === 'GET') result = { sessions: [], aiConfigured: true, backgroundConfigured: background, autonomy: { available: true, enabled: autonomyEnabled, viewings: viewingAutonomy } };
     else if (new URL(request.url()).pathname.endsWith('owner-consent')) {
       assert.equal(body.confirmedPhoneConsent, true); assert.equal(body.purpose, 'marketing');
       result = { conversationId: 'owner-conversation', recordedAt: new Date().toISOString() };
-    } else if (body.kind === 'autonomy') { autonomyEnabled = body.enabled; result = { available: true, enabled: autonomyEnabled }; }
+    } else if (body.kind === 'autonomy') { autonomyEnabled = body.enabled; viewingAutonomy = body.enabled && body.viewings === true; result = { available: true, enabled: autonomyEnabled, viewings: viewingAutonomy }; }
     else if (body.kind === 'start') result = { jobId: 'turn-job', status: 'pending' };
     else if (body.kind === 'execute_background') result = { jobId: 'plan-job', status: 'pending' };
     else if (body.kind === 'chat' && body.prompt === 'Arată alertele evaluate.') result = { message: message('Rezultate actuale.', ['owners', 'crm'].map(source => ({ type: 'results', source, title: source, complete: true, rows: [{ id: source + '-p', title: 'Ofertă ' + source, price: 120000, matchScore: 92, reasoning: 'Scor canonic păstrat.', feedbackNote: `Ai evaluat o alertă anterioară pentru ${source === 'owners' ? 'acest anunț' : 'această pereche client–proprietate'} ca neutilă (2026-10-07T10:00:00Z). Este evaluarea alertei de atunci; nu evaluează oferta actuală și nu schimbă scorul, ordinea rezultatelor sau frecvența alertelor.` }] }))) };
@@ -149,6 +149,12 @@ try {
   await page.getByRole('button', { name: 'Autorizează pașii safe', exact: true }).click();
   await page.getByRole('button', { name: 'Oprește pașii safe automați', exact: true }).waitFor();
   assert.equal(requests.filter(r => r.body?.kind === 'autonomy')[0].body.enabled, true);
+  await page.getByRole('button', { name: 'Autorizează cumpărători și vizionări', exact: true }).click();
+  await page.getByRole('button', { name: 'Oprește programarea automată', exact: true }).waitFor();
+  assert.equal(requests.filter(r => r.body?.kind === 'autonomy').at(-1).body.viewings, true);
+  await page.screenshot({ path: path.join(output, 'viewing-autonomy.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Oprește programarea automată', exact: true }).click();
+  await page.getByRole('button', { name: 'Autorizează cumpărători și vizionări', exact: true }).waitFor();
   assert.deepEqual(errors, []);
   await page.getByRole('button', { name: 'Vezi automatizările', exact: true }).click();
   await page.getByText('1 verificări / 48', { exact: false }).waitFor();

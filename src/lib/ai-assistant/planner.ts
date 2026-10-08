@@ -18,6 +18,7 @@ import { explicitInstants } from './temporal-policy';
 import { functionDefinition, functionPayload } from './function-tools';
 import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation } from './jev';
 import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
+import { validatePlannedDependencies } from './dependencies';
 
 export type AgentOptions = { provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string> };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
@@ -123,6 +124,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           try { response = await Promise.race([invoke(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Tool timeout; rezultatul nu este confirmat.')), Math.min(definition.timeoutMs, Math.max(1, budget.limits.maxExecutionMs - (Date.now() - budget.started)))); })]); }
           finally { if (timer) clearTimeout(timer); }
           definition.outputSchema.parse(response.data);
+          validatePlannedDependencies(response.actions, actions.length);
           if (name === 'goal_coverage') {
             goalCoverage = validateGoalCoverage(payload, prompt, actions.length, successfulReads);
             response.data = { accepted: true, requirements: goalCoverage.requirements.length, unresolved: goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.id) };

@@ -37,6 +37,10 @@ import { notificationTransactionReads } from '../notification-transaction';
 import { readNotificationBudget } from '../notification-budget';
 import { watchNotificationId } from '../watch-notification-id';
 import { zonedParts } from '../zoned-time';
+import { readResource } from '../access';
+import { executeSafePrefix } from '../autonomy';
+import { resolveDatetime } from '../datetime';
+import { viewingConfirmation } from '../execution-confirmation';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -51,6 +55,39 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('finds the Romanian title, creates Matei Alin and commits tomorrow at 07:30 before confirming', async () => {
+    const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent emulator' });
+    await agency.collection('assistantPolicies').doc(ctx.uid).set({ ownerId: ctx.uid, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 60000 });
+    await agency.collection('properties').doc('apartment').set({ title: 'Apartament – Cișmigiu', status: 'Activ', address: 'București' });
+    const previous = process.env.JARVIS_AUTONOMOUS; process.env.JARVIS_AUTONOMOUS = 'true';
+    try {
+      const found = await readResource(ctx, { resource: 'properties', search: 'Cişmigiu apartament', limit: 30 });
+      expect(found.complete).toBe(true); expect(found.rows.map(row => row.id)).toEqual(['apartment']);
+      expect((await readResource(ctx, { resource: 'contacts', search: '0123123123', limit: 30 })).rows).toEqual([]);
+      const date = resolveDatetime({ dayOffset: 1, time: '07:30' });
+      const actions = [
+        { kind: 'create_contact' as const, name: 'Matei Alin', phone: '0123123123', email: '', contactType: 'Cumparator' as const },
+        { kind: 'schedule_viewing' as const, propertyId: String(found.rows[0].id), contactId: '@step:1:contactId', viewingDate: date.iso, duration: 60, notes: '' },
+      ];
+      const prompt = 'Programează o vizionare pentru apartamentul Cișmigiu cu Matei Alin, telefon 0123123123, mâine la 07:30.';
+      const result = await executeSafePrefix(ctx, 'viewing-command', actions, prompt);
+      expect(result.blocked).toBe(false); expect(result.actions).toEqual([]); expect(result.results).toHaveLength(2);
+      const contacts = await agency.collection('contacts').get(), viewings = await agency.collection('viewings').get();
+      expect(contacts.size).toBe(1); expect(viewings.size).toBe(1);
+      expect(contacts.docs[0].data()).toMatchObject({ name: 'Matei Alin', phone: '0123123123', contactType: 'Cumparator' });
+      expect(viewings.docs[0].data()).toMatchObject({ contactId: contacts.docs[0].id, propertyId: 'apartment', viewingDate: date.iso, status: 'scheduled' });
+      expect(zonedParts(new Date(viewings.docs[0].data().viewingDate), 'Europe/Bucharest').date).toBe(date.local.slice(0, 10));
+      const confirmation = viewingConfirmation(result.results);
+      expect(confirmation).toContain('07:30'); expect(confirmation).toContain('Matei Alin'); expect(confirmation).toContain('Cișmigiu');
+      expect((await readResource(ctx, { resource: 'contacts', search: 'Alin-Matei', limit: 30 })).rows).toHaveLength(1);
+      await executeSafePrefix(ctx, 'viewing-command', actions, prompt);
+      expect((await agency.collection('contacts').get()).size).toBe(1); expect((await agency.collection('viewings').get()).size).toBe(1);
+    } finally {
+      if (previous === undefined) delete process.env.JARVIS_AUTONOMOUS; else process.env.JARVIS_AUTONOMOUS = previous;
+      await profile.delete();
+    }
+  }, 20000);
   it.each(['owner', 'matching'] as const)('repeats %s only in a later execution after cooldown and preserves withdrawn history', async kind => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     const listing = db.collection('ownerListings').doc(randomUUID());

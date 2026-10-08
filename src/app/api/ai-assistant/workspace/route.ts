@@ -31,7 +31,7 @@ const schema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('pause'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('resume'), planId: z.string().uuid() }).strict(),
   z.object({ kind: z.literal('inspect'), planId: z.string().uuid() }).strict(),
-  z.object({ kind: z.literal('autonomy'), enabled: z.boolean() }).strict(),
+  z.object({ kind: z.literal('autonomy'), enabled: z.boolean(), viewings: z.boolean().optional() }).strict(),
 ]);
 export async function GET(request: NextRequest) {
   try {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (text.length > 128000) return NextResponse.json({ error: 'Cererea este prea mare.' }, { status: 413 });
     const input = schema.parse(JSON.parse(text));
     let result: unknown;
-    if (input.kind === 'autonomy') result = await setAutonomy(ctx, input.enabled);
+    if (input.kind === 'autonomy') result = await setAutonomy(ctx, input.enabled, input.viewings);
     else if (input.kind === 'start') { result = await enqueueTurn(ctx, input); after(async () => { await drainAgentJobs(ctx.adminDb, 1); }); }
     else if (input.kind === 'execute_background') { result = await enqueuePlan(ctx, input.planId); after(async () => { await drainAgentJobs(ctx.adminDb, 1); }); }
     else if (input.kind === 'chat') result = await chatTurn(ctx, input);

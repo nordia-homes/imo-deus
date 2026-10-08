@@ -13,6 +13,7 @@ import { telemetryDocument, type AgentEvent, type TurnMetrics } from './telemetr
 import { VERSIONS } from './models';
 import { sessionSummary } from './context';
 import { executeSafePrefix } from './autonomy';
+import { viewingConfirmation } from './execution-confirmation';
 import { actionRisk } from './registry';
 import { OperationFailure } from './operation-error';
 import { MAX_PLAN_ACTIONS, PLAN_EXECUTION_MS } from './plan-limits';
@@ -78,6 +79,10 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const result = await planTurn(ctx, input.prompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;
     const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, input.prompt) : { actions: result.actions, results: [], blocked: false };
+    for (const step of autonomous.results) {
+      const receipt = step.result as Record<string, unknown> | undefined;
+      if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
+    }
     result.actions = autonomous.actions;
     if (result.goalCoverage && autonomous.results.length) {
       const consumed = autonomous.results.length;
@@ -89,6 +94,8 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     }
     if (autonomous.results.length || autonomous.blocked) {
       result.text = `Pași safe confirmați: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
+      const confirmation = viewingConfirmation(autonomous.results);
+      if (confirmation) result.text = `${confirmation}\n${result.text}`;
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Execuție autonomă autorizată', source: 'autonomy', rows: autonomous.results });
       if (autonomous.blocked) result.metrics.status = 'partial';
     }
@@ -277,7 +284,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       const now = new Date().toISOString();
       tx.update(ref, { status, ...(status === 'paused' ? { pausedAt: now } : { completedAt: now }) });
       if (fresh.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(fresh.telemetryId), { executionStatus: status, confirmedSteps: results.length }, { merge: true });
-      if (status === 'completed') tx.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`, createdAt: now });
+      if (status === 'completed') tx.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: [viewingConfirmation(results), `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`].filter(Boolean).join('\n'), createdAt: now });
       return status;
     });
     if (status !== 'completed') return { ...data, status, results };

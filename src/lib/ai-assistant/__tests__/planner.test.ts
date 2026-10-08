@@ -36,6 +36,18 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('repairs a viewing proposed before its new buyer without retaining the invalid first action', async () => {
+    const prompt = 'Programează vizionarea la 2030-01-01T05:30:00Z pentru Matei Alin.';
+    const viewing = { kind: 'schedule_viewing', contactId: '@step:1:contactId', propertyId: 'p', viewingDate: '2030-01-01T05:30:00Z', duration: 60, notes: '' };
+    const model = scripted(call('propose_actions', { actions: [viewing] }),
+      call('propose_actions', { actions: [{ kind: 'create_contact', name: 'Matei Alin', phone: '0123123123', contactType: 'Cumparator' }, viewing] }),
+      call('goal_coverage', { requirements: [{ id: 'viewing', sourceQuote: prompt, description: 'Cumpărător și vizionare', resolution: 'planned', steps: [1, 2], evidenceCallIds: [] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(result.actions.map(action => action.kind)).toEqual(['create_contact', 'schedule_viewing']);
+    expect(result.metrics.tools.map(tool => tool.status)).toEqual(['failed', 'success', 'success']);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('master-0806 continues after the first read and prepares the missing follow-up before finalizing', async () => {
     const prompt = corpus.scenarios.find(row => row.id === 'master-0806')!.text;
     vi.mocked(readResource).mockResolvedValue({ rows: [{ id: 'v', status: 'completed' }], complete: true } as any);

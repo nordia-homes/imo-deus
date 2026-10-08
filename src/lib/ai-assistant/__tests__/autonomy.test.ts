@@ -11,6 +11,28 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  it('creates the buyer and schedules the viewing in the same authorized command', async () => {
+    const context = ctx(); (context as any).policy.viewings = true;
+    vi.mocked(executeAction).mockResolvedValueOnce({ contactId: 'new-buyer' }).mockResolvedValueOnce({ viewingId: 'new-viewing' });
+    const actions: AssistantAction[] = [
+      { kind: 'create_contact', name: 'Matei Alin', phone: '0123123123', email: '', contactType: 'Cumparator' },
+      { kind: 'schedule_viewing', propertyId: 'p', contactId: '@step:1:contactId', viewingDate: '2030-01-01T05:30:00Z', duration: 60, notes: '' },
+    ];
+    const result = await runSafePrefix(context, 'request', actions, 'Programează o vizionare cu Matei Alin.');
+    expect(result.results).toHaveLength(2); expect(result.actions).toEqual([]);
+    expect(vi.mocked(executeAction).mock.calls[1][1]).toMatchObject({ contactId: 'new-buyer', kind: 'schedule_viewing' });
+  });
+  it('preserves old policy scope for buyers and viewings', async () => {
+    const action: AssistantAction = { kind: 'create_contact', name: 'Matei Alin', phone: '0123123123', email: '', contactType: 'Cumparator' };
+    const result = await runSafePrefix(ctx(), 'request', [action], 'Creează cumpărătorul Matei Alin.');
+    expect(result.actions).toEqual([action]); expect(executeAction).not.toHaveBeenCalled();
+  });
+  it.each(['Pregătește o vizionare.', 'Programează vizionarea, nu crea cumpărătorul.', 'Creează cumpărătorul, nu programa vizionarea.'])('keeps preview or negated viewing workflows pending: %s', async prompt => {
+    const context = ctx(); (context as any).policy.viewings = true;
+    const action: AssistantAction = { kind: 'create_contact', name: 'Matei Alin', phone: '0123123123', email: '', contactType: 'Cumparator' };
+    expect((await runSafePrefix(context, 'request', [action], prompt)).results).toEqual([]);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('carries a committed safe edit revision into the remaining approval plan', async () => {
     const revision = '2026-10-06T10:00:00Z', next = '2026-10-06T10:01:00Z';
     vi.mocked(executeAction).mockResolvedValueOnce({ taskId: 't', mutationRevision: { resource: 'tasks', id: 't', before: revision, after: next } });

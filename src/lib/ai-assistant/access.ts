@@ -3,7 +3,8 @@ import { CommunicationError, agencyCollection } from '@/lib/communications/serve
 import { canReadConversation, type Conversation } from '@/lib/communications/model';
 import { fieldSchema, type AssistantRead, type AccessReference, type AssistantAction, type AssistantRelated } from './contracts';
 import type { z } from 'zod';
-import { normalized, safeData, uniqueReferences } from './contracts';
+import { safeData, uniqueReferences } from './contracts';
+import { matchesCrmSearch } from '@/lib/crm/search-text';
 import { isStepReference } from './dependencies';
 import { FieldPath } from 'firebase-admin/firestore';
 
@@ -66,7 +67,7 @@ export async function readResource(ctx: AssistantContext, input: AssistantRead) 
     // A where clause bound to the authenticated agency/uid protects global collections.
     const docs = await query.get();
     const rows = docs.docs.slice(0, input.limit).map(d => safeData({ ...d.data(), id: d.id }));
-    return { rows: rows.filter(r => (!input.id || r.id === input.id) && (!input.search || normalized(JSON.stringify(r)).includes(normalized(input.search)))), nextCursor: docs.size > input.limit ? docs.docs[input.limit - 1].id : null, complete: docs.size <= input.limit };
+    return { rows: rows.filter(r => (!input.id || r.id === input.id) && (!input.search || matchesCrmSearch(r, input.search))), nextCursor: docs.size > input.limit ? docs.docs[input.limit - 1].id : null, complete: docs.size <= input.limit };
   }
   if (input.id) return { rows: [safeData(await getResource(ctx, input.resource, input.id))], nextCursor: null, complete: true };
   // Paginate by document id; the cursor advances over inaccessible/nonmatching rows too.
@@ -86,7 +87,7 @@ export async function readResource(ctx: AssistantContext, input: AssistantRead) 
       if (input.resource === 'crmEvents' && !(await eventReferencesAllowed(ctx, row))) continue;
       if (input.resource === 'assistantAutomations' && (row as Record<string, any>).automation?.type === 'whatsapp_template' && !(await referencesAllowed(ctx, [{ resource: 'conversations', id: (row as Record<string, any>).automation.conversationId }]))) continue;
       const safe = safeData(row);
-      if (input.search && !normalized(JSON.stringify(safe)).includes(normalized(input.search))) continue;
+      if (input.search && !matchesCrmSearch(safe, input.search)) continue;
       rows.push(safe);
       if (rows.length === input.limit) break;
     }

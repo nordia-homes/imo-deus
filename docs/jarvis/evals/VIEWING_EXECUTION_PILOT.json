@@ -1,0 +1,154 @@
+{
+  "scope": "One user example, actual model plus local Firestore emulator. Not production, voice recognition or acceptance of 1000 corpus scenarios. External operation catalog is excluded from the trial.",
+  "runAt": "2026-10-08T07:02:11.538Z",
+  "earlierAttempts": [
+    {
+      "name": "first-attempt",
+      "status": "success",
+      "executionVerified": false,
+      "costUsd": 0.00163144,
+      "modelCalls": 9
+    },
+    {
+      "name": "second-attempt",
+      "status": "partial",
+      "executionVerified": false,
+      "costUsd": 0.0020524849999999997,
+      "modelCalls": 11
+    },
+    {
+      "name": "restricted-tools-success",
+      "status": "success",
+      "executionVerified": true,
+      "costUsd": 0.00144634,
+      "modelCalls": 8
+    }
+  ],
+  "versions": {
+    "prompt": "jarvis-32",
+    "routing": "luna-first-2",
+    "policy": "tenant-approval-6",
+    "tools": "59",
+    "memory": "2",
+    "skills": "3"
+  },
+  "prompt": "Programează o vizionare pentru apartamentul „Cișmigiu” cu Matei Alin, număr de telefon 0123123123, pentru mâine la ora 07:30.",
+  "status": "success",
+  "text": "Am pregătit 2 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+  "actions": [
+    {
+      "kind": "create_contact",
+      "name": "Matei Alin",
+      "phone": "0123123123",
+      "email": "",
+      "contactType": "Cumparator"
+    },
+    {
+      "kind": "schedule_viewing",
+      "agentId": "94098efd-5293-44a3-a113-dbd7d3e73f08",
+      "contactId": "@step:1:contactId",
+      "propertyId": "apartment",
+      "viewingDate": "2026-10-09T04:30:00.000Z",
+      "duration": 60,
+      "notes": ""
+    }
+  ],
+  "tools": [
+    {
+      "name": "resolve_datetime",
+      "status": "success",
+      "latencyMs": 593,
+      "version": "59",
+      "argumentsHash": "a52a3158fead538e1f2559857717701a235be4afbc12b64e0ddb37a77ffe8c55"
+    },
+    {
+      "name": "operation_contract",
+      "status": "success",
+      "latencyMs": 24,
+      "version": "59",
+      "argumentsHash": "8e4663217ba8e294cca6db4935cc092129c0cd8e343fbd1129b9361ef328338e"
+    },
+    {
+      "name": "read",
+      "status": "success",
+      "latencyMs": 107,
+      "version": "59",
+      "argumentsHash": "6bf14878d7155840dd59b83899190241f543ede36563515614d2c96c335df123"
+    },
+    {
+      "name": "query_records",
+      "status": "success",
+      "latencyMs": 23,
+      "version": "59",
+      "argumentsHash": "6212204d7be2d029f1d494aa9414e3980ab30d5beed70a312e80b03a5486b312"
+    },
+    {
+      "name": "operation_contract",
+      "status": "success",
+      "latencyMs": 17,
+      "version": "59",
+      "argumentsHash": "7733de3b6653eae5cc0b97c3124c66b705533f8cf1a8a9752f6cbd5c241498e5"
+    },
+    {
+      "name": "propose_actions",
+      "status": "success",
+      "latencyMs": 17,
+      "version": "59",
+      "argumentsHash": "f4bf2046cf506f6a9a02998d8aedb64c6160c753d74d68d3ed0a1ba9008e8c4e"
+    },
+    {
+      "name": "goal_coverage",
+      "status": "success",
+      "latencyMs": 8,
+      "version": "59",
+      "argumentsHash": "86691576101ed036fe2dbcee39d5d8e264cd20ebbf2e2a89205b9e4c638a0cb4"
+    }
+  ],
+  "costUsd": 0.00195629,
+  "modelCalls": 8,
+  "executionVerified": true,
+  "confirmation": "Vizionare programată pentru „Apartament – Cișmigiu” cu Matei Alin: 09.10.2026, 07:30, ora Bucureștiului. ID: 94098efd-5293-44a3-a113-dbd7d3e73f08-safe-1.",
+  "storedContact": {
+    "name": "Matei Alin",
+    "phone": "0123123123",
+    "email": "",
+    "contactType": "Cumparator",
+    "normalizedPhone": "40123123123",
+    "normalizedEmail": "",
+    "id": "94098efd-5293-44a3-a113-dbd7d3e73f08-safe-0",
+    "status": "Nou",
+    "priority": "Medie",
+    "tags": [],
+    "source": "AI Assistant",
+    "agentId": "94098efd-5293-44a3-a113-dbd7d3e73f08",
+    "agentName": "Agent local",
+    "interactionHistory": [],
+    "preferences": {
+      "desiredPriceRangeMin": 0,
+      "desiredPriceRangeMax": 0,
+      "desiredRooms": 0,
+      "desiredBathrooms": 0,
+      "desiredSquareFootageMin": 0,
+      "desiredSquareFootageMax": 0,
+      "desiredFeatures": "",
+      "locationPreferences": ""
+    },
+    "createdAt": "2026-10-08T07:00:26.671Z"
+  },
+  "storedViewing": {
+    "agentId": "94098efd-5293-44a3-a113-dbd7d3e73f08",
+    "notes": "",
+    "contactId": "94098efd-5293-44a3-a113-dbd7d3e73f08-safe-0",
+    "propertyAddress": "București",
+    "contactName": "Matei Alin",
+    "agentName": "Agent local",
+    "viewingDate": "2026-10-09T04:30:00.000Z",
+    "duration": 60,
+    "createdAt": "2026-10-08T07:00:26.850Z",
+    "id": "94098efd-5293-44a3-a113-dbd7d3e73f08-safe-1",
+    "propertyId": "apartment",
+    "propertyTitle": "Apartament – Cișmigiu",
+    "status": "scheduled",
+    "updatedAt": "2026-10-08T07:00:26.850Z"
+  }
+}

@@ -511,7 +511,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const record = { contactId, contactName: contact.name, propertyId, propertyTitle: property.title, propertyAddress: property.address || property.location || '', agentId, agentName: assignment?.agentName || old?.agentName || profile.data()?.name || '', viewingDate, duration, status, notes: action.notes ?? old?.notes ?? '', updatedAt: now };
       await assertCalendarSlot(ctx, tx, 'viewings', ref.id, record);
       tx.set(ref, { ...record, ...(old ? {} : { id: ref.id, createdAt: now }) }, { merge: true });
-      result = { viewingId: ref.id, viewingDate, link: '/viewings' };
+      result = { viewingId: ref.id, viewingDate, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
     } else if (action.kind === 'recommend_properties') {
       const contact = await read('contacts', action.contactId);
       const ids = [...new Set(action.propertyIds)];
