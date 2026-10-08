@@ -2,6 +2,8 @@
 
 Data: 6 octombrie 2026. Stare: plan de implementare; etapele de mai jos nu sunt declarate finalizate.
 
+Audit curent: [matricea E0–E9 și ordinea revizuită din 8 octombrie](MASTER_AUDIT_2026-10-08.md). Jurnalul de mai jos păstrează istoricul. Corecție de evidență: 63 reprezintă cazuri originale revizuite, nu 63 de fluxuri integral acceptate; raportul live istoric are 60/62 probe de planificare trecute. Numărul testelor sintetice nu este procent de realizare a masterplanului.
+
 Obiectivul este ca agentul să poată delega un rezultat în limbaj natural, iar Jarvis să identifice entitățile, să pregătească și să execute pașii autorizați, să urmărească rezultatele și să comunice exact ce s-a realizat. Implementarea extinde nucleul existent din imoDeus, inclusiv memoria, Voice, automatizările și serviciile de domeniu.
 
 ## Baza de lucru
@@ -1257,3 +1259,9 @@ După o eroare de contabilizare, instanța comună de buget blochează verifică
 Versiunea uneltelor este 54. Au trecut 1696/1696 teste de regresie în 133 de fișiere, ESLint și paritatea, inclusiv cele 15 teste noi. Providerii sunt simulați; emulatorul și UI nu au fost relansate pentru acest control numeric în memorie. Acest lot nu implementează bugetul cumulativ persistent pe obiectiv, rezervările distribuite sau reconcilierea financiară a unui raport invalid. Aceste cerințe E3 rămân deschise. Regula București, producția și cele 63 de scenarii originale acceptate rămân neschimbate.
 
 Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut; dovezile producției nu au fost modificate.
+
+## 8 octombrie: audit E0–E9 și rezultate pe cerință
+
+Auditul MASTER_AUDIT_2026-10-08.md leagă etapele de cod și dovezi, corectează confuzia dintre cazuri revizuite și acceptate și reordonează lucrările rămase. Planul integral nu este închis. Raportarea pe cerință este disponibilă în API și componenta comună Text/Voice: confirmări, așteptări, incertitudini, limitări și răspunsuri istorice sunt distincte. Acoperirea invalidă nu produce o confirmare globală pentru planurile care o cer. Legăturile către pași sunt validate; dovezile contradictorii sunt păstrate pentru reducerul comun. Contorul de execuție spune pași cu rezultat înregistrat, iar ora verificării este explicit Europe/Bucharest.
+
+Validări: 69 teste țintite și 1715/1715 teste de regresie în 134 de fișiere; ESLint, paritate, UI Text și Voice simulate, capturi inspectate și build complet cu TypeScript și 227 pagini. Versiunea uneltelor este 55. Avertismentele cunoscute de build rămân. Emulatorul nu a fost relansat; nu există schemă sau scrieri Firestore noi. Nu s-au folosit provideri reali și nu s-a publicat în producție. Bugetul persistent și restul criteriilor din audit rămân de implementat/acceptat.

@@ -17,6 +17,7 @@ import { tikTokProjectOutcome } from './tiktok-project-outcome';
 import { confirmedStudioRender } from '@/lib/tiktok-render-evidence';
 import { metaDraftOutcome } from './meta-draft-outcome';
 import { outreachOutcome } from './outreach-outcome';
+import { requirementOutcomes } from './requirement-outcomes';
 
 // Read current domain evidence. Never replay a write or alter its execution ledger.
 export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
@@ -173,7 +174,8 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
   if (!(await referencesAllowed(ctx, (plan as any).accessRefs || []))) throw new CommunicationError('Accesul la plan a fost revocat.', 403);
   const finalMember = await ctx.adminDb.collection('users').doc(ctx.uid).get();
   if (finalMember.data()?.agencyId !== ctx.agencyId || finalMember.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
-  const outcome = goalCoverageOutcome(summarizeOutcome(plan.status, plan.actions.length, rows), plan.goal?.coverage, rows, plan.goal?.coverageRequired === true);
+  const requirements = requirementOutcomes(plan.status, plan.actions.length, plan.goal?.coverage, rows);
+  const outcome = goalCoverageOutcome(summarizeOutcome(plan.status, plan.actions.length, rows), requirements.status === 'invalid' ? undefined : plan.goal?.coverage, rows, plan.goal?.coverageRequired === true);
   const awaiting = !['paused', 'cancelled'].includes(plan.status) && rows.some(row => 'watchable' in row && row.watchable && !('completionSatisfied' in row && row.completionSatisfied) && ['queued', 'running', 'unknown', 'observed', 'accepted_unverified'].includes(row.executionState));
-  return { planId, planRevision, executionStatus: plan.status, outcome, rows, pollAfterMs: awaiting ? 15000 : null, checkedAt: outcome.checkedAt, note: 'Starea execuției planului și rezultatele de business sunt verificate separat. Starea CRM nu înlocuiește un receipt extern.' };
+  return { planId, planRevision, executionStatus: plan.status, outcome, requirements, rows, pollAfterMs: awaiting ? 15000 : null, checkedAt: outcome.checkedAt, note: 'Starea execuției planului și rezultatele de business sunt verificate separat. Starea CRM nu înlocuiește un receipt extern.' };
 }

@@ -3,6 +3,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { AssistantPlan } from '@/lib/ai-assistant/contracts';
 import { usePlanOutcomes } from './usePlanOutcomes';
+import type { RequirementOutcome } from '@/lib/ai-assistant/requirement-outcomes';
+
+const requirementLabels: Record<RequirementOutcome['state'], string> = { RUNNING: 'În curs', WAITING_PROVIDER: 'Așteaptă furnizorul', AWAITING_APPROVAL: 'Așteaptă aprobarea', NEEDS_CLARIFICATION: 'Necesită clarificare', PAUSED: 'În pauză', BLOCKED: 'Necesită verificare', COMPLETED: 'Rezultat confirmat', PARTIALLY_COMPLETED: 'Rezultat parțial', FAILED: 'Nereușit', CANCELLED: 'Oprit', ANSWERED: 'Răspuns anterior', UNSUPPORTED: 'Nesuportat de plan' };
 
 export function AssistantExecutionControls({ plan, user, onPlan, onResume, onError, resumeDisabled }: {
   plan: AssistantPlan; user: { getIdToken(): Promise<string> } | null;
@@ -31,15 +34,16 @@ export function AssistantExecutionControls({ plan, user, onPlan, onResume, onErr
       {plan.goal.coverage ? <ul className="mt-2 list-disc space-y-1 pl-4">{plan.goal.coverage.requirements.map(row => <li key={row.id}>{row.description} · {row.resolution === 'planned' ? `Pașii ${row.steps.join(', ')}` : row.resolution === 'answered' ? 'Citire efectuată' : row.resolution === 'needs_clarification' ? 'Necesită clarificare' : 'Nesuportat de acest plan'}</li>)}</ul> : <p className="mt-2">Acoperirea întregii cereri nu a fost verificată. Confirmarea execută numai pașii enumerați.</p>}
     </details>}
     {(outcomes?.outcome || plan.outcome) && <p role="status" className="text-sm">{(outcomes?.outcome || plan.outcome).note}</p>}
-    <p role="status" className="text-sm">{plan.results?.length || 0} / {plan.actions.length} pași confirmați{plan.status === 'paused' ? ' · În pauză' : ''}</p>
+    <p role="status" className="text-sm">{plan.results?.length || 0} / {plan.actions.length} pași cu rezultat înregistrat{plan.status === 'paused' ? ' · În pauză' : ''}</p>
     <progress className="h-2 w-full accent-emerald-500" value={plan.results?.length || 0} max={plan.actions.length} aria-label="Progresul execuției" />
     <div className="flex flex-wrap gap-2">
       {controllable && <><Button type="button" size="sm" variant="outline" disabled={busy || (plan.status === 'paused' && resumeDisabled)} onClick={() => control(plan.status === 'paused' ? 'resume' : 'pause')}>{plan.status === 'paused' ? 'Reia planul' : 'Pune în pauză'}</Button>
       <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => control('cancel')}>Oprește pașii rămași</Button></>}
       {(!!plan.results?.length || !!plan.stoppedStep) && <Button type="button" size="sm" variant="outline" disabled={busy || refreshing} onClick={() => void refresh()}>Verifică rezultatele actuale</Button>}
     </div>
+    {outcomes?.requirements && <section aria-label="Rezultatul fiecărei cerințe" className="space-y-2 rounded-xl border p-3 text-sm" aria-live="polite"><strong>Rezultatul fiecărei cerințe</strong>{outcomes.requirements.rows.map((row: RequirementOutcome) => <div key={row.id} className="border-t pt-2"><p>{row.description}</p><p className="font-medium">{requirementLabels[row.state]}</p>{row.total > 0 && <p className="text-xs">{row.confirmed} / {row.total} rezultate confirmate · Pașii {row.steps.join(', ')}</p>}<p className="text-xs text-muted-foreground">{row.note}</p></div>)}<p className="text-xs text-muted-foreground">{outcomes.requirements.note}</p></section>}
     {outcomes && <div className="grid gap-2" aria-live="polite">{outcomes.rows.map((row: any) => <div key={row.step} className="rounded-xl border bg-background p-3 text-sm"><strong>{row.title}</strong><p>{({ queued: 'În coadă', running: 'În procesare', succeeded: 'Finalizat', failed: 'Eșuat', cancelled: 'Anulat', draft: 'Pregătit', unknown: 'Rezultat incert', unavailable: 'Indisponibil', accepted_unverified: 'Acceptat, de verificat', observed: 'Stare observată' } as Record<string, string>)[row.executionState] || row.executionState}{row.businessStatus ? ` · ${row.businessStatus}` : ''}</p>{row.note && <p className="text-xs text-muted-foreground">{row.note}</p>}</div>)}<p className="text-xs text-muted-foreground">{outcomes.note}</p></div>}
-    {outcomes?.checkedAt && <p className="text-xs text-muted-foreground">Verificat la {new Date(outcomes.checkedAt).toLocaleTimeString('ro-RO')}{watching ? ' · Urmărire automată cât timp pagina este vizibilă' : ''}</p>}
+    {outcomes?.checkedAt && <p className="text-xs text-muted-foreground">Verificat la {new Date(outcomes.checkedAt).toLocaleTimeString('ro-RO', { timeZone: 'Europe/Bucharest' })}{watching ? ' · Urmărire automată cât timp pagina este vizibilă' : ''}</p>}
     {outcomeError && <p role="status" className="text-xs text-amber-700">{outcomeError}</p>}
     {plan.status === 'running' && <p className="text-xs text-muted-foreground">Pauza sau oprirea se aplică după pasul deja pornit.</p>}
   </div>;

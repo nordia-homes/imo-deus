@@ -87,6 +87,7 @@ try {
       result = { rows, complete: true, nextCursor: null, message: message('Rezultate verificate.', [card]) };
     } else throw new Error('Unexpected fixture request: ' + JSON.stringify(body));
     if (watchEdit && url.pathname.endsWith('/automations')) result = url.searchParams.has('id') ? { rows: [{ id: 'cap-run', action: 'run', occurredAt: '2026-10-07', status: 'active', result: { status: 'deferred', reasonCode: 'notification_cap', notificationResults: [{ status: 'deferred', reasonCode: 'notification_cap' }] } }], nextCursor: null } : { rows: [watchEdit], nextCursor: null };
+    if (url.pathname.endsWith('/plan-outcomes')) result.requirements = { status: 'available', rows: [{ id: 'delivery', description: 'Livrarea cerută', state: outcomeReads >= 3 ? 'COMPLETED' : 'WAITING_PROVIDER', steps: [1], total: 1, confirmed: outcomeReads >= 3 ? 1 : 0, note: 'Dovadă verificată pentru cerința curentă.' }], note: 'Rezultate pentru cerințele identificate.' };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) });
   });
   await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -101,10 +102,14 @@ try {
   await page.getByRole('button', { name: 'Execută planul' }).click();
   await page.getByText('Stare: finalizat', { exact: true }).waitFor();
   await page.getByText('În coadă · queued', { exact: true }).waitFor();
+  await page.getByRole('region', { name: 'Rezultatul fiecărei cerințe' }).getByText('Așteaptă furnizorul', { exact: true }).waitFor();
+  await page.getByText('1 / 1 pași cu rezultat înregistrat', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Verifică rezultatele actuale', exact: true }).click();
   await page.getByText('În coadă · queued', { exact: true }).waitFor();
   await page.clock.runFor(16000);
   await page.getByText('Finalizat · delivered', { exact: true }).waitFor();
+  await page.getByRole('region', { name: 'Rezultatul fiecărei cerințe' }).getByText('Rezultat confirmat', { exact: true }).waitFor();
+  await page.getByRole('region', { name: 'Rezultatul fiecărei cerințe' }).screenshot({ path: path.join(output, 'requirement-outcome.png') });
   const terminalReads = outcomeReads;
   await page.clock.runFor(45000);
   assert.equal(outcomeReads, terminalReads, 'Terminal evidence stops automatic tracking');
@@ -112,6 +117,7 @@ try {
   await page.getByRole('button', { name: 'Verifică rezultatele actuale', exact: true }).click();
   await page.getByText('Rezultatul nu mai este accesibil.', { exact: true }).waitFor();
   assert.equal(await page.getByText('Finalizat · delivered', { exact: true }).count(), 0, 'Revoked evidence is removed from the visible card');
+  assert.equal(await page.getByRole('region', { name: 'Rezultatul fiecărei cerințe' }).count(), 0, 'Revoked requirement evidence is removed too');
   const deniedReads = outcomeReads;
   await page.clock.runFor(45000);
   assert.equal(outcomeReads, deniedReads, 'Revocation stops automatic tracking');

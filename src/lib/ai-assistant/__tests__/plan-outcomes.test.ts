@@ -7,6 +7,18 @@ import { readPlanOutcomes } from '../plan-outcomes';
 import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx: any = { uid: 'u', role: 'agent', agencyId: 'a', adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ role: 'agent', agencyId: 'a' }) }) }) }) } };
 const action = { kind: 'existing_operation', operation: 'video_create', params: { propertyId: 'p' }, query: {}, body: {} };
+it('returns requirement evidence only after authorized reads and rejects corrupt coverage', async () => {
+  const goal = { schemaVersion: 1, coverageRequired: true, coverage: { requirements: [{ id: 'script', description: 'Pregătește scenariul', sourceQuote: 'scenariul', resolution: 'planned', steps: [1], evidenceCallIds: [] }] } };
+  const plan = { status: 'completed', goal, actions: [{ ...action, operation: 'video_script' }], results: [{ step: 1, result: { script: 'Scenariu concret.' } }] };
+  mocks.plan.mockResolvedValue({ data: plan });
+  mocks.resource.mockResolvedValue({ id: 'p' });
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'COMPLETED' }, requirements: { status: 'available', rows: [{ id: 'script', state: 'COMPLETED', confirmed: 1 }] } });
+  goal.coverage.requirements[0].steps = [2];
+  expect(await readPlanOutcomes(ctx, 'plan')).toMatchObject({ outcome: { state: 'BLOCKED' }, requirements: { status: 'invalid', rows: [] } });
+  mocks.allowed.mockResolvedValue(false);
+  await expect(readPlanOutcomes(ctx, 'plan')).rejects.toMatchObject({ status: 403 });
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
 it('keeps mixed video results under verification until the remaining provider effect settles', async () => {
   const plan = { actions: [action, action], status: 'completed', results: [1, 2].map(step => ({ step, result: { jobId: `j${step}`, executionState: 'queued' } })) };
   mocks.plan.mockResolvedValue({ data: plan });

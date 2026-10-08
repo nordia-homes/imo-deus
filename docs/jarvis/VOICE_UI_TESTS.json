@@ -11,13 +11,14 @@
     "desktop shortcut opens voice without transcript/composer",
     "existing core returns cards and concise speech",
     "local barge-in stops buffered audio and approval is required",
+    "voice shows server-verified results for each requirement",
     "spoken approval uses existing execute and shared session",
     "same explicit WhatsApp consent form in voice",
     "mobile launcher above navigation and safe-area; Esc releases microphone",
     "layered rig renders with blue body and preserved independent eye/mouth nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 58.0328356721474,
+  "animationFps": 51.0204081644704,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."

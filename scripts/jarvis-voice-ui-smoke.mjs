@@ -345,6 +345,7 @@ try {
                 ]),
       };
     } else throw new Error("Unexpected fixture: " + JSON.stringify(body));
+    if (url.pathname.endsWith('/plan-outcomes')) result.requirements = { status: 'available', rows: [{ id: 'viewing', description: 'Programează vizionarea cerută', state: 'COMPLETED', steps: [1], confirmed: 1, total: 1, note: 'Programare verificată.' }], note: 'Rezultate pentru cerințele identificate.' };
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -546,6 +547,9 @@ try {
   utterance = "Da.";
   await page.evaluate(() => window.injectSpeech());
   await page.getByText("Execuție confirmată.", { exact: true }).waitFor();
+  await page.getByRole('region', { name: 'Rezultatul fiecărei cerințe' }).getByText('Rezultat confirmat', { exact: true }).waitFor();
+  checks.push('voice shows server-verified results for each requirement');
+  await page.getByRole('region', { name: 'Rezultatul fiecărei cerințe' }).screenshot({ path: path.join(output, 'requirement-outcome.png') });
   assert.equal(requests.filter((r) => r.body?.kind === "execute").length, 1);
   const sessionIds = requests
     .filter((r) => r.body?.kind === "chat")
