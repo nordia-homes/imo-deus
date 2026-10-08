@@ -1,3 +1,4 @@
+import { viewingDetailsSchema } from './viewing-details';
 import { shiftDatetimeSchema } from './datetime';
 import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { z } from 'zod';
@@ -12,6 +13,7 @@ const objectOutput = z.record(z.unknown());
 const rowsOutput = z.object({ rows: z.array(z.record(z.unknown())) }).passthrough();
 const operationInput = z.object({ operation: idSchema, params: z.record(z.string().max(180)).default({}), query: z.record(z.string().max(2000)).default({}), body: z.record(z.unknown()).default({}) }).strict();
 export const coreToolSchemas = {
+  viewing_details: [viewingDetailsSchema, objectOutput, 'Identifică o vizionare și citește clientul/proprietatea actuale: contactPhone este telefonul cumpărătorului, ownerPhone al proprietarului din proprietatea CRM. mode=selected cu viewingId; mode=at_time cu time HH:mm și date sau dayOffset (implicit azi); mode=next folosește ora serverului. Pentru at_time/next agentId implicit este agentul curent. status=needs_clarification cere alegerea, partial nu confirmă selecția. Nu substitui telefoanele lipsă și nu confunda proprietarul cu cumpărătorul.'],
   resolve_matching_recipient: [matchingRecipientSchema, rowsOutput, 'Pentru trimite-i a doua proprietate: rezolvă poziția din matchingul salvat și conversațiile asociate exact clientului acelui set. Fără selecție după nume/telefon. conversationId opțional alege explicit o conversație. Nu ghici când recipientStatus=needs_clarification sau recipientSearchComplete=false. Doar citire; resolved nu înseamnă eligibil pentru trimitere. Folosește ulterior message_send cu body.matchingSelection copiat integral din rezultatul resolverului și text concret, în planul cu preview și aprobare.'],
   integration_status: [z.object({ provider: z.enum(['facebook_groups', 'meta_ads', 'tiktok_ads', 'tiktok_organic', 'imobiliare', 'storia', 'romimo', 'communications']) }).strict(), objectOutput, 'Verifică statusul conexiunii alese. NU listează capabilitățile TikTok Ads: pentru acestea apelează existing_read cu operation=tiktok_capabilities. Facebook Groups, Meta Ads, TikTok Ads și TikTok organic sunt integrări distincte. Doar citire; nu conectează și nu publică.'],
   search_global: [z.object({ query: z.string().trim().min(2).max(300) }).strict(), objectOutput, 'Caută global în CRM prin handlerul existent: contacte, proprietăți și sarcini. Nu restrânge cererea globală la o singură colecție.'],

@@ -1285,28 +1285,44 @@
           "sourceNumber": 168,
           "request": "Cine vine la vizionarea de la 17?",
           "requestSha256": "7d840ef81ecc0ae306bef1d5eedda0f3dce3ba4f93a180516fdf30cb1f07ef00",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0169",
           "sourceNumber": 169,
           "request": "Ce proprietate vizionez la 17?",
           "requestSha256": "dbd18e9df2515a6eb5b5ad7d1fa806a41e7e9de36a61bae45d88d48fa7a4e95e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0170",
           "sourceNumber": 170,
           "request": "Care este numărul clientului de la vizionarea următoare?",
           "requestSha256": "6132d18164d53d637639976d1dcd27ef8167323bdb6e3df7e481d64fd2445d78",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0171",
           "sourceNumber": 171,
           "request": "Care este numărul proprietarului proprietății vizionate?",
           "requestSha256": "d45af1dd8e0852e492a9d4bef38b0f52a365c725bbe5e695644f3de87d441b89",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0172",

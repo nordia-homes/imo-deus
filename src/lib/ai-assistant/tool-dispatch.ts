@@ -1,3 +1,4 @@
+import { viewingDetails } from './viewing-details';
 import { assertTaskEdit } from './task-edit';
 import { shiftDatetime } from './datetime';
 import { z } from 'zod';
@@ -25,7 +26,11 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'integration_status') {
+  if (name === 'viewing_details') {
+    data = await viewingDetails(ctx, payload);
+    cards.push({ type: 'data', title: 'Detalii vizionare', source: 'viewings', rows: data.rows, complete: data.complete });
+    if (data.contactId) refs.push({ resource: 'contacts', id: data.contactId });
+  } else if (name === 'integration_status') {
     const operation = ({ facebook_groups: 'facebook_connections', meta_ads: 'meta_status', tiktok_ads: 'tiktok_status', tiktok_organic: 'tiktok_organic_status', imobiliare: 'imobiliare_status', storia: 'storia_status', romimo: 'romimo_status', communications: 'communications_status' } as Record<string, string>)[payload.provider];
     requireTool(operation, ctx.role || '');
     data = await invokeOperation(ctx, { operation, params: {}, query: {}, body: {} }, true);

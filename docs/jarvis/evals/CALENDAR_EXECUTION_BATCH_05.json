@@ -1,0 +1,661 @@
+{
+  "scope": "Original scenarios 0168-0171; actual model answers using isolated Firestore CRM data. Read results verified, not production certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0168",
+      "prompt": "Cine vine la vizionarea de la 17?",
+      "versions": {
+        "prompt": "jarvis-38",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "68",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T09:58:17.049Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "La vizionarea de la 17:00 vine Andrei. Telefon: 0700000001.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_details",
+          "status": "success",
+          "latencyMs": 749,
+          "version": "68",
+          "argumentsHash": "9af5df2060256bc463468093c12a1f97b014c479d650f9a3a0a55a22b9b86221"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "68",
+          "argumentsHash": "3b9da503e3d095725e26db905e9db60385bbdd8c1cdf8882fa4bbb2241508c6f"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8631,
+            "outputTokens": 67,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 8628,
+            "estimated": false
+          },
+          "costUsd": 0.0011122999999999999,
+          "latencyMs": 2908,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8837,
+            "outputTokens": 94,
+            "cachedTokens": 8628,
+            "cacheWriteTokens": 206,
+            "estimated": false
+          },
+          "costUsd": 0.00015932999999999998,
+          "latencyMs": 2416,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8956,
+            "outputTokens": 39,
+            "cachedTokens": 8834,
+            "cacheWriteTokens": 119,
+            "estimated": false
+          },
+          "costUsd": 0.000123015,
+          "latencyMs": 2331,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001394645,
+      "confirmation": "La vizionarea de la 17:00 vine Andrei. Telefon: 0700000001.",
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "7156ee5e-c7a2-4aeb-a40e-cdde80cd7511",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "7156ee5e-c7a2-4aeb-a40e-cdde80cd7511",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "7156ee5e-c7a2-4aeb-a40e-cdde80cd7511",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0169",
+      "prompt": "Ce proprietate vizionez la 17?",
+      "versions": {
+        "prompt": "jarvis-38",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "68",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T09:58:27.943Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "La 17:00 vizionezi **Apartament Titan**, în zona Titan.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_details",
+          "status": "success",
+          "latencyMs": 73,
+          "version": "68",
+          "argumentsHash": "fc212f3b31e3c62ec9123e315c30c535a3dd84ad0ec4bde2262314a4ea41b92c"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 23,
+          "version": "68",
+          "argumentsHash": "3158c4209e90585f090ddcde280a3dceb8cb3db404cbc15219ae4180b57424d8"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8734,
+            "outputTokens": 68,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 8731,
+            "estimated": false
+          },
+          "costUsd": 0.001125675,
+          "latencyMs": 2390,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8943,
+            "outputTokens": 94,
+            "cachedTokens": 8731,
+            "cacheWriteTokens": 209,
+            "estimated": false
+          },
+          "costUsd": 0.000160735,
+          "latencyMs": 2225,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9062,
+            "outputTokens": 34,
+            "cachedTokens": 8940,
+            "cacheWriteTokens": 119,
+            "estimated": false
+          },
+          "costUsd": 0.000121575,
+          "latencyMs": 1963,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001407985,
+      "confirmation": "La 17:00 vizionezi **Apartament Titan**, în zona Titan.",
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "0d8f1a14-ae92-4d00-a215-12de2049d876",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "0d8f1a14-ae92-4d00-a215-12de2049d876",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "0d8f1a14-ae92-4d00-a215-12de2049d876",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0170",
+      "prompt": "Care este numărul clientului de la vizionarea următoare?",
+      "versions": {
+        "prompt": "jarvis-38",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "68",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T09:58:34.828Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Numărul clientului de la următoarea vizionare este **0700000001**.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_details",
+          "status": "success",
+          "latencyMs": 38,
+          "version": "68",
+          "argumentsHash": "c2e3278557481b6fae33cf1952c1011610bbeaa68ba7187e62aa3be6144e6724"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 13,
+          "version": "68",
+          "argumentsHash": "aa5112a2a3f6721b467c70b533404bc04b4b26d54c670d9e02687366f20f4980"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8733,
+            "outputTokens": 63,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 8730,
+            "estimated": false
+          },
+          "costUsd": 0.00112305,
+          "latencyMs": 2247,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8936,
+            "outputTokens": 93,
+            "cachedTokens": 8730,
+            "cacheWriteTokens": 203,
+            "estimated": false
+          },
+          "costUsd": 0.000159475,
+          "latencyMs": 2470,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9054,
+            "outputTokens": 37,
+            "cachedTokens": 8933,
+            "cacheWriteTokens": 118,
+            "estimated": false
+          },
+          "costUsd": 0.00012288,
+          "latencyMs": 2036,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001405405,
+      "confirmation": "Numărul clientului de la următoarea vizionare este **0700000001**.",
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-09T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "43876517-8048-4caa-baf7-5c16756fd2dd",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-09T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-09T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "43876517-8048-4caa-baf7-5c16756fd2dd",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-09T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "43876517-8048-4caa-baf7-5c16756fd2dd",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    },
+    {
+      "scenarioId": "master-0171",
+      "prompt": "Care este numărul proprietarului proprietății vizionate?",
+      "versions": {
+        "prompt": "jarvis-38",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "68",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T09:58:41.808Z",
+      "context": [
+        {
+          "id": "viewing-selection",
+          "role": "assistant",
+          "text": "Vizionarea selectată este viewing-selected.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "viewings",
+              "title": "Vizionare selectată",
+              "rows": [
+                {
+                  "id": "viewing-selected",
+                  "contactId": "andrei",
+                  "contactName": "Nume vechi",
+                  "propertyId": "titan",
+                  "propertyTitle": "Titlu vechi",
+                  "viewingDate": "2026-10-08T14:00:00.000Z",
+                  "duration": 60,
+                  "status": "scheduled",
+                  "notes": "Acces pe intrarea principală.",
+                  "agentId": "23ed15eb-e5d5-4168-b9b7-da9fff07583c",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T09:58:41.808Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Numărul proprietarului este 0700000002.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_details",
+          "status": "success",
+          "latencyMs": 46,
+          "version": "68",
+          "argumentsHash": "30e21c5bcec75cb938832024a87d834efc80af60c76916d7807de0b69d448a4d"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "68",
+          "argumentsHash": "68dc6d696e53434f1370aaa21b73223ce9e28af826b575167b40068ad4344e04"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8806,
+            "outputTokens": 45,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 8803,
+            "estimated": false
+          },
+          "costUsd": 0.001123175,
+          "latencyMs": 3385,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 8987,
+            "outputTokens": 97,
+            "cachedTokens": 8803,
+            "cacheWriteTokens": 181,
+            "estimated": false
+          },
+          "costUsd": 0.000159455,
+          "latencyMs": 2566,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9109,
+            "outputTokens": 29,
+            "cachedTokens": 8984,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00011989,
+          "latencyMs": 1944,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00140252,
+      "confirmation": "Numărul proprietarului este 0700000002.",
+      "storedViewings": [
+        {
+          "id": "cancelled",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "cancelled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "23ed15eb-e5d5-4168-b9b7-da9fff07583c",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "colleague",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "other-agent",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "later",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T15:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "23ed15eb-e5d5-4168-b9b7-da9fff07583c",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "viewing-selected",
+          "contactId": "andrei",
+          "contactName": "Nume vechi",
+          "propertyId": "titan",
+          "propertyTitle": "Titlu vechi",
+          "viewingDate": "2026-10-08T14:00:00.000Z",
+          "duration": 60,
+          "status": "scheduled",
+          "notes": "Acces pe intrarea principală.",
+          "agentId": "23ed15eb-e5d5-4168-b9b7-da9fff07583c",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "verification": "Actual model response matches fresh CRM relationship data; no mutations."
+    }
+  ],
+  "regressions": {
+    "unitTestsPassed": 1855,
+    "unitFilesPassed": 147,
+    "emulatorTestsPassed": 264,
+    "emulatorFilesPassed": 18,
+    "previous16LiveScenariosRerun": false
+  }
+}

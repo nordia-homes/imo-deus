@@ -41,6 +41,7 @@ import { readResource } from '../access';
 import { executeSafePrefix } from '../autonomy';
 import { resolveDatetime } from '../datetime';
 import { viewingConfirmation } from '../execution-confirmation';
+import { viewingDetails } from '../viewing-details';
 import { currentRecordMessage } from '../current-record';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
@@ -56,6 +57,27 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('reads fresh viewing relationships, distinguishes phones, preserves ties and agency isolation', async () => {
+    const ctx = context(), foreign = context();
+    const root = db.collection('agencies').doc(ctx.agencyId);
+    const now = new Date('2026-10-08T10:00:00Z');
+    await root.collection('contacts').doc('buyer').set({ name: 'Actual buyer', phone: '0700000001' });
+    await root.collection('properties').doc('property').set({ title: 'Actual property', ownerPhone: '0700000002' });
+    const viewing = { contactId: 'buyer', contactName: 'Stale buyer', propertyId: 'property', propertyTitle: 'Stale property', viewingDate: '2026-10-08T14:00:00Z', agentId: ctx.uid, status: 'scheduled' };
+    await root.collection('viewings').doc('one').set(viewing);
+    const first = await viewingDetails(ctx, { mode: 'next' }, now);
+    expect(first.status).toBe('resolved');
+    expect(first.rows).toEqual([expect.objectContaining({ id: 'one', contactName: 'Actual buyer', propertyTitle: 'Actual property', contactPhone: '0700000001', ownerPhone: '0700000002' })]);
+    await root.collection('viewings').doc('two').set({ ...viewing, viewingDate: '2026-10-08T17:00:00+03:00' });
+    const tied = await viewingDetails(ctx, { mode: 'at_time', time: '17:00' }, now);
+    expect(tied.status).toBe('needs_clarification'); expect(tied.rows).toHaveLength(2);
+    expect(tied.rows.every(row => !('contactPhone' in row))).toBe(true);
+    await root.collection('contacts').doc('buyer').delete();
+    const missing = await viewingDetails(ctx, { mode: 'selected', viewingId: 'one' }, now);
+    expect(missing.rows[0]).toMatchObject({ contactName: null, contactPhone: null, ownerPhone: '0700000002' });
+    await db.collection('agencies').doc(foreign.agencyId).collection('viewings').doc('foreign-only').set(viewing);
+    await expect(viewingDetails(ctx, { mode: 'selected', viewingId: 'foreign-only' }, now)).rejects.toMatchObject({ status: 404 });
+  });
   it('resolves open-page references only inside the current agency and rejects removed records', async () => {
     const first = context(), second = context();
     const local = db.collection('agencies').doc(first.agencyId).collection('contacts').doc('same-id');

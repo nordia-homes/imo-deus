@@ -4,6 +4,16 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — identificarea vizionării și telefoanele asociate
+
+Scenariile originale **0168–0171** au trecut cu modelul real și date Firestore locale: cine vine la ora 17, ce proprietate se vizionează la ora 17, telefonul clientului următoarei vizionări și telefonul proprietarului vizionării selectate. Dovezi: [CALENDAR_EXECUTION_BATCH_05.json](evals/CALENDAR_EXECUTION_BATCH_05.json). Toate cele patru rulări au folosit `viewing_details` și `goal_coverage`, fără erori de instrument și fără mutații CRM. Datele includ nume denormalizate vechi, o programare ulterioară, o programare anulată și o programare a altui agent. Pentru 0171, selecția este furnizată explicit prin contextul conversației.
+
+Instrumentul selectează ora în Europe/Bucharest sau următorul instant real, apoi citește contactul și proprietatea asociate. Telefonul cumpărătorului și cel al proprietarului provin din câmpuri distincte. Egalitățile, inclusiv ora repetată la schimbarea orei, cer alegerea vizionării. O relație lipsă nu este înlocuită cu date vechi. Citirea este limitată la agenția curentă; scanarea are plafon de 5.000 înregistrări / 12 secunde între pagini și raportează explicit rezultatul parțial dacă nu poate încheia. Nu reprezintă încă o soluție pentru orice volum al agendei.
+
+Validare: **1.855 teste unitare** și **264 regresii Firestore** trecute; TypeScript, lint, verificarea interfeței și inventarele au trecut. Compilarea aplicației a trecut (227 pagini). Cele 16 scenarii live anterioare nu au fost rerulate în acest lot. Nu s-a publicat în producție.
+
+Total curent: **20 scenarii originale cu dovezi locale folosind modelul real**, **980 fără acest tip de dovadă**. Aceste probe nu certifică producția, interfața vocală sau toate variantele corpusului. Autorizarea implicită prin cererea agentului pentru operațiile CRM rămâne activă.
+
 ## Lot calendar următor — ștergere și note
 
 Scenariile originale **0166–0167** au dovezi locale cu model real în [CALENDAR_EXECUTION_BATCH_04.json](evals/CALENDAR_EXECUTION_BATCH_04.json). 0166 șterge vizionarea selectată, păstrează auditul și confirmă ștergerea din receipt; repetarea cererii nu produce un al doilea efect. 0167 folosește textul notei oferit explicit într-un mesaj anterior și adaugă numai acel text, atomic, fără înlocuirea notelor existente. Nu se inventează conținutul lipsă din cererea originală.
