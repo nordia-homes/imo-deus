@@ -1,3 +1,6 @@
+import { deferralBlocked } from './task-deferral';
+import { resolveDatetime } from './datetime';
+import { zonedParts } from './zoned-time';
 import { assertTaskEdit } from './task-edit';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { briefSettingsSchema, validateBriefSettings } from './daily-brief-contract';
@@ -490,7 +493,15 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);
       if (action.expectedUpdatedAt !== undefined && (oldTask.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Sarcina s-a modificat între timp. Reîncarcă datele înainte de salvare.', 409);
-      const {kind: _, taskId: __, expectedUpdatedAt: ___, ...inputPatch} = action;
+      if (action.deferNonUrgent) {
+        const [buyer, property, viewing] = await Promise.all([oldTask.contactId ? read('contacts', oldTask.contactId) : null, oldTask.propertyId ? read('properties', oldTask.propertyId) : null, oldTask.viewingId ? read('viewings', oldTask.viewingId) : null]);
+        const clock = new Date(now), blocked = deferralBlocked(oldTask, buyer, property, viewing, ctx.uid, clock);
+        if (blocked) throw new CommunicationError(blocked, 409);
+        const tomorrow = resolveDatetime({ dayOffset: 1, time: '12:00' }, clock).local.slice(0, 10);
+        const originalTime = oldTask.startTime || (oldTask.dueDate?.includes('T') ? zonedParts(new Date(oldTask.dueDate), 'Europe/Bucharest').time : undefined);
+        if (action.dueDate !== tomorrow || action.startTime !== originalTime || Object.keys(action).some(key => !['kind', 'taskId', 'expectedUpdatedAt', 'deferNonUrgent', 'dueDate', 'startTime'].includes(key))) throw new CommunicationError('Mutarea neurgentă trebuie să păstreze taskul și ora, schimbând numai scadența pentru mâine.', 409);
+      }
+      const {kind: _, taskId: __, expectedUpdatedAt: ___, deferNonUrgent: ____, ...inputPatch} = action;
       const patch = taskClockPatch(inputPatch);
       if (!Object.keys(patch).length) throw new CommunicationError('Precizează modificarea sarcinii.');
       const contact = action.contactId ? await read('contacts', action.contactId) : null;

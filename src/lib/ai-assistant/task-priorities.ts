@@ -51,7 +51,7 @@ export async function taskPriorities(ctx: AssistantContext, value: z.infer<typeo
     if (Date.now() - started >= 12000) return partial;
     const [contact, property, viewing] = await Promise.all([related('contacts', task.contactId), related('properties', task.propertyId), related('viewings', task.viewingId)]);
     const priority = taskPriority(task, contact, property, viewing, now);
-    ranked.push({ id: task.id, description: task.description || '', dueLocal: priority.dueDay || 'Dată invalidă/lipsă', contactId: contact?.id || null,
+    ranked.push({ hasViewing: Boolean(task.viewingId), sourceDueDate: task.dueDate, startTime: task.startTime || null, updatedAt: task.updatedAt || null, viewingDate: viewing?.viewingDate || null, id: task.id, description: task.description || '', dueLocal: priority.dueDay || 'Dată invalidă/lipsă', contactId: contact?.id || null,
       contactName: contact?.name || null, propertyTitle: property?.title || null, ...priority });
   }
   const results = ranked.filter(row => input.mode === 'commercial' || row.urgent).sort((a, b) =>

@@ -1,3 +1,4 @@
+import { taskDeferral } from './task-deferral';
 import { taskPriorities } from './task-priorities';
 import { taskAgenda } from './task-agenda';
 import { viewingFollowups } from './viewing-followups';
@@ -30,7 +31,10 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'task_priorities') {
+  if (name === 'task_deferral') {
+    data = await taskDeferral(ctx);
+    cards.push({ type: 'data', title: 'Taskuri eligibile pentru mâine', source: 'tasks', rows: data.rows, complete: data.complete });
+  } else if (name === 'task_priorities') {
     data = await taskPriorities(ctx, payload);
     cards.push({ type: 'data', title: 'Prioritățile taskurilor', source: 'tasks', rows: data.rows, complete: data.complete });
     for (const row of data.rows) if (row.contactId) refs.push({ resource: 'contacts', id: row.contactId });

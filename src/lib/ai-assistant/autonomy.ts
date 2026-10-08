@@ -76,7 +76,7 @@ export async function executeSafePrefix(ctx: AssistantContext, requestId: string
   const policy = await autonomyPolicy(ctx);
   try {
     for (const action of actions.slice(0, MAX_PLAN_ACTIONS)) {
-      if (!(requestAuthorizedCrmAction(action) || policy.enabled && results.length < 4 && safeAutonomousAction(action)) || !explicitlyRequestedSafeAction(action, prompt)) break;
+      if (!(requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action)) || !explicitlyRequestedSafeAction(action, prompt)) break;
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');
       const resolved = continuePlanRevision(resolveAction(action, results), results);

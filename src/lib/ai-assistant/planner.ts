@@ -140,7 +140,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             successfulReads.add(call.id);
             response.data = { ...response.data, evidenceCallId: call.id };
           }
-          if (name === 'viewing_followups') for (const row of (response.data.rows || []) as { suggestedTask?: { dueDate?: string } }[]) {
+          if (['viewing_followups', 'task_deferral'].includes(name)) for (const row of (response.data.rows || []) as { suggestedTask?: { dueDate?: string } }[]) {
             const date = row.suggestedTask?.dueDate;
             if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) verifiedDates.add(new Date(date).toISOString());
           }

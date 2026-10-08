@@ -37,10 +37,11 @@ const historyCases = ['master-0172', 'master-0173', 'master-0174', 'master-0175'
 const followupCases = ['master-0176', 'master-0177'];
 const agendaCases = ['master-0182', 'master-0183', 'master-0184'];
 const priorityCases = ['master-0185', 'master-0186'];
-const cases = [...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const deferralCases = ['master-0187'];
+const cases = [...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -51,6 +52,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
+    const isDeferral = deferralCases.includes(scenarioId);
     const isPriority = priorityCases.includes(scenarioId);
     const isAgenda = agendaCases.includes(scenarioId);
     const isFollowup = followupCases.includes(scenarioId);
@@ -127,6 +129,13 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
         await agency.collection('tasks').doc('completed').set({ description: 'Task finalizat', status: 'completed', agentId: id, dueDate: '2026-01-01' });
         await agency.collection('tasks').doc('colleague').set({ description: 'Task coleg', status: 'open', agentId: 'colleague', dueDate: '2026-01-01' });
       }
+      if (isDeferral) {
+        for (let i = 0; i < 5; i++) await agency.collection('tasks').doc(`move-${i}`).set({ id: `move-${i}`, description: `Task neurgent ${i}`, agentId: id, status: 'open', dueDate: resolveDatetime({ dayOffset: 3, time: '12:00' }).local.slice(0, 10), duration: 30, ...(i === 0 ? { startTime: '09:00' } : {}), updatedAt: '2026-01-01T00:00:00.000Z' });
+        await agency.collection('contacts').doc('high-priority').set({ name: 'Client prioritar', status: 'Nou', priority: 'Ridicată' });
+        await agency.collection('viewings').doc('today-viewing').set({ ...seedViewing, viewingDate: resolveDatetime({ dayOffset: 0, time: '17:00' }).iso });
+        for (const [key, extra] of Object.entries({ urgent: { contactId: 'high-priority' }, today: { dueDate: resolveDatetime({ dayOffset: 0, time: '12:00' }).local.slice(0, 10) }, already: { dueDate: date.local.slice(0, 10) }, linked: { viewingId: 'today-viewing', contactId: 'andrei', propertyId: 'titan' }, done: { status: 'completed' }, colleague: { agentId: 'other' } })) await agency.collection('tasks').doc(key).set({ id: key, description: `Păstrează ${key}`, agentId: id, status: 'open', dueDate: resolveDatetime({ dayOffset: 3, time: '12:00' }).local.slice(0, 10), ...extra });
+      }
+      const beforeDeferral = isDeferral ? (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       const beforePriorities = isPriority ? (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       const beforeAgenda = isAgenda ? (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       const beforeRead = isRead ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
@@ -143,6 +152,25 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isDeferral) {
+        expect(diagnostics).toEqual([]); expect(planned.actions).toHaveLength(5);
+        expect(planned.actions.every(action => action.kind === 'update_task' && action.deferNonUrgent)).toBe(true);
+        const execution = await executeSafePrefix(ctx, id, planned.actions, prompt);
+        report = { ...report, execution };
+        expect(execution.blocked).toBe(false); expect(execution.actions).toEqual([]); expect(execution.results).toHaveLength(5);
+        const saved = (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data());
+        for (const original of beforeDeferral) {
+          const row = saved.find(row => row.id === original.id)!;
+          if (original.id.startsWith('move-')) {
+            expect(row.dueDate).toBe(date.local.slice(0, 10)); expect(row.duration).toBe(original.duration); expect(row.startTime).toBe(original.startTime);
+            expect(row.description).toBe(original.description); expect(row.deferNonUrgent).toBeUndefined();
+          } else expect(row).toEqual(original);
+        }
+        expect((await executeSafePrefix(ctx, id, planned.actions, prompt)).results).toEqual(execution.results);
+        const confirmation = executionConfirmation(execution.results); expect(confirmation.match(/Task actualizat/g)).toHaveLength(5);
+        report = { ...report, executionVerified: true, confirmation, beforeTasks: beforeDeferral, storedTasks: saved };
+        return;
+      }
       if (isPriority) {
         expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
         const expected = scenarioId === 'master-0185' ? ['overdue', 'today', 'priority'] : ['accepted', 'pending', 'negotiation', 'viewing', 'priority', 'overdue', 'today', 'future'];

@@ -4,6 +4,18 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — mutarea taskurilor neurgente
+
+Scenariul original **0187**, «Mută taskurile neurgente pentru mâine», a trecut din prima cu model real și Firestore local (prompt jarvis-47 / tools 77). Executorul a mutat toate cele cinci taskuri eligibile, a păstrat ora și durata și a confirmat fiecare salvare. Cele șase taskuri excluse au rămas identice: urgent, scadent azi, deja pentru mâine, asociat unei vizionări de azi, finalizat și atribuit altui agent. Replay-ul nu produce efecte suplimentare. Dovezi: [CALENDAR_EXECUTION_BATCH_10.json](evals/CALENDAR_EXECUTION_BATCH_10.json).
+
+`task_deferral` pregătește toate mutările într-un singur plan. Politica opțională de execuție a taskurilor rămâne necesară și a fost activă în probă. Numai mutările marcate pentru această operațiune pot continua peste limita de patru taskuri, până la plafonul existent de 100 de acțiuni. Executorul recitește în tranzacție taskul și relațiile sale: verifică agentul, starea, revizia, urgența actuală și vizionarea asociată, apoi permite exclusiv scadența de mâine, cu aceeași oră. Marcajul de verificare nu este persistat în task. Proba concurentă confirmă că schimbarea priorității clientului sau mutarea vizionării pentru azi împiedică salvarea unui plan devenit invalid.
+
+Urgența folosește regula explicită din lotul anterior: scadență azi/depășită sau client activ cu prioritate Ridicată. Protecția vizionărilor folosește legătura explicită `viewingId`. Datele/relațiile lipsă ori invalide și orele ambigue la schimbarea orei sunt excluse. Instrumentul cere un clasament complet: peste 100 de rezultate, sau la atingerea plafonului de scanare de 5.000 documente/12 secunde, returnează parțial și nu propune mutări. Aceste limite nu sunt prezentate drept execuție integrală. Protecția cerută de 0188 este implementată, dar comanda originală 0188 nu primește certificare live în acest lot.
+
+Validare: **1.868 teste unitare**, **269 regresii Firestore**, **o comandă originală cu model real**; verificările țintite au fost repetate după întărirea tratării datei invalide. Lint, TypeScript, inventarele și compilarea aplicației (227 pagini) au trecut.
+
+Total curent: **32 de scenarii originale cu dovezi locale folosind modelul real**, **968 fără această dovadă**. Cele 31 de scenarii live anterioare nu au fost rerulate. Nu este certificare integrală, în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — urgență și impact comercial
 
 Scenariile originale **0185–0186** au trecut cu model real și Firestore local, fără erori de instrument (prompt jarvis-46 / tools 76). Dovezi: [CALENDAR_EXECUTION_BATCH_09.json](evals/CALENDAR_EXECUTION_BATCH_09.json). 0185 returnează cele trei taskuri urgente din fixture; 0186 ordonează toate cele opt taskuri deschise proprii și explică motivele. Înregistrările CRM rămân neschimbate: Task nu are câmp de prioritate, iar aceste două cereri produc recomandări ordonate, nu mutații ale unui câmp inventat.

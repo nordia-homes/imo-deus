@@ -1,3 +1,4 @@
+import { taskDeferral } from '../task-deferral';
 import { taskPriorities } from '../task-priorities';
 import { taskAgenda } from '../task-agenda';
 import { viewingFollowups } from '../viewing-followups';
@@ -61,6 +62,29 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('rechecks client urgency and today-viewing protection when executing a prepared move', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });
+    try {
+      await root.collection('contacts').doc('c').set({ name: 'Client', status: 'Nou', priority: 'Medie' });
+      await root.collection('properties').doc('p').set({ title: 'Property', status: 'Activ' });
+      await root.collection('viewings').doc('v').set({ status: 'scheduled', contactId: 'c', propertyId: 'p', viewingDate: resolveDatetime({ dayOffset: 2, time: '17:00' }).iso });
+      const original = { description: 'Task', agentId: ctx.uid, status: 'open', dueDate: resolveDatetime({ dayOffset: 3, time: '12:00' }).local.slice(0, 10), contactId: 'c', propertyId: 'p', viewingId: 'v' };
+      await root.collection('tasks').doc('t').set(original);
+      const plan = await taskDeferral(ctx); expect(plan.rows).toHaveLength(1);
+      const action = plan.rows[0].suggestedTask;
+      await root.collection('contacts').doc('c').update({ priority: 'Ridicată' });
+      await expect(executeAction(ctx, action, 'priority-changed')).rejects.toMatchObject({ status: 409 });
+      await root.collection('contacts').doc('c').update({ priority: 'Medie' });
+      await root.collection('viewings').doc('v').update({ viewingDate: resolveDatetime({ dayOffset: 0, time: '17:00' }).iso });
+      await expect(executeAction(ctx, action, 'viewing-today')).rejects.toMatchObject({ status: 409 });
+      expect((await root.collection('tasks').doc('t').get()).data()).toEqual(original);
+      await root.collection('viewings').doc('v').update({ viewingDate: resolveDatetime({ dayOffset: 2, time: '17:00' }).iso });
+      const result = await executeAction(ctx, action, 'eligible-move');
+      expect(result.dueDate).toBe(resolveDatetime({ dayOffset: 1, time: '12:00' }).local.slice(0, 10));
+      expect((await root.collection('tasks').doc('t').get()).data()?.deferNonUrgent).toBeUndefined();
+    } finally { await profile.delete(); }
+  }, 20000);
   it('ranks all tasks before pagination and reads fresh CRM priority evidence', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), now = new Date('2026-10-08T10:00:00Z');
     await root.collection('contacts').doc('high').set({ name: 'Actual client', status: 'Nou', priority: 'Ridicată' });

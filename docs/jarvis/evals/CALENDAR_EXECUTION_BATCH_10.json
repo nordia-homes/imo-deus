@@ -1,0 +1,461 @@
+{
+  "scope": "Original scenario 0187. Actual model plus isolated Firestore; five tasks moved and six exclusions preserved, with optional task execution policy active. Not production certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0187",
+      "prompt": "Mută taskurile neurgente pentru mâine.",
+      "versions": {
+        "prompt": "jarvis-47",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "77",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:16:34.157Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 5 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "update_task",
+          "deferNonUrgent": true,
+          "startTime": "09:00",
+          "taskId": "move-0",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "kind": "update_task",
+          "deferNonUrgent": true,
+          "taskId": "move-1",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "kind": "update_task",
+          "deferNonUrgent": true,
+          "taskId": "move-2",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "kind": "update_task",
+          "deferNonUrgent": true,
+          "taskId": "move-3",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "kind": "update_task",
+          "deferNonUrgent": true,
+          "taskId": "move-4",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z",
+          "dueDate": "2026-10-09"
+        }
+      ],
+      "tools": [
+        {
+          "name": "task_deferral",
+          "status": "success",
+          "latencyMs": 912,
+          "version": "77",
+          "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 73,
+          "version": "77",
+          "argumentsHash": "96fef71e2321d67b612085d4dba756c825dc7b4166083dc6a70b49ed0a2b0e74"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 11,
+          "version": "77",
+          "argumentsHash": "98ab72c8887366009e78d7a5df324bcb45458d3870f7bf641f6051b0981d7321"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10236,
+            "outputTokens": 15,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10233,
+            "estimated": false
+          },
+          "costUsd": 0.001286925,
+          "latencyMs": 2762,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10773,
+            "outputTokens": 290,
+            "cachedTokens": 10233,
+            "cacheWriteTokens": 537,
+            "estimated": false
+          },
+          "costUsd": 0.000314755,
+          "latencyMs": 4024,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11098,
+            "outputTokens": 195,
+            "cachedTokens": 10770,
+            "cacheWriteTokens": 325,
+            "estimated": false
+          },
+          "costUsd": 0.000246125,
+          "latencyMs": 3625,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11318,
+            "outputTokens": 94,
+            "cachedTokens": 11095,
+            "cacheWriteTokens": 220,
+            "estimated": false
+          },
+          "costUsd": 0.00018575,
+          "latencyMs": 2859,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.002033555,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "update_task",
+            "result": {
+              "taskId": "move-0",
+              "link": "/tasks",
+              "description": "Task neurgent 0",
+              "status": "open",
+              "dueDate": "2026-10-09",
+              "startTime": "09:00",
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "move-0",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T11:16:51.054Z"
+              }
+            }
+          },
+          {
+            "step": 2,
+            "kind": "update_task",
+            "result": {
+              "taskId": "move-1",
+              "link": "/tasks",
+              "description": "Task neurgent 1",
+              "status": "open",
+              "dueDate": "2026-10-09",
+              "startTime": null,
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "move-1",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T11:16:51.241Z"
+              }
+            }
+          },
+          {
+            "step": 3,
+            "kind": "update_task",
+            "result": {
+              "taskId": "move-2",
+              "link": "/tasks",
+              "description": "Task neurgent 2",
+              "status": "open",
+              "dueDate": "2026-10-09",
+              "startTime": null,
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "move-2",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T11:16:51.335Z"
+              }
+            }
+          },
+          {
+            "step": 4,
+            "kind": "update_task",
+            "result": {
+              "taskId": "move-3",
+              "link": "/tasks",
+              "description": "Task neurgent 3",
+              "status": "open",
+              "dueDate": "2026-10-09",
+              "startTime": null,
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "move-3",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T11:16:51.414Z"
+              }
+            }
+          },
+          {
+            "step": 5,
+            "kind": "update_task",
+            "result": {
+              "taskId": "move-4",
+              "link": "/tasks",
+              "description": "Task neurgent 4",
+              "status": "open",
+              "dueDate": "2026-10-09",
+              "startTime": null,
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "move-4",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T11:16:51.478Z"
+              }
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task actualizat: „Task neurgent 0”. Data: 2026-10-09, 09:00, ora Bucureștiului. ID: move-0.\nTask actualizat: „Task neurgent 1”. Data: 2026-10-09. ID: move-1.\nTask actualizat: „Task neurgent 2”. Data: 2026-10-09. ID: move-2.\nTask actualizat: „Task neurgent 3”. Data: 2026-10-09. ID: move-3.\nTask actualizat: „Task neurgent 4”. Data: 2026-10-09. ID: move-4.",
+      "beforeTasks": [
+        {
+          "id": "already",
+          "description": "Păstrează already",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "colleague",
+          "description": "Păstrează colleague",
+          "agentId": "other",
+          "status": "open",
+          "dueDate": "2026-10-11"
+        },
+        {
+          "id": "done",
+          "description": "Păstrează done",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "completed",
+          "dueDate": "2026-10-11"
+        },
+        {
+          "id": "linked",
+          "description": "Păstrează linked",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "viewingId": "today-viewing",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "id": "move-0",
+          "description": "Task neurgent 0",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "duration": 30,
+          "startTime": "09:00",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "move-1",
+          "description": "Task neurgent 1",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "duration": 30,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "move-2",
+          "description": "Task neurgent 2",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "duration": 30,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "move-3",
+          "description": "Task neurgent 3",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "duration": 30,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "move-4",
+          "description": "Task neurgent 4",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "duration": 30,
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        },
+        {
+          "id": "today",
+          "description": "Păstrează today",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-08"
+        },
+        {
+          "id": "urgent",
+          "description": "Păstrează urgent",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "contactId": "high-priority"
+        }
+      ],
+      "storedTasks": [
+        {
+          "id": "already",
+          "description": "Păstrează already",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "id": "colleague",
+          "description": "Păstrează colleague",
+          "agentId": "other",
+          "status": "open",
+          "dueDate": "2026-10-11"
+        },
+        {
+          "id": "done",
+          "description": "Păstrează done",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "completed",
+          "dueDate": "2026-10-11"
+        },
+        {
+          "id": "linked",
+          "description": "Păstrează linked",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "viewingId": "today-viewing",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "id": "move-0",
+          "description": "Task neurgent 0",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "duration": 30,
+          "startTime": "09:00",
+          "dueDate": "2026-10-09",
+          "updatedAt": "2026-10-08T11:16:51.054Z"
+        },
+        {
+          "id": "move-1",
+          "description": "Task neurgent 1",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "duration": 30,
+          "dueDate": "2026-10-09",
+          "updatedAt": "2026-10-08T11:16:51.241Z"
+        },
+        {
+          "id": "move-2",
+          "description": "Task neurgent 2",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "duration": 30,
+          "dueDate": "2026-10-09",
+          "updatedAt": "2026-10-08T11:16:51.335Z"
+        },
+        {
+          "id": "move-3",
+          "description": "Task neurgent 3",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "duration": 30,
+          "dueDate": "2026-10-09",
+          "updatedAt": "2026-10-08T11:16:51.414Z"
+        },
+        {
+          "id": "move-4",
+          "description": "Task neurgent 4",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "duration": 30,
+          "dueDate": "2026-10-09",
+          "updatedAt": "2026-10-08T11:16:51.478Z"
+        },
+        {
+          "id": "today",
+          "description": "Păstrează today",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-08"
+        },
+        {
+          "id": "urgent",
+          "description": "Păstrează urgent",
+          "agentId": "49174b72-9a6b-465f-a4ef-7bdbf3e08226",
+          "status": "open",
+          "dueDate": "2026-10-11",
+          "contactId": "high-priority"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "unitTests": 1868,
+    "unitFiles": 152,
+    "emulatorRegressions": 269,
+    "emulatorFiles": 18,
+    "liveScenarios": 1,
+    "previous31LiveScenariosRerun": false
+  }
+}

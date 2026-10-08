@@ -1494,7 +1494,11 @@
           "sourceNumber": 187,
           "request": "Mută taskurile neurgente pentru mâine.",
           "requestSha256": "86b6088e6723c7b75bc1e72f36b56ae0cf9b9b332e89e32f5bcfcc94c81a4429",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_10.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0188",

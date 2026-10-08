@@ -30,6 +30,7 @@ if (process.argv.includes('--corpus-calendar-live')) {
   process.env.JARVIS_CORPUS_LIVE = 'true';
   const selected = process.argv.find(arg => /^--case=master-\d{4}$/.test(arg));
   if (selected) process.env.JARVIS_CORPUS_CASE = selected.slice(7);
+  if (process.argv.includes('--batch=task-deferral')) process.env.JARVIS_CORPUS_BATCH = 'task-deferral';
   if (process.argv.includes('--batch=task-priorities')) process.env.JARVIS_CORPUS_BATCH = 'task-priorities';
   if (process.argv.includes('--batch=task-agenda')) process.env.JARVIS_CORPUS_BATCH = 'task-agenda';
   if (process.argv.includes('--batch=viewing-followups')) process.env.JARVIS_CORPUS_BATCH = 'viewing-followups';
