@@ -1,8 +1,9 @@
 // Both modalities enter the EXISTING authenticated workspace command endpoint.
+import type { CurrentRecord } from '@/lib/ai-assistant/current-record-contract';
 export type JarvisApi = (path: string, body?: unknown) => Promise<any>;
 export async function existingJarvisCommand(
   api: JarvisApi,
-  input: { sessionId: string; requestId: string; prompt: string },
+  input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null },
   background: boolean,
   progress?: (text: string) => void,
 ) {

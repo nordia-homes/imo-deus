@@ -10,15 +10,18 @@
     "real browser PCM playback renders non-silent sound across odd chunk boundaries",
     "desktop shortcut opens voice without transcript/composer",
     "existing core returns cards and concise speech",
+    "voice command carries the currently open client reference",
     "local barge-in stops buffered audio and approval is required",
+    "navigation replaces the previous client reference with the current property",
     "voice shows server-verified results for each requirement",
     "spoken approval uses existing execute and shared session",
+    "list pages do not retain a stale detail selection",
     "same explicit WhatsApp consent form in voice",
     "mobile launcher above navigation and safe-area; Esc releases microphone",
     "layered rig renders with blue body and preserved independent eye/mouth nodes"
   ],
   "syntheticAudio": true,
-  "animationFps": 51.0204081644704,
+  "animationFps": 59.37067089068203,
   "bargeInGateMs": 120,
   "limitations": [
     "Headless Chromium with mocked microphone/output; real device echo cancellation requires manual acceptance."

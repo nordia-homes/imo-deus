@@ -14,12 +14,13 @@ import { automationReadiness } from '@/lib/ai-assistant/readiness';
 import { enqueueTurn, enqueuePlan, readJob, drainAgentJobs } from '@/lib/ai-assistant/jobs';
 import { autonomyPolicy, setAutonomy } from '@/lib/ai-assistant/autonomy';
 import { timelineSchema, readTimeline } from '@/lib/ai-assistant/timeline';
+import { currentRecordSchema } from '@/lib/ai-assistant/current-record-contract';
 
 export const runtime = 'nodejs';
 export const maxDuration = 180;
 const schema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('chat'), sessionId: z.string().uuid(), requestId: z.string().uuid(), prompt: z.string().trim().min(1).max(6000) }).strict(),
-  z.object({ kind: z.literal('start'), sessionId: z.string().uuid(), requestId: z.string().uuid(), prompt: z.string().trim().min(1).max(6000) }).strict(),
+  z.object({ kind: z.literal('chat'), sessionId: z.string().uuid(), requestId: z.string().uuid(), prompt: z.string().trim().min(1).max(6000), currentRecord: currentRecordSchema.nullable().optional() }).strict(),
+  z.object({ kind: z.literal('start'), sessionId: z.string().uuid(), requestId: z.string().uuid(), prompt: z.string().trim().min(1).max(6000), currentRecord: currentRecordSchema.nullable().optional() }).strict(),
   z.object({ kind: z.literal('search'), query: searchSchema, sessionId: z.string().uuid().optional(), requestId: z.string().uuid().optional() }).strict(),
   z.object({ kind: z.literal('prepare'), sessionId: z.string().uuid(), requestId: z.string().uuid(), actions: z.array(actionSchema).min(1).max(MAX_PLAN_ACTIONS) }).strict(),
   z.object({ kind: z.literal('read'), query: readSchema }).strict(),

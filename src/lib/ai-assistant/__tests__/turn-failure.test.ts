@@ -2,10 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../planner', () => ({ planTurn: vi.fn() }));
 vi.mock('../actions', () => ({ executeAction: vi.fn() }));
 vi.mock('../operations', () => ({ operations: {}, isReadOperation: vi.fn() }));
-vi.mock('../access', () => ({ collectionFor: (ctx: any, resource: string) => ctx.adminDb.collection(`agencies/${ctx.agencyId}/${resource}`), referencesAllowed: vi.fn(async () => true), actionReferences: () => [] }));
+vi.mock('../access', () => ({ getResource: vi.fn(), collectionFor: (ctx: any, resource: string) => ctx.adminDb.collection(`agencies/${ctx.agencyId}/${resource}`), referencesAllowed: vi.fn(async () => true), actionReferences: () => [] }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 import { chatTurn } from '../workspace';
 import { planTurn } from '../planner';
+import { getResource } from '../access';
 import { failureCategory } from '../failure';
 import { saveWorkerTurnFailure } from '../worker-failure';
 function fixture() {
@@ -22,6 +23,14 @@ function fixture() {
 }
 afterEach(() => vi.restoreAllMocks());
 describe('durable visible turn failures', () => {
+  it('passes the authorized current page to planning and preserves its provenance in history', async () => {
+    const { ctx, rows } = fixture();
+    vi.mocked(getResource).mockResolvedValueOnce({ id: 'andrei', name: 'Andrei' });
+    vi.mocked(planTurn).mockResolvedValueOnce({ text: 'Citire confirmată.', cards: [], actions: [], accessRefs: [{ resource: 'contacts', id: 'andrei' }], metrics: { status: 'success', elapsedMs: 0, tools: [], models: [] } });
+    await chatTurn(ctx, { sessionId: 's', requestId: 'r', prompt: 'Clientul deschis acum.', currentRecord: { resource: 'contacts', id: 'andrei' } });
+    expect(planTurn).toHaveBeenCalledWith(ctx, 'Clientul deschis acum.', expect.arrayContaining([expect.objectContaining({ id: 'current-page-context', accessRefs: [{ resource: 'contacts', id: 'andrei' }] })]), expect.anything());
+    expect(rows.get('agencies/a/assistantSessions/s/messages/r-user')).toMatchObject({ text: 'Clientul deschis acum.', cards: [{ source: 'contacts', rows: [{ id: 'andrei', name: 'Andrei' }] }], accessRefs: [{ resource: 'contacts', id: 'andrei' }] });
+  });
   const workerInput = { sessionId: 's', requestId: 'r', prompt: 'Cerere' };
   const workerJob = { ...workerInput, userId: 'u', agencyId: 'a', role: 'agent', jobType: 'turn', status: 'running', claimId: 'claim' };
   it('publishes an early worker failure without clearing another active conversation lock', async () => {

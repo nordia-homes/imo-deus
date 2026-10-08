@@ -42,6 +42,7 @@ import {
   voiceTimestamp,
 } from "@/lib/jarvis-voice/session";
 import { existingJarvisCommand } from "@/lib/jarvis-voice/command";
+import { currentRecordFromPath } from '@/lib/ai-assistant/current-record-contract';
 import { VoiceAudio } from "@/lib/jarvis-voice/audio";
 import {
   presentVoice,
@@ -351,6 +352,7 @@ export function JarvisVoice() {
   }
 
   function command(prompt: string, epoch = audio.current?.epoch || 0) {
+    const currentRecord = currentRecordFromPath(window.location.pathname);
     const active = voiceSession.current,
       approvalId = pendingPlan.current?.id;
     queue.current = queue.current
@@ -388,6 +390,7 @@ export function JarvisVoice() {
             {
               sessionId: session.current,
               requestId: crypto.randomUUID(),
+              currentRecord: currentRecord || null,
               prompt: prompt + (uploadedFiles.current.length ? '\nFișiere încărcate privat: ' + JSON.stringify(uploadedFiles.current) : ''),
             },
             background.current,

@@ -519,6 +519,7 @@ try {
   assert.equal(await dialog.getByRole('button', { name: 'Atașează fișier' }).count(), 1);
   checks.push("desktop shortcut opens voice without transcript/composer");
   await page.screenshot({ path: path.join(output, "listening.png") });
+  await page.evaluate(() => history.replaceState({}, '', '/leads/open-client'));
   await page.evaluate(() => window.injectSpeech());
   await page
     .getByRole("heading", { name: "Agenda de mâine", exact: true })
@@ -531,6 +532,9 @@ try {
     ),
   );
   checks.push("existing core returns cards and concise speech");
+  assert.deepEqual(requests.filter(r => r.body?.kind === 'chat').at(-1).body.currentRecord, { resource: 'contacts', id: 'open-client' });
+  checks.push('voice command carries the currently open client reference');
+  await page.evaluate(() => history.replaceState({}, '', '/properties/open-property'));
   utterance = "Programează o vizionare.";
   mode = "plan";
   audioSeconds = 0.2;
@@ -543,6 +547,8 @@ try {
   assert(await page.evaluate(() => window.stoppedSources > 0));
   assert.equal(requests.filter((r) => r.body?.kind === "execute").length, 0);
   checks.push("local barge-in stops buffered audio and approval is required");
+  assert.deepEqual(requests.filter(r => r.body?.kind === 'chat').at(-1).body.currentRecord, { resource: 'properties', id: 'open-property' });
+  checks.push('navigation replaces the previous client reference with the current property');
   await page.screenshot({ path: path.join(output, "confirmation.png") });
   utterance = "Da.";
   await page.evaluate(() => window.injectSpeech());
@@ -567,10 +573,13 @@ try {
     .click();
   mode = "owner";
   utterance = "Dă-mi 5 apartamente în Titan.";
+  await page.evaluate(() => history.replaceState({}, '', '/leads'));
   await page.evaluate(() => window.injectSpeech());
   await page
     .getByRole("heading", { name: "Apartament Titan", exact: true })
     .waitFor();
+  assert.equal(requests.filter(r => r.body?.kind === 'chat').at(-1).body.currentRecord, null);
+  checks.push('list pages do not retain a stale detail selection');
   const propertyRow = dialog
     .locator('section[data-source="owners"] article')
     .first();

@@ -47,6 +47,26 @@ Acesta este un exemplu suplimentar al utilizatorului, nu 1.000/1.000 și nici ac
 
 ## Verificări curente
 
+### Lot calendar contextual — 0155, 0158, 0159
+
+[Dovada lotului contextual](evals/CALENDAR_EXECUTION_BATCH_02.json) păstrează trei comenzi originale, contextul necesar, apelurile modelului și înregistrările recitite. Ultima rulare: **3/3**, fără apeluri de instrument eșuate, cost estimat 0,005578045 USD. Vizionările au fost salvate și confirmate; repetarea aceleiași comenzi păstrează rezultatele fără duplicate. Prima încercare este inclusă: 0158 pregătea acțiunea, dar consuma bugetul înaintea verificării acoperirii. Instrucțiunile disting acum contractul unei acțiuni native de descoperirea handler-elor externe și evită căutările redundante pentru o referință cunoscută.
+
+Implementări de produs, prompt 34 / unelte 61:
+
+- `resolve_datetime` acceptă `weekday` pentru zile numite și calculează următoarea apariție la ora cerută în Europe/Bucharest. Dacă ora de azi a trecut, folosește săptămâna următoare. Păstrează verificarea ambiguității și a orelor inexistente la schimbarea orei de vară; `date`, `dayOffset` și `weekday` se exclud reciproc.
+- Panoul Jarvis preia referința din pagina `/leads/:id` sau `/properties/:id` la trimiterea comenzii, atât prin voce cât și prin câmpul său text. API-ul acceptă numai resursa și ID-ul, iar serverul citește înregistrarea din agenția autentificată. Valorile și numele nu sunt preluate din browser. Referința este păstrată prin coadă și verificată din nou la execuția workerului.
+- La navigarea pe o pagină fără înregistrare deschisă, panoul trimite explicit absența selecției. Plannerul nu trebuie să substituie o pagină vizitată anterior. Contextul autorizat și referințele de acces sunt păstrate în istoricul conversației. Selecțiile din tabele/modale care nu modifică URL-ul nu sunt acoperite de acest mecanism.
+
+0155 folosește proprietatea selectată din conversație; 0158 folosește proprietatea și clientul selectați; 0159 folosește proprietatea și ora stabilite anterior, iar clientul curent trece prin resolverul de pagină și citirea Firestore. Aceste contexte sunt explicit documentate, nu informații inventate pentru cereri incomplete.
+
+Verificare separată în browser: cererea conține clientul deschis, navigarea înlocuiește referința cu proprietatea curentă, iar revenirea în listă elimină selecția. Suita UI utilizează microfon și răspunsuri API simulate; nu reprezintă acceptanță vocală pe dispozitiv real. Modelul real și executorul sunt verificați în proba locală, iar transportul API/worker/istoric în regresii distincte. Nu revendicăm un singur test integrat browser → model → workspace → producție.
+
+Regresia generală cu modulul Voice: 1819/1819 în 144 fișiere; Firestore/Storage: 261/261 în 18 fișiere. Browser: 18 verificări, inclusiv cele trei verificări noi de context. Buildul a trecut cu 227 pagini; verificarea TypeScript inclusiv fișierele de test și ESLint pentru fișierele schimbate au trecut. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone.
+
+Rularea comună finală cu modelul real a trecut **8/8**, zero apeluri de instrument eșuate, cost estimat 0,015195455 USD. Dovezile acestei reluări pe prompt 34/unelte 61 sunt păstrate în `combinedRegression` din raportul lotului 02; probele anterioare nu au fost înlocuite.
+
+Inventarul are acum **8 ID-uri originale cu dovezi de execuție locală**, nu acceptanță integrală a 1.000 de scenarii. Mai sunt 992 fără această probă, precum și variantele de formulare/context/voce și acceptanța în producție pentru cele opt. Nu s-a publicat în producție.
+
 ### Lot calendar — execuție practică pentru cinci scenarii originale (08.10.2026)
 
 [Dovada completă](evals/CALENDAR_EXECUTION_BATCH_01.json) leagă comenzile originale 0156, 0178, 0179, 0180 și 0181 de apelurile modelului real, acțiunile executorului CRM, documentele recitite și confirmările generate din tranzacții. Ultima rulare: **5/5**, zero apeluri de instrument eșuate, cost model estimat total 0,008527335 USD. Repetarea aceleiași comenzi produce aceleași rezultate fără documente suplimentare. Contextul pentru „taskul acesta” este furnizat explicit; prompturile originale nu sunt rescrise.

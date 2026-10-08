@@ -21,6 +21,13 @@ function database(initial: Record<string, any> = {}) {
 const input = { sessionId: 'session', requestId: 'request', prompt: 'Read authorized data' };
 afterEach(() => vi.clearAllMocks());
 describe('durable tenant-scoped jobs', () => {
+  it.each([{ resource: 'contacts' as const, id: 'andrei' }, null])('preserves the submitted page context through queue and worker: %j', async currentRecord => {
+    const { ctx, db, rows } = database();
+    await enqueueTurn(ctx, { ...input, currentRecord });
+    expect(rows.get('assistantAgentJobs/request').currentRecord).toEqual(currentRecord);
+    await drainAgentJobs(db as any);
+    expect(chatTurn).toHaveBeenCalledWith(expect.objectContaining({ agencyId: 'a', uid: 'u' }), expect.objectContaining({ ...input, currentRecord }), expect.any(Function));
+  });
   function approvedPlan(status: string) {
     const actions = [{ kind: 'create_task' as const, description: 'Follow-up', dueDate: '2030-01-01T10:00:00Z' }];
     return { status, actions, sessionId: 'session', approval: approvalEnvelope('u', 'a', 'plan', actions, Date.now() + 60000) };

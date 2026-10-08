@@ -14,6 +14,8 @@ import { VERSIONS } from './models';
 import { sessionSummary } from './context';
 import { executeSafePrefix } from './autonomy';
 import { executionConfirmation } from './execution-confirmation';
+import { currentRecordMessage } from './current-record';
+import type { CurrentRecord } from './current-record-contract';
 import { actionRisk } from './registry';
 import { OperationFailure } from './operation-error';
 import { MAX_PLAN_ACTIONS, PLAN_EXECUTION_MS } from './plan-limits';
@@ -54,11 +56,12 @@ export async function sessionHistory(ctx: AssistantContext, sessionId: string, b
   }));
   return { messages: messages.reverse(), nextCursor: docs.size === 40 ? docs.docs.at(-1)!.id : null };
 }
-export async function chatTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string }, progress?: (event: AgentEvent) => void | Promise<void>) {
+export async function chatTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null }, progress?: (event: AgentEvent) => void | Promise<void>) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(input.sessionId);
   const reply = ref.collection('messages').doc(`${input.requestId}-assistant`);
   const prior = await reply.get();
   if (prior.exists) { await requireSession(ctx, input.sessionId); if (!(await referencesAllowed(ctx, prior.data()?.accessRefs))) throw new CommunicationError('Accesul la resursele răspunsului a fost revocat.', 403); return { message: { ...prior.data(), id: prior.id } as AssistantMessage }; }
+  const pageContext = input.currentRecord !== undefined ? await currentRecordMessage(ctx, input.currentRecord) : undefined;
   const now = new Date().toISOString();
   const actorLock = collectionFor(ctx, 'assistantLocks').doc(`chat-${ctx.uid}`);
   await ctx.adminDb.runTransaction(async tx => {
@@ -69,12 +72,13 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     tx.set(actorLock, { busyUntil: Date.now() + 180000, turnId: input.requestId });
     if (!snap.exists) tx.create(ref, { ownerId: ctx.uid, title: input.prompt.slice(0, 100), createdAt: now, updatedAt: now, busyUntil: Date.now() + 180000, turnId: input.requestId });
     else tx.update(ref, { busyUntil: Date.now() + 180000, turnId: input.requestId });
-    tx.set(ref.collection('messages').doc(`${input.requestId}-user`), { role: 'user', text: input.prompt, createdAt: now });
+    tx.set(ref.collection('messages').doc(`${input.requestId}-user`), { role: 'user', text: input.prompt, createdAt: now, ...(pageContext ? { cards: pageContext.cards, ...(pageContext.accessRefs ? { accessRefs: pageContext.accessRefs } : {}) } : {}) });
   });
   let turnMetrics: TurnMetrics | undefined;
   const started = Date.now();
   try {
     const history = (await sessionHistory(ctx, input.sessionId)).messages.filter(m => m.id !== `${input.requestId}-user`);
+    if (pageContext) history.push(pageContext);
     const session = await ref.get();
     const result = await planTurn(ctx, input.prompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;

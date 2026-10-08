@@ -1146,7 +1146,11 @@
           "sourceNumber": 155,
           "request": "Programează o vizionare cu Andrei mâine la ora 17.",
           "requestSha256": "8fec169e1a8b734f3cec67ccc30d9cd9ccaa98ab1c6ea2090cb20c4ed057115c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0156",
@@ -1171,14 +1175,22 @@
           "sourceNumber": 158,
           "request": "Programează o vizionare vineri la ora 10.",
           "requestSha256": "83a9f521d7e18263748a138fd0a00d1762373f7ba204c0debb0c27c9cca37500",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0159",
           "sourceNumber": 159,
           "request": "Programează vizionarea pentru clientul pe care îl am deschis acum.",
           "requestSha256": "99acd2d5cef4616bdec53f732fff93da3b03df0343bb72f96abb2046d9e4423e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0160",

@@ -41,6 +41,7 @@ import { readResource } from '../access';
 import { executeSafePrefix } from '../autonomy';
 import { resolveDatetime } from '../datetime';
 import { viewingConfirmation } from '../execution-confirmation';
+import { currentRecordMessage } from '../current-record';
 
 const host = process.env.FIRESTORE_EMULATOR_HOST;
 describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', () => {
@@ -55,6 +56,17 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('resolves open-page references only inside the current agency and rejects removed records', async () => {
+    const first = context(), second = context();
+    const local = db.collection('agencies').doc(first.agencyId).collection('contacts').doc('same-id');
+    await local.set({ name: 'Local contact', status: 'Nou' });
+    await db.collection('agencies').doc(second.agencyId).collection('contacts').doc('same-id').set({ name: 'Other agency' });
+    await db.collection('agencies').doc(second.agencyId).collection('properties').doc('foreign-only').set({ title: 'Foreign property' });
+    expect((await currentRecordMessage(first, { resource: 'contacts', id: 'same-id' })).cards?.[0].rows).toEqual([{ id: 'same-id', name: 'Local contact', status: 'Nou' }]);
+    await expect(currentRecordMessage(first, { resource: 'properties', id: 'foreign-only' })).rejects.toThrow('nu există');
+    await local.delete();
+    await expect(currentRecordMessage(first, { resource: 'contacts', id: 'same-id' })).rejects.toThrow('nu există');
+  });
   it('finds the Romanian title, creates Matei Alin and commits tomorrow at 07:30 before confirming', async () => {
     const ctx = context(), agency = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent emulator' });

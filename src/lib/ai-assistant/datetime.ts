@@ -5,6 +5,15 @@ export function resolveDatetime(input: z.infer<typeof datetimeSchema>, now = new
   input = datetimeSchema.parse(input);
   const timezone = 'Europe/Bucharest';
   const today = zonedParts(now, timezone).date;
-  const date = input.date || new Date(Date.parse(today + 'T00:00:00Z') + Number(input.dayOffset) * 86400000).toISOString().slice(0, 10);
+  const midnight = Date.parse(today + 'T00:00:00Z');
+  let offset = input.dayOffset || 0;
+  if (input.weekday) {
+    const weekday = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(input.weekday);
+    offset = (weekday - new Date(midnight).getUTCDay() + 7) % 7;
+    // A bare weekday means its next occurrence at the requested local time.
+    // Preserve zonedInstant's DST ambiguity/nonexistent-time validation.
+    if (offset === 0 && Date.parse(zonedInstant(today, input.time, timezone, input.utcOffsetMinutes)) <= now.getTime()) offset = 7;
+  }
+  const date = input.date || new Date(midnight + offset * 86400000).toISOString().slice(0, 10);
   return { iso: zonedInstant(date, input.time, timezone, input.utcOffsetMinutes), timezone, local: `${date} ${input.time}` };
 }

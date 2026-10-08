@@ -9,6 +9,7 @@ import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { failureCategory } from './failure';
 import { saveWorkerTurnFailure } from './worker-failure';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
+import type { CurrentRecord } from './current-record-contract';
 
 export async function renewAgentJobLease(db: Firestore, ctx: AssistantContext) {
   if (!ctx.agentJobFence) throw new CommunicationError('Claim worker necesar.', 409);
@@ -18,7 +19,7 @@ export async function renewAgentJobLease(db: Firestore, ctx: AssistantContext) {
   });
 }
 
-export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string }) {
+export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null }) {
   if (ctx.runtimeMode === 'demo') throw new CommunicationError('Joburile durabile sunt indisponibile în demo.', 403);
   const ref = ctx.adminDb.collection('assistantAgentJobs').doc(input.requestId);
   const queue = collectionFor(ctx, 'assistantLocks').doc(`queue-${ctx.uid}`);
@@ -122,7 +123,7 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
           ? { status: 'pending', planStatus: 'pending', notBefore: plan.waitUntil || 0, confirmedSteps: plan.results?.length || 0, createdAt: new Date().toISOString() }
           : { status: 'completed', planStatus: plan.status, confirmedSteps: plan.results?.length || 0, completedAt: new Date().toISOString() };
       } else {
-        const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt }, async event => { events.push(event); await publishProgress(events.slice(-60)); });
+        const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt, ...(job.currentRecord !== undefined ? { currentRecord: job.currentRecord } : {}) }, async event => { events.push(event); await publishProgress(events.slice(-60)); });
         outcome = { status: 'completed', message: result.message, ...(result.message.outputType === 'ERROR_EVENT' ? { planStatus: 'failed' } : {}), completedAt: new Date().toISOString() };
       }
     } catch (error) {

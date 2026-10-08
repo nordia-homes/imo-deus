@@ -8,10 +8,14 @@ const corpus = JSON.parse(fs.readFileSync(source, 'utf8'));
 assert.equal(corpus.scenarios.length, 1000);
 assert.equal(new Set(corpus.scenarios.map(row => row.id)).size, 1000);
 const regressionIds = new Set(['master-0801', 'master-0806', 'master-0849', 'master-0850']);
-const calendarEvidenceFile = 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json';
-const calendarEvidence = JSON.parse(fs.readFileSync(calendarEvidenceFile, 'utf8'));
-const liveIds = new Set(calendarEvidence.finalRuns.filter(row => row.executionVerified).map(row => row.scenarioId));
-for (const row of calendarEvidence.finalRuns) assert.equal(row.prompt, corpus.scenarios.find(scenario => scenario.id === row.scenarioId)?.text);
+const liveIds = new Map();
+for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json']) {
+  const evidence = JSON.parse(fs.readFileSync(file, 'utf8'));
+  for (const row of evidence.finalRuns) {
+    assert.equal(row.prompt, corpus.scenarios.find(scenario => scenario.id === row.scenarioId)?.text);
+    if (row.executionVerified) liveIds.set(row.scenarioId, file);
+  }
+}
 const batches = Array.from({ length: 20 }, (_, index) => {
   const scenarios = corpus.scenarios.slice(index * 50, (index + 1) * 50);
   scenarios.forEach((row, offset) => {
@@ -26,7 +30,7 @@ const batches = Array.from({ length: 20 }, (_, index) => {
       id: row.id, sourceNumber: row.sourceNumber, request: row.text,
       requestSha256: crypto.createHash('sha256').update(row.text).digest('hex'),
       endToEnd: 'not_verified',
-      ...(liveIds.has(row.id) ? { liveExecutionEvidence: { file: calendarEvidenceFile, scope: 'Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification.' } } : {}),
+      ...(liveIds.has(row.id) ? { liveExecutionEvidence: { file: liveIds.get(row.id), scope: 'Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification.' } } : {}),
       ...(regressionIds.has(row.id) ? { deterministicCoverage: { file: 'src/lib/ai-assistant/__tests__/planner.test.ts', scope: 'Planner continuation / truthful incomplete result with a scripted provider. Does not certify execution, natural-language reliability or provider effects.' } } : {}),
     })),
   };
