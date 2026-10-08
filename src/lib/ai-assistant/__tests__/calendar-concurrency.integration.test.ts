@@ -62,6 +62,31 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('resolves the task participant from current CRM data and preserves unrelated fields on relinking', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });
+    try {
+      await root.collection('properties').doc('p').set({ title: 'Cișmigiu', ownerName: 'Ștefan', ownerPhone: '0700000002' });
+      await root.collection('contacts').doc('c').set({ name: 'Alin', phone: '0700000001' });
+      const action = { kind: 'create_task' as const, participantSource: 'property_owner' as const, propertyId: 'p', description: 'Discută documentele', dueDate: '2030-01-01', participantName: 'Nume vechi', participantPhone: '0000' };
+      const receipt = await executeAction(ctx, action, 'owner-task');
+      const ref = root.collection('tasks').doc(String(receipt.taskId)), saved = (await ref.get()).data()!;
+      expect(saved).toMatchObject({ participantName: 'Ștefan', participantPhone: '0700000002', propertyTitle: 'Cișmigiu' });
+      expect(saved.contactId).toBeUndefined(); expect(saved.participantSource).toBeUndefined();
+      expect(await executeAction(ctx, action, 'owner-task')).toEqual(receipt);
+      expect((await root.collection('tasks').get()).size).toBe(1);
+      await root.collection('properties').doc('q').set({ title: 'Titan' });
+      const linked = await executeAction(ctx, { kind: 'update_task', taskId: ref.id, propertyId: 'q' }, 'relink');
+      expect(linked).toMatchObject({ propertyId: 'q', propertyTitle: 'Titan' });
+      const changed = (await ref.get()).data()!;
+      expect(changed).toEqual({ ...saved, propertyId: 'q', propertyTitle: 'Titan', updatedAt: changed.updatedAt });
+      await expect(executeAction(ctx, { ...action, contactId: 'c' }, 'mixed-owner')).rejects.toThrow();
+      await expect(executeAction(ctx, { ...action, propertyId: 'missing' }, 'missing-owner')).rejects.toThrow();
+      expect((await root.collection('tasks').get()).size).toBe(1);
+      const client = await executeAction(ctx, { kind: 'create_task', participantSource: 'contact', contactId: 'c', description: 'Documente client', dueDate: '2030-01-01' }, 'client-task');
+      expect((await root.collection('tasks').doc(String(client.taskId)).get()).data()).toMatchObject({ contactId: 'c', contactName: 'Alin', participantName: 'Alin', participantPhone: '0700000001' });
+    } finally { await profile.delete(); }
+  }, 20000);
   it('rechecks client urgency and today-viewing protection when executing a prepared move', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });

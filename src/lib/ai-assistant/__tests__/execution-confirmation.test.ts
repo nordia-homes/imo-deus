@@ -1,5 +1,11 @@
 import { expect, it } from 'vitest';
 import { viewingConfirmation, executionConfirmation } from '../execution-confirmation';
+it('confirms task associations only from saved relation receipts', () => {
+  const text = executionConfirmation([{ kind: 'update_task', result: { taskId: 't', propertyId: 'p', propertyTitle: 'Cișmigiu' } }]);
+  expect(text).toContain('Proprietate: Cișmigiu.');
+  expect(text).not.toContain('Client:');
+  expect(executionConfirmation([{ kind: 'create_task', result: { taskId: 't', contactId: 'c', contactName: 'Alin', participantName: 'Alin' } }])).toContain('Client: Alin.');
+});
 it('confirms committed task state and time without confirming proposals', () => {
   expect(executionConfirmation([{ kind: 'create_task', result: { taskId: 't', description: 'Sună-l pe Andrei', status: 'open', dueDate: '2026-10-09T07:00:00Z', startTime: '10:00' } }])).toContain('2026-10-09, 10:00, ora Bucureștiului');
   expect(executionConfirmation([{ kind: 'update_task', result: { taskId: 't', status: 'completed' } }])).toContain('Task finalizat');

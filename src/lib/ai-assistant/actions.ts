@@ -1,3 +1,4 @@
+import { taskParticipant } from './task-participant';
 import { deferralBlocked } from './task-deferral';
 import { resolveDatetime } from './datetime';
 import { zonedParts } from './zoned-time';
@@ -482,13 +483,14 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         result = safeData({ taskId: existing.id, viewingId: action.viewingId, alreadyExists: true, link: '/tasks', description: task.description, status: task.status, dueDate: task.dueDate, startTime: task.startTime });
       } else {
         if (deterministic?.exists) throw new CommunicationError('Sarcina asociată are o stare care necesită verificare.', 409);
-        const { kind: _, ...inputTask } = action;
-        const taskData = taskClockPatch(inputTask);
+        const { kind: _, participantSource, ...inputTask } = action;
+        const taskData = { ...taskClockPatch(inputTask), ...taskParticipant(participantSource, contact, property) };
         const agentId = viewing ? viewing.agentId : action.agentId === undefined ? ctx.uid : action.agentId;
         const assignment = await propertyAssignment(agentId);
         await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId });
         tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId, agentName: assignment.agentName, createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
-        result = safeData({ taskId: ref.id, ...(action.viewingId ? { viewingId: action.viewingId } : {}), link: '/tasks', description: taskData.description, status: 'open', dueDate: taskData.dueDate, startTime: taskData.startTime });
+        result = safeData({ taskId: ref.id, ...(action.viewingId ? { viewingId: action.viewingId } : {}), link: '/tasks', description: taskData.description, status: 'open', dueDate: taskData.dueDate, startTime: taskData.startTime,
+          participantName: taskData.participantName, contactId: action.contactId, contactName: contact?.name, propertyId: action.propertyId, propertyTitle: property?.title });
       }
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);
@@ -511,7 +513,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         ...(action.contactId !== undefined ? { contactName: contact?.name || null } : {}),
         ...(action.propertyId !== undefined ? { propertyTitle: property?.title || null } : {}) });
       const savedTask = { ...oldTask, ...patch };
-      result = safeData({ taskId: action.taskId, link: '/tasks', description: savedTask.description, status: savedTask.status, dueDate: savedTask.dueDate, startTime: savedTask.startTime });
+      result = safeData({ taskId: action.taskId, link: '/tasks', description: savedTask.description, status: savedTask.status, dueDate: savedTask.dueDate, startTime: savedTask.startTime,
+        ...(action.contactId ? { contactId: action.contactId, contactName: contact?.name } : {}), ...(action.propertyId ? { propertyId: action.propertyId, propertyTitle: property?.title } : {}) });
     } else if (action.kind === 'delete_task' || action.kind === 'delete_viewing') {
       const resource = action.kind === 'delete_task' ? 'tasks' : 'viewings', id = action.kind === 'delete_task' ? action.taskId : action.viewingId;
       const previous = await read(resource, id);

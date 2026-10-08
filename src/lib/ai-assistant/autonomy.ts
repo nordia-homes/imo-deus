@@ -32,7 +32,9 @@ const CRM_VERBS: Record<string, string> = {
   preferences_link_action: 'creeaza|genereaza|regenereaza|dezactiveaza|create',
 };
 export function requestAuthorizedCrmAction(action: AssistantAction) {
-  return action.kind === 'create_task' && Boolean(action.viewingId) || Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
+  const contextualTask = action.kind === 'create_task' && (Boolean(action.viewingId) || action.participantSource === 'property_owner' && Boolean(action.propertyId) && !action.contactId || action.participantSource === 'contact' && Boolean(action.contactId));
+  const taskPropertyLink = action.kind === 'update_task' && Boolean(action.propertyId) && Object.keys(action).every(key => ['kind', 'taskId', 'expectedUpdatedAt', 'propertyId'].includes(key));
+  return contextualTask || taskPropertyLink || Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
 }
 export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
@@ -42,7 +44,7 @@ export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: s
   if (/\b(pregateste|preview|propune|arata|verifica|analizeaza)\b/.test(text)) return false;
   if (['create_contact', 'schedule_viewing'].includes(action.kind) && /\bnu\s+(?:mai\s+)?(?:crea|creati|programa|programati|adauga|adaugati)\b/.test(text)) return false;
   if (requestAuthorizedCrmAction(action) && /\bnu\s+(?:mai\s+)?(?:anula|reprograma|muta|sterge|elimina|arhiva|dezarhiva|modifica|schimba|actualiza|crea|adauga|programa)\b/.test(text)) return false;
-  const verbs = CRM_VERBS[action.kind] || (action.kind === 'assign_record' ? 'atribuie|reasigneaza|asigneaza|aloca|transfera|assign' : action.kind === 'delete_task' ? 'sterge|elimina|delete|remove' : action.kind === 'update_task' ? 'marcheaza|finalizeaza|completeaza|actualizeaza|modifica|redeschide|muta|replanifica|complete|update' : 'creeaza|creaza|adauga|programeaza|fa|create|add|schedule');
+  const verbs = CRM_VERBS[action.kind] || (action.kind === 'assign_record' ? 'atribuie|reasigneaza|asigneaza|aloca|transfera|assign' : action.kind === 'delete_task' ? 'sterge|elimina|delete|remove' : action.kind === 'update_task' ? 'marcheaza|finalizeaza|completeaza|actualizeaza|modifica|redeschide|muta|replanifica|leaga|asociaza|corecteaza|complete|update' : 'creeaza|creaza|adauga|programeaza|fa|create|add|schedule');
   return new RegExp(`\\b(${verbs})\\b`).test(text) && !new RegExp(`\\b(nu|not|dont)\\s+(?:\\w+\\s+){0,2}(${verbs})\\b`).test(text);
 }
 export async function autonomyPolicy(ctx: AssistantContext) {

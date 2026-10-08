@@ -1512,21 +1512,33 @@
           "sourceNumber": 189,
           "request": "Creează task pentru proprietarul acestei proprietăți.",
           "requestSha256": "0735da51a2b3c7f3643256641d72b95b6acc38eb73d87eb7982e7016a02f5a7d",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0190",
           "sourceNumber": 190,
           "request": "Creează task pentru clientul deschis acum.",
           "requestSha256": "0acffcbab873e6142f3bea9f18c94e4dbaef8a8fbafe834cc567045b4c50814d",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0191",
           "sourceNumber": 191,
           "request": "Leagă taskul de proprietatea corectă.",
           "requestSha256": "0713d9a879770da87810394738e8d39f3ecc75d8d4ce3f004d60391b56b85db4",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0192",

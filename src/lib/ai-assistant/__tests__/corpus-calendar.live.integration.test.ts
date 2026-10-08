@@ -38,10 +38,11 @@ const followupCases = ['master-0176', 'master-0177'];
 const agendaCases = ['master-0182', 'master-0183', 'master-0184'];
 const priorityCases = ['master-0185', 'master-0186'];
 const deferralCases = ['master-0187'];
-const cases = [...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const taskContextCases = ['master-0189', 'master-0190', 'master-0191'];
+const cases = [...taskContextCases, ...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'task-context' || taskContextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -53,6 +54,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
     const isDeferral = deferralCases.includes(scenarioId);
+    const isTaskContext = taskContextCases.includes(scenarioId);
     const isPriority = priorityCases.includes(scenarioId);
     const isAgenda = agendaCases.includes(scenarioId);
     const isFollowup = followupCases.includes(scenarioId);
@@ -88,9 +90,21 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), context: history, environment: 'actual model + local Firestore; external catalog excluded', executionVerified: false };
     try {
       await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
-      if (!isViewing) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
+      if (!isViewing && !isTaskContext) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
       await agency.collection('contacts').doc('andrei').set({ name: contactName, phone: '0700000001', contactType: 'Cumparator' });
       await agency.collection('properties').doc('titan').set({ title: 'Apartament Titan', location: 'Titan', ownerName: 'Proprietar local', ownerPhone: '0700000002', status: isNote ? 'Inactiv' : 'Activ' });
+      if (isTaskContext) {
+        await agency.collection('properties').doc('other-property').set({ title: 'Apartament vechi', ownerName: 'Alt proprietar', ownerPhone: '0700000099' });
+        await agency.collection('contacts').doc('other-contact').set({ name: 'Alt client', phone: '0700000098' });
+        history.push({ id: 'old-selection', role: 'assistant', text: 'Selecție anterioară.', cards: [{ type: 'data', source: 'properties', title: 'Proprietate veche', rows: [{ id: 'other-property', title: 'Apartament vechi' }] }, { type: 'data', source: 'contacts', title: 'Client vechi', rows: [{ id: 'other-contact', name: 'Alt client' }] }], createdAt: new Date().toISOString() });
+        if (scenarioId === 'master-0191') {
+          await agency.collection('tasks').doc('task-selected').set({ ...seedTask, propertyId: 'other-property', propertyTitle: 'Apartament vechi' });
+          history.push({ id: 'selected-task', role: 'assistant', text: 'Taskul selectat este task-selected.', cards: [{ type: 'data', source: 'tasks', title: 'Task selectat', rows: [{ ...seedTask, propertyId: 'other-property' }] }], createdAt: new Date().toISOString() });
+        } else history.push({ id: 'task-details', role: 'user', text: 'Pentru taskul pe care urmează să îl creez: descrierea este «Discută documentele lipsă», scadența mâine la 10:00, durata 30 minute.', createdAt: new Date().toISOString() });
+        const currentRecord = currentRecordFromPath(scenarioId === 'master-0190' ? '/leads/andrei' : '/properties/titan')!;
+        history.push(await currentRecordMessage(ctx, currentRecord));
+        report = { ...report, currentRecord, context: history };
+      }
       if (isEdit || isRead) await agency.collection('viewings').doc(seedViewing.id).set(seedViewing);
       if (isRead) {
         for (const [key, extra] of Object.entries({ later: { viewingDate: new Date(Date.parse(seedViewing.viewingDate) + 3600000).toISOString() }, cancelled: { status: 'cancelled' }, colleague: { agentId: 'other-agent' } })) {
@@ -145,13 +159,45 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
         report = { ...report, currentRecord, context: history };
       }
       if (['master-0179', 'master-0180', 'master-0181'].includes(scenarioId)) await agency.collection('tasks').doc(seedTask.id).set(seedTask);
-      const provider = new OpenAIAdapter(), diagnostics: unknown[] = [], seenErrors = new Set<string>();
+      const provider = new OpenAIAdapter(), diagnostics: unknown[] = [], toolCalls: unknown[] = [], seenErrors = new Set<string>();
+      if (['master-0189', 'master-0190'].includes(scenarioId)) {
+        const missing = await planTurn(ctx, prompt, history.filter(message => message.id !== 'task-details'), { provider, budget: new AgentBudget() });
+        report = { ...report, missingDetailsTrial: { status: missing.metrics.status, text: missing.text, actions: missing.actions, tools: missing.metrics.tools } };
+        expect(missing.actions).toEqual([]); expect(missing.metrics.status, missing.text).toBe('clarification');
+        expect((await agency.collection('tasks').get()).size).toBe(0);
+      }
       const planned = await planTurn(ctx, prompt, history, { provider: { id: provider.id, respond: async request => {
         for (const item of request.input as any[]) if (item.type === 'function_call_output' && !seenErrors.has(item.call_id)) { try { const output = JSON.parse(item.output); if (output.error) { diagnostics.push({ callId: item.call_id, error: output.error }); seenErrors.add(item.call_id); } } catch {} }
-        return provider.respond(request);
+        const response = await provider.respond(request); toolCalls.push(...response.calls); return response;
       } }, budget });
-      report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, costUsd: budget.cost };
+      report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, toolCalls, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isTaskContext) {
+        expect(diagnostics).toEqual([]); expect(planned.actions).toHaveLength(1);
+        if (scenarioId === 'master-0191') expect(planned.actions[0]).toMatchObject({ kind: 'update_task', taskId: 'task-selected', propertyId: 'titan' });
+        else expect(planned.actions[0]).toMatchObject({ kind: 'create_task', participantSource: scenarioId === 'master-0189' ? 'property_owner' : 'contact', description: 'Discută documentele lipsă', duration: 30 });
+        const before = (await agency.collection('tasks').doc('task-selected').get()).data();
+        const execution = await executeSafePrefix(ctx, id, planned.actions, prompt);
+        report = { ...report, execution };
+        expect(execution.blocked).toBe(false); expect(execution.actions).toEqual([]); expect(execution.results).toHaveLength(1);
+        const tasks = await agency.collection('tasks').get(); expect(tasks.size).toBe(1);
+        const saved = tasks.docs[0].data();
+        if (scenarioId === 'master-0191') expect(saved).toEqual({ ...before, propertyId: 'titan', propertyTitle: 'Apartament Titan', updatedAt: saved.updatedAt });
+        else {
+          expect(taskInterval(saved)?.start).toBe(date.iso);
+          expect(saved.status).toBe('open'); expect(saved.agentId).toBe(id); expect(saved.participantSource).toBeUndefined();
+          if (scenarioId === 'master-0189') { expect(saved).toMatchObject({ propertyId: 'titan', propertyTitle: 'Apartament Titan', participantName: 'Proprietar local', participantPhone: '0700000002' }); expect(saved.contactId).toBeUndefined(); }
+          else { expect(saved).toMatchObject({ contactId: 'andrei', contactName: 'Andrei', participantName: 'Andrei', participantPhone: '0700000001' }); expect(saved.propertyId).toBeUndefined(); }
+        }
+        expect((await executeSafePrefix(ctx, id, planned.actions, prompt)).results).toEqual(execution.results);
+        expect((await agency.collection('tasks').get()).size).toBe(1);
+        expect((await agency.collection('contacts').get()).size).toBe(2); expect((await agency.collection('viewings').get()).size).toBe(0);
+        const confirmation = executionConfirmation(execution.results);
+        expect(confirmation).toContain(scenarioId === 'master-0190' ? 'Client: Andrei.' : 'Proprietate: Apartament Titan.');
+        if (scenarioId === 'master-0189') expect(confirmation).toContain('Participant: Proprietar local.');
+        report = { ...report, executionVerified: true, confirmation, storedTasks: [saved] };
+        return;
+      }
       if (isDeferral) {
         expect(diagnostics).toEqual([]); expect(planned.actions).toHaveLength(5);
         expect(planned.actions.every(action => action.kind === 'update_task' && action.deferNonUrgent)).toBe(true);

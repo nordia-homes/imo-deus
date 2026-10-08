@@ -4,6 +4,22 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — participantul și proprietatea taskului
+
+Scenariile originale **0189–0191** au trecut cu model real și Firestore local (prompt jarvis-48 / tools 78 / request-crm-8), fără document `assistantPolicies`: task pentru proprietarul proprietății deschise, task pentru clientul deschis și corectarea proprietății asociate unui task selectat. Probe: [CALENDAR_EXECUTION_BATCH_11.json](evals/CALENDAR_EXECUTION_BATCH_11.json). Contextul precizează explicit descrierea, scadența mâine la 10:00 și durata de 30 de minute pentru creări; nu sunt presupuneri despre cererile originale. Probele suplimentare fără aceste detalii cer clarificare și verifică absența scrierilor.
+
+Selecțiile istorice indică intenționat alte înregistrări. Referința paginii curente este verificată pe server și prevalează; taskurile se salvează pentru clientul/proprietatea curentă. `create_task.participantSource` cere executorului să recitească participantul în tranzacție: `property_owner` folosește ownerName/ownerPhone și interzice legarea unui cumpărător; `contact` folosește numele/telefonul clientului CRM. Datele vechi furnizate în acțiune nu suprascriu aceste valori. Telefonul lipsă rămâne nul, iar lipsa completă a identității necesită completarea datelor. Marcajul participantSource nu se persistă.
+
+Crearea cu participant CRM identificat și modificarea exclusivă a `propertyId` sunt autorizate prin cererea agentului, fără opt-in pentru taskurile generale. Negația și cererile de previzualizare nu autorizează execuția; o asociere nu permite automat și schimbarea descrierii sau a scadenței. Rolul, agenția și revizia rămân verificate. Taskurile generale păstrează politica existentă.
+
+0189 salvează proprietarul, fără a crea un client; 0190 salvează clientul curent; 0191 schimbă numai propertyId/propertyTitle și revizia taskului. Confirmările includ relația efectiv salvată. Replay-ul aceleiași cereri produce un singur task/efect. Regresia Firestore verifică și datele actuale ale participantului, păstrarea celorlalte câmpuri la asociere și refuzul relațiilor lipsă sau contradictorii.
+
+Primele două încercări 0189 sunt păstrate în raport: prima a avut goal_coverage invalid și a atins bugetul; a doua a tratat verificarea proprietarului ca rezultat answered separat, apoi a atins bugetul înaintea finalizării. Instrucțiunile leagă acum precondițiile de unica cerință de creare, cu citatul din comanda curentă. Bugetele și validarea acoperirii nu au fost relaxate. Cele trei comenzi au trecut ulterior, apoi au fost reverificate fără opt-in.
+
+Validare finală: **2.088 teste locale** trecute din 186 fișiere (`vitest run --maxWorkers=2`), **270 regresii Firestore și 3 comenzi cu model real** trecute împreună, lint, inventare și build cu TypeScript/227 pagini. Cele 316 teste locale sărite au condiții separate de mediu; nu sunt incluse în numărul de teste trecute. O rulare locală cu paralelism implicit, simultan cu buildul și emulatorul, a avut două timeouturi și zece eșecuri ulterioare în planner; cele două fișiere afectate au trecut separat, apoi suita integrală a trecut cu doi workers, fără relaxarea aserțiunilor sau timeouturilor.
+
+Total curent: **35 de scenarii originale cu dovezi locale folosind modelul real**, **965 fără această dovadă**. Cele 32 de scenarii live anterioare nu au fost rerulate. 0188 rămâne necertificat separat. Nu este certificare integrală, în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — mutarea taskurilor neurgente
 
 Scenariul original **0187**, «Mută taskurile neurgente pentru mâine», a trecut din prima cu model real și Firestore local (prompt jarvis-47 / tools 77). Executorul a mutat toate cele cinci taskuri eligibile, a păstrat ora și durata și a confirmat fiecare salvare. Cele șase taskuri excluse au rămas identice: urgent, scadent azi, deja pentru mâine, asociat unei vizionări de azi, finalizat și atribuit altui agent. Replay-ul nu produce efecte suplimentare. Dovezi: [CALENDAR_EXECUTION_BATCH_10.json](evals/CALENDAR_EXECUTION_BATCH_10.json).

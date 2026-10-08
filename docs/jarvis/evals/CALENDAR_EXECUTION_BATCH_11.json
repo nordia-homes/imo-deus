@@ -1,0 +1,1453 @@
+{
+  "scope": "Original scenarios 0189-0191 with explicitly supplied task description/deadline and server-verified current page, actual model and isolated Firestore. No assistantPolicies opt-in. Missing-description/deadline variants for 0189-0190 request clarification without writing. Not production or full variant certification.",
+  "previousAttempts": [
+    {
+      "scenarioId": "master-0189",
+      "prompt": "Creează task pentru proprietarul acestei proprietăți.",
+      "versions": {
+        "prompt": "jarvis-48",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "78",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:32:25.603Z",
+      "context": [
+        {
+          "id": "old-selection",
+          "role": "assistant",
+          "text": "Selecție anterioară.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate veche",
+              "rows": [
+                {
+                  "id": "other-property",
+                  "title": "Apartament vechi"
+                }
+              ]
+            },
+            {
+              "type": "data",
+              "source": "contacts",
+              "title": "Client vechi",
+              "rows": [
+                {
+                  "id": "other-contact",
+                  "name": "Alt client"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T11:32:27.991Z"
+        },
+        {
+          "id": "task-details",
+          "role": "user",
+          "text": "Pentru taskul pe care urmează să îl creez: descrierea este «Discută documentele lipsă», scadența mâine la 10:00, durata 30 minute.",
+          "createdAt": "2026-10-08T11:32:27.991Z"
+        },
+        {
+          "id": "current-page-context",
+          "role": "assistant",
+          "text": "Proprietatea deschisă acum: titan. Referință verificată în CRM pentru comanda curentă.",
+          "createdAt": "2026-10-08T11:32:28.038Z",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietatea deschisă acum",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Titan",
+                  "status": "Activ"
+                }
+              ],
+              "complete": true
+            }
+          ]
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "currentRecord": {
+        "resource": "properties",
+        "id": "titan"
+      },
+      "plannerStatus": "partial",
+      "text": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "participantSource": "property_owner",
+          "startTime": "10:00",
+          "duration": 30,
+          "description": "Discută documentele lipsă",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 1377,
+          "version": "78",
+          "argumentsHash": "1d5615834bd81fcdb9f100bdfc2c13a072badc510b9f9f06484fe688dc802fe4"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 17,
+          "version": "78",
+          "argumentsHash": "d0daf89d69833198535b08ebc8ce4da1a5e7e9d1e855cfc0dcfe1d6950f92501"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 15,
+          "version": "78",
+          "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 24,
+          "version": "78",
+          "argumentsHash": "bb0a0d84ebf252e411b92b0083aeba64930ffd66dff3136a899c5de1a75e6aaf"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "failed",
+          "latencyMs": 21,
+          "version": "78",
+          "argumentsHash": "2f259c6df7b27541fd1ca0e75552bb40c22f5766d50f25a854494cce51626a72"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10779,
+            "outputTokens": 78,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10776,
+            "estimated": false
+          },
+          "costUsd": 0.0013863,
+          "latencyMs": 3475,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10941,
+            "outputTokens": 46,
+            "cachedTokens": 10776,
+            "cacheWriteTokens": 162,
+            "estimated": false
+          },
+          "costUsd": 0.00015131,
+          "latencyMs": 2536,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11060,
+            "outputTokens": 25,
+            "cachedTokens": 10938,
+            "cacheWriteTokens": 119,
+            "estimated": false
+          },
+          "costUsd": 0.000137055,
+          "latencyMs": 2816,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11370,
+            "outputTokens": 118,
+            "cachedTokens": 11057,
+            "cacheWriteTokens": 310,
+            "estimated": false
+          },
+          "costUsd": 0.00020862,
+          "latencyMs": 4095,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11515,
+            "outputTokens": 167,
+            "cachedTokens": 11367,
+            "cacheWriteTokens": 145,
+            "estimated": false
+          },
+          "costUsd": 0.000215595,
+          "latencyMs": 3266,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00209888,
+      "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality"
+    },
+    {
+      "scenarioId": "master-0189",
+      "prompt": "Creează task pentru proprietarul acestei proprietăți.",
+      "versions": {
+        "prompt": "jarvis-48",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "78",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:34:35.797Z",
+      "context": [
+        {
+          "id": "old-selection",
+          "role": "assistant",
+          "text": "Selecție anterioară.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate veche",
+              "rows": [
+                {
+                  "id": "other-property",
+                  "title": "Apartament vechi"
+                }
+              ]
+            },
+            {
+              "type": "data",
+              "source": "contacts",
+              "title": "Client vechi",
+              "rows": [
+                {
+                  "id": "other-contact",
+                  "name": "Alt client"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T11:34:37.721Z"
+        },
+        {
+          "id": "task-details",
+          "role": "user",
+          "text": "Pentru taskul pe care urmează să îl creez: descrierea este «Discută documentele lipsă», scadența mâine la 10:00, durata 30 minute.",
+          "createdAt": "2026-10-08T11:34:37.721Z"
+        },
+        {
+          "id": "current-page-context",
+          "role": "assistant",
+          "text": "Proprietatea deschisă acum: titan. Referință verificată în CRM pentru comanda curentă.",
+          "createdAt": "2026-10-08T11:34:37.763Z",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietatea deschisă acum",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Titan",
+                  "status": "Activ"
+                }
+              ],
+              "complete": true
+            }
+          ]
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "currentRecord": {
+        "resource": "properties",
+        "id": "titan"
+      },
+      "missingDetailsTrial": {
+        "status": "clarification",
+        "text": "Am verificat proprietatea curentă „Apartament Titan” și datele proprietarului. Ce descriere să aibă taskul și pentru ce dată să fie scadent?\nCerințe încă neacoperite: Creează un task pentru proprietarul proprietății curente; descrierea și scadența trebuie clarificate înainte de pregătire.",
+        "actions": [],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 1049,
+            "version": "78",
+            "argumentsHash": "596afea5a0fc1024283095ecfbcc1356c08052597fd41b3a047773347f55492c"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 29,
+            "version": "78",
+            "argumentsHash": "0a9118d26719abc36b961bf508b72216ffd97ec1147341d0cf11e3d2b6cc2e03"
+          }
+        ]
+      },
+      "plannerStatus": "partial",
+      "text": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "participantSource": "property_owner",
+          "startTime": "10:00",
+          "duration": 30,
+          "description": "Discută documentele lipsă",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 37,
+          "version": "78",
+          "argumentsHash": "1d5615834bd81fcdb9f100bdfc2c13a072badc510b9f9f06484fe688dc802fe4"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 20,
+          "version": "78",
+          "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 25,
+          "version": "78",
+          "argumentsHash": "d0daf89d69833198535b08ebc8ce4da1a5e7e9d1e855cfc0dcfe1d6950f92501"
+        },
+        {
+          "name": "create_task",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "78",
+          "argumentsHash": "6e7103f08753368be9196e4af5bee69f5471906ba0faf7bf6257d38f836d1673"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 19,
+          "version": "78",
+          "argumentsHash": "bf603f758f3bc230e5492a117864995acbec47d7acfcb27eae4f0a3734846a52"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10777,
+            "outputTokens": 68,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10774,
+            "estimated": false
+          },
+          "costUsd": 0.00138105,
+          "latencyMs": 2023,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10926,
+            "outputTokens": 25,
+            "cachedTokens": 10774,
+            "cacheWriteTokens": 149,
+            "estimated": false
+          },
+          "costUsd": 0.000139165,
+          "latencyMs": 2068,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11233,
+            "outputTokens": 46,
+            "cachedTokens": 10923,
+            "cacheWriteTokens": 307,
+            "estimated": false
+          },
+          "costUsd": 0.000170905,
+          "latencyMs": 2121,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11352,
+            "outputTokens": 71,
+            "cachedTokens": 11230,
+            "cacheWriteTokens": 119,
+            "estimated": false
+          },
+          "costUsd": 0.000162975,
+          "latencyMs": 2971,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11449,
+            "outputTokens": 165,
+            "cachedTokens": 11349,
+            "cacheWriteTokens": 97,
+            "estimated": false
+          },
+          "costUsd": 0.00020841500000000002,
+          "latencyMs": 3508,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_aXqrIUc74WR7DUOrSeUuzRp3",
+          "name": "read",
+          "arguments": "{\"resource\":\"properties\",\"id\":\"titan\",\"search\":null,\"cursor\":null,\"limit\":1}"
+        },
+        {
+          "id": "call_o6abSNI17mcBgbACxIQSyztP",
+          "name": "operation_contract",
+          "arguments": "{\"operation\":\"create_task\",\"actionKind\":\"create_task\"}"
+        },
+        {
+          "id": "call_iyJagTl86hAwjvX7PKPHq0gw",
+          "name": "resolve_datetime",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"weekday\":null,\"timezone\":\"Europe/Bucharest\",\"time\":\"10:00\",\"utcOffsetMinutes\":null}"
+        },
+        {
+          "id": "call_ubtknv1ahrswSJNcNN5caWdy",
+          "name": "create_task",
+          "arguments": "{\"payload\":\"{\\\"description\\\":\\\"Discută documentele lipsă\\\",\\\"dueDate\\\":\\\"2026-10-09T07:00:00.000Z\\\",\\\"startTime\\\":\\\"10:00\\\",\\\"duration\\\":30,\\\"propertyId\\\":\\\"titan\\\",\\\"participantSource\\\":\\\"property_owner\\\"}\"}"
+        },
+        {
+          "id": "call_u0f29yh90NmBasOyhLpyLcbo",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"create_owner_task\",\"sourceQuote\":\"Creează task pentru proprietarul acestei proprietăți.\",\"description\":\"Pregătește taskul pentru proprietarul proprietății deschise, cu descrierea, scadența mâine la 10:00 și durata de 30 de minute furnizate anterior.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]},{\"id\":\"property_owner_verified\",\"sourceQuote\":\"acestei proprietăți\",\"description\":\"Verifică proprietatea deschisă și datele proprietarului din CRM.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_aXqrIUc74WR7DUOrSeUuzRp3\"]}]}"
+        }
+      ],
+      "costUsd": 0.00206251,
+      "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality"
+    }
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0189",
+      "prompt": "Creează task pentru proprietarul acestei proprietăți.",
+      "versions": {
+        "prompt": "jarvis-48",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "78",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:41:54.390Z",
+      "context": [
+        {
+          "id": "old-selection",
+          "role": "assistant",
+          "text": "Selecție anterioară.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate veche",
+              "rows": [
+                {
+                  "id": "other-property",
+                  "title": "Apartament vechi"
+                }
+              ]
+            },
+            {
+              "type": "data",
+              "source": "contacts",
+              "title": "Client vechi",
+              "rows": [
+                {
+                  "id": "other-contact",
+                  "name": "Alt client"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T11:41:55.507Z"
+        },
+        {
+          "id": "task-details",
+          "role": "user",
+          "text": "Pentru taskul pe care urmează să îl creez: descrierea este «Discută documentele lipsă», scadența mâine la 10:00, durata 30 minute.",
+          "createdAt": "2026-10-08T11:41:55.507Z"
+        },
+        {
+          "id": "current-page-context",
+          "role": "assistant",
+          "text": "Proprietatea deschisă acum: titan. Referință verificată în CRM pentru comanda curentă.",
+          "createdAt": "2026-10-08T11:41:55.550Z",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietatea deschisă acum",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Titan",
+                  "status": "Activ"
+                }
+              ],
+              "complete": true
+            }
+          ]
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "currentRecord": {
+        "resource": "properties",
+        "id": "titan"
+      },
+      "missingDetailsTrial": {
+        "status": "clarification",
+        "text": "Am identificat proprietatea „Apartament Titan” și proprietarul în CRM. Ce descriere/scop să aibă taskul și pentru ce dată să fie scadent? Am nevoie de ambele ca să-l pregătesc.\nCerințe încă neacoperite: Crearea unui task pentru proprietarul proprietății Titan; lipsesc descrierea/scopul și scadența.",
+        "actions": [],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 541,
+            "version": "78",
+            "argumentsHash": "596afea5a0fc1024283095ecfbcc1356c08052597fd41b3a047773347f55492c"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 18,
+            "version": "78",
+            "argumentsHash": "5edb412a02e352364f082bf3ae4ebbce0d7a5fd68c79b6fb441aad09d20de0a4"
+          }
+        ]
+      },
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "participantSource": "property_owner",
+          "startTime": "10:00",
+          "duration": 30,
+          "description": "Discută documentele lipsă",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 38,
+          "version": "78",
+          "argumentsHash": "1d5615834bd81fcdb9f100bdfc2c13a072badc510b9f9f06484fe688dc802fe4"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 20,
+          "version": "78",
+          "argumentsHash": "d0daf89d69833198535b08ebc8ce4da1a5e7e9d1e855cfc0dcfe1d6950f92501"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 12,
+          "version": "78",
+          "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+        },
+        {
+          "name": "create_task",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "78",
+          "argumentsHash": "6e7103f08753368be9196e4af5bee69f5471906ba0faf7bf6257d38f836d1673"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 14,
+          "version": "78",
+          "argumentsHash": "7f5e7c492b9097fda7952067f9357b51de0d25361b09b86668f6a528c217b9d6"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10907,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10904,
+            "estimated": false
+          },
+          "costUsd": 0.0013802999999999999,
+          "latencyMs": 1737,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11023,
+            "outputTokens": 46,
+            "cachedTokens": 10904,
+            "cacheWriteTokens": 116,
+            "estimated": false
+          },
+          "costUsd": 0.00014684,
+          "latencyMs": 2051,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11143,
+            "outputTokens": 25,
+            "cachedTokens": 11020,
+            "cacheWriteTokens": 120,
+            "estimated": false
+          },
+          "costUsd": 0.000138,
+          "latencyMs": 1522,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11450,
+            "outputTokens": 71,
+            "cachedTokens": 11140,
+            "cacheWriteTokens": 307,
+            "estimated": false
+          },
+          "costUsd": 0.000185575,
+          "latencyMs": 1680,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11547,
+            "outputTokens": 100,
+            "cachedTokens": 11447,
+            "cacheWriteTokens": 97,
+            "estimated": false
+          },
+          "costUsd": 0.000176895,
+          "latencyMs": 2164,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_Iql1zeU1Fhxu9TNIqaSALfmq",
+          "name": "read",
+          "arguments": "{\"resource\":\"properties\",\"id\":\"titan\",\"search\":null,\"cursor\":null,\"limit\":1}"
+        },
+        {
+          "id": "call_vKBPxZKLqI3dfPu2BJwPdueG",
+          "name": "resolve_datetime",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"weekday\":null,\"timezone\":\"Europe/Bucharest\",\"time\":\"10:00\",\"utcOffsetMinutes\":null}"
+        },
+        {
+          "id": "call_BXmLarwGiw33qUGTmVtuU4NL",
+          "name": "operation_contract",
+          "arguments": "{\"operation\":\"create_task\",\"actionKind\":\"create_task\"}"
+        },
+        {
+          "id": "call_ax5UWAofSiwlHwL8KQ8GPhZb",
+          "name": "create_task",
+          "arguments": "{\"payload\":\"{\\\"description\\\":\\\"Discută documentele lipsă\\\",\\\"dueDate\\\":\\\"2026-10-09T07:00:00.000Z\\\",\\\"startTime\\\":\\\"10:00\\\",\\\"duration\\\":30,\\\"propertyId\\\":\\\"titan\\\",\\\"participantSource\\\":\\\"property_owner\\\"}\"}"
+        },
+        {
+          "id": "call_E6sgXFLloeiqAtovGERmxGHo",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"create_task_owner\",\"sourceQuote\":\"Creează task pentru proprietarul acestei proprietăți.\",\"description\":\"Pregătește taskul pentru proprietarul proprietății curente, cu descrierea, scadența de mâine la 10:00 și durata de 30 de minute furnizate anterior.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]}]}"
+        }
+      ],
+      "costUsd": 0.0020276099999999996,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "3262d2f5-2ba8-4e5f-ab11-e3f5adc87daf-safe-0",
+              "link": "/tasks",
+              "description": "Discută documentele lipsă",
+              "status": "open",
+              "dueDate": "2026-10-09T07:00:00.000Z",
+              "startTime": "10:00",
+              "participantName": "Proprietar local",
+              "contactId": null,
+              "contactName": null,
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan"
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task creat: „Discută documentele lipsă”. Data: 2026-10-09, 10:00, ora Bucureștiului. Proprietate: Apartament Titan. Participant: Proprietar local. ID: 3262d2f5-2ba8-4e5f-ab11-e3f5adc87daf-safe-0.",
+      "storedTasks": [
+        {
+          "startTime": "10:00",
+          "duration": 30,
+          "description": "Discută documentele lipsă",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "propertyId": "titan",
+          "participantName": "Proprietar local",
+          "participantPhone": "0700000002",
+          "id": "3262d2f5-2ba8-4e5f-ab11-e3f5adc87daf-safe-0",
+          "status": "open",
+          "agentId": "3262d2f5-2ba8-4e5f-ab11-e3f5adc87daf",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T11:42:14.329Z",
+          "propertyTitle": "Apartament Titan"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0190",
+      "prompt": "Creează task pentru clientul deschis acum.",
+      "versions": {
+        "prompt": "jarvis-48",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "78",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:42:14.713Z",
+      "context": [
+        {
+          "id": "old-selection",
+          "role": "assistant",
+          "text": "Selecție anterioară.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate veche",
+              "rows": [
+                {
+                  "id": "other-property",
+                  "title": "Apartament vechi"
+                }
+              ]
+            },
+            {
+              "type": "data",
+              "source": "contacts",
+              "title": "Client vechi",
+              "rows": [
+                {
+                  "id": "other-contact",
+                  "name": "Alt client"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T11:42:14.768Z"
+        },
+        {
+          "id": "task-details",
+          "role": "user",
+          "text": "Pentru taskul pe care urmează să îl creez: descrierea este «Discută documentele lipsă», scadența mâine la 10:00, durata 30 minute.",
+          "createdAt": "2026-10-08T11:42:14.768Z"
+        },
+        {
+          "id": "current-page-context",
+          "role": "assistant",
+          "text": "Clientul deschis acum: andrei. Referință verificată în CRM pentru comanda curentă.",
+          "createdAt": "2026-10-08T11:42:14.785Z",
+          "cards": [
+            {
+              "type": "data",
+              "source": "contacts",
+              "title": "Clientul deschis acum",
+              "rows": [
+                {
+                  "id": "andrei",
+                  "name": "Andrei"
+                }
+              ],
+              "complete": true
+            }
+          ],
+          "accessRefs": [
+            {
+              "resource": "contacts",
+              "id": "andrei"
+            }
+          ]
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "currentRecord": {
+        "resource": "contacts",
+        "id": "andrei"
+      },
+      "missingDetailsTrial": {
+        "status": "clarification",
+        "text": "Pentru a crea taskul pentru Andrei, am nevoie de descrierea taskului și data scadenței. Ce să notez și pentru când?\nCerințe încă neacoperite: Crearea unui task asociat clientului deschis (Andrei); descrierea și scadența nu sunt precizate.",
+        "actions": [],
+        "tools": [
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 8,
+            "version": "78",
+            "argumentsHash": "b668e22ec42079026c7d38add503bf280cf9063c77e138edb0b717a7fbdab1e2"
+          }
+        ]
+      },
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "participantSource": "contact",
+          "startTime": "10:00",
+          "duration": 30,
+          "description": "Discută documentele lipsă",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "contactId": "andrei"
+        }
+      ],
+      "tools": [
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 14,
+          "version": "78",
+          "argumentsHash": "d0daf89d69833198535b08ebc8ce4da1a5e7e9d1e855cfc0dcfe1d6950f92501"
+        },
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 28,
+          "version": "78",
+          "argumentsHash": "1aa7a20e08da815ea2fcaf65ca876138d7d7c108b1ac44e79677e9018f182eb4"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 14,
+          "version": "78",
+          "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+        },
+        {
+          "name": "create_task",
+          "status": "success",
+          "latencyMs": 16,
+          "version": "78",
+          "argumentsHash": "8ca4eb63037a0849ebf215c6af3530f7a50155eae26f6eef132166d581c2401f"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 15,
+          "version": "78",
+          "argumentsHash": "9bb7736d967f3b43e107c48fd4c7b81a19c840f4ebaeef0995630db31acf533e"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10904,
+            "outputTokens": 46,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10901,
+            "estimated": false
+          },
+          "costUsd": 0.0013859249999999999,
+          "latencyMs": 2121,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11024,
+            "outputTokens": 34,
+            "cachedTokens": 10901,
+            "cacheWriteTokens": 120,
+            "estimated": false
+          },
+          "costUsd": 0.00014131000000000001,
+          "latencyMs": 1649,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11133,
+            "outputTokens": 25,
+            "cachedTokens": 11021,
+            "cacheWriteTokens": 109,
+            "estimated": false
+          },
+          "costUsd": 0.000136635,
+          "latencyMs": 1684,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11444,
+            "outputTokens": 69,
+            "cachedTokens": 11130,
+            "cacheWriteTokens": 311,
+            "estimated": false
+          },
+          "costUsd": 0.00018497499999999998,
+          "latencyMs": 1803,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11539,
+            "outputTokens": 91,
+            "cachedTokens": 11441,
+            "cacheWriteTokens": 95,
+            "estimated": false
+          },
+          "costUsd": 0.000172085,
+          "latencyMs": 2216,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_uoCmiz6Lkl2K4fsGlH0YiDlw",
+          "name": "resolve_datetime",
+          "arguments": "{\"date\":null,\"dayOffset\":1,\"weekday\":null,\"timezone\":\"Europe/Bucharest\",\"time\":\"10:00\",\"utcOffsetMinutes\":null}"
+        },
+        {
+          "id": "call_jncM1v7t6RYuW8nT72c1eH4H",
+          "name": "read",
+          "arguments": "{\"resource\":\"contacts\",\"id\":\"andrei\",\"search\":null,\"cursor\":null,\"limit\":1}"
+        },
+        {
+          "id": "call_3mnmHyWvc16tORxZ6BnC7zq5",
+          "name": "operation_contract",
+          "arguments": "{\"operation\":\"create_task\",\"actionKind\":\"create_task\"}"
+        },
+        {
+          "id": "call_x1P5c0OE55u3nn0rhN4Nr0ff",
+          "name": "create_task",
+          "arguments": "{\"payload\":\"{\\\"description\\\":\\\"Discută documentele lipsă\\\",\\\"dueDate\\\":\\\"2026-10-09T07:00:00.000Z\\\",\\\"contactId\\\":\\\"andrei\\\",\\\"participantSource\\\":\\\"contact\\\",\\\"startTime\\\":\\\"10:00\\\",\\\"duration\\\":30}\"}"
+        },
+        {
+          "id": "call_PB5P5K3F4zA3G8yd8X75wk0R",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"create_task\",\"sourceQuote\":\"Creează task pentru clientul deschis acum.\",\"description\":\"Creează pentru clientul deschis acum taskul cu descrierea «Discută documentele lipsă», mâine la 10:00, durata 30 minute.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]}]}"
+        }
+      ],
+      "costUsd": 0.0020209299999999998,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "301e460a-a7c5-4ac4-9813-5eda9f0e92b0-safe-0",
+              "link": "/tasks",
+              "description": "Discută documentele lipsă",
+              "status": "open",
+              "dueDate": "2026-10-09T07:00:00.000Z",
+              "startTime": "10:00",
+              "participantName": "Andrei",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": null,
+              "propertyTitle": null
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task creat: „Discută documentele lipsă”. Data: 2026-10-09, 10:00, ora Bucureștiului. Client: Andrei. Participant: Andrei. ID: 301e460a-a7c5-4ac4-9813-5eda9f0e92b0-safe-0.",
+      "storedTasks": [
+        {
+          "startTime": "10:00",
+          "duration": 30,
+          "description": "Discută documentele lipsă",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "contactId": "andrei",
+          "participantName": "Andrei",
+          "participantPhone": "0700000001",
+          "id": "301e460a-a7c5-4ac4-9813-5eda9f0e92b0-safe-0",
+          "status": "open",
+          "agentId": "301e460a-a7c5-4ac4-9813-5eda9f0e92b0",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T11:42:31.544Z",
+          "contactName": "Andrei"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0191",
+      "prompt": "Leagă taskul de proprietatea corectă.",
+      "versions": {
+        "prompt": "jarvis-48",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "78",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T11:42:31.814Z",
+      "context": [
+        {
+          "id": "old-selection",
+          "role": "assistant",
+          "text": "Selecție anterioară.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietate veche",
+              "rows": [
+                {
+                  "id": "other-property",
+                  "title": "Apartament vechi"
+                }
+              ]
+            },
+            {
+              "type": "data",
+              "source": "contacts",
+              "title": "Client vechi",
+              "rows": [
+                {
+                  "id": "other-contact",
+                  "name": "Alt client"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T11:42:31.842Z"
+        },
+        {
+          "id": "selected-task",
+          "role": "assistant",
+          "text": "Taskul selectat este task-selected.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "tasks",
+              "title": "Task selectat",
+              "rows": [
+                {
+                  "id": "task-selected",
+                  "description": "Sună-l pe Andrei",
+                  "dueDate": "2026-10-09T07:00:00.000Z",
+                  "startTime": "10:00",
+                  "duration": 30,
+                  "contactId": "andrei",
+                  "contactName": "Andrei",
+                  "agentId": "b1cfe283-6a70-45f4-b3de-ff3911dea275",
+                  "status": "open",
+                  "updatedAt": "2026-01-01T00:00:00.000Z",
+                  "propertyId": "other-property"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T11:42:31.846Z"
+        },
+        {
+          "id": "current-page-context",
+          "role": "assistant",
+          "text": "Proprietatea deschisă acum: titan. Referință verificată în CRM pentru comanda curentă.",
+          "createdAt": "2026-10-08T11:42:31.857Z",
+          "cards": [
+            {
+              "type": "data",
+              "source": "properties",
+              "title": "Proprietatea deschisă acum",
+              "rows": [
+                {
+                  "id": "titan",
+                  "title": "Apartament Titan",
+                  "status": "Activ"
+                }
+              ],
+              "complete": true
+            }
+          ]
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "currentRecord": {
+        "resource": "properties",
+        "id": "titan"
+      },
+      "plannerStatus": "success",
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "update_task",
+          "taskId": "task-selected",
+          "propertyId": "titan",
+          "expectedUpdatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "tools": [
+        {
+          "name": "read",
+          "status": "success",
+          "latencyMs": 25,
+          "version": "78",
+          "argumentsHash": "df2a89cd0693beb56586c45f26731b401aa558af80afee10f1eeca5a91204db8"
+        },
+        {
+          "name": "update_task",
+          "status": "success",
+          "latencyMs": 27,
+          "version": "78",
+          "argumentsHash": "04309ea4ebb127f29e044f5d850b672da64578ebef6d5cb14463e666f2b25cc2"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 20,
+          "version": "78",
+          "argumentsHash": "497042717c0f55d097feaf8ae0a0d90f63804ec26ce6596b168617c683e7ea00"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10920,
+            "outputTokens": 34,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 10917,
+            "estimated": false
+          },
+          "costUsd": 0.001381925,
+          "latencyMs": 1752,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11121,
+            "outputTokens": 31,
+            "cachedTokens": 10917,
+            "cacheWriteTokens": 201,
+            "estimated": false
+          },
+          "costUsd": 0.000150095,
+          "latencyMs": 1755,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11178,
+            "outputTokens": 74,
+            "cachedTokens": 11118,
+            "cacheWriteTokens": 57,
+            "estimated": false
+          },
+          "costUsd": 0.000155605,
+          "latencyMs": 2319,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11277,
+            "outputTokens": 57,
+            "cachedTokens": 11175,
+            "cacheWriteTokens": 99,
+            "estimated": false
+          },
+          "costUsd": 0.00015292500000000002,
+          "latencyMs": 2152,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_9msK9TeJkgvArhssXVos5mlO",
+          "name": "read",
+          "arguments": "{\"resource\":\"tasks\",\"id\":\"task-selected\",\"search\":null,\"cursor\":null,\"limit\":null}"
+        },
+        {
+          "id": "call_UhKqoEId0wsWbrjH9RbdNhNi",
+          "name": "update_task",
+          "arguments": "{\"payload\":\"{\\\"taskId\\\":\\\"task-selected\\\",\\\"propertyId\\\":\\\"titan\\\"}\"}"
+        },
+        {
+          "id": "call_2QD00jWSuT74c0J11tjAivHP",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"link_task_property\",\"sourceQuote\":\"Leagă taskul de proprietatea corectă.\",\"description\":\"Asociază taskul selectat cu proprietatea deschisă, Apartament Titan.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]}]}"
+        }
+      ],
+      "costUsd": 0.00184055,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "update_task",
+            "result": {
+              "taskId": "task-selected",
+              "link": "/tasks",
+              "description": "Sună-l pe Andrei",
+              "status": "open",
+              "dueDate": "2026-10-09T07:00:00.000Z",
+              "startTime": "10:00",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "mutationRevision": {
+                "resource": "tasks",
+                "id": "task-selected",
+                "before": "2026-01-01T00:00:00.000Z",
+                "after": "2026-10-08T11:42:39.957Z"
+              }
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task actualizat: „Sună-l pe Andrei”. Data: 2026-10-09, 10:00, ora Bucureștiului. Proprietate: Apartament Titan. ID: task-selected.",
+      "storedTasks": [
+        {
+          "id": "task-selected",
+          "description": "Sună-l pe Andrei",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "startTime": "10:00",
+          "duration": 30,
+          "contactId": "andrei",
+          "contactName": "Andrei",
+          "agentId": "b1cfe283-6a70-45f4-b3de-ff3911dea275",
+          "status": "open",
+          "propertyId": "titan",
+          "propertyTitle": "Apartament Titan",
+          "updatedAt": "2026-10-08T11:42:39.957Z"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "unitTests": 2088,
+    "unitFiles": 186,
+    "unitSkipped": 316,
+    "unitCommand": "npx vitest run --maxWorkers=2",
+    "emulatorRegressions": 270,
+    "emulatorFiles": 18,
+    "liveScenarios": 3,
+    "combinedPassed": 273,
+    "missingDetailsTrials": 2,
+    "previous32LiveScenariosRerun": false,
+    "productionBuild": true,
+    "staticPages": 227,
+    "unitRerunReason": "Unbounded parallel run alongside emulator/build timed out in docx-import and initial planner test, with ten subsequent planner failures. Both files passed isolated (31 tests); entire suite passed with two workers, without changing assertions or timeouts."
+  }
+}

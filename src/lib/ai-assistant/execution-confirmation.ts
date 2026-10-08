@@ -9,7 +9,8 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
     if (!['create_task', 'update_task'].includes(String(step.kind)) || !receipt || typeof receipt.taskId !== 'string' || !receipt.taskId) return '';
     const verb = receipt.alreadyExists === true ? 'deja existent' : step.kind === 'create_task' ? 'creat' : receipt.status === 'completed' ? 'finalizat' : 'actualizat';
     const date = typeof receipt.dueDate === 'string' ? receipt.dueDate.includes('T') ? bucharestInputFromIso(receipt.dueDate).date : receipt.dueDate : '';
-    return `Task ${verb}${typeof receipt.description === 'string' ? `: „${receipt.description}”` : ''}.${date ? ` Data: ${date}${typeof receipt.startTime === 'string' && receipt.startTime ? `, ${receipt.startTime}, ora Bucureștiului` : ''}.` : ''} ID: ${receipt.taskId}.`;
+    const relation = [typeof receipt.propertyId === 'string' ? `Proprietate: ${receipt.propertyTitle || receipt.propertyId}.` : '', typeof receipt.contactId === 'string' ? `Client: ${receipt.contactName || receipt.contactId}.` : '', typeof receipt.participantName === 'string' && receipt.participantName ? `Participant: ${receipt.participantName}.` : ''].filter(Boolean).join(' ');
+    return `Task ${verb}${typeof receipt.description === 'string' ? `: „${receipt.description}”` : ''}.${date ? ` Data: ${date}${typeof receipt.startTime === 'string' && receipt.startTime ? `, ${receipt.startTime}, ora Bucureștiului` : ''}.` : ''}${relation ? ` ${relation}` : ''} ID: ${receipt.taskId}.`;
   }).filter(Boolean).join('\n');
 }
 

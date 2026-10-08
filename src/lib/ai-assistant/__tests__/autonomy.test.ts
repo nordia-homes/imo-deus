@@ -12,7 +12,22 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
-  it.each(['Redeschide taskul.', 'Mută taskul la 11.', 'Replanifică taskul.'])('executes explicit task edits and respects their negation: %s', async prompt => {
+  it('executes CRM participant tasks and property links without opt-in, but keeps unrelated edits gated', async () => {
+    const context = ctx(); (context as any).policy = undefined;
+    vi.stubEnv('JARVIS_AUTONOMOUS', 'false');
+    const actions: AssistantAction[] = [
+      { ...task, participantSource: 'property_owner', propertyId: 'p' },
+      { ...task, participantSource: 'contact', contactId: 'c' },
+      { kind: 'update_task', taskId: 't', propertyId: 'p' },
+    ];
+    for (const action of actions) {
+      expect((await runSafePrefix(context, 'contextual', [action], action.kind === 'create_task' ? 'Creează taskul.' : 'Leagă taskul de proprietate.')).results).toHaveLength(1);
+      expect((await runSafePrefix(context, 'negated', [action], action.kind === 'create_task' ? 'Nu crea taskul.' : 'Nu lega taskul de proprietate.')).results).toHaveLength(0);
+    }
+    expect((await runSafePrefix(context, 'general', [task], 'Creează taskul.')).results).toHaveLength(0);
+    expect((await runSafePrefix(context, 'mixed', [{ kind: 'update_task', taskId: 't', propertyId: 'p', description: 'Schimbare suplimentară' }], 'Leagă taskul de proprietate.')).results).toHaveLength(0);
+  });
+  it.each(['Redeschide taskul.', 'Mută taskul la 11.', 'Replanifică taskul.', 'Leagă taskul de proprietate.', 'Asociază taskul clientului.', 'Corectează legătura taskului.'])('executes explicit task edits and respects their negation: %s', async prompt => {
     const action: AssistantAction = { kind: 'update_task', taskId: 't', status: 'open' };
     expect((await runSafePrefix(ctx(), 'edit', [action], prompt)).results).toHaveLength(1);
     vi.mocked(executeAction).mockClear();
