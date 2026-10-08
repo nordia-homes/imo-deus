@@ -330,6 +330,18 @@ describe('durable batch checkpoints and controls', () => {
     expect((await runPlan(ctx, 'p', false, 1)).status).toBe('completed');
     expect(vi.mocked(executeAction).mock.calls.map(call => call[2])).toEqual(['p-0', 'p-1', 'p-2']);
   });
+  it('retries an internal failure after the first confirmed action without replaying that action', async () => {
+    const { ctx, plan } = executionFixture();
+    vi.mocked(executeAction).mockResolvedValueOnce({ taskId: 'first' }).mockRejectedValueOnce(new Error('Temporarily unavailable'));
+    expect((await runPlan(ctx, 'p')).status).toBe('failed');
+    const firstReceipt = structuredClone(plan.results[0]);
+    expect(plan.results).toHaveLength(1);
+    vi.mocked(executeAction).mockImplementation(async (_ctx, _action, key) => ({ taskId: key }));
+    expect((await runPlan(ctx, 'p')).status).toBe('completed');
+    expect(plan.results).toHaveLength(3);
+    expect(plan.results[0]).toEqual(firstReceipt);
+    expect(vi.mocked(executeAction).mock.calls.map(call => call[2])).toEqual(['p-0', 'p-1', 'p-1', 'p-2']);
+  });
   it('pauses after the in-flight action and resumes only the remaining actions', async () => {
     const { ctx, plan } = executionFixture();
     vi.mocked(executeAction).mockImplementation(async (_ctx, _action, key) => { if (key === 'p-0') await controlPlan(ctx, 'p', 'pause'); return { taskId: key }; });

@@ -38,16 +38,20 @@ export async function enqueuePlan(ctx: AssistantContext, planId: string) {
   const { data } = await getPlan(ctx, planId);
   validateApproval((data as any).approval, ctx.uid, ctx.agencyId, planId, data.actions);
   const ref = ctx.adminDb.collection('assistantAgentJobs').doc(planId);
-  await ctx.adminDb.runTransaction(async tx => {
+  const status = await ctx.adminDb.runTransaction(async tx => {
     const job = await tx.get(ref);
     if (job.exists) {
       if (job.data()?.userId !== ctx.uid || job.data()?.agencyId !== ctx.agencyId) throw new CommunicationError('Job inaccesibil.', 403);
-      if (!(job.data()?.status === 'failed' && data.status === 'failed') && !(job.data()?.status === 'completed' && job.data()?.planStatus === 'paused' && data.status === 'pending')) return;
+      const previous = job.data()!;
+      const retryFailed = data.status === 'failed' && (previous.status === 'failed' || (previous.status === 'completed' && previous.planStatus === 'failed'));
+      const resumePaused = previous.status === 'completed' && previous.planStatus === 'paused' && data.status === 'pending';
+      if (!retryFailed && !resumePaused) return previous.status;
     }
     if (!['pending', 'failed'].includes(data.status)) throw new CommunicationError('Planul necesită verificarea stării.', 409);
     tx.set(ref, { jobType: 'plan', planId, sessionId: data.sessionId, agencyId: ctx.agencyId, userId: ctx.uid, role: ctx.role, status: 'pending', attempts: 0, approvedAt: new Date().toISOString(), createdAt: new Date().toISOString(), events: [] });
+    return 'pending';
   });
-  return { jobId: ref.id, status: 'pending' };
+  return { jobId: ref.id, status };
 }
 export async function readJob(ctx: AssistantContext, id: string) {
   const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();

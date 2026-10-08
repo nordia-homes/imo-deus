@@ -17,12 +17,20 @@ Implementat: răspunsul final după încercarea instrumentelor, inclusiv când p
 
 Stare: **lot parțial, nu 50/50 și nu 1.000/1.000**. Inventarul nu certifică end-to-end niciun scenariu prin aceste probe. Verificarea deterministă a plannerului nu certifică fiabilitatea modelului real în limbaj natural.
 
+### Reluarea execuției — mecanism necesar pentru 0850
+
+Corectat blocajul dintre terminarea workerului și eșecul planului: un job cu `status=completed` și `planStatus=failed` poate fi pus din nou în coadă la reîncercarea autorizată, dacă planul este încă `failed` și aprobarea este validă. Înainte, răspunsul anunța `pending` fără să schimbe jobul. Pentru joburile care nu sunt repuse în coadă, API-ul returnează acum starea reală.
+
+Probele din `jobs.test.ts` parcurg coada → worker → plan eșuat → reîncercare → worker → plan terminat și verifică protecțiile pentru joburi în curs, rezultate incerte, planuri anulate/terminate/în pauză și aprobări expirate. Proba nouă din `recovery.test.ts` execută runnerul real cu un executor simulat: primul pas confirmat, al doilea eșuat înainte de confirmare, apoi reluare doar pentru pașii rămași, cu aceeași cheie de idempotență. Dovada primului pas rămâne identică. Sunt 11 probe noi; fixture-ul de coadă simulează Firestore și runnerul, iar cel de recuperare simulează Firestore și executorul.
+
+Aceste probe verifică mecanismul de recuperare, nu certifică întregul scenariu 0850. Reîncercarea după eșec este explicită; rezultatele externe incerte nu se repetă automat. Execuția reală în Firestore, limbajul natural și întregul obiectiv din conversație rămân de verificat separat.
+
 ## Criteriul de promovare a unui scenariu
 
 Fiecare ID necesită fixtures și aserțiuni proprii, contextul conversației dacă este o continuare, variante de limbaj, actor/rol, timp controlat în București, pașii autorizați, dovezi ale rezultatului final și efecte interzise. Se testează eroare, întrerupere, reluare și lipsa duplicatelor. Raportul identifică versiunea codului/modelului, sursele și mediul: determinist, emulator, model real pe fixtures, furnizor de test sau producție. Straturile nu sunt substituibile și nu se însumează ca scenarii distincte.
 
 ## Verificări curente
 
-25/25 teste planner și 1721/1721 teste de regresie în 134 de fișiere au trecut. ESLint și paritatea au trecut. Primele două eșecuri ale suitei țintite proveneau din fixtures limitate la două răspunsuri, incompatibile cu noua continuare; fixtures au fost extinse, apoi suita și regresia au trecut. Două probe suplimentare verifică recuperarea după prima citire eșuată și respingerea unei citiri eșuate ca dovadă; ele nu adaugă scenarii originale certificate. Providerii au fost simulați; nu s-au trimis mesaje sau lansat campanii reale. Versiunea uneltelor: 57.
+109/109 teste de coadă și recuperare și 1732/1732 teste de regresie în 134 de fișiere au trecut pentru versiunea 58 a uneltelor. ESLint, paritatea și inventarul loturilor au trecut. Providerii au fost simulați; nu s-au trimis mesaje sau lansat campanii reale. Numărul scenariilor originale certificate nu a crescut prin testele mecanismelor de recuperare.
 
-Buildul complet a trecut cu TypeScript și 227/227 pagini pentru versiunea 56; nu a fost repetat pentru extinderea condiției de continuare din versiunea 57, verificată prin suita completă și ESLint. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. Inventarul a fost regenerat și verificat; git diff --check a trecut. Nu s-au relansat UI sau emulatorul pentru modificarea plannerului. Nu s-a publicat în producție.
+Buildul complet a trecut cu TypeScript și 227/227 pagini pentru versiunea 58. Rămân avertismentul cunoscut Jaeger și omiterea copierii Playwright în standalone. git diff --check a trecut. Nu s-au relansat UI sau emulatorul pentru modificarea cozii. Nu s-a publicat în producție.

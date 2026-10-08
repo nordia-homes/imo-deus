@@ -3,8 +3,9 @@ vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 vi.mock('../access', () => ({ collectionFor: (ctx: any, name: string) => ctx.adminDb.collection(`agencies/${ctx.agencyId}/${name}`), referencesAllowed: vi.fn(async () => true) }));
 vi.mock('../workspace', () => ({ chatTurn: vi.fn(async () => ({ message: { id: 'reply', text: 'Confirmed fixture', accessRefs: [] } })), runPlan: vi.fn(async () => ({ status: 'unknown' })), getPlan: vi.fn(async () => ({ data: { status: 'pending' } })) }));
-import { enqueueTurn, readJob, drainAgentJobs, recoverAgentJob } from '../jobs';
-import { chatTurn, runPlan } from '../workspace';
+import { enqueueTurn, enqueuePlan, readJob, drainAgentJobs, recoverAgentJob } from '../jobs';
+import { chatTurn, runPlan, getPlan } from '../workspace';
+import { approvalEnvelope } from '../approval';
 import type { AssistantContext } from '../access';
 function database(initial: Record<string, any> = {}) {
   const rows = new Map<string, any>(Object.entries({ 'users/u': { agencyId: 'a', role: 'agent' }, ...initial }));
@@ -20,6 +21,52 @@ function database(initial: Record<string, any> = {}) {
 const input = { sessionId: 'session', requestId: 'request', prompt: 'Read authorized data' };
 afterEach(() => vi.clearAllMocks());
 describe('durable tenant-scoped jobs', () => {
+  function approvedPlan(status: string) {
+    const actions = [{ kind: 'create_task' as const, description: 'Follow-up', dueDate: '2030-01-01T10:00:00Z' }];
+    return { status, actions, sessionId: 'session', approval: approvalEnvelope('u', 'a', 'plan', actions, Date.now() + 60000) };
+  }
+  it('requeues a failed plan after a normally completed worker and drains the retry', async () => {
+    const { ctx, db, rows } = database({ 'assistantAgentJobs/plan': { jobType: 'plan', planId: 'plan', agencyId: 'a', userId: 'u', role: 'agent', status: 'pending', attempts: 0, createdAt: '' } });
+    vi.mocked(runPlan).mockResolvedValueOnce({ status: 'failed', results: [{ step: 1 }] } as any);
+    await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/plan')).toMatchObject({ status: 'completed', planStatus: 'failed', confirmedSteps: 1 });
+    vi.mocked(getPlan).mockResolvedValueOnce({ data: approvedPlan('failed') } as any);
+    expect(await enqueuePlan(ctx, 'plan')).toEqual({ jobId: 'plan', status: 'pending' });
+    expect(rows.get('assistantAgentJobs/plan')).not.toHaveProperty('completedAt');
+    vi.mocked(runPlan).mockResolvedValueOnce({ status: 'completed', results: [{ step: 1 }, { step: 2 }] } as any);
+    await drainAgentJobs(db as any);
+    expect(rows.get('assistantAgentJobs/plan')).toMatchObject({ status: 'completed', planStatus: 'completed', confirmedSteps: 2 });
+    expect(runPlan).toHaveBeenCalledTimes(2);
+  });
+  it.each(['pending', 'running', 'completed'])('returns the actual %s job state without claiming it was requeued', async status => {
+    const original = { jobType: 'plan', planId: 'plan', agencyId: 'a', userId: 'u', role: 'agent', status, planStatus: 'unknown', attempts: 2 };
+    const { ctx, rows } = database({ 'assistantAgentJobs/plan': original });
+    vi.mocked(getPlan).mockResolvedValueOnce({ data: approvedPlan('failed') } as any);
+    expect(await enqueuePlan(ctx, 'plan')).toEqual({ jobId: 'plan', status });
+    expect(rows.get('assistantAgentJobs/plan')).toEqual(original);
+    expect(runPlan).not.toHaveBeenCalled();
+  });
+  it.each(['unknown', 'cancelled', 'completed', 'paused'])('does not requeue a current %s plan even if the previous worker failed', async status => {
+    const original = { agencyId: 'a', userId: 'u', status: 'completed', planStatus: 'failed' };
+    const { ctx, rows } = database({ 'assistantAgentJobs/plan': original });
+    vi.mocked(getPlan).mockResolvedValueOnce({ data: approvedPlan(status) } as any);
+    expect(await enqueuePlan(ctx, 'plan')).toEqual({ jobId: 'plan', status: 'completed' });
+    expect(rows.get('assistantAgentJobs/plan')).toEqual(original);
+  });
+  it('still requeues an explicitly resumed paused plan', async () => {
+    const { ctx, rows } = database({ 'assistantAgentJobs/plan': { agencyId: 'a', userId: 'u', status: 'completed', planStatus: 'paused' } });
+    vi.mocked(getPlan).mockResolvedValueOnce({ data: approvedPlan('pending') } as any);
+    expect(await enqueuePlan(ctx, 'plan')).toEqual({ jobId: 'plan', status: 'pending' });
+    expect(rows.get('assistantAgentJobs/plan').status).toBe('pending');
+  });
+  it('does not retry a failed plan with expired approval', async () => {
+    const original = { agencyId: 'a', userId: 'u', status: 'completed', planStatus: 'failed' };
+    const { ctx, rows } = database({ 'assistantAgentJobs/plan': original });
+    const plan = approvedPlan('failed'); plan.approval.expiresAt = Date.now() - 1;
+    vi.mocked(getPlan).mockResolvedValueOnce({ data: plan } as any);
+    await expect(enqueuePlan(ctx, 'plan')).rejects.toThrow('expirat');
+    expect(rows.get('assistantAgentJobs/plan')).toEqual(original);
+  });
   it('recovers interrupted verification independently of its polling count without extending its deadline', async () => {
     const deadline = Date.now() + 60000;
     const { db, rows } = database({ 'assistantAgentJobs/watch': { jobType: 'verification', status: 'running', leaseUntil: 0, attempts: 80, deadline, recoveryAttempts: 1, notBefore: 123 } });
