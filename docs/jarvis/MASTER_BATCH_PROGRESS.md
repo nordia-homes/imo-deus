@@ -4,6 +4,22 @@
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot calendar — mesaje de confirmare pentru client și proprietar
+
+Scenariile originale **0195–0196** au trecut cu model real și Firestore local (prompt jarvis-50 / tools 80), fără opt-in separat. Dovezi: [CALENDAR_EXECUTION_BATCH_13.json](evals/CALENDAR_EXECUTION_BATCH_13.json). Rezultatul cerut este mesajul integral pregătit și netrimis, pentru vizionarea selectată în conversație. Nu reprezintă trimiterea mesajului sau confirmarea participării.
+
+Instrumentul recitește vizionarea, clientul și proprietatea. Probele folosesc intenționat un istoric vechi: mesajele finale conțin ora actuală **18:00, București**, numele actuale și adresa Strada Teiului 10. Proprietarul folosește identitatea și telefonul proprietarului, fără substituirea cumpărătorului. Datele lipsă sunt semnalate; o vizionare anulată, efectuată, trecută, cu relații lipsă sau proprietate inactivă nu produce mesaj de confirmare.
+
+Proba fără selecție a expus o alegere arbitrară a modelului pentru 0196. Verificarea este acum în aplicație: ID-ul trebuie să provină din ultima selecție neambiguă anterioară comenzii sau să fie indicat explicit în cerere. O listă nouă cu mai multe rezultate invalidează o selecție mai veche; rezultatele căutării din turul curent nu autorizează alegerea automată. Încercarea nereușită este păstrată în raport. Ambele probe fără selecție cer acum clarificare.
+
+Verificările compară integral colecțiile de vizionări, clienți și proprietăți înainte și după. Nu apar taskuri, execuții, joburi sau mesaje în communicationOutboundJobs. Regresia Firestore verifică datele actuale, anularea și izolarea agenției. Testele locale acoperă separat selecția ambiguă, contextul compactat și blocarea efectivă în dispatcher.
+
+Validare: **2.106 teste în suita locală completă**, plus **două teste noi de dispatcher** (fișierul cu toate cele 11 teste a trecut separat); 322 teste condiționate de alte medii nu sunt numărate ca trecute. **272 regresii Firestore și două comenzi originale cu model real** au trecut împreună. Cele 37 de scenarii live anterioare nu au fost rerulate.
+
+Lint, inventarele și buildul final cu TypeScript și 227 de pagini au trecut.
+
+Total curent: **39 de scenarii originale cu dovezi locale folosind modelul real**, **961 fără această dovadă**. Nu este certificare integrală, în producție sau pe voce; nu s-a publicat în producție.
+
 ## Lot calendar — disponibilitate și primul interval potrivit
 
 Scenariile originale **0192–0193** au trecut cu model real și Firestore local (prompt jarvis-49 / tools 79), fără opt-in separat. Dovezi: [CALENDAR_EXECUTION_BATCH_12.json](evals/CALENDAR_EXECUTION_BATCH_12.json). 0192 găsește exact golurile 17:00–17:30 și 18:30–00:00 din calendarul agentului pentru mâine după 16:00. Textul și cardurile afișează orele din București și precizează că limita implicită este sfârșitul zilei, nu programul de lucru.

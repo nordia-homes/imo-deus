@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readField: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
+vi.mock('../viewing-confirmation-draft', () => ({ viewingConfirmationDraft: vi.fn() }));
 vi.mock('../actions', () => ({ matchContact: vi.fn(), matchProperty: vi.fn() }));
 vi.mock('../watch-feedback', () => ({ annotateWatchFeedback: vi.fn() }));
 vi.mock('../context', () => ({ saveResultSet: vi.fn() }));
@@ -9,6 +10,7 @@ vi.mock('../registry', () => ({ requireTool: vi.fn(), discoverTools: vi.fn(), in
 vi.mock('../operation-cards', () => ({ operationCards: () => [] }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error {} }));
 import { dispatchTool } from '../tool-dispatch';
+import { viewingConfirmationDraft } from '../viewing-confirmation-draft';
 import { invokeOperation } from '../operations';
 import { requireTool } from '../registry';
 import { annotateWatchFeedback } from '../watch-feedback';
@@ -17,6 +19,17 @@ import { matchContact, matchProperty } from '../actions';
 import { saveResultSet } from '../context';
 const ctx: any = { uid: 'u', agencyId: 'a', role: 'agent' };
 afterEach(() => vi.resetAllMocks());
+it('does not prepare a confirmation for a viewing guessed by the model', async () => {
+  const result = await dispatchTool('viewing_confirmation_draft', ctx, { viewingId: 'guessed', recipient: 'owner' }, 'Pregătește confirmarea pentru proprietar.', {});
+  expect(result.data).toMatchObject({ status: 'needs_clarification', complete: false, rows: [], sent: false });
+  expect(viewingConfirmationDraft).not.toHaveBeenCalled();
+  expect(result.actions).toEqual([]);
+});
+it('prepares the selected viewing through the fresh-data reader', async () => {
+  vi.mocked(viewingConfirmationDraft).mockResolvedValue({ status: 'prepared', complete: true, sent: false, rows: [] } as any);
+  await dispatchTool('viewing_confirmation_draft', ctx, { viewingId: 'selected', recipient: 'client' }, 'Pregătește confirmarea.', { selectedViewingId: 'selected' });
+  expect(viewingConfirmationDraft).toHaveBeenCalledExactlyOnceWith(ctx, { viewingId: 'selected', recipient: 'client' });
+});
 it('annotates owner pages without changing pagination evidence', async () => {
   const rows = [{ id: 'p' }], annotated = [{ id: 'p', feedbackNote: 'Historical alert' }];
   vi.mocked(searchProperties).mockResolvedValue({ rows, nextCursor: 'cursor', complete: false, scanned: 10 } as any);

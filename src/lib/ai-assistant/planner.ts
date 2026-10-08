@@ -1,4 +1,5 @@
 import { MAX_PLAN_ACTIONS } from './plan-limits';
+import { selectedViewing } from './viewing-selection';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { AssistantAction, AssistantCard, AssistantMessage, AccessReference } from './contracts';
@@ -20,13 +21,14 @@ import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation 
 import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
 import { validatePlannedDependencies } from './dependencies';
 
-export type AgentOptions = { provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string> };
+export type AgentOptions = { provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
   let goalCoverage: GoalCoverage | undefined;
   const successfulReads = new Set<string>();
   const budget = options.budget || new AgentBudget(), provider = options.provider || new OpenAIAdapter();
   const verifiedDates = options.verifiedDates || explicitInstants(prompt);
+  const selectedViewingId = selectedViewing(history, options.summary);
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
   const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation }) };
   const verifiedMutationPlan = () => actions.length > 0 && !!goalCoverage?.requirements.every(row => row.resolution === 'planned') && metrics.tools.at(-1)?.name === 'goal_coverage' && metrics.tools.at(-1)?.status === 'success';
@@ -114,7 +116,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           let response;
           const invoke = async () => {
             for (let attempt = 1; ; attempt++) {
-              try { return await definition.handler(ctx, payload, prompt, { ...options, provider, budget, verifiedDates }); }
+              try { return await definition.handler(ctx, payload, prompt, { ...options, provider, budget, verifiedDates, selectedViewingId }); }
               catch (error) {
                 const code = Number((error as { status?: number; httpStatus?: number })?.status || (error as { httpStatus?: number })?.httpStatus);
                 const transient = error instanceof ProviderError ? error.retryable : [429, 502, 503, 504].includes(code);

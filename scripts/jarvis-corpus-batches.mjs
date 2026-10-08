@@ -9,7 +9,7 @@ assert.equal(corpus.scenarios.length, 1000);
 assert.equal(new Set(corpus.scenarios.map(row => row.id)).size, 1000);
 const regressionIds = new Set(['master-0801', 'master-0806', 'master-0849', 'master-0850']);
 const liveIds = new Map();
-for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_10.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json']) {
+for (const file of ['docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_01.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_02.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_03.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_10.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json', 'docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_13.json']) {
   const evidence = JSON.parse(fs.readFileSync(file, 'utf8'));
   for (const row of [...evidence.finalRuns, ...(evidence.combinedRegression?.runs || [])]) {
     assert.equal(row.prompt, corpus.scenarios.find(scenario => scenario.id === row.scenarioId)?.text);
@@ -30,7 +30,7 @@ const batches = Array.from({ length: 20 }, (_, index) => {
       id: row.id, sourceNumber: row.sourceNumber, request: row.text,
       requestSha256: crypto.createHash('sha256').update(row.text).digest('hex'),
       endToEnd: 'not_verified',
-      ...(liveIds.has(row.id) ? { liveExecutionEvidence: { file: liveIds.get(row.id), scope: 'Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification.' } } : {}),
+      ...(liveIds.has(row.id) ? { liveExecutionEvidence: { file: liveIds.get(row.id), scope: 'Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification.' } } : {}),
       ...(regressionIds.has(row.id) ? { deterministicCoverage: { file: 'src/lib/ai-assistant/__tests__/planner.test.ts', scope: 'Planner continuation / truthful incomplete result with a scripted provider. Does not certify execution, natural-language reliability or provider effects.' } } : {}),
     })),
   };

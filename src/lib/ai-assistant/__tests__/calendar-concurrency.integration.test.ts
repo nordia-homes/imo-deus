@@ -1,3 +1,4 @@
+import { viewingConfirmationDraft } from '../viewing-confirmation-draft';
 import { calendarAvailability } from '../calendar-availability';
 import { taskDeferral } from '../task-deferral';
 import { taskPriorities } from '../task-priorities';
@@ -63,6 +64,23 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('prepares confirmations from fresh relationship data without changing the viewing or queuing messages', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId);
+    await root.collection('contacts').doc('c').set({ name: 'Alin actual', phone: '0700000001' });
+    await root.collection('properties').doc('p').set({ title: 'Cișmigiu actual', status: 'Activ', address: 'Strada Teiului 10', ownerName: 'Ștefan actual', ownerPhone: '0700000002' });
+    const viewing = { status: 'scheduled', contactId: 'c', propertyId: 'p', contactName: 'Vechi', propertyTitle: 'Titlu vechi', viewingDate: resolveDatetime({ dayOffset: 1, time: '18:00' }).iso, agentId: ctx.uid };
+    await root.collection('viewings').doc('v').set(viewing);
+    const client = await viewingConfirmationDraft(ctx, { viewingId: 'v', recipient: 'client' });
+    const owner = await viewingConfirmationDraft(ctx, { viewingId: 'v', recipient: 'owner' });
+    expect(client.rows[0]).toMatchObject({ recipientName: 'Alin actual', recipientPhone: '0700000001' });
+    expect(owner.rows[0]).toMatchObject({ recipientName: 'Ștefan actual', recipientPhone: '0700000002' });
+    expect(owner.rows[0].description).toContain('Cișmigiu actual'); expect(owner.rows[0].description).toContain('18:00');
+    expect((await root.collection('viewings').doc('v').get()).data()).toEqual(viewing);
+    expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', ctx.agencyId).get()).size).toBe(0);
+    await root.collection('viewings').doc('v').update({ status: 'cancelled' });
+    expect(await viewingConfirmationDraft(ctx, { viewingId: 'v', recipient: 'client' })).toMatchObject({ complete: false, rows: [], sent: false });
+    await expect(viewingConfirmationDraft(context(), { viewingId: 'v', recipient: 'owner' })).rejects.toThrow();
+  });
   it('recalculates the first available slot atomically when two requests compete', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
     await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });

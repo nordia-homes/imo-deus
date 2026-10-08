@@ -1,0 +1,480 @@
+{
+  "scope": "Original 0195-0196, actual model and local Firestore. Prior conversation selects exactly one viewing. Complete unsent confirmation messages for client and owner use fresh CRM identities, address and Bucharest time. No assistantPolicies opt-in. No CRM changes, tasks, executions, jobs or outbound messages. Not participant confirmation, production, voice or full variant certification.",
+  "previousAttempts": [
+    {
+      "scenarioId": "master-0196",
+      "prompt": "Pregătește confirmarea pentru proprietar.",
+      "versions": {
+        "prompt": "jarvis-50",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "80",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T12:33:37.116Z",
+      "context": [
+        {
+          "id": "selected-viewing-for-message",
+          "role": "assistant",
+          "text": "Vizionarea selectată este viewing-selected.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "viewings",
+              "title": "Selecție anterioară",
+              "rows": [
+                {
+                  "id": "viewing-selected",
+                  "contactId": "andrei",
+                  "contactName": "Nume vechi",
+                  "propertyId": "titan",
+                  "propertyTitle": "Titlu vechi",
+                  "viewingDate": "2026-10-09T14:00:00.000Z",
+                  "duration": 60,
+                  "status": "scheduled",
+                  "notes": "Acces pe intrarea principală.",
+                  "agentId": "b13f5878-24d4-4b7c-969a-625c1de9f943",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T12:33:37.167Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "missingSelectionTrial": {
+        "status": "success",
+        "text": "Mesaj pregătit pentru proprietar, netrimis:\n\nBună ziua, Proprietar local! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați disponibilitatea pentru acces.\n\nDestinatar: Proprietar local · 0700000002. Mesajul nu confirmă participarea destinatarului.",
+        "actions": []
+      },
+      "failure": "Mesaj pregătit pentru proprietar, netrimis:\n\nBună ziua, Proprietar local! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați disponibilitatea pentru acces.\n\nDestinatar: Proprietar local · 0700000002. Mesajul nu confirmă participarea destinatarului.: expected 'success' to be 'clarification' // Object.is equality"
+    }
+  ],
+  "correction": "Missing-selection variant exposed an arbitrary viewing selection by the model. Tool dispatch now requires a unique pre-turn conversation selection or an explicit ID in the current request. Current-turn search results cannot silently select a viewing. Both original commands and missing-selection trials then passed.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0195",
+      "prompt": "Pregătește confirmarea pentru client.",
+      "versions": {
+        "prompt": "jarvis-50",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "80",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T12:41:41.880Z",
+      "context": [
+        {
+          "id": "selected-viewing-for-message",
+          "role": "assistant",
+          "text": "Vizionarea selectată este viewing-selected.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "viewings",
+              "title": "Selecție anterioară",
+              "rows": [
+                {
+                  "id": "viewing-selected",
+                  "contactId": "andrei",
+                  "contactName": "Nume vechi",
+                  "propertyId": "titan",
+                  "propertyTitle": "Titlu vechi",
+                  "viewingDate": "2026-10-09T14:00:00.000Z",
+                  "duration": 60,
+                  "status": "scheduled",
+                  "notes": "Acces pe intrarea principală.",
+                  "agentId": "746c06a4-e212-4e8e-8c1e-e9511b9ef0b3",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T12:41:44.470Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "missingSelectionTrial": {
+        "status": "clarification",
+        "text": "Pentru ce vizionare să pregătesc confirmarea către client? Trimite-mi, te rog, ID-ul vizionării sau data și ora acesteia.\nCerințe încă neacoperite: Identificarea vizionării este necesară pentru a pregăti confirmarea către client.",
+        "actions": []
+      },
+      "plannerStatus": "success",
+      "text": "Mesaj pregătit pentru client, netrimis:\n\nBună ziua, Andrei! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați participarea.\n\nDestinatar: Andrei · 0700000001. Pregătirea mesajului nu confirmă participarea clientului.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_confirmation_draft",
+          "status": "success",
+          "latencyMs": 47,
+          "version": "80",
+          "argumentsHash": "d683db40828a69ab94a99689b7e62450c1658d5857b5b21e4cf039eef3cb6d57"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 20,
+          "version": "80",
+          "argumentsHash": "5737e4c858829d7a84326b37907b3b3225eeec0ecd4776d55abb3a429088bd52"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11518,
+            "outputTokens": 29,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 11515,
+            "estimated": false
+          },
+          "costUsd": 0.001454175,
+          "latencyMs": 1787,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11788,
+            "outputTokens": 94,
+            "cachedTokens": 11515,
+            "cacheWriteTokens": 270,
+            "estimated": false
+          },
+          "costUsd": 0.0001962,
+          "latencyMs": 2459,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11907,
+            "outputTokens": 126,
+            "cachedTokens": 11785,
+            "cacheWriteTokens": 119,
+            "estimated": false
+          },
+          "costUsd": 0.000196025,
+          "latencyMs": 3865,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_Nh98tfsb98f4NIZpfm9oUETL",
+          "name": "viewing_confirmation_draft",
+          "arguments": "{\"viewingId\":\"viewing-selected\",\"recipient\":\"client\"}"
+        },
+        {
+          "id": "call_Qa7zfittaWYJol9hSNfWZ7aA",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"confirm_draft\",\"sourceQuote\":\"Pregătește confirmarea pentru client.\",\"description\":\"Pregătește și afișează integral mesajul de confirmare pentru client, netrimis.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_Nh98tfsb98f4NIZpfm9oUETL\"]}]}"
+        }
+      ],
+      "costUsd": 0.0018464,
+      "confirmation": "Mesaj pregătit pentru client, netrimis:\n\nBună ziua, Andrei! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați participarea.\n\nDestinatar: Andrei · 0700000001. Pregătirea mesajului nu confirmă participarea clientului.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Confirmare vizionare · mesaj netrimis",
+          "source": "viewing_confirmation",
+          "rows": [
+            {
+              "id": "viewing-selected",
+              "title": "Mesaj pentru client · Andrei",
+              "description": "Bună ziua, Andrei! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați participarea.",
+              "recipient": "client",
+              "recipientName": "Andrei",
+              "recipientPhone": "0700000001",
+              "viewingDate": "2026-10-09T15:00:00.000Z",
+              "viewingLocal": "09 octombrie 2026 la 18:00",
+              "propertyId": "titan",
+              "missingFields": []
+            }
+          ],
+          "complete": true,
+          "note": "Mesaj pregătit, netrimis. Nu reprezintă confirmarea participării destinatarului. Datele trebuie reverificate înaintea trimiterii.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "verification": "Complete unsent draft with current appointment/recipient data; no CRM mutation or outbound action.",
+      "unchangedRecords": [
+        [
+          {
+            "id": "viewing-selected",
+            "contactId": "andrei",
+            "contactName": "Nume vechi",
+            "propertyId": "titan",
+            "propertyTitle": "Titlu vechi",
+            "viewingDate": "2026-10-09T15:00:00.000Z",
+            "duration": 60,
+            "status": "scheduled",
+            "notes": "Acces pe intrarea principală.",
+            "agentId": "746c06a4-e212-4e8e-8c1e-e9511b9ef0b3",
+            "updatedAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        [
+          {
+            "name": "Andrei",
+            "phone": "0700000001",
+            "contactType": "Cumparator"
+          }
+        ],
+        [
+          {
+            "title": "Apartament Titan",
+            "location": "Titan",
+            "ownerName": "Proprietar local",
+            "ownerPhone": "0700000002",
+            "status": "Activ",
+            "address": "Strada Teiului 10"
+          }
+        ]
+      ]
+    },
+    {
+      "scenarioId": "master-0196",
+      "prompt": "Pregătește confirmarea pentru proprietar.",
+      "versions": {
+        "prompt": "jarvis-50",
+        "routing": "luna-first-2",
+        "policy": "request-crm-8",
+        "tools": "80",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T12:42:00.255Z",
+      "context": [
+        {
+          "id": "selected-viewing-for-message",
+          "role": "assistant",
+          "text": "Vizionarea selectată este viewing-selected.",
+          "cards": [
+            {
+              "type": "data",
+              "source": "viewings",
+              "title": "Selecție anterioară",
+              "rows": [
+                {
+                  "id": "viewing-selected",
+                  "contactId": "andrei",
+                  "contactName": "Nume vechi",
+                  "propertyId": "titan",
+                  "propertyTitle": "Titlu vechi",
+                  "viewingDate": "2026-10-09T14:00:00.000Z",
+                  "duration": 60,
+                  "status": "scheduled",
+                  "notes": "Acces pe intrarea principală.",
+                  "agentId": "69b000e7-00f2-4c5c-8b46-0449e854bce1",
+                  "updatedAt": "2026-01-01T00:00:00.000Z"
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-10-08T12:42:00.314Z"
+        }
+      ],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "missingSelectionTrial": {
+        "status": "clarification",
+        "text": "Nu am putut pregăti confirmarea: trebuie să alegi vizionarea pentru care vrei mesajul către proprietar. Care vizionare este?\nCerințe încă neacoperite: Pregătește mesajul de confirmare pentru proprietarul unei vizionări selectate.",
+        "actions": []
+      },
+      "plannerStatus": "success",
+      "text": "**Mesaj pregătit pentru proprietar — netrimis**\n\nBună ziua, Proprietar local! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați disponibilitatea pentru acces.\n\nMesajul nu a fost trimis și nu confirmă participarea proprietarului. Datele trebuie reverificate înainte de trimitere.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_confirmation_draft",
+          "status": "success",
+          "latencyMs": 32,
+          "version": "80",
+          "argumentsHash": "6fd3cc5c199e5421ad90bb4b74b374083ef93752e8e475c2a3337030f5f76179"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 5,
+          "version": "80",
+          "argumentsHash": "37cbd8416f9b22b4e8c47de84a777baf0e129a76f0d52632302ba93d6fdf69d4"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11519,
+            "outputTokens": 29,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 11516,
+            "estimated": false
+          },
+          "costUsd": 0.0014543,
+          "latencyMs": 1439,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11793,
+            "outputTokens": 97,
+            "cachedTokens": 11516,
+            "cacheWriteTokens": 274,
+            "estimated": false
+          },
+          "costUsd": 0.00019821,
+          "latencyMs": 1927,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11915,
+            "outputTokens": 135,
+            "cachedTokens": 11790,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00020094999999999998,
+          "latencyMs": 2699,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "toolCalls": [
+        {
+          "id": "call_rDyKHOh3xGzfqqEqfwFzxIbk",
+          "name": "viewing_confirmation_draft",
+          "arguments": "{\"viewingId\":\"viewing-selected\",\"recipient\":\"owner\"}"
+        },
+        {
+          "id": "call_vMJc0qRsP3piYyByPFJ65QzJ",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"owner_confirmation_draft\",\"sourceQuote\":\"Pregătește confirmarea pentru proprietar.\",\"description\":\"Pregătirea și afișarea mesajului complet de confirmare a vizionării pentru proprietar, fără trimitere.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_rDyKHOh3xGzfqqEqfwFzxIbk\"]}]}"
+        }
+      ],
+      "costUsd": 0.00185346,
+      "confirmation": "**Mesaj pregătit pentru proprietar — netrimis**\n\nBună ziua, Proprietar local! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați disponibilitatea pentru acces.\n\nMesajul nu a fost trimis și nu confirmă participarea proprietarului. Datele trebuie reverificate înainte de trimitere.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Confirmare vizionare · mesaj netrimis",
+          "source": "viewing_confirmation",
+          "rows": [
+            {
+              "id": "viewing-selected",
+              "title": "Mesaj pentru proprietar · Proprietar local",
+              "description": "Bună ziua, Proprietar local! Vă confirm programarea vizionării pentru „Apartament Titan”, pe 09 octombrie 2026 la 18:00, ora Bucureștiului. Adresă/zonă: Strada Teiului 10. Vă rog să confirmați disponibilitatea pentru acces.",
+              "recipient": "owner",
+              "recipientName": "Proprietar local",
+              "recipientPhone": "0700000002",
+              "viewingDate": "2026-10-09T15:00:00.000Z",
+              "viewingLocal": "09 octombrie 2026 la 18:00",
+              "propertyId": "titan",
+              "missingFields": []
+            }
+          ],
+          "complete": true,
+          "note": "Mesaj pregătit, netrimis. Nu reprezintă confirmarea participării destinatarului. Datele trebuie reverificate înaintea trimiterii.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "verification": "Complete unsent draft with current appointment/recipient data; no CRM mutation or outbound action.",
+      "unchangedRecords": [
+        [
+          {
+            "id": "viewing-selected",
+            "contactId": "andrei",
+            "contactName": "Nume vechi",
+            "propertyId": "titan",
+            "propertyTitle": "Titlu vechi",
+            "viewingDate": "2026-10-09T15:00:00.000Z",
+            "duration": 60,
+            "status": "scheduled",
+            "notes": "Acces pe intrarea principală.",
+            "agentId": "69b000e7-00f2-4c5c-8b46-0449e854bce1",
+            "updatedAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        [
+          {
+            "name": "Andrei",
+            "phone": "0700000001",
+            "contactType": "Cumparator"
+          }
+        ],
+        [
+          {
+            "title": "Apartament Titan",
+            "location": "Titan",
+            "ownerName": "Proprietar local",
+            "ownerPhone": "0700000002",
+            "status": "Activ",
+            "address": "Strada Teiului 10"
+          }
+        ]
+      ]
+    }
+  ],
+  "validation": {
+    "fullUnitSuitePassed": 2106,
+    "unitFiles": 189,
+    "unitSkipped": 322,
+    "additionalDispatcherTestsPassed": 2,
+    "dispatcherFilePassed": 11,
+    "emulatorRegressions": 272,
+    "liveScenarios": 2,
+    "combinedPassed": 274,
+    "previous37LiveScenariosRerun": false
+  }
+}

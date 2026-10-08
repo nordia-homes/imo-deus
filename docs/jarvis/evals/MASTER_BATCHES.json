@@ -1149,7 +1149,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1160,7 +1160,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1178,7 +1178,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1189,7 +1189,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1200,7 +1200,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1211,7 +1211,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1222,7 +1222,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1233,7 +1233,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1244,7 +1244,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1255,7 +1255,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1266,7 +1266,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1277,7 +1277,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1288,7 +1288,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1299,7 +1299,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1310,7 +1310,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1321,7 +1321,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_05.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1332,7 +1332,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1343,7 +1343,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1354,7 +1354,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1365,7 +1365,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_06.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1376,7 +1376,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1387,7 +1387,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1398,7 +1398,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1409,7 +1409,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1420,7 +1420,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1431,7 +1431,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_04.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1442,7 +1442,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1453,7 +1453,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1464,7 +1464,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_08.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1475,7 +1475,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1486,7 +1486,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_09.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1497,7 +1497,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_10.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1515,7 +1515,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1526,7 +1526,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1537,7 +1537,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_11.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1548,7 +1548,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1559,7 +1559,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_12.json",
-            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
         {
@@ -1574,14 +1574,22 @@
           "sourceNumber": 195,
           "request": "Pregătește confirmarea pentru client.",
           "requestSha256": "b9444dc9bffc2c6b855780c2d2ffe63c9229c7c0ce4ec2e1498615d50c79af20",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_13.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0196",
           "sourceNumber": 196,
           "request": "Pregătește confirmarea pentru proprietar.",
           "requestSha256": "b47ea02743e9dca90b58ea5c7f5e31eae73faadfe8daacc1c07a143ddf8887f6",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_13.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0197",

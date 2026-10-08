@@ -40,10 +40,11 @@ const priorityCases = ['master-0185', 'master-0186'];
 const deferralCases = ['master-0187'];
 const taskContextCases = ['master-0189', 'master-0190', 'master-0191'];
 const availabilityCases = ['master-0192', 'master-0193'];
-const cases = [...availabilityCases, ...taskContextCases, ...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const confirmationCases = ['master-0195', 'master-0196'];
+const cases = [...confirmationCases, ...availabilityCases, ...taskContextCases, ...deferralCases, ...priorityCases, ...agendaCases, ...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'availability' || availabilityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-context' || taskContextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'confirmations' || confirmationCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'availability' || availabilityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-context' || taskContextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-deferral' || deferralCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-priorities' || priorityCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'task-agenda' || agendaCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -54,7 +55,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
-    const isAvailability = availabilityCases.includes(scenarioId); const isDeferral = deferralCases.includes(scenarioId);
+    const isConfirmation = confirmationCases.includes(scenarioId); const isAvailability = availabilityCases.includes(scenarioId); const isDeferral = deferralCases.includes(scenarioId);
     const isTaskContext = taskContextCases.includes(scenarioId);
     const isPriority = priorityCases.includes(scenarioId);
     const isAgenda = agendaCases.includes(scenarioId);
@@ -64,7 +65,7 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     const isDelete = scenarioId === 'master-0166', isNote = scenarioId === 'master-0167';
     const newNote = 'Clientul dorește să revină împreună cu familia.';
     const isEdit = editCases.includes(scenarioId) || noteCases.includes(scenarioId);
-    const isViewing = isAvailability || isFollowup || isRead || isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
+    const isViewing = isConfirmation || isAvailability || isFollowup || isRead || isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
     const viewingTime = scenarioId === 'master-0158' ? '10:00' : ['master-0160', 'master-0161'].includes(scenarioId) ? '18:00' : scenarioId === 'master-0162' ? '17:30' : '17:00';
     const viewingDate = resolveDatetime(scenarioId === 'master-0158' ? { weekday: 'friday', time: viewingTime } : { dayOffset: ['master-0164', 'master-0167'].includes(scenarioId) ? -1 : 1, time: viewingTime }).iso;
     const seedTask = { id: 'task-selected', description: 'Sună-l pe Andrei', dueDate: date.iso, startTime: '10:00', duration: 30, contactId: 'andrei', contactName: 'Andrei', agentId: id, status: scenarioId === 'master-0181' ? 'completed' : 'open', updatedAt: '2026-01-01T00:00:00.000Z' };
@@ -94,6 +95,11 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       if (!isViewing && !isTaskContext) await agency.collection('assistantPolicies').doc(id).set({ ownerId: id, role: 'agent', enabled: true, viewings: true, expiresAt: Date.now() + 180000 });
       await agency.collection('contacts').doc('andrei').set({ name: contactName, phone: '0700000001', contactType: 'Cumparator' });
       await agency.collection('properties').doc('titan').set({ title: 'Apartament Titan', location: 'Titan', ownerName: 'Proprietar local', ownerPhone: '0700000002', status: isNote ? 'Inactiv' : 'Activ' });
+      if (isConfirmation) {
+        history.push({ id: 'selected-viewing-for-message', role: 'assistant', text: 'Vizionarea selectată este viewing-selected.', cards: [{ type: 'data', source: 'viewings', title: 'Selecție anterioară', rows: [{ ...seedViewing, contactName: 'Nume vechi', propertyTitle: 'Titlu vechi' }] }], createdAt: new Date().toISOString() });
+        await agency.collection('properties').doc('titan').update({ address: 'Strada Teiului 10' });
+        await agency.collection('viewings').doc(seedViewing.id).set({ ...seedViewing, contactName: 'Nume vechi', propertyTitle: 'Titlu vechi', viewingDate: resolveDatetime({ dayOffset: 1, time: '18:00' }).iso });
+      }
       if (isAvailability) {
         const at = (time: string) => resolveDatetime({ dayOffset: 1, time }).iso;
         await agency.collection('tasks').doc('busy-task').set({ description: 'Documente', status: 'open', agentId: id, dueDate: at('16:00'), startTime: '16:00', duration: 60 });
@@ -169,6 +175,12 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       }
       if (['master-0179', 'master-0180', 'master-0181'].includes(scenarioId)) await agency.collection('tasks').doc(seedTask.id).set(seedTask);
       const provider = new OpenAIAdapter(), diagnostics: unknown[] = [], toolCalls: unknown[] = [], seenErrors = new Set<string>();
+      if (isConfirmation) {
+        const missing = await planTurn(ctx, prompt, [], { provider, budget: new AgentBudget() });
+        report = { ...report, missingSelectionTrial: { status: missing.metrics.status, text: missing.text, actions: missing.actions } };
+        expect(missing.actions).toEqual([]); expect(missing.metrics.status, missing.text).toBe('clarification');
+      }
+      const confirmationBefore = isConfirmation ? await Promise.all(['viewings', 'contacts', 'properties'].map(async source => (await agency.collection(source).orderBy('__name__').get()).docs.map(doc => doc.data()))) : null;
       const availabilityBefore = isAvailability ? { tasks: (await agency.collection('tasks').orderBy('__name__').get()).docs.map(doc => doc.data()), viewings: (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) } : null;
       if (['master-0189', 'master-0190'].includes(scenarioId)) {
         const missing = await planTurn(ctx, prompt, history.filter(message => message.id !== 'task-details'), { provider, budget: new AgentBudget() });
@@ -182,6 +194,22 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, toolCalls, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isConfirmation) {
+        expect(diagnostics).toEqual([]); expect(planned.actions).toEqual([]);
+        const rows = (planned.cards || []).filter(card => card.source === 'viewing_confirmation').flatMap(card => card.rows || []);
+        expect(rows).toHaveLength(1);
+        const owner = scenarioId === 'master-0196';
+        expect(rows[0]).toMatchObject({ recipient: owner ? 'owner' : 'client', recipientName: owner ? 'Proprietar local' : 'Andrei', recipientPhone: owner ? '0700000002' : '0700000001' });
+        for (const value of ['18:00', 'Apartament Titan', 'Strada Teiului 10', owner ? 'Proprietar local' : 'Andrei']) expect(planned.text).toContain(value);
+        expect(planned.text).toMatch(/netrimis|nu (?:a fost |este |am )?trimis/i);
+        expect(planned.text).not.toMatch(/Nume vechi|Titlu vechi|17:00|UTC|GMT/);
+        expect(rows[0].description).toContain(owner ? 'confirmați disponibilitatea pentru acces' : 'confirmați participarea');
+        expect(await Promise.all(['viewings', 'contacts', 'properties'].map(async source => (await agency.collection(source).orderBy('__name__').get()).docs.map(doc => doc.data())))).toEqual(confirmationBefore);
+        for (const source of ['tasks', 'assistantExecutions', 'assistantJobs']) expect((await agency.collection(source).get()).size).toBe(0);
+        expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', id).get()).size).toBe(0);
+        report = { ...report, executionVerified: true, confirmation: planned.text, cards: planned.cards, verification: 'Complete unsent draft with current appointment/recipient data; no CRM mutation or outbound action.', unchangedRecords: confirmationBefore };
+        return;
+      }
       if (isAvailability) {
         expect(diagnostics).toEqual([]);
         if (scenarioId === 'master-0192') {

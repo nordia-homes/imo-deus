@@ -53,7 +53,7 @@ export async function viewingDetails(ctx: AssistantContext, value: Input, now = 
   const [contact, property] = await Promise.all([related('contacts', viewing.contactId), related('properties', viewing.propertyId)]);
   const row = { id: viewing.id, viewingDate: viewing.viewingDate, status: viewing.status,
     contactId: contact?.id || null, contactName: contact?.name || null, contactPhone: contact?.phone || null,
-    propertyId: property?.id || null, propertyTitle: property?.title || null, propertyAddress: property?.address || property?.location || null,
+    propertyId: property?.id || null, propertyTitle: property?.title || null, propertyStatus: property?.status || null, propertyAddress: property?.address || property?.location || null,
     ownerName: property?.ownerName || null, ownerPhone: property?.ownerPhone || null };
   return { status: 'resolved', complete: true, rows: [row], contactId: contact?.id || null };
 }
