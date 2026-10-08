@@ -1,3 +1,4 @@
+import { viewingFollowups } from './viewing-followups';
 import { propertyViewings } from './property-viewings';
 import { viewingDetails } from './viewing-details';
 import { assertTaskEdit } from './task-edit';
@@ -27,7 +28,11 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'property_viewings') {
+  if (name === 'viewing_followups') {
+    data = await viewingFollowups(ctx, payload);
+    cards.push({ type: 'data', title: 'Vizionări fără sarcină follow-up', source: 'viewings', rows: data.rows, complete: data.complete });
+    for (const row of data.rows) refs.push({ resource: 'contacts', id: row.contactId });
+  } else if (name === 'property_viewings') {
     data = await propertyViewings(ctx, payload);
     cards.push({ type: 'data', title: 'Istoric vizionări proprietate', source: 'viewings', rows: data.rows, complete: data.complete });
     for (const id of data.contactIds) refs.push({ resource: 'contacts', id });

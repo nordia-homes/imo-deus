@@ -6,7 +6,7 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
     const receipt = step.result as Record<string, unknown> | undefined;
     if (step.kind === 'delete_viewing' && receipt?.deleted === true && typeof receipt.id === 'string' && receipt.id) return `Vizionare ștearsă. ID: ${receipt.id}.`;
     if (!['create_task', 'update_task'].includes(String(step.kind)) || !receipt || typeof receipt.taskId !== 'string' || !receipt.taskId) return '';
-    const verb = step.kind === 'create_task' ? 'creat' : receipt.status === 'completed' ? 'finalizat' : 'actualizat';
+    const verb = receipt.alreadyExists === true ? 'deja existent' : step.kind === 'create_task' ? 'creat' : receipt.status === 'completed' ? 'finalizat' : 'actualizat';
     const date = typeof receipt.dueDate === 'string' ? receipt.dueDate.includes('T') ? bucharestInputFromIso(receipt.dueDate).date : receipt.dueDate : '';
     return `Task ${verb}${typeof receipt.description === 'string' ? `: „${receipt.description}”` : ''}.${date ? ` Data: ${date}${typeof receipt.startTime === 'string' && receipt.startTime ? `, ${receipt.startTime}, ora Bucureștiului` : ''}.` : ''} ID: ${receipt.taskId}.`;
   }).filter(Boolean).join('\n');

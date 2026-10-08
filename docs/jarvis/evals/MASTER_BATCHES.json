@@ -1373,14 +1373,22 @@
           "sourceNumber": 176,
           "request": "Ce vizionări s-au încheiat fără follow-up?",
           "requestSha256": "eaf6a6e094a8aab855f1d4d6abe37aedf9d1e79a14cfd1c75370313334c3506f",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0177",
           "sourceNumber": 177,
           "request": "Creează follow-up pentru vizionările de ieri.",
           "requestSha256": "91bdd930103e5c5757609ffbc7c330c8349005d7eaf9bbfc1ef43eddaddf859e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/CALENDAR_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and production CRM executors against local Firestore fixtures; committed records and replay checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0178",

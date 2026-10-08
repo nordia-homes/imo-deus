@@ -132,10 +132,17 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             goalCoverage = validateGoalCoverage(payload, prompt, actions.length, successfulReads);
             response.data = { accepted: true, requirements: goalCoverage.requirements.length, unresolved: goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.id) };
           }
-          if (response.actions.length) goalCoverage = undefined;
+          if (response.actions.length) {
+            goalCoverage = undefined;
+            response.data = { ...response.data, preparedSteps: response.actions.map((_, index) => actions.length + index + 1) };
+          }
           if (definition.riskLevel === 'READ' && name !== 'goal_coverage' && !response.actions.length && response.data.complete !== false) {
             successfulReads.add(call.id);
             response.data = { ...response.data, evidenceCallId: call.id };
+          }
+          if (name === 'viewing_followups') for (const row of (response.data.rows || []) as { suggestedTask?: { dueDate?: string } }[]) {
+            const date = row.suggestedTask?.dueDate;
+            if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) verifiedDates.add(new Date(date).toISOString());
           }
           if (['resolve_datetime', 'shift_datetime'].includes(name) && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
           if (actions.length + response.actions.length > MAX_PLAN_ACTIONS) throw new Error(`Planul depășește ${MAX_PLAN_ACTIONS} acțiuni.`);

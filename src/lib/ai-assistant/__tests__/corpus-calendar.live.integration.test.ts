@@ -34,10 +34,11 @@ const editCases = ['master-0160', 'master-0161', 'master-0162', 'master-0163', '
 const noteCases = ['master-0166', 'master-0167'];
 const readCases = ['master-0168', 'master-0169', 'master-0170', 'master-0171'];
 const historyCases = ['master-0172', 'master-0173', 'master-0174', 'master-0175'];
-const cases = [...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
+const followupCases = ['master-0176', 'master-0177'];
+const cases = [...followupCases, ...historyCases, ...readCases, ...noteCases, ...editCases, ...contextCases, 'master-0156', 'master-0178', 'master-0179', 'master-0180', 'master-0181'];
 const selected = process.env.JARVIS_CORPUS_CASE;
 if (selected && !cases.includes(selected)) throw new Error('Unknown calendar corpus case');
-for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
+for (const scenarioId of cases.filter(id => (!selected || id === selected) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-followups' || followupCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'property-history' || historyCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-details' || readCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'context' || contextCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-edits' || editCases.includes(id)) && (process.env.JARVIS_CORPUS_BATCH !== 'viewing-notes' || noteCases.includes(id)))) {
   it.skipIf(process.env.JARVIS_CORPUS_LIVE !== 'true')(`${scenarioId}: model chooses actions and the CRM stores the requested result`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -48,12 +49,13 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
     runtime.ctx = ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const date = resolveDatetime({ dayOffset: 1, time: '10:00' });
+    const isFollowup = followupCases.includes(scenarioId);
     const isHistory = historyCases.includes(scenarioId);
     const isRead = readCases.includes(scenarioId) || isHistory;
     const isDelete = scenarioId === 'master-0166', isNote = scenarioId === 'master-0167';
     const newNote = 'Clientul dorește să revină împreună cu familia.';
     const isEdit = editCases.includes(scenarioId) || noteCases.includes(scenarioId);
-    const isViewing = isRead || isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
+    const isViewing = isFollowup || isRead || isEdit || [...contextCases, 'master-0156'].includes(scenarioId);
     const viewingTime = scenarioId === 'master-0158' ? '10:00' : ['master-0160', 'master-0161'].includes(scenarioId) ? '18:00' : scenarioId === 'master-0162' ? '17:30' : '17:00';
     const viewingDate = resolveDatetime(scenarioId === 'master-0158' ? { weekday: 'friday', time: viewingTime } : { dayOffset: ['master-0164', 'master-0167'].includes(scenarioId) ? -1 : 1, time: viewingTime }).iso;
     const seedTask = { id: 'task-selected', description: 'Sună-l pe Andrei', dueDate: date.iso, startTime: '10:00', duration: 30, contactId: 'andrei', contactName: 'Andrei', agentId: id, status: scenarioId === 'master-0181' ? 'completed' : 'open', updatedAt: '2026-01-01T00:00:00.000Z' };
@@ -97,6 +99,11 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
         await agency.collection('viewings').doc('last-maria').set({ ...seedViewing, id: 'last-maria', contactId: 'maria', status: 'completed', viewingDate: resolveDatetime({ dayOffset: -1, time: '17:00' }).iso });
         await agency.collection('viewings').doc('unrelated').set({ ...seedViewing, id: 'unrelated', propertyId: 'other-property', status: 'completed', viewingDate: resolveDatetime({ dayOffset: -1, time: '18:00' }).iso });
       }
+      if (isFollowup) {
+        for (let i = 0; i < 6; i++) await agency.collection('viewings').doc(`follow-${i}`).set({ ...seedViewing, id: `follow-${i}`, status: 'completed', viewingDate: resolveDatetime({ dayOffset: -1, time: `${String(10 + i).padStart(2, '0')}:00` }).iso });
+        await agency.collection('viewings').doc('cancelled').set({ ...seedViewing, id: 'cancelled', status: 'cancelled', viewingDate: resolveDatetime({ dayOffset: -1, time: '16:00' }).iso });
+        await agency.collection('tasks').doc('existing-followup').set({ description: 'Follow-up deja înregistrat', viewingId: 'follow-5', contactId: 'andrei', propertyId: 'titan', agentId: id, status: 'open', dueDate: date.local.slice(0, 10) });
+      }
       const beforeRead = isRead ? (await agency.collection('viewings').orderBy('__name__').get()).docs.map(doc => doc.data()) : [];
       if (scenarioId === 'master-0159') {
         const currentRecord = currentRecordFromPath('/leads/andrei')!;
@@ -111,6 +118,39 @@ for (const scenarioId of cases.filter(id => (!selected || id === selected) && (p
       } }, budget });
       report = { ...report, plannerStatus: planned.metrics.status, text: planned.text, actions: planned.actions, tools: planned.metrics.tools, models: planned.metrics.models, diagnostics, costUsd: budget.cost };
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (isFollowup) {
+        expect(diagnostics).toEqual([]);
+        if (scenarioId === 'master-0176') {
+          expect(planned.text).not.toMatch(/UTC|GMT/);
+          for (let hour = 10; hour < 15; hour++) expect(planned.text).toContain(`${hour}:00`);
+          expect(planned.actions).toEqual([]);
+          const cards = JSON.stringify(planned.cards);
+          for (let i = 0; i < 5; i++) expect(cards).toContain(`follow-${i}`);
+          expect(cards).not.toContain('follow-5'); expect(cards).not.toContain('cancelled');
+          expect((await agency.collection('tasks').get()).size).toBe(1);
+          report = { ...report, executionVerified: true, cards: planned.cards, confirmation: planned.text };
+        } else {
+          expect(planned.actions).toHaveLength(5);
+          expect(planned.actions.every(action => action.kind === 'create_task' && action.viewingId)).toBe(true);
+          const executed = await executeSafePrefix(ctx, id, planned.actions, prompt);
+          report = { ...report, execution: executed };
+          expect(executed.blocked).toBe(false); expect(executed.actions).toEqual([]); expect(executed.results).toHaveLength(5);
+          const tasks = await agency.collection('tasks').get(); expect(tasks.size).toBe(6);
+          for (let i = 0; i < 5; i++) {
+            const matching = tasks.docs.filter(doc => doc.data().viewingId === `follow-${i}`);
+            expect(matching).toHaveLength(1);
+            expect(matching[0].data()).toMatchObject({ contactId: 'andrei', propertyId: 'titan', agentId: id, status: 'open', dueDate: resolveDatetime({ dayOffset: 0, time: '12:00' }).local.slice(0, 10) });
+          }
+          const replay = await executeSafePrefix(ctx, id + '-another-request', planned.actions, prompt);
+          expect(replay.blocked).toBe(false); expect(replay.results).toHaveLength(5);
+          expect((await agency.collection('tasks').get()).size).toBe(6);
+          const confirmation = executionConfirmation(executed.results);
+          expect(confirmation.match(/Task creat/g)).toHaveLength(5);
+          expect(executionConfirmation(replay.results).match(/deja existent/g)).toHaveLength(5);
+          report = { ...report, executionVerified: true, confirmation, replay, storedTasks: tasks.docs.map(doc => doc.data()) };
+        }
+        return;
+      }
       if (isRead) {
         expect(planned.actions).toEqual([]);
         if (isHistory) {

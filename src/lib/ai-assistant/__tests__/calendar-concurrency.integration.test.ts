@@ -1,3 +1,4 @@
+import { viewingFollowups } from '../viewing-followups';
 import { propertyViewings } from '../property-viewings';
 import { createHash, randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
@@ -58,6 +59,24 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
     const agencyId = randomUUID(); agencies.push(agencyId);
     return { uid: `agent-${agencyId}`, agencyId, role: 'agent', adminDb: db } as unknown as AssistantContext;
   }
+  it('creates one linked follow-up across concurrent requests and rechecks viewing relationships', async () => {
+    const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId), profile = db.collection('users').doc(ctx.uid);
+    await profile.set({ agencyId: ctx.agencyId, role: 'agent', name: 'Agent' });
+    try {
+      await root.collection('contacts').doc('c').set({ name: 'Client' });
+      await root.collection('properties').doc('p').set({ title: 'Property' });
+      await root.collection('viewings').doc('v').set({ agentId: ctx.uid, contactId: 'c', propertyId: 'p', status: 'completed', viewingDate: '2026-01-01T10:00:00Z' });
+      const action = { kind: 'create_task' as const, viewingId: 'v', contactId: 'c', propertyId: 'p', description: 'Follow-up', dueDate: '2026-10-08' };
+      const before = await viewingFollowups(ctx, {}); expect(before.rows).toHaveLength(1);
+      const results = await Promise.all([executeAction(ctx, action, 'followup-one'), executeAction(ctx, action, 'followup-two')]);
+      expect(results[0].taskId).toBe(results[1].taskId);
+      expect((await root.collection('tasks').get()).size).toBe(1);
+      expect((await viewingFollowups(ctx, {})).rows).toEqual([]);
+      await expect(executeAction(ctx, { ...action, contactId: 'different' }, 'wrong-link')).rejects.toMatchObject({ status: 409 });
+      await root.collection('viewings').doc('v').update({ status: 'cancelled' });
+      await expect(executeAction(ctx, action, 'cancelled-viewing')).rejects.toMatchObject({ status: 409 });
+    } finally { await profile.delete(); }
+  }, 20000);
   it('lists all property visits across pages, counts completed visits and keeps latest ties', async () => {
     const ctx = context(), root = db.collection('agencies').doc(ctx.agencyId);
     const now = new Date('2026-10-08T10:00:00Z');

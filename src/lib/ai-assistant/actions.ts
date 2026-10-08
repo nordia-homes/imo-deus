@@ -465,16 +465,28 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       else tx.update(ref, { interactionHistory: [...(contact.interactionHistory || []), { id: key, type: action.type, date: now, notes: action.notes, agentId: ctx.uid, agent: { name: profile.data()?.name || 'Agent' } }] });
       result = { contactId: action.contactId, link: `/leads/${action.contactId}` };
     } else if (action.kind === 'create_task') {
+      const viewing = action.viewingId ? await read('viewings', action.viewingId) : null;
+      if (viewing && (viewing.status !== 'completed' || !Number.isFinite(Date.parse(viewing.viewingDate)) || Date.parse(viewing.viewingDate) > Date.now())) throw new CommunicationError('Vizionarea nu este confirmată ca efectuată.', 409);
+      if (viewing && (action.contactId !== viewing.contactId || action.propertyId !== viewing.propertyId || (action.agentId !== undefined && action.agentId !== viewing.agentId))) throw new CommunicationError('Follow-up-ul trebuie legat de clientul, proprietatea și agentul vizionării.', 409);
       const contact = action.contactId ? await read('contacts', action.contactId) : null;
       const property = action.propertyId ? await read('properties', action.propertyId) : null;
-      const ref = collectionFor(ctx, 'tasks').doc(key);
-      const { kind: _, ...inputTask } = action;
-      const taskData = taskClockPatch(inputTask);
-      const agentId = action.agentId === undefined ? ctx.uid : action.agentId;
-      const assignment = await propertyAssignment(agentId);
-      await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId });
-      tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId, agentName: assignment.agentName, createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
-      result = safeData({ taskId: ref.id, link: '/tasks', description: taskData.description, status: 'open', dueDate: taskData.dueDate, startTime: taskData.startTime });
+      const ref = collectionFor(ctx, 'tasks').doc(action.viewingId ? 'viewing-followup-' + createHash('sha256').update(action.viewingId).digest('hex') : key);
+      const deterministic = action.viewingId ? await tx.get(ref) : null;
+      const linked = action.viewingId ? await tx.get(collectionFor(ctx, 'tasks').where('viewingId', '==', action.viewingId)) : null;
+      const existing = linked?.docs.find(doc => ['open', 'completed'].includes(doc.data().status));
+      if (existing) {
+        const task = existing.data();
+        result = safeData({ taskId: existing.id, viewingId: action.viewingId, alreadyExists: true, link: '/tasks', description: task.description, status: task.status, dueDate: task.dueDate, startTime: task.startTime });
+      } else {
+        if (deterministic?.exists) throw new CommunicationError('Sarcina asociată are o stare care necesită verificare.', 409);
+        const { kind: _, ...inputTask } = action;
+        const taskData = taskClockPatch(inputTask);
+        const agentId = viewing ? viewing.agentId : action.agentId === undefined ? ctx.uid : action.agentId;
+        const assignment = await propertyAssignment(agentId);
+        await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId });
+        tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId, agentName: assignment.agentName, createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
+        result = safeData({ taskId: ref.id, ...(action.viewingId ? { viewingId: action.viewingId } : {}), link: '/tasks', description: taskData.description, status: 'open', dueDate: taskData.dueDate, startTime: taskData.startTime });
+      }
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);
       if (action.expectedUpdatedAt !== undefined && (oldTask.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Sarcina s-a modificat între timp. Reîncarcă datele înainte de salvare.', 409);

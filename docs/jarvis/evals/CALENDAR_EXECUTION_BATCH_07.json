@@ -1,0 +1,2054 @@
+{
+  "scope": "Original scenarios 0176-0177. Actual model, isolated Firestore, full five-task execution and replay with another request ID. Not production certification.",
+  "initialAttempt": [
+    {
+      "scenarioId": "master-0176",
+      "prompt": "Ce vizionări s-au încheiat fără follow-up?",
+      "versions": {
+        "prompt": "jarvis-41",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "71",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:25:43.418Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Ieri, 7 octombrie, apar 5 vizionări încheiate fără sarcină de follow-up legată explicit:\n\n- 07:00 — Andrei, Apartament Titan\n- 08:00 — Andrei, Apartament Titan\n- 09:00 — Andrei, Apartament Titan\n- 10:00 — Andrei, Apartament Titan\n- 11:00 — Andrei, Apartament Titan\n\nVerificarea identifică sarcinile legate prin vizionare; nu confirmă dacă a avut loc contactarea manuală a clientului sau dacă există sarcini fără legătură explicită.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 319,
+          "version": "71",
+          "argumentsHash": "fca17737019a5f3a435d6bba46994f5b079361934e8605da497af3dcbcba6d45"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 21,
+          "version": "71",
+          "argumentsHash": "a011628067b9f307082cdd9ce01c2d99ece929e9f83fd372958043fa99ff9f29"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9468,
+            "outputTokens": 31,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9465,
+            "estimated": false
+          },
+          "costUsd": 0.001198925,
+          "latencyMs": 2416,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10405,
+            "outputTokens": 97,
+            "cachedTokens": 9465,
+            "cacheWriteTokens": 937,
+            "estimated": false
+          },
+          "costUsd": 0.000260575,
+          "latencyMs": 2916,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10527,
+            "outputTokens": 157,
+            "cachedTokens": 10402,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00019807,
+          "latencyMs": 3214,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00165757,
+      "cards": [
+        {
+          "type": "data",
+          "title": "Vizionări fără sarcină follow-up",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "follow-0",
+              "viewingId": "follow-0",
+              "viewingDate": "2026-10-07T07:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+              "suggestedTask": {
+                "viewingId": "follow-0",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-1",
+              "viewingId": "follow-1",
+              "viewingDate": "2026-10-07T08:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+              "suggestedTask": {
+                "viewingId": "follow-1",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-2",
+              "viewingId": "follow-2",
+              "viewingDate": "2026-10-07T09:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+              "suggestedTask": {
+                "viewingId": "follow-2",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-3",
+              "viewingId": "follow-3",
+              "viewingDate": "2026-10-07T10:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+              "suggestedTask": {
+                "viewingId": "follow-3",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-4",
+              "viewingId": "follow-4",
+              "viewingDate": "2026-10-07T11:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+              "suggestedTask": {
+                "viewingId": "follow-4",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "ebb1ff43-47ef-4ad5-b447-76d82fe95929",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "confirmation": "Ieri, 7 octombrie, apar 5 vizionări încheiate fără sarcină de follow-up legată explicit:\n\n- 07:00 — Andrei, Apartament Titan\n- 08:00 — Andrei, Apartament Titan\n- 09:00 — Andrei, Apartament Titan\n- 10:00 — Andrei, Apartament Titan\n- 11:00 — Andrei, Apartament Titan\n\nVerificarea identifică sarcinile legate prin vizionare; nu confirmă dacă a avut loc contactarea manuală a clientului sau dacă există sarcini fără legătură explicită."
+    },
+    {
+      "scenarioId": "master-0177",
+      "prompt": "Creează follow-up pentru vizionările de ieri.",
+      "versions": {
+        "prompt": "jarvis-41",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "71",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:25:53.336Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "plannerStatus": "partial",
+      "text": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "viewingId": "follow-0",
+          "agentId": "a3f8f95e-0970-463d-bbe9-10a17fe9b5fb",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08T06:00:00.000Z",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 89,
+          "version": "71",
+          "argumentsHash": "8f64f2b1de0b3879d44d7cecad77b6dfcfc81f93e41c4189ad1e883deaa452f1"
+        },
+        {
+          "name": "operation_contract",
+          "status": "success",
+          "latencyMs": 7,
+          "version": "71",
+          "argumentsHash": "c02fa5d119765ad27a0650567392a2bf6e83b5f123d51dcd4342ce71d7383c08"
+        },
+        {
+          "name": "create_task",
+          "status": "failed",
+          "latencyMs": 11,
+          "version": "71",
+          "argumentsHash": "df352632a642529ce7f32d3288b8d479f7c596105366713c99e383ca4f4f5c1c"
+        },
+        {
+          "name": "resolve_datetime",
+          "status": "success",
+          "latencyMs": 8,
+          "version": "71",
+          "argumentsHash": "5bc1e3d61e12fdfd226896e97b7fdc36e300720145f50d55d7f43970b78535a5"
+        },
+        {
+          "name": "create_task",
+          "status": "failed",
+          "latencyMs": 8,
+          "version": "71",
+          "argumentsHash": "df352632a642529ce7f32d3288b8d479f7c596105366713c99e383ca4f4f5c1c"
+        },
+        {
+          "name": "create_task",
+          "status": "success",
+          "latencyMs": 8,
+          "version": "71",
+          "argumentsHash": "c903af3a5a10bc64e64c9e5a76e3dfbcfd4e59cdfcfa0e5cf16c9a43426a44ec"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9461,
+            "outputTokens": 55,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9458,
+            "estimated": false
+          },
+          "costUsd": 0.00121005,
+          "latencyMs": 2612,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10470,
+            "outputTokens": 25,
+            "cachedTokens": 9458,
+            "cacheWriteTokens": 1009,
+            "estimated": false
+          },
+          "costUsd": 0.000233505,
+          "latencyMs": 1761,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10765,
+            "outputTokens": 94,
+            "cachedTokens": 10467,
+            "cacheWriteTokens": 295,
+            "estimated": false
+          },
+          "costUsd": 0.000188845,
+          "latencyMs": 1988,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10890,
+            "outputTokens": 76,
+            "cachedTokens": 10762,
+            "cacheWriteTokens": 125,
+            "estimated": false
+          },
+          "costUsd": 0.00016154500000000003,
+          "latencyMs": 2084,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11039,
+            "outputTokens": 94,
+            "cachedTokens": 10887,
+            "cacheWriteTokens": 149,
+            "estimated": false
+          },
+          "costUsd": 0.00017479500000000002,
+          "latencyMs": 2770,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11164,
+            "outputTokens": 142,
+            "cachedTokens": 11036,
+            "cacheWriteTokens": 125,
+            "estimated": false
+          },
+          "costUsd": 0.000197285,
+          "latencyMs": 3461,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [
+        {
+          "callId": "call_FLiypGIlsTvncud3VBmK1nZu",
+          "error": "Data trebuie confirmată prin resolve_datetime sau ISO explicit din comanda agentului."
+        },
+        {
+          "callId": "call_ul1JG7JH6ueu7m8FboC2iduY",
+          "error": "Data trebuie confirmată prin resolve_datetime sau ISO explicit din comanda agentului."
+        }
+      ],
+      "costUsd": 0.0021660250000000002,
+      "failure": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.: expected 'partial' to be 'success' // Object.is equality"
+    }
+  ],
+  "repair": "Trust the server-generated date-only dueDate from viewing_followups and prepare all actions in one propose_actions batch; no increase to model budget.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0176",
+      "prompt": "Ce vizionări s-au încheiat fără follow-up?",
+      "versions": {
+        "prompt": "jarvis-44",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "74",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:35:05.090Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am găsit 5 vizionări încheiate fără sarcină follow-up legată explicit de vizionare:\n\n- 7 octombrie 2026, 10:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 11:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 12:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 13:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 14:00 — Andrei, Apartament Titan\n\nAceastă verificare nu stabilește dacă au existat sarcini nelegate de vizionări sau contactări manuale.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 1031,
+          "version": "74",
+          "argumentsHash": "c817784eca0a2e294aeb29f90a081fb2f755be8e75032937afebd22ee3a4bbbb"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 27,
+          "version": "74",
+          "argumentsHash": "f13613ae08653ba2fbb0f387a8d450126802700b513c4910a8d364ccf75cca20"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9633,
+            "outputTokens": 51,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9630,
+            "estimated": false
+          },
+          "costUsd": 0.00122955,
+          "latencyMs": 2115,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10712,
+            "outputTokens": 97,
+            "cachedTokens": 9630,
+            "cacheWriteTokens": 1079,
+            "estimated": false
+          },
+          "costUsd": 0.000279975,
+          "latencyMs": 2179,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10834,
+            "outputTokens": 181,
+            "cachedTokens": 10709,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00021313999999999998,
+          "latencyMs": 4002,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001722665,
+      "cards": [
+        {
+          "type": "data",
+          "title": "Vizionări fără sarcină follow-up",
+          "source": "viewings",
+          "rows": [
+            {
+              "viewingLocal": "2026-10-07 10:00 (ora București)",
+              "id": "follow-0",
+              "viewingId": "follow-0",
+              "viewingDate": "2026-10-07T07:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+              "suggestedTask": {
+                "viewingId": "follow-0",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 11:00 (ora București)",
+              "id": "follow-1",
+              "viewingId": "follow-1",
+              "viewingDate": "2026-10-07T08:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+              "suggestedTask": {
+                "viewingId": "follow-1",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 12:00 (ora București)",
+              "id": "follow-2",
+              "viewingId": "follow-2",
+              "viewingDate": "2026-10-07T09:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+              "suggestedTask": {
+                "viewingId": "follow-2",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 13:00 (ora București)",
+              "id": "follow-3",
+              "viewingId": "follow-3",
+              "viewingDate": "2026-10-07T10:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+              "suggestedTask": {
+                "viewingId": "follow-3",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 14:00 (ora București)",
+              "id": "follow-4",
+              "viewingId": "follow-4",
+              "viewingDate": "2026-10-07T11:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+              "suggestedTask": {
+                "viewingId": "follow-4",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "874726c9-78b7-4bfc-a17e-f26059d04ad6",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "confirmation": "Am găsit 5 vizionări încheiate fără sarcină follow-up legată explicit de vizionare:\n\n- 7 octombrie 2026, 10:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 11:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 12:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 13:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 14:00 — Andrei, Apartament Titan\n\nAceastă verificare nu stabilește dacă au existat sarcini nelegate de vizionări sau contactări manuale."
+    },
+    {
+      "scenarioId": "master-0177",
+      "prompt": "Creează follow-up pentru vizionările de ieri.",
+      "versions": {
+        "prompt": "jarvis-44",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "74",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:35:17.106Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 5 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "viewingId": "follow-0",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-1",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-2",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-3",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-4",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 97,
+          "version": "74",
+          "argumentsHash": "fca17737019a5f3a435d6bba46994f5b079361934e8605da497af3dcbcba6d45"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 15,
+          "version": "74",
+          "argumentsHash": "8dbf1f9066f1c63c000ce6ceefc354ac8d2ebb136027a90245499eafae339a87"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 6,
+          "version": "74",
+          "argumentsHash": "87a22f395f21a95c247f4c9460e8e288721a0439cb0eafca27fc81d7a73857a3"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9625,
+            "outputTokens": 31,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9622,
+            "estimated": false
+          },
+          "costUsd": 0.0012185499999999999,
+          "latencyMs": 3076,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10722,
+            "outputTokens": 438,
+            "cachedTokens": 9622,
+            "cacheWriteTokens": 1097,
+            "estimated": false
+          },
+          "costUsd": 0.000452645,
+          "latencyMs": 5107,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11195,
+            "outputTokens": 100,
+            "cachedTokens": 10719,
+            "cacheWriteTokens": 473,
+            "estimated": false
+          },
+          "costUsd": 0.000216615,
+          "latencyMs": 3114,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11320,
+            "outputTokens": 85,
+            "cachedTokens": 11192,
+            "cacheWriteTokens": 125,
+            "estimated": false
+          },
+          "costUsd": 0.000170345,
+          "latencyMs": 2853,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.002058155,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f",
+              "viewingId": "follow-0",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 2,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014",
+              "viewingId": "follow-1",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 3,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273",
+              "viewingId": "follow-2",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 4,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1",
+              "viewingId": "follow-3",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 5,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99",
+              "viewingId": "follow-4",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99.",
+      "replay": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f",
+              "viewingId": "follow-0",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 2,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014",
+              "viewingId": "follow-1",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 3,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273",
+              "viewingId": "follow-2",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 4,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1",
+              "viewingId": "follow-3",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 5,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99",
+              "viewingId": "follow-4",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "storedTasks": [
+        {
+          "description": "Follow-up deja înregistrat",
+          "viewingId": "follow-5",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "status": "open",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "viewingId": "follow-4",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:35:32.276Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-3",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:35:32.117Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-1",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:35:31.820Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-0",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:35:31.622Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-2",
+          "agentId": "b229a98c-1ec1-4ad9-a03e-4f1f9d299e18",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:35:31.956Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        }
+      ]
+    }
+  ],
+  "intermediateAttemptBeforeBucharestDisplay": [
+    {
+      "scenarioId": "master-0176",
+      "prompt": "Ce vizionări s-au încheiat fără follow-up?",
+      "versions": {
+        "prompt": "jarvis-42",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "72",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:28:28.593Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am găsit 5 vizionări încheiate fără sarcină de follow-up legată explicit în CRM:\n\n- **7 octombrie 2026, 07:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-0`)\n- **7 octombrie 2026, 08:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-1`)\n- **7 octombrie 2026, 09:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-2`)\n- **7 octombrie 2026, 10:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-3`)\n- **7 octombrie 2026, 11:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-4`)\n\nLista este completă conform verificării. Absența unei sarcini legate de vizionare nu exclude sarcini mai vechi fără această legătură și nu dovedește că nu a existat contactare manuală.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 296,
+          "version": "72",
+          "argumentsHash": "405fe15dcffc3e288d3ed35d391457b29bd0e055754f72b32b38269b4ee70a11"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 14,
+          "version": "72",
+          "argumentsHash": "099fa32915d2e621f1fb80bf911c846add1f4475235a112e2e2d3f5eb7f84d8f"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9548,
+            "outputTokens": 30,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9545,
+            "estimated": false
+          },
+          "costUsd": 0.001208425,
+          "latencyMs": 2573,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10526,
+            "outputTokens": 99,
+            "cachedTokens": 9545,
+            "cacheWriteTokens": 978,
+            "estimated": false
+          },
+          "costUsd": 0.0002675,
+          "latencyMs": 3186,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10650,
+            "outputTokens": 274,
+            "cachedTokens": 10523,
+            "cacheWriteTokens": 124,
+            "estimated": false
+          },
+          "costUsd": 0.00025802999999999997,
+          "latencyMs": 3454,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.001733955,
+      "cards": [
+        {
+          "type": "data",
+          "title": "Vizionări fără sarcină follow-up",
+          "source": "viewings",
+          "rows": [
+            {
+              "id": "follow-0",
+              "viewingId": "follow-0",
+              "viewingDate": "2026-10-07T07:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+              "suggestedTask": {
+                "viewingId": "follow-0",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-1",
+              "viewingId": "follow-1",
+              "viewingDate": "2026-10-07T08:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+              "suggestedTask": {
+                "viewingId": "follow-1",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-2",
+              "viewingId": "follow-2",
+              "viewingDate": "2026-10-07T09:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+              "suggestedTask": {
+                "viewingId": "follow-2",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-3",
+              "viewingId": "follow-3",
+              "viewingDate": "2026-10-07T10:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+              "suggestedTask": {
+                "viewingId": "follow-3",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "id": "follow-4",
+              "viewingId": "follow-4",
+              "viewingDate": "2026-10-07T11:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+              "suggestedTask": {
+                "viewingId": "follow-4",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "60846d87-bd41-4f4e-9938-4dd48b5c144a",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "confirmation": "Am găsit 5 vizionări încheiate fără sarcină de follow-up legată explicit în CRM:\n\n- **7 octombrie 2026, 07:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-0`)\n- **7 octombrie 2026, 08:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-1`)\n- **7 octombrie 2026, 09:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-2`)\n- **7 octombrie 2026, 10:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-3`)\n- **7 octombrie 2026, 11:00 UTC** — Andrei, Apartament Titan (ID vizionare: `follow-4`)\n\nLista este completă conform verificării. Absența unei sarcini legate de vizionare nu exclude sarcini mai vechi fără această legătură și nu dovedește că nu a existat contactare manuală."
+    },
+    {
+      "scenarioId": "master-0177",
+      "prompt": "Creează follow-up pentru vizionările de ieri.",
+      "versions": {
+        "prompt": "jarvis-42",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "72",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:28:41.250Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am pregătit 5 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "viewingId": "follow-0",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-1",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-2",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-3",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-4",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 121,
+          "version": "72",
+          "argumentsHash": "fca17737019a5f3a435d6bba46994f5b079361934e8605da497af3dcbcba6d45"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 13,
+          "version": "72",
+          "argumentsHash": "b4ae4cbe54fec8519abe2230b052317deaabe21982f13df6996b1ef75950be07"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 7,
+          "version": "72",
+          "argumentsHash": "60c30d203c1c3727951569d79ff80cf28002267e8851ca4b95b33a291849e352"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9535,
+            "outputTokens": 31,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9532,
+            "estimated": false
+          },
+          "costUsd": 0.0012073,
+          "latencyMs": 1693,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10502,
+            "outputTokens": 423,
+            "cachedTokens": 9532,
+            "cacheWriteTokens": 967,
+            "estimated": false
+          },
+          "costUsd": 0.000427995,
+          "latencyMs": 4357,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10947,
+            "outputTokens": 110,
+            "cachedTokens": 10499,
+            "cacheWriteTokens": 445,
+            "estimated": false
+          },
+          "costUsd": 0.000215915,
+          "latencyMs": 2354,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11082,
+            "outputTokens": 64,
+            "cachedTokens": 10944,
+            "cacheWriteTokens": 135,
+            "estimated": false
+          },
+          "costUsd": 0.000158615,
+          "latencyMs": 3336,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.002009825,
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f",
+              "viewingId": "follow-0",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 2,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014",
+              "viewingId": "follow-1",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 3,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273",
+              "viewingId": "follow-2",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 4,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1",
+              "viewingId": "follow-3",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 5,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99",
+              "viewingId": "follow-4",
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Task creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1.\nTask creat: „Follow-up după vizionare: Andrei — Apartament Titan”. Data: 2026-10-08. ID: viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99.",
+      "replay": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f",
+              "viewingId": "follow-0",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 2,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014",
+              "viewingId": "follow-1",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 3,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273",
+              "viewingId": "follow-2",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 4,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1",
+              "viewingId": "follow-3",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          },
+          {
+            "step": 5,
+            "kind": "create_task",
+            "result": {
+              "taskId": "viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99",
+              "viewingId": "follow-4",
+              "alreadyExists": true,
+              "link": "/tasks",
+              "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+              "status": "open",
+              "dueDate": "2026-10-08",
+              "startTime": null
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "storedTasks": [
+        {
+          "description": "Follow-up deja înregistrat",
+          "viewingId": "follow-5",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "status": "open",
+          "dueDate": "2026-10-09"
+        },
+        {
+          "viewingId": "follow-4",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-526e50ea5d0e1f3b26327b956216894e6fdc1f72ecf1b188a4b97acac00c4d99",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:28:53.835Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-3",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-7581717d4de4b094f5c5dcccb3332c839cc17c9a378b93b5f916a62bfdb1a7f1",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:28:53.697Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-1",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-7e52dca4bb254158ca11df05441b129e78c3ed156e3261980408bd5b6afab014",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:28:53.489Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-0",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-c92e2e5a7883482a0e940b220b701243356cbe1891fd80212d16b302deab7a4f",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:28:53.334Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        },
+        {
+          "viewingId": "follow-2",
+          "agentId": "e5941207-3a60-4df2-a7e9-ad1006813e7a",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan",
+          "id": "viewing-followup-fe179d6046d145f6df510f88ab01ba780977adc4e2239468a9751a8fca186273",
+          "status": "open",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-08T10:28:53.600Z",
+          "contactName": "Andrei",
+          "propertyTitle": "Apartament Titan"
+        }
+      ]
+    }
+  ],
+  "intermediateAttemptBeforeStepList": [
+    {
+      "scenarioId": "master-0176",
+      "prompt": "Ce vizionări s-au încheiat fără follow-up?",
+      "versions": {
+        "prompt": "jarvis-43",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "73",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:32:45.704Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": true,
+      "plannerStatus": "success",
+      "text": "Am găsit 5 vizionări încheiate fără o sarcină legată explicit prin viewingId:\n\n- 7 octombrie 2026, 10:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 11:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 12:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 13:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 14:00 — Andrei, Apartament Titan\n\nAsta nu confirmă dacă a existat contactare manuală sau sarcini mai vechi fără legătură explicită cu vizionările.",
+      "actions": [],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 860,
+          "version": "73",
+          "argumentsHash": "405fe15dcffc3e288d3ed35d391457b29bd0e055754f72b32b38269b4ee70a11"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 21,
+          "version": "73",
+          "argumentsHash": "a0dd11ed326736d4d6b3d33449f545ded1a03fa6d8c59451ac6540ab1026a48d"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9571,
+            "outputTokens": 30,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9568,
+            "estimated": false
+          },
+          "costUsd": 0.0012113,
+          "latencyMs": 2300,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10638,
+            "outputTokens": 96,
+            "cachedTokens": 9568,
+            "cacheWriteTokens": 1067,
+            "estimated": false
+          },
+          "costUsd": 0.000277355,
+          "latencyMs": 2618,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10759,
+            "outputTokens": 185,
+            "cachedTokens": 10635,
+            "cacheWriteTokens": 121,
+            "estimated": false
+          },
+          "costUsd": 0.00021427500000000002,
+          "latencyMs": 3318,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [],
+      "costUsd": 0.00170293,
+      "cards": [
+        {
+          "type": "data",
+          "title": "Vizionări fără sarcină follow-up",
+          "source": "viewings",
+          "rows": [
+            {
+              "viewingLocal": "2026-10-07 10:00 (ora București)",
+              "id": "follow-0",
+              "viewingId": "follow-0",
+              "viewingDate": "2026-10-07T07:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+              "suggestedTask": {
+                "viewingId": "follow-0",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 11:00 (ora București)",
+              "id": "follow-1",
+              "viewingId": "follow-1",
+              "viewingDate": "2026-10-07T08:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+              "suggestedTask": {
+                "viewingId": "follow-1",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 12:00 (ora București)",
+              "id": "follow-2",
+              "viewingId": "follow-2",
+              "viewingDate": "2026-10-07T09:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+              "suggestedTask": {
+                "viewingId": "follow-2",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 13:00 (ora București)",
+              "id": "follow-3",
+              "viewingId": "follow-3",
+              "viewingDate": "2026-10-07T10:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+              "suggestedTask": {
+                "viewingId": "follow-3",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            },
+            {
+              "viewingLocal": "2026-10-07 14:00 (ora București)",
+              "id": "follow-4",
+              "viewingId": "follow-4",
+              "viewingDate": "2026-10-07T11:00:00.000Z",
+              "contactId": "andrei",
+              "contactName": "Andrei",
+              "propertyId": "titan",
+              "propertyTitle": "Apartament Titan",
+              "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+              "suggestedTask": {
+                "viewingId": "follow-4",
+                "contactId": "andrei",
+                "propertyId": "titan",
+                "agentId": "356cd0ea-c19d-4bb0-9dc1-15087d3ff16f",
+                "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+                "dueDate": "2026-10-08"
+              }
+            }
+          ],
+          "complete": true,
+          "outputType": "VIEWING_CARD"
+        }
+      ],
+      "confirmation": "Am găsit 5 vizionări încheiate fără o sarcină legată explicit prin viewingId:\n\n- 7 octombrie 2026, 10:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 11:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 12:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 13:00 — Andrei, Apartament Titan\n- 7 octombrie 2026, 14:00 — Andrei, Apartament Titan\n\nAsta nu confirmă dacă a existat contactare manuală sau sarcini mai vechi fără legătură explicită cu vizionările."
+    },
+    {
+      "scenarioId": "master-0177",
+      "prompt": "Creează follow-up pentru vizionările de ieri.",
+      "versions": {
+        "prompt": "jarvis-43",
+        "routing": "luna-first-2",
+        "policy": "request-crm-7",
+        "tools": "73",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-08T10:32:57.431Z",
+      "context": [],
+      "environment": "actual model + local Firestore; external catalog excluded",
+      "executionVerified": false,
+      "plannerStatus": "success",
+      "text": "Am pregătit 5 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "actions": [
+        {
+          "kind": "create_task",
+          "viewingId": "follow-0",
+          "agentId": "93364b91-3bbd-425a-845a-d43807ae8af5",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-1",
+          "agentId": "93364b91-3bbd-425a-845a-d43807ae8af5",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-2",
+          "agentId": "93364b91-3bbd-425a-845a-d43807ae8af5",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-3",
+          "agentId": "93364b91-3bbd-425a-845a-d43807ae8af5",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        },
+        {
+          "kind": "create_task",
+          "viewingId": "follow-4",
+          "agentId": "93364b91-3bbd-425a-845a-d43807ae8af5",
+          "description": "Follow-up după vizionare: Andrei — Apartament Titan",
+          "dueDate": "2026-10-08",
+          "contactId": "andrei",
+          "propertyId": "titan"
+        }
+      ],
+      "tools": [
+        {
+          "name": "viewing_followups",
+          "status": "success",
+          "latencyMs": 114,
+          "version": "73",
+          "argumentsHash": "fca17737019a5f3a435d6bba46994f5b079361934e8605da497af3dcbcba6d45"
+        },
+        {
+          "name": "propose_actions",
+          "status": "success",
+          "latencyMs": 9,
+          "version": "73",
+          "argumentsHash": "4871816debb43c85982e893eb169e8cac840aaeb81e490d814603ea106378c78"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "failed",
+          "latencyMs": 12,
+          "version": "73",
+          "argumentsHash": "30654c46e27210418cd14e7e66605b6c2500d632bbea20f1bea8e9f41edfeb3b"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 5,
+          "version": "73",
+          "argumentsHash": "a13180d1b21a3861e525df3cca12793cf084eb41eeaf36557e649a7428cae37a"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 9557,
+            "outputTokens": 31,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 9554,
+            "estimated": false
+          },
+          "costUsd": 0.00121005,
+          "latencyMs": 2786,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 10604,
+            "outputTokens": 413,
+            "cachedTokens": 9554,
+            "cacheWriteTokens": 1047,
+            "estimated": false
+          },
+          "costUsd": 0.00043321500000000003,
+          "latencyMs": 4538,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11039,
+            "outputTokens": 77,
+            "cachedTokens": 10601,
+            "cacheWriteTokens": 435,
+            "estimated": false
+          },
+          "costUsd": 0.000199185,
+          "latencyMs": 2826,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11147,
+            "outputTokens": 124,
+            "cachedTokens": 11036,
+            "cacheWriteTokens": 108,
+            "estimated": false
+          },
+          "costUsd": 0.00018616,
+          "latencyMs": 3983,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 11296,
+            "outputTokens": 54,
+            "cachedTokens": 11144,
+            "cacheWriteTokens": 149,
+            "estimated": false
+          },
+          "costUsd": 0.00015736500000000002,
+          "latencyMs": 2881,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "diagnostics": [
+        {
+          "callId": "call_isj401g7hLkpVyNh1ukJc3Aq",
+          "error": "Fiecare acțiune trebuie legată de o cerință."
+        }
+      ],
+      "costUsd": 0.002185975,
+      "failure": "expected [ { …(2) } ] to deeply equal []"
+    }
+  ],
+  "validation": {
+    "unitTests": 1860,
+    "unitFiles": 149,
+    "emulatorRegressions": 266,
+    "combinedRunVersion": "72",
+    "finalLiveVersion": "74",
+    "finalLiveScenarios": 2,
+    "plannerAndCoverageTestsAfterRepair": 39,
+    "previous24LiveScenariosRerun": false
+  },
+  "repairsAfterInitialAttempt": [
+    "Server-rendered viewingLocal and explicit prohibition of UTC/GMT in user replies.",
+    "Prepared action results include preparedSteps; goal coverage must reference every action, not merely the batch call."
+  ]
+}

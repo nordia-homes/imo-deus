@@ -32,7 +32,7 @@ const CRM_VERBS: Record<string, string> = {
   preferences_link_action: 'creeaza|genereaza|regenereaza|dezactiveaza|create',
 };
 export function requestAuthorizedCrmAction(action: AssistantAction) {
-  return Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
+  return action.kind === 'create_task' && Boolean(action.viewingId) || Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
 }
 export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
