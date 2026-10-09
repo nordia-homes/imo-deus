@@ -3,6 +3,22 @@ import { actionSchema, searchSchema, safeData, overlaps, automationSchema } from
 import { ownerSearchFields, parseOwnerPrice } from '@/lib/owner-listings/search-index';
 
 describe('assistant command boundary', () => {
+  it.each([false, true])('accepts the property form featured=%s on create and update', (featured) => {
+    const property = {
+      title: 'Apartament luminos 3 camere', address: 'Bulevardul General Gheorghe Magheru 9',
+      location: 'Ultracentral, București', city: 'București', zone: 'Ultracentral',
+      price: 130000, rooms: 3, bathrooms: 1, squareFootage: 53, constructionYear: 1961,
+      propertyType: 'Apartament', transactionType: 'Vânzare', featured,
+      images: [{ url: 'https://example.com/apartment.jpg', alt: 'Apartament' }],
+      uploadedVideo: null, locationProfile: null,
+      portalProfiles: { imobiliare: { locationId: null, locationLabel: null } },
+    };
+    expect(actionSchema.parse({ kind: 'create_property', propertyId: 'new-property', property,
+      agentId: null, statusChange: { status: 'Activ', notes: '' } })).toMatchObject({ property: { featured } });
+    expect(actionSchema.parse({ kind: 'update_property', propertyId: 'existing-property', patch: property }))
+      .toMatchObject({ patch: { featured } });
+    expect(actionSchema.safeParse({ kind: 'create_property', property: { ...property, ownerId: 'injected' } }).success).toBe(false);
+  });
   it('bounds the repeat-alert cooldown and supplies a daily default', () => {
     const input = { type: 'insight_report', nextRunAt: '2030-01-01T12:00:00Z' };
     expect(automationSchema.parse(input)).toMatchObject({ cooldownMinutes: 1440 });

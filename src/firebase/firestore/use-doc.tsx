@@ -42,20 +42,17 @@ export function useDoc<T = DocumentData>(
     throw new Error('DocumentReference passed to useDoc was not memoized. Please use the `useMemoFirebase` hook.');
   }
 
-  const [data, setData] = useState<WithId<T> | null>(null);
-  const [isLoading, setIsLoading] = useState(!!memoizedDocRef);
-  const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const [state, setState] = useState<UseDocResult<T> & {
+    reference: typeof memoizedDocRef;
+  }>({ reference: memoizedDocRef, data: null, isLoading: !!memoizedDocRef, error: null });
 
   useEffect(() => {
     if (!memoizedDocRef) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
+      setState({ reference: memoizedDocRef, data: null, isLoading: false, error: null });
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    setState({ reference: memoizedDocRef, data: null, isLoading: true, error: null });
 
     let isSubscribed = true;
     const unsubscribe = onSnapshot(
@@ -65,10 +62,9 @@ export function useDoc<T = DocumentData>(
 
         const docExists = snapshot.exists();
         
-        setData(docExists ? { ...(snapshot.data() as T), id: snapshot.id } : null);
-
-        setError(null);
-        setIsLoading(false);
+        setState({ reference: memoizedDocRef,
+          data: docExists ? { ...(snapshot.data() as T), id: snapshot.id } : null,
+          error: null, isLoading: false });
       },
       (err: FirestoreError) => {
         if (!isSubscribed) return;
@@ -78,9 +74,7 @@ export function useDoc<T = DocumentData>(
           path: memoizedDocRef.path,
         });
 
-        setError(contextualError);
-        setData(null);
-        setIsLoading(false);
+        setState({ reference: memoizedDocRef, error: contextualError, data: null, isLoading: false });
         errorEmitter.emit('permission-error', contextualError);
       }
     );
@@ -95,5 +89,10 @@ export function useDoc<T = DocumentData>(
     };
   }, [memoizedDocRef]);
 
-  return { data, isLoading, error };
+  // A dependent reference (e.g. profile -> agency) can appear during render,
+  // before the subscription effect runs. Never expose the previous reference's
+  // loaded state: route guards would mistake it for a missing document.
+  if (!memoizedDocRef) return { data: null, isLoading: false, error: null };
+  if (state.reference !== memoizedDocRef) return { data: null, isLoading: true, error: null };
+  return { data: state.data, isLoading: state.isLoading, error: state.error };
 }
