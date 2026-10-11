@@ -4,7 +4,11 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
-    if (step.kind === 'update_prospect' && receipt?.executionState === 'succeeded' && typeof receipt.listingId === 'string' && receipt.listingId) return receipt.state === 'taken' && typeof receipt.takenByAgentId === 'string' && receipt.takenByAgentId ? `Prospect preluat. ID: ${receipt.listingId}.` : `Prospect actualizat. ID: ${receipt.listingId}.`;
+    if (step.kind === 'update_prospect' && receipt?.executionState === 'succeeded' && typeof receipt.listingId === 'string' && receipt.listingId) {
+      const state = receipt.state === 'taken' && typeof receipt.takenByAgentId === 'string' && receipt.takenByAgentId ? 'preluat' : 'actualizat';
+      const details = [receipt.contactOutcome === 'negative' ? 'Rezultat apel: negativ.' : receipt.contactOutcome === 'follow_up' ? 'Rezultat apel: de revenit.' : '', receipt.collaborationStatus === 'collaborates' ? 'Colaborează.' : receipt.collaborationStatus === 'does_not_collaborate' ? 'Nu colaborează.' : '', typeof receipt.appendedNote === 'string' ? `Notă adăugată: „${receipt.appendedNote}”.` : ''].filter(Boolean).join(' ');
+      return `Prospect ${state}. ID: ${receipt.listingId}.${details ? ` ${details}` : ''}`;
+    }
     if (step.kind === 'existing_operation' && receipt?.operation === 'owner_prospect' && receipt.businessStatus === 'added_to_prospecting' && receipt.executionState === 'succeeded' && receipt.active === true && typeof receipt.listingId === 'string' && receipt.listingId) return `Anunț adăugat în lista de prospectare. ID: ${receipt.listingId}.`;
     if (step.kind === 'delete_task' && receipt?.deleted === true && typeof receipt.id === 'string' && receipt.id) return `Task șters. ID: ${receipt.id}.`;
     if (step.kind === 'delete_viewing' && receipt?.deleted === true && typeof receipt.id === 'string' && receipt.id) return `Vizionare ștearsă. ID: ${receipt.id}.`;

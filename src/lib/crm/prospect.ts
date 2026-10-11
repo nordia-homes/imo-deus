@@ -8,8 +8,14 @@ export function prospectOwner(row: Record<string, any>, at: number): string | nu
   return row.reservedByAgentId || null;
 }
 
-export function prospectPatch(row: Record<string, any>, patch: Record<string, any>, uid: string, name: string, now: string) {
-  const { state, ...fields } = patch;
+export function prospectPatch(row: Record<string, any>, patch: Record<string, any>, uid: string, name: string, now: string): Record<string, any> {
+  const { state, appendNote, ...fields } = patch;
+  if (state && fields.contactOutcome !== undefined) throw new Error('Preluarea și rezultatul apelului sunt actualizări distincte.');
+  if (appendNote !== undefined && fields.notes !== undefined) throw new Error('Nota nouă și înlocuirea notelor sunt operațiuni distincte.');
+  if (appendNote !== undefined) {
+    fields.notes = [row.notes || '', appendNote].filter(Boolean).join('\n');
+    if (fields.notes.length > 10000) throw new Error('Notele prospectului depășesc limita; istoricul nu a fost trunchiat.');
+  }
   const resetOutcome = { contactOutcome: null, contactOutcomeAt: null, contactOutcomeByAgentId: null, contactOutcomeByAgentName: null };
   const resetTaken = { takenByAgentId: null, takenByAgentName: null, takenAt: null };
   const ownershipChanged = prospectOwner(row, Date.parse(now)) !== uid;

@@ -332,7 +332,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const patch = prospectPatch(favorite, action.patch, ctx.uid, profile.data()?.name || '', now);
       if (snapshot.exists) tx.update(ref, patch);
       else tx.create(ref, { ownerListingId: action.listingId, isFavoriteActive: true, collaborationStatus: null, commissionValue: '', propertyAddress: '', notes: '', createdAt: now, createdBy: ctx.uid, ...patch });
-      result = { listingId: action.listingId, link: '/owner-listings/favorite', executionState: 'succeeded', state: action.patch.state || null, takenByAgentId: patch.takenByAgentId || null, updatedAt: now };
+      result = { listingId: action.listingId, link: '/owner-listings/favorite', executionState: 'succeeded', state: action.patch.state || null, takenByAgentId: patch.takenByAgentId || null, updatedAt: now, ...(action.patch.appendNote ? { appendedNote: action.patch.appendNote } : {}), ...(action.patch.contactOutcome !== undefined ? { contactOutcome: patch.contactOutcome } : {}), ...(action.patch.collaborationStatus !== undefined ? { collaborationStatus: patch.collaborationStatus } : {}) };
     } else if (action.kind === 'portal_action') {
       const contact = await read('contacts', action.contactId);
       if (action.expectedUpdatedAt !== undefined && (contact.updatedAt || null) !== action.expectedUpdatedAt) throw new CommunicationError('Contactul s-a modificat. Reîncarcă datele înainte de executare.', 409);

@@ -65,6 +65,18 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     await source.update({ publicationStatus: 'draft' });
     expect((await readResource(ctx, { resource: 'ownerListingFavorites', id, limit: 10 })).rows[0]).not.toHaveProperty('ownerPhone');
   });
+  it('saves the call outcome and appends notes exactly once under concurrent replay', async () => {
+    const ctx = await fixture(), id = randomUUID();
+    const favorite = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites').doc(id);
+    await favorite.set({ isFavoriteActive: true, notes: 'Istoric', updatedAt: '2026-10-01T07:00:00.000Z', takenByAgentId: ctx.uid });
+    const action = actionSchema.parse({ kind: 'update_prospect', listingId: id, expectedUpdatedAt: '2026-10-01T07:00:00.000Z', patch: { contactOutcome: 'negative', appendNote: 'Refuz la apel.' } });
+    const results = await Promise.all([executeAction(ctx, action, 'call'), executeAction(ctx, action, 'call')]);
+    expect(results[0]).toEqual(results[1]);
+    expect(results[0]).toMatchObject({ contactOutcome: 'negative', appendedNote: 'Refuz la apel.', executionState: 'succeeded' });
+    expect((await favorite.get()).data()).toMatchObject({ notes: 'Istoric\nRefuz la apel.', contactOutcome: 'negative', contactOutcomeByAgentId: ctx.uid, takenByAgentId: null });
+    await expect(executeAction(ctx, action, 'stale-call')).rejects.toMatchObject({ status: 409 });
+    expect((await favorite.get()).data()?.notes).toBe('Istoric\nRefuz la apel.');
+  });
   it('preserves selected order, writes through the existing handler once, then verifies current list membership', async () => {
     const ctx = await fixture(), ids = ['a','b','c'].map(suffix => ctx.agencyId + suffix); listings.push(...ids);
     for (const id of ids) await db.collection('ownerListings').doc(id).set({ scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, title: 'Apartament Drumul Taberei', location: 'Drumul Taberei', price: '120000 EUR', roomsValue: 3, propertyType: 'apartment', transactionType: 'sale', source: 'olx', link: `https://www.olx.ro/d/oferta/${id}.html` });

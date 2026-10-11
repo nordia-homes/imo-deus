@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot prospectare — continuare după clarificare și rezultat de apel
+
+Scenariile **0254, 0255, 0256 și 0258** au dovezi locale noi. Pentru 0254 și 0255 proba trece prin `chatTurn`: comanda originală, clarificarea salvată, răspunsul agentului, tranzacția reală pe Firestore local și confirmarea finală din conversație. Nu se salvează nimic înainte ca agentul să precizeze statusul sau rezultatul lipsă. Răspunsul scurt continuă autorizarea solicitării numai pentru același prospect și în următorul schimb; anularea nu moștenește autorizarea.
+
+Au fost corectate alegerea nejustificată a statusului „preluat”, oprirea la limita de tokenuri înainte de primul apel al continuării și pierderea autorizării din cererea inițială. Instrumentele inițiale ale continuării sunt limitate la fluxul prospectului, cu descoperirea altor instrumente disponibilă. Refuzul se salvează ca rezultat negativ și notă; colaborarea are statusul distinct. `appendNote` păstrează istoricul și refuză trunchierea; confirmarea descrie câmpurile salvate. Reluarea aceleiași cereri nu repetă modificarea.
+
+Versiuni **jarvis-69 / request-crm-12 / tools 95**. Au trecut **7 probe cu model real** (4 originale noi și 3 regresii) și **2.189 teste locale**. Dovezi: [PROSPECTING_EXECUTION_BATCH_02.json](evals/PROSPECTING_EXECUTION_BATCH_02.json). Total **99/1000 cu dovezi locale**, **901 fără rezultat local verificat**. Scenariul 0257 (follow-up programat) și limita semantică/manuală din 0246 rămân deschise. Nu este certificare integrală în producție; lotul nu a fost publicat în producție.
+
+Verificările Firestore au trecut: **288/288**, inclusiv salvarea concurentă și reluarea fără dublarea notei. Lint, paritate, inventarul reproductibil și buildul final (TypeScript, 227 pagini) au trecut.
+
 ## Lot prospectare — citire, recomandare și preluare
 
 Scenariile originale **0251–0253** au rezultat verificat cu model real și Firestore local: afișarea prospectelor active fără rezultat de contact înregistrat, recomandarea justificată a primului prospect de sunat și preluarea prospectului selectat. Nu se deduce lipsa oricărui apel anterior din lipsa unui rezultat în CRM și nu se inițiază apeluri pentru o cerere de recomandare.

@@ -36,6 +36,19 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('reaches the provider for a short prospect clarification reply while retaining discovery', async () => {
+    const model = scripted(final);
+    const result = await planTurn(ctx, 'Colaborează.', [
+      { id: 'clarification', role: 'assistant', text: 'Ce status?', createdAt: '2026-10-11T07:00:00Z', prospectContinuation: { listingId: 'p', request: 'Actualizează statusul prospectului selectat.' } },
+      { id: 'current-page-context', role: 'assistant', text: 'Pagina curentă nu are client sau proprietate.', createdAt: '2026-10-11T07:01:00Z' },
+    ], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(model.respond).toHaveBeenCalledOnce();
+    const names = model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name);
+    expect(names).toContain('update_prospect');
+    expect(names).toContain('discover_tools');
+    expect(names).not.toContain('create_property');
+  });
   it('repairs a viewing proposed before its new buyer without retaining the invalid first action', async () => {
     const prompt = 'Programează vizionarea la 2030-01-01T05:30:00Z pentru Matei Alin.';
     const viewing = { kind: 'schedule_viewing', contactId: '@step:1:contactId', propertyId: 'p', viewingDate: '2030-01-01T05:30:00Z', duration: 60, notes: '' };

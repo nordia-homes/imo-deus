@@ -1,4 +1,5 @@
 import { MAX_PLAN_ACTIONS } from './plan-limits';
+import { prospectClarification } from './prospect-continuation';
 import { selectedViewing, selectedViewingList } from './viewing-selection';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
@@ -42,14 +43,21 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     return { text, cards, actions, accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
+  const clarification = prospectClarification(prompt, history);
+  if (clarification) return finish(clarification, 'clarification');
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
   const readiness = await automationReadiness(ctx);
   const contextHint = (prompt + ' ' + history.slice(-2).map(m=>m.text).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   // Always keep discovery + propose_actions. Limit native schemas, particularly
   // the full property form, so an ordinary question cannot exhaust the budget.
   const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
+  const pendingProspect = history.filter(message => message.id !== 'current-page-context').at(-1)?.prospectContinuation;
+  if (pendingProspect) selectedActions.add('update_prospect');
+  // A clarification reply needs the selected workflow, not every unrelated core schema.
+  // Discovery remains available if the agent changes the request.
+  const continuationTools = new Set(['read', 'read_field', 'propose_actions', 'goal_coverage', 'update_prospect', 'discover_tools', 'operation_contract', 'data_catalog', 'resolve_datetime']);
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
-  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => !pendingProspect || continuationTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
   const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });

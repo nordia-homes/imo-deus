@@ -13,6 +13,7 @@ import { telemetryDocument, type AgentEvent, type TurnMetrics } from './telemetr
 import { VERSIONS } from './models';
 import { sessionSummary } from './context';
 import { executeSafePrefix } from './autonomy';
+import { pendingProspectRequest, prospectExecutionPrompt } from './prospect-continuation';
 import { executionConfirmation } from './execution-confirmation';
 import { currentRecordMessage } from './current-record';
 import type { CurrentRecord } from './current-record-contract';
@@ -78,11 +79,12 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
   const started = Date.now();
   try {
     const history = (await sessionHistory(ctx, input.sessionId)).messages.filter(m => m.id !== `${input.requestId}-user`);
+    const conversationHistory = [...history];
     if (pageContext) history.push(pageContext);
     const session = await ref.get();
     const result = await planTurn(ctx, input.prompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;
-    const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, input.prompt) : { actions: result.actions, results: [], blocked: false };
+    const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(input.prompt, result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
     for (const step of autonomous.results) {
       const receipt = step.result as Record<string, unknown> | undefined;
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
@@ -104,7 +106,9 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       if (autonomous.blocked) result.metrics.status = 'partial';
     }
     const planId = result.actions.length ? randomUUID() : undefined;
+    const pendingProspect = pendingProspectRequest(input.prompt, result.metrics.status, history);
     const message: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
+    if (pendingProspect) message.prospectContinuation = pendingProspect;
     await ctx.adminDb.runTransaction(async tx => {
       const [fresh, actor, member] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
