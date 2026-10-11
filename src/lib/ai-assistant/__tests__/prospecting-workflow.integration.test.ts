@@ -20,6 +20,7 @@ import { operationResult } from '../operation-result';
 import { readPlanOutcomes } from '../plan-outcomes';
 import { readResource } from '../access';
 import { executeSafePrefix } from '../autonomy';
+import { readTimeline } from '../timeline';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecting on Firestore with simulated phone provider', () => {
   let db: Firestore;
@@ -48,6 +49,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('paginates prospect interactions without mixing listings, snapshots or inaccessible events', async () => {
+    const ctx = await fixture();
+    const agency = db.collection('agencies').doc(ctx.agencyId);
+    await agency.collection('ownerListingFavorites').doc('selected').set({ notes: 'Condiții curente', contactOutcome: 'follow_up' });
+    for (const id of ['a', 'b', 'c']) await agency.collection('aiOutreachCalls').doc(id).set({ ownerListingId: 'selected', status: 'completed', summary: `Rezultat ${id}`, endedAt: '2026-10-10T07:00:00.000Z' });
+    await agency.collection('aiOutreachCalls').doc('other').set({ ownerListingId: 'another', summary: 'Nu aparține prospectului' });
+    await agency.collection('tasks').doc('followup').set({ ownerListingId: 'selected', description: 'Revenire', dueDate: '2026-10-24', createdAt: '2026-10-10T08:00:00.000Z', status: 'open' });
+    await agency.collection('crmEvents').doc('revoked').set({ actorId: ctx.uid, entities: { listingId: 'selected', conversationId: 'missing' }, capability: 'Private conversation' });
+    await agency.collection('crmEvents').doc('visible').set({ actorId: ctx.uid, entities: { listingId: 'selected' }, capability: 'update_prospect' });
+    const input = { resource: 'ownerListingFavorites' as const, id: 'selected', limit: 1 };
+    const rows: Record<string, any>[] = [];
+    let page = await readTimeline(ctx, input), pages = 0;
+    expect(page.complete).toBe(false);
+    expect(page.currentSnapshot).toMatchObject({ notes: 'Condiții curente', contactOutcome: 'follow_up' });
+    expect(page.scope).toMatchObject({ id: 'selected', relatedListingsIncluded: false });
+    while (true) {
+      rows.push(...page.rows); pages++;
+      if (page.complete) break;
+      expect(pages).toBeLessThan(10);
+      page = await readTimeline(ctx, { ...input, cursor: page.nextCursor! });
+    }
+    expect(rows.map(row => row.id).sort()).toEqual(['a', 'b', 'c', 'followup', 'visible']);
+    expect(rows.find(row => row.id === 'a')).toMatchObject({ source: 'aiOutreachCalls', description: 'Rezultat a', occurredAt: '2026-10-10T07:00:00.000Z' });
+    expect(rows.find(row => row.id === 'followup')).toMatchObject({ source: 'tasks', status: 'open', dueDate: '2026-10-24', occurredAt: '2026-10-10T08:00:00.000Z' });
+    const other = await fixture();
+    await expect(readTimeline(other, input)).rejects.toMatchObject({ status: 404 });
+  });
   it('enriches only agency prospects and preserves ownership and revision checks on takeover', async () => {
     const ctx = await fixture(), id = randomUUID(); listings.push(id);
     const source = db.collection('ownerListings').doc(id);

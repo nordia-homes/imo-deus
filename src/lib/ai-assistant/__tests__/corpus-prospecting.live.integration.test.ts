@@ -18,8 +18,9 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
+  if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -44,6 +45,11 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259]) {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 260) {
+        await agency.collection('aiOutreachCalls').doc('recorded-call').set({ ownerListingId: source.id, status: 'completed', summary: 'Proprietarul acceptă comisionul de 2%.', endedAt: '2026-10-10T07:00:00.000Z' });
+        await agency.collection('tasks').doc('planned-followup').set({ ownerListingId: source.id, description: 'Revenire la proprietar', status: 'open', dueDate: '2026-10-24', createdAt: '2026-10-10T08:00:00.000Z' });
+        await agency.collection('aiOutreachCalls').doc('unrelated-call').set({ ownerListingId: 'beta', summary: 'CANARY_UNRELATED_OWNER' });
+      }
       if ([254, 255, 259].includes(number)) {
         const session = agency.collection('assistantSessions').doc(id);
         await session.set({ ownerId: id, createdAt: new Date().toISOString() });
@@ -75,6 +81,19 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259]) {
       report = { ...report, text: planned.text, cards: planned.cards, actions: planned.actions, metrics: planned.metrics, toolCalls: calls };
       const executionPrompt = prompt;
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (number === 260) {
+        expect(planned.actions).toEqual([]);
+        const timeline = planned.cards.filter(card => card.source === 'timeline') as any[];
+        expect(timeline.length, planned.text).toBeGreaterThan(0);
+        const rows = timeline.flatMap(card => card.rows || []);
+        expect(rows.map(row => row.id)).toContain('recorded-call');
+        expect(rows.map(row => row.id)).toContain('planned-followup');
+        expect(JSON.stringify(planned)).not.toContain('CANARY_UNRELATED_OWNER');
+        expect(planned.text).toContain('2%');
+        for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
+        report = { ...report, selectedListingVerified: true, executionVerified: false, limitation: 'Selected listing timeline verified. All listings belonging to the same owner are not yet resolved; original scenario remains open.' };
+        return;
+      }
       if (number === 257) {
         const expectedDay = resolveDatetime({ dayOffset: 14, time: '12:00' }).local.slice(0, 10);
         expect(planned.actions).toHaveLength(1);

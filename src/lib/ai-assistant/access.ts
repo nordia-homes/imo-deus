@@ -176,7 +176,7 @@ export async function referencesAllowed(ctx: AssistantContext, references: Acces
   }
   return true;
 }
-async function eventReferencesAllowed(ctx: AssistantContext, row: Record<string, any>) {
+export async function eventReferencesAllowed(ctx: AssistantContext, row: Record<string, any>) {
   if (ctx.role === 'admin') return true;
   const map: Record<string, string> = { saleId: 'sales', conversationId: 'conversations' };
   for (const [field, resource] of Object.entries(map)) {

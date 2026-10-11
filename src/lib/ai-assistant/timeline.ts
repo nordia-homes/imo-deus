@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { collectionFor, getResource, canReadResource, type AssistantContext } from './access';
+import { collectionFor, getResource, canReadResource, eventReferencesAllowed, type AssistantContext } from './access';
 import { idSchema, safeData } from './contracts';
 const resources = ['contacts', 'properties', 'sales', 'conversations', 'aiOutreachCalls', 'ownerListingFavorites'] as const;
 export const timelineSchema = z.object({ resource: z.enum(resources), id: idSchema, limit: z.number().int().min(1).max(20).default(10), cursor: z.string().max(4000).optional() }).strict();
@@ -17,6 +17,9 @@ export async function readTimeline(ctx: AssistantContext, input: z.infer<typeof 
   ];
   if (input.resource === 'properties') for (const resource of ['propertyStatusEvents', 'propertyDeletionEvents']) sources.push({ name: resource, query: collectionFor(ctx, resource).where('propertyId', '==', input.id) });
   if (['contacts', 'properties'].includes(input.resource)) for (const resource of ['tasks', 'viewings']) sources.push({ name: resource, query: collectionFor(ctx, resource).where(idField, '==', input.id), permission: resource });
+  if (input.resource === 'ownerListingFavorites') for (const resource of ['aiOutreachCalls', 'tasks']) {
+    sources.push({ name: resource, query: collectionFor(ctx, resource).where('ownerListingId', '==', input.id), permission: resource });
+  }
   if (['sales', 'conversations', 'aiOutreachCalls'].includes(input.resource)) {
     const related = input.resource === 'sales' ? ['audit', 'emailMessages'] : input.resource === 'conversations' ? ['messages', 'notes'] : ['audit', 'messages'];
     for (const name of related) sources.push({ name, query: collectionFor(ctx, input.resource).doc(input.id).collection(name) });
@@ -32,10 +35,11 @@ export async function readTimeline(ctx: AssistantContext, input: z.infer<typeof 
     for (const doc of page) {
       const data: Record<string, any> = { ...doc.data(), id: doc.id };
       if (source.permission && !canReadResource(ctx, source.permission, data)) continue;
-      const occurredAt = data.occurredAt || data.changedAt || data.createdAt || data.date || null;
-      rows.push({ ...safeData(data), source: source.name, occurredAt, dueDate: occurredAt,
+      if (source.name === 'crmEvents' && !(await eventReferencesAllowed(ctx, data))) continue;
+      const occurredAt = data.occurredAt || data.changedAt || data.endedAt || data.createdAt || data.date || null;
+      rows.push({ ...safeData(data), source: source.name, occurredAt, dueDate: data.dueDate || occurredAt,
         title: data.capability || data.title || data.description || data.type || data.status || 'Eveniment CRM',
-        description: Array.isArray(data.changedFields) ? 'Câmpuri modificate: ' + data.changedFields.join(', ') : data.notes || null });
+        description: Array.isArray(data.changedFields) ? 'Câmpuri modificate: ' + data.changedFields.join(', ') : data.summary || data.notes || data.description || null });
     }
   }
   // Embedded histories are snapshots; never invent missing historical actors/dates.
@@ -50,6 +54,8 @@ export async function readTimeline(ctx: AssistantContext, input: z.infer<typeof 
     if (next[source]) complete = false;
   }
   return { rows: rows.sort((a, b) => String(b.occurredAt || '').localeCompare(String(a.occurredAt || ''))), complete,
+    scope: { resource: input.resource, id: input.id, sources: sources.map(source => source.name), relatedListingsIncluded: false },
+    ...(input.resource === 'ownerListingFavorites' ? { currentSnapshot: safeData({ notes: parent.notes || null, contactOutcome: parent.contactOutcome || null, contactOutcomeAt: parent.contactOutcomeAt || null, collaborationStatus: parent.collaborationStatus || null }), snapshotNote: 'Starea și notițele curente nu sunt evenimente istorice distincte. Taskurile sunt activități planificate; nu dovedesc efectuarea unui apel. Acest istoric privește numai anunțul selectat, nu toate anunțurile aceluiași proprietar.' } : {}),
     nextCursor: complete ? null : Buffer.from(JSON.stringify({ resource: input.resource, id: input.id, cursors: next })).toString('base64url'),
     asOf: new Date().toISOString(), note: 'Istoric din sursele disponibile. Evenimentele CRM noi includ fluxurile migrate. Absența istoricului vechi nu dovedește absența unei acțiuni. Ordinea globală necesită toate paginile.' };
 }

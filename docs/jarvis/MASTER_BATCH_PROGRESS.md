@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Istoricul prospectului — progres parțial pentru 0260
+
+Citirea `timeline` pentru prospect include acum apelurile AI și taskurile legate prin `ownerListingId`, pe lângă evenimentele CRM. Sursele sunt paginate independent; taskurile păstrează scadența și sunt prezentate ca activități planificate. Notițele și statusul curent sunt returnate separat de evenimentele datate. Evenimentele legate de conversații sau dosare inaccesibile sunt filtrate și din timeline.
+
+Cererea originală 0260 a fost verificată cu model real și Firestore local pentru anunțul selectat: apelul, rezultatul și taskul sunt citite fără scrieri sau amestec cu alt prospect. Dovadă: [PROSPECT_TIMELINE_PARTIAL_0260.json](evals/PROSPECT_TIMELINE_PARTIAL_0260.json). `executionVerified` rămâne false: corelarea tuturor anunțurilor aceluiași proprietar și a interacțiunilor asociate nu este încă implementată. Totalul rămâne **101/1000**. Versiuni **jarvis-71 / tools 97**. Modificările nu sunt publicate în producție.
+
+Verificări: 7/7 teste ale fluxului în Firestore local, o probă cu model real pentru istoricul anunțului selectat, lint, paritate, inventarul corpusului și buildul de producție (TypeScript și 227 pagini) trecute. Nu au fost contactați clienți.
+
 ## Lot prospectare — follow-up legat de prospect și condiții discutate
 
 Scenariile **0257 și 0259** au dovezi locale noi. În 0257, modelul real calculează ziua la 14 zile calendaristice în București, iar executorul creează efectiv un task cu `ownerListingId`, participantul actual și scadența fără oră inventată. Prospectul apare pe cardul taskului și în confirmarea salvării. Nu se creează un cumpărător sau o proprietate CRM pentru această legătură. Datele inactive, apartenența la alt agent și combinarea cu relații CRM incompatibile sunt refuzate înainte de scriere.

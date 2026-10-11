@@ -58,6 +58,8 @@ if (process.argv.includes('--corpus-owner-search-live')) {
 }
 if (process.argv.includes('--corpus-prospecting-live')) {
   process.env.JARVIS_PROSPECTING_LIVE = 'true';
+  const selected = process.argv.find(arg => /^--case=master-\d{4}$/.test(arg));
+  if (selected) process.env.JARVIS_PROSPECTING_CASE = selected.slice(7);
   command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/corpus-prospecting.live.integration.test.ts';
 }
 const child = spawn(process.execPath, ['node_modules/firebase-tools/lib/bin/firebase.js', 'emulators:exec', '--project', 'demo-imodeus-ai-assistant', '--only', 'firestore,storage', command], { stdio: 'inherit', windowsHide: true, env: { ...process.env, JAVA_HOME: javaHome, PATH: [path.join(javaHome, 'bin'), path.dirname(process.execPath), path.join(process.env.SystemRoot || 'C:/Windows', 'System32'), process.env.PATH].join(path.delimiter) } });
