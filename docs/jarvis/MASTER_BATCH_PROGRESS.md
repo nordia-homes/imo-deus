@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Istoricul prospectelor asociate prin telefon — continuare 0260
+
+`owner_prospects` citește prospectele agenției cu paginare și compară telefonul românesc complet normalizat, inclusiv variantele +40/0040 și prospectele inactive. Nu asociază persoane numai după nume. Cursorul este legat de agenție, prospect și telefonul actual; dacă telefonul se schimbă, continuarea veche este refuzată. Lipsa telefonului valid este declarată explicit, fără un rezultat fals complet.
+
+Planificatorul folosește instrumente și instrucțiuni compacte pentru cererile de istoric ale prospectului selectat, păstrând descoperirea altor instrumente. Contractele de citire și `goal_coverage` sunt explicite, eliminând opririle premature observate în probe din cauza bugetului și a confuziei dintre citiri și pași de scriere. Proba finală cu model real prezintă rezultatele apelurilor din ambele anunțuri și taskul planificat. Dovezi: [PROSPECT_PHONE_LINKED_HISTORY_PARTIAL_0260.json](evals/PROSPECT_PHONE_LINKED_HISTORY_PARTIAL_0260.json).
+
+Au trecut 8 teste Firestore, 32 teste ale planificatorului, lint, paritatea instrumentelor, inventarul corpusului și buildul final (TypeScript, 227 pagini). Scenariul original rămâne parțial: proprietățile importate în CRM, anunțurile globale și conversațiile fără legătură înregistrată nu sunt acoperite de această probă. Total **101/1000**, fără certificare nouă în producție. Versiuni **jarvis-72 / tools 98**.
+
 ## Istoricul prospectului — progres parțial pentru 0260
 
 Citirea `timeline` pentru prospect include acum apelurile AI și taskurile legate prin `ownerListingId`, pe lângă evenimentele CRM. Sursele sunt paginate independent; taskurile păstrează scadența și sunt prezentate ca activități planificate. Notițele și statusul curent sunt returnate separat de evenimentele datate. Evenimentele legate de conversații sau dosare inaccesibile sunt filtrate și din timeline.

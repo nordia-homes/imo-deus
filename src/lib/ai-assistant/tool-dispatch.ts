@@ -121,6 +121,10 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     cards.push({ type: 'data', title: 'Sursă oficială consultată', source: 'legal', rows: [{ sourceUrl: data.sourceUrl, authority: data.authority, retrievedAt: data.retrievedAt, contentHash: data.contentHash, temporalValidityVerified: false }], note: data.note });
   } else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
+  else if (name === 'owner_prospects') {
+    const { readOwnerProspects } = await import('./owner-prospects'); data = await readOwnerProspects(ctx, payload);
+    cards.push({ type: 'data', title: 'Prospecte cu același telefon', source: 'ownerListingFavorites', ...data } as AssistantCard);
+  }
   else if (name === 'timeline') {
     const { readTimeline } = await import('./timeline'); data = await readTimeline(ctx, payload);
     cards.push({ type: 'data', title: 'Istoric CRM verificat', source: 'timeline', timeline: payload, ...data } as AssistantCard);

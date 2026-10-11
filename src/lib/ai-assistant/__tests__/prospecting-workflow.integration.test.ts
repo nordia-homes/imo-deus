@@ -21,6 +21,7 @@ import { readPlanOutcomes } from '../plan-outcomes';
 import { readResource } from '../access';
 import { executeSafePrefix } from '../autonomy';
 import { readTimeline } from '../timeline';
+import { readOwnerProspects } from '../owner-prospects';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecting on Firestore with simulated phone provider', () => {
   let db: Firestore;
@@ -75,6 +76,23 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect(rows.find(row => row.id === 'followup')).toMatchObject({ source: 'tasks', status: 'open', dueDate: '2026-10-24', occurredAt: '2026-10-10T08:00:00.000Z' });
     const other = await fixture();
     await expect(readTimeline(other, input)).rejects.toMatchObject({ status: 404 });
+  });
+  it('links full Romanian phone variants across pages including inactive prospects without matching names', async () => {
+    const ctx = await fixture(), favorites = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites');
+    await favorites.doc('selected').set({ ownerPhone: '0722123456', ownerName: 'Matei Alin' });
+    await favorites.doc('a-related').set({ ownerPhone: '+40 722 123 456', isFavoriteActive: false });
+    await favorites.doc('z-related').set({ ownerPhone: '0040 722 123 456' });
+    for (let i = 0; i < 51; i++) await favorites.doc(`m-${String(i).padStart(2, '0')}`).set({ ownerPhone: '0733123456', ownerName: 'Matei Alin' });
+    const first = await readOwnerProspects(ctx, { listingId: 'selected' });
+    expect(first.complete).toBe(false); expect(first.nextCursor).toBeTruthy();
+    expect(first.rows.map(row => row.id)).toEqual(['a-related']);
+    const last = await readOwnerProspects(ctx, { listingId: 'selected', cursor: first.nextCursor! });
+    expect(last.complete).toBe(true); expect(last.rows.map(row => row.id)).toEqual(['selected', 'z-related']);
+    await favorites.doc('selected').update({ ownerPhone: '0744123456' });
+    await expect(readOwnerProspects(ctx, { listingId: 'selected', cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
+    await favorites.doc('selected').update({ ownerPhone: '' });
+    expect(await readOwnerProspects(ctx, { listingId: 'selected' })).toMatchObject({ rows: [], complete: false, reason: 'missing_valid_phone' });
+    await expect(readOwnerProspects(await fixture(), { listingId: 'selected' })).rejects.toMatchObject({ status: 404 });
   });
   it('enriches only agency prospects and preserves ownership and revision checks on takeover', async () => {
     const ctx = await fixture(), id = randomUUID(); listings.push(id);

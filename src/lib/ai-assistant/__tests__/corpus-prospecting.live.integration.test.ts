@@ -46,6 +46,8 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
       if (number === 260) {
+        await favorites.doc('related-inactive').set({ ownerPhone: '0040 722 123 456', ownerName: 'Alin Matei', isFavoriteActive: false });
+        await agency.collection('aiOutreachCalls').doc('related-call').set({ ownerListingId: 'related-inactive', status: 'completed', summary: 'Proprietarul acceptă vizionări sâmbăta.', endedAt: '2026-10-09T07:00:00.000Z' });
         await agency.collection('aiOutreachCalls').doc('recorded-call').set({ ownerListingId: source.id, status: 'completed', summary: 'Proprietarul acceptă comisionul de 2%.', endedAt: '2026-10-10T07:00:00.000Z' });
         await agency.collection('tasks').doc('planned-followup').set({ ownerListingId: source.id, description: 'Revenire la proprietar', status: 'open', dueDate: '2026-10-24', createdAt: '2026-10-10T08:00:00.000Z' });
         await agency.collection('aiOutreachCalls').doc('unrelated-call').set({ ownerListingId: 'beta', summary: 'CANARY_UNRELATED_OWNER' });
@@ -88,10 +90,12 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         const rows = timeline.flatMap(card => card.rows || []);
         expect(rows.map(row => row.id)).toContain('recorded-call');
         expect(rows.map(row => row.id)).toContain('planned-followup');
+        expect(rows.map(row => row.id)).toContain('related-call');
         expect(JSON.stringify(planned)).not.toContain('CANARY_UNRELATED_OWNER');
         expect(planned.text).toContain('2%');
+        expect(planned.text).toMatch(/sâmbăt|sambat/i);
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, selectedListingVerified: true, executionVerified: false, limitation: 'Selected listing timeline verified. All listings belonging to the same owner are not yet resolved; original scenario remains open.' };
+        report = { ...report, agencyPhoneLinkedHistoryVerified: true, executionVerified: false, limitation: 'Agency prospect timelines linked by full normalized phone, including inactive prospects. Global listings, imported property interactions and unlinked conversations remain outside this evidence.' };
         return;
       }
       if (number === 257) {

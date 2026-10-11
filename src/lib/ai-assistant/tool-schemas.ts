@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { actionSchema, readSchema, relatedSchema, fieldSchema, searchSchema, idSchema, queryRecordsSchema } from './contracts';
 import { analysisSchema, datetimeSchema } from './deterministic-contracts';
 import { timelineSchema } from './timeline';
+import { ownerProspectsSchema } from './owner-prospects';
 import { preferenceKeySchema } from './preferences';
 import { goalCoverageSchema } from './goal-coverage';
 import { contextSelectionSchema } from './context-selection-contract';
@@ -47,6 +48,7 @@ export const coreToolSchemas = {
   data_catalog: [z.object({ category: z.string().max(100).default('') }).strict(), objectOutput, 'Descoperă resursele CRM, relațiile, citirile și limitele de actualitate. Nu încarcă datele agenției în prompt.'],
   capability_status: [z.object({ operation: idSchema }).strict(), objectOutput, 'Verifică drepturi, feature flags, worker și pașii de eligibilitate/provider ai unei capabilități înainte de execuție. Nu confundă înregistrarea cu disponibilitatea integrării.'],
   timeline: [timelineSchema, rowsOutput, 'Istoric autorizat al clientului/proprietății/dosarului/conversației/apelului; paginare și surse explicite.'],
+  owner_prospects: [ownerProspectsSchema, rowsOutput, 'Găsește prospectele agenției cu același telefon normalizat ca prospectul selectat, inclusiv inactive. Citește toate paginile, apoi timeline pentru fiecare ID când se cere istoricul proprietarului. Nu asocia numai după nume.'],
   analyze_records: [analysisSchema, rowsOutput, 'Filtrare, sortare și statistici deterministe pe ID-uri autorizate deja identificate. Nu este un total al agenției.'],
   shift_datetime: [shiftDatetimeSchema, objectOutput, 'Deplasează un ISO verificat cu minutes minute (pozitiv = mai târziu, negativ = mai devreme). Returnează ISO și ora Europe/Bucharest, inclusiv peste schimbarea DST.'],
   resolve_datetime: [datetimeSchema, objectOutput, 'Dată și oră convertite determinist în ISO, exclusiv Europe/Bucharest. Alege exact unul: date, dayOffset (mâine=1) sau weekday (monday..sunday; vineri=friday), plus time HH:mm. weekday alege următoarea apariție la ora cerută, inclusiv azi dacă ora nu a trecut. Detectează ambiguitatea DST.'],

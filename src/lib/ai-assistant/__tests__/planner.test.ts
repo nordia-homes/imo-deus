@@ -36,6 +36,15 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('keeps owner history schemas compact while preserving discovery and all required reads', async () => {
+    const model = scripted(final);
+    const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    const names = model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name);
+    expect(names).toEqual(expect.arrayContaining(['owner_prospects', 'timeline', 'read', 'read_related', 'discover_tools']));
+    expect(names).not.toContain('create_property');
+    expect(names.length).toBeLessThanOrEqual(10);
+  });
   it('accepts a date-only task from the resolved Bucharest day without inventing a task hour', async () => {
     const prompt = 'Creează follow-up pentru 2030-10-27, fără oră.';
     const action = { kind: 'create_task', ownerListingId: 'p', description: 'Follow-up', dueDate: '2030-10-27' };

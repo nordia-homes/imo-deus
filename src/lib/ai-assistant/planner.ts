@@ -53,14 +53,17 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
   const pendingProspect = history.filter(message => message.id !== 'current-page-context').at(-1)?.prospectContinuation;
   const prospectFollowup = /\bfollow[- ]?up\b/i.test(prompt) && history.filter(message => message.id !== 'current-page-context').at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
+  const historyPrompt = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const prospectHistory = /^(arata|afiseaza|verifica|consulta)\b.*\b(istoric|istoricul|interactiuni|interactiunile)\b/.test(historyPrompt) && !/\b(creeaza|adauga|modifica|actualizeaza|sterge|programeaza|trimite|suna|marcheaza|anuleaza)\b/.test(historyPrompt) && history.filter(message => message.id !== 'current-page-context').at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
   if (prospectFollowup) selectedActions.add('create_task');
   if (pendingProspect) selectedActions.add('update_prospect');
   // A clarification reply needs the selected workflow, not every unrelated core schema.
   // Discovery remains available if the agent changes the request.
   const continuationTools = new Set(['read', 'read_field', 'propose_actions', 'goal_coverage', 'update_prospect', 'create_task', 'discover_tools', 'operation_contract', 'data_catalog', 'resolve_datetime']);
+  const historyTools = new Set(['read', 'read_field', 'read_related', 'timeline', 'owner_prospects', 'propose_actions', 'goal_coverage', 'discover_tools', 'operation_contract', 'data_catalog']);
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
-  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
-  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child });
+  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => name !== 'owner_prospects' || prospectHistory || options.allowedTools?.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(name => !prospectHistory || historyTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child || prospectHistory });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
   let invalidCalls = 0, closureAttempts = 0, reservingNextTurn = false, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
