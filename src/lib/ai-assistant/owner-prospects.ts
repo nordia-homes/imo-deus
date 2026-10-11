@@ -20,25 +20,27 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
   const resources = ['ownerListingFavorites', 'properties', 'conversations', 'aiOutreachCalls', 'tasks'] as const;
   const after = { ownerListingFavorites: null, properties: null, conversations: null, aiOutreachCalls: null, tasks: null } as Record<typeof resources[number], string | null>;
   const rows: Record<string, any>[] = [];
-  const resolveImport = ownerImportResolver(ctx, input.listingId, phone);
+  const resolveImport = ownerImportResolver(ctx, input.listingId, phone, urls);
   const unresolvedReferences: { propertyId: string; reason: string }[] = [];
   for (const resource of resources) {
     if (cursor && cursor.after[resource] === null) continue;
     const page = await readResource(ctx, { resource, limit: 50, ...(cursor?.after[resource] ? { cursor: cursor.after[resource]! } : {}) });
     after[resource] = page.nextCursor;
     for (const row of page.rows) {
-      let exact = resource === 'ownerListingFavorites' ? row.id === input.listingId : resource === 'properties' ? (row.ownerListingId === input.listingId || (!row.ownerListingId && typeof row.ownerListingUrl === 'string' && urls.includes(row.ownerListingUrl))) : ['aiOutreachCalls', 'tasks'].includes(resource) && row.ownerListingId === input.listingId;
+      let exact = resource === 'ownerListingFavorites' ? row.id === input.listingId : resource === 'properties' ? row.ownerListingId === input.listingId : ['aiOutreachCalls', 'tasks'].includes(resource) && row.ownerListingId === input.listingId;
       const phoneMatch = fullPhone && normalizeRomanianPhone(resource === 'conversations' ? row.phone : resource === 'tasks' ? row.participantPhone : row.ownerPhone) === phone;
       let linkedListingId: string | undefined;
+      let linkedListingIds: string[] | undefined;
       if (resource === 'properties' && !exact && !phoneMatch) {
         const reference = await resolveImport(row);
         exact = reference.related;
         linkedListingId = reference.listingId;
+        linkedListingIds = reference.listingIds;
         if (reference.unresolved) unresolvedReferences.push({ propertyId: row.id, reason: reference.unresolved });
       }
       if (!exact && !phoneMatch) continue;
       const direct = resource === 'aiOutreachCalls' || resource === 'tasks';
-      rows.push({ resource, id: row.id, title: row.title || row.name || row.description || row.ownerListingTitle || null, matchBasis: exact ? 'exact_listing_reference' : 'normalized_phone', ...(linkedListingId ? { linkedListingId } : {}), ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}),
+      rows.push({ resource, id: row.id, title: row.title || row.name || row.description || row.ownerListingTitle || null, matchBasis: linkedListingIds ? 'verified_source_candidates' : exact ? 'exact_listing_reference' : 'normalized_phone', ...(linkedListingId ? { linkedListingId } : {}), ...(linkedListingIds ? { linkedListingIds } : {}), ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}),
         ...(direct ? { readMode: 'interaction', interaction: safeData({ id: row.id, source: resource, status: row.status || null, outcome: row.outcome || null, summary: row.summary || null, description: row.description || null, occurredAt: row.endedAt || row.startedAt || row.createdAt || null, dueDate: row.dueDate || null, scheduledAt: row.scheduledAt || null, ownerListingId: row.ownerListingId || null, propertyId: row.propertyId || null }) } : { readMode: 'timeline' }) });
     }
   }

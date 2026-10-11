@@ -78,6 +78,22 @@ describe('Responses tool planning', () => {
     expect(readOwnerProspects).toHaveBeenLastCalledWith(ctx, expect.objectContaining({ listingId: 'p' }), '0722123456');
     expect(resumed.actions).toEqual([]);
   });
+  it('directs premature history closure to the unread timeline page with its actual cursor', async () => {
+    const prompt = 'Arată istoricul proprietarului.';
+    const history: any[] = [{ id: 'selected', role: 'assistant', text: 'Selectat', createdAt: '', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Selectat', rows: [{ id: 'p' }] }] }];
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [{ resource: 'properties', id: 'imported', readMode: 'timeline' }], complete: true, identityComplete: true } as any);
+    vi.mocked(readTimeline).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'actual-next-page' } as any).mockResolvedValueOnce({ rows: [], complete: true } as any);
+    const discovery = call('owner_prospects', { listingId: 'p', scope: 'agency_history' });
+    const page = call('timeline', { resource: 'properties', id: 'imported', limit: 20 });
+    const last = call('timeline', { resource: 'properties', id: 'imported', limit: 20, cursor: 'actual-next-page' });
+    const model = scripted(discovery, page, final, last, call('goal_coverage', { requirements: [{ id: 'history', sourceQuote: prompt, description: 'Istoric complet', resolution: 'answered', steps: [], evidenceCallIds: [discovery.calls[0].id, last.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, history, { provider: model });
+    expect(result.metrics.status, result.text).toBe('success');
+    const repair = model.respond.mock.calls[3][0].input.find((item: any) => item.role === 'developer' && item.content.includes('citiri obligatorii'));
+    expect(repair.content).toContain('actual-next-page');
+    expect(repair.content).toContain('imported');
+    expect(result.metrics.tools.every(tool => tool.status === 'success')).toBe(true);
+  });
   it('does not certify owner history when the model returns text without reading any records', async () => {
     const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: scripted(final) });
     expect(result.metrics.status).toBe('partial');

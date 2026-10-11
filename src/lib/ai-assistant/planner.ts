@@ -75,6 +75,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const historyTools = new Set(['read', 'read_field', 'read_related', 'timeline', 'owner_prospects', 'propose_actions', 'goal_coverage', 'discover_tools', 'operation_contract', 'data_catalog']);
   let historyDiscoveryComplete = false;
   const pendingHistory = new Set<string>(), completedHistory = new Set<string>();
+  const pendingHistoryCalls = new Map<string, { resource: string; id: string; limit: number; cursor?: string }>();
+  let historyDiscoveryCall: Record<string, unknown> = { listingId: history.filter(message => message.id !== 'current-page-context' || message.cards?.length).at(-1)?.cards?.find(card => card.source === 'ownerListingFavorites')?.rows[0]?.id, scope: 'agency_history' };
   const historyReady = () => historyDiscoveryComplete && pendingHistory.size === 0;
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
   const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => name !== 'owner_prospects' || prospectHistory || options.allowedTools?.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(name => !prospectHistory || historyTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
@@ -121,7 +123,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && (metrics.tools.length > 0 || prospectHistory);
         if (needsCoverage && result.text?.trim() && result.status !== 'incomplete' && !['clarification', 'refusal'].includes(result.intentStatus || '')) {
           if (closureAttempts++ >= 2) return finish('Acoperirea cererii nu a putut fi verificată. Rezultatele sunt parțiale, iar acțiunile pregătite nu au fost executate.', 'partial');
-          input.push({ role: 'developer', content: 'Verificarea serverului: cererea nu are încă goal_coverage valid. Nu încheia după primul pas. Compară TOATĂ cererea utilizatorului cu citirile și acțiunile deja pregătite; continuă numai pașii lipsă, fără să repeți propunerile existente. Apelează goal_coverage cu citate exacte și dovezi reale. Dacă lipsesc date, acces sau capabilități, declară explicit cerințele neacoperite. Nu inventa succesul și nu ocoli aprobările.' });
+          input.push({ role: 'developer', content: prospectHistory && !historyReady()
+            ? 'Istoricul mai are citiri obligatorii. goal_coverage devine disponibil numai după finalizarea lor; nu îl căuta prin discover_tools. Execută aceste apeluri și continuă paginile returnate: ' + JSON.stringify([...(historyDiscoveryComplete ? [] : [{ tool: 'owner_prospects', payload: historyDiscoveryCall }]), ...[...pendingHistoryCalls.values()].slice(0, 10).map(payload => ({ tool: 'timeline', payload }))])
+            : 'Verificarea serverului: cererea nu are încă goal_coverage valid. Nu încheia după primul pas. Compară TOATĂ cererea utilizatorului cu citirile și acțiunile deja pregătite; continuă numai pașii lipsă, fără să repeți propunerile existente. Apelează goal_coverage cu citate exacte și dovezi reale. Dacă lipsesc date, acces sau capabilități, declară explicit cerințele neacoperite. Nu inventa succesul și nu ocoli aprobările.' });
           await emit('verify_request_coverage', 'Verific cerințele rămase înainte de încheierea răspunsului.');
           continue;
         }
@@ -175,16 +179,20 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           }
           if (prospectHistory && name === 'owner_prospects' && payload.scope === 'agency_history') {
             historyDiscoveryComplete = response.data.complete === true;
+            historyDiscoveryCall = { listingId: payload.listingId, scope: 'agency_history', ...(typeof response.data.nextCursor === 'string' ? { cursor: response.data.nextCursor } : {}) };
             if (response.data.identityComplete === false) ownerHistoryContinuation = { listingId: payload.listingId, request: prompt };
             for (const row of Array.isArray(response.data.rows) ? response.data.rows : []) if (row.readMode === 'timeline') {
               const key = `${row.resource}:${row.id}`;
-              if (!completedHistory.has(key)) pendingHistory.add(key);
+              if (!completedHistory.has(key)) {
+                pendingHistory.add(key);
+                if (!pendingHistoryCalls.has(key)) pendingHistoryCalls.set(key, { resource: row.resource, id: row.id, limit: 20 });
+              }
             }
           }
           if (prospectHistory && name === 'timeline') {
             const key = `${payload.resource}:${payload.id}`;
-            if (response.data.complete === true) { completedHistory.add(key); pendingHistory.delete(key); }
-            else { completedHistory.delete(key); pendingHistory.add(key); }
+            if (response.data.complete === true) { completedHistory.add(key); pendingHistory.delete(key); pendingHistoryCalls.delete(key); }
+            else { completedHistory.delete(key); pendingHistory.add(key); pendingHistoryCalls.set(key, { resource: payload.resource, id: payload.id, limit: 20, ...(typeof response.data.nextCursor === 'string' ? { cursor: response.data.nextCursor } : {}) }); }
           }
           if (['viewing_followups', 'task_deferral'].includes(name)) for (const row of (response.data.rows || []) as { suggestedTask?: { dueDate?: string } }[]) {
             const date = row.suggestedTask?.dueDate;

@@ -30,6 +30,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
     const ctx = { uid: id, agencyId: id, role: 'agent', adminDb: db } as unknown as AssistantContext;
     const favorites = agency.collection('ownerListingFavorites');
     const source = db.collection('ownerListings').doc(`${id}-alfa`);
+    const relatedSource = db.collection('ownerListings').doc(`${id}-related`);
     const base = { isFavoriteActive: true, reservedByAgentId: id, reservedByAgentName: 'Agent local', reservedAt: new Date().toISOString(), contactOutcome: null, collaborationStatus: null, takenByAgentId: null, notes: 'Istoric existent.', updatedAt: '2026-10-01T07:00:00.000Z' };
     const fixture: Record<string, Record<string, unknown>> = {
       [`${id}-alfa`]: { ...base, ownerName: 'Alin Matei' },
@@ -46,15 +47,20 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
       if (number === 260) {
+        const duplicateUrl = `https://example.com/${id}/shared-source`;
+        await source.update({ link: duplicateUrl });
+        await relatedSource.set({ publicationStatus: 'ready', isCanonical: true, originSourceUrl: duplicateUrl });
+        await agency.collection('properties').doc('duplicate-import').set({ ownerListingUrl: duplicateUrl, title: 'Import din URL duplicat' });
+        await agency.collection('tasks').doc('duplicate-task').set({ propertyId: 'duplicate-import', description: 'Solicită releveul actualizat', status: 'open', dueDate: '2026-10-27' });
         await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted-prospect', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Proprietarul a cerut evaluarea garajului.', endedAt: '2026-10-08T07:00:00Z' });
         await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted-prospect', participantPhone: '0040 722 123 456', description: 'Trimite estimarea garajului', status: 'open', dueDate: '2026-10-26' });
-        await agency.collection('properties').doc('imported-property').set({ ownerListingId: 'related-inactive', title: 'Proprietate importată fără telefon din anunțul asociat' });
+        await agency.collection('properties').doc('imported-property').set({ ownerListingId: relatedSource.id, title: 'Proprietate importată fără telefon din anunțul asociat' });
         await agency.collection('tasks').doc('property-task').set({ propertyId: 'imported-property', description: 'Pregătire documente cadastrale', status: 'open', dueDate: '2026-10-25', createdAt: '2026-10-10T08:00:00Z' });
         await agency.collection('conversations').doc('owner-conversation').set({ agencyId: id, assigneeId: id, collaboratorIds: [], phone: '+40 722 123 456', name: 'Alin Matei' });
         await agency.collection('conversations').doc('owner-conversation').collection('messages').doc('owner-message').set({ text: 'Cheile sunt la recepție.', direction: 'received', createdAt: '2026-10-10T09:00:00Z' });
         await agency.collection('conversations').doc('private-conversation').set({ agencyId: id, assigneeId: 'another', collaboratorIds: [], phone: '+40 722 123 456', name: 'CANARY_PRIVATE_CONVERSATION' });
-        await favorites.doc('related-inactive').set({ ownerPhone: '0040 722 123 456', ownerName: 'Alin Matei', isFavoriteActive: false });
-        await agency.collection('aiOutreachCalls').doc('related-call').set({ ownerListingId: 'related-inactive', status: 'completed', summary: 'Proprietarul acceptă vizionări sâmbăta.', endedAt: '2026-10-09T07:00:00.000Z' });
+        await favorites.doc(relatedSource.id).set({ ownerPhone: '0040 722 123 456', ownerName: 'Alin Matei', isFavoriteActive: false });
+        await agency.collection('aiOutreachCalls').doc('related-call').set({ ownerListingId: relatedSource.id, status: 'completed', summary: 'Proprietarul acceptă vizionări sâmbăta.', endedAt: '2026-10-09T07:00:00.000Z' });
         await agency.collection('aiOutreachCalls').doc('recorded-call').set({ ownerListingId: source.id, status: 'completed', summary: 'Proprietarul acceptă comisionul de 2%.', endedAt: '2026-10-10T07:00:00.000Z' });
         await agency.collection('tasks').doc('planned-followup').set({ ownerListingId: source.id, description: 'Revenire la proprietar', status: 'open', dueDate: '2026-10-24', createdAt: '2026-10-10T08:00:00.000Z' });
         await agency.collection('aiOutreachCalls').doc('unrelated-call').set({ ownerListingId: 'beta', summary: 'CANARY_UNRELATED_OWNER' });
@@ -101,7 +107,10 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(rows.map(row => row.id)).toContain('related-call');
         expect(rows.map(row => row.id)).toContain('property-task');
         expect(rows.map(row => row.id)).toContain('owner-message');
+        expect(rows.map(row => row.id)).toContain('duplicate-task');
+        expect(planned.text).toMatch(/releveu/i);
         const linkedRows = planned.cards.flatMap(card => card.source === 'owner_history' ? card.rows : []) as any[];
+        expect(linkedRows.find(row => row.id === 'duplicate-import')).toMatchObject({ matchBasis: 'verified_source_candidates', linkedListingIds: [source.id, relatedSource.id].sort() });
         expect(linkedRows.find(row => row.id === 'orphan-call')).toMatchObject({ readMode: 'interaction', interaction: { summary: 'Proprietarul a cerut evaluarea garajului.' } });
         expect(linkedRows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { status: 'open' } });
         expect(JSON.stringify(planned)).not.toContain('CANARY_PRIVATE_CONVERSATION');
@@ -132,14 +141,14 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(resumedTelemetry.status, resumed.message.text).toBe('success');
         expect(resumedTelemetry.tools.filter((tool: any) => tool.status !== 'success')).toEqual([]);
         const resumedRows = resumed.message.cards?.flatMap(card => card.rows) || [];
-        for (const key of ['recorded-call', 'related-call', 'orphan-call', 'orphan-task', 'property-task', 'owner-message']) expect(resumedRows.map(row => row.id)).toContain(key);
+        for (const key of ['recorded-call', 'related-call', 'orphan-call', 'orphan-task', 'property-task', 'owner-message', 'duplicate-task']) expect(resumedRows.map(row => row.id)).toContain(key);
         expect(resumed.message.text).toMatch(/2%/);
         expect(resumed.message.text).toMatch(/garaj/i);
         expect(JSON.stringify(resumed)).not.toContain('CANARY_PRIVATE_CONVERSATION');
         expect(await chatTurn(ctx, reply)).toEqual(resumed);
         expect((await source.get()).data()?.ownerPhone).toBe('');
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Ambiguous identity and records without any usable association remain unresolved; no production certification.' };
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting identities and records without any usable association remain unresolved; no production certification.' };
         return;
       }
       if (number === 257) {
@@ -190,6 +199,6 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       for (const [key, row] of Object.entries(fixture)) if (number < 253 || key !== source.id) expect((await favorites.doc(key).get()).data()).toEqual(row);
       report = { ...report, executionVerified: true, verification: number >= 253 ? 'Selected record updated with requested state/outcome, confirmed from executor receipt; idempotent replay, notes preserved, unrelated records unchanged. Missing details clarified before writes.' : 'Original question, real model, current agency prospects. Uncontacted records distinguished from follow-up, refusal and removed entries; advice does not initiate a call.' };
     } catch (error) { report = { ...report, failure: error instanceof Error ? error.message : String(error) }; throw error; }
-    finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await db.terminate(); }
+    finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await relatedSource.delete(); await db.terminate(); }
   }, 240000);
 }

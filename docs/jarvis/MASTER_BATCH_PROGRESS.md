@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Importuri cu surse duplicate și reluarea citirilor omise — 0260
+
+Un URL de import care apare în mai multe anunțuri canonice este rezolvat automat dacă fiecare candidat este asociat proprietarului prin prospectele agenției și telefonul complet normalizat. Rezultatul păstrează toate ID-urile sursă verificate (`linkedListingIds`), fără alegerea arbitrară a unui anunț. Am eliminat scurtătura prin care URL-ul prospectului selectat ocolea verificarea duplicatelor: un candidat cu alt telefon sau fără prospect în agenție menține asocierea nerezolvată. Un ID explicit de import rămâne prioritar.
+
+Prima probă cu model real a încercat să încheie după doar două timeline-uri. Mesajul serverului de reluare enumeră acum citirile lipsă și cursorii lor reali, precizând că `goal_coverage` devine disponibil după finalizarea lor. Regresia verifică reluarea paginii exacte, fără repetarea paginilor încheiate.
+
+Proba finală cu model real citește taskul proprietății importate prin URL duplicat, împreună cu celelalte apeluri, taskuri și mesaje; verifică și conversația salvată cu telefon lipsă, răspuns incomplet, număr valid și reluare. Nu există apeluri de instrument eșuate în execuția finală. Dovadă: [OWNER_DUPLICATE_SOURCE_PARTIAL_0260.json](evals/OWNER_DUPLICATE_SOURCE_PARTIAL_0260.json). Au trecut **15 teste Firestore** și **40 teste unitare**, TypeScript complet, lint, paritate, inventarul corpusului și buildul final cu 227 pagini. Versiuni **jarvis-77 / tools 103**.
+
+Scenariul rămâne parțial pentru identități contradictorii și înregistrări fără asociere utilizabilă. Total **101/1000** cu dovezi locale; fără certificare nouă în producție. Modificările nu sunt publicate în producție.
+
 ## Reluarea istoricului după clarificarea telefonului — 0260
 
 Când prospectul nu are un telefon complet, Jarvis cere numărul și păstrează prospectul și cererea în conversație. Un răspuns cu un număr incomplet păstrează clarificarea; un număr românesc valid reia citirea tuturor surselor asociate. Telefonul furnizat este folosit pentru această citire, fără modificarea fișei CRM. Numărul deja salvat, dacă există între timp, are prioritate, iar accesul la prospect și conversații se verifică din nou. O comandă nouă, anularea sau selectarea altui obiect nu preiau automat cererea veche.

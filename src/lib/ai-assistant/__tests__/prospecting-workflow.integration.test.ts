@@ -172,6 +172,44 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect(ambiguous).toMatchObject({ associationComplete: false, unresolvedReferences: [{ propertyId: 'related-url', reason: 'ambiguous_source_url' }] });
     expect(ambiguous.rows.map(row => row.id)).toEqual([selectedId]);
   });
+  it('resolves duplicate source URLs only when every candidate belongs to the same agency owner', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    const selectedId = randomUUID(), duplicateId = randomUUID(); listings.push(selectedId, duplicateId);
+    const url = `https://example.com/${selectedId}`;
+    await agency.collection('ownerListingFavorites').doc(selectedId).set({ ownerPhone: '0722123456', link: url });
+    await agency.collection('ownerListingFavorites').doc(duplicateId).set({ ownerPhone: '0040 722 123 456', isFavoriteActive: false });
+    await db.collection('ownerListings').doc(selectedId).set({ publicationStatus: 'ready', isCanonical: true, link: url, originSourceUrl: url });
+    await db.collection('ownerListings').doc(duplicateId).set({ publicationStatus: 'ready', isCanonical: true, originSourceUrl: url, ownerPhone: '0722123456' });
+    await agency.collection('properties').doc('imported').set({ ownerListingUrl: url });
+    await agency.collection('tasks').doc('history').set({ propertyId: 'imported', description: 'Documente proprietar' });
+    const read = () => readOwnerProspects(ctx, { listingId: selectedId, scope: 'agency_history' });
+    const verified = await read();
+    expect(verified).toMatchObject({ associationComplete: true });
+    expect(verified.rows.filter(row => row.id === 'imported')).toEqual([expect.objectContaining({ matchBasis: 'verified_source_candidates', linkedListingIds: [selectedId, duplicateId].sort() })]);
+    expect((await readTimeline(ctx, { resource: 'properties', id: 'imported', limit: 20 })).rows.map(row => row.id)).toContain('history');
+    await agency.collection('ownerListingFavorites').doc(duplicateId).update({ ownerPhone: '0733123456' });
+    const conflict = await read();
+    expect(conflict).toMatchObject({ associationComplete: false, unresolvedReferences: [{ propertyId: 'imported', reason: 'ambiguous_source_url' }] });
+    expect(conflict.rows.map(row => row.id)).not.toContain('imported');
+    await agency.collection('ownerListingFavorites').doc(duplicateId).delete();
+    expect(await read()).toMatchObject({ associationComplete: false });
+    await db.collection('ownerListings').doc(duplicateId).update({ publicationStatus: 'draft' });
+    expect((await read()).rows.find(row => row.id === 'imported')).toMatchObject({ linkedListingId: selectedId });
+  });
+  it('keeps explicit import IDs authoritative and rejects duplicate URLs with missing owner identity', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    const selectedId = randomUUID(), duplicateId = randomUUID(); listings.push(selectedId, duplicateId);
+    const url = `https://example.com/${selectedId}`;
+    for (const id of [selectedId, duplicateId]) {
+      await agency.collection('ownerListingFavorites').doc(id).set({ ownerPhone: '', link: url });
+      await db.collection('ownerListings').doc(id).set({ publicationStatus: 'ready', isCanonical: true, link: url });
+    }
+    await agency.collection('properties').doc('by-url').set({ ownerListingUrl: url });
+    await agency.collection('properties').doc('by-id').set({ ownerListingId: selectedId, ownerListingUrl: url });
+    const found = await readOwnerProspects(ctx, { listingId: selectedId, scope: 'agency_history' });
+    expect(found.rows.map(row => row.id).sort()).toEqual([selectedId, 'by-id'].sort());
+    expect(found).toMatchObject({ identityComplete: false, associationComplete: false });
+  });
   it('returns recorded calls and planned tasks even when their original prospect no longer exists', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     await agency.collection('ownerListingFavorites').doc('selected').set({ ownerPhone: '0722123456' });
