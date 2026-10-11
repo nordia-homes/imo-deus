@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 import { getResource, readResource, type AssistantContext } from './access';
 import { idSchema } from './contracts';
+import { ownerImportResolver } from './owner-import-reference';
 
 export const ownerProspectsSchema = z.object({ listingId: idSchema, scope: z.literal('agency_history').optional(), cursor: z.string().max(2000).optional() }).strict();
 const cursorSchema = z.object({ agencyId: idSchema, listingId: idSchema, phone: z.string(), after: idSchema }).strict();
@@ -19,19 +20,28 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
   const resources = ['ownerListingFavorites', 'properties', 'conversations'] as const;
   const after = { ownerListingFavorites: null, properties: null, conversations: null } as Record<typeof resources[number], string | null>;
   const rows: Record<string, any>[] = [];
+  const resolveImport = ownerImportResolver(ctx, input.listingId, phone);
+  const unresolvedReferences: { propertyId: string; reason: string }[] = [];
   for (const resource of resources) {
     if (cursor && cursor.after[resource] === null) continue;
     const page = await readResource(ctx, { resource, limit: 50, ...(cursor?.after[resource] ? { cursor: cursor.after[resource]! } : {}) });
     after[resource] = page.nextCursor;
     for (const row of page.rows) {
-      const exact = resource === 'ownerListingFavorites' ? row.id === input.listingId : resource === 'properties' && (row.ownerListingId === input.listingId || (typeof row.ownerListingUrl === 'string' && urls.includes(row.ownerListingUrl)));
+      let exact = resource === 'ownerListingFavorites' ? row.id === input.listingId : resource === 'properties' && (row.ownerListingId === input.listingId || (!row.ownerListingId && typeof row.ownerListingUrl === 'string' && urls.includes(row.ownerListingUrl)));
       const phoneMatch = fullPhone && normalizeRomanianPhone(resource === 'conversations' ? row.phone : row.ownerPhone) === phone;
+      let linkedListingId: string | undefined;
+      if (resource === 'properties' && !exact && !phoneMatch) {
+        const reference = await resolveImport(row);
+        exact = reference.related;
+        linkedListingId = reference.listingId;
+        if (reference.unresolved) unresolvedReferences.push({ propertyId: row.id, reason: reference.unresolved });
+      }
       if (!exact && !phoneMatch) continue;
-      rows.push({ resource, id: row.id, title: row.title || row.name || null, matchBasis: exact ? 'exact_listing_reference' : 'normalized_phone', ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}) });
+      rows.push({ resource, id: row.id, title: row.title || row.name || null, matchBasis: exact ? 'exact_listing_reference' : 'normalized_phone', ...(linkedListingId ? { linkedListingId } : {}), ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}) });
     }
   }
   const complete = Object.values(after).every(value => value === null);
-  return { rows, complete, nextCursor: complete ? null : Buffer.from(JSON.stringify({ agencyId: ctx.agencyId, listingId: input.listingId, identity, after })).toString('base64url'), scope: 'agency_history', identityComplete: fullPhone,
+  return { rows, complete, nextCursor: complete ? null : Buffer.from(JSON.stringify({ agencyId: ctx.agencyId, listingId: input.listingId, identity, after })).toString('base64url'), scope: 'agency_history', identityComplete: fullPhone, associationComplete: unresolvedReferences.length === 0, unresolvedReferences,
     note: 'Înregistrări autorizate din agenție asociate prin referință exactă la anunț sau telefon comun complet. Citește timeline pentru fiecare resource/id. Nu include conversațiile cumpărătorilor doar pentru că au aceeași proprietate. Telefonul comun nu garantează identitatea persoanei; lipsa telefonului limitează asocierea la referințe exacte.' };
 }
 

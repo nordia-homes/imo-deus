@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Importuri fără telefon din alte prospecte asociate — 0260
+
+Istoricul include acum proprietăți fără telefon care trimit prin `ownerListingId` sau URL exact la alt prospect al aceluiași proprietar. Resolverul verifică prospectul din agenția curentă și telefonul complet normalizat, inclusiv pentru prospecte inactive. Telefonul dintr-un anunț global, fără prospect în agenție, nu acordă asocierea. URL-urile sunt căutate exact în `link` și `originSourceUrl`; sursele canonice multiple sau limita de verificare produc referințe explicit nerezolvate, nu o asociere ghicită. `associationComplete` este separat de finalizarea paginării, iar referințele sunt recitite la fiecare cerere.
+
+Proba cu model real a găsit taskul proprietății fără telefon importate din prospectul asociat și a încheiat răspunsul împreună cu apelurile și mesajul proprietarului. Dovadă: [OWNER_INDIRECT_IMPORT_HISTORY_PARTIAL_0260.json](evals/OWNER_INDIRECT_IMPORT_HISTORY_PARTIAL_0260.json). Au trecut 11 teste Firestore și 32 teste ale planificatorului, lint, paritate, inventarul corpusului și buildul final (TypeScript, 227 pagini). Cele 6 apeluri de instrument din proba cu model real au reușit fără erori. Modificările nu sunt publicate în producție. Versiuni **jarvis-74 / tools 100**.
+
+Scenariul original rămâne parțial pentru înregistrări din afara prospectării agenției și identități lipsă/ambigue. Total **101/1000**, fără certificare nouă în producție. Limita importurilor indirecte menționată în secțiunea precedentă este rezolvată pentru referințele exacte testate.
+
 ## Proprietăți importate și conversații în istoricul proprietarului — 0260
 
 `owner_prospects` cu `scope=agency_history` include acum prospectele, proprietățile CRM asociate prin ID/URL exact de import sau telefon complet și conversațiile autorizate cu telefonul proprietarului. O conversație a cumpărătorului nu este inclusă numai pentru că menționează aceeași proprietate. Telefonul lipsă nu împiedică citirea legăturilor exacte, dar rezultatul semnalează identitatea incompletă. Fiecare sursă are cursor independent; continuarea este refuzată dacă telefonul sau referința anunțului se schimbă. Accesul conversației se verifică din nou înainte de citirea mesajelor și referințele sunt păstrate pentru reautorizarea rezultatului.

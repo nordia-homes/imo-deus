@@ -46,7 +46,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
       if (number === 260) {
-        await agency.collection('properties').doc('imported-property').set({ ownerListingId: source.id, title: 'Proprietate importată' });
+        await agency.collection('properties').doc('imported-property').set({ ownerListingId: 'related-inactive', title: 'Proprietate importată fără telefon din anunțul asociat' });
         await agency.collection('tasks').doc('property-task').set({ propertyId: 'imported-property', description: 'Pregătire documente cadastrale', status: 'open', dueDate: '2026-10-25', createdAt: '2026-10-10T08:00:00Z' });
         await agency.collection('conversations').doc('owner-conversation').set({ agencyId: id, assigneeId: id, collaboratorIds: [], phone: '+40 722 123 456', name: 'Alin Matei' });
         await agency.collection('conversations').doc('owner-conversation').collection('messages').doc('owner-message').set({ text: 'Cheile sunt la recepție.', direction: 'received', createdAt: '2026-10-10T09:00:00Z' });
@@ -105,7 +105,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(planned.text).toMatch(/cadastral/i);
         expect(planned.text).toMatch(/recepți|recepti/i);
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, agencyLinkedHistoryVerified: true, executionVerified: false, limitation: 'Agency prospects, imported property and authorized owner conversation verified. Global listings and owner records without a usable phone or exact import reference remain unresolved.' };
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, executionVerified: false, limitation: 'Agency prospects, phone-less property imported from another related prospect and authorized owner conversation verified. Records outside agency prospecting and ambiguous or missing owner identity remain unresolved.' };
         return;
       }
       if (number === 257) {

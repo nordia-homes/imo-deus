@@ -1,0 +1,467 @@
+{
+  "scenarioId": "master-0260",
+  "prompt": "Arată-mi toate interacțiunile cu acest proprietar.",
+  "versions": {
+    "prompt": "jarvis-74",
+    "routing": "luna-first-2",
+    "policy": "request-crm-13",
+    "tools": "100",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-11T10:49:02.571Z",
+  "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+  "executionVerified": false,
+  "text": "Am găsit următoarele înregistrări asociate în istoricul agenției:\n\n**Anunțul selectat — Prospect Alfa**\n- **10 octombrie 2026:** apel înregistrat ca finalizat. Rezultat consemnat: „Proprietarul acceptă comisionul de 2%.”\n- **10 octombrie 2026:** task deschis, cu scadență **24 octombrie 2026** — „Revenire la proprietar”. Este o activitate planificată, nu dovada unui apel efectuat.\n- În instantaneul curent, notițele indică „Istoric existent”; nu există rezultat de contact sau dată de contact înregistrate și nici status de colaborare.\n\n**Alte înregistrări asociate**\n- Un prospect inactiv asociat prin telefon comun: **9 octombrie 2026**, apel înregistrat ca finalizat; rezumatul spune „Proprietarul acceptă vizionări sâmbăta.”\n- O proprietate importată asociată prin referință exactă: task deschis „Pregătire documente cadastrale”, cu scadență **25 octombrie 2026**.\n- O conversație asociată prin telefon comun: mesaj primit la **10 octombrie 2026**, „Cheile sunt la recepție.”\n\nAsocierea include un prospect inactiv, o proprietate și o conversație. Potrivirea după telefon comun nu garantează identitatea persoanei. Istoricul anunțului selectat nu verifică toate anunțurile aceluiași proprietar; absența altor înregistrări aici nu dovedește că nu au existat alte interacțiuni.",
+  "cards": [
+    {
+      "type": "data",
+      "title": "Înregistrări asociate proprietarului",
+      "source": "owner_history",
+      "rows": [
+        {
+          "resource": "ownerListingFavorites",
+          "id": "30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa",
+          "title": "Prospect Alfa",
+          "matchBasis": "exact_listing_reference",
+          "isFavoriteActive": true
+        },
+        {
+          "resource": "ownerListingFavorites",
+          "id": "related-inactive",
+          "title": null,
+          "matchBasis": "normalized_phone",
+          "isFavoriteActive": false
+        },
+        {
+          "resource": "properties",
+          "id": "imported-property",
+          "title": "Proprietate importată fără telefon din anunțul asociat",
+          "matchBasis": "exact_listing_reference",
+          "linkedListingId": "related-inactive"
+        },
+        {
+          "resource": "conversations",
+          "id": "owner-conversation",
+          "title": "Alin Matei",
+          "matchBasis": "normalized_phone"
+        }
+      ],
+      "complete": true,
+      "nextCursor": null,
+      "scope": "agency_history",
+      "identityComplete": true,
+      "associationComplete": true,
+      "unresolvedReferences": [],
+      "note": "Înregistrări autorizate din agenție asociate prin referință exactă la anunț sau telefon comun complet. Citește timeline pentru fiecare resource/id. Nu include conversațiile cumpărătorilor doar pentru că au aceeași proprietate. Telefonul comun nu garantează identitatea persoanei; lipsa telefonului limitează asocierea la referințe exacte.",
+      "outputType": "ANALYTICS_CARD"
+    },
+    {
+      "type": "data",
+      "title": "Istoric CRM verificat",
+      "source": "timeline",
+      "timeline": {
+        "resource": "ownerListingFavorites",
+        "id": "30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa",
+        "limit": 20
+      },
+      "rows": [
+        {
+          "ownerListingId": "30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa",
+          "description": "Revenire la proprietar",
+          "status": "open",
+          "dueDate": "2026-10-24",
+          "createdAt": "2026-10-10T08:00:00.000Z",
+          "id": "planned-followup",
+          "source": "tasks",
+          "occurredAt": "2026-10-10T08:00:00.000Z",
+          "title": "Revenire la proprietar"
+        },
+        {
+          "ownerListingId": "30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa",
+          "status": "completed",
+          "summary": "Proprietarul acceptă comisionul de 2%.",
+          "endedAt": "2026-10-10T07:00:00.000Z",
+          "id": "recorded-call",
+          "source": "aiOutreachCalls",
+          "occurredAt": "2026-10-10T07:00:00.000Z",
+          "dueDate": "2026-10-10T07:00:00.000Z",
+          "title": "completed",
+          "description": "Proprietarul acceptă comisionul de 2%."
+        }
+      ],
+      "complete": true,
+      "scope": {
+        "resource": "ownerListingFavorites",
+        "id": "30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa",
+        "sources": [
+          "crmEvents",
+          "aiOutreachCalls",
+          "tasks"
+        ],
+        "relatedListingsIncluded": false
+      },
+      "currentSnapshot": {
+        "notes": "Istoric existent.",
+        "contactOutcome": null,
+        "contactOutcomeAt": null,
+        "collaborationStatus": null
+      },
+      "snapshotNote": "Starea și notițele curente nu sunt evenimente istorice distincte. Taskurile sunt activități planificate; nu dovedesc efectuarea unui apel. Acest istoric privește numai anunțul selectat, nu toate anunțurile aceluiași proprietar.",
+      "nextCursor": null,
+      "asOf": "2026-10-11T10:49:09.483Z",
+      "note": "Istoric din sursele disponibile. Evenimentele CRM noi includ fluxurile migrate. Absența istoricului vechi nu dovedește absența unei acțiuni. Ordinea globală necesită toate paginile.",
+      "outputType": "ANALYTICS_CARD"
+    },
+    {
+      "type": "data",
+      "title": "Istoric CRM verificat",
+      "source": "timeline",
+      "timeline": {
+        "resource": "ownerListingFavorites",
+        "id": "related-inactive",
+        "limit": 20
+      },
+      "rows": [
+        {
+          "ownerListingId": "related-inactive",
+          "status": "completed",
+          "summary": "Proprietarul acceptă vizionări sâmbăta.",
+          "endedAt": "2026-10-09T07:00:00.000Z",
+          "id": "related-call",
+          "source": "aiOutreachCalls",
+          "occurredAt": "2026-10-09T07:00:00.000Z",
+          "dueDate": "2026-10-09T07:00:00.000Z",
+          "title": "completed",
+          "description": "Proprietarul acceptă vizionări sâmbăta."
+        }
+      ],
+      "complete": true,
+      "scope": {
+        "resource": "ownerListingFavorites",
+        "id": "related-inactive",
+        "sources": [
+          "crmEvents",
+          "aiOutreachCalls",
+          "tasks"
+        ],
+        "relatedListingsIncluded": false
+      },
+      "currentSnapshot": {
+        "notes": null,
+        "contactOutcome": null,
+        "contactOutcomeAt": null,
+        "collaborationStatus": null
+      },
+      "snapshotNote": "Starea și notițele curente nu sunt evenimente istorice distincte. Taskurile sunt activități planificate; nu dovedesc efectuarea unui apel. Acest istoric privește numai anunțul selectat, nu toate anunțurile aceluiași proprietar.",
+      "nextCursor": null,
+      "asOf": "2026-10-11T10:49:11.572Z",
+      "note": "Istoric din sursele disponibile. Evenimentele CRM noi includ fluxurile migrate. Absența istoricului vechi nu dovedește absența unei acțiuni. Ordinea globală necesită toate paginile.",
+      "outputType": "ANALYTICS_CARD"
+    },
+    {
+      "type": "data",
+      "title": "Istoric CRM verificat",
+      "source": "timeline",
+      "timeline": {
+        "resource": "properties",
+        "id": "imported-property",
+        "limit": 20
+      },
+      "rows": [
+        {
+          "propertyId": "imported-property",
+          "description": "Pregătire documente cadastrale",
+          "status": "open",
+          "dueDate": "2026-10-25",
+          "createdAt": "2026-10-10T08:00:00Z",
+          "id": "property-task",
+          "source": "tasks",
+          "occurredAt": "2026-10-10T08:00:00Z",
+          "title": "Pregătire documente cadastrale"
+        }
+      ],
+      "complete": true,
+      "scope": {
+        "resource": "properties",
+        "id": "imported-property",
+        "sources": [
+          "crmEvents",
+          "propertyStatusEvents",
+          "propertyDeletionEvents",
+          "tasks",
+          "viewings"
+        ],
+        "relatedListingsIncluded": false
+      },
+      "nextCursor": null,
+      "asOf": "2026-10-11T10:49:13.924Z",
+      "note": "Istoric din sursele disponibile. Evenimentele CRM noi includ fluxurile migrate. Absența istoricului vechi nu dovedește absența unei acțiuni. Ordinea globală necesită toate paginile.",
+      "outputType": "ANALYTICS_CARD"
+    },
+    {
+      "type": "data",
+      "title": "Istoric CRM verificat",
+      "source": "timeline",
+      "timeline": {
+        "resource": "conversations",
+        "id": "owner-conversation",
+        "limit": 20
+      },
+      "rows": [
+        {
+          "text": "Cheile sunt la recepție.",
+          "direction": "received",
+          "createdAt": "2026-10-10T09:00:00Z",
+          "id": "owner-message",
+          "source": "messages",
+          "occurredAt": "2026-10-10T09:00:00Z",
+          "dueDate": "2026-10-10T09:00:00Z",
+          "title": "Eveniment CRM",
+          "description": null
+        }
+      ],
+      "complete": true,
+      "scope": {
+        "resource": "conversations",
+        "id": "owner-conversation",
+        "sources": [
+          "crmEvents",
+          "messages",
+          "notes"
+        ],
+        "relatedListingsIncluded": false
+      },
+      "nextCursor": null,
+      "asOf": "2026-10-11T10:49:15.478Z",
+      "note": "Istoric din sursele disponibile. Evenimentele CRM noi includ fluxurile migrate. Absența istoricului vechi nu dovedește absența unei acțiuni. Ordinea globală necesită toate paginile.",
+      "outputType": "ANALYTICS_CARD"
+    }
+  ],
+  "actions": [],
+  "metrics": {
+    "models": [
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3308,
+          "outputTokens": 56,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 3305,
+          "estimated": false
+        },
+        "costUsd": 0.000441425,
+        "latencyMs": 2058,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3661,
+          "outputTokens": 56,
+          "cachedTokens": 3305,
+          "cacheWriteTokens": 353,
+          "estimated": false
+        },
+        "costUsd": 0.00010547499999999999,
+        "latencyMs": 1921,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 4235,
+          "outputTokens": 33,
+          "cachedTokens": 3658,
+          "cacheWriteTokens": 574,
+          "estimated": false
+        },
+        "costUsd": 0.00012513,
+        "latencyMs": 1993,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 4625,
+          "outputTokens": 31,
+          "cachedTokens": 4232,
+          "cacheWriteTokens": 390,
+          "estimated": false
+        },
+        "costUsd": 0.00010687,
+        "latencyMs": 2265,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 4895,
+          "outputTokens": 32,
+          "cachedTokens": 4622,
+          "cacheWriteTokens": 270,
+          "estimated": false
+        },
+        "costUsd": 0.00009627,
+        "latencyMs": 1467,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5157,
+          "outputTokens": 182,
+          "cachedTokens": 4892,
+          "cacheWriteTokens": 262,
+          "estimated": false
+        },
+        "costUsd": 0.00017297,
+        "latencyMs": 3060,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5364,
+          "outputTokens": 398,
+          "cachedTokens": 5154,
+          "cacheWriteTokens": 207,
+          "estimated": false
+        },
+        "costUsd": 0.000276715,
+        "latencyMs": 4599,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      }
+    ],
+    "tools": [
+      {
+        "name": "owner_prospects",
+        "status": "success",
+        "latencyMs": 652,
+        "version": "100",
+        "argumentsHash": "a4c0bb8abf12eea1b9d826567b639f4b8120f41270ac469018acb65e8caedba4"
+      },
+      {
+        "name": "timeline",
+        "status": "success",
+        "latencyMs": 130,
+        "version": "100",
+        "argumentsHash": "3ff3df15c2471e3f27a6b7f050de3a07be9c27698a48a3effb1637b6a7a480bb"
+      },
+      {
+        "name": "timeline",
+        "status": "success",
+        "latencyMs": 95,
+        "version": "100",
+        "argumentsHash": "41b0f10936d3fde7041ba64290cc080373081ba1dd2f431458437960de23a729"
+      },
+      {
+        "name": "timeline",
+        "status": "success",
+        "latencyMs": 86,
+        "version": "100",
+        "argumentsHash": "1379465937a2fac25b0200f08dd2ff9d0dc795bfdb5381fafa57b959789fa720"
+      },
+      {
+        "name": "timeline",
+        "status": "success",
+        "latencyMs": 86,
+        "version": "100",
+        "argumentsHash": "064b3d826f75186af890a5ff5716d88239c363c807412a557f90fc5e732216f9"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "success",
+        "latencyMs": 18,
+        "version": "100",
+        "argumentsHash": "d275094fc1a6c6024b4d4382f375466738d6d94dc4524802dc9a3b3563ee2796"
+      }
+    ],
+    "status": "success",
+    "elapsedMs": 18543
+  },
+  "toolCalls": [
+    {
+      "id": "call_4pshWVZHEIh5nK5tCH6rij82",
+      "name": "owner_prospects",
+      "arguments": "{\"payload\":\"{\\\"listingId\\\":\\\"30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa\\\",\\\"scope\\\":\\\"agency_history\\\"}\"}"
+    },
+    {
+      "id": "call_nMGjWOYaXFf1sLtaFes8Dy8f",
+      "name": "timeline",
+      "arguments": "{\"payload\":\"{\\\"resource\\\":\\\"ownerListingFavorites\\\",\\\"id\\\":\\\"30a9222e-2fd6-4768-89c2-d11c4ba7623f-alfa\\\",\\\"limit\\\":20}\"}"
+    },
+    {
+      "id": "call_rPoDnObydr78iqQsG6xtxsaQ",
+      "name": "timeline",
+      "arguments": "{\"payload\":\"{\\\"resource\\\":\\\"ownerListingFavorites\\\",\\\"id\\\":\\\"related-inactive\\\",\\\"limit\\\":20}\"}"
+    },
+    {
+      "id": "call_Ig2Xw277IW70pMDjTlVQcYB7",
+      "name": "timeline",
+      "arguments": "{\"payload\":\"{\\\"resource\\\":\\\"properties\\\",\\\"id\\\":\\\"imported-property\\\",\\\"limit\\\":20}\"}"
+    },
+    {
+      "id": "call_eV0sZDxbJRdVsQs5ruKXzmUZ",
+      "name": "timeline",
+      "arguments": "{\"payload\":\"{\\\"resource\\\":\\\"conversations\\\",\\\"id\\\":\\\"owner-conversation\\\",\\\"limit\\\":20}\"}"
+    },
+    {
+      "id": "call_2qAaWHGSHs3YsvQdLV1YWw3H",
+      "name": "goal_coverage",
+      "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Arată-mi toate interacțiunile cu acest proprietar.\",\"description\":\"Prezintă interacțiunile din istoricul asociat proprietarului/anunțului selectat, inclusiv asocierea agenției și limitările.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_4pshWVZHEIh5nK5tCH6rij82\",\"call_nMGjWOYaXFf1sLtaFes8Dy8f\",\"call_rPoDnObydr78iqQsG6xtxsaQ\",\"call_Ig2Xw277IW70pMDjTlVQcYB7\",\"call_eV0sZDxbJRdVsQs5ruKXzmUZ\"]}]}"
+    }
+  ],
+  "agencyLinkedHistoryVerified": true,
+  "indirectImportVerified": true,
+  "limitation": "Agency prospects, phone-less property imported from another related prospect and authorized owner conversation verified. Records outside agency prospecting and ambiguous or missing owner identity remain unresolved."
+}

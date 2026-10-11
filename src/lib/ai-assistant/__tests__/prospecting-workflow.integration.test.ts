@@ -134,6 +134,29 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     await source.update({ link: 'https://example.com/changed' });
     await expect(readOwnerProspects(ctx, { listingId: id, scope: 'agency_history', cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
   });
+  it('resolves phone-less imports through other agency prospects by source ID and URL, never by a global phone alone', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    const selectedId = randomUUID(), relatedId = randomUUID(), foreignId = randomUUID(); listings.push(selectedId, relatedId, foreignId);
+    await agency.collection('ownerListingFavorites').doc(selectedId).set({ ownerPhone: '0722123456' });
+    await agency.collection('ownerListingFavorites').doc(relatedId).set({ ownerPhone: '+40 722 123 456', isFavoriteActive: false });
+    const url = `https://example.com/${relatedId}`;
+    await db.collection('ownerListings').doc(relatedId).set({ publicationStatus: 'ready', isCanonical: true, originSourceUrl: url });
+    await db.collection('ownerListings').doc(foreignId).set({ publicationStatus: 'ready', isCanonical: true, link: `https://example.com/${foreignId}`, ownerPhone: '0722123456' });
+    await agency.collection('properties').doc('related-id').set({ ownerListingId: relatedId });
+    await agency.collection('properties').doc('related-url').set({ ownerListingUrl: url });
+    await agency.collection('properties').doc('foreign-url').set({ ownerListingUrl: `https://example.com/${foreignId}` });
+    const read = () => readOwnerProspects(ctx, { listingId: selectedId, scope: 'agency_history' });
+    const found = await read();
+    expect(found.rows.map(row => row.id).sort()).toEqual([selectedId, relatedId, 'related-id', 'related-url'].sort());
+    expect(found).toMatchObject({ complete: true, associationComplete: true, unresolvedReferences: [] });
+    expect(found.rows.find(row => row.id === 'related-url')).toMatchObject({ linkedListingId: relatedId, matchBasis: 'exact_listing_reference' });
+    await agency.collection('ownerListingFavorites').doc(relatedId).update({ ownerPhone: '0733123456' });
+    expect((await read()).rows.map(row => row.id)).toEqual([selectedId]);
+    await db.collection('ownerListings').doc(foreignId).update({ link: url });
+    const ambiguous = await read();
+    expect(ambiguous).toMatchObject({ associationComplete: false, unresolvedReferences: [{ propertyId: 'related-url', reason: 'ambiguous_source_url' }] });
+    expect(ambiguous.rows.map(row => row.id)).toEqual([selectedId]);
+  });
   it('enriches only agency prospects and preserves ownership and revision checks on takeover', async () => {
     const ctx = await fixture(), id = randomUUID(); listings.push(id);
     const source = db.collection('ownerListings').doc(id);
