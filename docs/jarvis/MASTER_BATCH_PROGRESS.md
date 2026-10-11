@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — intervale de ani și filtre combinate
+
+Scenariile originale **0226–0230** au trecut cu model real și Firestore local: trei camere după 2000 în Floreasca, apartamente din 1980–1990 în Titan, proprietăți înainte de 1990 în Drumul Taberei și două camere în Titan cu buget și prag de construcție. Implementarea existentă satisface acest lot; modificările adaugă probe executabile și dovezi, fără schimbări ale comportamentului aplicației.
+
+Intervalul 1980–1990 include ambele capete; „înainte de 1990” exclude anul 1990. Anii necunoscuți, renovarea și intervalele doar parțial compatibile sunt excluse. Prețul-limită rămâne inclus, iar regulile finale pentru chirii sunt păstrate. Probele verifică setul exact de rezultate după peste 250 de înregistrări, linkurile sursă, dovezile de an și lipsa modificărilor în date. Răspunsurile finale au fost inspectate și disting intervalele declarate de anii exacți.
+
+Validare: **7 probe cu model real** (5 originale și 2 regresii pentru chirii), **36 teste ale căutării**, lint și verificarea inventarului. Buildul nu a fost rerulat: s-au schimbat doar probele și documentarea. Dovezi: [OWNER_SEARCH_EXECUTION_BATCH_05.json](evals/OWNER_SEARCH_EXECUTION_BATCH_05.json). Total: **73/1000 scenarii originale cu dovezi locale folosind model real**, **927 fără asemenea dovezi**. Cele 68 anterioare nu au fost rerulate în acest lot. Nu este certificare în producție sau verificare a actualității portalurilor. Nicio publicare în producție și niciun mesaj către clienți.
+
 ## Lot proprietari — anul construcției și regula finală pentru chirii
 
 Clarificarea utilizatorului din 11 octombrie înlocuiește regula anterioară pentru cererile fără tranzacție: **fără buget și fără cerere explicită de chirie, se afișează numai vânzări**. Închirierile sunt eligibile când agentul cere explicit chirie/închiriere sau bugetul este de cel mult 10.000 EUR (pragul inclusiv stabilit anterior). Oricare limită de buget peste 10.000 selectează numai vânzări. Anul construcției nu reprezintă buget. Regula serverului este comună căutării și relevanței alertelor salvate; prețul-limită rămâne inclus.

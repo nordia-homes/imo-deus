@@ -14,7 +14,7 @@ import { AgentBudget } from '../budget';
 import { VERSIONS } from '../models';
 import type { AssistantContext } from '../access';
 
-const cases = Array.from({ length: 25 }, (_, index) => 201 + index).concat([1001, 1002]);
+const cases = Array.from({ length: 30 }, (_, index) => 201 + index).concat([1001, 1002]);
 for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM || number >= Number(process.env.JARVIS_OWNER_CASE_FROM))) {
   const scenarioId = number > 1000 ? number === 1001 ? 'variant-explicit-rental' : 'variant-small-budget' : `master-${String(number).padStart(4, '0')}`;
   it.skipIf(process.env.JARVIS_OWNER_SEARCH_LIVE !== 'true')(`${scenarioId}: actual model finds only the requested owner listings`, async () => {
@@ -26,15 +26,15 @@ for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM 
     const listings = db.collection('ownerListings');
     const ctx = { uid: id, agencyId: id, role: 'agent', adminDb: db } as unknown as AssistantContext;
     const prompt = number === 1001 ? 'Găsește apartamente de închiriat în Titan.' : number === 1002 ? 'Găsește apartamente în Titan până la 900 euro.' : corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera', 216: 'Aviației', 217: 'Drumul Taberei', 218: 'Berceni', 223: 'Drumul Taberei', 225: 'Pipera' } as Record<number, string>)[number] || 'Titan';
-    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000, 216: 250000, 217: 120000, 218: 140000, 219: 200000, 220: 80000, 1002: 900 } as Record<number, number>)[number];
+    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera', 216: 'Aviației', 217: 'Drumul Taberei', 218: 'Berceni', 223: 'Drumul Taberei', 225: 'Pipera', 226: 'Floreasca', 228: 'Drumul Taberei' } as Record<number, string>)[number] || 'Titan';
+    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000, 216: 250000, 217: 120000, 218: 140000, 219: 200000, 220: 80000, 229: 120000, 230: 140000, 1002: 900 } as Record<number, number>)[number];
     const priceMin = ({ 216: 150000, 217: 80000 } as Record<number, number>)[number];
-    const yearAfter = number >= 221 && number <= 225 ? number === 225 ? 2000 : number === 224 ? 1990 : 1977 : undefined;
-    const requestedRooms = [202, 203, 211, 212, 213, 214, 217, 218, 219, 220, 222, 223, 225].includes(number);
-    const apartmentOnly = [202, 203, 215, 220, 221, 224, 1001, 1002].includes(number);
+    const yearAfter = ({ 221: 1977, 222: 1977, 223: 1977, 224: 1990, 225: 2000, 226: 2000, 229: 1977, 230: 1990 } as Record<number, number>)[number];
+    const requestedRooms = [202, 203, 211, 212, 213, 214, 217, 218, 219, 220, 222, 223, 225, 226, 229, 230].includes(number);
+    const apartmentOnly = [202, 203, 215, 220, 221, 224, 227, 1001, 1002].includes(number);
     const otherZone = zone === 'Militari' ? 'Titan' : 'Militari';
-    const rooms = number === 220 ? 1 : number === 219 ? 4 : [203, 212, 214, 218, 223].includes(number) ? 3 : 2;
-    const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone === 'Aviației' ? 'Aviatiei' : zone === 'Drumul Taberei' ? 'Drumul-Taberei' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: `${priceMin || (number === 220 ? 70000 : 120000)} EUR`, lastVerifiedAt: new Date().toISOString(), ...(yearAfter ? { constructionYear: yearAfter + 1 } : {}) };
+    const rooms = number === 220 ? 1 : number === 219 ? 4 : [203, 212, 214, 218, 223, 226].includes(number) ? 3 : 2;
+    const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone === 'Aviației' ? 'Aviatiei' : zone === 'Drumul Taberei' ? 'Drumul-Taberei' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: `${priceMin || (number === 220 ? 70000 : 120000)} EUR`, lastVerifiedAt: new Date().toISOString(), ...(yearAfter ? { constructionYear: yearAfter + 1 } : number === 227 || number === 228 ? { constructionYear: 1985 } : {}) };
     const fixture = new Map<string, Record<string, unknown>>();
     const add = (key: string, patch: Record<string, unknown>) => fixture.set(`${id}-${key}`, { ...base, title: `Anunț ${key}`, link: `https://example.test/listing/${key}`, ...patch });
     // Matching records are beyond the first backend page, with adverse records in front.
@@ -74,6 +74,22 @@ for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM 
       add('b-overlapping-range', { constructionYear: `${yearAfter - 2}–${yearAfter + 4}` });
       add('b-unknown-year', { constructionYear: null });
       add('b-renovation-only', { constructionYear: '', description: 'Renovat complet în 2020' });
+    }
+    if (number === 227 || number === 228) {
+      add('z-lower-year', { constructionYear: 1980 });
+      add('z-upper-year', { constructionYear: number === 227 ? 1990 : 1989 });
+      add('z-range', { constructionYear: '1980–1989' });
+      if (number === 228) add('z-before', { constructionYear: 'înainte de 1990', constructionYearValue: 1989 });
+      else {
+        add('b-before-open', { constructionYear: 'before_1990' });
+        add('b-too-old', { constructionYear: 1979 });
+        add('b-overlap-lower', { constructionYear: '1979–1985' });
+      }
+      add('b-too-new', { constructionYear: number === 227 ? 1991 : 1990 });
+      add('b-overlap-upper', { constructionYear: '1985–1991' });
+      add('b-after-open', { constructionYear: 'after_1980' });
+      add('b-unknown-year', { constructionYear: null });
+      add('b-renovation-only', { constructionYear: '', description: 'Renovat în 1985' });
     }
     const expected = [...fixture.keys()].filter(key => key.includes('-z-')).sort();
     const budget = new AgentBudget();
@@ -116,6 +132,11 @@ for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM 
         expect(declared).toMatchObject({ constructionYear: null, constructionYearKnown: false, constructionYearEvidenceKind: 'declared_interval', constructionYearLowerBound: yearAfter + 1 });
         expect(rows.find(row => row.id === `${id}-z-range`)).toMatchObject({ constructionYear: null, constructionYearUpperBound: yearAfter + 4 });
         expect(rows.find(row => row.id === `${id}-z-structured`)).toMatchObject({ constructionYear: yearAfter + 2, constructionYearKnown: true });
+      }
+      if (number === 227 || number === 228) {
+        expect(rows.every(row => row.yearFilterSatisfied === true)).toBe(true);
+        expect(rows.find(row => row.id === `${id}-z-range`)).toMatchObject({ constructionYear: null, constructionYearKnown: false, constructionYearLowerBound: 1980, constructionYearUpperBound: 1989 });
+        if (number === 228) expect(rows.find(row => row.id === `${id}-z-before`)).toMatchObject({ constructionYear: null, constructionYearKnown: false, constructionYearLowerBound: null, constructionYearUpperBound: 1989 });
       }
       for (const [key, row] of fixture) expect((await listings.doc(key).get()).data()).toEqual(row);
       expect((await agency.collection('properties').get()).size).toBe(1);
