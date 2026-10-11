@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — alternative de camere și căutare indiferent de an
+
+Scenariile originale **0236–0240** au trecut cu model real și Firestore local: apartamente cu două sau trei camere, proprietăți cu una/două ori trei/patru camere și două camere fără filtru de an, inclusiv cu buget. Au fost corectate două probleme reale: răspunsul enumera șapte oferte deși cardurile conțineau opt; o cerere generică de proprietăți era restrânsă la apartamente și omitea o casă eligibilă.
+
+Căutarea transmite acum totalul explicit al paginii (`returnedCount`), iar instrucțiunile cer total și enumerare concordante. Probele verifică și numărul spus și fiecare titlu din enumerare, nu doar cardurile. Descrierea parametrului de tip și a instrumentului păstrează toate tipurile pentru „proprietăți”, chiar când se cere număr de camere. Comparația importurilor CRM poate fi descrisă ca executată numai în prezența dovezii `crmComparison`. Versiuni: prompt **jarvis-64**, tools **92**.
+
+Validare: **7 probe cu model real** (5 originale, 2 regresii pentru chirii), **2.179 teste locale**, **64 teste țintite finale**, lint, paritate și build (TypeScript, 227 pagini) trecute. Suita completă precedă ultima clarificare a descrierii tipului; probele reale și testele țintite folosesc versiunea finală. Dovezi și execuții inițiale: [OWNER_SEARCH_EXECUTION_BATCH_07.json](evals/OWNER_SEARCH_EXECUTION_BATCH_07.json). Total: **83/1000 scenarii originale cu dovezi locale folosind model real**, **917 fără asemenea dovezi**. Cele 78 anterioare nu au fost rerulate în acest lot. Nu este certificare în producție sau verificare a actualității portalurilor externe. Nicio publicare în producție și niciun mesaj către clienți.
+
 ## Lot proprietari — prag de construcție versus etichetă declarată
 
 Scenariile originale **0231–0235** verifică două/trei camere în Titan, Cișmigiu, Floreasca și Pipera, cu bugete și construcție după 1977/2000/2010. Prima probă 0231 a detectat o eroare reală: modelul adăuga filtrul de etichetă `after_1977` la o cerere obișnuită „după 1977” și omitea cinci oferte eligibile cu ani exacți sau intervale închise. Instrucțiunile de planificare, descrierea instrumentului și descrierea parametrului precizează acum diferența: pragul folosește `yearMin=1978`, iar filtrul de etichetă se aplică numai dacă eticheta este cerută explicit. Numărul de camere nu reprezintă numărul ofertelor solicitate. Versiuni: prompt **jarvis-62**, tools **90**.

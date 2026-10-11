@@ -2032,35 +2032,55 @@
           "sourceNumber": 236,
           "request": "Găsește apartamente cu două sau trei camere în Titan.",
           "requestSha256": "70ac5a76d7b9022566921b6dc763c490df5743167b112f05993479112180e2d1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0237",
           "sourceNumber": 237,
           "request": "Găsește proprietăți cu una sau două camere în Berceni.",
           "requestSha256": "5c51093e983bdf4cf5222b4038132f300466364d7229b7a633983d5466d0ed1a",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0238",
           "sourceNumber": 238,
           "request": "Găsește proprietăți cu trei sau patru camere în Drumul Taberei.",
           "requestSha256": "a6ae6afc7a1bc23dd0dc09971a30b1ec94f5bf375229834783086abf758a0c6b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0239",
           "sourceNumber": 239,
           "request": "Găsește două camere în Titan fără să filtrezi după an.",
           "requestSha256": "0d0324d19d316a5bb550ac2ac53f315e9e5b7a6e38d363a3700f1f3f10a0a064",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0240",
           "sourceNumber": 240,
           "request": "Găsește două camere în Titan sub 130.000 € indiferent de an.",
           "requestSha256": "62f2d0cb15e12811e77be5b65106e1dbcf081cb2925e20fdc01261ea79433b10",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0241",
