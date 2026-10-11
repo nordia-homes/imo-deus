@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Reluarea istoricului după clarificarea telefonului — 0260
+
+Când prospectul nu are un telefon complet, Jarvis cere numărul și păstrează prospectul și cererea în conversație. Un răspuns cu un număr incomplet păstrează clarificarea; un număr românesc valid reia citirea tuturor surselor asociate. Telefonul furnizat este folosit pentru această citire, fără modificarea fișei CRM. Numărul deja salvat, dacă există între timp, are prioritate, iar accesul la prospect și conversații se verifică din nou. O comandă nouă, anularea sau selectarea altui obiect nu preiau automat cererea veche.
+
+Proba cu model real parcurge `chatTurn`, clarificarea salvată, răspunsul incomplet, răspunsul valid, istoricul rezultat și repetarea aceleiași cereri. Verifică apelurile din prospecte active/inactive/șterse, taskul importului indirect și mesajul autorizat, cu fișele neschimbate și fără apeluri de instrument eșuate în execuția finală. Prima probă a expus contextul paginii goale care ascundea selecția anterioară; corecția este inclusă și are regresie dedicată. Dovadă: [OWNER_IDENTITY_CONTINUATION_PARTIAL_0260.json](evals/OWNER_IDENTITY_CONTINUATION_PARTIAL_0260.json).
+
+Au trecut 39 teste unitare și 13 teste Firestore, TypeScript complet, lint, paritate, inventarul corpusului și buildul final cu 227 pagini. Versiuni **jarvis-76 / tools 102**. Scenariul rămâne parțial pentru identități ambigue și înregistrări fără nicio asociere utilizabilă. Total **101/1000** cu dovezi locale, fără certificare nouă în producție. Modificările nu sunt publicate în producție.
+
 ## Interacțiuni păstrate după ștergerea prospectului — 0260
 
 Istoricul agenției caută acum și în `aiOutreachCalls` și `tasks`, după telefonul complet normalizat sau referința exactă la prospect. Astfel, apelurile și taskurile rămân vizibile în istoricul proprietarului chiar dacă prospectul la care trimiteau nu mai există. Rândurile `readMode=interaction` conțin direct rezultatul citit și se deduplică în răspuns după `source/id` față de timeline. Taskurile deschise și apelurile programate nu sunt prezentate drept convorbiri efectuate.

@@ -77,6 +77,21 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     const other = await fixture();
     await expect(readTimeline(other, input)).rejects.toMatchObject({ status: 404 });
   });
+  it('uses supplied identity only for missing phone and revalidates the selected agency record', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    await agency.collection('ownerListingFavorites').doc('selected').set({ ownerName: 'Fără telefon' });
+    await agency.collection('aiOutreachCalls').doc('linked').set({ ownerPhone: '+40 722 123 456', summary: 'Apel asociat' });
+    const input = { listingId: 'selected', scope: 'agency_history' as const };
+    expect(await readOwnerProspects(ctx, input)).toMatchObject({ identityComplete: false });
+    const resumed = await readOwnerProspects(ctx, input, '0040 722 123 456');
+    expect(resumed).toMatchObject({ identityComplete: true });
+    expect(resumed.rows.map(row => row.id)).toContain('linked');
+    expect((await agency.collection('ownerListingFavorites').doc('selected').get()).data()).toEqual({ ownerName: 'Fără telefon' });
+    await agency.collection('ownerListingFavorites').doc('selected').update({ ownerPhone: '0733123456' });
+    expect((await readOwnerProspects(ctx, input, '0722123456')).rows.map(row => row.id)).not.toContain('linked');
+    await agency.collection('ownerListingFavorites').doc('selected').delete();
+    await expect(readOwnerProspects(ctx, input, '0722123456')).rejects.toMatchObject({ status: 404 });
+  });
   it('links full Romanian phone variants across pages including inactive prospects without matching names', async () => {
     const ctx = await fixture(), favorites = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites');
     await favorites.doc('selected').set({ ownerPhone: '0722123456', ownerName: 'Matei Alin' });

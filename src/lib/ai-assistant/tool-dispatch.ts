@@ -122,7 +122,7 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
   } else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
   else if (name === 'owner_prospects') {
-    const { readOwnerProspects } = await import('./owner-prospects'); data = await readOwnerProspects(ctx, payload);
+    const { readOwnerProspects } = await import('./owner-prospects'); data = await readOwnerProspects(ctx, payload, options.ownerHistoryIdentity?.listingId === payload.listingId ? options.ownerHistoryIdentity?.phone : undefined);
     cards.push({ type: 'data', title: 'Înregistrări asociate proprietarului', source: payload.scope === 'agency_history' ? 'owner_history' : 'ownerListingFavorites', ...data } as AssistantCard);
     refs.push(...data.rows.filter((row: any) => row.resource === 'conversations').map((row: any) => ({ resource: 'conversations' as const, id: row.id })));
   }

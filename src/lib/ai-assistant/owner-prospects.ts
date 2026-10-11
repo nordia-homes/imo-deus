@@ -47,9 +47,10 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
     note: 'Înregistrări autorizate din agenție asociate prin referință exactă la anunț sau telefon comun complet. Pentru readMode=timeline citește timeline. readMode=interaction conține deja apelul/taskul verificat, inclusiv dacă prospectul a fost șters. Deduplică după source/id împreună cu timeline. Taskurile și apelurile programate nu dovedesc o conversație efectuată. Telefonul comun nu garantează identitatea; lipsa lui limitează asocierea la referințe exacte.' };
 }
 
-export async function readOwnerProspects(ctx: AssistantContext, input: z.infer<typeof ownerProspectsSchema>) {
+export async function readOwnerProspects(ctx: AssistantContext, input: z.infer<typeof ownerProspectsSchema>, identityPhone?: string) {
   const selected = await getResource(ctx, 'ownerListingFavorites', input.listingId);
-  const phone = normalizeRomanianPhone(selected.ownerPhone);
+  const savedPhone = normalizeRomanianPhone(selected.ownerPhone);
+  const phone = /^0[237]\d{8}$/.test(savedPhone) ? savedPhone : normalizeRomanianPhone(identityPhone || '');
   if (input.scope === 'agency_history') return linkedHistoryRecords(ctx, input, selected, phone);
   const cursor = input.cursor ? cursorSchema.parse(JSON.parse(Buffer.from(input.cursor, 'base64url').toString('utf8'))) : null;
   if (cursor && (cursor.agencyId !== ctx.agencyId || cursor.listingId !== input.listingId || cursor.phone !== phone)) throw new Error('Cursorul nu mai corespunde prospectului și telefonului curent.');

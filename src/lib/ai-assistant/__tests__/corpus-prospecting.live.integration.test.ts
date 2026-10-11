@@ -113,7 +113,33 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(planned.text).toMatch(/garaj/i);
         expect(planned.text).toMatch(/26 octombrie|26\.10|2026-10-26/);
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, executionVerified: false, limitation: 'Agency prospects, indirect imports, authorized conversations and calls/tasks whose prospect is missing verified. Ambiguous or missing identity and records without any usable association remain unresolved.' };
+        await source.update({ ownerPhone: '' });
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id, createdAt: new Date().toISOString() });
+        await session.collection('messages').doc('selection').set(history[0]);
+        const question = await chatTurn(ctx, { sessionId: id, requestId: `${id}-identity`, prompt, currentRecord: null });
+        report = { ...report, identityClarification: question.message, clarificationTelemetry: (await agency.collection('assistantTelemetry').doc(`${id}-identity`).get()).data() };
+        expect(question.message.ownerHistoryContinuation).toEqual({ listingId: source.id, request: prompt });
+        expect(question.message.text).toMatch(/telefon/i);
+        const incomplete = await chatTurn(ctx, { sessionId: id, requestId: `${id}-incomplete`, prompt: '0722', currentRecord: null });
+        expect(incomplete.message.ownerHistoryContinuation).toEqual(question.message.ownerHistoryContinuation);
+        const reply = { sessionId: id, requestId: `${id}-phone`, prompt: 'Telefonul proprietarului este +40 722 123 456.', currentRecord: null };
+        const resumed = await chatTurn(ctx, reply);
+        const resumedTelemetry = (await agency.collection('assistantTelemetry').doc(reply.requestId).get()).data()!;
+        report = { ...report, identityClarification: question.message, identityReply: resumed.message, identityTelemetry: resumedTelemetry };
+        expect(resumed.message.ownerHistoryContinuation).toBeUndefined();
+        expect(resumed.message.actions || []).toEqual([]);
+        expect(resumedTelemetry.status, resumed.message.text).toBe('success');
+        expect(resumedTelemetry.tools.filter((tool: any) => tool.status !== 'success')).toEqual([]);
+        const resumedRows = resumed.message.cards?.flatMap(card => card.rows) || [];
+        for (const key of ['recorded-call', 'related-call', 'orphan-call', 'orphan-task', 'property-task', 'owner-message']) expect(resumedRows.map(row => row.id)).toContain(key);
+        expect(resumed.message.text).toMatch(/2%/);
+        expect(resumed.message.text).toMatch(/garaj/i);
+        expect(JSON.stringify(resumed)).not.toContain('CANARY_PRIVATE_CONVERSATION');
+        expect(await chatTurn(ctx, reply)).toEqual(resumed);
+        expect((await source.get()).data()?.ownerPhone).toBe('');
+        for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Ambiguous identity and records without any usable association remain unresolved; no production certification.' };
         return;
       }
       if (number === 257) {
@@ -165,5 +191,5 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       report = { ...report, executionVerified: true, verification: number >= 253 ? 'Selected record updated with requested state/outcome, confirmed from executor receipt; idempotent replay, notes preserved, unrelated records unchanged. Missing details clarified before writes.' : 'Original question, real model, current agency prospects. Uncontacted records distinguished from follow-up, refusal and removed entries; advice does not initiate a call.' };
     } catch (error) { report = { ...report, failure: error instanceof Error ? error.message : String(error) }; throw error; }
     finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await db.terminate(); }
-  }, 170000);
+  }, 240000);
 }

@@ -57,6 +57,27 @@ describe('Responses tool planning', () => {
     expect(model.respond.mock.calls[2][0].tools.map((tool: any) => tool.name)).toContain('goal_coverage');
     expect(names.length).toBeLessThanOrEqual(10);
   });
+  it('asks for missing owner identity and resumes the read using the supplied phone', async () => {
+    const prompt = 'Arată istoricul proprietarului.';
+    const history: any[] = [{ id: 'selected', role: 'assistant', text: 'Selectat', createdAt: '', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Selectat', rows: [{ id: 'p' }] }] }];
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: true, identityComplete: false } as any);
+    const first = await planTurn(ctx, prompt, [...history, { id: 'current-page-context', role: 'user', text: 'Nicio selecție', createdAt: '', cards: [] }], { provider: scripted(call('owner_prospects', { listingId: 'p', scope: 'agency_history' })) });
+    expect(first.metrics.status).toBe('clarification');
+    expect(first.metrics.tools).toMatchObject([{ name: 'owner_prospects', status: 'success' }]);
+    expect(first.ownerHistoryContinuation).toEqual({ listingId: 'p', request: prompt });
+    const pending: any[] = [{ id: 'reply', role: 'assistant', text: first.text, createdAt: '', ownerHistoryContinuation: first.ownerHistoryContinuation }];
+    const invalid = await planTurn(ctx, '0722', pending, { provider: scripted(final) });
+    expect(invalid.metrics.status).toBe('clarification');
+    expect(invalid.ownerHistoryContinuation).toEqual(first.ownerHistoryContinuation);
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: true, identityComplete: true } as any);
+    const read = call('owner_prospects', { listingId: 'p', scope: 'agency_history' });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'history', sourceQuote: prompt, description: 'Istoric', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const resumed = await planTurn(ctx, '+40 722 123 456', pending, { provider: model });
+    expect(resumed.metrics.status, resumed.text).toBe('success');
+    expect(resumed.ownerHistoryContinuation).toBeUndefined();
+    expect(readOwnerProspects).toHaveBeenLastCalledWith(ctx, expect.objectContaining({ listingId: 'p' }), '0722123456');
+    expect(resumed.actions).toEqual([]);
+  });
   it('does not certify owner history when the model returns text without reading any records', async () => {
     const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: scripted(final) });
     expect(result.metrics.status).toBe('partial');

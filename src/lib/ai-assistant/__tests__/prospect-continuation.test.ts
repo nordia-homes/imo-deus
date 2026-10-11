@@ -1,3 +1,4 @@
+import { ownerHistoryReply } from '../owner-history-continuation';
 import { expect, it } from 'vitest';
 import { pendingProspectRequest, prospectExecutionPrompt, prospectClarification, prospectPlanningPrompt } from '../prospect-continuation';
 import { prospectPatch } from '@/lib/crm/prospect';
@@ -33,4 +34,15 @@ it('appends call results without replacing notes or silently truncating history'
   expect(() => prospectPatch({ notes: 'x'.repeat(10000) }, { appendNote: 'nou' }, 'u', 'Agent', 'now')).toThrow('limita');
   expect(() => prospectPatch({}, { appendNote: 'nou', notes: 'înlocuit' }, 'u', 'Agent', 'now')).toThrow('distincte');
   expect(() => prospectPatch({}, { state: 'taken', contactOutcome: 'negative' }, 'u', 'Agent', 'now')).toThrow('distincte');
+});
+
+it('resumes owner history only from an immediate phone answer and the same page selection', () => {
+  const history: AssistantMessage[] = [{ ...clarification, ownerHistoryContinuation: { listingId: 'p', request: 'Arată istoricul proprietarului.' } }];
+  for (const answer of ['+40 722 123 456', '0040 722 123 456', 'Telefonul proprietarului este 0722123456.']) expect(ownerHistoryReply(answer, history)?.phone).toBe('0722123456');
+  expect(ownerHistoryReply('0722', history)?.phone).toBeNull();
+  for (const answer of ['Anulează.', 'Nu știu.', 'Programează o vizionare la 0722123456', '0722123456 sau 0733123456']) expect(ownerHistoryReply(answer, history)).toBeUndefined();
+  expect(ownerHistoryReply('0722123456', [...history, selection])).toBeUndefined();
+  expect(ownerHistoryReply('0722123456', [...history, { ...selection, id: 'current-page-context', cards: [] }])?.phone).toBe('0722123456');
+  expect(ownerHistoryReply('0722123456', [...history, { ...selection, id: 'current-page-context', cards: [{ ...selection.cards![0], rows: [{ id: 'q' }] }] }])).toBeUndefined();
+  expect(ownerHistoryReply('0722123456', [...history, { ...selection, id: 'current-page-context' }])?.phone).toBe('0722123456');
 });

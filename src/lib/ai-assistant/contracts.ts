@@ -100,7 +100,7 @@ export type AccessReference = { resource: 'contacts' | 'sales' | 'conversations'
 export function uniqueReferences(references: AccessReference[]) {
   return [...new Map(references.map(ref => [JSON.stringify([ref.resource, ref.id]), ref])).values()];
 }
-export type AssistantMessage = { id: string; role: 'user' | 'assistant'; outputType?: StructuredOutputType; text: string; createdAt: string; cards?: AssistantCard[]; planId?: string; actions?: AssistantAction[]; accessRefs?: AccessReference[]; prospectContinuation?: { listingId: string; request: string } };
+export type AssistantMessage = { id: string; role: 'user' | 'assistant'; outputType?: StructuredOutputType; text: string; createdAt: string; cards?: AssistantCard[]; planId?: string; actions?: AssistantAction[]; accessRefs?: AccessReference[]; prospectContinuation?: { listingId: string; request: string }; ownerHistoryContinuation?: { listingId: string; request: string } };
 export type AssistantPlan = { id: string; outputType?: 'CONFIRMATION_CARD' | 'ACTION_RESULT'; status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'unknown' | 'cancelled'; goal?: import('./outcome').GoalContract; outcome?: import('./outcome').GoalOutcome; waitUntil?: number; verificationDeadline?: number; actions: AssistantAction[]; risks?: string[]; externalCostNote?: string; results?: Record<string, unknown>[]; stoppedStep?: { step: number; result: Record<string, unknown> }; error?: string; createdAt: string };
 
 // Never send integration credentials to a model, browser or persisted result card.

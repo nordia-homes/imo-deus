@@ -1,4 +1,5 @@
 import { MAX_PLAN_ACTIONS } from './plan-limits';
+import { ownerHistoryReply, type OwnerHistoryContinuation } from './owner-history-continuation';
 import { prospectClarification } from './prospect-continuation';
 import { selectedViewing, selectedViewingList } from './viewing-selection';
 import { createHash } from 'node:crypto';
@@ -22,8 +23,15 @@ import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation 
 import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
 import { validatePlannedDependencies } from './dependencies';
 
-export type AgentOptions = { provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string; selectedViewingIds?: string[] };
+export type AgentOptions = { ownerHistoryIdentity?: { listingId: string; phone: string }; provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string; selectedViewingIds?: string[] };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
+  const historyReply = ownerHistoryReply(prompt, history);
+  let ownerHistoryContinuation: OwnerHistoryContinuation | undefined;
+  if (historyReply?.phone) {
+    prompt = `${historyReply.pending.request}\nTelefonul indicat de agent pentru această citire: ${historyReply.phone}`;
+    history = [...history, { id: 'owner-history-selection', role: 'assistant', text: 'Prospect selectat pentru reluarea citirii.', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect selectat', rows: [{ id: historyReply.pending.listingId }] }] }];
+    options = { ...options, ownerHistoryIdentity: { listingId: historyReply.pending.listingId, phone: historyReply.phone } };
+  }
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
   let goalCoverage: GoalCoverage | undefined;
   const successfulReads = new Set<string>();
@@ -40,9 +48,13 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     for (const card of cards) card.outputType ||= card.title.includes('Matching') ? 'PROPERTY_MATCH_LIST' : ['owners', 'crm', 'properties'].includes(card.source) ? 'PROPERTY_LIST' : card.source === 'contacts' ? 'CLIENT_LIST' : card.source === 'viewings' ? 'VIEWING_CARD' : card.source === 'tasks' ? 'TASK_CARD' : card.source === 'insights' ? 'INSIGHT_CARD' : /campaign|meta|tiktok/.test(card.source) ? 'CAMPAIGN_CARD' : 'ANALYTICS_CARD';
     if (actions.length && status === 'success') text = `Am pregătit ${actions.length} acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.`;
     if (goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) text += '\nCerințe încă neacoperite: ' + goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.description).join('; ');
-    return { text, cards, actions, accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
+    return { text, cards, actions, ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
+  if (historyReply && !historyReply.phone) {
+    ownerHistoryContinuation = historyReply.pending;
+    return finish('Numărul nu este complet sau valid. Care este numărul de telefon complet al proprietarului?', 'clarification');
+  }
   const clarification = prospectClarification(prompt, history);
   if (clarification) return finish(clarification, 'clarification');
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
@@ -54,7 +66,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const pendingProspect = history.filter(message => message.id !== 'current-page-context').at(-1)?.prospectContinuation;
   const prospectFollowup = /\bfollow[- ]?up\b/i.test(prompt) && history.filter(message => message.id !== 'current-page-context').at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
   const historyPrompt = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const prospectHistory = /^(arata|afiseaza|verifica|consulta)\b.*\b(istoric|istoricul|interactiuni|interactiunile)\b/.test(historyPrompt) && !/\b(creeaza|adauga|modifica|actualizeaza|sterge|programeaza|trimite|suna|marcheaza|anuleaza)\b/.test(historyPrompt) && history.filter(message => message.id !== 'current-page-context').at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
+  const prospectHistory = /^(arata|afiseaza|verifica|consulta)\b.*\b(istoric|istoricul|interactiuni|interactiunile)\b/.test(historyPrompt) && !/\b(creeaza|adauga|modifica|actualizeaza|sterge|programeaza|trimite|suna|marcheaza|anuleaza)\b/.test(historyPrompt) && history.filter(message => message.id !== 'current-page-context' || message.cards?.length).at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
   if (prospectFollowup) selectedActions.add('create_task');
   if (pendingProspect) selectedActions.add('update_prospect');
   // A clarification reply needs the selected workflow, not every unrelated core schema.
@@ -163,6 +175,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           }
           if (prospectHistory && name === 'owner_prospects' && payload.scope === 'agency_history') {
             historyDiscoveryComplete = response.data.complete === true;
+            if (response.data.identityComplete === false) ownerHistoryContinuation = { listingId: payload.listingId, request: prompt };
             for (const row of Array.isArray(response.data.rows) ? response.data.rows : []) if (row.readMode === 'timeline') {
               const key = `${row.resource}:${row.id}`;
               if (!completedHistory.has(key)) pendingHistory.add(key);
@@ -199,6 +212,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         }
         metrics.tools.push({ name: toolRegistry.has(name) ? name : 'unknown_tool', status, latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
         input.push({ type: 'function_call_output', call_id: call.id, output: compressedResult(data, 7000) });
+        if (ownerHistoryContinuation) return finish('Prospectul nu are un telefon complet pentru asocierea istoricului. Care este numărul de telefon al proprietarului? Voi relua citirea pentru același prospect.', 'clarification');
       }
       // Let the model finish composing the requested workflow after an initial
       // proposal. Proposals are inert until the resulting plan is approved.

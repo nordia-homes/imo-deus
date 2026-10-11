@@ -110,6 +110,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const pendingProspect = pendingProspectRequest(planningPrompt, result.metrics.status, history);
     const message: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
     if (pendingProspect) message.prospectContinuation = pendingProspect;
+    if (result.ownerHistoryContinuation) message.ownerHistoryContinuation = result.ownerHistoryContinuation;
     await ctx.adminDb.runTransaction(async tx => {
       const [fresh, actor, member] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
