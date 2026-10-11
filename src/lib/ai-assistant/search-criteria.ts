@@ -3,7 +3,9 @@ import type { AssistantSearch } from './contracts';
 // Preserve declared intervals without inventing an exact year. Only the dedicated
 // construction field is parsed; marketing prose and renovation dates are ignored.
 export function constructionYearEvidence(row: Record<string, unknown>) {
-  const raw = row.constructionYear ?? row.year ?? row.constructionYearValue;
+  // Empty source fields must not mask a populated structured year. A nonempty
+  // interval/unknown label still takes precedence over a derived numeric value.
+  const raw = [row.constructionYear, row.year, row.constructionYearValue].find(value => value !== null && value !== undefined && !(typeof value === 'string' && !value.trim()));
   const candidate = typeof raw === 'number' ? raw : typeof raw === 'string' && /^\d{4}$/.test(raw.trim()) ? Number(raw.trim()) : NaN;
   const year = Number.isInteger(candidate) && candidate >= 1800 && candidate <= new Date().getFullYear() + 1 ? candidate : null;
   let lower = year, upper = year;
@@ -52,5 +54,8 @@ export function constructionYearFilterSatisfied(row: Record<string, unknown>, in
 // Agency rule: any requested EUR budget above this threshold selects sales.
 export const RENT_SEARCH_CEILING_EUR = 10000;
 export function searchTransaction(input: AssistantSearch) {
-  return Math.max(input.priceMin ?? 0, input.priceMax ?? 0) > RENT_SEARCH_CEILING_EUR ? 'sale' as const : input.transactionType;
+  const budget = Math.max(input.priceMin ?? 0, input.priceMax ?? 0);
+  if (budget > RENT_SEARCH_CEILING_EUR) return 'sale' as const;
+  if (input.transactionType) return input.transactionType;
+  return input.priceMin !== undefined || input.priceMax !== undefined ? undefined : 'sale' as const;
 }

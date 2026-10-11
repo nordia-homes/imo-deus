@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — anul construcției și regula finală pentru chirii
+
+Clarificarea utilizatorului din 11 octombrie înlocuiește regula anterioară pentru cererile fără tranzacție: **fără buget și fără cerere explicită de chirie, se afișează numai vânzări**. Închirierile sunt eligibile când agentul cere explicit chirie/închiriere sau bugetul este de cel mult 10.000 EUR (pragul inclusiv stabilit anterior). Oricare limită de buget peste 10.000 selectează numai vânzări. Anul construcției nu reprezintă buget. Regula serverului este comună căutării și relevanței alertelor salvate; prețul-limită rămâne inclus.
+
+Scenariile originale **0221–0225** au trecut cu model real: apartamente după 1977/1990/2000, inclusiv filtre de două/trei camere și zonele Titan, Drumul Taberei, Pipera. Câmpurile textuale goale nu mai ascund anul numeric structurat. Intervalele declarate au prioritate față de numere derivate și nu devin ani exacți. Anii prea vechi, anul exact de la prag, intervalele parțial suprapuse, necunoscutele și anul renovării sunt excluse din rezultatele cerute. Răspunsurile finale disting anii exacți de intervalele declarate.
+
+Au fost rerulate **toate cele 25 de comenzi originale 0201–0225** după clarificarea regulii de tranzacție; toate au trecut. Două probe suplimentare au confirmat chiria explicită și cererea cu buget de 900 EUR. Aceste variante nu cresc numărul scenariilor originale. Dovezi: [OWNER_SEARCH_EXECUTION_BATCH_04.json](evals/OWNER_SEARCH_EXECUTION_BATCH_04.json), prompt jarvis-61 / tools 89. Rapoartele anterioare păstrează istoricul regulilor de la momentul respectiv; rezultatele actuale sunt cele din acest lot.
+
+Validare: **2.179 teste locale**, **27 probe cu model real**, lint, paritate și build (TypeScript, 227 pagini) trecute. Nicio trimitere de mesaje sau modificare a datelor reale ale agențiilor. Total: **68/1000 scenarii originale cu dovezi locale folosind model real**, **932 fără asemenea dovezi**. Nu este certificare integrală în producție și nu verifică actualitatea portalurilor externe. Lotul nu este publicat în producție.
+
 ## Lot proprietari — intervale de preț și garsoniere
 
 Scenariile originale **0216–0220** au trecut cu model real și Firestore local, prompt jarvis-58 / tools 87: proprietăți în Aviației între 150.000–250.000 EUR, două camere în Drumul Taberei între 80.000–120.000, trei camere în Berceni, patru camere în Titan și garsoniere în Titan până la 80.000. Raport: [OWNER_SEARCH_EXECUTION_BATCH_03.json](evals/OWNER_SEARCH_EXECUTION_BATCH_03.json).

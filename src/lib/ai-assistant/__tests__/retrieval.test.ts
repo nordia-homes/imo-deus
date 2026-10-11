@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: vi.fn() }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, agencyCollection: (db: any, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
 import { ownerSearchFields } from '@/lib/owner-listings/search-index';
+import { constructionYearEvidence } from '../search-criteria';
 import { searchProperties, searchMatches } from '../search';
 import { canReadResource, readResource, readRelated, readField, referencesAllowed, type AssistantContext } from '../access';
 import { searchSchema, relatedSchema, fieldSchema } from '../contracts';
@@ -21,6 +22,23 @@ const context = (rows: Record<string, any>[]) => ({ agencyId: 'a', uid: 'agent',
 const listing = { publicationStatus: 'ready', isCanonical: true, scopeKey: 'bucuresti-ilfov', price: '120.000 €', priceValue: 120000, roomsValue: 2, propertyType: 'apartment', transactionType: 'sale', location: 'București Titan', title: 'Apartament', ownerPhone: 'PRIVATE' };
 
 describe('authorized complete pagination', () => {
+  it('uses a populated structured year behind empty fields without inventing an interval year', () => {
+    expect(constructionYearEvidence({ constructionYear: '  ', year: '', constructionYearValue: 2001 })).toMatchObject({ constructionYear: 2001, constructionYearEvidenceKind: 'exact' });
+    expect(constructionYearEvidence({ constructionYear: '', year: '1991', constructionYearValue: 2001 }).constructionYear).toBe(1991);
+    expect(constructionYearEvidence({ constructionYear: 'after_1977', constructionYearValue: 1978 })).toMatchObject({ constructionYear: null, constructionYearEvidenceKind: 'declared_interval', constructionYearLowerBound: 1978 });
+    expect(constructionYearEvidence({ constructionYear: 'necunoscut', constructionYearValue: 2001 }).constructionYear).toBeNull();
+    expect(searchMatches({ ...listing, constructionYear: '', constructionYearValue: 2001 }, searchSchema.parse({ yearMin: 2001 }))).toBe(true);
+    expect(searchMatches({ ...listing, constructionYear: '', description: 'Renovat în 2001' }, searchSchema.parse({ yearMin: 2001 }))).toBe(false);
+  });
+  it('defaults to sales without a budget and permits explicitly requested rentals', async () => {
+    const rows = [
+      { ...listing, id: 'sale' },
+      { ...listing, id: 'rent', transactionType: 'rent', price: '600 EUR' },
+    ];
+    expect((await searchProperties(context(rows), searchSchema.parse({}))).rows.map(row => row.id)).toEqual(['sale']);
+    expect((await searchProperties(context(rows), searchSchema.parse({ transactionType: 'rent' }))).rows.map(row => row.id)).toEqual(['rent']);
+    expect((await searchProperties(context(rows), searchSchema.parse({ priceMax: 900 }))).rows.map(row => row.id)).toEqual(['rent']);
+  });
   it.each([false, true])('finds declared studios with consistent room counts, indexed=%s', async indexed => {
     const rows = [
       { ...listing, id: 'a', price: '80000 EUR', roomsValue: null, rooms: 'garsonieră' },
@@ -45,7 +63,7 @@ describe('authorized complete pagination', () => {
       const row = { ...listing, price: '10000 EUR', transactionType, id: String(i) };
       return indexed ? { ...row, ...ownerSearchFields(row) } : row;
     });
-    const query = searchSchema.parse({ zone: 'Titan', ...(indexed ? { priceMax: 10000 } : {}) });
+    const query = searchSchema.parse({ zone: 'Titan', priceMax: 10000 });
     expect(query.transactionType).toBeUndefined();
     expect((await searchProperties(context(rows), query)).rows.map(row => row.id)).toEqual(['0', '1']);
     expect((await searchProperties(context(rows), { ...query, transactionType: 'rent' })).rows.map(row => row.id)).toEqual(['1']);
@@ -69,7 +87,7 @@ describe('authorized complete pagination', () => {
     expect(searchMatches(rent, searchSchema.parse({ priceMin: budget }))).toBe(budget <= 10000);
   });
   it.each(['10000.01 EUR', '15000 EUR', '9000 RON', '9000', 'negociabil'])('does not advertise an unverified or excessive EUR rental: %s', price => {
-    expect(searchMatches({ ...listing, transactionType: 'rent', price }, searchSchema.parse({}))).toBe(false);
+    expect(searchMatches({ ...listing, transactionType: 'rent', price }, searchSchema.parse({ transactionType: 'rent' }))).toBe(false);
   });
   it.each([['Cișmigiu', 'Bucureşti – Cismigiu', true], ['Cismigiu', 'București Cișmigiu', true], ['Titan', 'Titanium', false], ['Titan', 'București, Titan', true], ['Titan', 'PreTitan', false]])('matches whole normalized zone %s in %s', (zone, location, expected) => {
     expect(searchMatches({ ...listing, location }, searchSchema.parse({ zone }))).toBe(expected);
