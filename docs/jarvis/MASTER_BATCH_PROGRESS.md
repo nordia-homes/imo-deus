@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — listă de prospectare executată integral
+
+Lotul **0246–0250** adaugă dovezi locale pentru **0247–0250**, în timp ce **0246 rămâne parțial**: eliminarea importurilor cu referințe exacte funcționează, dar duplicatele semantice/manuale fără referințe nu sunt acoperite. Nici probele 0247, 0248 și 0250 nu certifică acea detecție generală.
+
+În **0249**, modelul real găsește șapte oferte și aplicația le adaugă efectiv în prospectare prin handlerul existent. Solicitarea explicită autorizează `owner_prospect:add` fără opțiune separată și fără oprirea după patru adăugări. Previzualizarea, negația, eliminarea și reîncercarea rămân distincte. Executorul recitește lista agenției și confirmă numai adăugările active; răspunsul final folosește aceste dovezi. Toate cele șapte ID-uri sunt salvate și confirmate, iar reluarea aceleiași cereri reutilizează rezultatele fără dubluri. Nu sunt trimise mesaje sau efectuate preluări externe de telefon în această probă.
+
+Au fost eliminate apeluri redundante de contract pentru prospectare și filtrarea de an nesolicitată. Planurile validate care combină citiri confirmate cu acțiuni pregătite se păstrează când numai apelul final de formulare depășește bugetul; cerințele neacoperite nu devin succes. Versiuni: prompt **jarvis-67**, tools **94**, policy **request-crm-10**.
+
+Validare: **2.183 teste locale**, **286 regresii Firestore**, **7 probe cu model real** (4 scenarii originale cu rezultat verificat, 1 original parțial declarat corect, 2 regresii pentru chirii), lint, paritate și build (TypeScript, 227 pagini) trecute. Dovezi: [OWNER_SEARCH_EXECUTION_BATCH_09.json](evals/OWNER_SEARCH_EXECUTION_BATCH_09.json). Total: **92/1000 scenarii originale cu dovezi locale**, **908 fără rezultat local verificat**; nu este certificare integrală în producție. Scenariul 0246 nu crește totalul. Nicio publicare în producție.
+
 ## Lot proprietari — ani lipsă separați și referințe de import CRM
 
 Scenariile originale **0241–0245** au dovezi locale cu model real pentru separarea anilor lipsă, căutarea etichetei declarate „după 1977”, separarea anilor necunoscuți la buget și excluderea importurilor CRM prin referințe exacte. Pentru **0245**, acestea nu certifică eliminarea duplicatelor introduse manual sau semantice fără referințe sursă.

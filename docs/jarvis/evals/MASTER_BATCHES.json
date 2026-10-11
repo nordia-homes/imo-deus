@@ -2149,28 +2149,44 @@
           "sourceNumber": 247,
           "request": "Găsește apartamente în Pipera sub 200.000 € care nu există deja în baza noastră.",
           "requestSha256": "1e1c94a2716aa55f4e2eae605650f68ad2e1c486dac1d747432e47f1736d35d5",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0248",
           "sourceNumber": 248,
           "request": "Găsește două camere în Berceni sub 100.000 € și verifică duplicatele.",
           "requestSha256": "c12d36b1582f8287b31f196ef12c862147bd8b7dfefc7d2ae4b06ab8a617fddd",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0249",
           "sourceNumber": 249,
           "request": "Găsește trei camere în Drumul Taberei sub 150.000 € și creează-mi lista de prospectare.",
           "requestSha256": "7ee4b97672f904fcfeaf027c96bf66ed65b6fccd23d615714c7aada4d3726946",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0250",
           "sourceNumber": 250,
           "request": "Găsește două camere în Titan sub 130.000 € după 1977, elimină ce avem deja în CRM și arată-mi doar rezultatele noi.",
           "requestSha256": "e87bba085dde8611e08b239e01967ea58fde18adf0621c36818699f69d1e4a4f",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         }
       ]
     },

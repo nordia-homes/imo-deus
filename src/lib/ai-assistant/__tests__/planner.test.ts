@@ -146,6 +146,19 @@ describe('Responses tool planning', () => {
     const incomplete = await planTurn(ctx, prompt, [], { provider: scripted(proposal), budget: new AgentBudget({ ...DEFAULT_LIMITS, maxSteps: 1 }) });
     expect(incomplete.metrics.status).toBe('partial'); expect(incomplete.goalCoverage).toBeUndefined();
   });
+  it('retains a validated read-then-write plan when only final wording exceeds the step budget', async () => {
+    const prompt = 'Citește clienții și creează o sarcină la 2030-01-01T10:00:00Z.';
+    vi.mocked(readResource).mockResolvedValue({ rows: [], complete: true } as any);
+    const read = call('read', { resource: 'contacts' });
+    const proposal = call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });
+    const coverage = call('goal_coverage', { requirements: [
+      { id: 'read', sourceQuote: 'Citește clienții', description: 'Clienții citiți', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] },
+      { id: 'write', sourceQuote: 'creează o sarcină', description: 'Sarcina cerută', resolution: 'planned', steps: [1], evidenceCallIds: [] },
+    ] });
+    const result = await planTurn(ctx, prompt, [], { provider: scripted(read, proposal, coverage), budget: new AgentBudget({ ...DEFAULT_LIMITS, maxSteps: 3 }) });
+    expect(result.metrics.status).toBe('success'); expect(result.actions).toHaveLength(1);
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('finalizes only before an unneeded call, never after an unprocessed over-budget response', async () => {
     const prompt = 'Creează o sarcină la 2030-01-01T10:00:00Z.';
     const proposal = call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });

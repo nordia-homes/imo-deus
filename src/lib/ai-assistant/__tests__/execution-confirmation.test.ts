@@ -36,3 +36,9 @@ it('confirms both cancellation and the appended reason from the same receipt', (
   const result = executionConfirmation([{ kind: 'update_viewing', result: { viewingId: 'v', viewingDate: '2027-01-01T10:00:00Z', status: 'cancelled', appendedNote: 'Anulată de client.' } }]);
   expect(result).toContain('Vizionare anulată'); expect(result).toContain('Notă adăugată'); expect(result).toContain('Anulată de client.');
 });
+
+it('confirms prospecting only from verified active membership receipts', () => {
+  const receipt = { operation: 'owner_prospect', listingId: 'listing-1', businessStatus: 'added_to_prospecting', executionState: 'succeeded', active: true };
+  expect(executionConfirmation([{ kind: 'existing_operation', result: receipt }])).toContain('Anunț adăugat în lista de prospectare. ID: listing-1.');
+  for (const patch of [{ active: false }, { executionState: 'accepted_unverified' }, { businessStatus: 'phone_pending' }, { listingId: '' }]) expect(executionConfirmation([{ kind: 'existing_operation', result: { ...receipt, ...patch } }])).toBe('');
+});

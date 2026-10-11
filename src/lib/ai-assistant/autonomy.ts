@@ -34,7 +34,7 @@ const CRM_VERBS: Record<string, string> = {
 export function requestAuthorizedCrmAction(action: AssistantAction) {
   const contextualTask = action.kind === 'create_task' && (Boolean(action.viewingId) || action.participantSource === 'property_owner' && Boolean(action.propertyId) && !action.contactId || action.participantSource === 'contact' && Boolean(action.contactId));
   const taskPropertyLink = action.kind === 'update_task' && Boolean(action.propertyId) && Object.keys(action).every(key => ['kind', 'taskId', 'expectedUpdatedAt', 'propertyId'].includes(key));
-  return contextualTask || taskPropertyLink || Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
+  return action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add' || contextualTask || taskPropertyLink || Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
 }
 export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
@@ -52,7 +52,7 @@ export async function autonomyPolicy(ctx: AssistantContext) {
   const data = (await collectionFor(ctx, 'assistantPolicies').doc(ctx.uid).get()).data();
   const enabled = featureFlags().autonomousWorkflows && data?.ownerId === ctx.uid && data?.role === ctx.role && data?.enabled === true && data.expiresAt > Date.now();
   const viewings = true;
-  return { available: featureFlags().autonomousWorkflows, enabled, viewings, requestAuthorizedCrm: true, allowedKinds: [...new Set([...Object.keys(CRM_VERBS), ...(enabled ? [...SAFE_KINDS, 'owner_prospect:add'] : [])])] };
+  return { available: featureFlags().autonomousWorkflows, enabled, viewings, requestAuthorizedCrm: true, allowedKinds: [...new Set([...Object.keys(CRM_VERBS), 'owner_prospect:add', ...(enabled ? [...SAFE_KINDS, 'owner_prospect:add'] : [])])] };
 }
 export async function setAutonomy(ctx: AssistantContext, enabled: boolean) {
   if (enabled && !featureFlags().autonomousWorkflows) throw new Error('Execuția autonomă este dezactivată de configurația serverului.');

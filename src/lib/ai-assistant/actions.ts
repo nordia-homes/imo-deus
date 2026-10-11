@@ -76,7 +76,13 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const hex = createHash('sha256').update(`${ctx.agencyId}:${key}`).digest('hex');
       const requestId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
       const body = action.operation === 'message_send' || action.operation === 'message_preview' ? { ...action.body, requestId } : action.body;
-      const result = await invokeOperation(ctx, { ...action, body });
+      let result = await invokeOperation(ctx, { ...action, body });
+      if (action.operation === 'owner_prospect' && body.action === 'add') {
+        const listingId = String(body.listingId || '');
+        const favorite = listingId ? await collectionFor(ctx, 'ownerListingFavorites').doc(listingId).get() : null;
+        if (result.active !== true || favorite?.data()?.isFavoriteActive !== true) throw new OperationFailure('Adăugarea în prospectare nu este confirmată în lista agenției.', 409, result);
+        result = { ...result, operation: 'owner_prospect', listingId, businessStatus: 'added_to_prospecting', executionState: 'succeeded', evidenceSource: 'current_domain_state', note: 'Anunț adăugat în prospectare. Preluarea telefonului și contactarea proprietarului nu sunt confirmate.' };
+      }
       if (unconfirmedOperationResult(result)) throw new OperationFailure('Handlerul raportează un rezultat parțial, eșuat sau incert. Verifică starea în modulul corespunzător; nu retrimite automat.', 409, result);
       await ledger.update({ status: 'completed', result: safeData(result), completedAt: new Date().toISOString() });
       return result;

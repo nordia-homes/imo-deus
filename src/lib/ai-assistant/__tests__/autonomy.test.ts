@@ -12,6 +12,21 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  it('executes every requested prospecting addition without opt-in and keeps other actions gated', async () => {
+    const context = ctx(); (context as any).policy = undefined;
+    vi.stubEnv('JARVIS_AUTONOMOUS', 'false');
+    const actions: AssistantAction[] = Array.from({ length: 7 }, (_, index) => ({ kind: 'existing_operation', operation: 'owner_prospect', params: {}, query: {}, body: { listingId: `listing-${index}`, action: 'add' } }));
+    const result = await runSafePrefix(context, 'prospecting', actions, 'Găsește trei camere și creează-mi lista de prospectare.');
+    expect(result.results).toHaveLength(7); expect(result.actions).toEqual([]);
+    vi.mocked(executeAction).mockClear();
+    for (const prompt of ['Arată lista de prospectare.', 'Pregătește lista de prospectare.', 'Nu adăuga anunțurile în prospectare.']) {
+      expect((await runSafePrefix(context, 'preview', actions, prompt)).results).toEqual([]);
+    }
+    for (const action of ['remove', 'retry']) {
+      expect((await runSafePrefix(context, 'other', [{ ...actions[0], body: { listingId: 'listing-0', action } } as AssistantAction], 'Adaugă anunțul.')).results).toEqual([]);
+    }
+    expect(executeAction).not.toHaveBeenCalled();
+  });
   it('does not turn an exact-time instruction into permission to pick another slot', async () => {
     const action: AssistantAction = { kind: 'schedule_viewing', contactId: 'c', propertyId: 'p', viewingDate: '2030-01-02T14:00:00Z', duration: 60, notes: '', firstAvailable: { start: '2030-01-02T14:00:00Z', end: '2030-01-02T20:00:00Z' } };
     expect((await runSafePrefix(ctx(), 'fixed', [action], 'Programează vizionarea la 16.')).results).toHaveLength(0);

@@ -32,7 +32,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const selectedViewingIds = selectedViewingList(history, options.summary);
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
   const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation }) };
-  const verifiedMutationPlan = () => actions.length > 0 && !!goalCoverage?.requirements.every(row => row.resolution === 'planned') && metrics.tools.at(-1)?.name === 'goal_coverage' && metrics.tools.at(-1)?.status === 'success';
+  const verifiedMutationPlan = () => actions.length > 0 && !!goalCoverage?.requirements.every(row => ['planned', 'answered'].includes(row.resolution)) && metrics.tools.at(-1)?.name === 'goal_coverage' && metrics.tools.at(-1)?.status === 'success';
   const finish = (text: string, status = 'success') => {
     if (status === 'success' && goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) status = goalCoverage.requirements.some(row => row.resolution === 'needs_clarification') ? 'clarification' : 'partial';
     metrics.status = status; metrics.elapsedMs = Date.now() - childStarted;
