@@ -2202,7 +2202,7 @@
           "requestSha256": "94135ddd4167ef89d63976cbc6250ec56a8a42195d9fa6af66573c460e4745bd",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2213,7 +2213,7 @@
           "requestSha256": "c4585092381783295d1df705bdbd835b30dfea2d6797a576e569d9af2d541c1f",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2224,7 +2224,7 @@
           "requestSha256": "1808b96cd4fea60fe80d9d26ffd68ab69a9efc968791e4219ebf149ba9363312",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2235,7 +2235,7 @@
           "requestSha256": "5e00cd732f162f423b852be5e643de836cd590ae7af0d4c3562d192bf96f2307",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2246,7 +2246,7 @@
           "requestSha256": "7fa16f689ad6b70fd41781d13e708eca5fbab5419857b2917db108ad6da90cd7",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2257,7 +2257,7 @@
           "requestSha256": "0b0c3af556bb3e05cf914887f82add7a9a6843603ac9e3ff90733279b8fe6d75",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2266,7 +2266,11 @@
           "sourceNumber": 257,
           "request": "Programează follow-up peste două săptămâni.",
           "requestSha256": "c892d06d6844cb98bd5603918b6883c2ed25b51e7f2cef8e644c555abf592668",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0258",
@@ -2275,7 +2279,7 @@
           "requestSha256": "f8ae61809916f7ed921b37ef825151364a4ebf6bc4576adbcfd9f7756e4416e2",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_02.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -2284,7 +2288,11 @@
           "sourceNumber": 259,
           "request": "Adaugă în prospectare condițiile discutate cu proprietarul.",
           "requestSha256": "d2eab4b4b187bf5049f823c8396a1e8fc117cfdeb7968ad1556f0b300ba3f8e1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0260",

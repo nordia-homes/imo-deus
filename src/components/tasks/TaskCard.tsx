@@ -58,6 +58,9 @@ export function TaskCard({ task, onEdit, onToggleComplete, className }: TaskCard
                     </div>
                 </div>
 
+                {task.ownerListingId && (
+                    <div className="mt-3 text-xs text-white/70">Prospect: {task.ownerListingTitle || task.ownerListingId}</div>
+                )}
                 {(task.contactId && task.contactName) && (
                     <div className={cn("mt-3 flex items-center gap-2 text-xs", task.status === 'completed' ? "text-white/45" : "text-white/70")}>
                         <UserRound className="h-3.5 w-3.5" />

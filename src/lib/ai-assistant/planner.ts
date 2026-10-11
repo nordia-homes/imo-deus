@@ -52,12 +52,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   // the full property form, so an ordinary question cannot exhaust the budget.
   const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
   const pendingProspect = history.filter(message => message.id !== 'current-page-context').at(-1)?.prospectContinuation;
+  const prospectFollowup = /\bfollow[- ]?up\b/i.test(prompt) && history.filter(message => message.id !== 'current-page-context').at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
+  if (prospectFollowup) selectedActions.add('create_task');
   if (pendingProspect) selectedActions.add('update_prospect');
   // A clarification reply needs the selected workflow, not every unrelated core schema.
   // Discovery remains available if the agent changes the request.
-  const continuationTools = new Set(['read', 'read_field', 'propose_actions', 'goal_coverage', 'update_prospect', 'discover_tools', 'operation_contract', 'data_catalog', 'resolve_datetime']);
+  const continuationTools = new Set(['read', 'read_field', 'propose_actions', 'goal_coverage', 'update_prospect', 'create_task', 'discover_tools', 'operation_contract', 'data_catalog', 'resolve_datetime']);
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
-  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => !pendingProspect || continuationTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
   const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
@@ -160,7 +162,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             const suggestion = response.data.suggestedViewing as { viewingDate?: string } | null;
             for (const date of [window?.start, window?.end, suggestion?.viewingDate]) if (typeof date === 'string') verifiedDates.add(date);
           }
-          if (['resolve_datetime', 'shift_datetime'].includes(name) && typeof response.data.iso === 'string') verifiedDates.add(response.data.iso);
+          if (['resolve_datetime', 'shift_datetime'].includes(name) && typeof response.data.iso === 'string') {
+            verifiedDates.add(response.data.iso);
+            if (typeof response.data.local === 'string' && /^\d{4}-\d{2}-\d{2} /.test(response.data.local)) verifiedDates.add(new Date(response.data.local.slice(0, 10)).toISOString());
+          }
           if (actions.length + response.actions.length > MAX_PLAN_ACTIONS) throw new Error(`Planul depășește ${MAX_PLAN_ACTIONS} acțiuni.`);
           cards.push(...response.cards); actions.push(...response.actions); accessRefs.push(...response.refs);
           if (response.childMetrics) { metrics.models.push(...response.childMetrics.models); metrics.tools.push(...response.childMetrics.tools as typeof metrics.tools); }

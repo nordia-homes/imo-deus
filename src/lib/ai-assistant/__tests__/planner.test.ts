@@ -36,6 +36,14 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('accepts a date-only task from the resolved Bucharest day without inventing a task hour', async () => {
+    const prompt = 'Creează follow-up pentru 2030-10-27, fără oră.';
+    const action = { kind: 'create_task', ownerListingId: 'p', description: 'Follow-up', dueDate: '2030-10-27' };
+    const model = scripted(call('resolve_datetime', { date: '2030-10-27', time: '12:00' }), call('propose_actions', { actions: [action] }), call('goal_coverage', { requirements: [{ id: 'followup', sourceQuote: prompt, description: 'Task fără oră', resolution: 'planned', steps: [1], evidenceCallIds: [] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(result.actions).toEqual([action]);
+  });
   it('reaches the provider for a short prospect clarification reply while retaining discovery', async () => {
     const model = scripted(final);
     const result = await planTurn(ctx, 'Colaborează.', [

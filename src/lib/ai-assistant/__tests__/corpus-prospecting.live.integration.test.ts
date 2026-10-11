@@ -16,8 +16,9 @@ import { VERSIONS } from '../models';
 import type { AssistantContext } from '../access';
 import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
+import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 258]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
@@ -43,7 +44,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 258]) {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
-      if ([254, 255].includes(number)) {
+      if ([254, 255, 259].includes(number)) {
         const session = agency.collection('assistantSessions').doc(id);
         await session.set({ ownerId: id, createdAt: new Date().toISOString() });
         await session.collection('messages').doc('selection').set(history[0]);
@@ -52,7 +53,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 258]) {
         expect(first.message.prospectContinuation?.listingId, first.message.text).toBe(source.id);
         expect(first.message.actions).toBeUndefined();
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        const answer = number === 254 ? 'Colaborează.' : 'Nu este interesat. A cerut să nu mai fie contactat.';
+        const answer = number === 254 ? 'Colaborează.' : number === 259 ? 'Comision 2%, fără exclusivitate. Vizionările se fac doar după ora 18:00.' : 'Nu este interesat. A cerut să nu mai fie contactat.';
         const request = { sessionId: id, requestId: `${id}-answer`, prompt: answer, currentRecord: null };
         const final = await chatTurn(ctx, request);
         const saved = (await favorites.doc(source.id).get()).data()!;
@@ -62,7 +63,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 258]) {
         expect(final.message.text).toContain(source.id);
         expect(saved.notes).toContain('Istoric existent.');
         if (number === 254) { expect(saved.collaborationStatus).toBe('collaborates'); expect(final.message.text).toContain('Colaborează'); }
-        else { expect(saved.contactOutcome).toBe('negative'); expect(saved.contactOutcomeByAgentId).toBe(id); expect(saved.notes).toMatch(/nu mai fie contactat/i); expect(final.message.text).toMatch(/nu mai fie contactat/i); }
+        else if (number === 259) { expect(saved.notes).toContain('2%'); expect(saved.notes).toMatch(/exclusivitate/i); expect(saved.notes).toContain('18:00'); expect(saved.collaborationStatus).toBeNull(); expect(saved.contactOutcome).toBeNull(); expect(final.message.text).toContain('18:00'); } else { expect(saved.contactOutcome).toBe('negative'); expect(saved.contactOutcomeByAgentId).toBe(id); expect(saved.notes).toMatch(/nu mai fie contactat/i); expect(final.message.text).toMatch(/nu mai fie contactat/i); }
         expect(await chatTurn(ctx, request)).toEqual(final);
         expect((await favorites.doc(source.id).get()).data()).toEqual(saved);
         for (const [key, row] of Object.entries(fixture)) if (key !== source.id) expect((await favorites.doc(key).get()).data()).toEqual(row);
@@ -74,6 +75,27 @@ for (const number of [251, 252, 253, 254, 255, 256, 258]) {
       report = { ...report, text: planned.text, cards: planned.cards, actions: planned.actions, metrics: planned.metrics, toolCalls: calls };
       const executionPrompt = prompt;
       expect(planned.metrics.status, planned.text).toBe('success');
+      if (number === 257) {
+        const expectedDay = resolveDatetime({ dayOffset: 14, time: '12:00' }).local.slice(0, 10);
+        expect(planned.actions).toHaveLength(1);
+        expect(planned.actions[0]).toMatchObject({ kind: 'create_task', ownerListingId: source.id, dueDate: expectedDay });
+        expect(planned.actions[0]).not.toHaveProperty('startTime');
+        const execution = await executeSafePrefix(ctx, id, planned.actions, prompt);
+        const confirmation = executionConfirmation(execution.results);
+        report = { ...report, execution, confirmation };
+        expect(execution.blocked).toBe(false); expect(execution.actions).toEqual([]); expect(execution.results).toHaveLength(1);
+        const tasks = await agency.collection('tasks').get();
+        expect(tasks.size).toBe(1);
+        expect(tasks.docs[0].data()).toMatchObject({ ownerListingId: source.id, dueDate: expectedDay, status: 'open', agentId: id, participantName: 'Alin Matei', participantPhone: '0722123456' });
+        expect(tasks.docs[0].data()).not.toHaveProperty('propertyId');
+        expect(tasks.docs[0].data()).not.toHaveProperty('startTime');
+        expect(confirmation).toContain(source.id); expect(confirmation).toContain(expectedDay);
+        expect((await executeSafePrefix(ctx, id, planned.actions, prompt)).results).toEqual(execution.results);
+        expect((await agency.collection('tasks').get()).size).toBe(1);
+        for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
+        report = { ...report, executionVerified: true, verification: 'Original prompt with selected prospect. Task saved with source listing, current participant, date 14 calendar days ahead in Bucharest and no invented hour. Confirmed saved ID, replay creates no duplicate; prospects unchanged.' };
+        return;
+      }
       if (number >= 253) {
         const patch = number === 253 ? { state: 'taken' } : [254, 258].includes(number) ? { collaborationStatus: 'collaborates' } : { contactOutcome: 'negative' };
         expect(planned.actions).toMatchObject([{ kind: 'update_prospect', listingId: source.id, patch }]);

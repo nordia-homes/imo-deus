@@ -19,6 +19,7 @@ import { executeAction } from '../actions';
 import { operationResult } from '../operation-result';
 import { readPlanOutcomes } from '../plan-outcomes';
 import { readResource } from '../access';
+import { executeSafePrefix } from '../autonomy';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecting on Firestore with simulated phone provider', () => {
   let db: Firestore;
@@ -64,6 +65,26 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     await expect(readResource(other, { resource: 'ownerListingFavorites', id, limit: 10 })).rejects.toMatchObject({ status: 404 });
     await source.update({ publicationStatus: 'draft' });
     expect((await readResource(ctx, { resource: 'ownerListingFavorites', id, limit: 10 })).rows[0]).not.toHaveProperty('ownerPhone');
+  });
+  it('saves a requested prospect follow-up with its participant and rejects foreign ownership or mixed links', async () => {
+    const ctx = await fixture(), id = randomUUID(); listings.push(id);
+    await db.collection('ownerListings').doc(id).set({ title: 'Cișmigiu', ownerName: 'Original', ownerPhone: '0722123456' });
+    const favorite = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites').doc(id);
+    await favorite.set({ isFavoriteActive: true, ownerName: 'Actual', takenByAgentId: ctx.uid });
+    const action = actionSchema.parse({ kind: 'create_task', ownerListingId: id, description: 'Follow-up proprietar', dueDate: '2030-10-27' });
+    const executed = await executeSafePrefix(ctx, 'follow-up', [action], 'Programează follow-up peste două săptămâni.');
+    expect(executed.actions).toEqual([]); expect(executed.results).toHaveLength(1);
+    const tasks = await db.collection('agencies').doc(ctx.agencyId).collection('tasks').get();
+    expect(tasks.size).toBe(1);
+    expect(tasks.docs[0].data()).toMatchObject({ ownerListingId: id, ownerListingTitle: 'Cișmigiu', participantName: 'Actual', participantPhone: '0722123456', dueDate: '2030-10-27' });
+    expect(tasks.docs[0].data()).not.toHaveProperty('startTime');
+    expect((await executeSafePrefix(ctx, 'follow-up', [action], 'Programează follow-up.')).results).toEqual(executed.results);
+    await expect(executeAction(ctx, { ...action, propertyId: 'unrelated' }, 'mixed')).rejects.toMatchObject({ status: 400 });
+    await favorite.update({ takenByAgentId: 'other' });
+    await expect(executeAction(ctx, action, 'other')).rejects.toMatchObject({ status: 403 });
+    await favorite.update({ takenByAgentId: ctx.uid, isFavoriteActive: false });
+    await expect(executeAction(ctx, action, 'inactive')).rejects.toMatchObject({ status: 403 });
+    expect((await db.collection('agencies').doc(ctx.agencyId).collection('tasks').get()).size).toBe(1);
   });
   it('saves the call outcome and appends notes exactly once under concurrent replay', async () => {
     const ctx = await fixture(), id = randomUUID();

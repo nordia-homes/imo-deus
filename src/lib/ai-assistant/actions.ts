@@ -476,6 +476,11 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       else tx.update(ref, { interactionHistory: [...(contact.interactionHistory || []), { id: key, type: action.type, date: now, notes: action.notes, agentId: ctx.uid, agent: { name: profile.data()?.name || 'Agent' } }] });
       result = { contactId: action.contactId, link: `/leads/${action.contactId}` };
     } else if (action.kind === 'create_task') {
+      if (action.ownerListingId && (action.viewingId || action.contactId || action.propertyId || action.participantSource)) throw new CommunicationError('Follow-up-ul prospectului nu poate folosi relațiile unui alt client sau ale unei proprietăți CRM.');
+      const prospect = action.ownerListingId ? await read('ownerListingFavorites', action.ownerListingId) : null;
+      if (prospect && (prospect.isFavoriteActive !== true || (ctx.role !== 'admin' && prospectOwner(prospect, Date.parse(now)) && prospectOwner(prospect, Date.parse(now)) !== ctx.uid))) throw new CommunicationError('Prospectul nu este activ sau este lucrat de alt agent.', 403);
+      const prospectListing = prospect ? (await tx.get(ctx.adminDb.collection('ownerListings').doc(action.ownerListingId!))).data() : null;
+      const prospectParticipant = prospect ? { participantName: prospect.ownerName || prospectListing?.ownerName || null, participantPhone: prospect.ownerPhone || prospectListing?.ownerPhone || null, ownerListingTitle: prospectListing?.title || action.ownerListingId } : {};
       const viewing = action.viewingId ? await read('viewings', action.viewingId) : null;
       if (viewing && (viewing.status !== 'completed' || !Number.isFinite(Date.parse(viewing.viewingDate)) || Date.parse(viewing.viewingDate) > Date.now())) throw new CommunicationError('Vizionarea nu este confirmată ca efectuată.', 409);
       if (viewing && (action.contactId !== viewing.contactId || action.propertyId !== viewing.propertyId || (action.agentId !== undefined && action.agentId !== viewing.agentId))) throw new CommunicationError('Follow-up-ul trebuie legat de clientul, proprietatea și agentul vizionării.', 409);
@@ -491,13 +496,13 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       } else {
         if (deterministic?.exists) throw new CommunicationError('Sarcina asociată are o stare care necesită verificare.', 409);
         const { kind: _, participantSource, ...inputTask } = action;
-        const taskData = { ...taskClockPatch(inputTask), ...taskParticipant(participantSource, contact, property) };
+        const taskData = { ...taskClockPatch(inputTask), ...taskParticipant(participantSource, contact, property), ...prospectParticipant };
         const agentId = viewing ? viewing.agentId : action.agentId === undefined ? ctx.uid : action.agentId;
         const assignment = await propertyAssignment(agentId);
         await assertCalendarSlot(ctx, tx, 'tasks', ref.id, { ...taskData, status: 'open', agentId });
         tx.create(ref, { ...taskData, id: ref.id, status: 'open', agentId, agentName: assignment.agentName, createdAt: now, ...(contact ? { contactId: action.contactId, contactName: contact.name } : {}), ...(property ? { propertyId: action.propertyId, propertyTitle: property.title } : {}) });
         result = safeData({ taskId: ref.id, ...(action.viewingId ? { viewingId: action.viewingId } : {}), link: '/tasks', description: taskData.description, status: 'open', dueDate: taskData.dueDate, startTime: taskData.startTime,
-          participantName: taskData.participantName, contactId: action.contactId, contactName: contact?.name, propertyId: action.propertyId, propertyTitle: property?.title });
+          participantName: taskData.participantName, contactId: action.contactId, contactName: contact?.name, propertyId: action.propertyId, propertyTitle: property?.title, ownerListingId: action.ownerListingId, ownerListingTitle: prospectParticipant.ownerListingTitle });
       }
     } else if (action.kind === 'update_task') {
       const oldTask = await read('tasks', action.taskId);

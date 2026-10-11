@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot prospectare — follow-up legat de prospect și condiții discutate
+
+Scenariile **0257 și 0259** au dovezi locale noi. În 0257, modelul real calculează ziua la 14 zile calendaristice în București, iar executorul creează efectiv un task cu `ownerListingId`, participantul actual și scadența fără oră inventată. Prospectul apare pe cardul taskului și în confirmarea salvării. Nu se creează un cumpărător sau o proprietate CRM pentru această legătură. Datele inactive, apartenența la alt agent și combinarea cu relații CRM incompatibile sunt refuzate înainte de scriere.
+
+În 0259, conversația cere condițiile lipsă și apoi salvează comisionul, lipsa exclusivității și restricția orară din răspuns ca notă, păstrând istoricul. Cuvântul „doar” dintr-o condiție factuală nu mai este tratat drept previzualizare. Cererea inițială și răspunsul la clarificare ajung împreună la planificare și validarea acoperirii, eliminând pierderea scopului cererii. Reluarea aceleiași cereri nu dublează taskul sau nota.
+
+Versiuni **jarvis-70 / request-crm-13 / tools 96**. Au trecut **9 probe cu model real**, **2.190 teste locale** și **78 verificări țintite** după ajustările continuării. Dovezi: [PROSPECTING_EXECUTION_BATCH_03.json](evals/PROSPECTING_EXECUTION_BATCH_03.json). Total **101/1000 cu dovezi locale**, **899 fără rezultat local verificat**. Scenariul 0260 (istoricul complet al proprietarului) și limita semantică/manuală din 0246 rămân deschise. Nu este certificare integrală în producție; lotul nu a fost publicat în producție.
+
+Verificare suplimentară: **289/289 regresii Firestore**, lint, paritate, inventarul reproductibil și buildul final (TypeScript, 227 pagini) trecute.
+
 ## Lot prospectare — continuare după clarificare și rezultat de apel
 
 Scenariile **0254, 0255, 0256 și 0258** au dovezi locale noi. Pentru 0254 și 0255 proba trece prin `chatTurn`: comanda originală, clarificarea salvată, răspunsul agentului, tranzacția reală pe Firestore local și confirmarea finală din conversație. Nu se salvează nimic înainte ca agentul să precizeze statusul sau rezultatul lipsă. Răspunsul scurt continuă autorizarea solicitării numai pentru același prospect și în următorul schimb; anularea nu moștenește autorizarea.

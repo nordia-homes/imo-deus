@@ -1466,6 +1466,8 @@ export type ActiveBuyersEvolutionData = {
 };
 
 export type Task = {
+  ownerListingId?: string;
+  ownerListingTitle?: string;
   id: string;
   updatedAt?: string;
   description: string;
