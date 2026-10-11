@@ -94,6 +94,46 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect(await readOwnerProspects(ctx, { listingId: 'selected' })).toMatchObject({ rows: [], complete: false, reason: 'missing_valid_phone' });
     await expect(readOwnerProspects(await fixture(), { listingId: 'selected' })).rejects.toMatchObject({ status: 404 });
   });
+  it('links imported properties and authorized owner conversations without including buyers or inaccessible conversations', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), id = randomUUID(); listings.push(id);
+    const favorite = agency.collection('ownerListingFavorites').doc(id);
+    await favorite.set({ ownerPhone: '0722123456' });
+    await db.collection('ownerListings').doc(id).set({ publicationStatus: 'ready', isCanonical: true, link: 'https://example.com/listing' });
+    await agency.collection('properties').doc('by-url').set({ ownerListingUrl: 'https://example.com/listing', ownerPhone: '' });
+    await agency.collection('properties').doc('by-id').set({ ownerListingId: id });
+    await agency.collection('properties').doc('by-phone').set({ ownerPhone: '+40 722 123 456' });
+    await agency.collection('properties').doc('unrelated').set({ ownerPhone: '0733123456' });
+    const conversation = { agencyId: ctx.agencyId, assigneeId: ctx.uid, collaboratorIds: [], phone: '0040 722 123 456' };
+    await agency.collection('conversations').doc('owner').set(conversation);
+    await agency.collection('conversations').doc('buyer').set({ ...conversation, phone: '0733123456', propertyIds: ['by-url'] });
+    await agency.collection('conversations').doc('private').set({ ...conversation, assigneeId: 'another' });
+    await agency.collection('conversations').doc('owner').collection('messages').doc('message').set({ text: 'Confirm vizionarea.', createdAt: '2026-10-11T07:00:00Z' });
+    const result = await readOwnerProspects(ctx, { listingId: id, scope: 'agency_history' });
+    expect(result.complete).toBe(true);
+    expect(result.rows.map(row => row.id).sort()).toEqual([id, 'by-id', 'by-phone', 'by-url', 'owner'].sort());
+    expect((await readTimeline(ctx, { resource: 'conversations', id: 'owner', limit: 20 })).rows).toEqual(expect.arrayContaining([expect.objectContaining({ text: 'Confirm vizionarea.' })]));
+    await agency.collection('conversations').doc('owner').update({ assigneeId: 'another' });
+    await expect(readTimeline(ctx, { resource: 'conversations', id: 'owner', limit: 20 })).rejects.toMatchObject({ status: 403 });
+    await favorite.update({ ownerPhone: '' });
+    const exactOnly = await readOwnerProspects(ctx, { listingId: id, scope: 'agency_history' });
+    expect(exactOnly).toMatchObject({ complete: true, identityComplete: false });
+    expect(exactOnly.rows.map(row => row.id).sort()).toEqual([id, 'by-id', 'by-url'].sort());
+  });
+  it('continues each history source independently and rejects a cursor after the source reference changes', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), id = randomUUID(); listings.push(id);
+    await agency.collection('ownerListingFavorites').doc(id).set({ ownerPhone: '0722123456' });
+    const source = db.collection('ownerListings').doc(id);
+    await source.set({ publicationStatus: 'ready', isCanonical: true, link: 'https://example.com/original' });
+    const batch = db.batch();
+    for (let i = 0; i < 51; i++) batch.set(agency.collection('properties').doc(`p-${String(i).padStart(2, '0')}`), { ownerPhone: '+40 722 123 456' });
+    await batch.commit();
+    const first = await readOwnerProspects(ctx, { listingId: id, scope: 'agency_history' });
+    expect(first.complete).toBe(false); expect(first.rows).toHaveLength(51);
+    const last = await readOwnerProspects(ctx, { listingId: id, scope: 'agency_history', cursor: first.nextCursor! });
+    expect(last.complete).toBe(true); expect(last.rows.map(row => row.id)).toEqual(['p-50']);
+    await source.update({ link: 'https://example.com/changed' });
+    await expect(readOwnerProspects(ctx, { listingId: id, scope: 'agency_history', cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
+  });
   it('enriches only agency prospects and preserves ownership and revision checks on takeover', async () => {
     const ctx = await fixture(), id = randomUUID(); listings.push(id);
     const source = db.collection('ownerListings').doc(id);

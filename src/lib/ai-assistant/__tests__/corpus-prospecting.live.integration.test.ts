@@ -46,6 +46,11 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
       if (number === 260) {
+        await agency.collection('properties').doc('imported-property').set({ ownerListingId: source.id, title: 'Proprietate importată' });
+        await agency.collection('tasks').doc('property-task').set({ propertyId: 'imported-property', description: 'Pregătire documente cadastrale', status: 'open', dueDate: '2026-10-25', createdAt: '2026-10-10T08:00:00Z' });
+        await agency.collection('conversations').doc('owner-conversation').set({ agencyId: id, assigneeId: id, collaboratorIds: [], phone: '+40 722 123 456', name: 'Alin Matei' });
+        await agency.collection('conversations').doc('owner-conversation').collection('messages').doc('owner-message').set({ text: 'Cheile sunt la recepție.', direction: 'received', createdAt: '2026-10-10T09:00:00Z' });
+        await agency.collection('conversations').doc('private-conversation').set({ agencyId: id, assigneeId: 'another', collaboratorIds: [], phone: '+40 722 123 456', name: 'CANARY_PRIVATE_CONVERSATION' });
         await favorites.doc('related-inactive').set({ ownerPhone: '0040 722 123 456', ownerName: 'Alin Matei', isFavoriteActive: false });
         await agency.collection('aiOutreachCalls').doc('related-call').set({ ownerListingId: 'related-inactive', status: 'completed', summary: 'Proprietarul acceptă vizionări sâmbăta.', endedAt: '2026-10-09T07:00:00.000Z' });
         await agency.collection('aiOutreachCalls').doc('recorded-call').set({ ownerListingId: source.id, status: 'completed', summary: 'Proprietarul acceptă comisionul de 2%.', endedAt: '2026-10-10T07:00:00.000Z' });
@@ -91,11 +96,16 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(rows.map(row => row.id)).toContain('recorded-call');
         expect(rows.map(row => row.id)).toContain('planned-followup');
         expect(rows.map(row => row.id)).toContain('related-call');
+        expect(rows.map(row => row.id)).toContain('property-task');
+        expect(rows.map(row => row.id)).toContain('owner-message');
+        expect(JSON.stringify(planned)).not.toContain('CANARY_PRIVATE_CONVERSATION');
         expect(JSON.stringify(planned)).not.toContain('CANARY_UNRELATED_OWNER');
         expect(planned.text).toContain('2%');
         expect(planned.text).toMatch(/sâmbăt|sambat/i);
+        expect(planned.text).toMatch(/cadastral/i);
+        expect(planned.text).toMatch(/recepți|recepti/i);
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, agencyPhoneLinkedHistoryVerified: true, executionVerified: false, limitation: 'Agency prospect timelines linked by full normalized phone, including inactive prospects. Global listings, imported property interactions and unlinked conversations remain outside this evidence.' };
+        report = { ...report, agencyLinkedHistoryVerified: true, executionVerified: false, limitation: 'Agency prospects, imported property and authorized owner conversation verified. Global listings and owner records without a usable phone or exact import reference remain unresolved.' };
         return;
       }
       if (number === 257) {

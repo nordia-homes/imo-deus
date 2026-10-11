@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Proprietăți importate și conversații în istoricul proprietarului — 0260
+
+`owner_prospects` cu `scope=agency_history` include acum prospectele, proprietățile CRM asociate prin ID/URL exact de import sau telefon complet și conversațiile autorizate cu telefonul proprietarului. O conversație a cumpărătorului nu este inclusă numai pentru că menționează aceeași proprietate. Telefonul lipsă nu împiedică citirea legăturilor exacte, dar rezultatul semnalează identitatea incompletă. Fiecare sursă are cursor independent; continuarea este refuzată dacă telefonul sau referința anunțului se schimbă. Accesul conversației se verifică din nou înainte de citirea mesajelor și referințele sunt păstrate pentru reautorizarea rezultatului.
+
+Proba cu model real a prezentat apelurile din două prospecte, taskul proprietății importate și mesajul din conversația proprietarului, fără a expune conversația altui agent. Dovadă: [OWNER_CRM_HISTORY_PARTIAL_0260.json](evals/OWNER_CRM_HISTORY_PARTIAL_0260.json). Scenariul rămâne parțial pentru înregistrările fără telefon utilizabil/referință exactă, importurile fără telefon legate numai de alt anunț asociat (referințele exacte sunt rezolvate momentan pentru anunțul selectat) și anunțurile din afara prospectării agenției. Totalul rămâne **101/1000**, fără certificare integrală în producție. Versiuni **jarvis-73 / tools 99**.
+
+Verificări trecute: 10 teste Firestore, 32 teste ale planificatorului, proba cu model real, lint, paritate, inventarul corpusului și buildul final cu TypeScript și 227 pagini. Modificările nu au fost publicate în producție.
+
 ## Istoricul prospectelor asociate prin telefon — continuare 0260
 
 `owner_prospects` citește prospectele agenției cu paginare și compară telefonul românesc complet normalizat, inclusiv variantele +40/0040 și prospectele inactive. Nu asociază persoane numai după nume. Cursorul este legat de agenție, prospect și telefonul actual; dacă telefonul se schimbă, continuarea veche este refuzată. Lipsa telefonului valid este declarată explicit, fără un rezultat fals complet.

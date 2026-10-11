@@ -123,7 +123,8 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
   else if (name === 'owner_prospects') {
     const { readOwnerProspects } = await import('./owner-prospects'); data = await readOwnerProspects(ctx, payload);
-    cards.push({ type: 'data', title: 'Prospecte cu același telefon', source: 'ownerListingFavorites', ...data } as AssistantCard);
+    cards.push({ type: 'data', title: 'Înregistrări asociate proprietarului', source: payload.scope === 'agency_history' ? 'owner_history' : 'ownerListingFavorites', ...data } as AssistantCard);
+    refs.push(...data.rows.filter((row: any) => row.resource === 'conversations').map((row: any) => ({ resource: 'conversations' as const, id: row.id })));
   }
   else if (name === 'timeline') {
     const { readTimeline } = await import('./timeline'); data = await readTimeline(ctx, payload);
