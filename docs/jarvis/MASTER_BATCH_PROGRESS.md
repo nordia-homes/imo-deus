@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot prospectare — citire, recomandare și preluare
+
+Scenariile originale **0251–0253** au rezultat verificat cu model real și Firestore local: afișarea prospectelor active fără rezultat de contact înregistrat, recomandarea justificată a primului prospect de sunat și preluarea prospectului selectat. Nu se deduce lipsa oricărui apel anterior din lipsa unui rezultat în CRM și nu se inițiază apeluri pentru o cerere de recomandare.
+
+Citirea listei agenției completează titlul și telefonul din anunțul original publicabil, păstrând prioritatea datelor locale. Preluarea solicitată este executată fără activarea separată a autonomiei, cu protecțiile existente pentru alt agent și revizia înregistrării. Confirmarea vine din rezultatul tranzacției salvate. Reluarea aceleiași cereri nu repetă modificarea.
+
+Versiuni: **jarvis-68 / request-crm-11 / tools 94**. Dovezi: [PROSPECTING_EXECUTION_BATCH_01.json](evals/PROSPECTING_EXECUTION_BATCH_01.json). Total: **95/1000 cu dovezi locale**, **905 fără rezultat local verificat**, fără certificare integrală în producție. Limitarea scenariului 0246 privind duplicatele semantice/manuale rămâne deschisă. Modificările acestui lot nu au fost publicate în producție.
+
+Validare: **2.185 teste locale**, **3 scenarii cu model real**, lint și paritate trecute. Regresiile Firestore existente au trecut (286); testul nou de izolare/revizie a trecut la rerularea celor 4 teste de prospectare după corectarea unei date invalide din fixture. TypeScript și generarea celor 227 de pagini au trecut.
+
 ## Lot proprietari — listă de prospectare executată integral
 
 Lotul **0246–0250** adaugă dovezi locale pentru **0247–0250**, în timp ce **0246 rămâne parțial**: eliminarea importurilor cu referințe exacte funcționează, dar duplicatele semantice/manuale fără referințe nu sunt acoperite. Nici probele 0247, 0248 și 0250 nu certifică acea detecție generală.

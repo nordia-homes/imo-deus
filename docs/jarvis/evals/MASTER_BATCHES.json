@@ -2193,28 +2193,40 @@
     {
       "id": "batch-06",
       "category": "Prospectare, outreach și proprietari",
-      "status": "pending",
+      "status": "in_progress",
       "scenarios": [
         {
           "id": "master-0251",
           "sourceNumber": 251,
           "request": "Arată-mi prospectele necontactate.",
           "requestSha256": "94135ddd4167ef89d63976cbc6250ec56a8a42195d9fa6af66573c460e4745bd",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0252",
           "sourceNumber": 252,
           "request": "Care prospect trebuie sunat primul?",
           "requestSha256": "c4585092381783295d1df705bdbd835b30dfea2d6797a576e569d9af2d541c1f",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0253",
           "sourceNumber": 253,
           "request": "Marchează prospectul acesta ca preluat de mine.",
           "requestSha256": "1808b96cd4fea60fe80d9d26ffd68ab69a9efc968791e4219ebf149ba9363312",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0254",

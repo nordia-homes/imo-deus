@@ -18,6 +18,7 @@ import { actionSchema, searchSchema } from '../contracts';
 import { executeAction } from '../actions';
 import { operationResult } from '../operation-result';
 import { readPlanOutcomes } from '../plan-outcomes';
+import { readResource } from '../access';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecting on Firestore with simulated phone provider', () => {
   let db: Firestore;
@@ -46,6 +47,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('enriches only agency prospects and preserves ownership and revision checks on takeover', async () => {
+    const ctx = await fixture(), id = randomUUID(); listings.push(id);
+    const source = db.collection('ownerListings').doc(id);
+    await source.set({ publicationStatus: 'ready', isCanonical: true, title: 'Cișmigiu', ownerPhone: '0722123456', ownerName: 'Original', privateField: 'not for assistant' });
+    const favorite = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites').doc(id);
+    await favorite.set({ isFavoriteActive: true, ownerName: 'Updated', updatedAt: '2026-10-01T07:00:00.000Z', takenByAgentId: 'other' });
+    const read = await readResource(ctx, { resource: 'ownerListingFavorites', id, limit: 10 });
+    expect(read.rows[0]).toMatchObject({ title: 'Cișmigiu', ownerName: 'Updated', ownerPhone: '0722123456' });
+    expect(read.rows[0]).not.toHaveProperty('privateField');
+    const action = actionSchema.parse({ kind: 'update_prospect', listingId: id, expectedUpdatedAt: '2026-10-01T07:00:00.000Z', patch: { state: 'taken' } });
+    await expect(executeAction(ctx, action, 'other-owner')).rejects.toMatchObject({ status: 403 });
+    await favorite.update({ takenByAgentId: null, updatedAt: '2026-10-02T07:00:00.000Z' });
+    await expect(executeAction(ctx, action, 'stale')).rejects.toMatchObject({ status: 409 });
+    const other = await fixture();
+    await expect(readResource(other, { resource: 'ownerListingFavorites', id, limit: 10 })).rejects.toMatchObject({ status: 404 });
+    await source.update({ publicationStatus: 'draft' });
+    expect((await readResource(ctx, { resource: 'ownerListingFavorites', id, limit: 10 })).rows[0]).not.toHaveProperty('ownerPhone');
+  });
   it('preserves selected order, writes through the existing handler once, then verifies current list membership', async () => {
     const ctx = await fixture(), ids = ['a','b','c'].map(suffix => ctx.agencyId + suffix); listings.push(...ids);
     for (const id of ids) await db.collection('ownerListings').doc(id).set({ scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, title: 'Apartament Drumul Taberei', location: 'Drumul Taberei', price: '120000 EUR', roomsValue: 3, propertyType: 'apartment', transactionType: 'sale', source: 'olx', link: `https://www.olx.ro/d/oferta/${id}.html` });

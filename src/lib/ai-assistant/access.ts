@@ -16,6 +16,12 @@ export async function assistantContext(request: Request): Promise<AssistantConte
   return { ...context, authorization, appOrigin: new URL(request.url).origin };
 }
 export function collectionFor(ctx: AssistantContext, resource: string) { return agencyCollection(ctx.adminDb, ctx.agencyId, resource); }
+async function prospectDetails(ctx: AssistantContext, row: Record<string, any>) {
+  const listing = (await ctx.adminDb.collection('ownerListings').doc(row.id).get()).data();
+  if (!listing || listing.publicationStatus !== 'ready' || listing.isCanonical !== true) return row;
+  const details = Object.fromEntries(['title', 'ownerName', 'ownerPhone', 'phoneExtractionStatus'].map(key => [key, row[key] || listing[key] || null]));
+  return { ...row, ...details };
+}
 export function canReadResource(ctx: Pick<AssistantContext, 'uid' | 'role' | 'agencyId'>, resource: string, row: Record<string, any>) {
   if (resource === 'salesTemplateAudit') return ctx.role === 'admin';
   if (resource === 'assistantAutomations') return row.actorId === ctx.uid;
@@ -51,7 +57,7 @@ export async function getResource(ctx: AssistantContext, resource: string, id: s
   if (!canReadResource(ctx, resource, row)) throw new CommunicationError('Nu ai acces la această înregistrare.', 403);
   if (resource === 'crmEvents' && !(await eventReferencesAllowed(ctx, row))) throw new CommunicationError('Acces revocat la entitatea din istoric.', 403);
   if (resource === 'assistantAutomations' && (row as Record<string, any>).automation?.type === 'whatsapp_template') await getResource(ctx, 'conversations', (row as Record<string, any>).automation.conversationId);
-  return row as Record<string, any>;
+  return resource === 'ownerListingFavorites' ? prospectDetails(ctx, row) : row;
 }
 export async function readResource(ctx: AssistantContext, input: AssistantRead) {
   if (input.resource === 'profile' || input.resource === 'notificationPreferences') return { rows: [await getResource(ctx, input.resource, input.id || ctx.uid)], complete: true, nextCursor: null };
@@ -86,7 +92,7 @@ export async function readResource(ctx: AssistantContext, input: AssistantRead) 
       if (!canReadResource(ctx, input.resource, row)) continue;
       if (input.resource === 'crmEvents' && !(await eventReferencesAllowed(ctx, row))) continue;
       if (input.resource === 'assistantAutomations' && (row as Record<string, any>).automation?.type === 'whatsapp_template' && !(await referencesAllowed(ctx, [{ resource: 'conversations', id: (row as Record<string, any>).automation.conversationId }]))) continue;
-      const safe = safeData(row);
+      const safe = safeData(input.resource === 'ownerListingFavorites' ? await prospectDetails(ctx, row) : row);
       if (input.search && !matchesCrmSearch(safe, input.search)) continue;
       rows.push(safe);
       if (rows.length === input.limit) break;

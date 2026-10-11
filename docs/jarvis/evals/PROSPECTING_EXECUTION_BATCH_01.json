@@ -1,0 +1,613 @@
+{
+  "scope": "Original prompts 0251–0253, actual model and application planner/executor against local Firestore. Agency favorites are enriched from ready canonical source listings; local owner metadata takes precedence. Takeover is saved and confirmed, replay is idempotent. No production, voice or external calling certification.",
+  "limitations": [
+    "No proof for all variants or all 1000 scenarios.",
+    "Uncontacted means no contact result recorded, not proof that no call ever happened.",
+    "First-call advice is justified from available data, not an invented commercial score.",
+    "0246 semantic/manual duplicate detection remains incomplete."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0251",
+      "prompt": "Arată-mi prospectele necontactate.",
+      "versions": {
+        "prompt": "jarvis-68",
+        "routing": "luna-first-2",
+        "policy": "request-crm-11",
+        "tools": "94",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T08:48:22.827Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Prospecte active fără rezultat de contact înregistrat (nu înseamnă că nu au fost sunate vreodată):\n\n- **Prospect Alfa** — Alin Matei — 0722123456. Telefon disponibil.\n- **Prospect Beta** — Dan Popa — telefon indisponibil în înregistrare.\n\nAm exclus prospectele inactive și pe cele cu rezultat înregistrat, inclusiv „follow_up” și „negative”. Am verificat toate cele 5 înregistrări disponibile.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "ownerListingFavorites",
+          "source": "ownerListingFavorites",
+          "rows": [
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "5a79c0b6-4d84-4e5b-bd98-c019c8f62791",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:22.826Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "ownerName": "Alin Matei",
+              "id": "5a79c0b6-4d84-4e5b-bd98-c019c8f62791-alfa",
+              "title": "Prospect Alfa",
+              "ownerPhone": "0722123456",
+              "phoneExtractionStatus": "available"
+            },
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "5a79c0b6-4d84-4e5b-bd98-c019c8f62791",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:22.826Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Beta",
+              "ownerName": "Dan Popa",
+              "ownerPhone": "",
+              "phoneExtractionStatus": "awaiting_connection",
+              "id": "beta"
+            },
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "5a79c0b6-4d84-4e5b-bd98-c019c8f62791",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:22.826Z",
+              "contactOutcome": "follow_up",
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Delta",
+              "contactOutcomeAt": "2026-10-01T07:00:00.000Z",
+              "id": "delta"
+            },
+            {
+              "isFavoriteActive": false,
+              "reservedByAgentId": "5a79c0b6-4d84-4e5b-bd98-c019c8f62791",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:22.826Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Epsilon",
+              "id": "epsilon"
+            },
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "5a79c0b6-4d84-4e5b-bd98-c019c8f62791",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:22.826Z",
+              "contactOutcome": "negative",
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Gamma",
+              "contactOutcomeAt": "2026-10-01T07:00:00.000Z",
+              "id": "gamma"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 5,
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13778,
+              "outputTokens": 35,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 13775,
+              "estimated": false
+            },
+            "costUsd": 0.001739675,
+            "latencyMs": 1791,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14544,
+              "outputTokens": 92,
+              "cachedTokens": 13775,
+              "cacheWriteTokens": 766,
+              "estimated": false
+            },
+            "costUsd": 0.0002798,
+            "latencyMs": 2147,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14661,
+              "outputTokens": 127,
+              "cachedTokens": 14541,
+              "cacheWriteTokens": 117,
+              "estimated": false
+            },
+            "costUsd": 0.000223835,
+            "latencyMs": 4038,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 839,
+            "version": "94",
+            "argumentsHash": "9a082cda24b202b638907a075be25ff736063cf75ea3d18ab543e9fbef184745"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 16,
+            "version": "94",
+            "argumentsHash": "9445910f7694e5db7504985b71fe0ac1a9081078427d934098fd64556845737e"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 8935
+      },
+      "toolCalls": [
+        {
+          "id": "call_uSyeLcBMNbxyaRE2ZZ5Tz0Tb",
+          "name": "read",
+          "arguments": "{\"resource\":\"ownerListingFavorites\",\"id\":null,\"search\":null,\"cursor\":null,\"limit\":100}"
+        },
+        {
+          "id": "call_ya4q5pY3AbBl6TYtTkPOKmYx",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"prospects-necontactate\",\"sourceQuote\":\"Arată-mi prospectele necontactate.\",\"description\":\"Afișează prospectele active fără rezultat și fără dată de contact înregistrate.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_uSyeLcBMNbxyaRE2ZZ5Tz0Tb\"]}]}"
+        }
+      ],
+      "verification": "Original question, real model, current agency prospects. Uncontacted records distinguished from follow-up, refusal and removed entries; advice does not initiate a call."
+    },
+    {
+      "scenarioId": "master-0252",
+      "prompt": "Care prospect trebuie sunat primul?",
+      "versions": {
+        "prompt": "jarvis-68",
+        "routing": "luna-first-2",
+        "policy": "request-crm-11",
+        "tools": "94",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T08:48:33.955Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Aș suna primul **Prospect Alfa** (Alin Matei), la **0722123456**. Este activ și rezervat pentru tine, are telefon disponibil și nu are rezultat de contact înregistrat. Nu înseamnă că nu a fost sunat vreodată—doar că nu există un rezultat consemnat în CRM.\n\nProspect Beta este activ, dar nu are telefon utilizabil înregistrat. Delta are rezultat „follow_up”, Gamma are rezultat negativ, iar Epsilon este inactiv; nu le-aș prioritiza înaintea lui Alfa.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "ownerListingFavorites",
+          "source": "ownerListingFavorites",
+          "rows": [
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "0e55579f-5f80-463d-bbea-dc1ab458cac7",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:33.955Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "ownerName": "Alin Matei",
+              "id": "0e55579f-5f80-463d-bbea-dc1ab458cac7-alfa",
+              "title": "Prospect Alfa",
+              "ownerPhone": "0722123456",
+              "phoneExtractionStatus": "available"
+            },
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "0e55579f-5f80-463d-bbea-dc1ab458cac7",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:33.955Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Beta",
+              "ownerName": "Dan Popa",
+              "ownerPhone": "",
+              "phoneExtractionStatus": "awaiting_connection",
+              "id": "beta"
+            },
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "0e55579f-5f80-463d-bbea-dc1ab458cac7",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:33.955Z",
+              "contactOutcome": "follow_up",
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Delta",
+              "contactOutcomeAt": "2026-10-01T07:00:00.000Z",
+              "id": "delta"
+            },
+            {
+              "isFavoriteActive": false,
+              "reservedByAgentId": "0e55579f-5f80-463d-bbea-dc1ab458cac7",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:33.955Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Epsilon",
+              "id": "epsilon"
+            },
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "0e55579f-5f80-463d-bbea-dc1ab458cac7",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:33.955Z",
+              "contactOutcome": "negative",
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "title": "Prospect Gamma",
+              "contactOutcomeAt": "2026-10-01T07:00:00.000Z",
+              "id": "gamma"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 5,
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13771,
+              "outputTokens": 35,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 13768,
+              "estimated": false
+            },
+            "costUsd": 0.0017388,
+            "latencyMs": 1687,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14512,
+              "outputTokens": 114,
+              "cachedTokens": 13768,
+              "cacheWriteTokens": 741,
+              "estimated": false
+            },
+            "costUsd": 0.000287605,
+            "latencyMs": 2815,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14651,
+              "outputTokens": 137,
+              "cachedTokens": 14509,
+              "cacheWriteTokens": 139,
+              "estimated": false
+            },
+            "costUsd": 0.000231265,
+            "latencyMs": 3013,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 116,
+            "version": "94",
+            "argumentsHash": "9a082cda24b202b638907a075be25ff736063cf75ea3d18ab543e9fbef184745"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 28,
+            "version": "94",
+            "argumentsHash": "e10672db87bd4221d50f48d047862c9c0fc8fb6c3572bd78a3e6fee21a00aa53"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 7709
+      },
+      "toolCalls": [
+        {
+          "id": "call_yK5VgE2Y4Zx4LQvVLRRXJXXo",
+          "name": "read",
+          "arguments": "{\"resource\":\"ownerListingFavorites\",\"id\":null,\"search\":null,\"cursor\":null,\"limit\":100}"
+        },
+        {
+          "id": "call_VIpLdN65VE6TxHtW5Wyz8Wlq",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Care prospect trebuie sunat primul?\",\"description\":\"Recomandă primul prospect de sunat dintre prospectele disponibile, active, necontactate fără rezultat înregistrat, cu telefon utilizabil și fără refuz; fără a iniția apelul.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_yK5VgE2Y4Zx4LQvVLRRXJXXo\"]}]}"
+        }
+      ],
+      "verification": "Original question, real model, current agency prospects. Uncontacted records distinguished from follow-up, refusal and removed entries; advice does not initiate a call."
+    },
+    {
+      "scenarioId": "master-0253",
+      "prompt": "Marchează prospectul acesta ca preluat de mine.",
+      "versions": {
+        "prompt": "jarvis-68",
+        "routing": "luna-first-2",
+        "policy": "request-crm-11",
+        "tools": "94",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T08:48:41.938Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "ownerListingFavorites",
+          "source": "ownerListingFavorites",
+          "rows": [
+            {
+              "isFavoriteActive": true,
+              "reservedByAgentId": "cde6be41-716f-4ba5-a56f-2afa1eaeb76f",
+              "reservedByAgentName": "Agent local",
+              "reservedAt": "2026-10-11T08:48:41.938Z",
+              "contactOutcome": null,
+              "collaborationStatus": null,
+              "takenByAgentId": null,
+              "notes": "",
+              "updatedAt": "2026-10-01T07:00:00.000Z",
+              "ownerName": "Alin Matei",
+              "id": "cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa",
+              "title": "Prospect Alfa",
+              "ownerPhone": "0722123456",
+              "phoneExtractionStatus": "available"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [
+        {
+          "kind": "update_prospect",
+          "listingId": "cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa",
+          "patch": {
+            "state": "taken"
+          },
+          "expectedUpdatedAt": "2026-10-01T07:00:00.000Z"
+        }
+      ],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13976,
+              "outputTokens": 59,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 13973,
+              "estimated": false
+            },
+            "costUsd": 0.0017764249999999999,
+            "latencyMs": 2288,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14240,
+              "outputTokens": 55,
+              "cachedTokens": 13973,
+              "cacheWriteTokens": 264,
+              "estimated": false
+            },
+            "costUsd": 0.00020053,
+            "latencyMs": 1658,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14322,
+              "outputTokens": 76,
+              "cachedTokens": 14237,
+              "cacheWriteTokens": 82,
+              "estimated": false
+            },
+            "costUsd": 0.00019092000000000002,
+            "latencyMs": 2207,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 14423,
+              "outputTokens": 52,
+              "cachedTokens": 14319,
+              "cacheWriteTokens": 101,
+              "estimated": false
+            },
+            "costUsd": 0.000182115,
+            "latencyMs": 2370,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 44,
+            "version": "94",
+            "argumentsHash": "9abef246760336595c4df76babfc72dfe5a2660c38a457dc003a1c0b229fc1f6"
+          },
+          {
+            "name": "update_prospect",
+            "status": "success",
+            "latencyMs": 58,
+            "version": "94",
+            "argumentsHash": "51d5426b4a0f95faaad8c1cf7944a35bd9ed1fe4419b1addfae0fda837af18af"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 22,
+            "version": "94",
+            "argumentsHash": "3b8a0df5c3b207f062f9b805db88bc9fb4acaf0e540bae6d60ca7c16068eddd2"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 8756
+      },
+      "toolCalls": [
+        {
+          "id": "call_pNtefAGAuoJ0sZ88u6FB9hYs",
+          "name": "read",
+          "arguments": "{\"resource\":\"ownerListingFavorites\",\"id\":\"cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa\",\"search\":null,\"cursor\":null,\"limit\":10}"
+        },
+        {
+          "id": "call_uapkdCmUY9BDuj9DURRaOel1",
+          "name": "update_prospect",
+          "arguments": "{\"payload\":\"{\\\"listingId\\\":\\\"cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa\\\",\\\"patch\\\":{\\\"state\\\":\\\"taken\\\"}}\"}"
+        },
+        {
+          "id": "call_LGnUtjfv02R4ocwuK6LwJDyr",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"mark-prospect-taken\",\"sourceQuote\":\"Marchează prospectul acesta ca preluat de mine.\",\"description\":\"Marchează prospectul selectat ca preluat de agentul curent.\",\"resolution\":\"planned\",\"steps\":[1],\"evidenceCallIds\":[]}] }"
+        }
+      ],
+      "execution": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "update_prospect",
+            "result": {
+              "listingId": "cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa",
+              "link": "/owner-listings/favorite",
+              "executionState": "succeeded",
+              "state": "taken",
+              "takenByAgentId": "cde6be41-716f-4ba5-a56f-2afa1eaeb76f",
+              "updatedAt": "2026-10-11T08:48:50.869Z",
+              "mutationRevision": {
+                "resource": "ownerListingFavorites",
+                "id": "cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa",
+                "before": "2026-10-01T07:00:00.000Z",
+                "after": "2026-10-11T08:48:50.869Z"
+              }
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Prospect preluat. ID: cde6be41-716f-4ba5-a56f-2afa1eaeb76f-alfa.",
+      "verification": "Selected record read and taken by current agent, confirmed from executor receipt; idempotent replay, unrelated records unchanged."
+    }
+  ]
+}

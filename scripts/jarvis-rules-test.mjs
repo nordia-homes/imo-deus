@@ -23,6 +23,7 @@ if (!runtime) throw new Error('Java runtime missing');
 const javaHome = path.join(directory, runtime);
 let command = `"${process.execPath}" "${path.resolve('node_modules/vitest/vitest.mjs')}" run --maxWorkers=2 --hookTimeout=60000 src/lib/ai-assistant/__tests__/media-pipeline.integration.test.ts src/lib/ai-assistant/__tests__/tiktok-schedule.integration.test.ts src/lib/ai-assistant/__tests__/outbound-recipient.integration.test.ts src/lib/ai-assistant/__tests__/matching-delivery.integration.test.ts src/lib/ai-assistant/__tests__/prospecting-workflow.integration.test.ts src/lib/ai-assistant/__tests__/reconciliation.integration.test.ts src/lib/ai-assistant/__tests__/media-server.integration.test.ts src/lib/ai-assistant/__tests__/media-storage.integration.test.ts src/lib/ai-assistant/__tests__/property-assets-concurrency.integration.test.ts src/lib/ai-assistant/__tests__/sales-query.integration.test.ts src/lib/ai-assistant/__tests__/jobs-concurrency.integration.test.ts src/lib/ai-assistant/__tests__/calendar-concurrency.integration.test.ts src/lib/ai-assistant/__tests__/viewing-whatsapp.integration.test.ts src/lib/ai-assistant/__tests__/notification-sweep.integration.test.ts src/lib/ai-assistant/__tests__/firestore-rules.test.ts src/lib/communications/__tests__/firestore-rules.test.ts src/lib/collaboration/firestore-rules.test.ts src/lib/tiktok-ads/__tests__/firestore-rules.integration.test.ts src/lib/property-removal/__tests__/firestore-rules.integration.test.ts`;
 if (process.argv.includes('--calendar-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/calendar-concurrency.integration.test.ts';
+if (process.argv.includes('--prospecting-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/prospecting-workflow.integration.test.ts';
 if (process.argv.includes('--viewing-live')) {
   process.env.JARVIS_LIVE_VIEWING_EVAL = 'true';
   command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/viewing-command.live.integration.test.ts';
@@ -54,6 +55,10 @@ if (process.argv.includes('--corpus-owner-search-live')) {
   if (from) process.env.JARVIS_OWNER_CASE_FROM = from.split('=')[1];
   if (!process.argv.includes('--with-regressions')) command = command.slice(0, command.indexOf(' src/lib/'));
   command += ' src/lib/ai-assistant/__tests__/corpus-owner-search.live.integration.test.ts';
+}
+if (process.argv.includes('--corpus-prospecting-live')) {
+  process.env.JARVIS_PROSPECTING_LIVE = 'true';
+  command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/corpus-prospecting.live.integration.test.ts';
 }
 const child = spawn(process.execPath, ['node_modules/firebase-tools/lib/bin/firebase.js', 'emulators:exec', '--project', 'demo-imodeus-ai-assistant', '--only', 'firestore,storage', command], { stdio: 'inherit', windowsHide: true, env: { ...process.env, JAVA_HOME: javaHome, PATH: [path.join(javaHome, 'bin'), path.dirname(process.execPath), path.join(process.env.SystemRoot || 'C:/Windows', 'System32'), process.env.PATH].join(path.delimiter) } });
 process.exitCode = await new Promise(resolve => child.on('exit', code => resolve(code || 0)));

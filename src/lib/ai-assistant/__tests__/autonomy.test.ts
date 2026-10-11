@@ -12,6 +12,14 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  it('takes the requested prospect without opt-in but respects previews and negation', async () => {
+    const context = ctx(); (context as any).policy = undefined;
+    const action: AssistantAction = { kind: 'update_prospect', listingId: 'p', patch: { state: 'taken' } };
+    expect((await runSafePrefix(context, 'take', [action], 'Marchează prospectul acesta ca preluat de mine.')).results).toHaveLength(1);
+    for (const prompt of ['Nu marca prospectul ca preluat.', 'Nu prelua prospectul.', 'Arată cum pot prelua prospectul.']) {
+      expect((await runSafePrefix(context, 'preview', [action], prompt)).results).toHaveLength(0);
+    }
+  });
   it('executes every requested prospecting addition without opt-in and keeps other actions gated', async () => {
     const context = ctx(); (context as any).policy = undefined;
     vi.stubEnv('JARVIS_AUTONOMOUS', 'false');

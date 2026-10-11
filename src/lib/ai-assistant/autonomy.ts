@@ -8,6 +8,7 @@ import { featureFlags } from './skills';
 const SAFE_KINDS = new Set(['delete_task', 'create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
 // These CRM commands are authorized by the agent's request, without a saved opt-in.
 const CRM_VERBS: Record<string, string> = {
+  update_prospect: 'marcheaza|preia|actualizeaza|modifica|schimba|seteaza|corecteaza|adauga|noteaza|update',
   create_contact: 'creeaza|creaza|adauga|inregistreaza|programeaza|create|add|schedule',
   schedule_viewing: 'programeaza|reprogrameaza|adauga|creeaza|creaza|schedule|create|add',
   update_viewing: 'muta|reprogrameaza|replanifica|marcheaza|anuleaza|actualizeaza|modifica|adauga|noteaza|update|cancel|reschedule',

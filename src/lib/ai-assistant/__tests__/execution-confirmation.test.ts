@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest';
 import { viewingConfirmation, executionConfirmation } from '../execution-confirmation';
+it('confirms prospect takeover only from a successful saved receipt', () => {
+  expect(executionConfirmation([{ kind: 'update_prospect', result: { listingId: 'p', executionState: 'succeeded', state: 'taken', takenByAgentId: 'u' } }])).toBe('Prospect preluat. ID: p.');
+  expect(executionConfirmation([{ kind: 'update_prospect', result: { listingId: 'p', state: 'taken' } }])).toBe('');
+  expect(executionConfirmation([{ kind: 'update_prospect', result: { listingId: 'p', executionState: 'succeeded', state: 'reserved' } }])).not.toContain('preluat');
+});
 it('confirms task associations only from saved relation receipts', () => {
   const text = executionConfirmation([{ kind: 'update_task', result: { taskId: 't', propertyId: 'p', propertyTitle: 'Cișmigiu' } }]);
   expect(text).toContain('Proprietate: Cișmigiu.');

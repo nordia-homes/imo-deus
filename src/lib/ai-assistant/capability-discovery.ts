@@ -21,6 +21,7 @@ const aliases: Record<string, string> = {
 };
 const ignored = new Set(['si', 'sa', 'de', 'in', 'din', 'pentru', 'care', 'cum', 'vreau', 'arata', 'toate', 'mi', 'un', 'o', 'the', 'a']);
 const inflections: Record<string, string> = Object.fromEntries(Object.entries({
+  prospect: ['prospectul', 'prospectului', 'prospecte', 'prospectele', 'prospectelor'],
   task: ['taskul', 'taskurile', 'taskului', 'taskurilor', 'tasks'],
   sarcina: ['sarcini', 'sarcinile', 'sarcinii', 'sarcinilor'],
   vizionare: ['vizionarea', 'vizionari', 'vizionarile', 'vizionarii', 'vizionarilor'],
