@@ -2,10 +2,9 @@ import type { AssistantContext } from './access';
 import { collectionFor } from './access';
 import { normalized, type AssistantSearch } from './contracts';
 import { resolveAgencyOwnerListingScope, getOwnerListingScope } from '@/lib/owner-listings/scope';
-import { parseOptionalNumber } from '@/lib/owner-listings/utils';
 import type { Agency } from '@/lib/types';
 import { CommunicationError } from '@/lib/communications/server';
-import { OWNER_SEARCH_VERSION, ownerPriceCurrency, parseOwnerPrice, ownerZoneKey } from '@/lib/owner-listings/search-index';
+import { OWNER_SEARCH_VERSION, ownerRooms, ownerPriceCurrency, parseOwnerPrice, ownerZoneKey } from '@/lib/owner-listings/search-index';
 import { createHash } from 'node:crypto';
 import { constructionYearEvidence, constructionYearFilterSatisfied, matchesConstructionYear, validateSearchCriteria, searchTransaction, RENT_SEARCH_CEILING_EUR } from './search-criteria';
 import { importedListingIds } from './imported-listings';
@@ -21,9 +20,9 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   const location = normalized(owners ? row.location : `${row.zone || ''} ${row.location || ''} ${row.address || ''}`);
   // A zone mentioned in marketing prose is not evidence of the property's location.
   if (input.zone && !(owners ? (` ${ownerZoneKey(row.location)} `).includes(` ${ownerZoneKey(input.zone)} `) : location.includes(normalized(input.zone)))) return false;
-  const rooms = Number(owners ? row.roomsValue ?? parseOptionalNumber(row.rooms) : row.rooms);
+  const rooms = owners ? ownerRooms(row) : Number(row.rooms);
   if (input.rooms !== undefined && rooms !== input.rooms) return false;
-  if (input.roomsAny && !input.roomsAny.includes(rooms)) return false;
+  if (input.roomsAny && (rooms === null || !input.roomsAny.includes(rooms))) return false;
   if (!matchesConstructionYear(row, input)) return false;
   const type = normalized(row.propertyType);
   const aliases: Record<string, string[]> = { apartment: ['apartment', 'apartament', 'garsoniera'], house: ['house', 'casa', 'vila'], land: ['land', 'teren'], commercial: ['commercial', 'comercial', 'birou'] };
@@ -104,7 +103,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
       if (input.source === 'owners' && listingCurrency(row.price) === 'unknown') uncertainCurrency++;
       if (!searchMatches(row, input)) continue;
       if (imported.has(doc.id)) { excludedImported++; continue; }
-      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearFilterSatisfied(row, input) === true : null, id: doc.id, title: row.title || '', transactionType: row.transactionType || null, location: row.location || row.zone || '', price: row.price, rooms: row.roomsValue ?? row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
+      rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearFilterSatisfied(row, input) === true : null, id: doc.id, title: row.title || '', transactionType: row.transactionType || null, location: row.location || row.zone || '', price: row.price, rooms: input.source === 'owners' ? ownerRooms(row) : row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
       if (rows.length === input.limit) break;
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }

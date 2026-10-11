@@ -14,8 +14,8 @@ import { AgentBudget } from '../budget';
 import { VERSIONS } from '../models';
 import type { AssistantContext } from '../access';
 
-const cases = Array.from({ length: 15 }, (_, index) => 201 + index);
-for (const number of cases) {
+const cases = Array.from({ length: 20 }, (_, index) => 201 + index);
+for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM || number >= Number(process.env.JARVIS_OWNER_CASE_FROM))) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   it.skipIf(process.env.JARVIS_OWNER_SEARCH_LIVE !== 'true')(`${scenarioId}: actual model finds only the requested owner listings`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
@@ -26,13 +26,14 @@ for (const number of cases) {
     const listings = db.collection('ownerListings');
     const ctx = { uid: id, agencyId: id, role: 'agent', adminDb: db } as unknown as AssistantContext;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera' } as Record<number, string>)[number] || 'Titan';
-    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000 } as Record<number, number>)[number];
-    const requestedRooms = [202, 203, 211, 212, 213, 214].includes(number);
-    const apartmentOnly = [202, 203, 215].includes(number);
+    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera', 216: 'Aviației', 217: 'Drumul Taberei', 218: 'Berceni' } as Record<number, string>)[number] || 'Titan';
+    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000, 216: 250000, 217: 120000, 218: 140000, 219: 200000, 220: 80000 } as Record<number, number>)[number];
+    const priceMin = ({ 216: 150000, 217: 80000 } as Record<number, number>)[number];
+    const requestedRooms = [202, 203, 211, 212, 213, 214, 217, 218, 219, 220].includes(number);
+    const apartmentOnly = [202, 203, 215, 220].includes(number);
     const otherZone = zone === 'Militari' ? 'Titan' : 'Militari';
-    const rooms = [203, 212, 214].includes(number) ? 3 : 2;
-    const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone === 'Aviației' ? 'Aviatiei' : zone === 'Drumul Taberei' ? 'Drumul-Taberei' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: '120000 EUR', lastVerifiedAt: new Date().toISOString() };
+    const rooms = number === 220 ? 1 : number === 219 ? 4 : [203, 212, 214, 218].includes(number) ? 3 : 2;
+    const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone === 'Aviației' ? 'Aviatiei' : zone === 'Drumul Taberei' ? 'Drumul-Taberei' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: `${priceMin || (number === 220 ? 70000 : 120000)} EUR`, lastVerifiedAt: new Date().toISOString() };
     const fixture = new Map<string, Record<string, unknown>>();
     const add = (key: string, patch: Record<string, unknown>) => fixture.set(`${id}-${key}`, { ...base, title: `Anunț ${key}`, link: `https://example.test/listing/${key}`, ...patch });
     // Matching records are beyond the first backend page, with adverse records in front.
@@ -54,6 +55,14 @@ for (const number of cases) {
       add('b-over-budget', { price: `${priceMax + 0.01} EUR` });
       add('b-ron', { price: '100000 RON' });
       add('b-unknown-currency', { price: '100000' });
+    }
+    if (priceMin) add('b-below-budget', { price: `${priceMin - 0.01} EUR` });
+    if (number === 220) {
+      // Published structured labels, not a studio inferred from marketing prose.
+      Object.assign(fixture.get(`${id}-z-sale`)!, { roomsValue: null, rooms: 'garsonieră', title: 'Garsonieră Titan' });
+      Object.assign(fixture.get(`${id}-z-fraction`)!, { roomsValue: 0, rooms: 'o cameră' });
+      add('b-ambiguous-rooms', { roomsValue: null, rooms: '1-2', price: '70000 EUR' });
+      add('b-title-studio', { roomsValue: 2, title: 'Garsonieră în titlu', price: '70000 EUR' });
     }
     const expected = [...fixture.keys()].filter(key => key.includes('-z-')).sort();
     const budget = new AgentBudget();
@@ -83,6 +92,7 @@ for (const number of cases) {
       if (priceMax) {
         const compactText = planned.text.toLowerCase().replace(/[\s.,€*]/g, '');
         expect(compactText).toContain(String(priceMax));
+        if (priceMin) expect(compactText).toContain(String(priceMin));
         expect(compactText).not.toMatch(/strictmaimic|nuseîncadrează|nuseincadreaza/);
         expect(compactText).not.toMatch(new RegExp('exclus[^;!?]{0,100}' + priceMax));
         expect(rows.every(row => row.transactionType === 'sale')).toBe(true);

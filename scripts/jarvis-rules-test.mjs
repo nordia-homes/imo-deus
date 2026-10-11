@@ -50,6 +50,8 @@ if (process.argv.includes('--corpus-calendar-live')) {
 if (process.argv.includes('--viewing-replies')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/viewing-whatsapp.integration.test.ts src/lib/ai-assistant/__tests__/firestore-rules.test.ts';
 if (process.argv.includes('--corpus-owner-search-live')) {
   process.env.JARVIS_OWNER_SEARCH_LIVE = 'true';
+  const from = process.argv.find(arg => /^--owner-from=\d+$/.test(arg));
+  if (from) process.env.JARVIS_OWNER_CASE_FROM = from.split('=')[1];
   if (!process.argv.includes('--with-regressions')) command = command.slice(0, command.indexOf(' src/lib/'));
   command += ' src/lib/ai-assistant/__tests__/corpus-owner-search.live.integration.test.ts';
 }

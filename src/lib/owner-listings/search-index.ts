@@ -1,6 +1,6 @@
 // Projection stored on the listing itself, in the SAME write as source changes.
 // Firestore maintains its native indexes atomically. No second search database.
-export const OWNER_SEARCH_VERSION = 2;
+export const OWNER_SEARCH_VERSION = 3;
 export function parseOwnerPrice(value: unknown): number | null {
   const text = String(value ?? '').trim();
   if (/\/\s*(?:mp|m2|m²)/i.test(text)) return null;
@@ -20,10 +20,22 @@ export function ownerPriceCurrency(value: unknown): 'EUR' | 'RON' | 'unknown' {
   return 'unknown';
 }
 export function ownerZoneKey(value: unknown) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+export function ownerRooms(row: { roomsValue?: unknown; rooms?: unknown; propertyType?: unknown }): number | null {
+  for (const raw of [row.roomsValue, row.rooms]) {
+    const text = String(raw ?? '').trim();
+    if (!text || text === '0') continue;
+    const label = ownerZoneKey(text);
+    if (/^(?:garsoniera|o camera|una camera)$/.test(label)) return 1;
+    const match = /^(\d{1,2})(?:[.,]0)?(?:\s*(?:camera|camere|rooms?))?$/.exec(text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase());
+    if (match && Number(match[1]) >= 1 && Number(match[1]) <= 30) return Number(match[1]);
+    return null; // An ambiguous interval is not an exact number of rooms.
+  }
+  return ownerZoneKey(row.propertyType) === 'garsoniera' ? 1 : null;
+}
 export function ownerSearchFields(row: { price?: unknown; priceValue?: unknown; location?: unknown; propertyType?: unknown; transactionType?: unknown; rooms?: unknown; roomsValue?: unknown }) {
   const words = ownerZoneKey(row.location).split(' ').filter(Boolean).slice(0,24), zones = new Set<string>();
   for (let start=0;start<words.length;start++) for(let length=1;length<=4&&start+length<=words.length;length++) zones.add(words.slice(start,start+length).join(' '));
-  const rawType=ownerZoneKey(row.propertyType), rawTransaction=ownerZoneKey(row.transactionType), roomText=String(row.roomsValue??row.rooms??'');
+  const rawType=ownerZoneKey(row.propertyType), rawTransaction=ownerZoneKey(row.transactionType);
   const searchType=/apart|garson/.test(rawType)?'apartment':/casa|house|vila/.test(rawType)?'house':/teren|land/.test(rawType)?'land':/comercial|commercial|birou|office/.test(rawType)?'commercial':'unknown';
-  return { searchVersion: OWNER_SEARCH_VERSION, searchCurrency: ownerPriceCurrency(row.price), searchPrice: parseOwnerPrice(row.price), searchLocation: ownerZoneKey(row.location), searchZones: [...zones], searchType, searchTransaction: /sale|vanz|sell/.test(rawTransaction)?'sale':/rent|inchir/.test(rawTransaction)?'rent':'unknown', searchRooms: Number(roomText.match(/\d+/)?.[0]||0) };
+  return { searchVersion: OWNER_SEARCH_VERSION, searchCurrency: ownerPriceCurrency(row.price), searchPrice: parseOwnerPrice(row.price), searchLocation: ownerZoneKey(row.location), searchZones: [...zones], searchType, searchTransaction: /sale|vanz|sell/.test(rawTransaction)?'sale':/rent|inchir/.test(rawTransaction)?'rent':'unknown', searchRooms: ownerRooms(row) ?? 0 };
 }

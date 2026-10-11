@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — intervale de preț și garsoniere
+
+Scenariile originale **0216–0220** au trecut cu model real și Firestore local, prompt jarvis-58 / tools 87: proprietăți în Aviației între 150.000–250.000 EUR, două camere în Drumul Taberei între 80.000–120.000, trei camere în Berceni, patru camere în Titan și garsoniere în Titan până la 80.000. Raport: [OWNER_SEARCH_EXECUTION_BATCH_03.json](evals/OWNER_SEARCH_EXECUTION_BATCH_03.json).
+
+Ambele limite ale intervalului sunt incluse; rezultatele cu un cent în afara intervalului, închirierile la aceste bugete, monedele necunoscute și anunțurile cu alt număr de camere sunt excluse. Garsonierele declarate în câmpurile structurate prin „garsonieră” sau „o cameră” sunt interpretate ca o cameră; mențiunea din titlu nu schimbă două camere în una. Intervalele ambigue precum „1–2” rămân necunoscute, nu devin un număr exact. Același parser furnizează filtrul, numărul afișat și proiecția indexată.
+
+Proiecția de căutare trece la versiunea 3. Până când toate anunțurile eligibile au noua proiecție, serverul folosește scanarea paginată a datelor actuale, cu limitele și cursorul existente, în loc să omită anunțurile din indexul vechi. Testele acoperă atât căutarea indexată, cât și revenirea la scanare. La publicare, scriptul existent `scripts/backfill-owner-search-index.mjs` poate actualiza proiecțiile la versiunea 3 (dry-run implicit, apoi `--apply`, cu protecție pentru modificări concurente). Nu a fost executat pe producție în acest lot.
+
+Validare: **2.177 teste locale trecute**, **5 comenzi originale cu model real**, lint, paritate și build final (TypeScript, 227 pagini) trecute. Probele verifică exact rezultatele, linkurile sursă, răspunsul final și lipsa modificărilor în anunțuri. Nu au fost trimise mesaje sau folosite datele reale ale agențiilor. Total: **63/1000 scenarii originale cu dovezi locale folosind model real**, **937 fără asemenea dovezi**; cele 58 anterioare nu au fost rerulate cu model real în acest lot. Nu este certificare de producție sau a colectării de pe portalurile externe. Lotul nu este publicat în producție.
+
 ## Lot proprietari — zone și bugete, regula comercială din 11 octombrie 2026
 
 Scenariile originale **0206–0215** au trecut cu model real și Firestore local; **0201–0205** au fost rerulate ca regresie. Raport: [OWNER_SEARCH_EXECUTION_BATCH_02.json](evals/OWNER_SEARCH_EXECUTION_BATCH_02.json), prompt jarvis-57 / tools 86. Sunt acoperite Pipera, Aviației, Drumul Taberei, Berceni, Militari și cererile cu buget din Titan, Cișmigiu, Floreasca și Pipera.

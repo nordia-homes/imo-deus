@@ -21,6 +21,25 @@ const context = (rows: Record<string, any>[]) => ({ agencyId: 'a', uid: 'agent',
 const listing = { publicationStatus: 'ready', isCanonical: true, scopeKey: 'bucuresti-ilfov', price: '120.000 €', priceValue: 120000, roomsValue: 2, propertyType: 'apartment', transactionType: 'sale', location: 'București Titan', title: 'Apartament', ownerPhone: 'PRIVATE' };
 
 describe('authorized complete pagination', () => {
+  it.each([false, true])('finds declared studios with consistent room counts, indexed=%s', async indexed => {
+    const rows = [
+      { ...listing, id: 'a', price: '80000 EUR', roomsValue: null, rooms: 'garsonieră' },
+      { ...listing, id: 'b', price: '79000 EUR', roomsValue: 0, rooms: 'o cameră' },
+      { ...listing, id: 'c', price: '78000 EUR', roomsValue: null, propertyType: 'garsoniera' },
+      { ...listing, id: 'd', price: '70000 EUR', roomsValue: 2, title: 'Garsoniera în titlu' },
+      { ...listing, id: 'e', price: '70000 EUR', roomsValue: null, rooms: '1-2' },
+    ].map(row => indexed ? { ...row, ...ownerSearchFields(row) } : row);
+    const query = searchSchema.parse({ zone: 'Titan', propertyType: 'apartment', rooms: 1, priceMax: 80000 });
+    const result = await searchProperties(context(rows), query);
+    expect(result.rows.map(row => row.id)).toEqual(['a', 'b', 'c']);
+    expect(result.rows.every(row => row.rooms === 1)).toBe(true);
+    expect(result.searchMode).toBe(indexed ? 'native_index' : 'live_scan');
+  });
+  it('scans old room projections until every listing has the new version', async () => {
+    const row = { ...listing, id: 'a', price: '80000 EUR', roomsValue: null, rooms: 'garsoniera', searchVersion: 2, searchRooms: 0 };
+    const result = await searchProperties(context([row]), searchSchema.parse({ rooms: 1, priceMax: 80000 }));
+    expect(result.searchMode).toBe('live_scan'); expect(result.rows[0].id).toBe('a');
+  });
   it.each([false, true])('includes sale and rent unless requested, indexed=%s', async indexed => {
     const rows = ['sale', 'rent'].map((transactionType, i) => {
       const row = { ...listing, price: '10000 EUR', transactionType, id: String(i) };
