@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — prag de construcție versus etichetă declarată
+
+Scenariile originale **0231–0235** verifică două/trei camere în Titan, Cișmigiu, Floreasca și Pipera, cu bugete și construcție după 1977/2000/2010. Prima probă 0231 a detectat o eroare reală: modelul adăuga filtrul de etichetă `after_1977` la o cerere obișnuită „după 1977” și omitea cinci oferte eligibile cu ani exacți sau intervale închise. Instrucțiunile de planificare, descrierea instrumentului și descrierea parametrului precizează acum diferența: pragul folosește `yearMin=1978`, iar filtrul de etichetă se aplică numai dacă eticheta este cerută explicit. Numărul de camere nu reprezintă numărul ofertelor solicitate. Versiuni: prompt **jarvis-62**, tools **90**.
+
+După corecție, toate cele **15 comenzi originale 0221–0235** și **2 regresii pentru chirii** au trecut. Sunt verificate rezultatele exacte, normalizarea Cișmigiu/Cismigiu, ambele limite ale bugetului, anii structurați și intervalele, paginarea după 250 de înregistrări și lipsa modificărilor în date. Dovezile păstrează și execuția inițială eșuată: [OWNER_SEARCH_EXECUTION_BATCH_06.json](evals/OWNER_SEARCH_EXECUTION_BATCH_06.json). O observație de redactare rămâne în raport: un răspuns a menționat generic comparația importurilor CRM fără să o execute; acest lot nu certifică acea comparație.
+
+Validare: **2.179 teste locale**, **17 probe cu model real**, lint, paritate și build (TypeScript, 227 pagini) trecute. Total: **78/1000 scenarii originale cu dovezi locale folosind model real**, **922 fără asemenea dovezi**. Nu este certificare integrală în producție sau verificare a actualității portalurilor externe. Nicio publicare în producție și niciun mesaj către clienți.
+
 ## Lot proprietari — intervale de ani și filtre combinate
 
 Scenariile originale **0226–0230** au trecut cu model real și Firestore local: trei camere după 2000 în Floreasca, apartamente din 1980–1990 în Titan, proprietăți înainte de 1990 în Drumul Taberei și două camere în Titan cu buget și prag de construcție. Implementarea existentă satisface acest lot; modificările adaugă probe executabile și dovezi, fără schimbări ale comportamentului aplicației.

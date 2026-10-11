@@ -1869,7 +1869,7 @@
           "requestSha256": "c2ac5ffbf031ee9687431ce69b2e261a771160b255b81d6fc3a3a7f011e29057",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_04.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1880,7 +1880,7 @@
           "requestSha256": "5e31b4724918b459403294a88e9bd82b7a2addad25eb65ab68f113edbf525cd5",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_04.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1891,7 +1891,7 @@
           "requestSha256": "ad772b30f2adfde4803a4b878875bdc97d6f4844822b6569d9062c20cd71f9e6",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_04.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1902,7 +1902,7 @@
           "requestSha256": "4a4cf4b384d99b13c064b80d52a5b8bac6cd150b9d6be24a48ae4e3bd57f4788",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_04.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1913,7 +1913,7 @@
           "requestSha256": "dafa86a448a1722c0ccf374a00f94755638a3f81649a8f0deb067bf3b3786e4d",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_04.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1924,7 +1924,7 @@
           "requestSha256": "e17655de47a96651e98dda10fc4b50b0226115636cf34d65597b6c6c9fadf89e",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_05.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1935,7 +1935,7 @@
           "requestSha256": "7ed57e5918f5a71eac0f8a9e72830c6044ff4dd04e49fccd63162b7f41dba85f",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_05.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1946,7 +1946,7 @@
           "requestSha256": "8aadaae165b5146aea388a8b682cdcc8044df1671f062f218a413ed7ca101b0b",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_05.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1957,7 +1957,7 @@
           "requestSha256": "21dab25dea9266773110c6a44cfe8dcda20d668faa686db1b823a1676bcaee6d",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_05.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1968,7 +1968,7 @@
           "requestSha256": "ef7f7943d4827541937d11f95cc33974b87e7318fcfea1bc2a55e7c233b15ec0",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_05.json",
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
             "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
           }
         },
@@ -1977,35 +1977,55 @@
           "sourceNumber": 231,
           "request": "Găsește trei camere în Titan sub 180.000 €, după 1977.",
           "requestSha256": "c77b23a8be54b790fa10c9eaa5a6540362833a50b23c78d8a9e6f90c85968ef1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0232",
           "sourceNumber": 232,
           "request": "Găsește două camere în Cișmigiu sub 200.000 €, după 1977.",
           "requestSha256": "91c708d30706d3de0fc365fc9c3886b313d63d9f9b8dccf1aef45b1dda55540b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0233",
           "sourceNumber": 233,
           "request": "Găsește trei camere în Floreasca sub 300.000 €, după 2000.",
           "requestSha256": "4985a84ce5a0110803ac62a066fa80b24bd0c75783bb8b193f6e38191a340ed5",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0234",
           "sourceNumber": 234,
           "request": "Găsește două camere în Pipera sub 180.000 €, după 2010.",
           "requestSha256": "0d05ec478f8d6e7ffe1b1c825f0884f2904a81df28606b43f3887a00dae075f2",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0235",
           "sourceNumber": 235,
           "request": "Găsește trei camere în Pipera între 150.000 și 250.000 €, după 2000.",
           "requestSha256": "789900e1c21b126baf9035bd730ab9b0dd39e23515e9d9843ff9950ea1de2127",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0236",

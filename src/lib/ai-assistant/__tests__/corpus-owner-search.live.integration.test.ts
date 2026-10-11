@@ -14,7 +14,7 @@ import { AgentBudget } from '../budget';
 import { VERSIONS } from '../models';
 import type { AssistantContext } from '../access';
 
-const cases = Array.from({ length: 30 }, (_, index) => 201 + index).concat([1001, 1002]);
+const cases = Array.from({ length: 35 }, (_, index) => 201 + index).concat([1001, 1002]);
 for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM || number >= Number(process.env.JARVIS_OWNER_CASE_FROM))) {
   const scenarioId = number > 1000 ? number === 1001 ? 'variant-explicit-rental' : 'variant-small-budget' : `master-${String(number).padStart(4, '0')}`;
   it.skipIf(process.env.JARVIS_OWNER_SEARCH_LIVE !== 'true')(`${scenarioId}: actual model finds only the requested owner listings`, async () => {
@@ -26,14 +26,14 @@ for (const number of cases.filter(number => !process.env.JARVIS_OWNER_CASE_FROM 
     const listings = db.collection('ownerListings');
     const ctx = { uid: id, agencyId: id, role: 'agent', adminDb: db } as unknown as AssistantContext;
     const prompt = number === 1001 ? 'Găsește apartamente de închiriat în Titan.' : number === 1002 ? 'Găsește apartamente în Titan până la 900 euro.' : corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera', 216: 'Aviației', 217: 'Drumul Taberei', 218: 'Berceni', 223: 'Drumul Taberei', 225: 'Pipera', 226: 'Floreasca', 228: 'Drumul Taberei' } as Record<number, string>)[number] || 'Titan';
-    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000, 216: 250000, 217: 120000, 218: 140000, 219: 200000, 220: 80000, 229: 120000, 230: 140000, 1002: 900 } as Record<number, number>)[number];
-    const priceMin = ({ 216: 150000, 217: 80000 } as Record<number, number>)[number];
-    const yearAfter = ({ 221: 1977, 222: 1977, 223: 1977, 224: 1990, 225: 2000, 226: 2000, 229: 1977, 230: 1990 } as Record<number, number>)[number];
-    const requestedRooms = [202, 203, 211, 212, 213, 214, 217, 218, 219, 220, 222, 223, 225, 226, 229, 230].includes(number);
+    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera', 216: 'Aviației', 217: 'Drumul Taberei', 218: 'Berceni', 223: 'Drumul Taberei', 225: 'Pipera', 226: 'Floreasca', 228: 'Drumul Taberei', 232: 'Cișmigiu', 233: 'Floreasca', 234: 'Pipera', 235: 'Pipera' } as Record<number, string>)[number] || 'Titan';
+    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000, 216: 250000, 217: 120000, 218: 140000, 219: 200000, 220: 80000, 229: 120000, 230: 140000, 231: 180000, 232: 200000, 233: 300000, 234: 180000, 235: 250000, 1002: 900 } as Record<number, number>)[number];
+    const priceMin = ({ 216: 150000, 217: 80000, 235: 150000 } as Record<number, number>)[number];
+    const yearAfter = ({ 221: 1977, 222: 1977, 223: 1977, 224: 1990, 225: 2000, 226: 2000, 229: 1977, 230: 1990, 231: 1977, 232: 1977, 233: 2000, 234: 2010, 235: 2000 } as Record<number, number>)[number];
+    const requestedRooms = [202, 203, 211, 212, 213, 214, 217, 218, 219, 220, 222, 223, 225, 226, 229, 230, 231, 232, 233, 234, 235].includes(number);
     const apartmentOnly = [202, 203, 215, 220, 221, 224, 227, 1001, 1002].includes(number);
     const otherZone = zone === 'Militari' ? 'Titan' : 'Militari';
-    const rooms = number === 220 ? 1 : number === 219 ? 4 : [203, 212, 214, 218, 223, 226].includes(number) ? 3 : 2;
+    const rooms = number === 220 ? 1 : number === 219 ? 4 : [203, 212, 214, 218, 223, 226, 231, 233, 235].includes(number) ? 3 : 2;
     const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone === 'Aviației' ? 'Aviatiei' : zone === 'Drumul Taberei' ? 'Drumul-Taberei' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: `${priceMin || (number === 220 ? 70000 : 120000)} EUR`, lastVerifiedAt: new Date().toISOString(), ...(yearAfter ? { constructionYear: yearAfter + 1 } : number === 227 || number === 228 ? { constructionYear: 1985 } : {}) };
     const fixture = new Map<string, Record<string, unknown>>();
     const add = (key: string, patch: Record<string, unknown>) => fixture.set(`${id}-${key}`, { ...base, title: `Anunț ${key}`, link: `https://example.test/listing/${key}`, ...patch });
