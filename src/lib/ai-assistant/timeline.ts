@@ -1,3 +1,4 @@
+import { taskScheduleDetails } from './task-schedule';
 import { z } from 'zod';
 import { collectionFor, getResource, canReadResource, eventReferencesAllowed, type AssistantContext } from './access';
 import { idSchema, safeData } from './contracts';
@@ -37,7 +38,7 @@ export async function readTimeline(ctx: AssistantContext, input: z.infer<typeof 
       if (source.permission && !canReadResource(ctx, source.permission, data)) continue;
       if (source.name === 'crmEvents' && !(await eventReferencesAllowed(ctx, data))) continue;
       const occurredAt = data.occurredAt || data.changedAt || data.endedAt || data.createdAt || data.date || null;
-      rows.push({ ...safeData(data), source: source.name, occurredAt, dueDate: data.dueDate || occurredAt,
+      rows.push({ ...safeData(data), ...(source.name === 'tasks' ? taskScheduleDetails(data) : {}), source: source.name, occurredAt, dueDate: data.dueDate || occurredAt,
         title: data.capability || data.title || data.description || data.type || data.status || 'Eveniment CRM',
         description: Array.isArray(data.changedFields) ? 'Câmpuri modificate: ' + data.changedFields.join(', ') : data.summary || data.notes || data.description || null });
     }

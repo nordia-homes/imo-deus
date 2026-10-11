@@ -60,8 +60,8 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         await relatedSource.set({ publicationStatus: 'ready', isCanonical: true, originSourceUrl: duplicateUrl });
         await agency.collection('properties').doc('duplicate-import').set({ ownerListingUrl: duplicateUrl, title: 'Import din URL duplicat' });
         await agency.collection('tasks').doc('duplicate-task').set({ propertyId: 'duplicate-import', description: 'Solicită releveul actualizat', status: 'open', dueDate: '2026-10-27' });
-        await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted-prospect', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Proprietarul a cerut evaluarea garajului.', endedAt: '2026-10-08T07:00:00Z' });
-        await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted-prospect', participantPhone: '0040 722 123 456', description: 'Trimite estimarea garajului', status: 'open', dueDate: '2026-10-26' });
+        await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted-prospect', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Proprietarul a cerut evaluarea garajului.', result: { documentsAvailable: 'Certificatul energetic este disponibil.' }, durationSeconds: 95, endedAt: '2026-10-08T07:00:00Z' });
+        await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted-prospect', participantPhone: '0040 722 123 456', description: 'Trimite estimarea garajului', status: 'open', dueDate: '2026-10-26', startTime: '07:30', duration: 45 });
         await agency.collection('properties').doc('imported-property').set({ ownerListingId: relatedSource.id, title: 'Proprietate importată fără telefon din anunțul asociat' });
         await agency.collection('tasks').doc('property-task').set({ propertyId: 'imported-property', description: 'Pregătire documente cadastrale', status: 'open', dueDate: '2026-10-25', createdAt: '2026-10-10T08:00:00Z' });
         await agency.collection('conversations').doc('owner-conversation').set({ agencyId: id, assigneeId: id, collaboratorIds: [], phone: '+40 722 123 456', name: 'Alin Matei' });
@@ -120,7 +120,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         const linkedRows = planned.cards.flatMap(card => card.source === 'owner_history' ? card.rows : []) as any[];
         expect(linkedRows.find(row => row.id === 'duplicate-import')).toMatchObject({ matchBasis: 'verified_source_candidates', linkedListingIds: [source.id, relatedSource.id].sort() });
         expect(linkedRows.find(row => row.id === 'orphan-call')).toMatchObject({ readMode: 'interaction', interaction: { summary: 'Proprietarul a cerut evaluarea garajului.' } });
-        expect(linkedRows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { status: 'open' } });
+        expect(linkedRows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { status: 'open', startTime: '07:30', duration: 45 } });
         expect(JSON.stringify(planned)).not.toContain('CANARY_PRIVATE_CONVERSATION');
         expect(JSON.stringify(planned)).not.toContain('CANARY_UNRELATED_OWNER');
         expect(planned.text).toContain('2%');
@@ -128,6 +128,9 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(planned.text).toMatch(/cadastral/i);
         expect(planned.text).toMatch(/recepți|recepti/i);
         expect(planned.text).toMatch(/garaj/i);
+        expect(planned.text).toMatch(/0?7[:.]30/);
+        expect(planned.text).toMatch(/45\s*(?:de\s*)?min/i);
+        expect(planned.text).toMatch(/energetic/i);
         expect(planned.text).toMatch(/26 octombrie|26\.10|2026-10-26/);
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
         await source.update({ ownerPhone: '' });
@@ -152,6 +155,9 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         for (const key of ['recorded-call', 'related-call', 'orphan-call', 'orphan-task', 'property-task', 'owner-message', 'duplicate-task']) expect(resumedRows.map(row => row.id)).toContain(key);
         expect(resumed.message.text).toMatch(/2%/);
         expect(resumed.message.text).toMatch(/garaj/i);
+        expect(resumed.message.text).toMatch(/0?7[:.]30/);
+        expect(resumed.message.text).toMatch(/45\s*(?:de\s*)?min/i);
+        expect(resumed.message.text).toMatch(/energetic/i);
         expect(JSON.stringify(resumed)).not.toContain('CANARY_PRIVATE_CONVERSATION');
         expect(await chatTurn(ctx, reply)).toEqual(resumed);
         expect((await source.get()).data()?.ownerPhone).toBe('');
@@ -190,7 +196,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(resolved.message.text).toMatch(/releveu/i);
         expect(await chatTurn(ctx, conflictReply)).toEqual(resolved);
         expect((await agency.collection('properties').doc('duplicate-import').get()).data()).toEqual({ ownerListingUrl: `https://example.com/${id}/shared-source`, title: 'Import din URL duplicat' });
-        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, conflictingAssociationContinuationVerified: true, multiPageSourceLookupVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting URL associations clarified through saved chat and explicit read-only agent answer. All source URL pages read past 110 noncanonical drafts. Records without any usable association remain unresolved; execution remains subject to runtime budgets and no production certification.' };
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, conflictingAssociationContinuationVerified: true, multiPageSourceLookupVerified: true, interactionDetailsVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting URL associations clarified through saved chat and explicit read-only agent answer. All source URL pages read past 110 noncanonical drafts. Records without any usable association remain unresolved; execution remains subject to runtime budgets and no production certification.' };
         return;
       }
       if (number === 257) {

@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Orele taskurilor și rezultatele apelurilor recuperate — 0260
+
+Istoricul asociat prin telefon păstrează acum ora și durata taskurilor, precum și rezultatul structurat, începutul, sfârșitul și durata apelurilor. Astfel, un apel al unui prospect șters nu pierde informația despre documentele disponibile sau rezultatul negocierii. Valorile explicite false și zero se păstrează; un task fără oră nu primește una inventată.
+
+Prima probă cu model real a expus o conversie greșită: ora locală 07:30 a fost prezentată ca 10:30. Serverul furnizează acum `taskLocal` marcat explicit ca ora Bucureștiului, atât în `owner_prospects`, cât și în `timeline`; politica precizează că `startTime` este deja local și nu trebuie convertit. Verificările acoperă iarna, vara și ziua schimbării orei.
+
+Proba finală cu model real păstrează **07:30**, **45 de minute** și certificatul energetic din rezultatul apelului, inclusiv după clarificarea telefonului în conversația salvată. Fluxul cu asociere ambiguă continuă să treacă, fără apeluri de instrument eșuate. Dovadă: [OWNER_INTERACTION_DETAILS_PARTIAL_0260.json](evals/OWNER_INTERACTION_DETAILS_PARTIAL_0260.json). Versiuni **jarvis-80 / tools 106**. Au trecut **49 teste unitare**, **17 teste Firestore**, TypeScript complet, lint, paritate, inventarul corpusului și buildul final cu 227 pagini.
+
+Scenariul rămâne parțial pentru înregistrările fără asociere utilizabilă. Total **101/1000** cu dovezi locale și **0 certificări complete în producție**. Modificările nu sunt publicate în producție.
+
 ## Paginarea surselor și păstrarea ID-ului selectat — 0260
 
 Resolverul importurilor citește toate paginile URL-ului, în ordine după ID, separat pentru `link` și `originSourceUrl`, în loc să abandoneze la 51 de documente. Sursele necanonice și ciornele sunt ignorate după citire; nu mai ascund surse valide aflate pe pagini ulterioare. ID-urile canonice se deduplică între câmpuri, iar verificarea prospectelor agenției se face în grupuri de maximum 20 pentru a evita lansarea simultană a tuturor citirilor.

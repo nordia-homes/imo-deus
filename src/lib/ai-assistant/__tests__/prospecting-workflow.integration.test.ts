@@ -265,16 +265,19 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
   it('returns recorded calls and planned tasks even when their original prospect no longer exists', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     await agency.collection('ownerListingFavorites').doc('selected').set({ ownerPhone: '0722123456' });
-    await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Acceptă contactarea luni.', endedAt: '2026-10-10T07:00:00Z' });
-    await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted', participantPhone: '0040 722 123 456', description: 'Revenire luni', status: 'open', dueDate: '2026-10-12' });
+    await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Acceptă contactarea luni.', durationSeconds: 0, result: { wantsHumanCallback: true, ownerAcceptedCommission: false }, endedAt: '2026-10-10T07:00:00Z' });
+    await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted', participantPhone: '0040 722 123 456', description: 'Revenire luni', status: 'open', dueDate: '2026-10-12', startTime: '07:30', duration: 45 });
     await agency.collection('tasks').doc('exact-task').set({ ownerListingId: 'selected', status: 'completed' });
     await agency.collection('aiOutreachCalls').doc('other-call').set({ ownerPhone: '0733123456', ownerListingTitle: 'Same title' });
     const other = await fixture();
     await db.collection('agencies').doc(other.agencyId).collection('aiOutreachCalls').doc('foreign-call').set({ ownerPhone: '0722123456' });
     const result = await readOwnerProspects(ctx, { listingId: 'selected', scope: 'agency_history' });
     expect(result.rows.map(row => row.id).sort()).toEqual(['exact-task', 'orphan-call', 'orphan-task', 'selected']);
-    expect(result.rows.find(row => row.id === 'orphan-call')).toMatchObject({ readMode: 'interaction', interaction: { source: 'aiOutreachCalls', summary: 'Acceptă contactarea luni.', status: 'completed', occurredAt: '2026-10-10T07:00:00Z' } });
-    expect(result.rows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { source: 'tasks', status: 'open', dueDate: '2026-10-12', occurredAt: null } });
+    expect(result.rows.find(row => row.id === 'orphan-call')).toMatchObject({ readMode: 'interaction', interaction: { source: 'aiOutreachCalls', durationSeconds: 0, result: { wantsHumanCallback: true, ownerAcceptedCommission: false }, summary: 'Acceptă contactarea luni.', status: 'completed', occurredAt: '2026-10-10T07:00:00Z' } });
+    expect(result.rows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { source: 'tasks', status: 'open', dueDate: '2026-10-12', startTime: '07:30', duration: 45, taskLocal: '07:30 (ora București)', occurredAt: null } });
+    expect(result.rows.find(row => row.id === 'exact-task')).toMatchObject({ interaction: { startTime: null, duration: null } });
+    await agency.collection('tasks').doc('exact-task').update({ startTime: '07:30', duration: 45 });
+    expect((await readTimeline(ctx, { resource: 'ownerListingFavorites', id: 'selected', limit: 20 })).rows.find(row => row.id === 'exact-task')).toMatchObject({ taskLocal: '07:30 (ora București)', duration: 45 });
     await agency.collection('ownerListingFavorites').doc('selected').update({ ownerPhone: '' });
     expect((await readOwnerProspects(ctx, { listingId: 'selected', scope: 'agency_history' })).rows.map(row => row.id).sort()).toEqual(['exact-task', 'selected']);
   });

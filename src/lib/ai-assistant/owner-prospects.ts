@@ -1,3 +1,4 @@
+import { taskScheduleDetails } from './task-schedule';
 import type { OwnerAssociationAnswer } from './owner-history-continuation';
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
@@ -44,7 +45,7 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
       if (!exact && !phoneMatch) continue;
       const direct = resource === 'aiOutreachCalls' || resource === 'tasks';
       rows.push({ resource, id: row.id, title: row.title || row.name || row.description || row.ownerListingTitle || null, matchBasis: agentConfirmed ? 'agent_confirmed_association' : linkedListingIds ? 'verified_source_candidates' : exact ? 'exact_listing_reference' : 'normalized_phone', ...(linkedListingId ? { linkedListingId } : {}), ...(linkedListingIds ? { linkedListingIds } : {}), ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}),
-        ...(direct ? { readMode: 'interaction', interaction: safeData({ id: row.id, source: resource, status: row.status || null, outcome: row.outcome || null, summary: row.summary || null, description: row.description || null, occurredAt: row.endedAt || row.startedAt || row.createdAt || null, dueDate: row.dueDate || null, scheduledAt: row.scheduledAt || null, ownerListingId: row.ownerListingId || null, propertyId: row.propertyId || null }) } : { readMode: 'timeline' }) });
+        ...(direct ? { readMode: 'interaction', interaction: safeData({ id: row.id, source: resource, status: row.status || null, outcome: row.outcome || null, summary: row.summary || null, description: row.description || null, occurredAt: row.endedAt || row.startedAt || row.createdAt || null, dueDate: row.dueDate || null, scheduledAt: row.scheduledAt || null, ...(resource === 'tasks' ? taskScheduleDetails(row) : { startedAt: row.startedAt ?? null, endedAt: row.endedAt ?? null, durationSeconds: row.durationSeconds ?? null, result: row.result ?? null }), ownerListingId: row.ownerListingId || null, propertyId: row.propertyId || null }) } : { readMode: 'timeline' }) });
     }
   }
   const complete = Object.values(after).every(value => value === null);
