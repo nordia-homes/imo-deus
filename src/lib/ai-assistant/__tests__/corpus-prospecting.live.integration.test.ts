@@ -31,6 +31,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
     const favorites = agency.collection('ownerListingFavorites');
     const source = db.collection('ownerListings').doc(`${id}-alfa`);
     const relatedSource = db.collection('ownerListings').doc(`${id}-related`);
+    const conflictingSource = db.collection('ownerListings').doc(`${id}-conflict`);
     const base = { isFavoriteActive: true, reservedByAgentId: id, reservedByAgentName: 'Agent local', reservedAt: new Date().toISOString(), contactOutcome: null, collaborationStatus: null, takenByAgentId: null, notes: 'Istoric existent.', updatedAt: '2026-10-01T07:00:00.000Z' };
     const fixture: Record<string, Record<string, unknown>> = {
       [`${id}-alfa`]: { ...base, ownerName: 'Alin Matei' },
@@ -148,7 +149,39 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(await chatTurn(ctx, reply)).toEqual(resumed);
         expect((await source.get()).data()?.ownerPhone).toBe('');
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting identities and records without any usable association remain unresolved; no production certification.' };
+        await source.update({ ownerPhone: '0722123456' });
+        await conflictingSource.set({ publicationStatus: 'ready', isCanonical: true, link: `https://example.com/${id}/shared-source`, ownerPhone: '0733123456' });
+        const conflictSession = agency.collection('assistantSessions').doc(`${id}-conflict`);
+        await conflictSession.set({ ownerId: id, createdAt: new Date().toISOString() });
+        await conflictSession.collection('messages').doc('selection').set(history[0]);
+        const conflictQuestion = await chatTurn(ctx, { sessionId: conflictSession.id, requestId: `${id}-conflict-question`, prompt, currentRecord: null });
+        report = { ...report, associationQuestion: conflictQuestion.message };
+        expect(conflictQuestion.message.ownerHistoryContinuation?.association).toMatchObject({ propertyId: 'duplicate-import' });
+        expect(conflictQuestion.message.text).toContain('Import din URL duplicat');
+        const conflictReply = { sessionId: conflictSession.id, requestId: `${id}-conflict-answer`, prompt: 'Da.', currentRecord: null };
+        const originalRespond = OpenAIAdapter.prototype.respond;
+        const associationCalls: unknown[] = [];
+        const trace = vi.spyOn(OpenAIAdapter.prototype, 'respond').mockImplementation(async function(this: OpenAIAdapter, request) {
+          const result = await originalRespond.call(this, request);
+          associationCalls.push({ calls: result.calls, errors: request.input.filter((item: any) => item.type === 'function_call_output' && typeof item.output === 'string' && item.output.includes('\"error\"')) });
+          return result;
+        });
+        let resolved;
+        try { resolved = await chatTurn(ctx, conflictReply); }
+        finally { trace.mockRestore(); }
+        report = { ...report, associationCalls };
+        const associationTelemetry = (await agency.collection('assistantTelemetry').doc(conflictReply.requestId).get()).data()!;
+        report = { ...report, associationReply: resolved.message, associationTelemetry };
+        expect(associationTelemetry.status, resolved.message.text).toBe('success');
+        expect(associationTelemetry.tools.filter((tool: any) => tool.status !== 'success')).toEqual([]);
+        expect(resolved.message.ownerHistoryContinuation).toBeUndefined();
+        expect(resolved.message.actions || []).toEqual([]);
+        expect(resolved.message.cards?.flatMap(card => card.rows).find(row => row.id === 'duplicate-import')).toMatchObject({ matchBasis: 'agent_confirmed_association' });
+        expect(resolved.message.cards?.flatMap(card => card.rows).map(row => row.id)).toContain('duplicate-task');
+        expect(resolved.message.text).toMatch(/releveu/i);
+        expect(await chatTurn(ctx, conflictReply)).toEqual(resolved);
+        expect((await agency.collection('properties').doc('duplicate-import').get()).data()).toEqual({ ownerListingUrl: `https://example.com/${id}/shared-source`, title: 'Import din URL duplicat' });
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, conflictingAssociationContinuationVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting URL associations clarified through saved chat and explicit read-only agent answer. Records without any usable association and source scan limits remain unresolved; no production certification.' };
         return;
       }
       if (number === 257) {
@@ -199,6 +232,6 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       for (const [key, row] of Object.entries(fixture)) if (number < 253 || key !== source.id) expect((await favorites.doc(key).get()).data()).toEqual(row);
       report = { ...report, executionVerified: true, verification: number >= 253 ? 'Selected record updated with requested state/outcome, confirmed from executor receipt; idempotent replay, notes preserved, unrelated records unchanged. Missing details clarified before writes.' : 'Original question, real model, current agency prospects. Uncontacted records distinguished from follow-up, refusal and removed entries; advice does not initiate a call.' };
     } catch (error) { report = { ...report, failure: error instanceof Error ? error.message : String(error) }; throw error; }
-    finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await relatedSource.delete(); await db.terminate(); }
+    finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await relatedSource.delete(); await conflictingSource.delete(); await db.terminate(); }
   }, 240000);
 }

@@ -1,12 +1,14 @@
+import { createHash } from 'node:crypto';
+import type { OwnerAssociationAnswer } from './owner-history-continuation';
 import { collectionFor, getResource, type AssistantContext } from './access';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 import { idSchema } from './contracts';
 
 // A global source reference is only an identifier; the agency prospect supplies
 // the owner association. Never infer ownership from the global phone alone.
-export function ownerImportResolver(ctx: AssistantContext, selectedId: string, phone: string, selectedUrls: string[] = []) {
+export function ownerImportResolver(ctx: AssistantContext, selectedId: string, phone: string, selectedUrls: string[] = [], answers: OwnerAssociationAnswer[] = []) {
   const listings = new Map<string, Promise<boolean>>();
-  type Association = { related: boolean; listingId?: string; listingIds?: string[]; unresolved?: string };
+  type Association = { related: boolean; listingId?: string; listingIds?: string[]; unresolved?: string; referenceHash?: string };
   const urls = new Map<string, Promise<Association>>();
   const related = (id: string) => {
     if (!listings.has(id)) listings.set(id, (async () => {
@@ -33,7 +35,7 @@ export function ownerImportResolver(ctx: AssistantContext, selectedId: string, p
       // is independently associated through the current agency's prospects.
       if (candidates.length > 1) return matches.every(Boolean)
         ? { related: true, listingIds: candidates }
-        : { related: false, unresolved: 'ambiguous_source_url' };
+        : { related: false, unresolved: 'ambiguous_source_url', referenceHash: createHash('sha256').update(JSON.stringify({ selectedId, phone, url, candidates, matches })).digest('hex') };
       return { related: matches[0] === true, listingId: candidates[0] };
     })());
     return urls.get(url)!;
@@ -43,6 +45,10 @@ export function ownerImportResolver(ctx: AssistantContext, selectedId: string, p
       return { related: await related(property.ownerListingId), listingId: property.ownerListingId };
     }
     if (typeof property.ownerListingUrl !== 'string' || !/^https?:\/\//.test(property.ownerListingUrl)) return { related: false };
-    return lookupUrl(property.ownerListingUrl);
+    const association = await lookupUrl(property.ownerListingUrl);
+    if (!association.referenceHash) return association;
+    const referenceHash = createHash('sha256').update(JSON.stringify({ source: association.referenceHash, propertyId: property.id, title: property.title || null, ownerName: property.ownerName || null, ownerPhone: property.ownerPhone || null, updatedAt: property.updatedAt || null })).digest('hex');
+    const answer = answers.find(row => row.propertyId === property.id && row.referenceHash === referenceHash);
+    return answer ? { related: answer.related, referenceHash } : { ...association, referenceHash };
   };
 }

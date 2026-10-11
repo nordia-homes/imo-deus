@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Clarificarea asocierilor contradictorii — 0260
+
+Dacă un URL de import indică surse cu proprietari diferiți sau fără prospect în agenție, Jarvis cere explicit dacă proprietatea CRM identificată prin titlu și ID aparține proprietarului selectat. Cererea și proprietatea în așteptare se păstrează în conversație. Răspunsul „da” include istoricul proprietății, „nu” îl exclude, iar „nu știu” păstrează întrebarea. O comandă nouă sau anularea nu aplică automat confirmarea.
+
+Precizarea agentului este folosită doar pentru citirea curentă și este marcată `agent_confirmed_association`; nu modifică fișa CRM. Confirmarea este legată prin hash de proprietate, sursele candidate, asocierea lor cu telefonul selectat și datele proprietății. Reluarea recitește datele și accesul; o confirmare veche nu se aplică unei referințe schimbate. Confirmările deja rezolvate sunt păstrate când următoarea proprietate necesită clarificare.
+
+Proba finală cu model real parcurge conversația salvată, întrebarea, răspunsul „da”, toate citirile și răspunsul final cu taskul importului ambiguu. Repetarea aceleiași cereri întoarce rezultatul salvat; proprietatea rămâne neschimbată. Verifică în continuare și lipsa telefonului, importurile duplicate concordante, apelurile și mesajele autorizate. Dovadă: [OWNER_CONFLICT_CONTINUATION_PARTIAL_0260.json](evals/OWNER_CONFLICT_CONTINUATION_PARTIAL_0260.json).
+
+Prima probă a citit datele, dar a eșuat la validarea finală. Serverul furnizează acum explicit citatul cererii și ID-urile citirilor reușite după încheierea citirilor obligatorii, fără a elimina validatorul sau a mări bugetele. Proba finală nu are apeluri de instrument eșuate. Au trecut **42 teste unitare** și **15 teste Firestore**, inclusiv confirmare, refuz, revalidare și izolare între agenții. TypeScript complet, lint, paritate, inventarul corpusului și buildul final cu 227 pagini au trecut. Versiuni **jarvis-78 / tools 104**.
+
+Scenariul rămâne parțial pentru înregistrări fără asociere utilizabilă și limitele de scanare a surselor. Totalul rămâne **101/1000** cu dovezi locale, fără certificare nouă în producție. Modificările nu sunt publicate în producție.
+
 ## Importuri cu surse duplicate și reluarea citirilor omise — 0260
 
 Un URL de import care apare în mai multe anunțuri canonice este rezolvat automat dacă fiecare candidat este asociat proprietarului prin prospectele agenției și telefonul complet normalizat. Rezultatul păstrează toate ID-urile sursă verificate (`linkedListingIds`), fără alegerea arbitrară a unui anunț. Am eliminat scurtătura prin care URL-ul prospectului selectat ocolea verificarea duplicatelor: un candidat cu alt telefon sau fără prospect în agenție menține asocierea nerezolvată. Un ID explicit de import rămâne prioritar.

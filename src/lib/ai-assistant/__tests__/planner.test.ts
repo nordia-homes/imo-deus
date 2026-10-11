@@ -55,6 +55,8 @@ describe('Responses tool planning', () => {
     expect(names).not.toContain('goal_coverage');
     expect(model.respond.mock.calls[1][0].tools.map((tool: any) => tool.name)).not.toContain('goal_coverage');
     expect(model.respond.mock.calls[2][0].tools.map((tool: any) => tool.name)).toContain('goal_coverage');
+    const closure = model.respond.mock.calls[2][0].input.find((item: any) => item.role === 'developer' && item.content.includes('Citirile obligatorii sunt încheiate'));
+    expect(closure.content).toContain(JSON.stringify({ sourceQuote: prompt, evidenceCallIds: [first.calls[0].id, timeline.calls[0].id] }));
     expect(names.length).toBeLessThanOrEqual(10);
   });
   it('asks for missing owner identity and resumes the read using the supplied phone', async () => {
@@ -75,7 +77,7 @@ describe('Responses tool planning', () => {
     const resumed = await planTurn(ctx, '+40 722 123 456', pending, { provider: model });
     expect(resumed.metrics.status, resumed.text).toBe('success');
     expect(resumed.ownerHistoryContinuation).toBeUndefined();
-    expect(readOwnerProspects).toHaveBeenLastCalledWith(ctx, expect.objectContaining({ listingId: 'p' }), '0722123456');
+    expect(readOwnerProspects).toHaveBeenLastCalledWith(ctx, expect.objectContaining({ listingId: 'p' }), '0722123456', undefined);
     expect(resumed.actions).toEqual([]);
   });
   it('directs premature history closure to the unread timeline page with its actual cursor', async () => {
@@ -93,6 +95,24 @@ describe('Responses tool planning', () => {
     expect(repair.content).toContain('actual-next-page');
     expect(repair.content).toContain('imported');
     expect(result.metrics.tools.every(tool => tool.status === 'success')).toBe(true);
+  });
+  it('persists ambiguous import clarification and resumes only the confirmed property association', async () => {
+    const prompt = 'Arată istoricul proprietarului.';
+    const history: any[] = [{ id: 'selected', role: 'assistant', text: 'Selectat', createdAt: '', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Selectat', rows: [{ id: 'p' }] }] }];
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: true, identityComplete: true, unresolvedReferences: [{ propertyId: 'imported', title: 'Apartament Cișmigiu', reason: 'ambiguous_source_url', referenceHash: 'hash' }] } as any);
+    const first = await planTurn(ctx, prompt, history, { provider: scripted(call('owner_prospects', { listingId: 'p', scope: 'agency_history' })) });
+    expect(first.metrics.status).toBe('clarification');
+    expect(first.text).toContain('Apartament Cișmigiu');
+    expect(first.ownerHistoryContinuation?.association).toMatchObject({ propertyId: 'imported', referenceHash: 'hash' });
+    const pending: any[] = [{ id: 'reply', role: 'assistant', text: first.text, createdAt: '', ownerHistoryContinuation: first.ownerHistoryContinuation }];
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: true, identityComplete: true, unresolvedReferences: [] } as any);
+    const read = call('owner_prospects', { listingId: 'p', scope: 'agency_history' });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'history', sourceQuote: prompt, description: 'Istoric', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, 'Da.', pending, { provider: model });
+    expect(result.metrics.status, result.text).toBe('success');
+    expect(readOwnerProspects).toHaveBeenLastCalledWith(ctx, expect.objectContaining({ listingId: 'p' }), undefined, [{ propertyId: 'imported', referenceHash: 'hash', related: true }]);
+    expect(result.actions).toEqual([]);
+    expect(result.ownerHistoryContinuation).toBeUndefined();
   });
   it('does not certify owner history when the model returns text without reading any records', async () => {
     const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: scripted(final) });

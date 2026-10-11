@@ -1,5 +1,5 @@
 import { MAX_PLAN_ACTIONS } from './plan-limits';
-import { ownerHistoryReply, type OwnerHistoryContinuation } from './owner-history-continuation';
+import { ownerHistoryReply, ownerHistoryQuestion, type OwnerHistoryContinuation, type OwnerAssociationAnswer } from './owner-history-continuation';
 import { prospectClarification } from './prospect-continuation';
 import { selectedViewing, selectedViewingList } from './viewing-selection';
 import { createHash } from 'node:crypto';
@@ -23,14 +23,14 @@ import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation 
 import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
 import { validatePlannedDependencies } from './dependencies';
 
-export type AgentOptions = { ownerHistoryIdentity?: { listingId: string; phone: string }; provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string; selectedViewingIds?: string[] };
+export type AgentOptions = { ownerHistoryIdentity?: { listingId: string; phone?: string; associations?: OwnerAssociationAnswer[] }; provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string; selectedViewingIds?: string[] };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
   const historyReply = ownerHistoryReply(prompt, history);
   let ownerHistoryContinuation: OwnerHistoryContinuation | undefined;
-  if (historyReply?.phone) {
-    prompt = `${historyReply.pending.request}\nTelefonul indicat de agent pentru această citire: ${historyReply.phone}`;
+  if (historyReply?.phone || historyReply?.associationAnswered) {
+    prompt = historyReply.pending.request + (historyReply.phone ? `\nTelefonul indicat de agent pentru această citire: ${historyReply.phone}` : '');
     history = [...history, { id: 'owner-history-selection', role: 'assistant', text: 'Prospect selectat pentru reluarea citirii.', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect selectat', rows: [{ id: historyReply.pending.listingId }] }] }];
-    options = { ...options, ownerHistoryIdentity: { listingId: historyReply.pending.listingId, phone: historyReply.phone } };
+    options = { ...options, ownerHistoryIdentity: { listingId: historyReply.pending.listingId, phone: historyReply.phone || undefined, associations: historyReply.associations || historyReply.pending.associations } };
   }
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
   let goalCoverage: GoalCoverage | undefined;
@@ -51,9 +51,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     return { text, cards, actions, ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
-  if (historyReply && !historyReply.phone) {
+  if (historyReply && ((!historyReply.phone && !historyReply.associationAnswered) || historyReply.associationAnswered === false)) {
     ownerHistoryContinuation = historyReply.pending;
-    return finish('Numărul nu este complet sau valid. Care este numărul de telefon complet al proprietarului?', 'clarification');
+    return finish(historyReply.pending.association ? ownerHistoryQuestion(historyReply.pending) : 'Numărul nu este complet sau valid. Care este numărul de telefon complet al proprietarului?', 'clarification');
   }
   const clarification = prospectClarification(prompt, history);
   if (clarification) return finish(clarification, 'clarification');
@@ -181,6 +181,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             historyDiscoveryComplete = response.data.complete === true;
             historyDiscoveryCall = { listingId: payload.listingId, scope: 'agency_history', ...(typeof response.data.nextCursor === 'string' ? { cursor: response.data.nextCursor } : {}) };
             if (response.data.identityComplete === false) ownerHistoryContinuation = { listingId: payload.listingId, request: prompt };
+            else {
+              const unresolved = Array.isArray(response.data.unresolvedReferences) ? response.data.unresolvedReferences.find(row => row.reason === 'ambiguous_source_url' && typeof row.referenceHash === 'string') : undefined;
+              if (unresolved) ownerHistoryContinuation = { listingId: payload.listingId, request: historyReply?.pending.request || prompt, ...(options.ownerHistoryIdentity?.phone ? { phone: options.ownerHistoryIdentity.phone } : {}), ...(options.ownerHistoryIdentity?.associations ? { associations: options.ownerHistoryIdentity.associations } : {}), association: { propertyId: unresolved.propertyId, title: unresolved.title || unresolved.propertyId, referenceHash: unresolved.referenceHash } };
+            }
             for (const row of Array.isArray(response.data.rows) ? response.data.rows : []) if (row.readMode === 'timeline') {
               const key = `${row.resource}:${row.id}`;
               if (!completedHistory.has(key)) {
@@ -220,7 +224,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         }
         metrics.tools.push({ name: toolRegistry.has(name) ? name : 'unknown_tool', status, latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
         input.push({ type: 'function_call_output', call_id: call.id, output: compressedResult(data, 7000) });
-        if (ownerHistoryContinuation) return finish('Prospectul nu are un telefon complet pentru asocierea istoricului. Care este numărul de telefon al proprietarului? Voi relua citirea pentru același prospect.', 'clarification');
+        if (ownerHistoryContinuation) return finish(ownerHistoryQuestion(ownerHistoryContinuation), 'clarification');
+        if (prospectHistory && historyReady() && status === 'success' && ['owner_prospects', 'timeline'].includes(name)) input.push({ role: 'developer', content: 'Citirile obligatorii sunt încheiate. Validează acum goal_coverage cu resolution=answered și steps=[]. Copiază exact citatul și ID-urile dovezilor curente: ' + JSON.stringify({ sourceQuote: prompt.slice(0, 1000), evidenceCallIds: [...successfulReads].slice(-20) }) });
       }
       // Let the model finish composing the requested workflow after an initial
       // proposal. Proposals are inert until the resulting plan is approved.

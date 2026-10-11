@@ -46,3 +46,12 @@ it('resumes owner history only from an immediate phone answer and the same page 
   expect(ownerHistoryReply('0722123456', [...history, { ...selection, id: 'current-page-context', cards: [{ ...selection.cards![0], rows: [{ id: 'q' }] }] }])).toBeUndefined();
   expect(ownerHistoryReply('0722123456', [...history, { ...selection, id: 'current-page-context' }])?.phone).toBe('0722123456');
 });
+
+it('distinguishes yes/no association answers from phone answers, cancellation and new requests', () => {
+  const pending = { listingId: 'p', request: 'Arată istoricul.', phone: '0722123456', association: { propertyId: 'imported', title: 'Apartament', referenceHash: 'current' } };
+  const history: AssistantMessage[] = [{ ...clarification, ownerHistoryContinuation: pending }];
+  expect(ownerHistoryReply('Da.', history)).toMatchObject({ associationAnswered: true, phone: '0722123456', associations: [{ propertyId: 'imported', referenceHash: 'current', related: true }] });
+  expect(ownerHistoryReply('Nu.', history)?.associations?.[0].related).toBe(false);
+  expect(ownerHistoryReply('Nu știu.', history)?.associationAnswered).toBe(false);
+  for (const answer of ['Anulează.', '0722123456', 'Programează o vizionare', 'Da, trimite mesaj']) expect(ownerHistoryReply(answer, history)).toBeUndefined();
+});
