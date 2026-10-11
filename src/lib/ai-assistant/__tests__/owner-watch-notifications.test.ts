@@ -30,9 +30,18 @@ describe('owner watch notification relevance', () => {
   it('keeps a rental eligible when the watch has no transaction filter', async () => {
     const { ctx, rows, search } = fixture();
     delete search.transactionType;
-    rows.set('ownerListings/p', { ...rows.get('ownerListings/p'), transactionType: 'rent' });
+    search.priceMax = 10000;
+    rows.set('ownerListings/p', { ...rows.get('ownerListings/p'), transactionType: 'rent', price: '10000 EUR' });
     expect(await createOwnerWatchNotification(ctx, 'r', 'n', 'p', search)).toMatchObject({ status: 'created' });
     expect((await reconcileRuleNotifications(ctx, { ids: ['n'] })).withdrawn).toBe(0);
+  });
+  it('withdraws a rental when the saved budget becomes greater than EUR 10000', async () => {
+    const { ctx, rows, search } = fixture();
+    delete search.transactionType; search.priceMax = 10000;
+    rows.set('ownerListings/p', { ...rows.get('ownerListings/p'), transactionType: 'rent', price: '600 EUR' });
+    await createOwnerWatchNotification(ctx, 'r', 'n', 'p', search);
+    rows.get('users/u/notifications/n').ownerWatchCondition.search.priceMax = 130000;
+    expect((await reconcileRuleNotifications(ctx, { ids: ['n'] })).withdrawn).toBe(1);
   });
   it('creates once with live title and stores criteria without pagination', async () => {
     const { ctx, rows, search } = fixture();

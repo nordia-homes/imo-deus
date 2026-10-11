@@ -1,0 +1,3738 @@
+{
+  "scope": "Original scenarios 0206–0215, actual model and application handlers with local Firestore. No production or live portal certification.",
+  "commercialRule": "Maximum inclusive even for sub. Any requested EUR price bound >10000 selects only sales. Rentals require known EUR price <=10000.",
+  "rejectedTrials": [
+    {
+      "run": {
+        "scenarioId": "master-0211",
+        "prompt": "Găsește două camere în Titan sub 130.000 €.",
+        "versions": {
+          "prompt": "jarvis-56",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:55:04.661Z",
+        "executionVerified": false,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit două apartamente de vânzare cu două camere în Titan sub 130.000 €:\n\n- **Anunț z-sale** — 120.000 €; București, Titan.\n- **Anunț z-fraction** — 129.999,99 €; București, Titan.\n\nAm exclus anunțul la exact 130.000 €, deoarece cererea este pentru un preț strict mai mic. Rezultatele provin din anunțuri colectate în aplicație; moneda necunoscută nu a fost tratată ca EUR.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Titan",
+              "propertyType": "apartment",
+              "transactionType": "sale",
+              "rooms": 2,
+              "priceMax": 130000,
+              "limit": 100
+            },
+            "appliedTransactionType": "sale",
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "16866ff3-bbb4-473f-9980-a52439ba7b2f-z-boundary",
+                "title": "Apartament Titan, preț exact la limită",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "130000 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-boundary",
+                "lastVerifiedAt": "2026-10-11T06:55:04.661Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "16866ff3-bbb4-473f-9980-a52439ba7b2f-z-fraction",
+                "title": "Anunț z-fraction",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "129999.99 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-fraction",
+                "lastVerifiedAt": "2026-10-11T06:55:04.661Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "16866ff3-bbb4-473f-9980-a52439ba7b2f-z-sale",
+                "title": "Apartament Titan, vânzare",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "120000 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:55:04.661Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 271,
+            "uncertainCurrency": 1,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:55:07.232Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 249,
+            "version": "86",
+            "argumentsHash": "0dcebce99e16124ffe77a42ae7161cbb7ee94c4dd5b4881baee48dd6d0268c11"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 15,
+            "version": "86",
+            "argumentsHash": "f5a804d97f14c0d0b4373386ef9059d8b9fbf1001222bc4faa71cd6eb80181aa"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12453,
+              "outputTokens": 91,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12450,
+              "estimated": false
+            },
+            "costUsd": 0.00160205,
+            "latencyMs": 2293,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13178,
+              "outputTokens": 101,
+              "cachedTokens": 12450,
+              "cacheWriteTokens": 725,
+              "estimated": false
+            },
+            "costUsd": 0.000265925,
+            "latencyMs": 2215,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13304,
+              "outputTokens": 141,
+              "cachedTokens": 13175,
+              "cacheWriteTokens": 126,
+              "estimated": false
+            },
+            "costUsd": 0.00021830000000000002,
+            "latencyMs": 2423,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_BooB5mvC9kT3lpCNWHOmwC4C",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":\"apartment\",\"transactionType\":\"sale\",\"rooms\":2,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":130000,\"limit\":100,\"cursor\":null}"
+          },
+          {
+            "id": "call_Qkyv59QTBGkFLXDLa1zIZdDM",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Găsește două camere în Titan sub 130.000 €.\",\"description\":\"Găsește apartamente de vânzare cu două camere în Titan, sub 130.000 EUR.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_BooB5mvC9kT3lpCNWHOmwC4C\"]}]}"
+          }
+        ],
+        "costUsd": 0.002086275,
+        "expectedIds": [
+          "16866ff3-bbb4-473f-9980-a52439ba7b2f-z-boundary",
+          "16866ff3-bbb4-473f-9980-a52439ba7b2f-z-fraction",
+          "16866ff3-bbb4-473f-9980-a52439ba7b2f-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      "reason": "Human review rejected final prose that excluded the exact price boundary although the returned cards included it. Initial automatic assertions checked cards only; final assertions also check prose."
+    },
+    {
+      "run": {
+        "scenarioId": "master-0212",
+        "prompt": "Găsește trei camere în Titan sub 160.000 €.",
+        "versions": {
+          "prompt": "jarvis-56",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:55:15.792Z",
+        "executionVerified": false,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit trei apartamente de vânzare cu 3 camere în Titan, sub 160.000 €:\n\n- **Apartament Titan, vânzare** — **120.000 €**\n- **Anunț z-fraction** — **159.999,99 €**\n\nAm exclus anunțul la **160.000 €**, fiindcă ai cerut sub acest prag. Datele provin din anunțuri colectate în aplicație, observate la 11 octombrie 2026; nu reprezintă o verificare independentă pe portaluri.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Titan",
+              "propertyType": "apartment",
+              "transactionType": "sale",
+              "rooms": 3,
+              "priceMax": 160000,
+              "limit": 100
+            },
+            "appliedTransactionType": "sale",
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "c357734a-33b4-4325-928d-2abfb155058b-z-boundary",
+                "title": "Apartament Titan, preț exact la limită",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "160000 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-boundary",
+                "lastVerifiedAt": "2026-10-11T06:55:15.791Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "c357734a-33b4-4325-928d-2abfb155058b-z-fraction",
+                "title": "Anunț z-fraction",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "159999.99 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-fraction",
+                "lastVerifiedAt": "2026-10-11T06:55:15.791Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "c357734a-33b4-4325-928d-2abfb155058b-z-sale",
+                "title": "Apartament Titan, vânzare",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "120000 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:55:15.791Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 271,
+            "uncertainCurrency": 1,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:55:18.715Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 185,
+            "version": "86",
+            "argumentsHash": "99224c795557cf8f51940730a6901d6df5dd39fc59473f6643462216a68e1c72"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 6,
+            "version": "86",
+            "argumentsHash": "035640047bccdb541785a228468d1b98e6600fba47e3b9265a6e4e8929c55739"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12453,
+              "outputTokens": 91,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12450,
+              "estimated": false
+            },
+            "costUsd": 0.00160205,
+            "latencyMs": 2692,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13176,
+              "outputTokens": 101,
+              "cachedTokens": 12450,
+              "cacheWriteTokens": 723,
+              "estimated": false
+            },
+            "costUsd": 0.000265675,
+            "latencyMs": 2355,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13302,
+              "outputTokens": 146,
+              "cachedTokens": 13173,
+              "cacheWriteTokens": 126,
+              "estimated": false
+            },
+            "costUsd": 0.00022078,
+            "latencyMs": 2973,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_yFWGaC2Bu48pZGQq24eDWmdR",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":\"apartment\",\"transactionType\":\"sale\",\"rooms\":3,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":160000,\"limit\":100,\"cursor\":null}"
+          },
+          {
+            "id": "call_2fyQz9aJC2smHsJiMkpqMiKm",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"list\",\"sourceQuote\":\"Găsește trei camere în Titan sub 160.000 €.\",\"description\":\"Găsește apartamente de vânzare cu trei camere în Titan, cu preț sub 160.000 EUR.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_yFWGaC2Bu48pZGQq24eDWmdR\"]}]}"
+          }
+        ],
+        "costUsd": 0.002088505,
+        "expectedIds": [
+          "c357734a-33b4-4325-928d-2abfb155058b-z-boundary",
+          "c357734a-33b4-4325-928d-2abfb155058b-z-fraction",
+          "c357734a-33b4-4325-928d-2abfb155058b-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      "reason": "Human review rejected final prose that excluded the exact price boundary although the returned cards included it. Initial automatic assertions checked cards only; final assertions also check prose."
+    },
+    {
+      "run": {
+        "scenarioId": "master-0214",
+        "prompt": "Găsește trei camere în Floreasca sub 250.000 €.",
+        "versions": {
+          "prompt": "jarvis-56",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:55:39.177Z",
+        "executionVerified": false,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit două apartamente de vânzare cu 3 camere în Floreasca sub 250.000 €:\n\n- **Anunț z-sale** — 120.000 € — [vezi anunțul](https://example.test/listing/z-sale)\n- **Anunț z-fraction** — 249.999,99 € — [vezi anunțul](https://example.test/listing/z-fraction)\n\nUn al treilea rezultat are prețul exact de 250.000 €, deci nu se încadrează la „sub 250.000 €”. A mai fost un anunț cu moneda necunoscută, pe care nu l-am considerat potrivire în EUR. Căutarea a fost completă la momentul verificării; anunțurile colectate în aplicație nu reprezintă o verificare în timp real pe portaluri.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Floreasca",
+              "propertyType": "apartment",
+              "transactionType": "sale",
+              "rooms": 3,
+              "priceMax": 250000,
+              "limit": 100
+            },
+            "appliedTransactionType": "sale",
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "80611619-81fa-453e-8790-5565bb3f831d-z-boundary",
+                "title": "Apartament Floreasca, preț exact la limită",
+                "transactionType": "sale",
+                "location": "București, Floreasca",
+                "price": "250000 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-boundary",
+                "lastVerifiedAt": "2026-10-11T06:55:39.177Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "80611619-81fa-453e-8790-5565bb3f831d-z-fraction",
+                "title": "Anunț z-fraction",
+                "transactionType": "sale",
+                "location": "București, Floreasca",
+                "price": "249999.99 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-fraction",
+                "lastVerifiedAt": "2026-10-11T06:55:39.177Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "80611619-81fa-453e-8790-5565bb3f831d-z-sale",
+                "title": "Apartament Floreasca, vânzare",
+                "transactionType": "sale",
+                "location": "București, Floreasca",
+                "price": "120000 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:55:39.177Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 271,
+            "uncertainCurrency": 1,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:55:41.717Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 180,
+            "version": "86",
+            "argumentsHash": "ba61736d520f4c61e4e919b76d2d2f45ffd9d6e1b39bce609a16ddb286831070"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 12,
+            "version": "86",
+            "argumentsHash": "09e8ba6d1eb8dbd0b7c42f377d06fde32eca02c4ffd6885020e0ce3a10e96dbe"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12343,
+              "outputTokens": 93,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12340,
+              "estimated": false
+            },
+            "costUsd": 0.0015892999999999999,
+            "latencyMs": 2306,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13075,
+              "outputTokens": 106,
+              "cachedTokens": 12340,
+              "cacheWriteTokens": 732,
+              "estimated": false
+            },
+            "costUsd": 0.0002682,
+            "latencyMs": 2356,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13206,
+              "outputTokens": 213,
+              "cachedTokens": 13072,
+              "cacheWriteTokens": 131,
+              "estimated": false
+            },
+            "costUsd": 0.000253895,
+            "latencyMs": 3224,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_5BOCGpgXcrEpgPptoTtrhWyt",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Floreasca\",\"propertyType\":\"apartment\",\"transactionType\":\"sale\",\"rooms\":3,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":250000,\"limit\":100,\"cursor\":null}"
+          },
+          {
+            "id": "call_aqKNcHZtW3gcgvnr9I9qil8Y",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"property_search\",\"sourceQuote\":\"Găsește trei camere în Floreasca sub 250.000 €.\",\"description\":\"Găsește apartamente de vânzare cu trei camere în Floreasca, cu preț sub 250.000 EUR.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_5BOCGpgXcrEpgPptoTtrhWyt\"]}]}"
+          }
+        ],
+        "costUsd": 0.002111395,
+        "expectedIds": [
+          "80611619-81fa-453e-8790-5565bb3f831d-z-boundary",
+          "80611619-81fa-453e-8790-5565bb3f831d-z-fraction",
+          "80611619-81fa-453e-8790-5565bb3f831d-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      "reason": "Human review rejected final prose that excluded the exact price boundary although the returned cards included it. Initial automatic assertions checked cards only; final assertions also check prose."
+    }
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0206",
+      "prompt": "Găsește proprietăți de proprietar în Pipera.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:58:12.712Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 proprietăți de proprietar în Pipera:\n\n- **Casă Pipera** — casă de vânzare, 4 camere, **120.000 EUR**.\n- **Apartament Pipera, închiriere** — 2 camere, **600 EUR**.\n- **Apartament Pipera, vânzare** — 2 camere, **120.000 EUR**.\n\nCăutarea este completă. Anul construcției nu este cunoscut pentru niciuna dintre oferte; datele au fost verificate la 11 octombrie 2026.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Pipera",
+            "limit": 20
+          },
+          "appliedTransactionType": null,
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "e5795a79-8892-4cc2-800f-046c6f74db02-z-house",
+              "title": "Casă Pipera",
+              "transactionType": "sale",
+              "location": "București, Pipera",
+              "price": "120000 EUR",
+              "rooms": 4,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-house",
+              "lastVerifiedAt": "2026-10-11T06:58:12.711Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "e5795a79-8892-4cc2-800f-046c6f74db02-z-rent",
+              "title": "Apartament Pipera, închiriere",
+              "transactionType": "rent",
+              "location": "București, Pipera",
+              "price": "600 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-rent",
+              "lastVerifiedAt": "2026-10-11T06:58:12.711Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "e5795a79-8892-4cc2-800f-046c6f74db02-z-sale",
+              "title": "Apartament Pipera, vânzare",
+              "transactionType": "sale",
+              "location": "București, Pipera",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:58:12.711Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 266,
+          "uncertainCurrency": 0,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:58:15.622Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 208,
+          "version": "86",
+          "argumentsHash": "4d5847508b9e813d710575661d8644aa8a94cc2bbb8654bd5b32a9792df29cee"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "86",
+          "argumentsHash": "9c5cab75ebe4a71a8103633adb3e4107f32f374724b26233aeb271c8d8863de3"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12941,
+            "outputTokens": 91,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12938,
+            "estimated": false
+          },
+          "costUsd": 0.00166305,
+          "latencyMs": 2600,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13644,
+            "outputTokens": 90,
+            "cachedTokens": 12938,
+            "cacheWriteTokens": 703,
+            "estimated": false
+          },
+          "costUsd": 0.000262555,
+          "latencyMs": 3788,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13759,
+            "outputTokens": 152,
+            "cachedTokens": 13641,
+            "cacheWriteTokens": 115,
+            "estimated": false
+          },
+          "costUsd": 0.000227085,
+          "latencyMs": 3538,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_sXWYCpO5KrWXLes8YPgBFmnj",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Pipera\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":20,\"cursor\":null}"
+        },
+        {
+          "id": "call_Dlb9MZzPbX7O7254Uo6mXZ7S",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"properties\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Pipera.\",\"description\":\"Caută și prezintă proprietățile proprietarilor din Pipera.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_sXWYCpO5KrWXLes8YPgBFmnj\"]}]}"
+        }
+      ],
+      "costUsd": 0.00215269,
+      "expectedIds": [
+        "e5795a79-8892-4cc2-800f-046c6f74db02-z-house",
+        "e5795a79-8892-4cc2-800f-046c6f74db02-z-rent",
+        "e5795a79-8892-4cc2-800f-046c6f74db02-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0207",
+      "prompt": "Găsește proprietăți de proprietar în Aviației.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:58:27.067Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 proprietăți de proprietar în Aviației:\n\n- **Casă Aviației** — vânzare, 4 camere, **120.000 EUR**. [Anunț](https://example.test/listing/z-house)\n- **Apartament Aviației, închiriere** — închiriere, 2 camere, **600 EUR**. [Anunț](https://example.test/listing/z-rent)\n- **Apartament Aviației, vânzare** — vânzare, 2 camere, **120.000 EUR**. [Anunț](https://example.test/listing/z-sale)\n\nCăutarea este completă; anunțurile au fost verificate la 11 octombrie 2026. Datele despre anul construcției nu sunt disponibile.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Aviației",
+            "limit": 100
+          },
+          "appliedTransactionType": null,
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "5743870c-9be0-45b2-b16b-97ca58a9888f-z-house",
+              "title": "Casă Aviației",
+              "transactionType": "sale",
+              "location": "București, Aviatiei",
+              "price": "120000 EUR",
+              "rooms": 4,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-house",
+              "lastVerifiedAt": "2026-10-11T06:58:27.066Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "5743870c-9be0-45b2-b16b-97ca58a9888f-z-rent",
+              "title": "Apartament Aviației, închiriere",
+              "transactionType": "rent",
+              "location": "București, Aviatiei",
+              "price": "600 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-rent",
+              "lastVerifiedAt": "2026-10-11T06:58:27.066Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "5743870c-9be0-45b2-b16b-97ca58a9888f-z-sale",
+              "title": "Apartament Aviației, vânzare",
+              "transactionType": "sale",
+              "location": "București, Aviatiei",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:58:27.066Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 266,
+          "uncertainCurrency": 0,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:58:29.517Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 158,
+          "version": "86",
+          "argumentsHash": "52147999ff98eac87d3c9b5d5e72938482bd21f65e9ebb88b93406db5485fe47"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 12,
+          "version": "86",
+          "argumentsHash": "19acccaf2ef5c9a363a13680926e3970914c9fd547cd2ab91f6c423c2aa55c9c"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12942,
+            "outputTokens": 91,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12939,
+            "estimated": false
+          },
+          "costUsd": 0.001663175,
+          "latencyMs": 2211,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13651,
+            "outputTokens": 96,
+            "cachedTokens": 12939,
+            "cacheWriteTokens": 709,
+            "estimated": false
+          },
+          "costUsd": 0.00026631500000000004,
+          "latencyMs": 2730,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13772,
+            "outputTokens": 202,
+            "cachedTokens": 13648,
+            "cacheWriteTokens": 121,
+            "estimated": false
+          },
+          "costUsd": 0.000252905,
+          "latencyMs": 3260,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_FuiXnaYbybeMMF7Sh9aBjWjm",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Aviației\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_KIOaw99xT2z8FF1d20hufOWC",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Aviației.\",\"description\":\"Caută și prezintă proprietățile din sursa proprietari în zona Aviației.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_FuiXnaYbybeMMF7Sh9aBjWjm\"]}]}"
+        }
+      ],
+      "costUsd": 0.002182395,
+      "expectedIds": [
+        "5743870c-9be0-45b2-b16b-97ca58a9888f-z-house",
+        "5743870c-9be0-45b2-b16b-97ca58a9888f-z-rent",
+        "5743870c-9be0-45b2-b16b-97ca58a9888f-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0208",
+      "prompt": "Găsește proprietăți de proprietar în Drumul Taberei.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:58:40.324Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 proprietăți de la proprietari în Drumul Taberei:\n\n- **Casă Drumul Taberei** — vânzare, 4 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-house)\n- **Apartament Drumul Taberei, închiriere** — 2 camere, **600 EUR**. [Vezi anunțul](https://example.test/listing/z-rent)\n- **Apartament Drumul Taberei, vânzare** — 2 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-sale)\n\nCăutarea este completă pentru rezultatele eligibile găsite. Datele au fost verificate în sistem la 11 octombrie 2026; anul construcției nu este precizat pentru aceste anunțuri.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Drumul Taberei",
+            "limit": 100
+          },
+          "appliedTransactionType": null,
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "151b2432-1049-4579-8089-28e90a8285dc-z-house",
+              "title": "Casă Drumul Taberei",
+              "transactionType": "sale",
+              "location": "București, Drumul-Taberei",
+              "price": "120000 EUR",
+              "rooms": 4,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-house",
+              "lastVerifiedAt": "2026-10-11T06:58:40.323Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "151b2432-1049-4579-8089-28e90a8285dc-z-rent",
+              "title": "Apartament Drumul Taberei, închiriere",
+              "transactionType": "rent",
+              "location": "București, Drumul-Taberei",
+              "price": "600 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-rent",
+              "lastVerifiedAt": "2026-10-11T06:58:40.323Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "151b2432-1049-4579-8089-28e90a8285dc-z-sale",
+              "title": "Apartament Drumul Taberei, vânzare",
+              "transactionType": "sale",
+              "location": "București, Drumul-Taberei",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:58:40.323Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 266,
+          "uncertainCurrency": 0,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:58:43.572Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 342,
+          "version": "86",
+          "argumentsHash": "e20c18276ae3e70f26c30e433c5e12823a27b85e1b59d6b271aabb4e390cd29b"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 17,
+          "version": "86",
+          "argumentsHash": "a3fcb5b53120bc96bb4adb60b8247de08883bed3bb38878b5e51d12ee07d4de1"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12941,
+            "outputTokens": 92,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12938,
+            "estimated": false
+          },
+          "costUsd": 0.00166355,
+          "latencyMs": 2360,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13656,
+            "outputTokens": 97,
+            "cachedTokens": 12938,
+            "cacheWriteTokens": 715,
+            "estimated": false
+          },
+          "costUsd": 0.000267555,
+          "latencyMs": 2591,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13778,
+            "outputTokens": 217,
+            "cachedTokens": 13653,
+            "cacheWriteTokens": 122,
+            "estimated": false
+          },
+          "costUsd": 0.00026058000000000006,
+          "latencyMs": 3477,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_5iECsMdDRGWQ2PvpKvDnGq8M",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Drumul Taberei\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_QrFLY9PdZYHutTTBmaAyDrG3",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"listings\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Drumul Taberei.\",\"description\":\"Caută și prezintă proprietățile proprietarilor din Drumul Taberei.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_5iECsMdDRGWQ2PvpKvDnGq8M\"]}]}"
+        }
+      ],
+      "costUsd": 0.002191685,
+      "expectedIds": [
+        "151b2432-1049-4579-8089-28e90a8285dc-z-house",
+        "151b2432-1049-4579-8089-28e90a8285dc-z-rent",
+        "151b2432-1049-4579-8089-28e90a8285dc-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0209",
+      "prompt": "Găsește proprietăți de proprietar în Berceni.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:58:53.652Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 proprietăți de la proprietari în Berceni:\n\n- **Casă Berceni** — vânzare, 4 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-house)\n- **Apartament Berceni, închiriere** — închiriere, 2 camere, **600 EUR**. [Vezi anunțul](https://example.test/listing/z-rent)\n- **Apartament Berceni, vânzare** — vânzare, 2 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-sale)\n\nCăutarea este completă pentru criteriile cerute; anunțurile au fost verificate la 11 octombrie 2026. Anul construcției nu este cunoscut pentru aceste proprietăți.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Berceni",
+            "limit": 100
+          },
+          "appliedTransactionType": null,
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "54e7f570-5f7f-4590-b7d7-566e25600451-z-house",
+              "title": "Casă Berceni",
+              "transactionType": "sale",
+              "location": "București, Berceni",
+              "price": "120000 EUR",
+              "rooms": 4,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-house",
+              "lastVerifiedAt": "2026-10-11T06:58:53.652Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "54e7f570-5f7f-4590-b7d7-566e25600451-z-rent",
+              "title": "Apartament Berceni, închiriere",
+              "transactionType": "rent",
+              "location": "București, Berceni",
+              "price": "600 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-rent",
+              "lastVerifiedAt": "2026-10-11T06:58:53.652Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "54e7f570-5f7f-4590-b7d7-566e25600451-z-sale",
+              "title": "Apartament Berceni, vânzare",
+              "transactionType": "sale",
+              "location": "București, Berceni",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:58:53.652Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 266,
+          "uncertainCurrency": 0,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:58:57.114Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 132,
+          "version": "86",
+          "argumentsHash": "4e13dc74597ab07c785cc85f81efdec405e7de635e59770d3aac1b8466eba264"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "86",
+          "argumentsHash": "b2de82c14b9b902e140ae7fae88c7485980de473b6dc9dcca89fdc6157d10fa2"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12942,
+            "outputTokens": 91,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12939,
+            "estimated": false
+          },
+          "costUsd": 0.001663175,
+          "latencyMs": 3274,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13651,
+            "outputTokens": 96,
+            "cachedTokens": 12939,
+            "cacheWriteTokens": 709,
+            "estimated": false
+          },
+          "costUsd": 0.00026631500000000004,
+          "latencyMs": 2810,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13772,
+            "outputTokens": 223,
+            "cachedTokens": 13648,
+            "cacheWriteTokens": 121,
+            "estimated": false
+          },
+          "costUsd": 0.000263405,
+          "latencyMs": 3486,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_7RHRr30gi1lgvjBVKe8RYKIE",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Berceni\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_PKJ84JKO2A1RIUrlGXyjSvbX",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"list_properties\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Berceni.\",\"description\":\"Găsește și prezintă proprietățile din sursa proprietari din Berceni.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_7RHRr30gi1lgvjBVKe8RYKIE\"]}]}"
+        }
+      ],
+      "costUsd": 0.0021928950000000003,
+      "expectedIds": [
+        "54e7f570-5f7f-4590-b7d7-566e25600451-z-house",
+        "54e7f570-5f7f-4590-b7d7-566e25600451-z-rent",
+        "54e7f570-5f7f-4590-b7d7-566e25600451-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0210",
+      "prompt": "Găsește proprietăți de proprietar în Militari.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:59:07.594Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 proprietăți de proprietar în Militari:\n\n- **Casă Militari** — vânzare, 4 camere, **120.000 EUR**. [Anunț](https://example.test/listing/z-house)\n- **Apartament Militari, închiriere** — 2 camere, **600 EUR**. [Anunț](https://example.test/listing/z-rent)\n- **Apartament Militari, vânzare** — 2 camere, **120.000 EUR**. [Anunț](https://example.test/listing/z-sale)\n\nCăutarea s-a încheiat și rezultatele sunt actuale la momentul verificării. Informațiile despre suprafață și anul construcției nu sunt disponibile în înregistrări.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Militari",
+            "limit": 20
+          },
+          "appliedTransactionType": null,
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "cc871e1d-64e7-492b-b6c5-08c8701e7ba1-z-house",
+              "title": "Casă Militari",
+              "transactionType": "sale",
+              "location": "București, Militari",
+              "price": "120000 EUR",
+              "rooms": 4,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-house",
+              "lastVerifiedAt": "2026-10-11T06:59:07.594Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "cc871e1d-64e7-492b-b6c5-08c8701e7ba1-z-rent",
+              "title": "Apartament Militari, închiriere",
+              "transactionType": "rent",
+              "location": "București, Militari",
+              "price": "600 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-rent",
+              "lastVerifiedAt": "2026-10-11T06:59:07.594Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "cc871e1d-64e7-492b-b6c5-08c8701e7ba1-z-sale",
+              "title": "Apartament Militari, vânzare",
+              "transactionType": "sale",
+              "location": "București, Militari",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:59:07.594Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 266,
+          "uncertainCurrency": 0,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:59:10.991Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 117,
+          "version": "86",
+          "argumentsHash": "07c9ea3ae33ec078a80fb74c7b130812e7e0e44fad2c377f5d0eb798a176a0a8"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 10,
+          "version": "86",
+          "argumentsHash": "9714a781baad79297ed80192841f2e19d18c556303b031b8c21f12329851b30f"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12943,
+            "outputTokens": 90,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12940,
+            "estimated": false
+          },
+          "costUsd": 0.0016627999999999999,
+          "latencyMs": 3154,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13651,
+            "outputTokens": 98,
+            "cachedTokens": 12940,
+            "cacheWriteTokens": 708,
+            "estimated": false
+          },
+          "costUsd": 0.00026720000000000004,
+          "latencyMs": 3385,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13774,
+            "outputTokens": 192,
+            "cachedTokens": 13648,
+            "cacheWriteTokens": 123,
+            "estimated": false
+          },
+          "costUsd": 0.000248155,
+          "latencyMs": 4693,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_Y6WgsUGqrZC196cEOyY0LoIj",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Militari\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":20,\"cursor\":null}"
+        },
+        {
+          "id": "call_4vwOBDyPiwmzoxzsJs4iBo6G",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"find_owner_properties_militari\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Militari.\",\"description\":\"Caută oferte de proprietar în zona Militari și prezintă rezultatele disponibile.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_Y6WgsUGqrZC196cEOyY0LoIj\"]}]}"
+        }
+      ],
+      "costUsd": 0.0021781549999999998,
+      "expectedIds": [
+        "cc871e1d-64e7-492b-b6c5-08c8701e7ba1-z-house",
+        "cc871e1d-64e7-492b-b6c5-08c8701e7ba1-z-rent",
+        "cc871e1d-64e7-492b-b6c5-08c8701e7ba1-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0211",
+      "prompt": "Găsește două camere în Titan sub 130.000 €.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:59:23.187Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit trei apartamente de vânzare cu două camere în Titan, până la 130.000 € inclusiv:\n\n- **120.000 €** — Apartament Titan, vânzare ([anunț](https://example.test/listing/z-sale))\n- **129.999,99 €** — Anunț z-fraction ([anunț](https://example.test/listing/z-fraction))\n- **130.000 €** — Apartament Titan, preț exact la limită ([anunț](https://example.test/listing/z-boundary))\n\nCăutarea a fost completă. Un anunț cu monedă necunoscută nu a fost inclus; anul construcției nu este disponibil pentru aceste oferte.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "rooms": 2,
+            "priceMax": 130000,
+            "limit": 100
+          },
+          "appliedTransactionType": "sale",
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "3900092d-9d0d-48a8-aa0b-92effdec7990-z-boundary",
+              "title": "Apartament Titan, preț exact la limită",
+              "transactionType": "sale",
+              "location": "București, Titan",
+              "price": "130000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-boundary",
+              "lastVerifiedAt": "2026-10-11T06:59:23.185Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "3900092d-9d0d-48a8-aa0b-92effdec7990-z-fraction",
+              "title": "Anunț z-fraction",
+              "transactionType": "sale",
+              "location": "București, Titan",
+              "price": "129999.99 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-fraction",
+              "lastVerifiedAt": "2026-10-11T06:59:23.185Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "3900092d-9d0d-48a8-aa0b-92effdec7990-z-sale",
+              "title": "Apartament Titan, vânzare",
+              "transactionType": "sale",
+              "location": "București, Titan",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:59:23.185Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 271,
+          "uncertainCurrency": 1,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:59:26.547Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 713,
+          "version": "86",
+          "argumentsHash": "4e4434c4ea0b275fc5224aa8e95ab8e064dec20b4aa7a5801b7dbf141560c94e"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 13,
+          "version": "86",
+          "argumentsHash": "2f07105f4e2f8a94581be2a9eb2805e156517c984a6ee557bb44df38a527968e"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12610,
+            "outputTokens": 91,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12607,
+            "estimated": false
+          },
+          "costUsd": 0.001621675,
+          "latencyMs": 2556,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13339,
+            "outputTokens": 101,
+            "cachedTokens": 12607,
+            "cacheWriteTokens": 729,
+            "estimated": false
+          },
+          "costUsd": 0.000267995,
+          "latencyMs": 2729,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13465,
+            "outputTokens": 185,
+            "cachedTokens": 13336,
+            "cacheWriteTokens": 126,
+            "estimated": false
+          },
+          "costUsd": 0.00024191000000000002,
+          "latencyMs": 2851,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_zwfRM8I8nDk0CfqRg6swn0NX",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":\"apartment\",\"transactionType\":null,\"rooms\":2,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":130000,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_A0GN9egzk7n8MfQ0A30NOcap",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Găsește două camere în Titan sub 130.000 €.\",\"description\":\"Caută apartamente cu două camere în Titan până la pragul inclusiv de 130.000 EUR.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_zwfRM8I8nDk0CfqRg6swn0NX\"]}]}"
+        }
+      ],
+      "costUsd": 0.00213158,
+      "expectedIds": [
+        "3900092d-9d0d-48a8-aa0b-92effdec7990-z-boundary",
+        "3900092d-9d0d-48a8-aa0b-92effdec7990-z-fraction",
+        "3900092d-9d0d-48a8-aa0b-92effdec7990-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0212",
+      "prompt": "Găsește trei camere în Titan sub 160.000 €.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:59:36.264Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 apartamente de vânzare cu 3 camere în Titan. Limita de 160.000 € este inclusivă, astfel că este inclus și anunțul exact la prag.\n\n- **120.000 €** — Apartament Titan, vânzare. [Vezi anunțul](https://example.test/listing/z-sale)\n- **159.999,99 €** — Anunț z-fraction. [Vezi anunțul](https://example.test/listing/z-fraction)\n- **160.000 €** — Apartament Titan, preț exact la limită. [Vezi anunțul](https://example.test/listing/z-boundary)\n\nRezultatele provin din anunțurile colectate în aplicație; moneda unui alt anunț citit nu a putut fi verificată și acesta nu a fost inclus.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Titan",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "priceMax": 160000,
+            "limit": 100
+          },
+          "appliedTransactionType": "sale",
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "9996e388-3f37-4f48-a6d8-ded47f2d5851-z-boundary",
+              "title": "Apartament Titan, preț exact la limită",
+              "transactionType": "sale",
+              "location": "București, Titan",
+              "price": "160000 EUR",
+              "rooms": 3,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-boundary",
+              "lastVerifiedAt": "2026-10-11T06:59:36.264Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "9996e388-3f37-4f48-a6d8-ded47f2d5851-z-fraction",
+              "title": "Anunț z-fraction",
+              "transactionType": "sale",
+              "location": "București, Titan",
+              "price": "159999.99 EUR",
+              "rooms": 3,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-fraction",
+              "lastVerifiedAt": "2026-10-11T06:59:36.264Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "9996e388-3f37-4f48-a6d8-ded47f2d5851-z-sale",
+              "title": "Apartament Titan, vânzare",
+              "transactionType": "sale",
+              "location": "București, Titan",
+              "price": "120000 EUR",
+              "rooms": 3,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:59:36.264Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 271,
+          "uncertainCurrency": 1,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:59:40.653Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 177,
+          "version": "86",
+          "argumentsHash": "99224c795557cf8f51940730a6901d6df5dd39fc59473f6643462216a68e1c72"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "failed",
+          "latencyMs": 8,
+          "version": "86",
+          "argumentsHash": "7ab3ad4433c6160d2104bf1709c3c9de206408af03e32ff53c2d4e376db4981d"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 18,
+          "version": "86",
+          "argumentsHash": "d44666fa25b8e7274ea23f3e03b75bb1f12deecc0347ea9f438c6f761c139a74"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12612,
+            "outputTokens": 91,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12609,
+            "estimated": false
+          },
+          "costUsd": 0.001621925,
+          "latencyMs": 4185,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13344,
+            "outputTokens": 120,
+            "cachedTokens": 12609,
+            "cacheWriteTokens": 732,
+            "estimated": false
+          },
+          "costUsd": 0.00027789,
+          "latencyMs": 3283,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13493,
+            "outputTokens": 110,
+            "cachedTokens": 13341,
+            "cacheWriteTokens": 149,
+            "estimated": false
+          },
+          "costUsd": 0.000207335,
+          "latencyMs": 2865,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13628,
+            "outputTokens": 211,
+            "cachedTokens": 13490,
+            "cacheWriteTokens": 135,
+            "estimated": false
+          },
+          "costUsd": 0.00025757500000000007,
+          "latencyMs": 3475,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_jfxqhSmk6iCdu4uoJEPuijcc",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":\"apartment\",\"transactionType\":\"sale\",\"rooms\":3,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":160000,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_LhmYpd53dx0nPMq1cBkO1eIA",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"list-three-room-apartments-titan-under-160000\",\"sourceQuote\":\"Găsește trei camere în Titan sub 160.000 €.\",\"description\":\"Găsește apartamente de vânzare cu trei camere în Titan, până la pragul inclusiv de 160.000 EUR conform convenției aplicației.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_jfxqhSmk6iCdu4uoJEPuijcc\"]}]}"
+        },
+        {
+          "id": "call_Ct0bqPmsm8oWxtDyAxpqXpiB",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"req1\",\"sourceQuote\":\"Găsește trei camere în Titan sub 160.000 €.\",\"description\":\"Găsește apartamente de vânzare cu trei camere în Titan, până la pragul inclusiv de 160.000 EUR conform convenției aplicației.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_jfxqhSmk6iCdu4uoJEPuijcc\"]}]}"
+        }
+      ],
+      "costUsd": 0.002364725,
+      "expectedIds": [
+        "9996e388-3f37-4f48-a6d8-ded47f2d5851-z-boundary",
+        "9996e388-3f37-4f48-a6d8-ded47f2d5851-z-fraction",
+        "9996e388-3f37-4f48-a6d8-ded47f2d5851-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0213",
+      "prompt": "Găsește două camere în Cișmigiu până în 180.000 €.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T06:59:54.300Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 apartamente de vânzare cu două camere în Cișmigiu, toate în limita de 180.000 € inclusiv:\n\n- **120.000 €** — Apartament Cișmigiu, vânzare. [Vezi anunțul](https://example.test/listing/z-sale)\n- **179.999,99 €** — Anunț z-fraction. [Vezi anunțul](https://example.test/listing/z-fraction)\n- **180.000 €** — Apartament Cișmigiu, preț exact la limită. [Vezi anunțul](https://example.test/listing/z-boundary)\n\nCăutarea a fost completă. Un anunț cu moneda necunoscută nu a fost inclus.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Cișmigiu",
+            "propertyType": "apartment",
+            "rooms": 2,
+            "priceMax": 180000,
+            "limit": 100
+          },
+          "appliedTransactionType": "sale",
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "0e50051e-67d8-497b-8369-ea945560efd0-z-boundary",
+              "title": "Apartament Cișmigiu, preț exact la limită",
+              "transactionType": "sale",
+              "location": "București, Cismigiu",
+              "price": "180000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-boundary",
+              "lastVerifiedAt": "2026-10-11T06:59:54.300Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "0e50051e-67d8-497b-8369-ea945560efd0-z-fraction",
+              "title": "Anunț z-fraction",
+              "transactionType": "sale",
+              "location": "București, Cismigiu",
+              "price": "179999.99 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-fraction",
+              "lastVerifiedAt": "2026-10-11T06:59:54.300Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "0e50051e-67d8-497b-8369-ea945560efd0-z-sale",
+              "title": "Apartament Cișmigiu, vânzare",
+              "transactionType": "sale",
+              "location": "București, Cismigiu",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T06:59:54.300Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 271,
+          "uncertainCurrency": 1,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T06:59:56.864Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 112,
+          "version": "86",
+          "argumentsHash": "b60f9b22f7d85c316d94956c74c783e5c25032ff84c9d40dd53e90bf39410312"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 14,
+          "version": "86",
+          "argumentsHash": "ddecfac9321d8ea93266f028d104ecaba92f05867d38e71f6c0a3227ac273359"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12502,
+            "outputTokens": 94,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12499,
+            "estimated": false
+          },
+          "costUsd": 0.0016096749999999999,
+          "latencyMs": 2353,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13245,
+            "outputTokens": 108,
+            "cachedTokens": 12499,
+            "cacheWriteTokens": 743,
+            "estimated": false
+          },
+          "costUsd": 0.000272165,
+          "latencyMs": 2688,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13378,
+            "outputTokens": 192,
+            "cachedTokens": 13242,
+            "cacheWriteTokens": 133,
+            "estimated": false
+          },
+          "costUsd": 0.000245345,
+          "latencyMs": 3442,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_9UkoLliTU6k2TcZ26AyfNhm8",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Cișmigiu\",\"propertyType\":\"apartment\",\"transactionType\":null,\"rooms\":2,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":180000,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_GFYeqjJzdjwBHuEiv6nXYnHR",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"search_properties\",\"sourceQuote\":\"Găsește două camere în Cișmigiu până în 180.000 €.\",\"description\":\"Găsește apartamente cu două camere în Cișmigiu, în limita inclusivă de 180.000 EUR.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_9UkoLliTU6k2TcZ26AyfNhm8\"]}]}"
+        }
+      ],
+      "costUsd": 0.0021271849999999998,
+      "expectedIds": [
+        "0e50051e-67d8-497b-8369-ea945560efd0-z-boundary",
+        "0e50051e-67d8-497b-8369-ea945560efd0-z-fraction",
+        "0e50051e-67d8-497b-8369-ea945560efd0-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0214",
+      "prompt": "Găsește trei camere în Floreasca sub 250.000 €.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T07:00:07.217Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 apartamente de vânzare cu 3 camere în Floreasca, până la 250.000 € inclusiv:\n\n- **120.000 €** — Apartament Floreasca, vânzare\n- **249.999,99 €** — Anunț z-fraction\n- **250.000 €** — Apartament Floreasca, preț exact la limită\n\nCăutarea este completă. Anul construcției nu este cunoscut pentru aceste anunțuri.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Floreasca",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "rooms": 3,
+            "priceMax": 250000,
+            "limit": 100
+          },
+          "appliedTransactionType": "sale",
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "4cb8c571-8ff9-46f7-996c-6ee30f88dca9-z-boundary",
+              "title": "Apartament Floreasca, preț exact la limită",
+              "transactionType": "sale",
+              "location": "București, Floreasca",
+              "price": "250000 EUR",
+              "rooms": 3,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-boundary",
+              "lastVerifiedAt": "2026-10-11T07:00:07.217Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "4cb8c571-8ff9-46f7-996c-6ee30f88dca9-z-fraction",
+              "title": "Anunț z-fraction",
+              "transactionType": "sale",
+              "location": "București, Floreasca",
+              "price": "249999.99 EUR",
+              "rooms": 3,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-fraction",
+              "lastVerifiedAt": "2026-10-11T07:00:07.217Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "4cb8c571-8ff9-46f7-996c-6ee30f88dca9-z-sale",
+              "title": "Apartament Floreasca, vânzare",
+              "transactionType": "sale",
+              "location": "București, Floreasca",
+              "price": "120000 EUR",
+              "rooms": 3,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T07:00:07.217Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 271,
+          "uncertainCurrency": 1,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T07:00:10.014Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 167,
+          "version": "86",
+          "argumentsHash": "ba61736d520f4c61e4e919b76d2d2f45ffd9d6e1b39bce609a16ddb286831070"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 8,
+          "version": "86",
+          "argumentsHash": "9d42bb3749a1b5befe4786dfbfcc4a40daea092cb7d47ce72e03573da64bd47c"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12504,
+            "outputTokens": 93,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12501,
+            "estimated": false
+          },
+          "costUsd": 0.001609425,
+          "latencyMs": 2615,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13255,
+            "outputTokens": 102,
+            "cachedTokens": 12501,
+            "cacheWriteTokens": 751,
+            "estimated": false
+          },
+          "costUsd": 0.000270185,
+          "latencyMs": 2534,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13382,
+            "outputTokens": 133,
+            "cachedTokens": 13252,
+            "cacheWriteTokens": 127,
+            "estimated": false
+          },
+          "costUsd": 0.00021519500000000003,
+          "latencyMs": 2840,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_5b9Su8aUvhQZSSqXv0qCe2cq",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Floreasca\",\"propertyType\":\"apartment\",\"transactionType\":\"sale\",\"rooms\":3,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":250000,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_ObDOZqE52R9honBl11n6B7QR",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"properties\",\"sourceQuote\":\"Găsește trei camere în Floreasca sub 250.000 €.\",\"description\":\"Caută apartamente de trei camere în Floreasca până la 250.000 EUR inclusiv.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_5b9Su8aUvhQZSSqXv0qCe2cq\"]}]}"
+        }
+      ],
+      "costUsd": 0.002094805,
+      "expectedIds": [
+        "4cb8c571-8ff9-46f7-996c-6ee30f88dca9-z-boundary",
+        "4cb8c571-8ff9-46f7-996c-6ee30f88dca9-z-fraction",
+        "4cb8c571-8ff9-46f7-996c-6ee30f88dca9-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    },
+    {
+      "scenarioId": "master-0215",
+      "prompt": "Găsește apartamente în Pipera până în 200.000 €.",
+      "versions": {
+        "prompt": "jarvis-57",
+        "routing": "luna-first-2",
+        "policy": "request-crm-9",
+        "tools": "86",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T07:00:19.600Z",
+      "executionVerified": true,
+      "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+      "text": "Am găsit 3 apartamente de vânzare în Pipera, toate în limita de până la 200.000 € inclusiv:\n\n- **Apartament Pipera, vânzare** — 120.000 €, 2 camere. [Vezi anunțul](https://example.test/listing/z-sale)\n- **Anunț z-fraction** — 199.999,99 €, 2 camere. [Vezi anunțul](https://example.test/listing/z-fraction)\n- **Apartament Pipera, preț exact la limită** — 200.000 €, 2 camere. [Vezi anunțul](https://example.test/listing/z-boundary)\n\nCăutarea a fost completă. Un anunț cu monedă necunoscută nu a fost inclus; datele anunțurilor provin din sursa de oferte și nu reprezintă o verificare independentă a proprietăților.",
+      "plannerStatus": "success",
+      "cards": [
+        {
+          "type": "results",
+          "title": "Anunțuri proprietari",
+          "source": "owners",
+          "search": {
+            "source": "owners",
+            "zone": "Pipera",
+            "propertyType": "apartment",
+            "transactionType": "sale",
+            "priceMax": 200000,
+            "limit": 100
+          },
+          "appliedTransactionType": "sale",
+          "rentCeilingEur": 10000,
+          "rows": [
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "f9819e05-f8c3-4824-8609-bb8a251ddea1-z-boundary",
+              "title": "Apartament Pipera, preț exact la limită",
+              "transactionType": "sale",
+              "location": "București, Pipera",
+              "price": "200000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-boundary",
+              "lastVerifiedAt": "2026-10-11T07:00:19.600Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "f9819e05-f8c3-4824-8609-bb8a251ddea1-z-fraction",
+              "title": "Anunț z-fraction",
+              "transactionType": "sale",
+              "location": "București, Pipera",
+              "price": "199999.99 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-fraction",
+              "lastVerifiedAt": "2026-10-11T07:00:19.600Z"
+            },
+            {
+              "constructionYear": null,
+              "constructionYearLabel": null,
+              "constructionYearKnown": false,
+              "constructionYearEvidenceKind": "unknown",
+              "constructionYearLowerBound": null,
+              "constructionYearUpperBound": null,
+              "yearFilterSatisfied": null,
+              "id": "f9819e05-f8c3-4824-8609-bb8a251ddea1-z-sale",
+              "title": "Apartament Pipera, vânzare",
+              "transactionType": "sale",
+              "location": "București, Pipera",
+              "price": "120000 EUR",
+              "rooms": 2,
+              "squareFootage": null,
+              "imageUrl": null,
+              "status": null,
+              "source": "owners",
+              "link": "https://example.test/listing/z-sale",
+              "lastVerifiedAt": "2026-10-11T07:00:19.600Z"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 271,
+          "uncertainCurrency": 1,
+          "freshness": "live_firestore",
+          "observedAt": "2026-10-11T07:00:23.226Z",
+          "paginationConsistency": "live_cursor",
+          "searchMode": "live_scan",
+          "note": "1 anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR. Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+          "outputType": "PROPERTY_LIST"
+        }
+      ],
+      "actions": [],
+      "tools": [
+        {
+          "name": "search_properties",
+          "status": "success",
+          "latencyMs": 149,
+          "version": "86",
+          "argumentsHash": "877dcce6e1c80a87fc41999829da647281000222ee26a67b814f4e1db915932f"
+        },
+        {
+          "name": "goal_coverage",
+          "status": "success",
+          "latencyMs": 20,
+          "version": "86",
+          "argumentsHash": "94c6809d8653ba914075fc3d65110277087e892f4ea62849e33a2f08994cbbbd"
+        }
+      ],
+      "models": [
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 12943,
+            "outputTokens": 93,
+            "cachedTokens": 0,
+            "cacheWriteTokens": 12940,
+            "estimated": false
+          },
+          "costUsd": 0.0016642999999999999,
+          "latencyMs": 3409,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13681,
+            "outputTokens": 102,
+            "cachedTokens": 12940,
+            "cacheWriteTokens": 738,
+            "estimated": false
+          },
+          "costUsd": 0.00027295000000000005,
+          "latencyMs": 3205,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        },
+        {
+          "decision": {
+            "logical": "LUNA",
+            "model": "gpt-6-luna",
+            "effort": "low",
+            "reason": "luna_first",
+            "version": "luna-first-2"
+          },
+          "usage": {
+            "inputTokens": 13808,
+            "outputTokens": 227,
+            "cachedTokens": 13678,
+            "cacheWriteTokens": 127,
+            "estimated": false
+          },
+          "costUsd": 0.000266455,
+          "latencyMs": 3826,
+          "pricingVersion": "openai-standard-2026-10-04",
+          "outcome": "success"
+        }
+      ],
+      "toolCalls": [
+        {
+          "id": "call_skM6xU1Ppw1lvXBHEqF2OWWb",
+          "name": "search_properties",
+          "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Pipera\",\"propertyType\":\"apartment\",\"transactionType\":\"sale\",\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":200000,\"limit\":100,\"cursor\":null}"
+        },
+        {
+          "id": "call_DgNLwT3QvwPt8AJluZVXCTmd",
+          "name": "goal_coverage",
+          "arguments": "{\"requirements\":[{\"id\":\"apartments\",\"sourceQuote\":\"Găsește apartamente în Pipera până în 200.000 €.\",\"description\":\"Caută apartamente de vânzare în Pipera până la 200.000 EUR inclusiv.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_skM6xU1Ppw1lvXBHEqF2OWWb\"]}]}"
+        }
+      ],
+      "costUsd": 0.002203705,
+      "expectedIds": [
+        "f9819e05-f8c3-4824-8609-bb8a251ddea1-z-boundary",
+        "f9819e05-f8c3-4824-8609-bb8a251ddea1-z-fraction",
+        "f9819e05-f8c3-4824-8609-bb8a251ddea1-z-sale"
+      ],
+      "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+    }
+  ],
+  "combinedRegression": {
+    "runs": [
+      {
+        "scenarioId": "master-0201",
+        "prompt": "Găsește anunțuri direct de la proprietar în Titan.",
+        "versions": {
+          "prompt": "jarvis-57",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:57:01.581Z",
+        "executionVerified": true,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit 3 anunțuri direct de la proprietar în Titan:\n\n- **Casă Titan** — vânzare, 4 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-house)\n- **Apartament Titan, închiriere** — 2 camere, **600 EUR**. [Vezi anunțul](https://example.test/listing/z-rent)\n- **Apartament Titan, vânzare** — 2 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-sale)\n\nCăutarea a fost completă pentru rezultatele disponibile. Anunțurile provin din sursa proprietarilor; datele au fost observate la 11 octombrie 2026.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Titan",
+              "limit": 20
+            },
+            "appliedTransactionType": null,
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "96324fcc-0342-446c-856e-1536e1344bab-z-house",
+                "title": "Casă Titan",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "120000 EUR",
+                "rooms": 4,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-house",
+                "lastVerifiedAt": "2026-10-11T06:57:01.580Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "96324fcc-0342-446c-856e-1536e1344bab-z-rent",
+                "title": "Apartament Titan, închiriere",
+                "transactionType": "rent",
+                "location": "București, Titan",
+                "price": "600 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-rent",
+                "lastVerifiedAt": "2026-10-11T06:57:01.580Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "96324fcc-0342-446c-856e-1536e1344bab-z-sale",
+                "title": "Apartament Titan, vânzare",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "120000 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:57:01.580Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 266,
+            "uncertainCurrency": 0,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:57:09.508Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 2564,
+            "version": "86",
+            "argumentsHash": "ce647d1c380415fbbfad26b68bf2dabb4aeb7a79795f283d609a797e24145bf0"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 10,
+            "version": "86",
+            "argumentsHash": "f3e41e6a4e4825860b49f4913960eedfe62bbafa80cb6ba661a790b8577b5baf"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12722,
+              "outputTokens": 89,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12719,
+              "estimated": false
+            },
+            "costUsd": 0.001634675,
+            "latencyMs": 3022,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13409,
+              "outputTokens": 98,
+              "cachedTokens": 12719,
+              "cacheWriteTokens": 687,
+              "estimated": false
+            },
+            "costUsd": 0.000262365,
+            "latencyMs": 2291,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13532,
+              "outputTokens": 200,
+              "cachedTokens": 13406,
+              "cacheWriteTokens": 123,
+              "estimated": false
+            },
+            "costUsd": 0.000249735,
+            "latencyMs": 4001,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_9mWEfNfK0SZ2oIS9L4eHbAx9",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":20,\"cursor\":null}"
+          },
+          {
+            "id": "call_Qvv62zRDFzhTTR7kMKlj919d",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Găsește anunțuri direct de la proprietar în Titan.\",\"description\":\"Caută și prezintă anunțurile proprietarilor din zona Titan.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_9mWEfNfK0SZ2oIS9L4eHbAx9\"]}]}"
+          }
+        ],
+        "costUsd": 0.002146775,
+        "expectedIds": [
+          "96324fcc-0342-446c-856e-1536e1344bab-z-house",
+          "96324fcc-0342-446c-856e-1536e1344bab-z-rent",
+          "96324fcc-0342-446c-856e-1536e1344bab-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      {
+        "scenarioId": "master-0202",
+        "prompt": "Găsește apartamente de proprietar cu două camere în Titan.",
+        "versions": {
+          "prompt": "jarvis-57",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:57:20.014Z",
+        "executionVerified": true,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit două apartamente de proprietar în Titan:\n\n- **Închiriere — 600 EUR:** apartament cu 2 camere, București, Titan. [Anunț](https://example.test/listing/z-rent)\n- **Vânzare — 120.000 EUR:** apartament cu 2 camere, București, Titan. [Anunț](https://example.test/listing/z-sale)\n\nCăutarea este completă pentru rezultatele disponibile la momentul verificării. Anul construcției nu este precizat pentru niciunul dintre anunțuri.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Titan",
+              "propertyType": "apartment",
+              "rooms": 2,
+              "limit": 100
+            },
+            "appliedTransactionType": null,
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "63a72298-4e08-4719-8f3a-ec1a2f3fedaa-z-rent",
+                "title": "Apartament Titan, închiriere",
+                "transactionType": "rent",
+                "location": "București, Titan",
+                "price": "600 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-rent",
+                "lastVerifiedAt": "2026-10-11T06:57:20.013Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "63a72298-4e08-4719-8f3a-ec1a2f3fedaa-z-sale",
+                "title": "Apartament Titan, vânzare",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "120000 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:57:20.013Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 267,
+            "uncertainCurrency": 0,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:57:22.594Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 181,
+            "version": "86",
+            "argumentsHash": "df7d432a59b16a8da9d926eb5fb32bb4826d44027a152c26a289221ebde796c2"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 11,
+            "version": "86",
+            "argumentsHash": "3c730dd5654aadf0dd64f073c6368c954097cf87d702968507be87779a9d34c4"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12944,
+              "outputTokens": 90,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12941,
+              "estimated": false
+            },
+            "costUsd": 0.001662925,
+            "latencyMs": 2264,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13492,
+              "outputTokens": 97,
+              "cachedTokens": 12941,
+              "cacheWriteTokens": 548,
+              "estimated": false
+            },
+            "costUsd": 0.00024671000000000003,
+            "latencyMs": 2757,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13614,
+              "outputTokens": 147,
+              "cachedTokens": 13489,
+              "cacheWriteTokens": 122,
+              "estimated": false
+            },
+            "costUsd": 0.00022394000000000003,
+            "latencyMs": 2689,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_tk4WKhVA1T9SKaPSJKIvuh51",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":\"apartment\",\"transactionType\":null,\"rooms\":2,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":100,\"cursor\":null}"
+          },
+          {
+            "id": "call_PjOuWTkINTzkf7h4J0j2MQRr",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"1\",\"sourceQuote\":\"Găsește apartamente de proprietar cu două camere în Titan.\",\"description\":\"Caută apartamente de proprietar cu două camere în zona Titan și prezintă rezultatele găsite.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_tk4WKhVA1T9SKaPSJKIvuh51\"]}]}"
+          }
+        ],
+        "costUsd": 0.002133575,
+        "expectedIds": [
+          "63a72298-4e08-4719-8f3a-ec1a2f3fedaa-z-rent",
+          "63a72298-4e08-4719-8f3a-ec1a2f3fedaa-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      {
+        "scenarioId": "master-0203",
+        "prompt": "Găsește apartamente de proprietar cu trei camere în Titan.",
+        "versions": {
+          "prompt": "jarvis-57",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:57:32.061Z",
+        "executionVerified": true,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit două apartamente de proprietar cu 3 camere în Titan:\n\n- **Închiriere — 600 EUR** ([anunț](https://example.test/listing/z-rent))\n- **Vânzare — 120.000 EUR** ([anunț](https://example.test/listing/z-sale))\n\nCăutarea s-a încheiat și a inclus ambele tipuri de tranzacție; anunțurile sunt date colectate în aplicație, nu o verificare separată pe portaluri.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Titan",
+              "propertyType": "apartment",
+              "rooms": 3,
+              "limit": 30
+            },
+            "appliedTransactionType": null,
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "04db1322-03fa-4443-bfd4-42b6d9ab3032-z-rent",
+                "title": "Apartament Titan, închiriere",
+                "transactionType": "rent",
+                "location": "București, Titan",
+                "price": "600 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-rent",
+                "lastVerifiedAt": "2026-10-11T06:57:32.060Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "04db1322-03fa-4443-bfd4-42b6d9ab3032-z-sale",
+                "title": "Apartament Titan, vânzare",
+                "transactionType": "sale",
+                "location": "București, Titan",
+                "price": "120000 EUR",
+                "rooms": 3,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:57:32.060Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 267,
+            "uncertainCurrency": 0,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:57:36.154Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 144,
+            "version": "86",
+            "argumentsHash": "bfc3746062578424a3530f068a4e95a5b37b4a0f032792a95a0729cc45759ac2"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 23,
+            "version": "86",
+            "argumentsHash": "9673d088aefb6a8202022298960484d60f0f84ed41c0ee5660824f60133dbf0a"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12941,
+              "outputTokens": 90,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12938,
+              "estimated": false
+            },
+            "costUsd": 0.00166255,
+            "latencyMs": 3784,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13482,
+              "outputTokens": 96,
+              "cachedTokens": 12938,
+              "cacheWriteTokens": 541,
+              "estimated": false
+            },
+            "costUsd": 0.000245305,
+            "latencyMs": 3201,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13603,
+              "outputTokens": 136,
+              "cachedTokens": 13479,
+              "cacheWriteTokens": 121,
+              "estimated": false
+            },
+            "costUsd": 0.000218215,
+            "latencyMs": 4417,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_enKPapLAfdZJFZtLItETMmLJ",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Titan\",\"propertyType\":\"apartment\",\"transactionType\":null,\"rooms\":3,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":30,\"cursor\":null}"
+          },
+          {
+            "id": "call_rRmK5UobyhVpZYDbouC62nS1",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"listings\",\"sourceQuote\":\"Găsește apartamente de proprietar cu trei camere în Titan.\",\"description\":\"Găsirea ofertelor de apartamente cu 3 camere din Titan, din sursa proprietari.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_enKPapLAfdZJFZtLItETMmLJ\"]}]}"
+          }
+        ],
+        "costUsd": 0.00212607,
+        "expectedIds": [
+          "04db1322-03fa-4443-bfd4-42b6d9ab3032-z-rent",
+          "04db1322-03fa-4443-bfd4-42b6d9ab3032-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      {
+        "scenarioId": "master-0204",
+        "prompt": "Găsește proprietăți de proprietar în Cișmigiu.",
+        "versions": {
+          "prompt": "jarvis-57",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:57:47.648Z",
+        "executionVerified": true,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit 3 proprietăți de proprietar în Cișmigiu:\n\n- **Casă Cișmigiu** — vânzare, 4 camere, **120.000 EUR**. [Anunț](https://example.test/listing/z-house)\n- **Apartament Cișmigiu, închiriere** — 2 camere, **600 EUR**. [Anunț](https://example.test/listing/z-rent)\n- **Apartament Cișmigiu, vânzare** — 2 camere, **120.000 EUR**. [Anunț](https://example.test/listing/z-sale)\n\nLista este completă conform căutării. Datele anunțurilor au fost verificate la 11 octombrie 2026; anul construcției nu este cunoscut pentru niciuna dintre proprietăți.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Cișmigiu",
+              "limit": 100
+            },
+            "appliedTransactionType": null,
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "00e00f23-0eb2-4105-893a-27f91758691d-z-house",
+                "title": "Casă Cișmigiu",
+                "transactionType": "sale",
+                "location": "București, Cismigiu",
+                "price": "120000 EUR",
+                "rooms": 4,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-house",
+                "lastVerifiedAt": "2026-10-11T06:57:47.648Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "00e00f23-0eb2-4105-893a-27f91758691d-z-rent",
+                "title": "Apartament Cișmigiu, închiriere",
+                "transactionType": "rent",
+                "location": "București, Cismigiu",
+                "price": "600 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-rent",
+                "lastVerifiedAt": "2026-10-11T06:57:47.648Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "00e00f23-0eb2-4105-893a-27f91758691d-z-sale",
+                "title": "Apartament Cișmigiu, vânzare",
+                "transactionType": "sale",
+                "location": "București, Cismigiu",
+                "price": "120000 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:57:47.648Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 266,
+            "uncertainCurrency": 0,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:57:50.139Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 178,
+            "version": "86",
+            "argumentsHash": "a0f1d5dc6510b52c34262700242c9e2e48762e77d189c2d503c2dbe33b7376a2"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 13,
+            "version": "86",
+            "argumentsHash": "6f58ce943ed12f8e19d6d3561b62cac670f091a578da5db6645989a433bd68ad"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12942,
+              "outputTokens": 92,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12939,
+              "estimated": false
+            },
+            "costUsd": 0.0016636749999999999,
+            "latencyMs": 2185,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13654,
+              "outputTokens": 95,
+              "cachedTokens": 12939,
+              "cacheWriteTokens": 712,
+              "estimated": false
+            },
+            "costUsd": 0.0002661900000000001,
+            "latencyMs": 2322,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13774,
+              "outputTokens": 205,
+              "cachedTokens": 13651,
+              "cacheWriteTokens": 120,
+              "estimated": false
+            },
+            "costUsd": 0.00025431,
+            "latencyMs": 3163,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_sj6qrap6StGaZeQlSY9UzVsC",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Cișmigiu\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":100,\"cursor\":null}"
+          },
+          {
+            "id": "call_x0qsoQU9PJKXuFlINDH6wARS",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Cișmigiu.\",\"description\":\"Caută și prezintă proprietățile proprietarilor din zona Cișmigiu.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_sj6qrap6StGaZeQlSY9UzVsC\"]}]}"
+          }
+        ],
+        "costUsd": 0.002184175,
+        "expectedIds": [
+          "00e00f23-0eb2-4105-893a-27f91758691d-z-house",
+          "00e00f23-0eb2-4105-893a-27f91758691d-z-rent",
+          "00e00f23-0eb2-4105-893a-27f91758691d-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      },
+      {
+        "scenarioId": "master-0205",
+        "prompt": "Găsește proprietăți de proprietar în Floreasca.",
+        "versions": {
+          "prompt": "jarvis-57",
+          "routing": "luna-first-2",
+          "policy": "request-crm-9",
+          "tools": "86",
+          "memory": "2",
+          "skills": "3"
+        },
+        "runAt": "2026-10-11T06:57:59.691Z",
+        "executionVerified": true,
+        "environment": "actual model + local Firestore; collected-listing fixtures, no live portal certification",
+        "text": "Am găsit 3 proprietăți de la proprietari în Floreasca, București:\n\n- **Casă Floreasca** — vânzare, 4 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-house)\n- **Apartament Floreasca, închiriere** — 2 camere, **600 EUR**. [Vezi anunțul](https://example.test/listing/z-rent)\n- **Apartament Floreasca, vânzare** — 2 camere, **120.000 EUR**. [Vezi anunțul](https://example.test/listing/z-sale)\n\nCăutarea s-a încheiat și a inclus anunțurile eligibile găsite în sursa proprietarilor. Datele sunt actuale la momentul căutării.",
+        "plannerStatus": "success",
+        "cards": [
+          {
+            "type": "results",
+            "title": "Anunțuri proprietari",
+            "source": "owners",
+            "search": {
+              "source": "owners",
+              "zone": "Floreasca",
+              "limit": 20
+            },
+            "appliedTransactionType": null,
+            "rentCeilingEur": 10000,
+            "rows": [
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "c2a59564-60ce-4201-8777-1c67143b379c-z-house",
+                "title": "Casă Floreasca",
+                "transactionType": "sale",
+                "location": "București, Floreasca",
+                "price": "120000 EUR",
+                "rooms": 4,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-house",
+                "lastVerifiedAt": "2026-10-11T06:57:59.690Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "c2a59564-60ce-4201-8777-1c67143b379c-z-rent",
+                "title": "Apartament Floreasca, închiriere",
+                "transactionType": "rent",
+                "location": "București, Floreasca",
+                "price": "600 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-rent",
+                "lastVerifiedAt": "2026-10-11T06:57:59.690Z"
+              },
+              {
+                "constructionYear": null,
+                "constructionYearLabel": null,
+                "constructionYearKnown": false,
+                "constructionYearEvidenceKind": "unknown",
+                "constructionYearLowerBound": null,
+                "constructionYearUpperBound": null,
+                "yearFilterSatisfied": null,
+                "id": "c2a59564-60ce-4201-8777-1c67143b379c-z-sale",
+                "title": "Apartament Floreasca, vânzare",
+                "transactionType": "sale",
+                "location": "București, Floreasca",
+                "price": "120000 EUR",
+                "rooms": 2,
+                "squareFootage": null,
+                "imageUrl": null,
+                "status": null,
+                "source": "owners",
+                "link": "https://example.test/listing/z-sale",
+                "lastVerifiedAt": "2026-10-11T06:57:59.690Z"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "scanned": 266,
+            "uncertainCurrency": 0,
+            "freshness": "live_firestore",
+            "observedAt": "2026-10-11T06:58:02.157Z",
+            "paginationConsistency": "live_cursor",
+            "searchMode": "live_scan",
+            "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+            "outputType": "PROPERTY_LIST"
+          }
+        ],
+        "actions": [],
+        "tools": [
+          {
+            "name": "search_properties",
+            "status": "success",
+            "latencyMs": 150,
+            "version": "86",
+            "argumentsHash": "a2659d4cace465d231b3ad3d98508c4c4d5cdbaeaf28eac9186cdfc2b149a866"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 18,
+            "version": "86",
+            "argumentsHash": "79c04da1ac4aa8d031492df02dee6a2c3228c0d27f9e38c245f23c0184abdc49"
+          }
+        ],
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 12941,
+              "outputTokens": 91,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 12938,
+              "estimated": false
+            },
+            "costUsd": 0.00166305,
+            "latencyMs": 2245,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13647,
+              "outputTokens": 95,
+              "cachedTokens": 12938,
+              "cacheWriteTokens": 706,
+              "estimated": false
+            },
+            "costUsd": 0.00026543,
+            "latencyMs": 2643,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 13767,
+              "outputTokens": 207,
+              "cachedTokens": 13644,
+              "cacheWriteTokens": 120,
+              "estimated": false
+            },
+            "costUsd": 0.00025524,
+            "latencyMs": 3886,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "toolCalls": [
+          {
+            "id": "call_lMfnxISmvuNj3PAZBj9rlXsn",
+            "name": "search_properties",
+            "arguments": "{\"source\":\"owners\",\"scopeKey\":null,\"zone\":\"Floreasca\",\"propertyType\":null,\"transactionType\":null,\"rooms\":null,\"roomsAny\":null,\"yearMin\":null,\"yearMax\":null,\"unknownYear\":null,\"excludeImported\":null,\"yearLabel\":null,\"priceMin\":null,\"priceMax\":null,\"limit\":20,\"cursor\":null}"
+          },
+          {
+            "id": "call_fwvDrqZladqQI2w1PLJPbasO",
+            "name": "goal_coverage",
+            "arguments": "{\"requirements\":[{\"id\":\"r1\",\"sourceQuote\":\"Găsește proprietăți de proprietar în Floreasca.\",\"description\":\"Găsește și prezintă proprietățile de la proprietari din Floreasca.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_lMfnxISmvuNj3PAZBj9rlXsn\"]}]}"
+          }
+        ],
+        "costUsd": 0.0021837199999999997,
+        "expectedIds": [
+          "c2a59564-60ce-4201-8777-1c67143b379c-z-house",
+          "c2a59564-60ce-4201-8777-1c67143b379c-z-rent",
+          "c2a59564-60ce-4201-8777-1c67143b379c-z-sale"
+        ],
+        "verification": "Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification."
+      }
+    ]
+  },
+  "validation": {
+    "targetedUnitPassed": 193,
+    "fullSuite": {
+      "passed": 2173,
+      "failed": 1,
+      "skipped": 355,
+      "failure": "Planner initial module-load test exceeded 5000ms under concurrent load."
+    },
+    "plannerRerun": {
+      "passed": 28,
+      "failed": 0
+    },
+    "liveFinal": {
+      "passed": 15,
+      "failed": 0
+    },
+    "lint": "passed",
+    "parity": "passed",
+    "build": {
+      "success": true,
+      "typeScript": true,
+      "pages": 227
+    }
+  }
+}

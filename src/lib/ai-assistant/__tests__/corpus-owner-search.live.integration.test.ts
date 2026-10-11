@@ -14,7 +14,7 @@ import { AgentBudget } from '../budget';
 import { VERSIONS } from '../models';
 import type { AssistantContext } from '../access';
 
-const cases = [201, 202, 203, 204, 205];
+const cases = Array.from({ length: 15 }, (_, index) => 201 + index);
 for (const number of cases) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   it.skipIf(process.env.JARVIS_OWNER_SEARCH_LIVE !== 'true')(`${scenarioId}: actual model finds only the requested owner listings`, async () => {
@@ -26,25 +26,35 @@ for (const number of cases) {
     const listings = db.collection('ownerListings');
     const ctx = { uid: id, agencyId: id, role: 'agent', adminDb: db } as unknown as AssistantContext;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const zone = number === 204 ? 'Cișmigiu' : number === 205 ? 'Floreasca' : 'Titan';
-    const rooms = number === 203 ? 3 : 2;
-    const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: '120000 EUR', lastVerifiedAt: new Date().toISOString() };
+    const zone = ({ 204: 'Cișmigiu', 205: 'Floreasca', 206: 'Pipera', 207: 'Aviației', 208: 'Drumul Taberei', 209: 'Berceni', 210: 'Militari', 213: 'Cișmigiu', 214: 'Floreasca', 215: 'Pipera' } as Record<number, string>)[number] || 'Titan';
+    const priceMax = ({ 211: 130000, 212: 160000, 213: 180000, 214: 250000, 215: 200000 } as Record<number, number>)[number];
+    const requestedRooms = [202, 203, 211, 212, 213, 214].includes(number);
+    const apartmentOnly = [202, 203, 215].includes(number);
+    const otherZone = zone === 'Militari' ? 'Titan' : 'Militari';
+    const rooms = [203, 212, 214].includes(number) ? 3 : 2;
+    const base = { scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: `București, ${zone === 'Cișmigiu' ? 'Cismigiu' : zone === 'Aviației' ? 'Aviatiei' : zone === 'Drumul Taberei' ? 'Drumul-Taberei' : zone}`, propertyType: 'apartment', roomsValue: rooms, transactionType: 'sale', price: '120000 EUR', lastVerifiedAt: new Date().toISOString() };
     const fixture = new Map<string, Record<string, unknown>>();
     const add = (key: string, patch: Record<string, unknown>) => fixture.set(`${id}-${key}`, { ...base, title: `Anunț ${key}`, link: `https://example.test/listing/${key}`, ...patch });
     // Matching records are beyond the first backend page, with adverse records in front.
-    for (let i = 0; i < 260; i++) add(`a-${String(i).padStart(3, '0')}`, { location: 'București Militari' });
+    for (let i = 0; i < 260; i++) add(`a-${String(i).padStart(3, '0')}`, { location: `București ${otherZone}` });
     add('b-substring', { location: `${zone}um` });
-    add('b-title-only', { location: 'Militari', title: `Apartament ${zone}` });
+    add('b-title-only', { location: otherZone, title: `Apartament ${zone}` });
     add('b-unpublished', { publicationStatus: 'discovered' });
     add('b-duplicate', { isCanonical: false });
     add('b-other-city', { scopeKey: 'brasov' });
-    if (number === 202 || number === 203) {
-      add('b-wrong-rooms', { roomsValue: rooms === 2 ? 3 : 2 });
-      add('b-house', { propertyType: 'house' });
-    }
+    if (requestedRooms) add('b-wrong-rooms', { roomsValue: rooms === 2 ? 3 : 2 });
+    if (apartmentOnly) add('b-house', { propertyType: 'house' });
     add('z-sale', { title: `Apartament ${zone}, vânzare` });
-    add('z-rent', { title: `Apartament ${zone}, închiriere`, transactionType: 'rent', price: '600 EUR' });
-    if (number !== 202 && number !== 203) add('z-house', { title: `Casă ${zone}`, propertyType: 'house', roomsValue: 4 });
+    add(priceMax ? 'b-rent' : 'z-rent', { title: `Apartament ${zone}, închiriere`, transactionType: 'rent', price: '600 EUR' });
+    if (!requestedRooms && !apartmentOnly) add('z-house', { title: `Casă ${zone}`, propertyType: 'house', roomsValue: 4 });
+    add('b-expensive-rent', { transactionType: 'rent', price: '10000.01 EUR' });
+    if (priceMax) {
+      add('z-boundary', { price: `${priceMax} EUR`, title: `Apartament ${zone}, preț exact la limită` });
+      add('z-fraction', { price: `${priceMax - 0.01} EUR` });
+      add('b-over-budget', { price: `${priceMax + 0.01} EUR` });
+      add('b-ron', { price: '100000 RON' });
+      add('b-unknown-currency', { price: '100000' });
+    }
     const expected = [...fixture.keys()].filter(key => key.includes('-z-')).sort();
     const budget = new AgentBudget();
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), executionVerified: false, environment: 'actual model + local Firestore; collected-listing fixtures, no live portal certification' };
@@ -70,9 +80,18 @@ for (const number of cases) {
         expect(row.transactionType).toBe(fixture.get(String(row.id))!.transactionType);
       }
       expect(planned.text.length).toBeGreaterThan(30);
+      if (priceMax) {
+        const compactText = planned.text.toLowerCase().replace(/[\s.,€*]/g, '');
+        expect(compactText).toContain(String(priceMax));
+        expect(compactText).not.toMatch(/strictmaimic|nuseîncadrează|nuseincadreaza/);
+        expect(compactText).not.toMatch(new RegExp('exclus[^;!?]{0,100}' + priceMax));
+        expect(rows.every(row => row.transactionType === 'sale')).toBe(true);
+        expect(rows.some(row => row.price === `${priceMax} EUR`)).toBe(true);
+        expect(cards.every(card => 'appliedTransactionType' in card && card.appliedTransactionType === 'sale')).toBe(true);
+      }
       for (const [key, row] of fixture) expect((await listings.doc(key).get()).data()).toEqual(row);
       expect((await agency.collection('properties').get()).size).toBe(1);
-      report = { ...report, executionVerified: true, expectedIds: expected, verification: 'Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, both transactions, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification.' };
+      report = { ...report, executionVerified: true, expectedIds: expected, verification: 'Original prompt; actual model, production planner/search and real local Firestore. Correct zone, room/type constraints, budget-driven sale selection, inclusive price boundaries, EUR rental ceiling, source links, pagination beyond 250 and unpublished/duplicate/wrong-city/title-only exclusions. Listing data unchanged. No portal freshness or production certification.' };
     } catch (error) {
       report = { ...report, failure: error instanceof Error ? error.message : String(error) }; throw error;
     } finally {

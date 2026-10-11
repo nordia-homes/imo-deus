@@ -48,3 +48,9 @@ export function constructionYearFilterSatisfied(row: Record<string, unknown>, in
   if ((input.yearMin === undefined || lower !== null && lower >= input.yearMin) && (input.yearMax === undefined || upper !== null && upper <= input.yearMax)) return true;
   return null;
 }
+
+// Agency rule: any requested EUR budget above this threshold selects sales.
+export const RENT_SEARCH_CEILING_EUR = 10000;
+export function searchTransaction(input: AssistantSearch) {
+  return Math.max(input.priceMin ?? 0, input.priceMax ?? 0) > RENT_SEARCH_CEILING_EUR ? 'sale' as const : input.transactionType;
+}

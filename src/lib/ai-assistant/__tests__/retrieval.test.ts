@@ -23,14 +23,34 @@ const listing = { publicationStatus: 'ready', isCanonical: true, scopeKey: 'bucu
 describe('authorized complete pagination', () => {
   it.each([false, true])('includes sale and rent unless requested, indexed=%s', async indexed => {
     const rows = ['sale', 'rent'].map((transactionType, i) => {
-      const row = { ...listing, transactionType, id: String(i) };
+      const row = { ...listing, price: '10000 EUR', transactionType, id: String(i) };
       return indexed ? { ...row, ...ownerSearchFields(row) } : row;
     });
-    const query = searchSchema.parse({ zone: 'Titan', ...(indexed ? { priceMax: 130000 } : {}) });
+    const query = searchSchema.parse({ zone: 'Titan', ...(indexed ? { priceMax: 10000 } : {}) });
     expect(query.transactionType).toBeUndefined();
     expect((await searchProperties(context(rows), query)).rows.map(row => row.id)).toEqual(['0', '1']);
     expect((await searchProperties(context(rows), { ...query, transactionType: 'rent' })).rows.map(row => row.id)).toEqual(['1']);
     expect((await searchProperties(context(rows), { ...query, transactionType: 'sale' })).rows.map(row => row.id)).toEqual(['0']);
+  });
+  it.each([false, true])('forces sales above EUR 10000 and includes the exact maximum, indexed=%s', async indexed => {
+    const rows = [
+      { ...listing, id: '0', transactionType: 'rent', price: '600 EUR' },
+      { ...listing, id: '1', price: '130000 EUR' },
+      { ...listing, id: '2', price: '130000.01 EUR' },
+    ].map(row => indexed ? { ...row, ...ownerSearchFields(row) } : row);
+    for (const transactionType of [undefined, 'rent', 'sale'] as const) {
+      const result = await searchProperties(context(rows), searchSchema.parse({ priceMax: 130000, transactionType }));
+      expect(result.rows.map(row => row.id)).toEqual(['1']);
+      expect(result.appliedTransactionType).toBe('sale');
+    }
+  });
+  it.each([10000, 10000.01, 130000])('uses both budget bounds to select sales, threshold=%s', budget => {
+    const rent = { ...listing, transactionType: 'rent', price: '10000 EUR' };
+    expect(searchMatches(rent, searchSchema.parse({ priceMax: budget }))).toBe(budget <= 10000);
+    expect(searchMatches(rent, searchSchema.parse({ priceMin: budget }))).toBe(budget <= 10000);
+  });
+  it.each(['10000.01 EUR', '15000 EUR', '9000 RON', '9000', 'negociabil'])('does not advertise an unverified or excessive EUR rental: %s', price => {
+    expect(searchMatches({ ...listing, transactionType: 'rent', price }, searchSchema.parse({}))).toBe(false);
   });
   it.each([['Cișmigiu', 'Bucureşti – Cismigiu', true], ['Cismigiu', 'București Cișmigiu', true], ['Titan', 'Titanium', false], ['Titan', 'București, Titan', true], ['Titan', 'PreTitan', false]])('matches whole normalized zone %s in %s', (zone, location, expected) => {
     expect(searchMatches({ ...listing, location }, searchSchema.parse({ zone }))).toBe(expected);

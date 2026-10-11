@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — zone și bugete, regula comercială din 11 octombrie 2026
+
+Scenariile originale **0206–0215** au trecut cu model real și Firestore local; **0201–0205** au fost rerulate ca regresie. Raport: [OWNER_SEARCH_EXECUTION_BATCH_02.json](evals/OWNER_SEARCH_EXECUTION_BATCH_02.json), prompt jarvis-57 / tools 86. Sunt acoperite Pipera, Aviației, Drumul Taberei, Berceni, Militari și cererile cu buget din Titan, Cișmigiu, Floreasca și Pipera.
+
+Conform regulii explicite a utilizatorului, **prețul-limită este inclus**, chiar pentru formularea „sub”. Dacă oricare dintre limitele bugetului cerut depășește **10.000 EUR**, căutarea returnează **doar vânzări**. Închirierile sunt eligibile numai cu preț cunoscut în EUR de cel mult 10.000. Fără buget sau la un buget de cel mult 10.000, tranzacția explicită este respectată; în lipsa ei sunt eligibile ambele. Regula se aplică pe server atât scanării, cât și căutării indexate, precum și relevanței alertelor salvate, inclusiv dacă modelul propune greșit închiriere pentru un buget mare. Rezultatul indică tranzacția efectiv aplicată.
+
+Prima rulare a returnat corect cardurile, dar răspunsurile text pentru 0211/0212/0214 eliminau oferta de la limita exactă. Aceste încercări sunt respinse în raport, chiar dacă vechile aserțiuni trecuseră. Instrucțiunile comerciale și verificarea textului final au fost întărite. Rularea finală a trecut toate cele 15 comenzi și include prețul exact în răspuns, fără declarații contradictorii de excludere.
+
+Verificare: 193 teste țintite; suita completă a avut 2.173 trecute și un timeout de încărcare în planner, urmat de rerularea reușită a tuturor celor 28 de teste din acel fișier. Lint, verificarea parității și buildul final (TypeScript, 227 pagini) au trecut. Nu au fost trimise mesaje sau modificate date reale ale agențiilor. Totalul este **58/1000 scenarii originale cu dovezi locale folosind model real**, **942 fără asemenea dovezi**, fără certificare integrală de producție sau a portalurilor externe. Acest lot nu este publicat în producție.
+
 ## Lot proprietari — căutări în Titan, Cișmigiu și Floreasca
 
 Scenariile originale **0201–0205** au trecut cu model real, planificatorul aplicației și Firestore local (prompt jarvis-55 / tools 85). Dovezi: [OWNER_SEARCH_EXECUTION_BATCH_01.json](evals/OWNER_SEARCH_EXECUTION_BATCH_01.json). Jarvis găsește anunțurile de proprietari în zona cerută, aplică numărul de camere și tipul apartament numai când sunt cerute și returnează linkurile sursă.

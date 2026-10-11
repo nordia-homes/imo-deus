@@ -7,7 +7,7 @@ import type { Agency } from '@/lib/types';
 import { CommunicationError } from '@/lib/communications/server';
 import { OWNER_SEARCH_VERSION, ownerPriceCurrency, parseOwnerPrice, ownerZoneKey } from '@/lib/owner-listings/search-index';
 import { createHash } from 'node:crypto';
-import { constructionYearEvidence, constructionYearFilterSatisfied, matchesConstructionYear, validateSearchCriteria } from './search-criteria';
+import { constructionYearEvidence, constructionYearFilterSatisfied, matchesConstructionYear, validateSearchCriteria, searchTransaction, RENT_SEARCH_CEILING_EUR } from './search-criteria';
 import { importedListingIds } from './imported-listings';
 
 export function listingCurrency(price: unknown): 'EUR' | 'RON' | 'unknown' {
@@ -29,8 +29,10 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
   const aliases: Record<string, string[]> = { apartment: ['apartment', 'apartament', 'garsoniera'], house: ['house', 'casa', 'vila'], land: ['land', 'teren'], commercial: ['commercial', 'comercial', 'birou'] };
   if (input.propertyType && !aliases[input.propertyType].some(v => type.includes(v))) return false;
   const transaction = normalized(row.transactionType);
-  if (input.transactionType && !(input.transactionType === 'sale' ? ['sale', 'vanzare'] : ['rent', 'inchiriere']).some(v => transaction.includes(v))) return false;
+  const requestedTransaction = searchTransaction(input);
+  if (requestedTransaction && !(requestedTransaction === 'sale' ? ['sale', 'vanzare'] : ['rent', 'inchiriere']).some(v => transaction.includes(v))) return false;
   const price = owners ? parseOwnerPrice(row.price) : Number(row.price);
+  if (['rent', 'inchiriere'].some(value => transaction.includes(value)) && (price === null || !Number.isFinite(price) || price > RENT_SEARCH_CEILING_EUR || owners && listingCurrency(row.price) !== 'EUR')) return false;
   if ((input.priceMin !== undefined || input.priceMax !== undefined) && owners && listingCurrency(row.price) !== 'EUR') return false;
   if (input.priceMin !== undefined && (price === null || !Number.isFinite(price) || price < input.priceMin)) return false;
   if (input.priceMax !== undefined && (price === null || !Number.isFinite(price) || price > input.priceMax)) return false;
@@ -38,6 +40,7 @@ export function searchMatches(row: Record<string, any>, input: AssistantSearch) 
 }
 export async function searchProperties(ctx: AssistantContext, input: AssistantSearch) {
   validateSearchCriteria(input);
+  input = { ...input, transactionType: searchTransaction(input) };
   let base: FirebaseFirestore.Query = collectionFor(ctx, 'properties');
   let resolvedScope: string | null = null;
   if (input.source === 'owners') {
@@ -106,5 +109,5 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }
   }
-  return { rows, nextCursor: complete || !cursor ? null : indexed ? `i|${fingerprint}|${cursorPrice}|${cursor}` : `s|${fingerprint}|${cursor}`, complete, scanned, uncertainCurrency, ...(input.excludeImported ? { crmComparison: { mode: 'exact_references' as const, checked: true, excludedOnThisPage: excludedImported, semanticDuplicateDetection: false as const, note: 'Excluse importurile cu același ownerListingId sau URL sursă exact. Alte anunțuri ale aceleiași proprietăți pot necesita verificare.' } } : {}), freshness: 'live_firestore', observedAt: new Date().toISOString(), paginationConsistency: 'live_cursor', searchMode: indexed ? 'native_index' : 'live_scan', note: [uncertainCurrency ? `${uncertainCurrency} anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR.` : '', input.cursor ? 'Continuare din datele actuale. Anunțurile adăugate sau mutate înaintea cursorului apar la reluarea căutării de la început.' : 'Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.'].filter(Boolean).join(' ') };
+  return { appliedTransactionType: input.transactionType ?? null, rentCeilingEur: RENT_SEARCH_CEILING_EUR, rows, nextCursor: complete || !cursor ? null : indexed ? `i|${fingerprint}|${cursorPrice}|${cursor}` : `s|${fingerprint}|${cursor}`, complete, scanned, uncertainCurrency, ...(input.excludeImported ? { crmComparison: { mode: 'exact_references' as const, checked: true, excludedOnThisPage: excludedImported, semanticDuplicateDetection: false as const, note: 'Excluse importurile cu același ownerListingId sau URL sursă exact. Alte anunțuri ale aceleiași proprietăți pot necesita verificare.' } } : {}), freshness: 'live_firestore', observedAt: new Date().toISOString(), paginationConsistency: 'live_cursor', searchMode: indexed ? 'native_index' : 'live_scan', note: [uncertainCurrency ? `${uncertainCurrency} anunțuri citite au moneda necunoscută; nu au fost tratate drept EUR.` : '', input.cursor ? 'Continuare din datele actuale. Anunțurile adăugate sau mutate înaintea cursorului apar la reluarea căutării de la început.' : 'Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.'].filter(Boolean).join(' ') };
 }
