@@ -61,6 +61,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   // Discovery remains available if the agent changes the request.
   const continuationTools = new Set(['read', 'read_field', 'propose_actions', 'goal_coverage', 'update_prospect', 'create_task', 'discover_tools', 'operation_contract', 'data_catalog', 'resolve_datetime']);
   const historyTools = new Set(['read', 'read_field', 'read_related', 'timeline', 'owner_prospects', 'propose_actions', 'goal_coverage', 'discover_tools', 'operation_contract', 'data_catalog']);
+  let historyDiscoveryComplete = false;
+  const pendingHistory = new Set<string>(), completedHistory = new Set<string>();
+  const historyReady = () => historyDiscoveryComplete && pendingHistory.size === 0;
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
   const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => name !== 'owner_prospects' || prospectHistory || options.allowedTools?.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(name => !prospectHistory || historyTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
   const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child || prospectHistory });
@@ -79,14 +82,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       reservingNextTurn = true;
       budget.step(); await emit('planning', 'Interpretez cererea și aleg următorul pas.');
       let decision = routeModel({ invalidCalls, remainingCost: budget.limits.maxCost - budget.cost });
-      const reservation = requestReservation(instructions,input,tools,previousReservation), inputBytes = reservation.tokens;
+      const turnTools = prospectHistory && !historyReady() ? tools.filter(tool => tool.name !== 'goal_coverage') : tools;
+      const reservation = requestReservation(instructions,input,turnTools,previousReservation), inputBytes = reservation.tokens;
       const outputLimit = options.child ? 1200 : budget.limits.maxOutputTokens;
       budget.reserve(decision.model, inputBytes, outputLimit);
       if (options.child && (budget.tokens - initialTokens + inputBytes + outputLimit > 16000 || budget.cost - initialCost + usageCost(decision.model, { inputTokens: inputBytes, outputTokens: outputLimit, cachedTokens: 0, cacheWriteTokens: inputBytes, estimated: true }) > 0.03 || Date.now() - childStarted >= 30000)) throw new BudgetExceeded('buget subagent');
       reservingNextTurn = false;
       let result;
       for (let attempt = 0; ; attempt++) {
-        try { result = await provider.respond({ decision, instructions, input, tools, maxOutputTokens: outputLimit, timeoutMs: Math.max(1, Math.min(45000, budget.limits.maxExecutionMs - (Date.now() - budget.started), options.child ? 30000 - (Date.now() - childStarted) : Infinity)), tenant: ctx }); break; }
+        try { result = await provider.respond({ decision, instructions, input, tools: turnTools, maxOutputTokens: outputLimit, timeoutMs: Math.max(1, Math.min(45000, budget.limits.maxExecutionMs - (Date.now() - budget.started), options.child ? 30000 - (Date.now() - childStarted) : Infinity)), tenant: ctx }); break; }
         catch (error) {
           const usage = { inputTokens: inputBytes, outputTokens: outputLimit, cachedTokens: 0, cacheWriteTokens: inputBytes, estimated: true };
           metrics.models.push(usageRecord(decision, usage, usageCost(decision.model, usage), 0, error instanceof ProviderError ? error.category : 'unknown')); budget.record(decision.model, usage);
@@ -102,7 +106,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
       input.push(...result.items);
       if (!result.calls.length) {
-        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && metrics.tools.length > 0;
+        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && (metrics.tools.length > 0 || prospectHistory);
         if (needsCoverage && result.text?.trim() && result.status !== 'incomplete' && !['clarification', 'refusal'].includes(result.intentStatus || '')) {
           if (closureAttempts++ >= 2) return finish('Acoperirea cererii nu a putut fi verificată. Rezultatele sunt parțiale, iar acțiunile pregătite nu au fost executate.', 'partial');
           input.push({ role: 'developer', content: 'Verificarea serverului: cererea nu are încă goal_coverage valid. Nu încheia după primul pas. Compară TOATĂ cererea utilizatorului cu citirile și acțiunile deja pregătite; continuă numai pașii lipsă, fără să repeți propunerile existente. Apelează goal_coverage cu citate exacte și dovezi reale. Dacă lipsesc date, acces sau capabilități, declară explicit cerințele neacoperite. Nu inventa succesul și nu ocoli aprobările.' });
@@ -145,6 +149,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           definition.outputSchema.parse(response.data);
           validatePlannedDependencies(response.actions, actions.length);
           if (name === 'goal_coverage') {
+            if (prospectHistory && !historyReady()) throw new Error('Istoricul nu este complet citit: termină owner_prospects scope=agency_history și timeline pentru fiecare rezultat readMode=timeline.');
             goalCoverage = validateGoalCoverage(payload, prompt, actions.length, successfulReads);
             response.data = { accepted: true, requirements: goalCoverage.requirements.length, unresolved: goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.id) };
           }
@@ -155,6 +160,18 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           if (definition.riskLevel === 'READ' && name !== 'goal_coverage' && !response.actions.length && response.data.complete !== false) {
             successfulReads.add(call.id);
             response.data = { ...response.data, evidenceCallId: call.id };
+          }
+          if (prospectHistory && name === 'owner_prospects' && payload.scope === 'agency_history') {
+            historyDiscoveryComplete = response.data.complete === true;
+            for (const row of Array.isArray(response.data.rows) ? response.data.rows : []) if (row.readMode === 'timeline') {
+              const key = `${row.resource}:${row.id}`;
+              if (!completedHistory.has(key)) pendingHistory.add(key);
+            }
+          }
+          if (prospectHistory && name === 'timeline') {
+            const key = `${payload.resource}:${payload.id}`;
+            if (response.data.complete === true) { completedHistory.add(key); pendingHistory.delete(key); }
+            else { completedHistory.delete(key); pendingHistory.add(key); }
           }
           if (['viewing_followups', 'task_deferral'].includes(name)) for (const row of (response.data.rows || []) as { suggestedTask?: { dueDate?: string } }[]) {
             const date = row.suggestedTask?.dueDate;

@@ -157,6 +157,22 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect(ambiguous).toMatchObject({ associationComplete: false, unresolvedReferences: [{ propertyId: 'related-url', reason: 'ambiguous_source_url' }] });
     expect(ambiguous.rows.map(row => row.id)).toEqual([selectedId]);
   });
+  it('returns recorded calls and planned tasks even when their original prospect no longer exists', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    await agency.collection('ownerListingFavorites').doc('selected').set({ ownerPhone: '0722123456' });
+    await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Acceptă contactarea luni.', endedAt: '2026-10-10T07:00:00Z' });
+    await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted', participantPhone: '0040 722 123 456', description: 'Revenire luni', status: 'open', dueDate: '2026-10-12' });
+    await agency.collection('tasks').doc('exact-task').set({ ownerListingId: 'selected', status: 'completed' });
+    await agency.collection('aiOutreachCalls').doc('other-call').set({ ownerPhone: '0733123456', ownerListingTitle: 'Same title' });
+    const other = await fixture();
+    await db.collection('agencies').doc(other.agencyId).collection('aiOutreachCalls').doc('foreign-call').set({ ownerPhone: '0722123456' });
+    const result = await readOwnerProspects(ctx, { listingId: 'selected', scope: 'agency_history' });
+    expect(result.rows.map(row => row.id).sort()).toEqual(['exact-task', 'orphan-call', 'orphan-task', 'selected']);
+    expect(result.rows.find(row => row.id === 'orphan-call')).toMatchObject({ readMode: 'interaction', interaction: { source: 'aiOutreachCalls', summary: 'Acceptă contactarea luni.', status: 'completed', occurredAt: '2026-10-10T07:00:00Z' } });
+    expect(result.rows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { source: 'tasks', status: 'open', dueDate: '2026-10-12', occurredAt: null } });
+    await agency.collection('ownerListingFavorites').doc('selected').update({ ownerPhone: '' });
+    expect((await readOwnerProspects(ctx, { listingId: 'selected', scope: 'agency_history' })).rows.map(row => row.id).sort()).toEqual(['exact-task', 'selected']);
+  });
   it('enriches only agency prospects and preserves ownership and revision checks on takeover', async () => {
     const ctx = await fixture(), id = randomUUID(); listings.push(id);
     const source = db.collection('ownerListings').doc(id);
@@ -181,6 +197,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     const favorite = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites').doc(id);
     await favorite.set({ isFavoriteActive: true, ownerName: 'Actual', takenByAgentId: ctx.uid });
     const action = actionSchema.parse({ kind: 'create_task', ownerListingId: id, description: 'Follow-up proprietar', dueDate: '2030-10-27' });
+    if (action.kind !== 'create_task') throw new Error('Expected task action');
     const executed = await executeSafePrefix(ctx, 'follow-up', [action], 'Programează follow-up peste două săptămâni.');
     expect(executed.actions).toEqual([]); expect(executed.results).toHaveLength(1);
     const tasks = await db.collection('agencies').doc(ctx.agencyId).collection('tasks').get();

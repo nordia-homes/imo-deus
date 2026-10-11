@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Interacțiuni păstrate după ștergerea prospectului — 0260
+
+Istoricul agenției caută acum și în `aiOutreachCalls` și `tasks`, după telefonul complet normalizat sau referința exactă la prospect. Astfel, apelurile și taskurile rămân vizibile în istoricul proprietarului chiar dacă prospectul la care trimiteau nu mai există. Rândurile `readMode=interaction` conțin direct rezultatul citit și se deduplică în răspuns după `source/id` față de timeline. Taskurile deschise și apelurile programate nu sunt prezentate drept convorbiri efectuate.
+
+Planificatorul nu oferă `goal_coverage` până când toate paginile de asociere și toate timeline-urile cerute au fost citite complet. Verifică aceeași condiție și pe server; un răspuns fără citiri sau cu pagini omise nu este certificat ca succes. Aceasta elimină validarea prematură observată în prima probă, înainte de citirea datelor.
+
+Au trecut 12 teste Firestore, 34 de teste ale planificatorului și proba finală cu model real, fără apeluri de instrument eșuate. Dovadă: [OWNER_ORPHAN_HISTORY_PARTIAL_0260.json](evals/OWNER_ORPHAN_HISTORY_PARTIAL_0260.json). Versiuni **jarvis-75 / tools 101**. Scenariul rămâne parțial pentru identități lipsă/ambigue și înregistrări fără nicio asociere utilizabilă. Totalul rămâne **101/1000**, fără certificare nouă în producție.
+
+Verificări finale: TypeScript complet (`tsc --noEmit`), lint, paritate, inventarul corpusului și buildul cu 227 pagini trecute. Modificările nu sunt publicate în producție.
+
 ## Importuri fără telefon din alte prospecte asociate — 0260
 
 Istoricul include acum proprietăți fără telefon care trimit prin `ownerListingId` sau URL exact la alt prospect al aceluiași proprietar. Resolverul verifică prospectul din agenția curentă și telefonul complet normalizat, inclusiv pentru prospecte inactive. Telefonul dintr-un anunț global, fără prospect în agenție, nu acordă asocierea. URL-urile sunt căutate exact în `link` și `originSourceUrl`; sursele canonice multiple sau limita de verificare produc referințe explicit nerezolvate, nu o asociere ghicită. `associationComplete` este separat de finalizarea paginării, iar referințele sunt recitite la fiecare cerere.

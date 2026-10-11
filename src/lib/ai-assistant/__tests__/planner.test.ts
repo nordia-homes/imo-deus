@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readField: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
+vi.mock('../owner-prospects', async importOriginal => ({ ...await importOriginal<typeof import('../owner-prospects')>(), readOwnerProspects: vi.fn() }));
+vi.mock('../timeline', async importOriginal => ({ ...await importOriginal<typeof import('../timeline')>(), readTimeline: vi.fn() }));
 vi.mock('../actions', () => ({ matchContact: vi.fn(), matchProperty: vi.fn(), executeAction: vi.fn() }));
 vi.mock('../operations', () => ({ invokeOperation: vi.fn(), operationCatalog: () => [], operationContract: vi.fn(), operations: {}, isReadOperation: vi.fn() }));
 vi.mock('../readiness', () => ({ automationReadiness: async () => ({ configured: false, active: false }) }));
@@ -9,6 +11,8 @@ import { planTurn } from '../planner';
 import { executeAction } from '../actions';
 import { searchProperties } from '../search';
 import { readResource } from '../access';
+import { readOwnerProspects } from '../owner-prospects';
+import { readTimeline } from '../timeline';
 import { ProviderError, type ProviderResult, type ModelProvider } from '../provider';
 import { AgentBudget, BudgetExceeded, DEFAULT_LIMITS } from '../budget';
 import type { AssistantContext } from '../access';
@@ -37,13 +41,32 @@ function scripted(...responses: (ProviderResult | Error)[]) {
 }
 describe('Responses tool planning', () => {
   it('keeps owner history schemas compact while preserving discovery and all required reads', async () => {
-    const model = scripted(final);
-    const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: model });
+    const prompt = 'Arată-mi toate interacțiunile cu acest proprietar.';
+    vi.mocked(readOwnerProspects).mockResolvedValue({ rows: [{ resource: 'ownerListingFavorites', id: 'p', readMode: 'timeline' }], complete: true } as any);
+    vi.mocked(readTimeline).mockResolvedValue({ rows: [], complete: true } as any);
+    const first = call('owner_prospects', { listingId: 'p', scope: 'agency_history' });
+    const timeline = call('timeline', { resource: 'ownerListingFavorites', id: 'p' });
+    const model = scripted(first, timeline, call('goal_coverage', { requirements: [{ id: 'history', sourceQuote: prompt, description: 'Istoric', resolution: 'answered', steps: [], evidenceCallIds: [first.calls[0].id, timeline.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: model });
     expect(result.metrics.status).toBe('success');
     const names = model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name);
     expect(names).toEqual(expect.arrayContaining(['owner_prospects', 'timeline', 'read', 'read_related', 'discover_tools']));
     expect(names).not.toContain('create_property');
+    expect(names).not.toContain('goal_coverage');
+    expect(model.respond.mock.calls[1][0].tools.map((tool: any) => tool.name)).not.toContain('goal_coverage');
+    expect(model.respond.mock.calls[2][0].tools.map((tool: any) => tool.name)).toContain('goal_coverage');
     expect(names.length).toBeLessThanOrEqual(10);
+  });
+  it('does not certify owner history when the model returns text without reading any records', async () => {
+    const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: scripted(final) });
+    expect(result.metrics.status).toBe('partial');
+  });
+  it('keeps history closure unavailable while an association page remains unread', async () => {
+    vi.mocked(readOwnerProspects).mockResolvedValue({ rows: [], complete: false, nextCursor: 'more' } as any);
+    const model = scripted(call('owner_prospects', { listingId: 'p', scope: 'agency_history' }), final);
+    const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: model });
+    expect(result.metrics.status).toBe('partial');
+    for (const [request] of model.respond.mock.calls) expect(request.tools.map((tool: any) => tool.name)).not.toContain('goal_coverage');
   });
   it('accepts a date-only task from the resolved Bucharest day without inventing a task hour', async () => {
     const prompt = 'Creează follow-up pentru 2030-10-27, fără oră.';

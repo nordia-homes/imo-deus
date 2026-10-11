@@ -2,12 +2,12 @@ import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 import { getResource, readResource, type AssistantContext } from './access';
-import { idSchema } from './contracts';
+import { idSchema, safeData } from './contracts';
 import { ownerImportResolver } from './owner-import-reference';
 
-export const ownerProspectsSchema = z.object({ listingId: idSchema, scope: z.literal('agency_history').optional(), cursor: z.string().max(2000).optional() }).strict();
+export const ownerProspectsSchema = z.object({ listingId: idSchema, scope: z.literal('agency_history').optional(), cursor: z.string().max(4000).optional() }).strict();
 const cursorSchema = z.object({ agencyId: idSchema, listingId: idSchema, phone: z.string(), after: idSchema }).strict();
-const historyCursorSchema = z.object({ agencyId: idSchema, listingId: idSchema, identity: z.string(), after: z.object({ ownerListingFavorites: idSchema.nullable(), properties: idSchema.nullable(), conversations: idSchema.nullable() }).strict() }).strict();
+const historyCursorSchema = z.object({ agencyId: idSchema, listingId: idSchema, identity: z.string(), after: z.object({ ownerListingFavorites: idSchema.nullable(), properties: idSchema.nullable(), conversations: idSchema.nullable(), aiOutreachCalls: idSchema.nullable(), tasks: idSchema.nullable() }).strict() }).strict();
 
 async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof ownerProspectsSchema>, selected: Record<string, any>, phone: string) {
   const source = (await ctx.adminDb.collection('ownerListings').doc(input.listingId).get()).data();
@@ -17,8 +17,8 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
   const cursor = input.cursor ? historyCursorSchema.parse(JSON.parse(Buffer.from(input.cursor, 'base64url').toString('utf8'))) : null;
   if (cursor && (cursor.agencyId !== ctx.agencyId || cursor.listingId !== input.listingId || cursor.identity !== identity)) throw new Error('Cursorul nu mai corespunde proprietarului curent.');
   const fullPhone = /^0[237]\d{8}$/.test(phone);
-  const resources = ['ownerListingFavorites', 'properties', 'conversations'] as const;
-  const after = { ownerListingFavorites: null, properties: null, conversations: null } as Record<typeof resources[number], string | null>;
+  const resources = ['ownerListingFavorites', 'properties', 'conversations', 'aiOutreachCalls', 'tasks'] as const;
+  const after = { ownerListingFavorites: null, properties: null, conversations: null, aiOutreachCalls: null, tasks: null } as Record<typeof resources[number], string | null>;
   const rows: Record<string, any>[] = [];
   const resolveImport = ownerImportResolver(ctx, input.listingId, phone);
   const unresolvedReferences: { propertyId: string; reason: string }[] = [];
@@ -27,8 +27,8 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
     const page = await readResource(ctx, { resource, limit: 50, ...(cursor?.after[resource] ? { cursor: cursor.after[resource]! } : {}) });
     after[resource] = page.nextCursor;
     for (const row of page.rows) {
-      let exact = resource === 'ownerListingFavorites' ? row.id === input.listingId : resource === 'properties' && (row.ownerListingId === input.listingId || (!row.ownerListingId && typeof row.ownerListingUrl === 'string' && urls.includes(row.ownerListingUrl)));
-      const phoneMatch = fullPhone && normalizeRomanianPhone(resource === 'conversations' ? row.phone : row.ownerPhone) === phone;
+      let exact = resource === 'ownerListingFavorites' ? row.id === input.listingId : resource === 'properties' ? (row.ownerListingId === input.listingId || (!row.ownerListingId && typeof row.ownerListingUrl === 'string' && urls.includes(row.ownerListingUrl))) : ['aiOutreachCalls', 'tasks'].includes(resource) && row.ownerListingId === input.listingId;
+      const phoneMatch = fullPhone && normalizeRomanianPhone(resource === 'conversations' ? row.phone : resource === 'tasks' ? row.participantPhone : row.ownerPhone) === phone;
       let linkedListingId: string | undefined;
       if (resource === 'properties' && !exact && !phoneMatch) {
         const reference = await resolveImport(row);
@@ -37,12 +37,14 @@ async function linkedHistoryRecords(ctx: AssistantContext, input: z.infer<typeof
         if (reference.unresolved) unresolvedReferences.push({ propertyId: row.id, reason: reference.unresolved });
       }
       if (!exact && !phoneMatch) continue;
-      rows.push({ resource, id: row.id, title: row.title || row.name || null, matchBasis: exact ? 'exact_listing_reference' : 'normalized_phone', ...(linkedListingId ? { linkedListingId } : {}), ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}) });
+      const direct = resource === 'aiOutreachCalls' || resource === 'tasks';
+      rows.push({ resource, id: row.id, title: row.title || row.name || row.description || row.ownerListingTitle || null, matchBasis: exact ? 'exact_listing_reference' : 'normalized_phone', ...(linkedListingId ? { linkedListingId } : {}), ...(resource === 'ownerListingFavorites' ? { isFavoriteActive: row.isFavoriteActive ?? null } : {}),
+        ...(direct ? { readMode: 'interaction', interaction: safeData({ id: row.id, source: resource, status: row.status || null, outcome: row.outcome || null, summary: row.summary || null, description: row.description || null, occurredAt: row.endedAt || row.startedAt || row.createdAt || null, dueDate: row.dueDate || null, scheduledAt: row.scheduledAt || null, ownerListingId: row.ownerListingId || null, propertyId: row.propertyId || null }) } : { readMode: 'timeline' }) });
     }
   }
   const complete = Object.values(after).every(value => value === null);
   return { rows, complete, nextCursor: complete ? null : Buffer.from(JSON.stringify({ agencyId: ctx.agencyId, listingId: input.listingId, identity, after })).toString('base64url'), scope: 'agency_history', identityComplete: fullPhone, associationComplete: unresolvedReferences.length === 0, unresolvedReferences,
-    note: 'Înregistrări autorizate din agenție asociate prin referință exactă la anunț sau telefon comun complet. Citește timeline pentru fiecare resource/id. Nu include conversațiile cumpărătorilor doar pentru că au aceeași proprietate. Telefonul comun nu garantează identitatea persoanei; lipsa telefonului limitează asocierea la referințe exacte.' };
+    note: 'Înregistrări autorizate din agenție asociate prin referință exactă la anunț sau telefon comun complet. Pentru readMode=timeline citește timeline. readMode=interaction conține deja apelul/taskul verificat, inclusiv dacă prospectul a fost șters. Deduplică după source/id împreună cu timeline. Taskurile și apelurile programate nu dovedesc o conversație efectuată. Telefonul comun nu garantează identitatea; lipsa lui limitează asocierea la referințe exacte.' };
 }
 
 export async function readOwnerProspects(ctx: AssistantContext, input: z.infer<typeof ownerProspectsSchema>) {

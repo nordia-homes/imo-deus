@@ -46,6 +46,8 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
       if (number === 260) {
+        await agency.collection('aiOutreachCalls').doc('orphan-call').set({ ownerListingId: 'deleted-prospect', ownerPhone: '+40 722 123 456', status: 'completed', summary: 'Proprietarul a cerut evaluarea garajului.', endedAt: '2026-10-08T07:00:00Z' });
+        await agency.collection('tasks').doc('orphan-task').set({ ownerListingId: 'deleted-prospect', participantPhone: '0040 722 123 456', description: 'Trimite estimarea garajului', status: 'open', dueDate: '2026-10-26' });
         await agency.collection('properties').doc('imported-property').set({ ownerListingId: 'related-inactive', title: 'Proprietate importată fără telefon din anunțul asociat' });
         await agency.collection('tasks').doc('property-task').set({ propertyId: 'imported-property', description: 'Pregătire documente cadastrale', status: 'open', dueDate: '2026-10-25', createdAt: '2026-10-10T08:00:00Z' });
         await agency.collection('conversations').doc('owner-conversation').set({ agencyId: id, assigneeId: id, collaboratorIds: [], phone: '+40 722 123 456', name: 'Alin Matei' });
@@ -90,6 +92,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       expect(planned.metrics.status, planned.text).toBe('success');
       if (number === 260) {
         expect(planned.actions).toEqual([]);
+        expect(planned.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
         const timeline = planned.cards.filter(card => card.source === 'timeline') as any[];
         expect(timeline.length, planned.text).toBeGreaterThan(0);
         const rows = timeline.flatMap(card => card.rows || []);
@@ -98,14 +101,19 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(rows.map(row => row.id)).toContain('related-call');
         expect(rows.map(row => row.id)).toContain('property-task');
         expect(rows.map(row => row.id)).toContain('owner-message');
+        const linkedRows = planned.cards.flatMap(card => card.source === 'owner_history' ? card.rows : []) as any[];
+        expect(linkedRows.find(row => row.id === 'orphan-call')).toMatchObject({ readMode: 'interaction', interaction: { summary: 'Proprietarul a cerut evaluarea garajului.' } });
+        expect(linkedRows.find(row => row.id === 'orphan-task')).toMatchObject({ readMode: 'interaction', interaction: { status: 'open' } });
         expect(JSON.stringify(planned)).not.toContain('CANARY_PRIVATE_CONVERSATION');
         expect(JSON.stringify(planned)).not.toContain('CANARY_UNRELATED_OWNER');
         expect(planned.text).toContain('2%');
         expect(planned.text).toMatch(/sâmbăt|sambat/i);
         expect(planned.text).toMatch(/cadastral/i);
         expect(planned.text).toMatch(/recepți|recepti/i);
+        expect(planned.text).toMatch(/garaj/i);
+        expect(planned.text).toMatch(/26 octombrie|26\.10|2026-10-26/);
         for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
-        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, executionVerified: false, limitation: 'Agency prospects, phone-less property imported from another related prospect and authorized owner conversation verified. Records outside agency prospecting and ambiguous or missing owner identity remain unresolved.' };
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, executionVerified: false, limitation: 'Agency prospects, indirect imports, authorized conversations and calls/tasks whose prospect is missing verified. Ambiguous or missing identity and records without any usable association remain unresolved.' };
         return;
       }
       if (number === 257) {
