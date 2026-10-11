@@ -110,6 +110,24 @@ describe('authorized complete pagination', () => {
     await expect(searchProperties(ctx, { ...input, yearMin: 2001, cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
     await expect(searchProperties(ctx, { ...input, roomsAny: [2, 4], cursor: first.nextCursor! })).rejects.toThrow('Cursorul');
   });
+  it('includes missing years separately without accepting partially overlapping declared intervals', async () => {
+    const ctx = context([
+      { ...listing, id: 'exact', constructionYear: 1980 },
+      { ...listing, id: 'interval', constructionYear: 'after_1977' },
+      { ...listing, id: 'missing', constructionYear: null },
+      { ...listing, id: 'old', constructionYear: 1960 },
+      { ...listing, id: 'partial', constructionYear: '1975–1985' },
+      { ...listing, id: 'renovation', constructionYear: '', description: 'Renovat 2020' },
+    ]);
+    const input = searchSchema.parse({ yearMin: 1978, unknownYear: 'include_missing', limit: 100 });
+    const result = await searchProperties(ctx, input);
+    expect(result.rows.map(row => row.id)).toEqual(['exact', 'interval', 'missing', 'renovation']);
+    expect(result.rows.filter(row => row.yearFilterSatisfied === false).map(row => row.id)).toEqual(['missing', 'renovation']);
+    const broader = await searchProperties(ctx, { ...input, unknownYear: 'include' });
+    expect(broader.rows.map(row => row.id)).toContain('partial');
+    const only = await searchProperties(ctx, { ...input, unknownYear: 'only' });
+    expect(only.rows.map(row => row.id)).toEqual(['missing', 'renovation']);
+  });
   it('rejects contradictory criteria before database reads', async () => {
     const ctx = context([]);
     for (const query of [{ yearMin: 2000, yearMax: 1980 }, { priceMin: 150000, priceMax: 100000 }, { rooms: 2, roomsAny: [2, 3] }, { roomsAny: [2, 2] }]) {

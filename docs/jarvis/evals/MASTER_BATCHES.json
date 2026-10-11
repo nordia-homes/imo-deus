@@ -2087,35 +2087,55 @@
           "sourceNumber": 241,
           "request": "Găsește trei camere în Titan după 1977 și marchează separat anunțurile fără an declarat.",
           "requestSha256": "b491201e4296fa19635fa5287fe0e70c4a53e5e36965a642b638bffb8581b820",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0242",
           "sourceNumber": 242,
           "request": "Găsește două camere în Drumul Taberei după 1977 și separă rezultatele cu an necunoscut.",
           "requestSha256": "6db26b255bf56f81d1aafbd42435a50b1c756f984b713521581276bdfb034219",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0243",
           "sourceNumber": 243,
           "request": "Găsește proprietățile unde anunțul spune explicit „după 1977”.",
           "requestSha256": "d3bfb04fffe1969f5e73685956601e390c0159de05bd283203522d78f857dc21",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0244",
           "sourceNumber": 244,
           "request": "Găsește apartamente în Titan sub 150.000 € și arată separat cele fără an declarat.",
           "requestSha256": "80888d4353cd6e7a80660a9929a555f42b856286fac79e50f2fa18f4c5dc7e27",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0245",
           "sourceNumber": 245,
           "request": "Găsește două camere în Titan și elimină rezultatele deja existente în CRM.",
           "requestSha256": "cc3625663f65bdf004198bc8000be08902d1490eb5dac4d763b73c98a38e420e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/OWNER_SEARCH_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0246",

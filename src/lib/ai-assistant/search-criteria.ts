@@ -38,7 +38,7 @@ export function matchesConstructionYear(row: Record<string, unknown>, input: Ass
   const bounded = input.yearMin !== undefined || input.yearMax !== undefined;
   if (!bounded) return evidence.constructionYearEvidenceKind !== 'unknown' || input.unknownYear !== 'exclude';
   const match = constructionYearFilterSatisfied(row, input);
-  return match === true || match === null && input.unknownYear === 'include';
+  return match === true || match === null && (input.unknownYear === 'include' || input.unknownYear === 'include_missing' && evidence.constructionYearEvidenceKind === 'unknown');
 }
 
 // null means insufficient evidence (including partial interval overlap).

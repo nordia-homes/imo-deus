@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot proprietari — ani lipsă separați și referințe de import CRM
+
+Scenariile originale **0241–0245** au dovezi locale cu model real pentru separarea anilor lipsă, căutarea etichetei declarate „după 1977”, separarea anilor necunoscuți la buget și excluderea importurilor CRM prin referințe exacte. Pentru **0245**, acestea nu certifică eliminarea duplicatelor introduse manual sau semantice fără referințe sursă.
+
+Primele probe 0241–0242 au arătat că modul larg `unknownYear=include` aducea și intervale declarate parțial suprapuse, deși cererea solicita doar potriviri confirmate și an lipsă. A fost implementat `include_missing`, care păstrează anii și intervalele compatibile plus lipsa dovezii de an; intervalele parțiale rămân excluse. Modurile `include` și `only` își păstrează sensul anterior. Schema, descrierea instrumentului și un test dedicat verifică diferența. Versiuni: prompt **jarvis-65**, tools **93**.
+
+După corecție, 0241–0242 afișează separat patru potriviri și două anunțuri fără an. 0243 păstrează doar eticheta explicită, inclusiv normalizarea „după 1977”/`after_1977`; 0244 separă corect lipsa anului la plafon inclusiv de 150.000 EUR. 0245 exclude trei importuri prin ID, URL sursă și URL original, inclusiv un import CRM inactiv, și păstrează oferta nouă. Limitarea comparației exacte este explicată în răspuns.
+
+Validare: **2.180 teste locale**, **7 probe cu model real** (5 originale și 2 regresii pentru chirii), lint, paritate și build (TypeScript, 227 pagini) trecute. Raportul păstrează primele execuții și cele corectate: [OWNER_SEARCH_EXECUTION_BATCH_08.json](evals/OWNER_SEARCH_EXECUTION_BATCH_08.json). Total: **88/1000 scenarii originale cu dovezi locale folosind model real**, **912 fără asemenea dovezi**; nu este acceptanță integrală a fiecărui scenariu în toate variantele. Cele 83 anterioare nu au fost rerulate. Nicio publicare în producție și niciun mesaj către clienți.
+
 ## Lot proprietari — alternative de camere și căutare indiferent de an
 
 Scenariile originale **0236–0240** au trecut cu model real și Firestore local: apartamente cu două sau trei camere, proprietăți cu una/două ori trei/patru camere și două camere fără filtru de an, inclusiv cu buget. Au fost corectate două probleme reale: răspunsul enumera șapte oferte deși cardurile conțineau opt; o cerere generică de proprietăți era restrânsă la apartamente și omitea o casă eligibilă.
