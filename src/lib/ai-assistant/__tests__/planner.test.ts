@@ -114,6 +114,18 @@ describe('Responses tool planning', () => {
     expect(result.actions).toEqual([]);
     expect(result.ownerHistoryContinuation).toBeUndefined();
   });
+  it('binds owner history discovery to the selected prospect instead of a model-transcribed ID', async () => {
+    const prompt = 'Arată istoricul proprietarului.';
+    const history: any[] = [{ id: 'selected', role: 'assistant', text: 'Selectat', createdAt: '', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Selectat', rows: [{ id: 'correct-id' }] }] }];
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: true, identityComplete: true } as any);
+    history[0].cards.unshift({ type: 'data', source: 'ownerListingFavorites', title: 'Lista anterioară', rows: [{ id: 'another' }, { id: 'unselected' }] });
+    const read = call('owner_prospects', { listingId: 'mistyped-id' });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'history', sourceQuote: prompt, description: 'Istoric', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, history, { provider: model });
+    expect(readOwnerProspects).toHaveBeenCalledWith(ctx, { listingId: 'correct-id', scope: 'agency_history' }, undefined, undefined);
+    expect(result.metrics.status, result.text).toBe('success');
+    expect(result.metrics.tools.every(tool => tool.status === 'success')).toBe(true);
+  });
   it('does not certify owner history when the model returns text without reading any records', async () => {
     const result = await planTurn(ctx, 'Arată-mi toate interacțiunile cu acest proprietar.', [{ id: 'selected', role: 'assistant', text: 'Prospect selectat.', createdAt: '2026-10-11T07:00:00Z', cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospect', rows: [{ id: 'p' }] }] }], { provider: scripted(final) });
     expect(result.metrics.status).toBe('partial');

@@ -32,6 +32,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
     const source = db.collection('ownerListings').doc(`${id}-alfa`);
     const relatedSource = db.collection('ownerListings').doc(`${id}-related`);
     const conflictingSource = db.collection('ownerListings').doc(`${id}-conflict`);
+    const draftSources: string[] = [];
     const base = { isFavoriteActive: true, reservedByAgentId: id, reservedByAgentName: 'Agent local', reservedAt: new Date().toISOString(), contactOutcome: null, collaborationStatus: null, takenByAgentId: null, notes: 'Istoric existent.', updatedAt: '2026-10-01T07:00:00.000Z' };
     const fixture: Record<string, Record<string, unknown>> = {
       [`${id}-alfa`]: { ...base, ownerName: 'Alin Matei' },
@@ -49,6 +50,12 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
       if (number === 260) {
         const duplicateUrl = `https://example.com/${id}/shared-source`;
+        const drafts = db.batch();
+        for (let index = 0; index < 110; index++) {
+          const draftId = `${id}-000-${String(index).padStart(3, '0')}`; draftSources.push(draftId);
+          drafts.set(db.collection('ownerListings').doc(draftId), { link: duplicateUrl, originSourceUrl: duplicateUrl, publicationStatus: 'draft', isCanonical: false });
+        }
+        await drafts.commit();
         await source.update({ link: duplicateUrl });
         await relatedSource.set({ publicationStatus: 'ready', isCanonical: true, originSourceUrl: duplicateUrl });
         await agency.collection('properties').doc('duplicate-import').set({ ownerListingUrl: duplicateUrl, title: 'Import din URL duplicat' });
@@ -155,7 +162,9 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         await conflictSession.set({ ownerId: id, createdAt: new Date().toISOString() });
         await conflictSession.collection('messages').doc('selection').set(history[0]);
         const conflictQuestion = await chatTurn(ctx, { sessionId: conflictSession.id, requestId: `${id}-conflict-question`, prompt, currentRecord: null });
-        report = { ...report, associationQuestion: conflictQuestion.message };
+        const associationQuestionTelemetry = (await agency.collection('assistantTelemetry').doc(`${id}-conflict-question`).get()).data()!;
+        report = { ...report, associationQuestion: conflictQuestion.message, associationQuestionTelemetry };
+        expect(associationQuestionTelemetry.tools.filter((tool: any) => tool.status !== 'success')).toEqual([]);
         expect(conflictQuestion.message.ownerHistoryContinuation?.association).toMatchObject({ propertyId: 'duplicate-import' });
         expect(conflictQuestion.message.text).toContain('Import din URL duplicat');
         const conflictReply = { sessionId: conflictSession.id, requestId: `${id}-conflict-answer`, prompt: 'Da.', currentRecord: null };
@@ -181,7 +190,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
         expect(resolved.message.text).toMatch(/releveu/i);
         expect(await chatTurn(ctx, conflictReply)).toEqual(resolved);
         expect((await agency.collection('properties').doc('duplicate-import').get()).data()).toEqual({ ownerListingUrl: `https://example.com/${id}/shared-source`, title: 'Import din URL duplicat' });
-        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, conflictingAssociationContinuationVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting URL associations clarified through saved chat and explicit read-only agent answer. Records without any usable association and source scan limits remain unresolved; no production certification.' };
+        report = { ...report, agencyLinkedHistoryVerified: true, indirectImportVerified: true, orphanInteractionsVerified: true, missingPhoneContinuationVerified: true, duplicateSourceOwnerVerified: true, conflictingAssociationContinuationVerified: true, multiPageSourceLookupVerified: true, executionVerified: false, limitation: 'Missing phone clarified through persisted chat and actual model. Duplicate source URLs resolved when all agency candidates have the same owner phone. Conflicting URL associations clarified through saved chat and explicit read-only agent answer. All source URL pages read past 110 noncanonical drafts. Records without any usable association remain unresolved; execution remains subject to runtime budgets and no production certification.' };
         return;
       }
       if (number === 257) {
@@ -232,6 +241,6 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       for (const [key, row] of Object.entries(fixture)) if (number < 253 || key !== source.id) expect((await favorites.doc(key).get()).data()).toEqual(row);
       report = { ...report, executionVerified: true, verification: number >= 253 ? 'Selected record updated with requested state/outcome, confirmed from executor receipt; idempotent replay, notes preserved, unrelated records unchanged. Missing details clarified before writes.' : 'Original question, real model, current agency prospects. Uncontacted records distinguished from follow-up, refusal and removed entries; advice does not initiate a call.' };
     } catch (error) { report = { ...report, failure: error instanceof Error ? error.message : String(error) }; throw error; }
-    finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await relatedSource.delete(); await conflictingSource.delete(); await db.terminate(); }
+    finally { await mkdir('.tmp/jarvis-corpus-prospecting', { recursive: true }); await writeFile(`.tmp/jarvis-corpus-prospecting/${scenarioId}.json`, JSON.stringify(report, null, 2)); await db.recursiveDelete(agency); await profile.delete(); await source.delete(); await relatedSource.delete(); await conflictingSource.delete(); if (draftSources.length) { const cleanup = db.batch(); for (const draftId of draftSources) cleanup.delete(db.collection('ownerListings').doc(draftId)); await cleanup.commit(); } await db.terminate(); }
   }, 240000);
 }

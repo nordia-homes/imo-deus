@@ -224,6 +224,44 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect(found.rows.map(row => row.id).sort()).toEqual([selectedId, 'by-id'].sort());
     expect(found).toMatchObject({ identityComplete: false, associationComplete: false });
   });
+  it('reads all source URL pages including a canonical match and contradiction after more than 100 drafts', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), prefix = randomUUID();
+    const selectedId = `${prefix}-z-owner`, otherId = `${prefix}-zz-other`, url = `https://example.com/${prefix}`;
+    listings.push(selectedId, otherId);
+    await agency.collection('ownerListingFavorites').doc(selectedId).set({ ownerPhone: '0722123456' });
+    const batch = db.batch();
+    for (let index = 0; index < 101; index++) {
+      const id = `${prefix}-${String(index).padStart(3, '0')}`; listings.push(id);
+      batch.set(db.collection('ownerListings').doc(id), { link: url, originSourceUrl: url, publicationStatus: index % 2 ? 'draft' : 'ready', isCanonical: false });
+    }
+    batch.set(db.collection('ownerListings').doc(selectedId), { originSourceUrl: url, publicationStatus: 'ready', isCanonical: true });
+    await batch.commit();
+    await agency.collection('properties').doc('imported').set({ ownerListingUrl: url });
+    const read = () => readOwnerProspects(ctx, { listingId: selectedId, scope: 'agency_history' });
+    const found = await read();
+    expect(found).toMatchObject({ associationComplete: true, unresolvedReferences: [] });
+    expect(found.rows.find(row => row.id === 'imported')).toMatchObject({ linkedListingId: selectedId });
+    await db.collection('ownerListings').doc(otherId).set({ link: url, publicationStatus: 'ready', isCanonical: true });
+    const conflict = await read();
+    expect(conflict).toMatchObject({ associationComplete: false, unresolvedReferences: [{ propertyId: 'imported', reason: 'ambiguous_source_url' }] });
+    expect(conflict.rows.map(row => row.id)).not.toContain('imported');
+  });
+  it('checks more than 50 canonical source candidates without discarding the import', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), prefix = randomUUID();
+    const ids = Array.from({ length: 61 }, (_, index) => `${prefix}-${String(index).padStart(3, '0')}`), url = `https://example.com/${prefix}`;
+    listings.push(...ids);
+    const batch = db.batch();
+    for (const id of ids) {
+      batch.set(db.collection('ownerListings').doc(id), { link: url, originSourceUrl: url, publicationStatus: 'ready', isCanonical: true });
+      batch.set(agency.collection('ownerListingFavorites').doc(id), { ownerPhone: '+40 722 123 456' });
+    }
+    batch.set(agency.collection('properties').doc('imported'), { ownerListingUrl: url });
+    await batch.commit();
+    const read = () => readOwnerProspects(ctx, { listingId: ids[0], scope: 'agency_history' });
+    expect((await read()).rows.find(row => row.id === 'imported')).toMatchObject({ matchBasis: 'verified_source_candidates', linkedListingIds: ids });
+    await agency.collection('ownerListingFavorites').doc(ids[60]).update({ ownerPhone: '0733123456' });
+    expect(await read()).toMatchObject({ associationComplete: false, unresolvedReferences: [{ propertyId: 'imported', reason: 'ambiguous_source_url' }] });
+  });
   it('returns recorded calls and planned tasks even when their original prospect no longer exists', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     await agency.collection('ownerListingFavorites').doc('selected').set({ ownerPhone: '0722123456' });

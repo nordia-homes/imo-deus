@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Paginarea surselor și păstrarea ID-ului selectat — 0260
+
+Resolverul importurilor citește toate paginile URL-ului, în ordine după ID, separat pentru `link` și `originSourceUrl`, în loc să abandoneze la 51 de documente. Sursele necanonice și ciornele sunt ignorate după citire; nu mai ascund surse valide aflate pe pagini ulterioare. ID-urile canonice se deduplică între câmpuri, iar verificarea prospectelor agenției se face în grupuri de maximum 20 pentru a evita lansarea simultană a tuturor citirilor.
+
+Regresiile Firestore găsesc sursa validă după 101 documente necanonice, detectează contradicția adăugată după acestea și verifică 61 de surse canonice asociate aceluiași proprietar. Schimbarea telefonului ultimului candidat este detectată. Proba cu model real parcurge istoricul cu 110 ciorne pe același URL, inclusiv clarificarea telefonului și a asocierii contradictorii. Dovadă: [OWNER_SOURCE_PAGINATION_PARTIAL_0260.json](evals/OWNER_SOURCE_PAGINATION_PARTIAL_0260.json).
+
+Prima probă reală a descoperit un ID de prospect transcris greșit de model. Pentru istoricul unui singur prospect selectat, serverul fixează acum ținta `owner_prospects` și `scope=agency_history` din selecția aplicației, cu revalidarea accesului. O listă anterioară nu înlocuiește cardul selectat; selecțiile contradictorii nu fixează arbitrar o țintă. Regresia trimite intenționat un ID greșit și confirmă citirea țintei corecte, fără eroare.
+
+Au trecut **17 teste Firestore**, **43 teste unitare** și proba finală cu model real fără apeluri de instrument eșuate. TypeScript complet, lint, paritate, inventarul corpusului și buildul final cu 227 pagini au trecut. Versiuni **jarvis-79 / tools 105**. Scenariul rămâne parțial pentru înregistrările fără asociere utilizabilă; bugetele de timp și execuție rămân aplicabile. Total **101/1000** cu dovezi locale, fără certificare nouă în producție. Modificările nu sunt publicate în producție.
+
 ## Clarificarea asocierilor contradictorii — 0260
 
 Dacă un URL de import indică surse cu proprietari diferiți sau fără prospect în agenție, Jarvis cere explicit dacă proprietatea CRM identificată prin titlu și ID aparține proprietarului selectat. Cererea și proprietatea în așteptare se păstrează în conversație. Răspunsul „da” include istoricul proprietății, „nu” îl exclude, iar „nu știu” păstrează întrebarea. O comandă nouă sau anularea nu aplică automat confirmarea.

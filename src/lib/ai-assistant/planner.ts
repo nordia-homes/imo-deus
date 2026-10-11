@@ -65,8 +65,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const selectedActions = new Set(selectActionTools(contextHint, Object.keys(actionToolSchemas)));
   const pendingProspect = history.filter(message => message.id !== 'current-page-context').at(-1)?.prospectContinuation;
   const prospectFollowup = /\bfollow[- ]?up\b/i.test(prompt) && history.filter(message => message.id !== 'current-page-context').at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
+  const historySelectionIds = [...new Set(history.filter(message => message.id !== 'current-page-context' || message.cards?.length).at(-1)?.cards?.filter(card => card.source === 'ownerListingFavorites' && card.rows.length === 1).map(card => card.rows[0].id).filter((id): id is string => typeof id === 'string') || [])];
+  const selectedHistoryListingId = historySelectionIds.length === 1 ? historySelectionIds[0] : undefined;
   const historyPrompt = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const prospectHistory = /^(arata|afiseaza|verifica|consulta)\b.*\b(istoric|istoricul|interactiuni|interactiunile)\b/.test(historyPrompt) && !/\b(creeaza|adauga|modifica|actualizeaza|sterge|programeaza|trimite|suna|marcheaza|anuleaza)\b/.test(historyPrompt) && history.filter(message => message.id !== 'current-page-context' || message.cards?.length).at(-1)?.cards?.some(card => card.source === 'ownerListingFavorites' && card.rows.length === 1);
+  const prospectHistory = /^(arata|afiseaza|verifica|consulta)\b.*\b(istoric|istoricul|interactiuni|interactiunile)\b/.test(historyPrompt) && !/\b(creeaza|adauga|modifica|actualizeaza|sterge|programeaza|trimite|suna|marcheaza|anuleaza)\b/.test(historyPrompt) && typeof selectedHistoryListingId === 'string';
   if (prospectFollowup) selectedActions.add('create_task');
   if (pendingProspect) selectedActions.add('update_prospect');
   // A clarification reply needs the selected workflow, not every unrelated core schema.
@@ -76,7 +78,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   let historyDiscoveryComplete = false;
   const pendingHistory = new Set<string>(), completedHistory = new Set<string>();
   const pendingHistoryCalls = new Map<string, { resource: string; id: string; limit: number; cursor?: string }>();
-  let historyDiscoveryCall: Record<string, unknown> = { listingId: history.filter(message => message.id !== 'current-page-context' || message.cards?.length).at(-1)?.cards?.find(card => card.source === 'ownerListingFavorites')?.rows[0]?.id, scope: 'agency_history' };
+  let historyDiscoveryCall: Record<string, unknown> = { listingId: selectedHistoryListingId, scope: 'agency_history' };
   const historyReady = () => historyDiscoveryComplete && pendingHistory.size === 0;
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
   const available = coreToolNames.filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => name !== 'owner_prospects' || prospectHistory || options.allowedTools?.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(name => !prospectHistory || historyTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
@@ -144,6 +146,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           }
           if (options.allowedTools && !options.allowedTools.includes(name)) throw new Error('Tool nepermis subagentului.');
           const definition = requireTool(name, ctx.role || ''), payload = definition.inputSchema.parse(JSON.parse(parsed.payload));
+          if (prospectHistory && name === 'owner_prospects' && typeof selectedHistoryListingId === 'string') { payload.listingId = selectedHistoryListingId; payload.scope = 'agency_history'; }
           const signature = name + ':' + parsed.payload; const repeated = (repetitions.get(signature) || 0) + 1; repetitions.set(signature, repeated); if (repeated > 2) throw new Error('Planificare circulară fără progres.');
           await emit(name, definition.description);
           let timer: ReturnType<typeof setTimeout> | undefined;

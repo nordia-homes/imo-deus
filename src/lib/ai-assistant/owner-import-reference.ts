@@ -25,12 +25,18 @@ export function ownerImportResolver(ctx: AssistantContext, selectedId: string, p
     if (!urls.has(url)) urls.set(url, (async () => {
       const ids = new Set<string>(selectedUrls.includes(url) ? [selectedId] : []);
       for (const field of ['link', 'originSourceUrl']) {
-        const snapshot = await ctx.adminDb.collection('ownerListings').where(field, '==', url).limit(51).get();
-        if (snapshot.size > 50) return { related: false, unresolved: 'source_reference_scan_limit' };
-        for (const doc of snapshot.docs) if (doc.data().publicationStatus === 'ready' && doc.data().isCanonical === true) ids.add(doc.id);
+        const query = ctx.adminDb.collection('ownerListings').where(field, '==', url).orderBy('__name__').limit(50);
+        let after: string | undefined;
+        while (true) {
+          const snapshot = await (after ? query.startAfter(after) : query).get();
+          for (const doc of snapshot.docs) if (doc.data().publicationStatus === 'ready' && doc.data().isCanonical === true) ids.add(doc.id);
+          if (snapshot.size < 50) break;
+          after = snapshot.docs[snapshot.docs.length - 1].id;
+        }
       }
       const candidates = [...ids].sort();
-      const matches = await Promise.all(candidates.map(related));
+      const matches: boolean[] = [];
+      for (let start = 0; start < candidates.length; start += 20) matches.push(...await Promise.all(candidates.slice(start, start + 20).map(related)));
       // Multiple source records are not an ambiguous owner when every candidate
       // is independently associated through the current agency's prospects.
       if (candidates.length > 1) return matches.every(Boolean)
