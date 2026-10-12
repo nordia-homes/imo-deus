@@ -12,6 +12,17 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  it('executes requested prospecting templates without another opt-in only after server preparation', async () => {
+    const context = ctx(); (context as any).policy = undefined;
+    const action: AssistantAction = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conv' }, query: {}, body: { template: { name: 'prospectare' }, prospectingConsentReceiptId: 'server-receipt', sendApproval: { amountMicros: 500000 } } };
+    const prompt = 'Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp';
+    expect((await runSafePrefix(context, 'prospect-send', [action, action, action], prompt)).results).toHaveLength(3);
+    for (const text of ['Pregătește mesajul și nu trimite proprietarilor pe WhatsApp', 'Numărul proprietarului este pe WhatsApp']) {
+      expect((await runSafePrefix(context, 'preview', [action], text)).results).toHaveLength(0);
+    }
+    const unprepared = { ...action, body: { template: { name: 'prospectare' } } };
+    expect((await runSafePrefix(context, 'unprepared', [unprepared], prompt)).results).toHaveLength(0);
+  });
   it('takes the requested prospect without opt-in but respects previews and negation', async () => {
     const context = ctx(); (context as any).policy = undefined;
     const action: AssistantAction = { kind: 'update_prospect', listingId: 'p', patch: { state: 'taken' } };

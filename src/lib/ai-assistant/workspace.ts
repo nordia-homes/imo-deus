@@ -83,6 +83,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     if (pageContext) history.push(pageContext);
     const session = await ref.get();
     const planningPrompt = prospectPlanningPrompt(input.prompt, conversationHistory);
+    ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.prompt } };
     const result = await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;
     const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(input.prompt, result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };

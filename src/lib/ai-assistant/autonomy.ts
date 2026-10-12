@@ -5,6 +5,7 @@ import { resolveAction } from './dependencies';
 import { continuePlanRevision } from './plan-revisions';
 import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { featureFlags } from './skills';
+import { requestsWhatsappProspecting } from './prospecting-consent';
 const SAFE_KINDS = new Set(['delete_task', 'create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
 // These CRM commands are authorized by the agent's request, without a saved opt-in.
 const CRM_VERBS: Record<string, string> = {
@@ -34,6 +35,7 @@ const CRM_VERBS: Record<string, string> = {
   preferences_link_action: 'creeaza|genereaza|regenereaza|dezactiveaza|create',
 };
 export function requestAuthorizedCrmAction(action: AssistantAction) {
+  if (action.kind === 'existing_operation' && action.operation === 'message_send' && typeof action.body.prospectingConsentReceiptId === 'string' && Boolean(action.body.template) && Boolean(action.body.sendApproval)) return true;
   const contextualTask = action.kind === 'create_task' && (Boolean(action.ownerListingId) || Boolean(action.viewingId) || action.participantSource === 'property_owner' && Boolean(action.propertyId) && !action.contactId || action.participantSource === 'contact' && Boolean(action.contactId));
   const taskPropertyLink = action.kind === 'update_task' && Boolean(action.propertyId) && Object.keys(action).every(key => ['kind', 'taskId', 'expectedUpdatedAt', 'propertyId'].includes(key));
   return action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add' || contextualTask || taskPropertyLink || Object.hasOwn(CRM_VERBS, action.kind) || action.kind === 'assign_record' && ['contacts', 'properties'].includes(action.resource);
@@ -42,6 +44,7 @@ export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
 }
 export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: string) {
+  if (action.kind === 'existing_operation' && action.operation === 'message_send') return requestAuthorizedCrmAction(action) && requestsWhatsappProspecting(prompt);
   const text = normalized(prompt);
   if (action.kind === 'schedule_viewing' && action.firstAvailable && !/\bprim(?:ul|a)\b.*\b(?:interval|ora)\b|\bfirst\b.*\b(?:slot|available)\b/.test(text)) return false;
   if (/\b(pregateste|preview|propune|arata|verifica|analizeaza)\b/.test(text)) return false;

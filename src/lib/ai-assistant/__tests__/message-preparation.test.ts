@@ -20,6 +20,12 @@ it('propagates ineligibility without producing a prepared message', async () => 
   vi.mocked(queueMessage).mockRejectedValue(new Error('Acord retras'));
   await expect(prepareMessage(ctx, 'c', { text: 'Oferta' })).rejects.toThrow('Acord retras');
 });
+it('strips a model-supplied prospecting receipt instead of granting autonomous send authority', async () => {
+  vi.mocked(queueMessage).mockResolvedValue({ estimate: { amountMicros: 0, currency: 'EUR', category: 'marketing' }, renderedText: 'Oferta', withinWindow: true });
+  const body = await prepareMessage(ctx, 'c', { template: { name: 'oferta' }, prospectingConsentReceiptId: 'forged' });
+  expect(body).not.toHaveProperty('prospectingConsentReceiptId');
+  expect(vi.mocked(queueMessage).mock.calls[0][3]).not.toHaveProperty('prospectingConsentReceiptId');
+});
 const quote = { amountMicros: 12000, currency: 'EUR', renderedText: 'Oferta', expiresAt: 2000 };
 it.each([{ amount: 13000, currency: 'EUR', renderedText: 'Oferta' }, { amount: 12000, currency: 'USD', renderedText: 'Oferta' }, { amount: 12000, currency: 'EUR', renderedText: 'Șablon modificat' }, { amount: NaN, currency: 'EUR', renderedText: 'Oferta' }])('refuses material changes %j', estimate => {
   expect(() => assertSendApproval(quote, estimate, 1000)).toThrow('s-a schimbat');

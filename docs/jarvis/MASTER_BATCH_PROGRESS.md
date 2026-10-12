@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare WhatsApp: declarația agentului prin solicitare — 12 octombrie 2026
+
+La solicitarea explicită a utilizatorului, comanda de contactare WhatsApp a proprietarilor este declarația agentului că a obținut anterior acordul telefonic pentru prospectare. Pentru mesajele pregătite cu anunțul concret, serverul salvează acordul marketing și istoricul cu sursa `agent_request_prior_phone_consent`, autorul, solicitarea originală, sesiunea, anunțul și destinatarul. Nu inventează răspunsul proprietarului sau data apelului. Agentul nu mai completează formularul Inbox pentru acest flux. Declarația poate rămâne înregistrată chiar dacă verificarea ulterioară a șablonului/configurației/costului împiedică expedierea.
+
+Numărul trebuie să coincidă cu anunțul accesibil din prospectarea agenției sau cu un anunț public canonic, gata de utilizare. Solicitarea salvată, apartenența agentului, accesul la conversație, numărul și eventualele refuzuri se recitesc în tranzacție. Declarația nu suprascrie un refuz global/marketing și nu înlocuiește dovezile unui acord deja existent. Același request nu dublează istoricul. Un număr public, o ciornă, o verificare sau o solicitare ipotetică nu acordă permisiunea de contact.
+
+Mesajele de prospectare cu dovadă produsă de server, șablon marketing aprobat și cost verificat intră în execuția autorizată de solicitare, fără încă un opt-in al agentului. Rămân verificările reale din coadă și worker, inclusiv retragerea acordului după pregătire și rezervarea bugetului. Confirmarea participării la vizionare rămâne separată și provine exclusiv din răspunsul WhatsApp corelat.
+
+Validare: TypeScript, ESLint, manifestul de paritate și buildul de producție (227 pagini) au trecut; 125 teste unitare și 62 teste de integrare în emulator, cu serviciul real de coadă/worker și Meta simulat. Au fost verificate înregistrarea acordului, numărul public fără favorit, expedierea o singură dată, refuzul, schimbarea numărului/accesului, proveniența solicitării și eliberarea bugetului. Aceasta nu reprezintă o nouă certificare a corpusului: rămân 115/1000 dovezi locale cu model real. În această modificare nu s-a verificat cap-coadă prin model căutarea celor trei oferte plus crearea unor conversații noi; pregătirea `message_send` necesită în continuare conversații concrete existente. Nu s-au contactat persoane reale și nu s-a publicat în producție.
+
+Această regulă înlocuiește cerința pasului manual descrisă mai jos numai pentru solicitarea explicită de prospectare WhatsApp. Fluxul manual rămâne disponibil pentru alte situații.
+
 ## Fluxul uman de acord și numărul public — 0275 parțial / 0276
 
 Jarvis recunoaște cererea originală de înregistrare prin fluxul uman și citește acordurile reale ale conversației selectate. Oferă linkul exact către Inbox, indică panoul „Consimțământ WhatsApp”, scopul, dovada/data și pasul administratorului. Nu colectează dovada în chat, nu scrie acordul și nu pretinde că acesta a fost înregistrat. Formularul Inbox golește dovada și resetează scopul la schimbarea conversației, evitând reutilizarea textului pentru alt destinatar.

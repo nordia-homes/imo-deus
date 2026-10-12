@@ -250,6 +250,93 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     return { ...f, token, consent, budget, templates, input: { ...action.body, requestId: randomUUID() } };
   }
   const templateSends = () => mocks.graph.mock.calls.filter(call => /\/messages$/.test(call[0]));
+  async function prospectingFixture() {
+    const f = await marketingFixture();
+    await f.consent.delete();
+    const agency = db.collection('agencies').doc(f.actor.agencyId);
+    const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt: 'Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp' };
+    const session = agency.collection('assistantSessions').doc(request.sessionId);
+    await session.set({ ownerId: f.actor.uid });
+    await session.collection('messages').doc(`${request.requestId}-user`).set({ role: 'user', text: request.prompt });
+    const listing = agency.collection('ownerListingFavorites').doc('selected-owner');
+    await listing.set({ ownerPhone: '0722 123 456', title: 'Apartament Titan' });
+    const ctx = { ...f.actor, adminDb: db, prospectingRequest: request } as any;
+    const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
+    return { ...f, agency, request, session, listing, ctx, prepare };
+  }
+  it('records an agent request attestation and dispatches the template once without an Inbox consent step', async () => {
+    const f = await prospectingFixture();
+    try {
+      const actions = await f.prepare(), action = actions[0];
+      if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+      expect((await f.consent.get()).data()).toMatchObject({ status: 'granted', purpose: 'marketing', source: 'agent_request_prior_phone_consent', recordedBy: f.actor.uid, evidence: f.request.prompt, ownerListingId: f.listing.id });
+      expect(action.body.prospectingConsentReceiptId).toEqual(expect.any(String));
+      expect(templateSends()).toHaveLength(0);
+      await f.prepare();
+      expect((await f.consent.collection('history').get()).size).toBe(1);
+      const input = { ...action.body, requestId: randomUUID() };
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, input);
+      await queueMessage(db as any, f.actor, f.ref.id, input);
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(1);
+      expect((await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data()?.status).toBe('accepted');
+    } finally { await f.rate.delete(); }
+  });
+  it.each(['revoked', 'global', 'phone', 'request', 'actor', 'preview'])('rejects prospecting consent when %s is invalid', async change => {
+    const f = await prospectingFixture();
+    try {
+      if (change === 'revoked' || change === 'global') await revokeMarketing(f, change);
+      if (change === 'phone') await f.listing.update({ ownerPhone: '0722999999' });
+      if (change === 'request') await f.session.collection('messages').doc(`${f.request.requestId}-user`).update({ text: 'Caută oferte' });
+      if (change === 'actor') await f.session.update({ ownerId: 'another-agent' });
+      if (change === 'preview') f.ctx.prospectingRequest = { ...f.request, prompt: 'Pregătește un mesaj, nu trimite proprietarilor pe WhatsApp' };
+      await expect(f.prepare()).rejects.toThrow();
+      expect((await f.consent.get()).data()?.status).not.toBe('granted');
+      expect((await f.consent.collection('history').get()).empty).toBe(true);
+      expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); }
+  });
+  it('honors a withdrawal after the agent attestation and does not restore it on replay', async () => {
+    const f = await prospectingFixture();
+    try {
+      const action = (await f.prepare())[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() });
+      await revokeMarketing(f, 'revoked');
+      await expect(f.prepare()).rejects.toThrow('retras');
+      await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(0);
+      expect((await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data()?.status).toBe('failed');
+      expect((await f.budget.get()).data()?.reservedMicros).toBe(0);
+    } finally { await f.rate.delete(); }
+  });
+  it('accepts a ready canonical owner listing without requiring it to be saved as a prospect', async () => {
+    const f = await prospectingFixture(), source = db.collection('ownerListings').doc(randomUUID());
+    try {
+      await source.set({ publicationStatus: 'ready', isCanonical: true, ownerPhone: '+40 722 123 456', title: 'Apartament Titan' });
+      const prepare = () => bindBusinessRevisions(f.ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: source.id } }]);
+      const action = (await prepare())[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+      expect((await f.consent.get()).data()?.ownerListingId).toBe(source.id);
+      await source.update({ publicationStatus: 'pending' });
+      await expect(prepare()).rejects.toThrow('disponibil');
+      expect(templateSends()).toHaveLength(0);
+    } finally { await source.delete(); await f.rate.delete(); }
+  });
+  it('rechecks access inside the consent transaction and preserves prior consent evidence', async () => {
+    const f = await prospectingFixture(), original = db.runTransaction.bind(db);
+    try {
+      await f.consent.set({ status: 'granted', source: 'manual-evidence', evidence: 'Original telephone record' });
+      await f.prepare();
+      expect((await f.consent.get()).data()?.source).toBe('manual-evidence');
+      const transaction = vi.spyOn(db, 'runTransaction').mockImplementationOnce(async (callback: any) => {
+        await f.ref.update({ assigneeId: 'another-agent', collaboratorIds: [] });
+        return original(callback);
+      });
+      try { await expect(f.prepare()).rejects.toThrow('accesul'); }
+      finally { transaction.mockRestore(); }
+      expect((await f.consent.collection('history').get()).size).toBe(1);
+      expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); }
+  });
   async function revokeMarketing(f: Awaited<ReturnType<typeof marketingFixture>>, change: string) {
     if (change === 'deleted') return f.consent.delete();
     if (change === 'global') return withdrawEligibility(f, 'all');
