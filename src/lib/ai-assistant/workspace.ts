@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { collectionFor, referencesAllowed, actionReferences, type AssistantContext } from './access';
 import { actionSchema, cardPreview, uniqueReferences, type AssistantMessage, type AssistantPlan, type AssistantCard } from './contracts';
 import { planTurn } from './planner';
+import { canExecutePreparedProspecting } from './prospecting-plan';
 import { executeAction } from './actions';
 import { CommunicationError } from '@/lib/communications/server';
 import { resolveAction } from './dependencies';
@@ -86,7 +87,8 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.prompt } };
     const result = await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;
-    const autonomous = result.metrics.status === 'success' && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(input.prompt, result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
+    const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(input.prompt, result.metrics.status, result.actions, result.goalCoverage);
+    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(input.prompt, result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
     for (const step of autonomous.results) {
       const receipt = step.result as Record<string, unknown> | undefined;
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
@@ -105,6 +107,11 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       result.text = `Acțiuni executate: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : hasOutbound ? 'Starea mesajelor este disponibilă în Inbox.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       const confirmation = executionConfirmation(autonomous.results);
       if (confirmation) result.text = `${confirmation}\n${result.text}`;
+      const missing = result.goalCoverage?.requirements.filter(row => ['needs_clarification', 'unsupported'].includes(row.resolution)) || [];
+      if (missing.length) {
+        result.text += `\nCerințe încă neîndeplinite: ${missing.map(row => row.description).join('; ')}`;
+        result.metrics.status = 'partial';
+      }
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Rezultatele cererii', source: 'autonomy', rows: autonomous.results });
       if (autonomous.blocked) result.metrics.status = 'partial';
     }

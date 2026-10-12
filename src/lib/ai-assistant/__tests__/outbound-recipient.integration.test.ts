@@ -265,7 +265,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting: actual model searches three sales and executes new-recipient templates in one chat turn', async () => {
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -279,21 +279,29 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       for (const [index, patch] of variants.entries()) {
         const id = `${f.actor.agencyId}-offer-${index}`; sources.push(id);
         await db.collection('ownerListings').doc(id).set({ scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: 'București, Titan', propertyType: 'apartment', transactionType: 'sale', roomsValue: 2, price: '120000 EUR', title: `Apartament test ${index}`, ownerName: `Proprietar ${index}`, ownerPhone: `072233330${index}`, lastVerifiedAt: new Date().toISOString(), link: `https://example.test/${index}`, ...patch });
+        if (variant === 'shared-owner-long-titles' && index < 3) await db.collection('ownerListings').doc(id).update({ title: `Apartament test ${index} ` + 'Titlu lung cu diacritice ȘȚĂÎÂ. '.repeat(300), ...(index === 2 ? { ownerName: 'Proprietar 0', ownerPhone: '+40 722 333 300' } : {}) });
+        if (variant === 'missing-phone' && index === 2) await db.collection('ownerListings').doc(id).update({ ownerPhone: '', phoneExtractionStatus: 'unavailable' });
       }
-      const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt: f.request.prompt, currentRecord: null };
+      const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt: variant === 'shared-owner-long-titles' ? f.request.prompt.replace('Găsește 3', 'Găsește doar 3') : f.request.prompt, currentRecord: null };
       const result = await chatTurn(mocks.actor, request);
       await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
-      await writeFile('.tmp/jarvis-whatsapp-prospecting/latest.json', JSON.stringify({ prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-latest.json`, JSON.stringify({ variant, prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
       expect(result.message.planId, result.message.text).toBeUndefined();
       const jobs = await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get();
-      expect(jobs.size, result.message.text).toBe(3);
+      const expectedSends = variant === 'standard' ? 3 : 2;
+      expect(jobs.size, result.message.text).toBe(expectedSends);
+      if (variant === 'missing-phone') {
+        expect(result.message.text).toContain('Cerințe încă neîndeplinite');
+        expect(result.message.text).toMatch(/telefon|număr/);
+        expect((await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data()?.status).toBe('partial');
+      }
       await drainOutbound(db as any); await drainOutbound(db as any);
-      expect(templateSends()).toHaveLength(3);
-      expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722333300', '40722333301', '40722333302']);
+      expect(templateSends()).toHaveLength(expectedSends);
+      expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722333300', '40722333301', '40722333302'].slice(0, expectedSends));
       for (const job of jobs.docs) expect((await job.ref.get()).data()?.status).toBe('accepted');
       await chatTurn(mocks.actor, request); await drainOutbound(db as any);
-      expect(templateSends()).toHaveLength(3);
-      await writeFile('.tmp/jarvis-whatsapp-prospecting/verified.json', JSON.stringify({ prompt: request.prompt, verifiedAt: new Date().toISOString(), sends: 3, replaySends: 0, realProvider: false, newConversations: true, priceBoundaryIncluded: true, rentalsExcluded: true }, null, 2));
+      expect(templateSends()).toHaveLength(expectedSends);
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-verified.json`, JSON.stringify({ variant, prompt: request.prompt, verifiedAt: new Date().toISOString(), sends: expectedSends, replaySends: 0, realProvider: false, newConversations: true, priceBoundaryIncluded: true, rentalsExcluded: true }, null, 2));
     } finally { for (const id of sources) await db.collection('ownerListings').doc(id).delete(); await f.rate.delete(); mocks.actor = null; }
   }, 240000);
   it('creates three owner conversations, records consent and sends all templates without preexisting contacts', async () => {
@@ -318,6 +326,35 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       const repeated = await bindBusinessRevisions(f.ctx, proposed);
       expect(repeated.map(action => action.kind === 'existing_operation' && action.params.conversationId)).toEqual(actions.map(action => action.kind === 'existing_operation' && action.params.conversationId));
     } finally { await f.rate.delete(); }
+  });
+  it('sends each recipient once when the planner proposes overlapping batches', async () => {
+    const f = await prospectingFixture();
+    mocks.actor = f.ctx;
+    try {
+      const { planTurn } = await import('../planner');
+      const { executeSafePrefix } = await import('../autonomy');
+      await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ channel: 'whatsapp', status: 'connected' });
+      for (const [index, id] of ['first', 'second'].entries()) await f.agency.collection('ownerListingFavorites').doc(id).set({ ownerName: `Proprietar ${index}`, ownerPhone: `072244440${index}` });
+      const action = (listingId: string) => ({ kind: 'existing_operation', operation: 'message_send', params: {}, query: {}, body: { prospectingListingId: listingId, prospectingConnectionId: f.conversation.connectionId, template: { name: 'colaborare', language: 'ro', parameters: ['Proprietar'] } } });
+      const calls = [
+        { name: 'propose_actions', payload: { actions: [action('first')] } },
+        { name: 'propose_actions', payload: { actions: [action('first'), action('second')] } },
+        { name: 'goal_coverage', payload: { requirements: [{ id: 'send', sourceQuote: 'contactează proprietarii pe whatsapp', description: 'Contactare proprietari', resolution: 'planned', steps: [1, 2], evidenceCallIds: [] }] } },
+      ];
+      let index = 0;
+      const provider = { id: 'scripted-overlapping-proposals', respond: vi.fn(async (_request: unknown) => {
+        const next = calls[index++], id = `call-${index}`;
+        const call = next ? { id, name: next.name, arguments: JSON.stringify(next.name === 'propose_actions' ? { payload: JSON.stringify(next.payload) } : next.payload) } : null;
+        return { calls: call ? [call] : [], items: call ? [{ type: 'function_call', call_id: id, name: call.name, arguments: call.arguments }] : [], text: call ? '' : 'Mesaje pregătite.', intentStatus: 'answer' as const, status: 'completed', latencyMs: 1, usage: { inputTokens: 100, outputTokens: 30, cachedTokens: 0, cacheWriteTokens: 0, estimated: false } };
+      }) };
+      const planned = await planTurn(f.ctx, f.request.prompt, [], { provider });
+      expect(planned.metrics.status).toBe('success');
+      expect(planned.actions).toHaveLength(2);
+      const executed = await executeSafePrefix(f.ctx, randomUUID(), planned.actions, f.request.prompt);
+      expect(executed.blocked).toBe(false); expect(executed.results).toHaveLength(2);
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722444400', '40722444401']);
+    } finally { await f.rate.delete(); mocks.actor = null; }
   });
   it.each(['missing-phone', 'disconnected', 'other-agent', 'revoked', 'not-requested'])('does not create or take over a prospecting conversation: %s', async change => {
     const f = await prospectingFixture();

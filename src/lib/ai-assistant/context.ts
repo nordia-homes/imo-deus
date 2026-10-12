@@ -12,7 +12,7 @@ export async function preferredTimezone(_ctx: AssistantContext) {
 // Keep qualifications beside the values they qualify, including in model previews.
 // Do not truncate notes or identifiers: if they do not fit, omit the whole result.
 function provenance(row: Record<string, any>) {
-  return Object.fromEntries(['scoreMayBeStale', 'scoreRecalculated', 'scoringSource', 'freshness', 'observedAt', 'paginationConsistency', 'uncertainCurrency', 'note', 'orderSource', 'sourceMessageId', 'contactId']
+  return Object.fromEntries(['scoreMayBeStale', 'scoreRecalculated', 'scoringSource', 'freshness', 'observedAt', 'paginationConsistency', 'uncertainCurrency', 'note', 'orderSource', 'sourceMessageId', 'contactId', 'evidenceCallId', 'evidenceScope']
     .filter(key => row[key] !== undefined).map(key => [key, row[key]]));
 }
 function rowProvenance(row: Record<string, any>) {
@@ -31,7 +31,7 @@ export function compressedResult(result: unknown, maxBytes = 14000) {
     return result();
   }
   const rows = Array.isArray(safe?.rows) ? safe.rows : [];
-  const overview = rows.slice(0, 100).map((row: any) => ({ ...Object.fromEntries(['id', 'name', 'title', 'status', 'price', 'constructionYear', 'constructionYearLabel', 'constructionYearKnown', 'constructionYearEvidenceKind', 'constructionYearLowerBound', 'constructionYearUpperBound', 'yearFilterSatisfied', 'matchScore', 'contactId', 'propertyId', 'viewingDate', 'dueDate'].filter(key => row[key] !== undefined).map(key => [key, typeof row[key] === 'string' && ['name', 'title'].includes(key) ? row[key].slice(0, 150) : row[key]])), ...rowProvenance(row), availableFields: Object.keys(row).slice(0, 30) }));
+  const overview = rows.slice(0, 100).map((row: any) => ({ ...Object.fromEntries(['id', 'name', 'title', 'status', 'price', 'constructionYear', 'constructionYearLabel', 'constructionYearKnown', 'constructionYearEvidenceKind', 'constructionYearLowerBound', 'constructionYearUpperBound', 'yearFilterSatisfied', 'matchScore', 'ownerName', 'ownerPhone', 'phoneExtractionStatus', 'contactId', 'propertyId', 'viewingDate', 'dueDate'].filter(key => row[key] !== undefined).map(key => [key, typeof row[key] === 'string' && ['name', 'title'].includes(key) ? row[key].slice(0, 150) : row[key]])), ...rowProvenance(row), availableFields: Object.keys(row).slice(0, 30) }));
   const selected = overview.slice(0, 40);
   const preview = () => JSON.stringify({ ...provenance(safe || {}), truncated: true, rows: selected, ...(safe?.crmComparison?.mode === 'exact_references' ? { crmComparison: { mode: 'exact_references', semanticDuplicateDetection: false } } : {}), resultSetId: safe?.resultSetId || null, nextCursor: safe?.nextCursor || null, complete: false, warning: 'Previzualizare incompletă; folosește read_field/read cu limită mai mică.' });
   while (selected.length && Buffer.byteLength(preview()) > maxBytes) selected.pop();

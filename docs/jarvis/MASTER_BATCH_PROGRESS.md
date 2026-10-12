@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare WhatsApp: destinatari comuni, date lipsă și rezultate lungi — 12 octombrie 2026
+
+Au fost verificate trei variante cu model real și fluxul efectiv chat → căutare → pregătire → API → coadă → worker, pe Firestore local și Meta simulat. Dovadă: [WHATSAPP_PROSPECTING_VARIANTS_EXECUTION.json](evals/WHATSAPP_PROSPECTING_VARIANTS_EXECUTION.json). Cazul obișnuit trimite trei șabloane. Trei anunțuri cu titluri foarte lungi și un proprietar comun produc două mesaje către două numere distincte; formularea „Găsește doar 3...” este recunoscută ca solicitare explicită. Când al treilea anunț nu are telefon, cele două mesaje eligibile sunt executate, iar lipsa telefonului rămâne indicată în răspuns și starea cererii este `partial`. Nu sunt inventate date și nu este declarat succes integral pentru proprietarul necontactat. Reluarea fiecărui request nu retrimite mesajele.
+
+Compresia rezultatelor păstrează numele/telefonul proprietarului și identificatorul/scopul dovezii de citire. Un titlu lung nu mai elimină datele necesare contactării din contextul modelului. Deduplicarea funcționează și între propuneri succesive din aceeași cerere, cu indicarea pașilor deja pregătiți. Planurile mixte își păstrează ordinea și referințele dintre pași.
+
+Execuția parțială este limitată la mesaje de prospectare independente, pregătite de server și acoperite de cerințe validate, atunci când planificarea a reușit sau cere clarificări pentru alt destinatar. Opririle de buget, erorile, refuzurile și planurile fără dovadă validă nu sunt convertite în permisiune de expediere. Refuzurile WhatsApp, identitatea destinatarului, costul și bugetul continuă să fie verificate de serviciul de expediere.
+
+Validare: TypeScript, ESLint, manifestul de paritate și buildul final au trecut, împreună cu 180 teste unitare, 69 teste de integrare fără model și 3 variante suplimentare cu model real, inclusiv execuție prin handlerul real și verificarea numărului exact de apeluri către furnizorul simulat. Inventarul original rămâne 115/1000 dovezi locale, cu 0 certificări complete în producție. Aceste variante nu cresc artificial numărul de scenarii originale certificate. Nu au fost contactate persoane reale și modificarea nu este publicată în producție.
+
 ## Prospectare WhatsApp cu destinatari noi: cerere executată cu model real — 12 octombrie 2026
 
 Cererea „Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp” a fost verificată în aceeași tură de chat, cu model real, căutarea reală a aplicației, crearea conversațiilor, acordul declarat prin solicitare, handlerul API, coada și workerul reale. Firestore a rulat local, iar Meta a fost simulat; nu au fost contactate persoane reale. Dovada este [WHATSAPP_PROSPECTING_REQUEST_EXECUTION.json](evals/WHATSAPP_PROSPECTING_REQUEST_EXECUTION.json).

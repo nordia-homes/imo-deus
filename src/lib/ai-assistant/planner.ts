@@ -1,4 +1,5 @@
 import { requestsWhatsappProspecting } from './prospecting-consent';
+import { uniqueProspectingProposals } from './prospecting-plan';
 import { payloadHash } from './approval';
 import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { ownerHistoryReply, ownerHistoryQuestion, type OwnerHistoryContinuation, type OwnerAssociationAnswer } from './owner-history-continuation';
@@ -245,6 +246,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             if (prospectRead && !historyReady()) throw new Error('Citirea nu este completă: termină paginile owner_prospects și citirile timeline cerute de rezultatele readMode=timeline.');
             goalCoverage = validateGoalCoverage(payload, prompt, actions.length, successfulReads);
             response.data = { accepted: true, requirements: goalCoverage.requirements.length, unresolved: goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.id) };
+          }
+          if (response.actions.length) {
+            const unique = uniqueProspectingProposals(actions, response.actions);
+            response.actions = unique.actions;
+            if (unique.reusedSteps.length) response.data = { ...response.data, prepared: unique.actions.length, reusedSteps: unique.reusedSteps, note: 'Destinatarii din reusedSteps au deja mesaje pregătite în cererea curentă. Nu îi propune din nou; include pașii existenți în goal_coverage.' };
           }
           if (response.actions.length) {
             goalCoverage = undefined;

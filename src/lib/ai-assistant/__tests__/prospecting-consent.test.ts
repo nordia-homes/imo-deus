@@ -6,6 +6,8 @@ it.each([
   'Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp',
   'Trimite proprietarului template de prospectare WhatsApp',
   'Scrie proprietarilor pe WhatsApp',
+  'Găsește doar 3 apartamente și contactează proprietarii pe WhatsApp',
+  'Trimite numai proprietarilor template de prospectare WhatsApp',
 ])('recognizes explicit prospecting contact request: %s', prompt => {
   expect(requestsWhatsappProspecting(prompt)).toBe(true);
 });
@@ -18,6 +20,7 @@ it.each([
   'Ca exemplu: contactează proprietarii pe WhatsApp',
   'Trimite cumpărătorului confirmarea vizionării pe WhatsApp',
   'Dacă își dau acordul, contactează proprietarii pe WhatsApp',
+  'Când își dau acordul, contactează proprietarii pe WhatsApp',
 ])('does not infer an attestation from %s', prompt => {
   expect(requestsWhatsappProspecting(prompt)).toBe(false);
 });

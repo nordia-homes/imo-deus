@@ -4,6 +4,16 @@ import type { AssistantMessage } from '../contracts';
 
 const feedback = { previousAlertFeedback: 'not_useful', alertFeedbackUpdatedAt: '2026-10-07T10:00:00.000Z', feedbackNote: 'Evaluarea alertei de atunci; nu evaluează oferta actuală.' };
 const large = 'ș'.repeat(20000);
+it('keeps owner phones and read evidence when long listing titles require compression', () => {
+  const rows = Array.from({ length: 3 }, (_, index) => ({ id: `owner-${index}`, title: large, ownerName: `Proprietar ${index}`, ownerPhone: `072233330${index}`, phoneExtractionStatus: 'available', price: '130000 EUR' }));
+  const encoded = compressedResult({ rows, complete: false, nextCursor: 'next', evidenceCallId: 'search-call', evidenceScope: 'returned_results_only_not_global_total' }, 7000);
+  const result = JSON.parse(encoded);
+  expect(result).toMatchObject({ complete: false, truncated: true, evidenceCallId: 'search-call', evidenceScope: 'returned_results_only_not_global_total' });
+  expect(result.rows).toHaveLength(3);
+  expect(result.rows.map((row: any) => row.ownerPhone)).toEqual(rows.map(row => row.ownerPhone));
+  expect(result.rows.map((row: any) => row.ownerName)).toEqual(rows.map(row => row.ownerName));
+  expect(Buffer.byteLength(encoded)).toBeLessThanOrEqual(7000);
+});
 
 it('keeps stale matching evidence with the original score and selected position', () => {
   const input = { rows: [{ id: 'p', matchScore: 91, scoreMayBeStale: true, selectedPosition: 2, description: large }], scoreMayBeStale: true, scoreRecalculated: false, scoringSource: 'existing_imodeus_matching', contactId: 'c', orderSource: 'saved_display_order', note: 'Scorul păstrează calculul anterior.', resultSetId: 'set' };

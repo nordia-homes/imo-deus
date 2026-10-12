@@ -11,7 +11,7 @@ export function requestsWhatsappProspecting(prompt: string) {
   return /\bwhatsapp\b/.test(text)
     && /\b(proprietar\w*|prospect\w*)\b/.test(text)
     && /\b(contacteaza|contactati|trimite|trimiteti|scrie|scrieti)\b/.test(text)
-    && !/\b(nu|fara|doar|numai|daca|exemplu|exemplificare|ipotetic|pregateste|ciorna|preview|verifica|arata|explica|cum)\b/.test(text);
+    && !/\b(nu|fara|daca|cand|exemplu|exemplificare|ipotetic|pregateste|ciorna|preview|verifica|arata|explica|cum)\b/.test(text);
 }
 
 export async function recordProspectingConsent(ctx: AssistantContext, conversationId: string, listingId: string, expectedRevision: string) {
