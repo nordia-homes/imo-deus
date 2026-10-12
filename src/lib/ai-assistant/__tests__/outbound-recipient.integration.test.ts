@@ -244,6 +244,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     await consent.set({ status: 'granted' });
     const token = async () => { const value = await f.token(); return { ...value, connection: { ...value.connection, parentId: '123456' } }; };
     mocks.token.mockImplementation(token);
+    await agency.collection('channelConnections').doc(f.conversation.connectionId).set({ channel: 'whatsapp', status: 'connected', parentId: '123456', capabilities: { templates: { status: 'active' } } });
     const templates = { data: [{ name: 'colaborare', language: 'ro', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Bună ziua, {{1}}. Discutăm o colaborare?' }] }] };
     mocks.graph.mockImplementation(async (path: string) => path.includes('/message_templates?') ? templates : { messages: [{ id: randomUUID() }] });
     const actions = await bindBusinessRevisions({ ...f.actor, adminDb: db } as any, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] } } }]);
@@ -251,6 +252,94 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     return { ...f, token, consent, budget, templates, input: { ...action.body, requestId: randomUUID() } };
   }
   const templateSends = () => mocks.graph.mock.calls.filter(call => /\/messages$/.test(call[0]));
+  it.each(['unknown', 'revoked', 'empty', 'pagination', 'provider-error'])('reads template catalog with real consent and API: %s', async variant => {
+    const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    const ctx = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' } as any;
+    mocks.actor = ctx;
+    try {
+      const { checkWhatsAppTemplates } = await import('../whatsapp-template-check');
+      if (variant === 'unknown') await f.consent.delete();
+      if (variant === 'revoked') await agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722123456', 'all')).set({ status: 'revoked' });
+      mocks.graph.mockReset();
+      mocks.graph.mockImplementation(async (path: string) => {
+        if (!path.includes('/message_templates?')) throw new Error('Sending excluded');
+        if (variant === 'provider-error') throw new Error('Provider unavailable');
+        if (variant !== 'pagination') return { data: [] };
+        return path.includes('after=next-page') ? { data: [{ ...f.templates.data[0], name: 'pagina_doi' }] } : { ...f.templates, paging: { next: 'provider-next', cursors: { after: 'next-page' } } };
+      });
+      if (variant === 'provider-error') await expect(checkWhatsAppTemplates(ctx, f.ref.id)).rejects.toThrow();
+      else {
+        const result = await checkWhatsAppTemplates(ctx, f.ref.id);
+        expect(result.sendAuthorized).toBe(false);
+        if (variant === 'unknown' || variant === 'revoked') {
+          expect(result.status).toBe(variant === 'unknown' ? 'consent_missing' : 'blocked');
+          expect(mocks.graph).not.toHaveBeenCalled();
+        } else {
+          expect(result).toMatchObject({ status: 'checked', availableCount: variant === 'empty' ? 0 : 2 });
+          expect(result.rows).toHaveLength(variant === 'empty' ? 0 : 2);
+          expect(mocks.graph).toHaveBeenCalledTimes(variant === 'empty' ? 1 : 2);
+        }
+      }
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get()).empty).toBe(true);
+      expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); mocks.actor = null; }
+  });
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting master-0277: checks current templates after consent without sending', async () => {
+    const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
+    if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
+    const { chatTurn } = await import('../workspace');
+    const { VERSIONS } = await import('../models');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0277')!.text;
+    let report: Record<string, unknown> = { scenarioId: 'master-0277', prompt, versions: VERSIONS, executionVerified: false, environment: 'Actual model, chatTurn and template API; Firestore local and simulated Meta. No production certification.' };
+    try {
+      const templates = [
+        ...f.templates.data,
+        { name: 'in_asteptare', language: 'ro', category: 'MARKETING', status: 'PENDING', components: [{ type: 'BODY', text: 'Mesaj în așteptare' }] },
+        { name: 'format_media', language: 'ro', category: 'UTILITY', status: 'APPROVED', components: [{ type: 'HEADER', format: 'IMAGE' }, { type: 'BODY', text: 'Imagine' }] },
+      ];
+      mocks.graph.mockImplementation(async (path: string) => {
+        if (!path.includes('/message_templates?')) throw new Error('No external sending allowed');
+        return { data: templates };
+      });
+      const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId);
+      await session.set({ ownerId: f.actor.uid });
+      await session.collection('messages').doc('selection').set({ id: 'selection', role: 'assistant', text: 'Conversație WhatsApp selectată.', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'conversations', title: 'WhatsApp', rows: [{ id: f.ref.id }] }] });
+      const request = { sessionId, requestId: randomUUID(), prompt, currentRecord: null };
+      const result = await chatTurn(mocks.actor, request);
+      report = { ...report, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data() };
+      expect(result.message.planId, result.message.text).toBeUndefined();
+      const rows = result.message.cards?.filter(card => card.source === 'whatsappTemplates').flatMap(card => card.rows);
+      expect(rows).toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: 'colaborare', approvedAndSupported: true, bodyParameterCount: 1 }),
+        expect.objectContaining({ name: 'in_asteptare', approvedAndSupported: false, status: 'PENDING' }),
+        expect.objectContaining({ name: 'format_media', approvedAndSupported: false, supported: false }),
+      ]));
+      expect(result.message.text).toContain('colaborare');
+      expect((await agency.collection('assistantTelemetry').doc(request.requestId).get()).data()?.status).toBe('success');
+      const reads = mocks.graph.mock.calls.length;
+      expect(await chatTurn(mocks.actor, request)).toEqual(result);
+      expect(mocks.graph).toHaveBeenCalledTimes(reads);
+      templates[0].status = 'PAUSED';
+      const changed = await chatTurn(mocks.actor, { ...request, requestId: randomUUID() });
+      report = { ...report, changed: changed.message };
+      expect(changed.message.cards?.filter(card => card.source === 'whatsappTemplates').flatMap(card => card.rows)).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'colaborare', status: 'PAUSED', approvedAndSupported: false })]));
+      expect(changed.message.text).toMatch(/PAUSED|pauz|suspendat|indisponibil/i);
+      expect((await f.consent.get()).data()).toEqual({ status: 'granted' });
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get()).empty).toBe(true);
+      expect(templateSends()).toHaveLength(0);
+      report = { ...report, executionVerified: true, verifiedAt: new Date().toISOString(), verification: 'Original request, current catalog through real API, approved/pending/unsupported distinction, fresh PAUSED state on next request, persisted replay, unchanged consent and zero outbound jobs/messages.' };
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile('.tmp/jarvis-whatsapp-prospecting/master-0277-latest.json', JSON.stringify(report, null, 2));
+      await f.rate.delete(); mocks.actor = null;
+    }
+  }, 240000);
   async function prospectingFixture() {
     const f = await marketingFixture();
     await f.consent.delete();

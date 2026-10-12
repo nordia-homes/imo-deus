@@ -58,6 +58,14 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('requires selected WhatsApp conversation and fresh templates before completing catalog checks', async () => {
+    const prompt = 'După acord, verifică template-urile disponibile.';
+    expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('clarification');
+    const history = [{ id: 'selection', role: 'assistant' as const, text: 'WhatsApp selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'WhatsApp', source: 'conversations', rows: [{ id: 'selected' }] }] }];
+    const model = scripted(final);
+    expect((await planTurn(ctx, prompt, history, { provider: model })).metrics.status).toBe('partial');
+    expect(model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).toEqual(['whatsapp_template_check']);
+  });
   it('requires a selected conversation and an actual check before certifying WhatsApp eligibility', async () => {
     const prompt = 'Nu trimite WhatsApp dacă destinatarul nu este eligibil.';
     expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('clarification');

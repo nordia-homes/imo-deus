@@ -1,0 +1,511 @@
+{
+  "scope": "Original corpus request with actual model and application APIs; local fixtures and simulated Meta; not production certification",
+  "initialRuns": [
+    {
+      "scenarioId": "master-0277",
+      "prompt": "După acord, verifică template-urile disponibile.",
+      "versions": {
+        "prompt": "jarvis-97",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "126",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": false,
+      "environment": "Actual model, chatTurn and template API; Firestore local and simulated Meta. No production certification.",
+      "final": {
+        "id": "72a95b39-fed8-4b69-9f67-506fe1668c8f-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Acoperirea cererii nu a putut fi verificată. Rezultatele sunt parțiale, iar acțiunile pregătite nu au fost executate.",
+        "cards": [],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T14:11:32.436Z"
+      },
+      "telemetry": {
+        "requestId": "72a95b39-fed8-4b69-9f67-506fe1668c8f",
+        "sessionId": "3c694047-fc84-4c99-b62f-e5498a5c8a86",
+        "userId": "47a8bef0-a3c0-4c85-8964-fac0897f4f02",
+        "agencyId": "46bac03a-37a7-4cc2-9352-0d56e0d5a702",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2170,
+              "outputTokens": 46,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1918,
+              "estimated": false
+            },
+            "costUsd": 0.00028795,
+            "latencyMs": 1948,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2239,
+              "outputTokens": 93,
+              "cachedTokens": 1918,
+              "cacheWriteTokens": 318,
+              "estimated": false
+            },
+            "costUsd": 0.00010573,
+            "latencyMs": 1958,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2450,
+              "outputTokens": 46,
+              "cachedTokens": 2236,
+              "cacheWriteTokens": 0,
+              "estimated": false
+            },
+            "costUsd": 6.676E-05,
+            "latencyMs": 1090,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2519,
+              "outputTokens": 121,
+              "cachedTokens": 2236,
+              "cacheWriteTokens": 280,
+              "estimated": false
+            },
+            "costUsd": 0.00011816,
+            "latencyMs": 1935,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2758,
+              "outputTokens": 112,
+              "cachedTokens": 2516,
+              "cacheWriteTokens": 0,
+              "estimated": false
+            },
+            "costUsd": 0.00010536,
+            "latencyMs": 2073,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "whatsapp_template_check",
+            "status": "failed",
+            "latencyMs": 391,
+            "version": "126",
+            "argumentsHash": "a6371e85e00cb9c1c89418f86604a4d67ff1bdc54240d8889f40a8ebd0dffe50"
+          },
+          {
+            "name": "whatsapp_template_check",
+            "status": "failed",
+            "latencyMs": 47,
+            "version": "126",
+            "argumentsHash": "a6371e85e00cb9c1c89418f86604a4d67ff1bdc54240d8889f40a8ebd0dffe50"
+          }
+        ],
+        "status": "partial",
+        "elapsedMs": 9785,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.3,
+          "inputTokens": 441,
+          "outputTokens": 51,
+          "costUsd": 1.8522000000000003E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 294,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.0007024819999999999,
+        "tokens": 13046,
+        "versions": {
+          "prompt": "jarvis-97",
+          "routing": "luna-first-2",
+          "policy": "request-crm-14",
+          "tools": "126",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T14:11:32.485Z"
+      }
+    }
+  ],
+  "repairs": [
+    "Test selection uses the existing persisted conversation card, not the properties/contacts currentRecord input.",
+    "Seeded the actual channelConnections resource required by API access validation.",
+    "Template responses preserve the selected conversation for the next current-catalog read."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0277",
+      "prompt": "După acord, verifică template-urile disponibile.",
+      "versions": {
+        "prompt": "jarvis-97",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "126",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual model, chatTurn and template API; Firestore local and simulated Meta. No production certification.",
+      "final": {
+        "id": "06c717bd-3038-4e8c-81e3-117386a86f11-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Am verificat șabloanele disponibile pentru conversația selectată. Acordul pentru marketing este înregistrat ca acordat; acordul general și cel pentru mesaje de serviciu apar ca necunoscute. Verificarea nu modifică acordurile.\n\nDisponibil tehnic pentru pregătirea unui mesaj:\n- „colaborare” — limba română (ro), categoria MARKETING, status Meta APPROVED, 1 parametru în corp.\n\nNu sunt disponibile tehnic:\n- „in_asteptare” — română, MARKETING, PENDING, 0 parametri.\n- „format_media” — română, UTILITY, APPROVED, format incompatibil; numărul parametrilor nu este disponibil.\n\nDisponibilitatea tehnică nu confirmă eligibilitatea destinatarului și nici costul. Acestea necesită previzualizarea mesajului concret. Nu am trimis niciun mesaj.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Șabloane WhatsApp",
+            "source": "whatsappTemplates",
+            "conversationId": "00213585-f470-4462-8045-e68420c0c6ab",
+            "consent": {
+              "all": "unknown",
+              "service": "unknown",
+              "marketing": "granted"
+            },
+            "sendAuthorized": false,
+            "complete": true,
+            "note": "Citire de șabloane, fără trimitere sau înregistrare de acord. Costul și eligibilitatea mesajului concret necesită previzualizare.",
+            "rows": [
+              {
+                "id": "colaborare:ro",
+                "name": "colaborare",
+                "language": "ro",
+                "status": "APPROVED",
+                "category": "MARKETING",
+                "bodyParameterCount": 1,
+                "supported": true,
+                "approvedAndSupported": true
+              },
+              {
+                "id": "in_asteptare:ro",
+                "name": "in_asteptare",
+                "language": "ro",
+                "status": "PENDING",
+                "category": "MARKETING",
+                "bodyParameterCount": 0,
+                "supported": true,
+                "approvedAndSupported": false
+              },
+              {
+                "id": "format_media:ro",
+                "name": "format_media",
+                "language": "ro",
+                "status": "APPROVED",
+                "category": "UTILITY",
+                "bodyParameterCount": null,
+                "supported": false,
+                "approvedAndSupported": false
+              }
+            ],
+            "status": "checked",
+            "connectionId": "3b31438f-df4e-4cf5-894e-c4b154dd0d56",
+            "availableCount": 1,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Conversație WhatsApp verificată",
+            "source": "conversations",
+            "rows": [
+              {
+                "id": "00213585-f470-4462-8045-e68420c0c6ab"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "00213585-f470-4462-8045-e68420c0c6ab"
+          }
+        ],
+        "createdAt": "2026-10-12T14:16:16.683Z"
+      },
+      "telemetry": {
+        "requestId": "06c717bd-3038-4e8c-81e3-117386a86f11",
+        "sessionId": "8cf48925-995c-4260-91ee-cf6b3cee4c87",
+        "userId": "392a362b-e998-433c-812d-867c699ca99b",
+        "agencyId": "ea55a0a5-e04b-4626-8205-49f9d14449a9",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2151,
+              "outputTokens": 39,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1906,
+              "estimated": false
+            },
+            "costUsd": 0.00028225,
+            "latencyMs": 1684,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2659,
+              "outputTokens": 116,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2656,
+              "estimated": false
+            },
+            "costUsd": 0.0003903,
+            "latencyMs": 1924,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2800,
+              "outputTokens": 224,
+              "cachedTokens": 2656,
+              "cacheWriteTokens": 141,
+              "estimated": false
+            },
+            "costUsd": 0.00015648500000000002,
+            "latencyMs": 3088,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "whatsapp_template_check",
+            "status": "success",
+            "latencyMs": 490,
+            "version": "126",
+            "argumentsHash": "17f72639a10100d57149bdd740e9183d7dda03160930b25ee1d29d085782de18"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 11,
+            "version": "126",
+            "argumentsHash": "df1d63a7118d2dded47c081bd6d9a21ac75212c5870e4186ed026c48df719e2d"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 7596,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.28,
+          "inputTokens": 441,
+          "outputTokens": 51,
+          "costUsd": 1.8522000000000003E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 339,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.0008475570000000001,
+        "tokens": 8481,
+        "versions": {
+          "prompt": "jarvis-97",
+          "routing": "luna-first-2",
+          "policy": "request-crm-14",
+          "tools": "126",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T14:16:16.74Z"
+      },
+      "changed": {
+        "id": "34a1abf9-1957-417f-9bb3-feeb9b1c3e30-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Am verificat șabloanele pentru conversația selectată. Acordul de marketing este acordat, dar acordul general și cel pentru mesaje de serviciu sunt necunoscute. Trimiterea nu este autorizată.\n\nNu există șabloane disponibile tehnic pentru pregătirea unui mesaj:\n- **colaborare** — română (ro), MARKETING, **PAUSED**, 1 parametru; indisponibil.\n- **in_asteptare** — română (ro), MARKETING, **PENDING**, 0 parametri; indisponibil.\n- **format_media** — română (ro), UTILITY, **APPROVED**, numărul parametrilor nu este disponibil; format incompatibil, deci indisponibil.\n\nChiar și un șablon disponibil tehnic nu ar confirma eligibilitatea destinatarului sau costul; acestea necesită previzualizarea mesajului concret. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Șabloane WhatsApp",
+            "source": "whatsappTemplates",
+            "conversationId": "00213585-f470-4462-8045-e68420c0c6ab",
+            "consent": {
+              "all": "unknown",
+              "service": "unknown",
+              "marketing": "granted"
+            },
+            "sendAuthorized": false,
+            "complete": true,
+            "note": "Citire de șabloane, fără trimitere sau înregistrare de acord. Costul și eligibilitatea mesajului concret necesită previzualizare.",
+            "rows": [
+              {
+                "id": "colaborare:ro",
+                "name": "colaborare",
+                "language": "ro",
+                "status": "PAUSED",
+                "category": "MARKETING",
+                "bodyParameterCount": 1,
+                "supported": true,
+                "approvedAndSupported": false
+              },
+              {
+                "id": "in_asteptare:ro",
+                "name": "in_asteptare",
+                "language": "ro",
+                "status": "PENDING",
+                "category": "MARKETING",
+                "bodyParameterCount": 0,
+                "supported": true,
+                "approvedAndSupported": false
+              },
+              {
+                "id": "format_media:ro",
+                "name": "format_media",
+                "language": "ro",
+                "status": "APPROVED",
+                "category": "UTILITY",
+                "bodyParameterCount": null,
+                "supported": false,
+                "approvedAndSupported": false
+              }
+            ],
+            "status": "checked",
+            "connectionId": "3b31438f-df4e-4cf5-894e-c4b154dd0d56",
+            "availableCount": 0,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Conversație WhatsApp verificată",
+            "source": "conversations",
+            "rows": [
+              {
+                "id": "00213585-f470-4462-8045-e68420c0c6ab"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "00213585-f470-4462-8045-e68420c0c6ab"
+          }
+        ],
+        "createdAt": "2026-10-12T14:16:23.531Z"
+      },
+      "verifiedAt": "2026-10-12T14:16:23.632Z",
+      "verification": "Original request, current catalog through real API, approved/pending/unsupported distinction, fresh PAUSED state on next request, persisted replay, unchanged consent and zero outbound jobs/messages."
+    }
+  ]
+}

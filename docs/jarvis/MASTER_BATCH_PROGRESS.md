@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Șabloane WhatsApp după acord — 0277 — 12 octombrie 2026
+
+Cererea originală „După acord, verifică template-urile disponibile.” citește acum acordurile conversației selectate și șabloanele conexiunii sale prin API-ul existent al aplicației. Jarvis prezintă numele, limba, categoria, statusul Meta și numărul parametrilor. Separă aprobarea Meta de compatibilitatea formatului: un șablon PENDING/PAUSED sau cu format incompatibil nu este oferit ca disponibil pentru pregătire. Disponibilitatea tehnică nu certifică eligibilitatea destinatarului ori costul; acestea rămân supuse previzualizării mesajului concret. Cererea de consultare nu înregistrează acorduri și nu trimite mesaje.
+
+Conversația este fixată pe server din selecția existentă și păstrată în rezultat pentru verificarea următoare. Lipsa acordului sau refuzul global sunt raportate fără apelarea catalogului Meta; o eroare a furnizorului nu este transformată în listă goală. Catalogul paginat este citit prin serviciul existent. Nu se elimină controalele de acces ale API-ului.
+
+Scenariul original a trecut prin `chatTurn` cu model real, Firestore local și Meta simulat, inclusiv citirea ulterioară a unui șablon schimbat din APPROVED în PAUSED, reluarea idempotentă a requestului și absența mesajelor/joburilor outbound. Raportul păstrează și încercarea intermediară nereușită cauzată de conexiunea absentă din fixture; datele finale includ conexiunea cerută de API. Dovada: [PROSPECTING_EXECUTION_BATCH_16.json](evals/PROSPECTING_EXECUTION_BATCH_16.json).
+
+Au trecut 77 teste unitare, 74 teste de integrare, scenariul original cu model real, TypeScript, ESLint, manifestul de paritate și buildul final cu 227 de pagini. Versiuni jarvis-97 / tools 126. Inventar: **116/1000 dovezi locale cu model real, 0 certificări complete în producție**. Nu au fost contactate persoane reale și modificările nu sunt publicate în producție.
+
 ## Prospectare WhatsApp: filtrele ofertelor nu interzic contactarea — 12 octombrie 2026
 
 Solicitările explicite care includ „fără intermediari”, „fără agenții” sau „fără comision” sunt recunoscute acum ca solicitări de contactare. Aceste expresii descriu ofertele; anterior, simpla prezență a cuvântului „fără” dezactiva fluxul de prospectare autorizat prin solicitare. Excepția este limitată la cele trei expresii complete. „Fără acord”, „nu trimite”, condițiile, exemplele și cererile de ciornă continuă să nu acorde permisiunea de expediere, inclusiv în aceeași cerere cu un filtru admis. Recunoașterea intenției nu certifică absența comisionului unei oferte.

@@ -129,6 +129,13 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     const { readOutreachPreflight } = await import('./outreach-preflight'); data = await readOutreachPreflight(ctx, payload);
     cards.push({ type: 'data', title: 'Verificare pentru apel AI', source: 'aiOutreachPreflight', rows: data.rows, complete: data.complete });
   }
+  else if (name === 'whatsapp_template_check') {
+    const { checkWhatsAppTemplates } = await import('./whatsapp-template-check');
+    data = await checkWhatsAppTemplates(ctx, payload.conversationId);
+    cards.push({ type: 'data', title: 'Șabloane WhatsApp', source: 'whatsappTemplates', ...data } as AssistantCard);
+    cards.push({ type: 'data', title: 'Conversație WhatsApp verificată', source: 'conversations', rows: [{ id: payload.conversationId }], complete: true });
+    refs.push({ resource: 'conversations', id: payload.conversationId });
+  }
   else if (name === 'whatsapp_recipient_check') {
     const { checkWhatsAppRecipient } = await import('./whatsapp-recipient-check');
     data = await checkWhatsAppRecipient(ctx, payload.conversationId);

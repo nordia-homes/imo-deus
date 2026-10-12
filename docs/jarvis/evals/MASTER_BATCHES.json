@@ -2474,7 +2474,11 @@
           "sourceNumber": 277,
           "request": "După acord, verifică template-urile disponibile.",
           "requestSha256": "612a599859dfa7e12f19ccfeb5b3fb817e906fa1c7f881aa93486e68d6cddf75",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_16.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0278",
