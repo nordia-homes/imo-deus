@@ -33,7 +33,7 @@ import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 import { stableId } from '@/lib/communications/crypto';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -58,12 +58,37 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271, 272, 273, 274].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271, 272, 273, 274, 275, 276].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 275 || number === 276) {
+        const conversation = agency.collection('conversations').doc('selected-whatsapp');
+        await conversation.set({ id: conversation.id, agencyId: id, channel: 'whatsapp', connectionId: 'connection', externalParticipantId: '40722123456', phone: '+40722123456', name: 'Alin Matei', assigneeId: id, collaboratorIds: [], lastInboundAt: null });
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id, createdAt: new Date().toISOString() });
+        await session.collection('messages').doc('selection').set({ id: 'selection', role: 'assistant', text: 'Conversație selectată; numărul apare în anunțul public al proprietarului.', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'conversations', title: 'Conversație', rows: [{ id: conversation.id, phone: '+40722123456' }] }] });
+        const request = { sessionId: id, requestId: `${id}-consent`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        report = { ...report, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data() };
+        expect(result.message.actions).toBeUndefined(); expect(result.message.planId).toBeUndefined();
+        expect(result.message.cards?.flatMap(card => card.rows).find(row => row.id === conversation.id)).toMatchObject({ consent: { all: 'unknown', service: 'unknown', marketing: 'unknown' }, humanConsent: { canRecord: false, recordedByJarvis: false, url: '/inbox?conversationId=selected-whatsapp' } });
+        if (number === 275) {
+          expect(result.message.text).toContain('/inbox?conversationId=selected-whatsapp');
+          expect(result.message.text).toMatch(/administrator/); expect(result.message.text).toMatch(/dovad/);
+        } else {
+          expect(result.message.text).toMatch(/public/); expect(result.message.text).toMatch(/nu.*(?:acord|consimțământ)|necunoscut|necunoscute/);
+        }
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        expect((await agency.collection('communicationConsents').get()).empty).toBe(true);
+        expect((await conversation.collection('messages').get()).empty).toBe(true);
+        expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', id).get()).empty).toBe(true);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, executionVerified: number === 276, humanStepPending: number === 275, verification: number === 275 ? 'Actual model and persisted chatTurn guided the agent to the exact Inbox conversation and administrator evidence workflow. No consent written. Human recording remains pending; not complete corpus execution.' : 'Original assertion through actual model and persisted chatTurn with a public phone number: all consent scopes remain unknown, no consent inferred or written, no outbound message/job, idempotent replay. Local only.' };
+        return;
+      }
       if (number === 274) {
         const conversation = agency.collection('conversations').doc('selected-whatsapp');
         await conversation.set({ id: conversation.id, agencyId: id, channel: 'whatsapp', connectionId: 'connection', externalParticipantId: '40722123456', name: 'Alin Matei', assigneeId: id, collaboratorIds: [], lastInboundAt: new Date().toISOString() });

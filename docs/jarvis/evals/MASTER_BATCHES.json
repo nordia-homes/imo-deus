@@ -2463,7 +2463,11 @@
           "sourceNumber": 276,
           "request": "Nu presupune acordul WhatsApp din faptul că numărul este public.",
           "requestSha256": "b60fe1717bd86db60f5d116f84f75653430a2c3f0df1ed25b7f7e2ea6504b198",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_15.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0277",

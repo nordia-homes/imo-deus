@@ -151,6 +151,7 @@ export default function InboxWorkspace() {
   }, [agencyId, firestore, selected?.id, open]);
   useEffect(() => { if (userProfile?.role === 'admin') api('agents').then(d => setAgents(d.agents)).catch(e => setError(e.message)); }, [api, userProfile?.role]);
   useEffect(() => {
+    setConsentEvidence(''); setConsentPurpose('marketing');
     setTemplate(''); setEstimate(''); setText(''); setNote(false); setTemplates([]); setAttachment(null);
     if (selected?.channel === 'whatsapp') api(`templates/${selected.connectionId}`).then(d => setTemplates((d.data || []).filter((t: { status: string; sendable?: boolean }) => t.status === 'APPROVED' && t.sendable !== false))).catch(e => setError(e.message));
   }, [api, selected?.id, selected?.channel, selected?.connectionId]);

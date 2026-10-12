@@ -1,0 +1,420 @@
+{
+  "scope": "0275 human consent guidance (pending human action), 0276 no consent inferred from public phone.",
+  "fixes": [
+    "Expose exact Inbox conversation link, administrator role and required human evidence in the read-only consent check.",
+    "Recognize original human-flow and public-phone requests; read current consent, never write it through Jarvis.",
+    "Clear evidence and reset purpose when the Inbox conversation changes."
+  ],
+  "validation": {
+    "typescript": "passed",
+    "lint": "0 errors; 3 React set-state-in-effect warnings in InboxWorkspace",
+    "unitTests": 113,
+    "productionBuild": "passed, 227 pages",
+    "actualModelRuns": "0275 guidance passed, 0276 assertion passed"
+  },
+  "limitations": [
+    "115 original scenarios have local actual-model evidence; zero complete production certifications.",
+    "0275 is not counted: real human recording was not performed. Jarvis only provides the route and instructions.",
+    "No customer contact, consent mutation or external provider call in these model runs.",
+    "Inbox evidence reset is implemented and type/build checked; browser interaction not certified.",
+    "Current administrator-only human consent rules remain; unknown is not granted and public phone is not evidence."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0275",
+      "prompt": "Înregistrează acordul WhatsApp doar prin fluxul uman prevăzut.",
+      "versions": {
+        "prompt": "jarvis-92",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "121",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T12:31:55.616Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": false,
+      "final": {
+        "id": "acbe8064-afd6-44c6-b510-b953ef2bb40b-consent-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Pentru Alin Matei, acordurile WhatsApp pentru toate categoriile sunt necunoscute: marketing și service. Nu este înregistrat un refuz global, dar asta nu înseamnă că există acord sau că destinatarul este eligibil pentru mesaje. Eligibilitatea depinde de previzualizarea mesajului concret, categoria șablonului, acordul corespunzător, conexiune și cost.\n\nÎnregistrarea trebuie făcută de un administrator în fluxul uman: [Deschide conversația în Inbox](/inbox?conversationId=selected-whatsapp) → **Consimțământ WhatsApp** → selectează scopul real (marketing sau service), introdu dovada și data del acordului real, apoi apasă **Înregistrează**. Dovezile nu trebuie trimise aici. Agentul nu poate salva acordul în fluxul curent, deci administratorul trebuie să finalizeze pasul uman. Înregistrarea acordului nu trimite mesajul; nu am înregistrat niciun acord și nu am trimis niciun mesaj.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Eligibilitate WhatsApp",
+            "source": "conversations",
+            "rows": [
+              {
+                "id": "selected-whatsapp",
+                "name": "Alin Matei",
+                "channel": "whatsapp",
+                "consent": {
+                  "all": "unknown",
+                  "service": "unknown",
+                  "marketing": "unknown"
+                },
+                "humanConsent": {
+                  "url": "/inbox?conversationId=selected-whatsapp",
+                  "panel": "Consimțământ WhatsApp",
+                  "requiredRole": "admin",
+                  "canRecord": false,
+                  "evidenceRequired": true,
+                  "recordedByJarvis": false
+                },
+                "withinWindow": false,
+                "status": "needs_message_preview"
+              }
+            ],
+            "complete": true,
+            "blocked": false,
+            "sendAuthorized": false,
+            "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+            "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected-whatsapp"
+          }
+        ],
+        "createdAt": "2026-10-12T12:32:08.176Z"
+      },
+      "telemetry": {
+        "requestId": "acbe8064-afd6-44c6-b510-b953ef2bb40b-consent",
+        "sessionId": "acbe8064-afd6-44c6-b510-b953ef2bb40b",
+        "userId": "acbe8064-afd6-44c6-b510-b953ef2bb40b",
+        "agencyId": "acbe8064-afd6-44c6-b510-b953ef2bb40b",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2181,
+              "outputTokens": 24,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1907,
+              "estimated": false
+            },
+            "costUsd": 0.00027777499999999996,
+            "latencyMs": 2190,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2631,
+              "outputTokens": 103,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2628,
+              "estimated": false
+            },
+            "costUsd": 0.00038030000000000003,
+            "latencyMs": 2939,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2759,
+              "outputTokens": 249,
+              "cachedTokens": 2628,
+              "cacheWriteTokens": 128,
+              "estimated": false
+            },
+            "costUsd": 0.00016707999999999998,
+            "latencyMs": 4092,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "whatsapp_recipient_check",
+            "status": "success",
+            "latencyMs": 508,
+            "version": "121",
+            "argumentsHash": "148a909f9824b5c034212d77e23e05dccb653546c22fb7ffb63b7a0ce0f876a0"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 16,
+            "version": "121",
+            "argumentsHash": "88d42dba604358cc6ef5a3f3112e83dd673c96312ad26d96a2e61f8cad74e9ed"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 10190,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.67,
+          "inputTokens": 451,
+          "outputTokens": 51,
+          "costUsd": 1.8942E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 356,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.0008440969999999999,
+        "tokens": 8449,
+        "versions": {
+          "prompt": "jarvis-92",
+          "routing": "luna-first-2",
+          "policy": "request-crm-13",
+          "tools": "121",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T12:32:08.222Z"
+      },
+      "humanStepPending": true,
+      "verification": "Actual model and persisted chatTurn guided the agent to the exact Inbox conversation and administrator evidence workflow. No consent written. Human recording remains pending; not complete corpus execution."
+    },
+    {
+      "scenarioId": "master-0276",
+      "prompt": "Nu presupune acordul WhatsApp din faptul că numărul este public.",
+      "versions": {
+        "prompt": "jarvis-92",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "121",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T12:34:18.418Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "final": {
+        "id": "acc1730b-94c7-4f49-bcdc-febaa08be66f-consent-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Am verificat acordurile WhatsApp: starea globală, de serviciu și de marketing este „unknown”. Nu există refuz global înregistrat, dar „unknown” nu înseamnă acord și numărul public nu îl dovedește. Eligibilitatea depinde de mesajul concret, categoria șablonului, acordul corespunzător, conexiune și cost; ar fi necesară previzualizarea mesajului. Nu am trimis niciun mesaj.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Eligibilitate WhatsApp",
+            "source": "conversations",
+            "rows": [
+              {
+                "id": "selected-whatsapp",
+                "name": "Alin Matei",
+                "channel": "whatsapp",
+                "consent": {
+                  "all": "unknown",
+                  "service": "unknown",
+                  "marketing": "unknown"
+                },
+                "humanConsent": {
+                  "url": "/inbox?conversationId=selected-whatsapp",
+                  "panel": "Consimțământ WhatsApp",
+                  "requiredRole": "admin",
+                  "canRecord": false,
+                  "evidenceRequired": true,
+                  "recordedByJarvis": false
+                },
+                "withinWindow": false,
+                "status": "needs_message_preview"
+              }
+            ],
+            "complete": true,
+            "blocked": false,
+            "sendAuthorized": false,
+            "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+            "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected-whatsapp"
+          }
+        ],
+        "createdAt": "2026-10-12T12:34:27.343Z"
+      },
+      "telemetry": {
+        "requestId": "acc1730b-94c7-4f49-bcdc-febaa08be66f-consent",
+        "sessionId": "acc1730b-94c7-4f49-bcdc-febaa08be66f",
+        "userId": "acc1730b-94c7-4f49-bcdc-febaa08be66f",
+        "agencyId": "acc1730b-94c7-4f49-bcdc-febaa08be66f",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2085,
+              "outputTokens": 24,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1906,
+              "estimated": false
+            },
+            "costUsd": 0.00026815,
+            "latencyMs": 1579,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2534,
+              "outputTokens": 100,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2531,
+              "estimated": false
+            },
+            "costUsd": 0.000366675,
+            "latencyMs": 1711,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2659,
+              "outputTokens": 122,
+              "cachedTokens": 2531,
+              "cacheWriteTokens": 125,
+              "estimated": false
+            },
+            "costUsd": 0.000102235,
+            "latencyMs": 2453,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "whatsapp_recipient_check",
+            "status": "success",
+            "latencyMs": 359,
+            "version": "121",
+            "argumentsHash": "148a909f9824b5c034212d77e23e05dccb653546c22fb7ffb63b7a0ce0f876a0"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 27,
+            "version": "121",
+            "argumentsHash": "439c5e3567781b0b971c4ad70e7ac78ca67dc6940455925100d71578cbcd3c36"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 6557,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "CLARIFY",
+          "confidence": 0.38,
+          "inputTokens": 449,
+          "outputTokens": 48,
+          "costUsd": 1.8858E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 360,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.000755918,
+        "tokens": 8021,
+        "versions": {
+          "prompt": "jarvis-92",
+          "routing": "luna-first-2",
+          "policy": "request-crm-13",
+          "tools": "121",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T12:34:27.397Z"
+      },
+      "humanStepPending": false,
+      "verification": "Original assertion through actual model and persisted chatTurn with a public phone number: all consent scopes remain unknown, no consent inferred or written, no outbound message/job, idempotent replay. Local only."
+    }
+  ]
+}
