@@ -2324,21 +2324,33 @@
           "sourceNumber": 263,
           "request": "Arată-mi apelurile AI de prospectare.",
           "requestSha256": "2d804eb7bcd36bf93a408c570f14f897f97a587e6a1484168406368f8e48e312",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0264",
           "sourceNumber": 264,
           "request": "Care apeluri AI au eșuat?",
           "requestSha256": "e85747b094e3bc2aa14e4677350c82b8f4ddf626d8c5330b3c2e114a3abbdfe9",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0265",
           "sourceNumber": 265,
           "request": "Arată-mi rezultatul ultimului apel AI.",
           "requestSha256": "faff28fa9451945259907fe2546070f3b998bec18f2c0c57113b724674d260fd",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0266",

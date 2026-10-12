@@ -121,6 +121,10 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     cards.push({ type: 'data', title: 'Sursă oficială consultată', source: 'legal', rows: [{ sourceUrl: data.sourceUrl, authority: data.authority, retrievedAt: data.retrievedAt, contentHash: data.contentHash, temporalValidityVerified: false }], note: data.note });
   } else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
+  else if (name === 'outreach_history') {
+    const { readOutreachHistory } = await import('./outreach-history'); data = await readOutreachHistory(ctx, payload);
+    cards.push({ type: 'data', title: 'Apeluri AI de prospectare', source: 'aiOutreachCalls', ...data } as AssistantCard);
+  }
   else if (name === 'owner_prospects') {
     const { readOwnerProspects } = await import('./owner-prospects'); data = await readOwnerProspects(ctx, payload, options.ownerHistoryIdentity?.listingId === payload.listingId ? options.ownerHistoryIdentity?.phone : undefined, options.ownerHistoryIdentity?.listingId === payload.listingId ? options.ownerHistoryIdentity?.associations : undefined);
     cards.push({ type: 'data', title: 'Înregistrări asociate proprietarului', source: payload.scope === 'agency_history' ? 'owner_history' : 'ownerListingFavorites', ...data } as AssistantCard);

@@ -18,7 +18,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -42,12 +42,43 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261]) {
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = number >= 253 ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = number >= 253 && number <= 261 ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if ([263, 264, 265].includes(number)) {
+        const calls = agency.collection('aiOutreachCalls');
+        const fixtureCalls: Record<string, Record<string, unknown>> = {
+          'a-latest': { ownerListingTitle: 'Apartament Magnolia', status: 'completed', summary: 'Acceptă comisionul de 2%.', result: { documentsAvailable: 'Certificat energetic disponibil' }, startedAt: '2026-10-12T04:30:00Z', createdAt: '2026-10-01T07:00:00Z' },
+          'b-failed': { ownerListingTitle: 'Casă Tei', status: 'failed', providerErrorMessage: 'Număr invalid', createdAt: '2026-10-10T07:00:00Z' },
+          'c-unknown': { ownerListingTitle: 'Teren Salcâm', status: 'calling', providerErrorCode: 'vapi_create_unknown', outcome: 'needs_human_review', createdAt: '2026-10-11T07:00:00Z' },
+          'z-failed': { ownerListingTitle: 'Garsonieră Lalele', status: 'failed', providerErrorMessage: 'Furnizor indisponibil', createdAt: '2026-10-09T07:00:00Z' },
+          'zz-scheduled': { ownerListingTitle: 'Vilă Viitoare', status: 'scheduled', createdAt: '2026-10-13T07:00:00Z', scheduledAt: '2026-10-15T07:00:00Z' },
+        };
+        if (number !== 263) for (let i = 0; i < 101; i++) fixtureCalls[`m-old-${i.toString().padStart(3, '0')}`] = { status: 'completed', ownerListingTitle: 'Apel vechi', createdAt: '2026-01-01T07:00:00Z' };
+        const batch = db.batch(); for (const [key, value] of Object.entries(fixtureCalls)) batch.set(calls.doc(key), value); await batch.commit();
+        const result = await planTurn(ctx, prompt, []); report = { ...report, ...result };
+        expect(result.metrics.status, result.text).toBe('success'); expect(result.actions).toEqual([]);
+        expect(result.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        const rows = result.cards.flatMap(card => card.source === 'aiOutreachCalls' ? card.rows : []);
+        if (number === 263) {
+          for (const title of ['Magnolia', 'Tei', 'Salcâm', 'Lalele', 'Viitoare']) expect(result.text).toContain(title);
+          expect(result.text).toMatch(/incert|necunoscut|neclar/i); expect(result.text).toMatch(/programat/i);
+        } else if (number === 264) {
+          expect(rows.map(row => row.id).sort()).toEqual(['b-failed', 'z-failed']);
+          expect(result.text).toMatch(/Tei/); expect(result.text).toMatch(/Lalele/);
+          expect(result.text).toMatch(/invalid/i); expect(result.text).toMatch(/indisponibil/i);
+        } else {
+          expect(rows.map(row => row.id)).toEqual(['a-latest']);
+          expect(result.text).toContain('2%'); expect(result.text).toMatch(/energetic/i); expect(result.text).toMatch(/0?7[:.]30/);
+          expect(result.text).not.toContain('Viitoare');
+        }
+        expect((await calls.get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))).toEqual(Object.entries(fixtureCalls).sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => ({ id: key, ...value })));
+        report = { ...report, executionVerified: true, verification: 'Original command, actual model and local Firestore reads. Correct status and result interpretation, full pagination for failures, latest attempted call independent of document order and newer pending schedules, Bucharest local time, no mutation or external call.' };
+        return;
+      }
       if (number === 261) {
         const batch = db.batch();
         for (let i = 0; i < 105; i++) batch.set(favorites.doc(`m-unrelated-${String(i).padStart(3, '0')}`), { ownerName: 'Alin Matei', ownerPhone: '0733123456', title: 'CANARY_UNRELATED_PHONE' });

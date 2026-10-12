@@ -1,3 +1,4 @@
+import { readOutreachHistory } from '../outreach-history';
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { NextRequest } from 'next/server';
@@ -109,6 +110,23 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect(result.call).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_phone_duplicate' });
     expect(result.warning).toContain('rezultat de contact'); expect(mocks.vapi).not.toHaveBeenCalled();
     expect((await favorite.get()).data()?.contactOutcomePhone).toBe('0722123456');
+  });
+  it('reads AI failures across pages and finds the latest attempted call independently of document order', async () => {
+    const ctx = await fixture(), calls = db.collection('agencies').doc(ctx.agencyId).collection('aiOutreachCalls');
+    const batch = db.batch();
+    for (let i = 0; i < 101; i++) batch.set(calls.doc(`m-${i.toString().padStart(3, '0')}`), { status: 'completed', createdAt: '2026-01-01T10:00:00Z' });
+    batch.set(calls.doc('a-latest'), { status: 'completed', startedAt: '2026-10-12T04:30:00Z', summary: 'Rezultat actual', result: { ownerAcceptedCommission: false } });
+    batch.set(calls.doc('z-failed'), { status: 'failed', createdAt: '2026-01-02T10:00:00Z' });
+    batch.set(calls.doc('zz-scheduled'), { status: 'scheduled', createdAt: '2026-10-14T10:00:00Z' }); await batch.commit();
+    let page = await readOutreachHistory(ctx, { mode: 'failed' }); const ids = page.rows.map(row => row.id);
+    expect(page.complete).toBe(false);
+    while (page.nextCursor) { page = await readOutreachHistory(ctx, { mode: 'failed', cursor: page.nextCursor }); ids.push(...page.rows.map(row => row.id)); }
+    expect(ids).toEqual(['z-failed']);
+    const latest = await readOutreachHistory(ctx, { mode: 'latest_result' });
+    expect(latest).toMatchObject({ complete: true, latestVerified: true, rows: [{ id: 'a-latest', callLocal: '2026-10-12 07:30 (ora București)', result: { ownerAcceptedCommission: false } }] });
+    await calls.doc('undated').set({ status: 'completed' });
+    expect(await readOutreachHistory(ctx, { mode: 'latest_result' })).toMatchObject({ latestVerified: false, undated: 1 });
+    expect((await readOutreachHistory(await fixture(), { mode: 'all' })).rows).toEqual([]);
   });
   it('paginates prospect interactions without mixing listings, snapshots or inaccessible events', async () => {
     const ctx = await fixture();

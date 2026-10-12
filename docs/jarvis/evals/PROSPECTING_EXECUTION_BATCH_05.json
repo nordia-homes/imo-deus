@@ -1,0 +1,711 @@
+{
+  "scope": "0263–0265: original prompts, actual model and application reads against local Firestore fixtures. Lists, failed-call pagination and latest attempted-call result; no external calls or production certification.",
+  "fixes": [
+    "Compact native outreach_history tool avoids planner schema budget exhaustion.",
+    "Server binds list mode and cursor and requires complete pagination before closure.",
+    "Latest call is selected by timestamps across pages, excluding schedules and canceled calls.",
+    "Bucharest local call and scheduled times, structured results and uncertain provider states remain explicit."
+  ],
+  "limitations": [
+    "105 original scenarios have local evidence; no full production certifications.",
+    "Latest-result scan is bounded to 5000 records; incomplete scans or undated calls cannot certify recency.",
+    "Timestamp ties retain at most 30 records with explicit matchingCount and truncation.",
+    "Scope is authorized agency records; no live telephony or production data was used."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0263",
+      "prompt": "Arată-mi apelurile AI de prospectare.",
+      "versions": {
+        "prompt": "jarvis-82",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "110",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T00:48:59.426Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Apeluri AI de prospectare:\n\n- **Apartament Magnolia** — `completed` (12 octombrie 2026, 07:30, ora Bucureștiului). Sumar: acceptă comisionul de 2%. Rezultat: certificat energetic disponibil. Fără cod sau mesaj de eroare. ID: `a-latest`.\n- **Casă Tei** — `failed` (10 octombrie 2026, 10:00, ora Bucureștiului). Motiv: număr invalid. ID: `b-failed`.\n- **Teren Salcâm** — `calling`, rezultat marcat `needs_human_review` (11 octombrie 2026, 10:00, ora Bucureștiului). Rezultatul lansării este incert; nu îl pot considera eșec cert sau apel încheiat. Cod: `vapi_create_unknown`. ID: `c-unknown`.\n- **Garsonieră Lalele** — `failed` (9 octombrie 2026, 10:00, ora Bucureștiului). Motiv: furnizor indisponibil. ID: `z-failed`.\n- **Vilă Viitoare** — `scheduled`, nu apel efectuat (programat pentru 15 octombrie 2026, 10:00, ora Bucureștiului). ID: `zz-scheduled`.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Apeluri AI de prospectare",
+          "source": "aiOutreachCalls",
+          "rows": [
+            {
+              "id": "a-latest",
+              "ownerListingId": null,
+              "title": "Apartament Magnolia",
+              "status": "completed",
+              "outcome": null,
+              "summary": "Acceptă comisionul de 2%.",
+              "result": {
+                "documentsAvailable": "Certificat energetic disponibil"
+              },
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": null,
+              "uncertain": false,
+              "timestamp": "2026-10-12T04:30:00Z",
+              "callLocal": "2026-10-12 07:30 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            },
+            {
+              "id": "b-failed",
+              "ownerListingId": null,
+              "title": "Casă Tei",
+              "status": "failed",
+              "outcome": null,
+              "summary": null,
+              "result": null,
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": "Număr invalid",
+              "uncertain": false,
+              "timestamp": "2026-10-10T07:00:00Z",
+              "callLocal": "2026-10-10 10:00 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            },
+            {
+              "id": "c-unknown",
+              "ownerListingId": null,
+              "title": "Teren Salcâm",
+              "status": "calling",
+              "outcome": "needs_human_review",
+              "summary": null,
+              "result": null,
+              "durationSeconds": null,
+              "providerErrorCode": "vapi_create_unknown",
+              "providerErrorMessage": null,
+              "uncertain": true,
+              "timestamp": "2026-10-11T07:00:00Z",
+              "callLocal": "2026-10-11 10:00 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            },
+            {
+              "id": "z-failed",
+              "ownerListingId": null,
+              "title": "Garsonieră Lalele",
+              "status": "failed",
+              "outcome": null,
+              "summary": null,
+              "result": null,
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": "Furnizor indisponibil",
+              "uncertain": false,
+              "timestamp": "2026-10-09T07:00:00Z",
+              "callLocal": "2026-10-09 10:00 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            },
+            {
+              "id": "zz-scheduled",
+              "ownerListingId": null,
+              "title": "Vilă Viitoare",
+              "status": "scheduled",
+              "outcome": null,
+              "summary": null,
+              "result": null,
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": null,
+              "uncertain": false,
+              "timestamp": "2026-10-13T07:00:00Z",
+              "callLocal": "2026-10-13 10:00 (ora București)",
+              "scheduledAt": "2026-10-15T07:00:00Z",
+              "scheduledLocal": "2026-10-15 10:00 (ora București)"
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 5,
+          "scope": "agency",
+          "note": "Citește toate paginile nextCursor. failed este statusul salvat, nu include apelurile anulate sau programate. uncertain indică rezultat de lansare necunoscut; nu îl declara eșec cert și nu retrimite. scheduled/queued nu înseamnă apel efectuat. Afișează callLocal fără altă conversie; pentru ora programării folosește scheduledLocal.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [],
+      "accessRefs": [],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2723,
+              "outputTokens": 23,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2720,
+              "estimated": false
+            },
+            "costUsd": 0.0003518,
+            "latencyMs": 1849,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3640,
+              "outputTokens": 115,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 3637,
+              "estimated": false
+            },
+            "costUsd": 0.000512425,
+            "latencyMs": 2445,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3780,
+              "outputTokens": 321,
+              "cachedTokens": 3637,
+              "cacheWriteTokens": 140,
+              "estimated": false
+            },
+            "costUsd": 0.00021466999999999998,
+            "latencyMs": 3850,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "outreach_history",
+            "status": "success",
+            "latencyMs": 501,
+            "version": "110",
+            "argumentsHash": "34d4ad99b441fe02bd9be2023714dff76cce5df8b0b474876c01c9c28d6937c5"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 23,
+            "version": "110",
+            "argumentsHash": "a5db6c313c890e33ce8eeb9bb262166a353fd49171297d82f813fb2d7b2dd80b"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 9274,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "FAST_TOOL",
+          "confidence": 0.23,
+          "inputTokens": 465,
+          "outputTokens": 47,
+          "costUsd": 1.953E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 520,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        }
+      },
+      "goalCoverage": {
+        "requirements": [
+          {
+            "id": "r1",
+            "sourceQuote": "Arată-mi apelurile AI de prospectare.",
+            "description": "Afișează apelurile AI de prospectare și statusul, sumarul, rezultatul și motivul erorii unde este disponibil; diferențiază programările și stările incerte.",
+            "resolution": "answered",
+            "steps": [],
+            "evidenceCallIds": [
+              "call_1DI2OshpZ9eIepYvY5oPHjbX"
+            ]
+          }
+        ]
+      },
+      "verification": "Original command, actual model and local Firestore reads. Correct status and result interpretation, full pagination for failures, latest attempted call independent of document order and newer pending schedules, Bucharest local time, no mutation or external call."
+    },
+    {
+      "scenarioId": "master-0264",
+      "prompt": "Care apeluri AI au eșuat?",
+      "versions": {
+        "prompt": "jarvis-82",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "110",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T00:49:49.543Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Au eșuat două apeluri AI:\n\n- **Casă Tei** — 10 octombrie 2026, 10:00 (ora București). Motiv: număr invalid.\n- **Garsonieră Lalele** — 9 octombrie 2026, 10:00 (ora București). Motiv: furnizor indisponibil.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Apeluri AI de prospectare",
+          "source": "aiOutreachCalls",
+          "rows": [
+            {
+              "id": "b-failed",
+              "ownerListingId": null,
+              "title": "Casă Tei",
+              "status": "failed",
+              "outcome": null,
+              "summary": null,
+              "result": null,
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": "Număr invalid",
+              "uncertain": false,
+              "timestamp": "2026-10-10T07:00:00Z",
+              "callLocal": "2026-10-10 10:00 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            }
+          ],
+          "nextCursor": "m-old-026",
+          "complete": false,
+          "scanned": 30,
+          "scope": "agency",
+          "note": "Citește toate paginile nextCursor. failed este statusul salvat, nu include apelurile anulate sau programate. uncertain indică rezultat de lansare necunoscut; nu îl declara eșec cert și nu retrimite. scheduled/queued nu înseamnă apel efectuat. Afișează callLocal fără altă conversie; pentru ora programării folosește scheduledLocal.",
+          "outputType": "ANALYTICS_CARD"
+        },
+        {
+          "type": "data",
+          "title": "Apeluri AI de prospectare",
+          "source": "aiOutreachCalls",
+          "rows": [],
+          "nextCursor": "m-old-056",
+          "complete": false,
+          "scanned": 30,
+          "scope": "agency",
+          "note": "Citește toate paginile nextCursor. failed este statusul salvat, nu include apelurile anulate sau programate. uncertain indică rezultat de lansare necunoscut; nu îl declara eșec cert și nu retrimite. scheduled/queued nu înseamnă apel efectuat. Afișează callLocal fără altă conversie; pentru ora programării folosește scheduledLocal.",
+          "outputType": "ANALYTICS_CARD"
+        },
+        {
+          "type": "data",
+          "title": "Apeluri AI de prospectare",
+          "source": "aiOutreachCalls",
+          "rows": [],
+          "nextCursor": "m-old-086",
+          "complete": false,
+          "scanned": 30,
+          "scope": "agency",
+          "note": "Citește toate paginile nextCursor. failed este statusul salvat, nu include apelurile anulate sau programate. uncertain indică rezultat de lansare necunoscut; nu îl declara eșec cert și nu retrimite. scheduled/queued nu înseamnă apel efectuat. Afișează callLocal fără altă conversie; pentru ora programării folosește scheduledLocal.",
+          "outputType": "ANALYTICS_CARD"
+        },
+        {
+          "type": "data",
+          "title": "Apeluri AI de prospectare",
+          "source": "aiOutreachCalls",
+          "rows": [
+            {
+              "id": "z-failed",
+              "ownerListingId": null,
+              "title": "Garsonieră Lalele",
+              "status": "failed",
+              "outcome": null,
+              "summary": null,
+              "result": null,
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": "Furnizor indisponibil",
+              "uncertain": false,
+              "timestamp": "2026-10-09T07:00:00Z",
+              "callLocal": "2026-10-09 10:00 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            }
+          ],
+          "nextCursor": null,
+          "complete": true,
+          "scanned": 16,
+          "scope": "agency",
+          "note": "Citește toate paginile nextCursor. failed este statusul salvat, nu include apelurile anulate sau programate. uncertain indică rezultat de lansare necunoscut; nu îl declara eșec cert și nu retrimite. scheduled/queued nu înseamnă apel efectuat. Afișează callLocal fără altă conversie; pentru ora programării folosește scheduledLocal.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [],
+      "accessRefs": [],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2725,
+              "outputTokens": 23,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2722,
+              "estimated": false
+            },
+            "costUsd": 0.00035205,
+            "latencyMs": 1091,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2980,
+              "outputTokens": 26,
+              "cachedTokens": 2722,
+              "cacheWriteTokens": 255,
+              "estimated": false
+            },
+            "costUsd": 7.2395E-05,
+            "latencyMs": 952,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3132,
+              "outputTokens": 26,
+              "cachedTokens": 2977,
+              "cacheWriteTokens": 152,
+              "estimated": false
+            },
+            "costUsd": 6.207E-05,
+            "latencyMs": 986,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3284,
+              "outputTokens": 26,
+              "cachedTokens": 3129,
+              "cacheWriteTokens": 152,
+              "estimated": false
+            },
+            "costUsd": 6.359E-05,
+            "latencyMs": 935,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3740,
+              "outputTokens": 110,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 3737,
+              "estimated": false
+            },
+            "costUsd": 0.000522425,
+            "latencyMs": 1785,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3875,
+              "outputTokens": 98,
+              "cachedTokens": 3737,
+              "cacheWriteTokens": 135,
+              "estimated": false
+            },
+            "costUsd": 0.00010354499999999999,
+            "latencyMs": 1634,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "outreach_history",
+            "status": "success",
+            "latencyMs": 530,
+            "version": "110",
+            "argumentsHash": "2b1f808f1a1384e3385c4f9ddedd6384c0b2fbe5c9167e5b229529e2e5ddc7c5"
+          },
+          {
+            "name": "outreach_history",
+            "status": "success",
+            "latencyMs": 45,
+            "version": "110",
+            "argumentsHash": "79c0daeb87e5f2436848667b31685c4f9fc0068fd9b100b691671c93dd42ad93"
+          },
+          {
+            "name": "outreach_history",
+            "status": "success",
+            "latencyMs": 49,
+            "version": "110",
+            "argumentsHash": "06a4416be17aa6a1deae1650ce505626f28112eac22958cbd797c56d9400538a"
+          },
+          {
+            "name": "outreach_history",
+            "status": "success",
+            "latencyMs": 40,
+            "version": "110",
+            "argumentsHash": "4b98f4403d8ea2037eb7dfe356daf1fe7b2c14df174d98b7f6182bee9b30fc66"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 20,
+            "version": "110",
+            "argumentsHash": "2e731a299f4df2f594eb825d211084eff37fa24d7efaa0b8864eb5e470616739"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 8528,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "FAST_TOOL",
+          "confidence": 0.16,
+          "inputTokens": 461,
+          "outputTokens": 47,
+          "costUsd": 1.9362000000000002E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 332,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        }
+      },
+      "goalCoverage": {
+        "requirements": [
+          {
+            "id": "r1",
+            "sourceQuote": "Care apeluri AI au eșuat?",
+            "description": "Identifică apelurile AI cu status eșuat, după parcurgerea tuturor paginilor, incluzând titlul, data locală și motivul erorii.",
+            "resolution": "answered",
+            "steps": [],
+            "evidenceCallIds": [
+              "call_IK7YhQAQKWrKvYD2iXSxtzEY"
+            ]
+          }
+        ]
+      },
+      "verification": "Original command, actual model and local Firestore reads. Correct status and result interpretation, full pagination for failures, latest attempted call independent of document order and newer pending schedules, Bucharest local time, no mutation or external call."
+    },
+    {
+      "scenarioId": "master-0265",
+      "prompt": "Arată-mi rezultatul ultimului apel AI.",
+      "versions": {
+        "prompt": "jarvis-82",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "110",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T00:50:38.443Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Ultimul apel AI verificat al agenției a fost către „Apartament Magnolia”, la 12 octombrie 2026, ora 07:30 (București). Status: completed. Rezumat: acceptă comisionul de 2%. Rezultat: certificatul energetic este disponibil. Nu este indicat un motiv de eroare.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Apeluri AI de prospectare",
+          "source": "aiOutreachCalls",
+          "rows": [
+            {
+              "id": "a-latest",
+              "ownerListingId": null,
+              "title": "Apartament Magnolia",
+              "status": "completed",
+              "outcome": null,
+              "summary": "Acceptă comisionul de 2%.",
+              "result": {
+                "documentsAvailable": "Certificat energetic disponibil"
+              },
+              "durationSeconds": null,
+              "providerErrorCode": null,
+              "providerErrorMessage": null,
+              "uncertain": false,
+              "timestamp": "2026-10-12T04:30:00Z",
+              "callLocal": "2026-10-12 07:30 (ora București)",
+              "scheduledAt": null,
+              "scheduledLocal": null
+            }
+          ],
+          "complete": true,
+          "scanned": 106,
+          "undated": 0,
+          "matchingCount": 1,
+          "tiesTruncated": false,
+          "latestVerified": true,
+          "scope": "agency",
+          "nextCursor": null,
+          "note": "Ultimul apel încercat, după startedAt, altfel endedAt, altfel createdAt. Programările, cozile și anulările sunt excluse. calling nu are rezultat final; failed poate fi o încercare fără conversație. Dacă latestVerified=false, nu afirma că acesta este ultimul apel al agenției. Egalitățile de timp sunt returnate împreună; matchingCount numără potrivirile din scanare, tiesTruncated semnalează lista limitată la 30. Folosește callLocal; nu converti din nou.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [],
+      "accessRefs": [],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2728,
+              "outputTokens": 24,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2725,
+              "estimated": false
+            },
+            "costUsd": 0.000352925,
+            "latencyMs": 1065,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3237,
+              "outputTokens": 81,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 3234,
+              "estimated": false
+            },
+            "costUsd": 0.00044505,
+            "latencyMs": 1479,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3343,
+              "outputTokens": 90,
+              "cachedTokens": 3234,
+              "cacheWriteTokens": 106,
+              "estimated": false
+            },
+            "costUsd": 9.089E-05,
+            "latencyMs": 2011,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "outreach_history",
+            "status": "success",
+            "latencyMs": 533,
+            "version": "110",
+            "argumentsHash": "75ac55e153e569d553cd05711df42de7a6b5aedf8fbe291dda05b7d4c5afadfe"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 21,
+            "version": "110",
+            "argumentsHash": "315603bb623eb9329c69f63fec4ec7a732f823b0f35c8ae5df435377d327a67c"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 5496,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "CLARIFY",
+          "confidence": 0.69,
+          "inputTokens": 465,
+          "outputTokens": 48,
+          "costUsd": 1.953E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 313,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        }
+      },
+      "goalCoverage": {
+        "requirements": [
+          {
+            "id": "r1",
+            "sourceQuote": "Arată-mi rezultatul ultimului apel AI.",
+            "description": "Afișează ultimul rezultat al apelului AI.",
+            "resolution": "answered",
+            "steps": [],
+            "evidenceCallIds": [
+              "call_8wsfyYRexvdzVGXThbpAPTGb"
+            ]
+          }
+        ]
+      },
+      "verification": "Original command, actual model and local Firestore reads. Correct status and result interpretation, full pagination for failures, latest attempted call independent of document order and newer pending schedules, Bucharest local time, no mutation or external call."
+    }
+  ]
+}

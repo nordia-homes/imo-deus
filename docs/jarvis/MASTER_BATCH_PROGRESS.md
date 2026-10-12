@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Consultarea apelurilor AI — 0263, 0264, 0265
+
+Jarvis citește acum lista apelurilor AI, apelurile eșuate și rezultatul ultimului apel printr-un instrument dedicat. Pentru liste, aplicația fixează filtrul cerut și cursorul și nu permite încheierea înaintea ultimei pagini, inclusiv când o pagină intermediară nu conține potriviri. Schema compactă elimină epuizarea bugetului de planificare observată în proba inițială cu mai multe pagini.
+
+Ultimul apel este ales după startedAt, apoi endedAt sau createdAt, independent de ordinea documentelor. Programările, cozile și anulările nu devin rezultate de apel. Starea în curs și lansarea cu rezultat necunoscut rămân explicite. Rezumatul, rezultatul structurat și motivul erorii sunt păstrate; orele apelului și programării sunt calculate în Europe/Bucharest.
+
+Au trecut cele trei cereri originale cu model real și Firestore local, inclusiv 101 apeluri vechi între înregistrările relevante, fără modificări CRM sau apeluri externe. Au trecut și **58 teste unitare**, **21 teste Firestore**, TypeScript, lint, paritatea celor 180 de operații, inventarul corpusului și buildul final cu 227 de pagini. Dovadă: [PROSPECTING_EXECUTION_BATCH_05.json](evals/PROSPECTING_EXECUTION_BATCH_05.json).
+
+Versiuni **jarvis-82 / tools 110**. Total **105/1000** cu dovezi locale și **0 certificări complete în producție**. Citirea ultimului rezultat este limitată la 5000 de înregistrări; un istoric incomplet sau fără date valide nu este certificat drept cel mai recent. Egalitățile sunt numărate și afișate în limita a 30 de rezultate, cu trunchiere explicită. Modificările nu sunt publicate în producție.
+
 ## Rezultatul contactului uman oprește apelul AI duplicat — 0262, parțial
 
 Lansarea AI verifică acum și rezultatele de contact salvate pe celelalte prospecte ale agenției, inclusiv inactive. Un rezultat `negative` sau `follow_up`, cu dată validă și telefon corespunzător, anulează apelul AI pornit prin alt anunț. Un task planificat, numele comun sau un rezultat fără dată nu sunt considerate dovada unui contact efectuat.

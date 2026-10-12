@@ -1,3 +1,5 @@
+vi.mock('../outreach-history', async importOriginal => ({ ...await importOriginal<typeof import('../outreach-history')>(), readOutreachHistory: vi.fn() }));
+import { readOutreachHistory } from '../outreach-history';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readField: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
@@ -40,6 +42,22 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('keeps AI call reading compact and binds the requested filter and pagination', async () => {
+    const prompt = 'Care apeluri AI au eșuat?';
+    vi.mocked(readOutreachHistory).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'next' } as any).mockResolvedValueOnce({ rows: [], complete: true } as any);
+    const first = call('outreach_history', { mode: 'all' }), last = call('outreach_history', { mode: 'latest_result' });
+    const model = scripted(first, final, last, call('goal_coverage', { requirements: [{ id: 'calls', sourceQuote: prompt, description: 'Eșuate', resolution: 'answered', steps: [], evidenceCallIds: [last.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(readOutreachHistory).toHaveBeenNthCalledWith(1, ctx, { mode: 'failed' });
+    expect(readOutreachHistory).toHaveBeenNthCalledWith(2, ctx, { mode: 'failed', cursor: 'next' });
+    expect(JSON.stringify(model.respond.mock.calls[0][0].tools).length).toBeLessThan(12000);
+  });
+  it('does not certify an AI call list without any CRM read', async () => {
+    const result = await planTurn(ctx, 'Arată-mi apelurile AI de prospectare.', [], { provider: scripted(final) });
+    expect(result.metrics.status).toBe('partial');
+  });
+
   it('finishes every phone-lookup page for the selected prospect without reading timelines', async () => {
     const prompt = 'Verifică dacă numărul lui apare și la alte anunțuri.';
     const history: any[] = [{ id: 'selection', role: 'assistant', text: 'Selectat', cards: [{ source: 'ownerListingFavorites', rows: [{ id: 'p' }] }] }];
