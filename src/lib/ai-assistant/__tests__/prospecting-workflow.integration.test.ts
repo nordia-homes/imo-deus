@@ -1,5 +1,6 @@
 import { POST as outreachWebhook } from '@/app/api/ai-outreach/vapi/webhook/route';
 import { readOutreachPreflight } from '../outreach-preflight';
+import { readProspectFollowupStop } from '../prospect-followup-stop';
 import { resolveDatetime } from '../datetime';
 import { readOutreachHistory } from '../outreach-history';
 import { randomUUID } from 'node:crypto';
@@ -62,6 +63,34 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('rechecks refusal at execution and preserves completed, unrelated and foreign-agent tasks', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    const favorite = agency.collection('ownerListingFavorites').doc('stop-owner');
+    const owner = agency.collection('aiOutreachOwnerListingStatuses').doc('stop-owner');
+    const tasks = agency.collection('tasks'), calls = agency.collection('aiOutreachCalls');
+    await favorite.set({ contactOutcome: 'negative', contactOutcomeAt: new Date().toISOString() });
+    await owner.set({ aiNextFollowUpAt: '2099-01-01T10:00:00Z' });
+    await tasks.doc('own').set({ ownerListingId: 'stop-owner', status: 'open', description: 'Sună proprietarul', agentId: ctx.uid });
+    await tasks.doc('done').set({ ownerListingId: 'stop-owner', status: 'completed', description: 'Apel', agentId: ctx.uid });
+    await tasks.doc('colleague').set({ ownerListingId: 'stop-owner', status: 'open', description: 'Apel', agentId: 'colleague' });
+    await tasks.doc('documents').set({ ownerListingId: 'stop-owner', status: 'open', description: 'Verifică documente', agentId: ctx.uid });
+    await calls.doc('pending').set({ ownerListingId: 'stop-owner', status: 'scheduled' });
+    await calls.doc('claimed').set({ ownerListingId: 'stop-owner', status: 'queued', providerDispatchStartedAt: new Date().toISOString() });
+    expect(await readProspectFollowupStop(ctx, { listingId: 'stop-owner' })).toMatchObject({ refused: true });
+    await favorite.update({ contactOutcome: null });
+    const action = actionSchema.parse({ kind: 'stop_prospect_followups', listingId: 'stop-owner' });
+    expect(await executeAction(ctx, action, 'no-refusal')).toMatchObject({ refusalVerified: false, canceledCallIds: [], removedTaskIds: [] });
+    expect((await tasks.doc('own').get()).exists).toBe(true); expect((await calls.doc('pending').get()).data()?.status).toBe('scheduled');
+    await owner.update({ aiDoNotCall: true });
+    const result = await executeAction(ctx, action, 'stop');
+    expect(result).toMatchObject({ refusalVerified: true, canceledCallIds: ['pending'], removedTaskIds: ['own'] });
+    expect(await executeAction(ctx, action, 'stop')).toEqual(result);
+    for (const id of ['done', 'colleague', 'documents']) expect((await tasks.doc(id).get()).exists).toBe(true);
+    expect((await calls.doc('claimed').get()).data()?.status).toBe('queued');
+    expect((await owner.get()).data()).toMatchObject({ aiDoNotCall: true, aiNextFollowUpAt: null });
+    const foreign = await fixture();
+    await expect(executeAction(foreign, action, 'foreign')).rejects.toThrow('nu există');
+  });
   it('keeps refusal sticky across late webhooks and cancels only undispatched same-listing follow-ups', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), calls = agency.collection('aiOutreachCalls');
     mocks.vapi.mockReset();

@@ -1803,6 +1803,7 @@
     }
   ],
   "actionKinds": [
+    "stop_prospect_followups",
     "prepare_sale_email",
     "outreach_call_action",
     "email_template_preference",

@@ -126,7 +126,20 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
     const statusEvent = (propertyId: string, previous: Record<string, any>, next: Record<string, any>, change: z.infer<typeof propertyLifecycleSchema>) => {
       tx.create(collectionFor(ctx, 'propertyStatusEvents').doc(key), { id: key, agencyId: ctx.agencyId, propertyId, actorId: ctx.uid, changedAt: now, previousStatus: previous.status || null, nextStatus: change.status, reason: change.reason || 'agent_instruction', reasonLabel: change.reason ? propertyStatusReasonLabels[change.reason] : 'La solicitarea agentului', agentMessage: change.notes || `Status ${change.status} solicitat de agent.`, soldPrice: change.soldPrice || null, marketAnalysisEligible: change.status === 'Vândut', propertySnapshot: { ...next, id: propertyId } });
     };
-    if (action.kind === 'prepare_sale_email') {
+    if (action.kind === 'stop_prospect_followups') {
+      const { inspectProspectFollowups } = await import('./prospect-followup-stop');
+      const scope = await inspectProspectFollowups(ctx, action.listingId, tx);
+      if (scope.refused) {
+        for (const call of scope.pendingCalls) tx.update(call.ref, { status: 'canceled', outcome: 'uncalled', providerErrorCode: 'owner_refused_followup', providerErrorMessage: 'Follow-up oprit la solicitarea agentului după refuz.', updatedAt: now });
+        for (const task of scope.pendingTasks) {
+          tx.create(collectionFor(ctx, 'assistantDeletedRecords').doc(`${key}-${task.id}`), { resource: 'tasks', id: task.id, previous: task.data(), actorId: ctx.uid, deletedAt: now, reason: 'owner_refused_followup' });
+          tx.delete(task.ref);
+        }
+        const latestCanceled = scope.pendingCalls.some(call => call.id === scope.owner.data()?.latestAiCallId);
+        tx.set(scope.ownerRef, { aiNextFollowUpAt: null, updatedAt: now, ...(latestCanceled ? { aiOutreachStatus: 'canceled', aiOutreachOutcome: scope.owner.data()?.aiOutreachOutcome || 'uncalled', aiOutreachUpdatedAt: now } : {}) }, { merge: true });
+      }
+      result = { listingId: action.listingId, executionState: 'succeeded', refusalVerified: scope.refused, canceledCallIds: scope.refused ? scope.pendingCalls.map(doc => doc.id) : [], removedTaskIds: scope.refused ? scope.pendingTasks.map(doc => doc.id) : [], activeCallIds: scope.activeCalls.map(doc => doc.id) };
+    } else if (action.kind === 'prepare_sale_email') {
       const sale = protectedSale!.data()!;
       if (!canReadResource(ctx, 'sales', sale)) throw new CommunicationError('Nu ai acces la acest dosar.', 403);
       const documents = action.documentIds.map(id => (sale.checklist || []).find((row: any) => row.id === id));

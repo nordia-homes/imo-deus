@@ -1,6 +1,12 @@
 import { expect, it } from 'vitest';
 import { viewingConfirmation, executionConfirmation } from '../execution-confirmation';
 import { operationResult } from '../operation-result';
+it('confirms follow-up stopping only from execution and separately reports ongoing calls', () => {
+  expect(executionConfirmation([{ kind: 'stop_prospect_followups', listingId: 'p' }])).toBe('');
+  const result = { executionState: 'succeeded', listingId: 'p', refusalVerified: true, canceledCallIds: ['c'], removedTaskIds: ['t'], activeCallIds: ['running'] };
+  expect(executionConfirmation([{ kind: 'stop_prospect_followups', result }])).toContain('nu au fost oprite');
+  expect(executionConfirmation([{ kind: 'stop_prospect_followups', result: { ...result, refusalVerified: false } }])).toContain('Nu am oprit');
+});
 
 it('confirms provider acceptance without claiming a finished conversation', () => {
   const call = { id: 'call-1', status: 'calling', vapiCallId: 'provider-1' };

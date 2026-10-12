@@ -32,7 +32,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -57,12 +57,40 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 271) {
+        const tasks = agency.collection('tasks'), calls = agency.collection('aiOutreachCalls'), owner = agency.collection('aiOutreachOwnerListingStatuses').doc(source.id);
+        await favorites.doc(source.id).update({ contactOutcome: 'negative', contactOutcomeAt: new Date().toISOString() });
+        await owner.set({ latestAiCallId: 'scheduled', aiNextFollowUpAt: '2099-01-01T10:00:00Z' });
+        await calls.doc('scheduled').set({ ownerListingId: source.id, status: 'scheduled' });
+        await calls.doc('running').set({ ownerListingId: source.id, status: 'calling', vapiCallId: 'already-running' });
+        await tasks.doc('callback').set({ ownerListingId: source.id, agentId: id, description: 'Apel follow-up proprietar', status: 'open' });
+        await tasks.doc('documents').set({ ownerListingId: source.id, agentId: id, description: 'Verifică documentele', status: 'open' });
+        await tasks.doc('colleague').set({ ownerListingId: source.id, agentId: 'other-agent', description: 'Apel proprietar', status: 'open' });
+        const planned = await planTurn(ctx, prompt, history); report = { ...report, planned };
+        expect(planned.metrics.status, planned.text).toBe('success'); expect(planned.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(planned.actions).toEqual([{ kind: 'stop_prospect_followups', listingId: source.id }]);
+        const key = randomUUID(), executed = await executeSafePrefix(ctx, key, planned.actions, prompt);
+        expect(executed.blocked).toBe(false); expect(executed.actions).toEqual([]); expect(executed.results).toHaveLength(1);
+        expect(executed.results[0].result).toMatchObject({ refusalVerified: true, canceledCallIds: ['scheduled'], removedTaskIds: ['callback'], activeCallIds: ['running'] });
+        expect((await tasks.doc('callback').get()).exists).toBe(false);
+        expect((await tasks.doc('documents').get()).exists).toBe(true); expect((await tasks.doc('colleague').get()).exists).toBe(true);
+        expect((await calls.doc('scheduled').get()).data()?.status).toBe('canceled'); expect((await calls.doc('running').get()).data()?.status).toBe('calling');
+        expect((await owner.get()).data()?.aiNextFollowUpAt).toBeNull();
+        const archive = await agency.collection('assistantDeletedRecords').get(); expect(archive.size).toBe(1); expect(archive.docs[0].data().previous.description).toBe('Apel follow-up proprietar');
+        const confirmation = executionConfirmation(executed.results); expect(confirmation).toContain('1 apeluri AI anulate'); expect(confirmation).toContain('1 taskuri'); expect(confirmation).toContain('nu au fost oprite');
+        expect((await executeSafePrefix(ctx, key, planned.actions, prompt)).results).toEqual(executed.results);
+        await favorites.doc(source.id).update({ contactOutcome: null, contactOutcomeAt: null });
+        const noRefusal = await planTurn(ctx, prompt, history);
+        expect(noRefusal.actions).toEqual([]); expect(noRefusal.metrics.status).toBe('success');
+        report = { ...report, executed, confirmation, noRefusal, executionVerified: true, verification: 'Original request and actual model, native executor authorized by request, local Firestore: recorded manual refusal, scheduled call canceled, agent callback task archived and removed, unrelated and colleague tasks preserved, running call explicitly not stopped, idempotent replay, absent-refusal variant without actions. No real provider or durable UI session certification.' };
+        return;
+      }
       if (number === 270) {
         settingsContext.provider.mockReset();
         await agency.collection('aiOutreach').doc('settings').set({ enabled: true, callWindowStart: '09:00', callWindowEnd: '18:00' });

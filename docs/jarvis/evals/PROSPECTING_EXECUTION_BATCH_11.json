@@ -1,0 +1,368 @@
+{
+  "scope": "0271: original command, actual model, request-authorized native executor and local Firestore. No external provider calls.",
+  "fixes": [
+    "Read current recorded refusal and scope the selected prospect on server.",
+    "Execute conditional stop transactionally with profile/fence validation and idempotent ledger.",
+    "Cancel undispatched AI calls and archive/remove open callback tasks assigned to the agent; administrators may include agency tasks.",
+    "Recheck refusal at execution, preserve unrelated/completed/colleague tasks and report dispatched or potentially dispatched calls as not stopped."
+  ],
+  "validation": {
+    "unitTests": 129,
+    "firestoreTests": 30,
+    "typescript": "passed",
+    "lint": "passed",
+    "parity": "180 operations, 41 native action kinds, 46 UI files",
+    "productionBuild": "passed, 227 pages"
+  },
+  "limitations": [
+    "111 original scenarios have local evidence; zero complete production certifications.",
+    "Actual-model fixture uses a recorded manual negative outcome; missing-refusal variant has no actions.",
+    "Tasks are selected by exact ownerListingId, open status, assignment and callback/follow-up words in the description; no guarantee for every unstructured task wording.",
+    "The read and transaction reject histories exceeding 100 calls or 100 tasks for one listing without partial writes.",
+    "Other agents tasks, live conversation termination, durable chat/voice UI and external provider behavior are not certified.",
+    "Previously observed intermittent HTTP 500 in the separate concurrent launch test was not reproduced in this run; root cause remains unestablished."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0271",
+      "prompt": "Oprește follow-up-ul dacă proprietarul a refuzat.",
+      "versions": {
+        "prompt": "jarvis-88",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "117",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T03:07:39.211Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "planned": {
+        "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Follow-up după refuz",
+            "source": "prospectFollowups",
+            "rows": [
+              {
+                "id": "7505e6e5-ab4d-4eba-b5ef-b3ccecc161de-alfa",
+                "refused": true,
+                "pendingCalls": 1,
+                "pendingTasks": 1,
+                "activeCalls": 1
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "stop_prospect_followups",
+            "listingId": "7505e6e5-ab4d-4eba-b5ef-b3ccecc161de-alfa"
+          }
+        ],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7593,
+                "outputTokens": 45,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7469,
+                "estimated": false
+              },
+              "costUsd": 0.000968525,
+              "latencyMs": 1960,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8058,
+                "outputTokens": 61,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 8055,
+                "estimated": false
+              },
+              "costUsd": 0.001037675,
+              "latencyMs": 2150,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8146,
+                "outputTokens": 101,
+                "cachedTokens": 8055,
+                "cacheWriteTokens": 88,
+                "estimated": false
+              },
+              "costUsd": 0.00014235,
+              "latencyMs": 2080,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8272,
+                "outputTokens": 77,
+                "cachedTokens": 8143,
+                "cacheWriteTokens": 126,
+                "estimated": false
+              },
+              "costUsd": 0.00013598,
+              "latencyMs": 2640,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "prospect_followup_stop",
+              "status": "success",
+              "latencyMs": 675,
+              "version": "117",
+              "argumentsHash": "8fd4d3e85e3281fcbcb4feb6ec7103e371f927f7cd8c56dbbe625f09ebd53c5f"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "117",
+              "argumentsHash": "5683d707eafc8f02c070f27a045d222cd66fa225649a3f1690d714c50fff65b8"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "117",
+              "argumentsHash": "12a436000724f8f9c1554722abda91b76821b508fb5635805f5e8adc4f13c731"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 9986,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.7,
+            "inputTokens": 452,
+            "outputTokens": 51,
+            "costUsd": 1.8984000000000003e-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 349,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "stop-followup",
+              "sourceQuote": "Oprește follow-up-ul dacă proprietarul a refuzat.",
+              "description": "Oprește follow-up-ul prospectului selectat, deoarece înregistrarea indică refuzul proprietarului.",
+              "resolution": "planned",
+              "steps": [
+                1
+              ],
+              "evidenceCallIds": [
+                "call_WWOpCj3pCkcOVeOdbzxzkLUO"
+              ]
+            }
+          ]
+        }
+      },
+      "executed": {
+        "actions": [],
+        "results": [
+          {
+            "step": 1,
+            "kind": "stop_prospect_followups",
+            "result": {
+              "listingId": "7505e6e5-ab4d-4eba-b5ef-b3ccecc161de-alfa",
+              "executionState": "succeeded",
+              "refusalVerified": true,
+              "canceledCallIds": [
+                "scheduled"
+              ],
+              "removedTaskIds": [
+                "callback"
+              ],
+              "activeCallIds": [
+                "running"
+              ]
+            }
+          }
+        ],
+        "blocked": false
+      },
+      "confirmation": "Pentru prospectul 7505e6e5-ab4d-4eba-b5ef-b3ccecc161de-alfa: 1 apeluri AI anulate, 1 taskuri de apel/follow-up eliminate și păstrate în arhivă. Au fost incluse numai taskurile pe care le poți opri. 1 apeluri ajunse sau posibil ajunse la furnizor nu au fost oprite.",
+      "noRefusal": {
+        "text": "Nu este înregistrat un refuz al proprietarului pentru acest prospect, deci nu am oprit follow-up-ul. Există un apel în curs; verificarea nu îl oprește.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Follow-up după refuz",
+            "source": "prospectFollowups",
+            "rows": [
+              {
+                "id": "7505e6e5-ab4d-4eba-b5ef-b3ccecc161de-alfa",
+                "refused": false,
+                "pendingCalls": 0,
+                "pendingTasks": 0,
+                "activeCalls": 1
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7593,
+                "outputTokens": 45,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7469,
+                "estimated": false
+              },
+              "costUsd": 0.000968525,
+              "latencyMs": 1559,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8017,
+                "outputTokens": 103,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 8014,
+                "estimated": false
+              },
+              "costUsd": 0.0010535499999999999,
+              "latencyMs": 1846,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8145,
+                "outputTokens": 58,
+                "cachedTokens": 8014,
+                "cacheWriteTokens": 128,
+                "estimated": false
+              },
+              "costUsd": 0.00012544,
+              "latencyMs": 2060,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "prospect_followup_stop",
+              "status": "success",
+              "latencyMs": 35,
+              "version": "117",
+              "argumentsHash": "8fd4d3e85e3281fcbcb4feb6ec7103e371f927f7cd8c56dbbe625f09ebd53c5f"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 8,
+              "version": "117",
+              "argumentsHash": "9f9280be91f9e21a3436950a059b7dbb57bdf2f964e5b81ecdf2cc071493476b"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 5854,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.66,
+            "inputTokens": 452,
+            "outputTokens": 51,
+            "costUsd": 1.8984000000000003e-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 277,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "stop_if_refused",
+              "sourceQuote": "Oprește follow-up-ul dacă proprietarul a refuzat.",
+              "description": "Verifică dacă proprietarul a refuzat; oprește follow-up-ul numai în cazul unui refuz confirmat.",
+              "resolution": "answered",
+              "steps": [],
+              "evidenceCallIds": [
+                "call_ZyyDWyKOcuPPEHBPQrQk9eXh"
+              ]
+            }
+          ]
+        }
+      },
+      "verification": "Original request and actual model, native executor authorized by request, local Firestore: recorded manual refusal, scheduled call canceled, agent callback task archived and removed, unrelated and colleague tasks preserved, running call explicitly not stopped, idempotent replay, absent-refusal variant without actions. No real provider or durable UI session certification."
+    }
+  ]
+}

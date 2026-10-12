@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Oprirea follow-up-ului prin comanda agentului — 0271
+
+Cererea originală „Oprește follow-up-ul dacă proprietarul a refuzat.” verifică refuzul actual pentru prospectul selectat și continuă cu o acțiune nativă. Solicitarea agentului autorizează această modificare CRM, fără activarea unei permisiuni suplimentare. Lipsa refuzului înregistrat nu este transformată într-un refuz inventat și nu produce acțiuni.
+
+Executorul reverifică profilul, agenția și refuzul în aceeași tranzacție cu modificările: anulează apelurile AI nelansate, golește următorul follow-up AI și arhivează/elimină taskurile deschise de apel/follow-up ale agentului. Administratorul poate include taskurile agenției. Taskurile finalizate, fără legătură sau ale colegilor rămân nemodificate pentru agent. Refuzul retras între citire și execuție oprește modificările. Repetarea cheii de execuție întoarce rezultatul inițial fără duplicarea arhivelor.
+
+Proba cu model real a verificat comanda originală, anularea unui apel programat, eliminarea recuperabilă a unui task, păstrarea taskurilor fără legătură și ale colegului, confirmarea rezultatului și varianta fără refuz. Apelurile deja expediate sau posibil expediate sunt raportate separat ca neoprite. Au trecut **129 teste unitare**, **30 teste Firestore**, TypeScript, lint și verificarea parității (**180 operații / 41 acțiuni native**) și buildul final cu **227 de pagini**. Dovadă: [PROSPECTING_EXECUTION_BATCH_11.json](evals/PROSPECTING_EXECUTION_BATCH_11.json).
+
+Versiuni **jarvis-88 / tools 117**. Total **111/1000** cu dovezi locale, **0 certificări complete în producție**. Selecția taskurilor cere legătura ownerListingId și termeni de apel/follow-up în descriere; toate formulările nestructurate nu sunt certificate. Peste 100 de apeluri sau taskuri pentru un anunț, operația se oprește fără scrieri parțiale. Convorbirile reale, interfața vocală și reluarea conversației persistate nu sunt verificate. Eșecul concurent HTTP 500 observat în etapa anterioară nu s-a reprodus în această suită; cauza lui rămâne neclarificată. Modificările nu sunt publicate în producție.
+
 ## Refuz persistent și oprirea follow-up-urilor AI nelansate — 0271, parțial
 
 Webhookul salvează acum tranzacțional starea apelului și refuzul proprietarului. Un eveniment ulterior fără refuz nu șterge aiDoNotCall și nici dovada refuzului din rezultatul apelului. Evenimentele de început sosite după o stare terminală nu readuc apelul în curs. Un apel vechi nu înlocuiește starea ultimului apel al proprietarului.
