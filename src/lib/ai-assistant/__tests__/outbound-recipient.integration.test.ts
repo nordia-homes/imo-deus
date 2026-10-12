@@ -252,6 +252,66 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     return { ...f, token, consent, budget, templates, input: { ...action.body, requestId: randomUUID() } };
   }
   const templateSends = () => mocks.graph.mock.calls.filter(call => /\/messages$/.test(call[0]));
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting master-0281: reads the actual queued, accepted, delivered and read message without resending', async () => {
+    const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
+    if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
+    const { chatTurn } = await import('../workspace');
+    const { VERSIONS } = await import('../models');
+    const { ingestMessage } = await import('@/lib/communications/server');
+    const { normalizeWebhook } = await import('@/lib/communications/normalize');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0281')!.text;
+    const runs: Record<string, unknown>[] = [];
+    let verified = false;
+    try {
+      const conversationId = stableId(f.conversation.connectionId, '40722123456');
+      const conversation = agency.collection('conversations').doc(conversationId);
+      await conversation.set({ ...(await f.ref.get()).data(), id: conversationId });
+      const actions = await bindBusinessRevisions(mocks.actor, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] } } }]);
+      const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+      const { executeAction } = await import('../actions');
+      const queued = await executeAction(mocks.actor, action, randomUUID());
+      expect(queued.conversationId).toBe(conversationId);
+      const message = conversation.collection('messages').doc(queued.messageId!);
+      const connection = { ...(await f.token()).connection, agencyId: f.actor.agencyId, id: f.conversation.connectionId } as any;
+      const receipt = async (status: string) => {
+        const externalId = (await message.get()).data()!.externalId;
+        const events = normalizeWebhook({ entry: [{ changes: [{ value: { metadata: { phone_number_id: connection.externalId }, statuses: [{ id: externalId, recipient_id: '40722123456', timestamp: String(Math.floor(Date.now() / 1000)), status }] } }] }] });
+        for (const event of events) await ingestMessage(db as any, connection, event);
+      };
+      for (const status of ['queued', 'accepted', 'delivered', 'read']) {
+        if (status === 'accepted') await drainOutbound(db as any);
+        if (status === 'delivered' || status === 'read') await receipt(status);
+        expect((await message.get()).data()?.status).toBe(status);
+        const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId);
+        await session.set({ ownerId: f.actor.uid });
+        await session.collection('messages').doc('selection').set({ id: 'selection', role: 'assistant', text: 'Mesajul WhatsApp selectat pentru verificare.', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'autonomy', title: 'Rezultatele cererii', rows: [{ step: 1, kind: 'existing_operation', result: queued }] }] });
+        const request = { sessionId, requestId: randomUUID(), prompt, currentRecord: null };
+        const sendsBefore = templateSends().length;
+        const result = await chatTurn(mocks.actor, request);
+        const telemetry = (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data();
+        runs.push({ status, final: result.message, telemetry });
+        expect(result.message.planId, result.message.text).toBeUndefined();
+        expect(result.message.cards?.flatMap(card => card.rows)).toEqual(expect.arrayContaining([expect.objectContaining({ id: message.id, status })]));
+        expect(result.message.text.toLowerCase()).toContain(status);
+        expect(telemetry?.status).toBe('success');
+        expect(await chatTurn(mocks.actor, request)).toEqual(result);
+        expect(templateSends()).toHaveLength(sendsBefore);
+        expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get()).size).toBe(1);
+      }
+      await receipt('delivered');
+      expect((await message.get()).data()?.status).toBe('read');
+      await drainOutbound(db as any); expect(templateSends()).toHaveLength(1);
+      verified = true;
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile('.tmp/jarvis-whatsapp-prospecting/master-0281-latest.json', JSON.stringify({ scenarioId: 'master-0281', prompt, versions: VERSIONS, executionVerified: verified, environment: 'Actual model, chat, API, queue, worker, receipt normalization and ingestion; local Firestore and simulated Meta, not production certification.', runs }, null, 2));
+      await f.rate.delete(); mocks.actor = null;
+    }
+  }, 240000);
   it.each(['unknown', 'revoked', 'empty', 'pagination', 'provider-error'])('reads template catalog with real consent and API: %s', async variant => {
     const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
     const ctx = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' } as any;

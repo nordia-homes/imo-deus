@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Starea mesajului WhatsApp — scenariul 0281 — 12 octombrie 2026
+
+Cererea originală „Verifică dacă mesajul este queued, accepted, delivered sau read.” epuiza bugetul înainte de prima citire. Planificarea folosește acum numai citirea mesajului și verificarea acoperirii cererii. Referința este fixată de server la mesajul selectat ori la unicul mesaj din rezultatul ultimei execuții. Rezultatele trimiterilor păstrează și conversationId, astfel încât verificarea ulterioară să nu depindă de o identificare inventată de model. Selecțiile multiple cer precizarea mesajului; o pagină fără context nu șterge selecția din conversație.
+
+API-ul este recitit la fiecare cerere nouă, apoi rezultatul este restrâns la ID-ul exact. Un mesaj dispărut nu este înlocuit cu starea altui mesaj din conversație. queued înseamnă în coadă; accepted nu confirmă livrarea; delivered nu confirmă citirea; read confirmă citirea. Verificarea nu expediază mesaje.
+
+Proba cu model real pornește din ledgerul și coada aplicației, trimite o singură dată către Meta simulat și verifică toate cele patru stări. delivered/read sunt produse prin normalizarea și ingestia confirmărilor simulate, nu prin modificarea directă a statusului în fixture. Contextul conversației păstrează receipt-ul inițial queued, demonstrând citirea proaspătă. Reluarea requestului nu retrimite, iar un delivered sosit după read nu retrogradează starea. Dovadă: [PROSPECTING_EXECUTION_BATCH_17.json](evals/PROSPECTING_EXECUTION_BATCH_17.json).
+
+Au trecut 114 teste unitare, 77 teste de integrare, scenariul original cu model real în toate cele patru stări, TypeScript, ESLint, paritatea și buildul final cu 227 de pagini. Versiuni jarvis-100 / tools 130. Inventarul crește la 117/1000 dovezi locale cu model real; rămân 0 certificări complete în producție. Nu au fost contactate persoane reale și modificările nu sunt publicate în producție.
+
 ## Prospectare: cereri explicite fără previzualizare sau aprobarea agentului — 12 octombrie 2026
 
 Recunoașterea comenzii distingea insuficient între interdicția de trimitere și renunțarea la un pas manual. „Contactează proprietarii pe WhatsApp fără previzualizare” și „Nu îmi mai cere aprobarea. Găsește ... și contactează proprietarii pe WhatsApp” erau respinse de filtrul general de negații. Formulările explicite de renunțare la previzualizare ori la confirmarea agentului sunt acum recunoscute în contextul unei cereri de contactare.

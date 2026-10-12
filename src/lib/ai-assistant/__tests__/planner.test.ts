@@ -10,13 +10,14 @@ vi.mock('../search', () => ({ searchProperties: vi.fn() }));
 vi.mock('../owner-prospects', async importOriginal => ({ ...await importOriginal<typeof import('../owner-prospects')>(), readOwnerProspects: vi.fn() }));
 vi.mock('../timeline', async importOriginal => ({ ...await importOriginal<typeof import('../timeline')>(), readTimeline: vi.fn() }));
 vi.mock('../actions', () => ({ matchContact: vi.fn(), matchProperty: vi.fn(), executeAction: vi.fn() }));
-vi.mock('../operations', () => ({ invokeOperation: vi.fn(), operationCatalog: () => [], operationContract: vi.fn(), operations: {}, isReadOperation: vi.fn() }));
+vi.mock('../operations', () => ({ invokeOperation: vi.fn(), operationCatalog: () => [], operationContract: vi.fn(), operations: { conversation_messages: { method: 'GET', path: '/messages', description: 'Mesaje.' } }, isReadOperation: vi.fn((name: string) => name === 'conversation_messages') }));
 vi.mock('../readiness', () => ({ automationReadiness: async () => ({ configured: false, active: false }) }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } } }));
 import { planTurn } from '../planner';
 import { executeAction } from '../actions';
 import { searchProperties } from '../search';
 import { readResource } from '../access';
+import { invokeOperation } from '../operations';
 import { readOwnerProspects } from '../owner-prospects';
 import { readTimeline } from '../timeline';
 import { ProviderError, type ProviderResult, type ModelProvider } from '../provider';
@@ -60,6 +61,20 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('binds status checks to the selected message and excludes unrelated operations and messages', async () => {
+    const prompt = 'Verifică dacă mesajul este queued, accepted, delivered sau read.';
+    const history = [{ id: 'selection', role: 'assistant' as const, text: 'Mesaj selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'Mesaj', source: 'conversation_messages', rows: [{ id: 'target', conversationId: 'selected' }] }] }];
+    expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('clarification');
+    expect((await planTurn(ctx, prompt, history, { provider: scripted(final) })).metrics.status).toBe('partial');
+    vi.mocked(invokeOperation).mockResolvedValueOnce({ conversation: { id: 'selected' }, messages: [{ id: 'other', status: 'read' }, { id: 'target', conversationId: 'selected', status: 'queued' }] });
+    const read = call('existing_read', { operation: 'conversation_list', params: {}, query: {}, body: {} });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'status', sourceQuote: prompt, description: 'Starea actuală', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, history, { provider: model });
+    expect(model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).toEqual(['existing_read']);
+    expect(invokeOperation).toHaveBeenCalledWith(expect.anything(), { operation: 'conversation_messages', params: { conversationId: 'selected' }, query: { target: 'target' }, body: {} }, true);
+    expect(result.cards.flatMap(card => card.rows).map(row => row.id)).toEqual(['target']);
+    expect(result.metrics.status).toBe('success'); expect(result.actions).toEqual([]); expect(executeAction).not.toHaveBeenCalled();
+  });
   it('requires selected WhatsApp conversation and fresh templates before completing catalog checks', async () => {
     const prompt = 'După acord, verifică template-urile disponibile.';
     expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('clarification');

@@ -1,0 +1,828 @@
+{
+  "scope": "Original corpus request through actual model, execution ledger, message API, queue/worker and receipt ingestion; local Firestore and simulated Meta, not production certification",
+  "initialRuns": [
+    {
+      "scenarioId": "master-0281",
+      "prompt": "Verifică dacă mesajul este queued, accepted, delivered sau read.",
+      "versions": {
+        "prompt": "jarvis-99",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "129",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": false,
+      "environment": "Actual model, chat, API, queue, worker, receipt normalization and ingestion; local Firestore and simulated Meta, not production certification.",
+      "runs": [
+        {
+          "status": "queued",
+          "final": {
+            "id": "8087a5cf-e51a-4c24-9720-dd5be3d5e9f9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Limita Jarvis a fost atinsă: tokens. Rezultatele sunt parțiale. Acțiunile pregătite nu au fost executate.",
+            "cards": [],
+            "accessRefs": [],
+            "createdAt": "2026-10-12T18:18:41.764Z"
+          },
+          "telemetry": {
+            "requestId": "8087a5cf-e51a-4c24-9720-dd5be3d5e9f9",
+            "sessionId": "eedeccbb-9c7c-4180-ba0e-389999363987",
+            "userId": "aa8824cc-7d1c-4599-b702-167e029b0476",
+            "agencyId": "b472c81f-de36-4b77-84a0-a366c92ce7e6",
+            "models": [],
+            "tools": [],
+            "status": "partial",
+            "elapsedMs": 416,
+            "jev": {
+              "mode": "shadow",
+              "model": "jev-1.13.0",
+              "route": "CLARIFY",
+              "confidence": 0.33,
+              "inputTokens": 705,
+              "outputTokens": 48,
+              "costUsd": 2.9610000000000003E-05,
+              "estimated": false,
+              "actualRoute": "JARVIS_PLANNER",
+              "latencyMs": 364,
+              "status": "ok",
+              "reasonCode": "shadow_only"
+            },
+            "requiresApproval": false,
+            "costUsd": 2.9610000000000003E-05,
+            "tokens": 753,
+            "versions": {
+              "prompt": "jarvis-99",
+              "routing": "luna-first-2",
+              "policy": "request-crm-14",
+              "tools": "129",
+              "memory": "2",
+              "skills": "3"
+            },
+            "configuration": {
+              "flags": {
+                "memory": true,
+                "subagents": true,
+                "autonomousWorkflows": true,
+                "proactiveInsights": true,
+                "automations": true,
+                "mcp": false,
+                "solEscalation": true
+              },
+              "regionalProcessing": false,
+              "defaultLimits": {
+                "maxSteps": 12,
+                "maxToolCalls": 24,
+                "maxTokens": 70000,
+                "maxCost": 0.12,
+                "maxExecutionMs": 120000,
+                "maxParallel": 3,
+                "maxOutputTokens": 2200
+              }
+            },
+            "timestamp": "2026-10-12T18:18:41.801Z"
+          }
+        }
+      ]
+    }
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0281",
+      "prompt": "Verifică dacă mesajul este queued, accepted, delivered sau read.",
+      "versions": {
+        "prompt": "jarvis-100",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "130",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual model, chat, API, queue, worker, receipt normalization and ingestion; local Firestore and simulated Meta, not production certification.",
+      "runs": [
+        {
+          "status": "queued",
+          "final": {
+            "id": "f030c803-5a12-41cd-aa6d-5bf4e0bc7a7b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesajul are statusul **queued** — este în coadă și nu este confirmat ca livrat. Am verificat starea actuală; nu l-am retrimis.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Starea mesajului selectat",
+                "source": "conversation_messages",
+                "note": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                "freshness": "domain_handler",
+                "rows": [
+                  {
+                    "id": "0c2a9fc7a2a621c122edcbf89479b00a110931784a88e4ee79cdd94e7148843e",
+                    "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+                    "conversationId": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399",
+                    "externalId": null,
+                    "direction": "sent",
+                    "origin": "imodeus",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "createdAt": "2026-10-12T18:31:02.418Z",
+                    "authorId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+                    "status": "queued",
+                    "attachments": [],
+                    "imageUrl": null,
+                    "link": null,
+                    "title": "Starea mesajului selectat",
+                    "description": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                    "dueDate": "2026-10-12T18:31:02.418Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399"
+              }
+            ],
+            "createdAt": "2026-10-12T18:31:09.094Z"
+          },
+          "telemetry": {
+            "requestId": "f030c803-5a12-41cd-aa6d-5bf4e0bc7a7b",
+            "sessionId": "b60aeeb7-b8d4-49e3-8842-f9f392315f7c",
+            "userId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+            "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+            "models": [
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2071,
+                  "outputTokens": 118,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 1851,
+                  "estimated": false
+                },
+                "costUsd": 0.000312375,
+                "latencyMs": 1828,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2850,
+                  "outputTokens": 105,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 2847,
+                  "estimated": false
+                },
+                "costUsd": 0.000408675,
+                "latencyMs": 2009,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2980,
+                  "outputTokens": 55,
+                  "cachedTokens": 2847,
+                  "cacheWriteTokens": 130,
+                  "estimated": false
+                },
+                "costUsd": 7.251999999999999E-05,
+                "latencyMs": 1668,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              }
+            ],
+            "tools": [
+              {
+                "name": "existing_read",
+                "status": "success",
+                "latencyMs": 539,
+                "version": "130",
+                "argumentsHash": "c89844c87b5e9eb063d19d0f3f82e8ffb846462a4bdb204c5809e8ccacceeeda"
+              },
+              {
+                "name": "goal_coverage",
+                "status": "success",
+                "latencyMs": 22,
+                "version": "130",
+                "argumentsHash": "e0ecf3b52fe8d5a43d4f260a1706890f6ca983c08948bfd64dc1ab39f1e63ca7"
+              }
+            ],
+            "status": "success",
+            "elapsedMs": 6501,
+            "jev": {
+              "mode": "shadow",
+              "model": "jev-1.13.0",
+              "route": "CLARIFY",
+              "confidence": 0.51,
+              "inputTokens": 441,
+              "outputTokens": 48,
+              "costUsd": 1.8522000000000003E-05,
+              "estimated": false,
+              "actualRoute": "JARVIS_PLANNER",
+              "latencyMs": 369,
+              "status": "ok",
+              "reasonCode": "shadow_only"
+            },
+            "requiresApproval": false,
+            "costUsd": 0.0008120919999999999,
+            "tokens": 8668,
+            "versions": {
+              "prompt": "jarvis-100",
+              "routing": "luna-first-2",
+              "policy": "request-crm-14",
+              "tools": "130",
+              "memory": "2",
+              "skills": "3"
+            },
+            "configuration": {
+              "flags": {
+                "memory": true,
+                "subagents": true,
+                "autonomousWorkflows": true,
+                "proactiveInsights": true,
+                "automations": true,
+                "mcp": false,
+                "solEscalation": true
+              },
+              "regionalProcessing": false,
+              "defaultLimits": {
+                "maxSteps": 12,
+                "maxToolCalls": 24,
+                "maxTokens": 70000,
+                "maxCost": 0.12,
+                "maxExecutionMs": 120000,
+                "maxParallel": 3,
+                "maxOutputTokens": 2200
+              }
+            },
+            "timestamp": "2026-10-12T18:31:09.138Z"
+          }
+        },
+        {
+          "status": "accepted",
+          "final": {
+            "id": "1ebb6686-5324-4c13-a55d-faf9d5e55a6f-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesajul are statusul **accepted**: a fost acceptat de furnizor, dar livrarea nu este încă confirmată. Nu l-am retrimis.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Starea mesajului selectat",
+                "source": "conversation_messages",
+                "note": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                "freshness": "domain_handler",
+                "rows": [
+                  {
+                    "id": "0c2a9fc7a2a621c122edcbf89479b00a110931784a88e4ee79cdd94e7148843e",
+                    "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+                    "conversationId": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399",
+                    "direction": "sent",
+                    "origin": "imodeus",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "createdAt": "2026-10-12T18:31:02.418Z",
+                    "authorId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+                    "attachments": [],
+                    "externalId": "893eeb3a-6eb1-4365-91d6-a8720968f42f",
+                    "status": "accepted",
+                    "imageUrl": null,
+                    "link": null,
+                    "title": "Starea mesajului selectat",
+                    "description": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                    "dueDate": "2026-10-12T18:31:02.418Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399"
+              }
+            ],
+            "createdAt": "2026-10-12T18:31:16.189Z"
+          },
+          "telemetry": {
+            "requestId": "1ebb6686-5324-4c13-a55d-faf9d5e55a6f",
+            "sessionId": "6937fd2d-f7a5-491b-97f2-62937a69588e",
+            "userId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+            "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+            "models": [
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2071,
+                  "outputTokens": 118,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 1851,
+                  "estimated": false
+                },
+                "costUsd": 0.000312375,
+                "latencyMs": 2013,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2926,
+                  "outputTokens": 96,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 2923,
+                  "estimated": false
+                },
+                "costUsd": 0.000413675,
+                "latencyMs": 1987,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 3047,
+                  "outputTokens": 52,
+                  "cachedTokens": 2923,
+                  "cacheWriteTokens": 121,
+                  "estimated": false
+                },
+                "costUsd": 7.065500000000001E-05,
+                "latencyMs": 1432,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              }
+            ],
+            "tools": [
+              {
+                "name": "existing_read",
+                "status": "success",
+                "latencyMs": 71,
+                "version": "130",
+                "argumentsHash": "c89844c87b5e9eb063d19d0f3f82e8ffb846462a4bdb204c5809e8ccacceeeda"
+              },
+              {
+                "name": "goal_coverage",
+                "status": "success",
+                "latencyMs": 24,
+                "version": "130",
+                "argumentsHash": "a2e728a1e499cf10ee757e9c6b70fdf780e435dc96119fa70109213836ef708f"
+              }
+            ],
+            "status": "success",
+            "elapsedMs": 5959,
+            "jev": {
+              "mode": "shadow",
+              "model": "jev-1.13.0",
+              "route": "CLARIFY",
+              "confidence": 0.61,
+              "inputTokens": 441,
+              "outputTokens": 48,
+              "costUsd": 1.8522000000000003E-05,
+              "estimated": false,
+              "actualRoute": "JARVIS_PLANNER",
+              "latencyMs": 299,
+              "status": "ok",
+              "reasonCode": "shadow_only"
+            },
+            "requiresApproval": false,
+            "costUsd": 0.000815227,
+            "tokens": 8799,
+            "versions": {
+              "prompt": "jarvis-100",
+              "routing": "luna-first-2",
+              "policy": "request-crm-14",
+              "tools": "130",
+              "memory": "2",
+              "skills": "3"
+            },
+            "configuration": {
+              "flags": {
+                "memory": true,
+                "subagents": true,
+                "autonomousWorkflows": true,
+                "proactiveInsights": true,
+                "automations": true,
+                "mcp": false,
+                "solEscalation": true
+              },
+              "regionalProcessing": false,
+              "defaultLimits": {
+                "maxSteps": 12,
+                "maxToolCalls": 24,
+                "maxTokens": 70000,
+                "maxCost": 0.12,
+                "maxExecutionMs": 120000,
+                "maxParallel": 3,
+                "maxOutputTokens": 2200
+              }
+            },
+            "timestamp": "2026-10-12T18:31:16.214Z"
+          }
+        },
+        {
+          "status": "delivered",
+          "final": {
+            "id": "b1f7d02a-6256-45ba-8ab9-993782c0f4dd-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesajul este **delivered** — livrarea este confirmată. Nu rezultă că mesajul a fost citit.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Starea mesajului selectat",
+                "source": "conversation_messages",
+                "note": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                "freshness": "domain_handler",
+                "rows": [
+                  {
+                    "id": "0c2a9fc7a2a621c122edcbf89479b00a110931784a88e4ee79cdd94e7148843e",
+                    "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+                    "conversationId": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399",
+                    "direction": "sent",
+                    "origin": "imodeus",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "createdAt": "2026-10-12T18:31:02.418Z",
+                    "authorId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+                    "attachments": [],
+                    "externalId": "893eeb3a-6eb1-4365-91d6-a8720968f42f",
+                    "status": "delivered",
+                    "imageUrl": null,
+                    "link": null,
+                    "title": "Starea mesajului selectat",
+                    "description": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                    "dueDate": "2026-10-12T18:31:02.418Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399"
+              }
+            ],
+            "createdAt": "2026-10-12T18:31:22.457Z"
+          },
+          "telemetry": {
+            "requestId": "b1f7d02a-6256-45ba-8ab9-993782c0f4dd",
+            "sessionId": "127ca2ca-8911-4c5b-a2c3-6aec8b016a50",
+            "userId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+            "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+            "models": [
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2071,
+                  "outputTokens": 118,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 1851,
+                  "estimated": false
+                },
+                "costUsd": 0.000312375,
+                "latencyMs": 1559,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2929,
+                  "outputTokens": 98,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 2926,
+                  "estimated": false
+                },
+                "costUsd": 0.00041505000000000003,
+                "latencyMs": 2101,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 3052,
+                  "outputTokens": 44,
+                  "cachedTokens": 2926,
+                  "cacheWriteTokens": 123,
+                  "estimated": false
+                },
+                "costUsd": 6.693500000000001E-05,
+                "latencyMs": 1865,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              }
+            ],
+            "tools": [
+              {
+                "name": "existing_read",
+                "status": "success",
+                "latencyMs": 72,
+                "version": "130",
+                "argumentsHash": "c89844c87b5e9eb063d19d0f3f82e8ffb846462a4bdb204c5809e8ccacceeeda"
+              },
+              {
+                "name": "goal_coverage",
+                "status": "success",
+                "latencyMs": 7,
+                "version": "130",
+                "argumentsHash": "92ae11f8fffea7d0bf5d9304bb17bb49d4f3cbc62823907bacfd033ae8170745"
+              }
+            ],
+            "status": "success",
+            "elapsedMs": 5958,
+            "jev": {
+              "mode": "shadow",
+              "model": "jev-1.13.0",
+              "route": "CLARIFY",
+              "confidence": 0.64,
+              "inputTokens": 441,
+              "outputTokens": 48,
+              "costUsd": 1.8522000000000003E-05,
+              "estimated": false,
+              "actualRoute": "JARVIS_PLANNER",
+              "latencyMs": 312,
+              "status": "ok",
+              "reasonCode": "shadow_only"
+            },
+            "requiresApproval": false,
+            "costUsd": 0.000812882,
+            "tokens": 8801,
+            "versions": {
+              "prompt": "jarvis-100",
+              "routing": "luna-first-2",
+              "policy": "request-crm-14",
+              "tools": "130",
+              "memory": "2",
+              "skills": "3"
+            },
+            "configuration": {
+              "flags": {
+                "memory": true,
+                "subagents": true,
+                "autonomousWorkflows": true,
+                "proactiveInsights": true,
+                "automations": true,
+                "mcp": false,
+                "solEscalation": true
+              },
+              "regionalProcessing": false,
+              "defaultLimits": {
+                "maxSteps": 12,
+                "maxToolCalls": 24,
+                "maxTokens": 70000,
+                "maxCost": 0.12,
+                "maxExecutionMs": 120000,
+                "maxParallel": 3,
+                "maxOutputTokens": 2200
+              }
+            },
+            "timestamp": "2026-10-12T18:31:22.511Z"
+          }
+        },
+        {
+          "status": "read",
+          "final": {
+            "id": "cb45aa60-ee8a-45c8-8e64-2006a5f41579-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesajul are statusul **read** — citirea este confirmată. Am verificat starea actuală a mesajului selectat; nu l-am retrimis.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Starea mesajului selectat",
+                "source": "conversation_messages",
+                "note": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                "freshness": "domain_handler",
+                "rows": [
+                  {
+                    "id": "0c2a9fc7a2a621c122edcbf89479b00a110931784a88e4ee79cdd94e7148843e",
+                    "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+                    "conversationId": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399",
+                    "direction": "sent",
+                    "origin": "imodeus",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "createdAt": "2026-10-12T18:31:02.418Z",
+                    "authorId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+                    "attachments": [],
+                    "externalId": "893eeb3a-6eb1-4365-91d6-a8720968f42f",
+                    "status": "read",
+                    "imageUrl": null,
+                    "link": null,
+                    "title": "Starea mesajului selectat",
+                    "description": "Stare citită acum: queued = în coadă; accepted = acceptat de furnizor, fără confirmare de livrare; delivered = livrare confirmată; read = citire confirmată. failed/unknown nu înseamnă livrat. Verificarea nu retrimite mesajul.",
+                    "dueDate": "2026-10-12T18:31:02.418Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "cfd8242e6afbf68d79347f10914c4878f2503dbf743068e0791e3a2db92b1399"
+              }
+            ],
+            "createdAt": "2026-10-12T18:31:28.348Z"
+          },
+          "telemetry": {
+            "requestId": "cb45aa60-ee8a-45c8-8e64-2006a5f41579",
+            "sessionId": "b767bd34-f86b-45a4-b392-317958e90498",
+            "userId": "c9f6ca6f-389c-4849-b9ec-52dc1868af30",
+            "agencyId": "323b4b68-43b7-43f2-8acc-2cfde363b07d",
+            "models": [
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2071,
+                  "outputTokens": 118,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 1851,
+                  "estimated": false
+                },
+                "costUsd": 0.000312375,
+                "latencyMs": 1522,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 2926,
+                  "outputTokens": 94,
+                  "cachedTokens": 0,
+                  "cacheWriteTokens": 2923,
+                  "estimated": false
+                },
+                "costUsd": 0.000412675,
+                "latencyMs": 1723,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              },
+              {
+                "decision": {
+                  "logical": "LUNA",
+                  "model": "gpt-6-luna",
+                  "effort": "low",
+                  "reason": "luna_first",
+                  "version": "luna-first-2"
+                },
+                "usage": {
+                  "inputTokens": 3045,
+                  "outputTokens": 52,
+                  "cachedTokens": 2923,
+                  "cacheWriteTokens": 119,
+                  "estimated": false
+                },
+                "costUsd": 7.0405E-05,
+                "latencyMs": 1910,
+                "pricingVersion": "openai-standard-2026-10-04",
+                "outcome": "success"
+              }
+            ],
+            "tools": [
+              {
+                "name": "existing_read",
+                "status": "success",
+                "latencyMs": 77,
+                "version": "130",
+                "argumentsHash": "c89844c87b5e9eb063d19d0f3f82e8ffb846462a4bdb204c5809e8ccacceeeda"
+              },
+              {
+                "name": "goal_coverage",
+                "status": "success",
+                "latencyMs": 12,
+                "version": "130",
+                "argumentsHash": "52d5d480b1e41c7a6da9230b1de781edb97e3b78640c71df29d7c8fb2bea3554"
+              }
+            ],
+            "status": "success",
+            "elapsedMs": 5551,
+            "jev": {
+              "mode": "shadow",
+              "model": "jev-1.13.0",
+              "route": "CLARIFY",
+              "confidence": 0.53,
+              "inputTokens": 441,
+              "outputTokens": 48,
+              "costUsd": 1.8522000000000003E-05,
+              "estimated": false,
+              "actualRoute": "JARVIS_PLANNER",
+              "latencyMs": 279,
+              "status": "ok",
+              "reasonCode": "shadow_only"
+            },
+            "requiresApproval": false,
+            "costUsd": 0.000813977,
+            "tokens": 8795,
+            "versions": {
+              "prompt": "jarvis-100",
+              "routing": "luna-first-2",
+              "policy": "request-crm-14",
+              "tools": "130",
+              "memory": "2",
+              "skills": "3"
+            },
+            "configuration": {
+              "flags": {
+                "memory": true,
+                "subagents": true,
+                "autonomousWorkflows": true,
+                "proactiveInsights": true,
+                "automations": true,
+                "mcp": false,
+                "solEscalation": true
+              },
+              "regionalProcessing": false,
+              "defaultLimits": {
+                "maxSteps": 12,
+                "maxToolCalls": 24,
+                "maxTokens": 70000,
+                "maxCost": 0.12,
+                "maxExecutionMs": 120000,
+                "maxParallel": 3,
+                "maxOutputTokens": 2200
+              }
+            },
+            "timestamp": "2026-10-12T18:31:28.405Z"
+          }
+        }
+      ]
+    }
+  ]
+}

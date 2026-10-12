@@ -2506,7 +2506,11 @@
           "sourceNumber": 281,
           "request": "Verifică dacă mesajul este queued, accepted, delivered sau read.",
           "requestSha256": "ae3ddc31d18279f2d3727e4fe018b227ea58d60ef6c449a4b8f8fab4b1c44eee",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_17.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0282",
