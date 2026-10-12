@@ -51,6 +51,12 @@ function getConfiguredSecret(value: string | undefined) {
   return normalized;
 }
 
+export function isVapiOutboundConfigured() {
+  return Boolean(getConfiguredSecret(process.env.VAPI_API_KEY)
+    && (getConfiguredSecret(process.env.AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID) || getConfiguredSecret(process.env.VAPI_ASSISTANT_ID))
+    && (getConfiguredSecret(process.env.AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID) || getConfiguredSecret(process.env.VAPI_PHONE_NUMBER_ID)));
+}
+
 export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput): Promise<VapiOutboundCallResult> {
   const apiKey = getConfiguredSecret(process.env.VAPI_API_KEY);
   const assistantId = getConfiguredSecret(process.env.AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID) || getConfiguredSecret(process.env.VAPI_ASSISTANT_ID);

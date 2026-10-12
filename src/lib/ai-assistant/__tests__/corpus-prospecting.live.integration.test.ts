@@ -3,16 +3,17 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { Firestore } from '@google-cloud/firestore';
 import dotenv from 'dotenv';
 import { expect, it, vi } from 'vitest';
-const settingsContext = vi.hoisted(() => ({ current: null as any, invokes: 0 }));
-vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: vi.fn(), requireAgencyAdminFromBearerToken: async () => {
+const settingsContext = vi.hoisted(() => ({ current: null as any, invokes: 0, provider: vi.fn() }));
+vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => settingsContext.current, requireAgencyAdminFromBearerToken: async () => {
   if (settingsContext.current?.role !== 'admin') throw Object.assign(new Error('Administrator required'), { status: 403 }); return settingsContext.current;
 } }));
+vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: settingsContext.provider, isVapiOutboundConfigured: () => true, VapiDispatchError: class extends Error {} }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
-vi.mock('../operations', () => ({ operations: { outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
-  if (input.operation !== 'outreach_settings_update') throw new Error('External calls excluded');
+vi.mock('../operations', () => ({ operations: { outreach_start: { method: 'POST', path: '/api/ai-outreach/calls', description: 'Pornește apelul AI.' }, outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
+  if (!['outreach_settings_update', 'outreach_start'].includes(input.operation)) throw new Error('External calls excluded');
   settingsContext.invokes++;
-  const { POST } = await import('@/app/api/ai-outreach/settings/route');
+  const { POST } = input.operation === 'outreach_start' ? await import('@/app/api/ai-outreach/calls/route') : await import('@/app/api/ai-outreach/settings/route');
   const { NextRequest } = await import('next/server');
   const { operationResult } = await import('../operation-result');
   const response = await POST(new NextRequest('http://localhost/api/ai-outreach/settings', { method: 'POST', body: JSON.stringify(input.body) }));
@@ -31,7 +32,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 267, 268, 269]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -56,12 +57,40 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = number >= 253 && number <= 261 ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = (number >= 253 && number <= 261 || number === 266) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 266) {
+        settingsContext.provider.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'local-provider-call', raw: {} });
+        await agency.collection('aiOutreach').doc('settings').set({ enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' });
+        const planned = await planTurn(ctx, prompt, history);
+        report = { ...report, planned };
+        expect(planned.metrics.status, planned.text).toBe('success');
+        expect(planned.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(planned.actions).toEqual([{ kind: 'existing_operation', operation: 'outreach_start', params: {}, query: {}, body: { ownerListing: { id: source.id, title: 'Prospect Alfa' } } }]);
+        expect(settingsContext.provider).not.toHaveBeenCalled();
+        expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true);
+        const key = randomUUID(), receipt = await executeAction(ctx, planned.actions[0], key);
+        expect(receipt).toMatchObject({ operation: 'outreach_start', executionState: 'running', call: { status: 'calling', vapiCallId: 'local-provider-call' } });
+        const saved = await agency.collection('aiOutreachCalls').get();
+        expect(saved.size).toBe(1); expect(saved.docs[0].data()).toMatchObject({ status: 'calling', ownerListingId: source.id, ownerPhone: '0722123456', vapiCallId: 'local-provider-call' });
+        const confirmation = executionConfirmation([{ kind: 'existing_operation', result: receipt }]);
+        expect(confirmation).toContain('Furnizorul a acceptat apelul AI.');
+        expect(await executeAction(ctx, planned.actions[0], key)).toEqual(receipt);
+        expect(settingsContext.provider).toHaveBeenCalledTimes(1); expect(settingsContext.invokes).toBe(1);
+        await agency.collection('aiOutreach').doc('settings').update({ enabled: false });
+        const disabled = await planTurn(ctx, prompt, history);
+        expect(disabled.metrics.status, disabled.text).toBe('success'); expect(disabled.actions).toEqual([]);
+        expect(disabled.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(disabled.text).toMatch(/dezactiv|nu.*activ/i);
+        expect(settingsContext.provider).toHaveBeenCalledTimes(1);
+        expect((await agency.collection('aiOutreachCalls').get()).size).toBe(1);
+        report = { ...report, receipt, confirmation, disabled, executionVerified: true, verification: 'Original command, actual model, selected prospect preflight, prepared action, approved-action executor and real HTTP handler with local Firestore, simulated provider acceptance and idempotent replay. Disabled-service variant uses the actual model and produces no additional actions or calls. Approval UI and actual provider conversation are not certified.' };
+        return;
+      }
       if (number === 269) {
         const ref = agency.collection('aiOutreach').doc('settings');
         const initial = { enabled: false, desiredCommissionValue: '4', callWindowStart: '09:00', callWindowEnd: '18:00', maxDailyCalls: 50 };

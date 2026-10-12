@@ -2,6 +2,8 @@ vi.mock('../outreach-history', async importOriginal => ({ ...await importOrigina
 import { readOutreachHistory } from '../outreach-history';
 vi.mock('../outreach-configuration', () => ({ readOutreachConfiguration: vi.fn() }));
 import { readOutreachConfiguration } from '../outreach-configuration';
+vi.mock('../outreach-preflight', () => ({ readOutreachPreflight: vi.fn() }));
+import { readOutreachPreflight } from '../outreach-preflight';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readField: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
@@ -44,6 +46,21 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('requires a selected prospect and a preflight, even if the model tries to finish immediately', async () => {
+    const prompt = 'Pornește apelul AI dacă este eligibil și este aprobat.';
+    const noSelection = scripted(final);
+    expect((await planTurn(ctx, prompt, [], { provider: noSelection })).metrics.status).toBe('clarification');
+    expect(noSelection.respond).not.toHaveBeenCalled();
+    const history = [{ id: 'selection', role: 'assistant' as const, text: 'Prospect selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'Prospect', source: 'ownerListingFavorites', rows: [{ id: 'selected' }] }] }];
+    const premature = scripted(final);
+    expect((await planTurn(ctx, prompt, history, { provider: premature })).metrics.status).toBe('partial');
+    expect(premature.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).not.toContain('goal_coverage');
+    vi.mocked(readOutreachPreflight).mockResolvedValue({ complete: true, eligible: false, rows: [], reason: 'Serviciu dezactivat' } as any);
+    const read = call('outreach_preflight', { listingId: 'invented' });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'call', sourceQuote: prompt, description: 'Verificare', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    expect((await planTurn(ctx, prompt, history, { provider: model })).actions).toEqual([]);
+    expect(readOutreachPreflight).toHaveBeenCalledWith(ctx, { listingId: 'selected' });
+  });
   it.each(['Verifică setările de outreach.', 'Verifică setările de outreach pentru apelurile AI.', 'Verifică setările apelurilor AI.', 'Nu porni apelul dacă serviciul este dezactivat.'])('requires current configuration for %s', async prompt => {
     vi.mocked(readOutreachConfiguration).mockResolvedValue({ rows: [{ enabled: false }], complete: true } as any);
     const read = call('outreach_configuration', {});

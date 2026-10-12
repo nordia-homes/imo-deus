@@ -2357,7 +2357,11 @@
           "sourceNumber": 266,
           "request": "Pornește apelul AI dacă este eligibil și este aprobat.",
           "requestSha256": "db63bb22cf63b5a65f31f1b7aae9577ea0723188c4ee708baf491e8e1bcffcb5",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_09.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0267",

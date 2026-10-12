@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { createVapiOutboundCall } from '@/lib/ai-outreach/vapi';
+import { createVapiOutboundCall, isVapiOutboundConfigured } from '@/lib/ai-outreach/vapi';
 import { withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 const transport = vi.fn();
 beforeEach(() => {
@@ -9,6 +9,15 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.resetAllMocks(); });
 function input(ownerPhone: string) { return { call: { id: 'call', agencyId: 'agency', agentId: 'agent', ownerListingId: 'listing', ownerPhone } as any, settings: withDefaultAiOutreachSettings('agency') }; }
+it('checks configuration locally without network or exposing credential values', () => {
+  expect(isVapiOutboundConfigured()).toBe(true);
+  vi.stubEnv('VAPI_API_KEY', '__NOT_CONFIGURED__');
+  expect(isVapiOutboundConfigured()).toBe(false);
+  vi.stubEnv('VAPI_API_KEY', 'fixture'); vi.stubEnv('AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID', ''); vi.stubEnv('VAPI_ASSISTANT_ID', '');
+  expect(isVapiOutboundConfigured()).toBe(false);
+  vi.stubEnv('VAPI_ASSISTANT_ID', 'fallback'); expect(isVapiOutboundConfigured()).toBe(true);
+  expect(transport).not.toHaveBeenCalled();
+});
 
 it.each(['0722123456', '+40 722 123 456', '0040722123456', '722123456'])('sends %s in international format without changing the CRM snapshot', async phone => {
   const data = input(phone);

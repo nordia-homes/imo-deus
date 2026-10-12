@@ -121,6 +121,10 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     cards.push({ type: 'data', title: 'Sursă oficială consultată', source: 'legal', rows: [{ sourceUrl: data.sourceUrl, authority: data.authority, retrievedAt: data.retrievedAt, contentHash: data.contentHash, temporalValidityVerified: false }], note: data.note });
   } else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
+  else if (name === 'outreach_preflight') {
+    const { readOutreachPreflight } = await import('./outreach-preflight'); data = await readOutreachPreflight(ctx, payload);
+    cards.push({ type: 'data', title: 'Verificare pentru apel AI', source: 'aiOutreachPreflight', rows: data.rows, complete: data.complete });
+  }
   else if (name === 'outreach_configuration') {
     const { readOutreachConfiguration } = await import('./outreach-configuration'); data = await readOutreachConfiguration(ctx);
     cards.push({ type: 'data', title: 'Setările apelurilor AI', source: 'aiOutreachSettings', ...data } as AssistantCard);

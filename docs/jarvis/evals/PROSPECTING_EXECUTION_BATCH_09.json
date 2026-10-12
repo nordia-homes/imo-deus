@@ -1,0 +1,397 @@
+{
+  "scope": "0266: original command, actual model, local Firestore and real domain handler with simulated provider. Not live telephony or production certification.",
+  "fixes": [
+    "Read-only eligibility preflight using current prospect, canonical phone fallback, enabled service, Bucharest call window, quotas, refusal and duplicate-contact checks.",
+    "Selected prospect bound on server; only the exact eligible suggested action is accepted into the plan.",
+    "Successful preflight must continue to action preparation; executor rechecks eligibility and deduplicates replay.",
+    "Existing execution confirmation reports provider acceptance, never a completed conversation."
+  ],
+  "validation": {
+    "unitTests": 121,
+    "firestoreTests": 27,
+    "actualModelCases": [
+      "eligible launch and idempotent executor replay",
+      "disabled service without another action or call"
+    ],
+    "typescript": "passed",
+    "lint": "passed",
+    "parity": "180 operations, 40 native action kinds, 46 UI files",
+    "productionBuild": "passed, 227 pages; existing nonfatal OpenTelemetry and Playwright-copy warnings"
+  },
+  "limitations": [
+    "109 original scenarios with local real-model evidence, zero full production certifications.",
+    "Approval UI and real provider credentials, availability, call connection and conversation are not exercised. Provider readiness is simulated.",
+    "Compact immediate-launch routing covers the original wording and simple launch variants; scheduled requests and wider wording are not certified.",
+    "Agency call and prospect history is scanned for phone conflicts; large-agency performance and concurrent quota reservation remain unverified."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0266",
+      "prompt": "Pornește apelul AI dacă este eligibil și este aprobat.",
+      "versions": {
+        "prompt": "jarvis-86",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "115",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T02:14:33.211Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "planned": {
+        "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Verificare pentru apel AI",
+            "source": "aiOutreachPreflight",
+            "rows": [
+              {
+                "id": "26a36cee-c318-4771-9ec2-5672db7ba436-alfa",
+                "title": "Prospect Alfa",
+                "eligible": true
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "existing_operation",
+            "operation": "outreach_start",
+            "params": {},
+            "query": {},
+            "body": {
+              "ownerListing": {
+                "id": "26a36cee-c318-4771-9ec2-5672db7ba436-alfa",
+                "title": "Prospect Alfa"
+              }
+            }
+          }
+        ],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7604,
+                "outputTokens": 42,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7479,
+                "estimated": false
+              },
+              "costUsd": 0.000968375,
+              "latencyMs": 2498,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8041,
+                "outputTokens": 81,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 8038,
+                "estimated": false
+              },
+              "costUsd": 0.00104555,
+              "latencyMs": 3328,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8149,
+                "outputTokens": 107,
+                "cachedTokens": 8038,
+                "cacheWriteTokens": 108,
+                "estimated": false
+              },
+              "costUsd": 0.00014768,
+              "latencyMs": 2030,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8281,
+                "outputTokens": 68,
+                "cachedTokens": 8146,
+                "cacheWriteTokens": 132,
+                "estimated": false
+              },
+              "costUsd": 0.00013225999999999998,
+              "latencyMs": 1544,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "outreach_preflight",
+              "status": "success",
+              "latencyMs": 651,
+              "version": "115",
+              "argumentsHash": "a4103e2094fe8c7ccb5f7044187fd44ce2badf9870ba03b17e3ec2fe61bc744a"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 19,
+              "version": "115",
+              "argumentsHash": "a83a11aa90d0cae927a9d0697cb16b9e507bd7b7576e925d831ac6285460e0f3"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 11,
+              "version": "115",
+              "argumentsHash": "135a47e4c308386e5703b17e5ad8f42e699a8d6a912c2a807142fef1b8fc77e4"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 10490,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.73,
+            "inputTokens": 451,
+            "outputTokens": 51,
+            "costUsd": 1.8942e-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 325,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "1",
+              "sourceQuote": "Pornește apelul AI dacă este eligibil și este aprobat.",
+              "description": "Verifică eligibilitatea și pregătește apelul AI prin planul de aprobare; nu lansează apelul în această etapă.",
+              "resolution": "planned",
+              "steps": [
+                1
+              ],
+              "evidenceCallIds": [
+                "call_VJLBmhmjDK8GXopoiEUM5rtF"
+              ]
+            }
+          ]
+        }
+      },
+      "receipt": {
+        "call": {
+          "id": "18g2nxwlV6QGAMWNXuuG",
+          "agencyId": "26a36cee-c318-4771-9ec2-5672db7ba436",
+          "agentId": "26a36cee-c318-4771-9ec2-5672db7ba436",
+          "agentName": "Agent local",
+          "ownerListingId": "26a36cee-c318-4771-9ec2-5672db7ba436-alfa",
+          "ownerListingTitle": "Prospect Alfa",
+          "ownerListingLocation": "",
+          "ownerListingPrice": "",
+          "ownerPhone": "0722123456",
+          "callerNumber": null,
+          "phoneNumberId": null,
+          "vapiCallId": "local-provider-call",
+          "status": "calling",
+          "outcome": "calling",
+          "attemptNumber": 1,
+          "templateId": "owner_acquisition",
+          "scheduledAt": null,
+          "startedAt": "2026-10-12T02:14:46.297Z",
+          "endedAt": null,
+          "durationSeconds": null,
+          "cost": null,
+          "summary": "",
+          "transcript": "",
+          "recordingUrl": null,
+          "endedReason": null,
+          "providerErrorCode": null,
+          "providerErrorMessage": null,
+          "result": {
+            "desiredCommission": "3",
+            "minimumCommission": "2"
+          },
+          "createdBy": "26a36cee-c318-4771-9ec2-5672db7ba436",
+          "createdAt": "2026-10-12T02:14:46.089Z",
+          "updatedAt": "2026-10-12T02:14:46.297Z",
+          "providerDispatchStartedAt": "2026-10-12T02:14:46.282Z",
+          "providerRawCreateResponse": {}
+        },
+        "operation": "outreach_start",
+        "businessStatus": "calling",
+        "executionState": "running",
+        "verifiedAt": "2026-10-12T02:14:46.372Z",
+        "evidenceSource": "domain_handler",
+        "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+        "callId": "18g2nxwlV6QGAMWNXuuG"
+      },
+      "confirmation": "Furnizorul a acceptat apelul AI. Rezultatul conversației este încă în așteptare. ID apel: 18g2nxwlV6QGAMWNXuuG.",
+      "disabled": {
+        "text": "Apelul AI nu este eligibil: apelurile AI nu sunt activate pentru această agenție. Nu am pregătit lansarea apelului.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Verificare pentru apel AI",
+            "source": "aiOutreachPreflight",
+            "rows": [
+              {
+                "id": "26a36cee-c318-4771-9ec2-5672db7ba436-alfa",
+                "eligible": false,
+                "reason": "Apelurile AI nu sunt activate pentru aceasta agentie."
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7604,
+                "outputTokens": 42,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7479,
+                "estimated": false
+              },
+              "costUsd": 0.000968375,
+              "latencyMs": 1084,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7928,
+                "outputTokens": 97,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7925,
+                "estimated": false
+              },
+              "costUsd": 0.0010394249999999999,
+              "latencyMs": 3396,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8050,
+                "outputTokens": 47,
+                "cachedTokens": 7925,
+                "cacheWriteTokens": 122,
+                "estimated": false
+              },
+              "costUsd": 0.0001183,
+              "latencyMs": 2229,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "outreach_preflight",
+              "status": "success",
+              "latencyMs": 65,
+              "version": "115",
+              "argumentsHash": "a4103e2094fe8c7ccb5f7044187fd44ce2badf9870ba03b17e3ec2fe61bc744a"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 16,
+              "version": "115",
+              "argumentsHash": "595981177100228d8df5f3f23c87395aabb1d854edfb0184e0cf46b1595e22c9"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 7097,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.73,
+            "inputTokens": 451,
+            "outputTokens": 51,
+            "costUsd": 1.8942e-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 268,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "r1",
+              "sourceQuote": "Pornește apelul AI dacă este eligibil și este aprobat.",
+              "description": "Verifică eligibilitatea și pregătește apelul AI numai dacă eligibil.",
+              "resolution": "answered",
+              "steps": [],
+              "evidenceCallIds": [
+                "call_5AVtXmC80OgyZMi0I5PKEO9y"
+              ]
+            }
+          ]
+        }
+      },
+      "verification": "Original command, actual model, selected prospect preflight, prepared action, approved-action executor and real HTTP handler with local Firestore, simulated provider acceptance and idempotent replay. Disabled-service variant uses the actual model and produces no additional actions or calls. Approval UI and actual provider conversation are not certified."
+    }
+  ]
+}

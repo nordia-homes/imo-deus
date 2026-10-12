@@ -1,9 +1,10 @@
+import { readOutreachPreflight } from '../outreach-preflight';
 import { readOutreachHistory } from '../outreach-history';
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ context: null as any, invoke: vi.fn(), queue: vi.fn(), cancel: vi.fn(), plan: vi.fn(), vapi: vi.fn() }));
+const mocks = vi.hoisted(() => ({ context: null as any, invoke: vi.fn(), queue: vi.fn(), cancel: vi.fn(), plan: vi.fn(), vapi: vi.fn(), configured: true }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.context, requireAgencyAdminFromBearerToken: async () => { if (mocks.context.role !== 'admin') throw Object.assign(new Error('Administrator required'), { status: 403 }); return mocks.context; } }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn(), agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
@@ -12,7 +13,7 @@ vi.mock('@/lib/owner-listings/enrichment-queue', () => ({ upsertPubli24Prospecti
 vi.mock('@/lib/owner-listings/olx-agent-connection', () => ({ getAgentOlxConnection: async () => ({ status: 'connected' }) }));
 vi.mock('../operations', () => ({ operations: { owner_prospect: { method: 'POST', path: '/api/owner-listings/prospecting' } }, isReadOperation: () => false, invokeOperation: mocks.invoke }));
 vi.mock('../workspace', () => ({ getPlan: mocks.plan }));
-vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: mocks.vapi, VapiDispatchError: class extends Error {} }));
+vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: mocks.vapi, isVapiOutboundConfigured: () => mocks.configured, VapiDispatchError: class extends Error {} }));
 import { POST as updateOutreachSettings } from '@/app/api/ai-outreach/settings/route';
 import { POST as createOutreachCall } from '@/app/api/ai-outreach/calls/route';
 import { launchAiOutreachCall } from '@/lib/ai-outreach/server';
@@ -59,6 +60,29 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('preflights current eligibility without creating calls, leaking secrets or accepting a foreign prospect', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    mocks.vapi.mockReset(); mocks.configured = true;
+    const favorite = agency.collection('ownerListingFavorites').doc('preflight');
+    const read = () => readOutreachPreflight(ctx, { listingId: 'preflight' });
+    expect(await read()).toMatchObject({ eligible: false });
+    await favorite.set({ isFavoriteActive: true, title: 'Prospect test', ownerPhone: '0722123456', privateSecret: 'CANARY' });
+    const ready = await read(); expect(ready).toMatchObject({ eligible: true, suggestedAction: { body: { ownerListing: { id: 'preflight', title: 'Prospect test' } } } });
+    expect(JSON.stringify(ready)).not.toContain('CANARY');
+    mocks.configured = false; expect(await read()).toMatchObject({ eligible: false, reason: expect.stringContaining('configurat') }); mocks.configured = true;
+    const settings = agency.collection('aiOutreach').doc('settings');
+    await settings.update({ enabled: false }); expect(await read()).toMatchObject({ eligible: false }); await settings.update({ enabled: true });
+    await settings.update({ maxDailyCalls: 0 }); expect(await read()).toMatchObject({ eligible: false }); await settings.update({ maxDailyCalls: 50 });
+    const owner = agency.collection('aiOutreachOwnerListingStatuses').doc('preflight');
+    await owner.set({ aiDoNotCall: true }); expect(await read()).toMatchObject({ eligible: false }); await owner.delete();
+    const old = agency.collection('aiOutreachCalls').doc('old');
+    await old.set({ ownerListingId: 'different', ownerPhone: '+40 722 123 456', status: 'completed', createdAt: '2020-01-01T00:00:00Z' });
+    expect(await read()).toMatchObject({ eligible: false }); await old.delete();
+    await agency.collection('ownerListingFavorites').doc('different').set({ ownerPhone: '0733123456', contactOutcomePhone: '0722123456', contactOutcome: 'negative', contactOutcomeAt: '2026-10-01T07:00:00Z' });
+    expect(await read()).toMatchObject({ eligible: false });
+    const other = await fixture(); expect(await readOutreachPreflight(other, { listingId: 'preflight' })).toMatchObject({ eligible: false });
+    expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true); expect(mocks.vapi).not.toHaveBeenCalled();
+  }, 30000);
   it('preserves a refusal recorded after eligibility checks and cancels before the provider', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     mocks.vapi.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'must-not-launch', raw: {} });

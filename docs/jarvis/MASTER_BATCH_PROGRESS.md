@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lansarea apelului pentru prospectul selectat — 0266, probă locală cu model real
+
+Cererea originală „Pornește apelul AI dacă este eligibil și este aprobat.” are acum o verificare preliminară dedicată: prospect activ, telefon românesc complet, titlu actual, serviciu activ, interval București, limite zilnice și buget, refuzuri și contactări deja înregistrate la același număr. Lipsa selecției cere alegerea prospectului. Verificarea nu creează apeluri, nu modifică setări și nu ține loc de aprobare.
+
+Planificatorul fixează prospectul din context pe server și acceptă numai acțiunea returnată de verificarea reușită. Nu poate declara cererea acoperită oprindu-se după verificare: trebuie să pregătească apelul. Executorul existent reverifică starea înaintea lansării și repetarea aceleiași execuții nu produce un al doilea apel.
+
+Proba cu model real a parcurs cererea originală, pregătirea planului, executorul pentru acțiunea aprobată, ruta HTTP reală și salvarea în Firestore local. Furnizorul simulat a primit exact un apel; confirmarea spune că furnizorul l-a acceptat, fără să pretindă încheierea conversației. Varianta cu serviciul dezactivat a produs explicație fără o nouă acțiune sau apel. Au trecut **121 teste unitare**, **27 teste Firestore**, TypeScript, lint, paritatea operațiilor și buildul final cu **227 de pagini**. Dovadă: [PROSPECTING_EXECUTION_BATCH_09.json](evals/PROSPECTING_EXECUTION_BATCH_09.json).
+
+Versiuni **jarvis-86 / tools 115**. Total **109/1000** cu dovezi locale, **0 certificări complete în producție**. Interfața de aprobare, furnizorul real și conversația telefonică nu sunt certificate. Ruta compactă acoperă comanda originală și variante simple de lansare imediată, nu certifică toate formulările sau programările. Scanarea istoricului pentru agenții mari și rezervarea concurentă a cotelor necesită verificări suplimentare. Modificările nu sunt publicate în producție.
+
 ## Confirmarea stării apelului în conversație — 0266, parțial
 
 Confirmarea execuției recunoaște acum rezultatul operației outreach_start și identificatorul apelului salvat. Acceptarea furnizorului este afișată numai pentru starea calling cu ID extern; nu este prezentată drept conversație încheiată. Programările viitoare au dată și oră București, inclusiv diferența vară/iarnă. Anularea, eșecul și lansarea incertă au mesaje distincte. Rezultatele fără identificator concordant sau programările expirate nu primesc o confirmare de succes.
