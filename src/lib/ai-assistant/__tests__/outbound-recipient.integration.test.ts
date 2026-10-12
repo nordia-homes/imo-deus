@@ -354,7 +354,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -364,6 +364,10 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     try {
       await f.agency.set({ city: 'București' });
       await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ agencyId: f.actor.agencyId, channel: 'whatsapp', status: 'connected', name: 'WhatsApp agenție test', appId: 'fixture-app', parentId: '123456', externalId: 'fixture-number', currency: 'EUR', updatedAt: new Date().toISOString(), capabilities: { send: { status: 'active' }, templates: { status: 'active' } } });
+      if (variant === 'dedicated-template') f.templates.data.splice(0, f.templates.data.length,
+        { name: 'newsletter_oferte', language: 'ro', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Descoperă ofertele noi din newsletterul agenției.' }] },
+        { name: 'prospectare_proprietari', language: 'ro', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Bună ziua, {{1}}. Vă contactăm pentru o posibilă colaborare privind proprietatea dumneavoastră.' }] },
+        { name: 'confirmare_vizionare', language: 'ro', status: 'APPROVED', category: 'UTILITY', components: [{ type: 'BODY', text: 'Confirmați participarea la vizionare.' }] });
       const variants = [{ price: '120000 EUR' }, { price: '125000 EUR' }, { price: '130000 EUR' }, { price: '130001 EUR' }, { price: '600 EUR', transactionType: 'rent' }, { location: 'București, Militari' }];
       for (const [index, patch] of variants.entries()) {
         const id = `${f.actor.agencyId}-offer-${index}`; sources.push(id);
@@ -378,7 +382,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-latest.json`, JSON.stringify({ variant, prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
       expect(result.message.planId, result.message.text).toBeUndefined();
       const jobs = await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get();
-      const expectedSends = ['standard', 'without-intermediaries'].includes(variant) ? 3 : 2;
+      const expectedSends = ['standard', 'without-intermediaries', 'dedicated-template'].includes(variant) ? 3 : 2;
       expect(jobs.size, result.message.text).toBe(expectedSends);
       if (variant === 'missing-phone') {
         expect(result.message.text).toContain('Cerințe încă neîndeplinite');
@@ -388,6 +392,11 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await drainOutbound(db as any); await drainOutbound(db as any);
       expect(templateSends()).toHaveLength(expectedSends);
       expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722333300', '40722333301', '40722333302'].slice(0, expectedSends));
+      if (variant === 'dedicated-template') {
+        expect(templateSends().map(call => call[2].template.name)).toEqual(Array(3).fill('prospectare_proprietari'));
+        expect(result.message.text).not.toMatch(/previzualiz|confirmă|aprobați|aprobă|verifică planul/i);
+        expect(result.message.cards?.some(card => /preview|previzualiz/i.test(card.title))).toBeFalsy();
+      }
       for (const job of jobs.docs) expect((await job.ref.get()).data()?.status).toBe('accepted');
       await chatTurn(mocks.actor, request); await drainOutbound(db as any);
       expect(templateSends()).toHaveLength(expectedSends);

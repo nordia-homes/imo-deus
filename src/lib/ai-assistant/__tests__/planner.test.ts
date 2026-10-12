@@ -50,6 +50,8 @@ it('keeps explicit WhatsApp prospecting within the first-call budget with concre
   expect(request.tools.map((tool: any) => tool.name)).not.toContain('create_task');
   expect(request.instructions).toContain('prospectingConnectionId');
   expect(request.instructions).toContain('whatsapp_templates');
+  expect(request.instructions).toContain('Nu solicita previzualizarea textului');
+  expect(request.instructions).toContain('chiar dacă există alte șabloane');
   expect(Buffer.byteLength(request.instructions)).toBeLessThan(10000);
 });
 function scripted(...responses: (ProviderResult | Error)[]) {

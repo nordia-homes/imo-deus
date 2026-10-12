@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare directă cu șablonul dedicat, fără previzualizare manuală — 12 octombrie 2026
+
+Clarificarea utilizatorului prevalează asupra unui flux cu previzualizare obligatorie: comanda explicită de prospectare WhatsApp autorizează expedierea șablonului dedicat, fără ca agentul să confirme textul, mesajul sau planul. Costul și eligibilitatea se verifică intern în pregătire și în expeditor. Consultarea șabloanelor sau previzualizarea cerută expres rămân operații separate, niciodată pași manuali obligatorii ai prospectării. Completările nefinalizate pentru un nou instrument de previzualizare au fost retrase.
+
+Instrucțiunile disting șablonul dedicat prospectării de cele pentru newsletter și confirmări de vizionare; existența șabloanelor cu alte scopuri nu mai trebuie tratată ca motiv de a cere agentului să aleagă. În lipsa datelor indispensabile ori dacă există mai multe variante de prospectare indistincte, Jarvis trebuie să precizeze problema reală, fără să o prezinte drept lipsa aprobării agentului. Refuzurile înregistrate și verificările reale de expediere rămân active.
+
+Proba nouă cu model real a găsit trei apartamente, a ales `prospectare_proprietari` din trei șabloane aprobate cu scopuri diferite și a expediat trei mesaje prin coada/workerul aplicației către Meta simulat. Niciun plan de aprobare, nicio solicitare de previzualizare și nicio retrimitere la reluarea requestului. Au trecut 105 teste unitare și toate cele 6 cazuri cu model real din suita WhatsApp, TypeScript, ESLint, paritatea și buildul final cu 227 de pagini. Dovada: [WHATSAPP_DIRECT_PROSPECTING_TEMPLATE.json](evals/WHATSAPP_DIRECT_PROSPECTING_TEMPLATE.json).
+
+Versiune prompt jarvis-98. Inventarul rămâne 116/1000 cu dovezi locale și 0 certificări complete în producție; aceasta este o variantă suplimentară, nu un scenariu original nou. Nu au fost contactate persoane reale și modificările nu sunt publicate în producție.
+
 ## Șabloane WhatsApp după acord — 0277 — 12 octombrie 2026
 
 Cererea originală „După acord, verifică template-urile disponibile.” citește acum acordurile conversației selectate și șabloanele conexiunii sale prin API-ul existent al aplicației. Jarvis prezintă numele, limba, categoria, statusul Meta și numărul parametrilor. Separă aprobarea Meta de compatibilitatea formatului: un șablon PENDING/PAUSED sau cu format incompatibil nu este oferit ca disponibil pentru pregătire. Disponibilitatea tehnică nu certifică eligibilitatea destinatarului ori costul; acestea rămân supuse previzualizării mesajului concret. Cererea de consultare nu înregistrează acorduri și nu trimite mesaje.

@@ -1,0 +1,503 @@
+{
+  "scope": "Explicit prospecting command selects the dedicated template and executes without agent preview or confirmation",
+  "originalCorpusScenario": false,
+  "realProvider": false,
+  "selectedTemplate": "prospectare_proprietari",
+  "otherTemplates": [
+    "newsletter_oferte",
+    "confirmare_vizionare"
+  ],
+  "agentConfirmationRequired": false,
+  "verification": {
+    "variant": "dedicated-template",
+    "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+    "verifiedAt": "2026-10-12T14:32:03Z",
+    "sends": 3,
+    "replaySends": 0,
+    "realProvider": false,
+    "newConversations": true,
+    "priceBoundaryIncluded": true,
+    "rentalsExcluded": true
+  },
+  "final": {
+    "id": "f6475d2f-e765-4373-a256-c44f974fb9f2-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: b3e70b94da19e7a961fa143eb00c418b2dbf0010f5a78ae84b180148ce8ae832.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 07997fbbb5366148a5dc43d89b1bcdf57101177f6b3f7f24604a9b6f6da79bdc.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 865cc820694d29fc3e8c904072b549a10d2302afd0f8db55f64beb8792454ca5.\nAcțiuni executate: 3. Starea mesajelor este disponibilă în Inbox.",
+    "cards": [
+      {
+        "type": "results",
+        "title": "Anunțuri proprietari",
+        "source": "owners",
+        "search": {
+          "source": "owners",
+          "zone": "Titan",
+          "propertyType": "apartment",
+          "transactionType": "sale",
+          "priceMax": 130000,
+          "limit": 3
+        },
+        "returnedCount": 3,
+        "appliedTransactionType": "sale",
+        "rentCeilingEur": 10000,
+        "rows": [
+          {
+            "constructionYear": null,
+            "constructionYearLabel": null,
+            "constructionYearKnown": false,
+            "constructionYearEvidenceKind": "unknown",
+            "constructionYearLowerBound": null,
+            "constructionYearUpperBound": null,
+            "yearFilterSatisfied": null,
+            "id": "d41d97cb-ff7d-4f5c-9eeb-8e8500b307aa-offer-0",
+            "title": "Apartament test 0",
+            "transactionType": "sale",
+            "location": "București, Titan",
+            "price": "120000 EUR",
+            "rooms": 2,
+            "squareFootage": null,
+            "imageUrl": null,
+            "status": null,
+            "source": "owners",
+            "link": "https://example.test/0",
+            "lastVerifiedAt": "2026-10-12T14:31:44.691Z",
+            "ownerName": "Proprietar 0",
+            "ownerPhone": "0722333300",
+            "phoneExtractionStatus": null
+          },
+          {
+            "constructionYear": null,
+            "constructionYearLabel": null,
+            "constructionYearKnown": false,
+            "constructionYearEvidenceKind": "unknown",
+            "constructionYearLowerBound": null,
+            "constructionYearUpperBound": null,
+            "yearFilterSatisfied": null,
+            "id": "d41d97cb-ff7d-4f5c-9eeb-8e8500b307aa-offer-1",
+            "title": "Apartament test 1",
+            "transactionType": "sale",
+            "location": "București, Titan",
+            "price": "125000 EUR",
+            "rooms": 2,
+            "squareFootage": null,
+            "imageUrl": null,
+            "status": null,
+            "source": "owners",
+            "link": "https://example.test/1",
+            "lastVerifiedAt": "2026-10-12T14:31:44.695Z",
+            "ownerName": "Proprietar 1",
+            "ownerPhone": "0722333301",
+            "phoneExtractionStatus": null
+          },
+          {
+            "constructionYear": null,
+            "constructionYearLabel": null,
+            "constructionYearKnown": false,
+            "constructionYearEvidenceKind": "unknown",
+            "constructionYearLowerBound": null,
+            "constructionYearUpperBound": null,
+            "yearFilterSatisfied": null,
+            "id": "d41d97cb-ff7d-4f5c-9eeb-8e8500b307aa-offer-2",
+            "title": "Apartament test 2",
+            "transactionType": "sale",
+            "location": "București, Titan",
+            "price": "130000 EUR",
+            "rooms": 2,
+            "squareFootage": null,
+            "imageUrl": null,
+            "status": null,
+            "source": "owners",
+            "link": "https://example.test/2",
+            "lastVerifiedAt": "2026-10-12T14:31:44.699Z",
+            "ownerName": "Proprietar 2",
+            "ownerPhone": "0722333302",
+            "phoneExtractionStatus": null
+          }
+        ],
+        "nextCursor": "s|638708fc0e98|d41d97cb-ff7d-4f5c-9eeb-8e8500b307aa-offer-2",
+        "complete": false,
+        "scanned": 3,
+        "uncertainCurrency": 0,
+        "freshness": "live_firestore",
+        "observedAt": "2026-10-12T14:31:47.098Z",
+        "paginationConsistency": "live_cursor",
+        "searchMode": "live_scan",
+        "note": "Date actuale din Firestore. O căutare nouă include anunțurile eligibile nou colectate.",
+        "outputType": "PROPERTY_LIST"
+      },
+      {
+        "type": "data",
+        "title": "Starea conexiunilor și bugetului de comunicare",
+        "source": "communications_status",
+        "note": null,
+        "freshness": "domain_handler",
+        "rows": [
+          {
+            "agencyId": "d41d97cb-ff7d-4f5c-9eeb-8e8500b307aa",
+            "channel": "whatsapp",
+            "status": "connected",
+            "name": "WhatsApp agenție test",
+            "appId": "fixture-app",
+            "parentId": "123456",
+            "externalId": "fixture-number",
+            "currency": "EUR",
+            "updatedAt": "2026-10-12T14:31:44.687Z",
+            "capabilities": {
+              "send": {
+                "status": "active"
+              },
+              "templates": {
+                "status": "active"
+              }
+            },
+            "id": "cfa4fac0-d8f1-4970-86cb-02da911e6e29",
+            "imageUrl": null,
+            "link": null,
+            "title": "WhatsApp agenție test",
+            "description": null,
+            "dueDate": null
+          }
+        ],
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "title": "Șabloane aprobate și parametri necesari",
+        "source": "whatsapp_templates",
+        "note": null,
+        "freshness": "domain_handler",
+        "rows": [
+          {
+            "name": "newsletter_oferte",
+            "language": "ro",
+            "status": "APPROVED",
+            "category": "MARKETING",
+            "components": [
+              {
+                "type": "BODY",
+                "text": "Descoperă ofertele noi din newsletterul agenției."
+              }
+            ],
+            "bodyParameterCount": 0,
+            "sendable": true,
+            "imageUrl": null,
+            "link": null,
+            "title": "newsletter_oferte",
+            "description": null,
+            "dueDate": null
+          },
+          {
+            "name": "prospectare_proprietari",
+            "language": "ro",
+            "status": "APPROVED",
+            "category": "MARKETING",
+            "components": [
+              {
+                "type": "BODY",
+                "text": "Bună ziua, {{1}}. Vă contactăm pentru o posibilă colaborare privind proprietatea dumneavoastră."
+              }
+            ],
+            "bodyParameterCount": 1,
+            "sendable": true,
+            "imageUrl": null,
+            "link": null,
+            "title": "prospectare_proprietari",
+            "description": null,
+            "dueDate": null
+          },
+          {
+            "name": "confirmare_vizionare",
+            "language": "ro",
+            "status": "APPROVED",
+            "category": "UTILITY",
+            "components": [
+              {
+                "type": "BODY",
+                "text": "Confirmați participarea la vizionare."
+              }
+            ],
+            "bodyParameterCount": 0,
+            "sendable": true,
+            "imageUrl": null,
+            "link": null,
+            "title": "confirmare_vizionare",
+            "description": null,
+            "dueDate": null
+          }
+        ],
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "outputType": "ACTION_RESULT",
+        "title": "Rezultatele cererii",
+        "source": "autonomy",
+        "rows": [
+          {
+            "step": 1,
+            "kind": "existing_operation",
+            "result": {
+              "messageId": "b3e70b94da19e7a961fa143eb00c418b2dbf0010f5a78ae84b180148ce8ae832",
+              "status": "queued",
+              "operation": "message_send",
+              "businessStatus": "queued",
+              "executionState": "queued",
+              "verifiedAt": "2026-10-12T14:32:01.726Z",
+              "evidenceSource": "domain_handler",
+              "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes."
+            }
+          },
+          {
+            "step": 2,
+            "kind": "existing_operation",
+            "result": {
+              "messageId": "07997fbbb5366148a5dc43d89b1bcdf57101177f6b3f7f24604a9b6f6da79bdc",
+              "status": "queued",
+              "operation": "message_send",
+              "businessStatus": "queued",
+              "executionState": "queued",
+              "verifiedAt": "2026-10-12T14:32:01.959Z",
+              "evidenceSource": "domain_handler",
+              "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes."
+            }
+          },
+          {
+            "step": 3,
+            "kind": "existing_operation",
+            "result": {
+              "messageId": "865cc820694d29fc3e8c904072b549a10d2302afd0f8db55f64beb8792454ca5",
+              "status": "queued",
+              "operation": "message_send",
+              "businessStatus": "queued",
+              "executionState": "queued",
+              "verifiedAt": "2026-10-12T14:32:02.15Z",
+              "evidenceSource": "domain_handler",
+              "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes."
+            }
+          }
+        ]
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-12T14:32:02.154Z"
+  },
+  "telemetry": {
+    "requestId": "f6475d2f-e765-4373-a256-c44f974fb9f2",
+    "sessionId": "aa9a751c-3eaa-4305-a82d-a7d83b1bde66",
+    "userId": "9a0b2c0b-6387-4c83-931b-b57f4d838b05",
+    "agencyId": "d41d97cb-ff7d-4f5c-9eeb-8e8500b307aa",
+    "models": [
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3902,
+          "outputTokens": 91,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 3564,
+          "estimated": false
+        },
+        "costUsd": 0.0005248,
+        "latencyMs": 1731,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 4728,
+          "outputTokens": 36,
+          "cachedTokens": 3564,
+          "cacheWriteTokens": 1161,
+          "estimated": false
+        },
+        "costUsd": 0.000199065,
+        "latencyMs": 2439,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5016,
+          "outputTokens": 64,
+          "cachedTokens": 4725,
+          "cacheWriteTokens": 288,
+          "estimated": false
+        },
+        "costUsd": 0.00011555,
+        "latencyMs": 1721,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5338,
+          "outputTokens": 362,
+          "cachedTokens": 5013,
+          "cacheWriteTokens": 322,
+          "estimated": false
+        },
+        "costUsd": 0.00027168,
+        "latencyMs": 3356,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5731,
+          "outputTokens": 180,
+          "cachedTokens": 5335,
+          "cacheWriteTokens": 393,
+          "estimated": false
+        },
+        "costUsd": 0.000192775,
+        "latencyMs": 2430,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5936,
+          "outputTokens": 105,
+          "cachedTokens": 5728,
+          "cacheWriteTokens": 205,
+          "estimated": false
+        },
+        "costUsd": 0.000135705,
+        "latencyMs": 2096,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      }
+    ],
+    "tools": [
+      {
+        "name": "search_properties",
+        "status": "success",
+        "latencyMs": 131,
+        "version": "126",
+        "argumentsHash": "33dfb2a0e252b30d1cba1d82bd5739e016dc16b49492af316b7f57e510e0a86d"
+      },
+      {
+        "name": "existing_read",
+        "status": "success",
+        "latencyMs": 36,
+        "version": "126",
+        "argumentsHash": "adbd1496411a59eff1784cd7b6115de4a3a8a7f82d288193fcef327d2f607ab9"
+      },
+      {
+        "name": "existing_read",
+        "status": "success",
+        "latencyMs": 1608,
+        "version": "126",
+        "argumentsHash": "8c08ec739029471cfe88ae51e360299c56af5d9eec449fce975fdb112af255d7"
+      },
+      {
+        "name": "propose_actions",
+        "status": "success",
+        "latencyMs": 699,
+        "version": "126",
+        "argumentsHash": "9abec283a4da3e11f3de40a3fb3ebf0006857da2e05fc2559c5f123744d1a237"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "success",
+        "latencyMs": 5,
+        "version": "126",
+        "argumentsHash": "67b90012fabc091ea7179e3ed3bd56eb93b49d1a48fc7ccdb9765622c4a63062"
+      }
+    ],
+    "status": "success",
+    "elapsedMs": 16727,
+    "jev": {
+      "mode": "shadow",
+      "model": "jev-1.13.0",
+      "route": "JARVIS_PLANNER",
+      "confidence": 0.92,
+      "inputTokens": 486,
+      "outputTokens": 51,
+      "costUsd": 2.0412000000000004E-05,
+      "estimated": false,
+      "actualRoute": "JARVIS_PLANNER",
+      "latencyMs": 433,
+      "status": "ok",
+      "reasonCode": "shadow_only"
+    },
+    "requiresApproval": false,
+    "costUsd": 0.001459987,
+    "tokens": 32026,
+    "versions": {
+      "prompt": "jarvis-98",
+      "routing": "luna-first-2",
+      "policy": "request-crm-14",
+      "tools": "126",
+      "memory": "2",
+      "skills": "3"
+    },
+    "configuration": {
+      "flags": {
+        "memory": true,
+        "subagents": true,
+        "autonomousWorkflows": true,
+        "proactiveInsights": true,
+        "automations": true,
+        "mcp": false,
+        "solEscalation": true
+      },
+      "regionalProcessing": false,
+      "defaultLimits": {
+        "maxSteps": 12,
+        "maxToolCalls": 24,
+        "maxTokens": 70000,
+        "maxCost": 0.12,
+        "maxExecutionMs": 120000,
+        "maxParallel": 3,
+        "maxOutputTokens": 2200
+      }
+    },
+    "timestamp": "2026-10-12T14:32:02.193Z"
+  },
+  "validation": {
+    "unitTests": 105,
+    "environment": "Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta",
+    "actualModelCases": 6
+  }
+}
