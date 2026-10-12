@@ -2559,7 +2559,11 @@
           "sourceNumber": 288,
           "request": "Găsește prospectele mele active.",
           "requestSha256": "6dbce9d68273b57812b521d5d9966d02572d411d3b2b45d4711216a98c92cdbe",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_18.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0289",

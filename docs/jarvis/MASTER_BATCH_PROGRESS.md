@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectele proprii active — scenariul 0288 — 12 octombrie 2026
+
+„Găsește prospectele mele active.” folosește acum citirea paginată a prospectelor agenției, cu filtrare pe server după agentul autentificat. Se reutilizează regulile CRM: preluarea are prioritate, apoi atribuirea prin rezultatul contactului, apoi rezervarea neexpirată. Sunt excluse înregistrările inactive, neatribuite și rezervările expirate. Crearea unui prospect de către agent nu îl face automat proprietarul atribuirii.
+
+Serverul fixează resursa și cursorul, elimină selecțiile sau filtrele inventate de model și cere toate paginile înainte de încheiere. O pagină fără potriviri nu este confundată cu o listă completă goală. Cererea de citire nu expune instrumente de modificare sau contactare.
+
+Proba prin chatTurn, cu model real și Firestore local, include 57 de prospecte: prima pagină fără potriviri și exact trei rezultate pe pagina următoare. Verifică atribuirea, înregistrările nemodificate, reluarea idempotentă și recitirea după dezactivarea celor trei rezultate. Dovadă: [PROSPECTING_EXECUTION_BATCH_18.json](evals/PROSPECTING_EXECUTION_BATCH_18.json). Versiuni jarvis-101 / tools 131. Rezultatul este local, fără contactarea persoanelor reale; modificările nu sunt publicate în producție.
+
+Au trecut 59 de teste unitare, 30 de teste de integrare, scenariul original cu model real la verificarea finală, ESLint, paritatea și buildul cu verificare TypeScript și 227 de pagini. Inventarul crește la 118/1000 dovezi locale cu model real; rămân 0 certificări complete în producție.
+
 ## Starea mesajului WhatsApp — scenariul 0281 — 12 octombrie 2026
 
 Cererea originală „Verifică dacă mesajul este queued, accepted, delivered sau read.” epuiza bugetul înainte de prima citire. Planificarea folosește acum numai citirea mesajului și verificarea acoperirii cererii. Referința este fixată de server la mesajul selectat ori la unicul mesaj din rezultatul ultimei execuții. Rezultatele trimiterilor păstrează și conversationId, astfel încât verificarea ulterioară să nu depindă de o identificare inventată de model. Selecțiile multiple cer precizarea mesajului; o pagină fără context nu șterge selecția din conversație.

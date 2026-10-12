@@ -1,0 +1,268 @@
+{
+  "initialRuns": [],
+  "scope": "Original scenario 0288, actual model and application chatTurn with local Firestore. No external messages or production certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0288",
+      "prompt": "Găsește prospectele mele active.",
+      "versions": {
+        "prompt": "jarvis-101",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "131",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T18:44:11.76Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "final": {
+        "id": "2c9437bd-f751-4c9b-af0e-1d3bd291294b-active-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Am găsit 3 prospecte active atribuite ție:\n- **Contactat Salcâm** — rezultat de contact: follow-up. ID: `z-mine-outcome`.\n- **Rezervat Tei** — rezervat. ID: `z-mine-reserved`.\n- **Preluat Magnolia** — preluat. ID: `z-mine-taken`.\n\nLista cuprinde prospectele din toate paginile citite. Nu am modificat și nu am rezervat nimic.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "ownerListingFavorites",
+            "title": "Prospectele mele active",
+            "rows": [],
+            "complete": false,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "source": "ownerListingFavorites",
+            "title": "Prospectele mele active",
+            "rows": [
+              {
+                "id": "z-mine-outcome",
+                "title": "Contactat Salcâm",
+                "ownerName": null,
+                "ownerPhone": null,
+                "isFavoriteActive": true,
+                "agentId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b",
+                "ownership": "contact_outcome",
+                "contactOutcome": "follow_up",
+                "collaborationStatus": null
+              },
+              {
+                "id": "z-mine-reserved",
+                "title": "Rezervat Tei",
+                "ownerName": null,
+                "ownerPhone": null,
+                "isFavoriteActive": true,
+                "agentId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b",
+                "ownership": "reserved",
+                "contactOutcome": null,
+                "collaborationStatus": null
+              },
+              {
+                "id": "z-mine-taken",
+                "title": "Preluat Magnolia",
+                "ownerName": null,
+                "ownerPhone": null,
+                "isFavoriteActive": true,
+                "agentId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b",
+                "ownership": "taken",
+                "contactOutcome": null,
+                "collaborationStatus": null
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T18:44:26.075Z"
+      },
+      "telemetry": {
+        "requestId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b-active",
+        "sessionId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b",
+        "userId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b",
+        "agencyId": "2c9437bd-f751-4c9b-af0e-1d3bd291294b",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2140,
+              "outputTokens": 35,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1990,
+              "estimated": false
+            },
+            "costUsd": 0.00028125,
+            "latencyMs": 1381,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2230,
+              "outputTokens": 37,
+              "cachedTokens": 1990,
+              "cacheWriteTokens": 237,
+              "estimated": false
+            },
+            "costUsd": 6.832500000000001E-05,
+            "latencyMs": 1143,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2738,
+              "outputTokens": 96,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2735,
+              "estimated": false
+            },
+            "costUsd": 0.00039017500000000004,
+            "latencyMs": 2326,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2859,
+              "outputTokens": 131,
+              "cachedTokens": 2735,
+              "cacheWriteTokens": 121,
+              "estimated": false
+            },
+            "costUsd": 0.000108275,
+            "latencyMs": 3328,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 1667,
+            "version": "131",
+            "argumentsHash": "b4508c69622dcc6da59d1964f75e33d8d252a4cd67d6a594ccb3f277c4e15346"
+          },
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 154,
+            "version": "131",
+            "argumentsHash": "33c2ce9139c77c68d4a09a3e31508956c9024a3d63afedde6e727585c65871c5"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 17,
+            "version": "131",
+            "argumentsHash": "0cb7ec80057df07c08fce56e29e6d4d199a8d22c151f5403f485d570bcce3325"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 10408,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.27,
+          "inputTokens": 435,
+          "outputTokens": 51,
+          "costUsd": 1.827E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 325,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.000866295,
+        "tokens": 10752,
+        "versions": {
+          "prompt": "jarvis-101",
+          "routing": "luna-first-2",
+          "policy": "request-crm-14",
+          "tools": "131",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T18:44:26.112Z"
+      },
+      "empty": {
+        "id": "2c9437bd-f751-4c9b-af0e-1d3bd291294b-empty-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Nu ai prospecte active atribuite în agenția curentă.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "ownerListingFavorites",
+            "title": "Prospectele mele active",
+            "rows": [],
+            "complete": false,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "source": "ownerListingFavorites",
+            "title": "Prospectele mele active",
+            "rows": [],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T18:44:33.676Z"
+      },
+      "verification": "Original command through actual model and persisted chatTurn, real local Firestore: 57 prospects across two pages, empty matching first page, exact current-agent assignment by CRM precedence, expired/inactive/unassigned excluded, exact three results, unchanged records, idempotent replay and fresh empty result after deactivation. No external contact or production certification."
+    }
+  ]
+}

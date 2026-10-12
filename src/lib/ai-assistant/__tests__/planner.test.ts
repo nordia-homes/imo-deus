@@ -61,6 +61,20 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('reads every active-prospect page with server-bound scope even when the model repeats a wrong selection', async () => {
+    const prompt = 'Găsește prospectele mele active.';
+    expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('partial');
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'other', isFavoriteActive: true, takenByAgentId: 'other' }], complete: false, nextCursor: 'page-1' });
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'page-2' });
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'mine', title: 'Alfa', isFavoriteActive: true, takenByAgentId: 'u' }], complete: true, nextCursor: null });
+    const reads = [1, 2, 3].map(() => call('read', { resource: 'contacts', id: 'wrong', search: 'wrong', cursor: 'wrong', limit: 1 }));
+    const model = scripted(...reads, call('goal_coverage', { requirements: [{ id: 'list', sourceQuote: prompt, description: 'Prospectele mele active', resolution: 'answered', steps: [], evidenceCallIds: [reads[2].calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(vi.mocked(readResource).mock.calls.map(args => args[1])).toEqual([{ resource: 'ownerListingFavorites', limit: 50 }, { resource: 'ownerListingFavorites', limit: 50, cursor: 'page-1' }, { resource: 'ownerListingFavorites', limit: 50, cursor: 'page-2' }]);
+    expect(result.cards.flatMap(card => card.rows).map(row => row.id)).toEqual(['mine']);
+    expect(result.metrics.status).toBe('success'); expect(result.actions).toEqual([]);
+    expect(model.respond.mock.calls.slice(0, 3).every(args => args[0].tools.every((tool: any) => tool.name === 'read'))).toBe(true);
+  });
   it('binds status checks to the selected message and excludes unrelated operations and messages', async () => {
     const prompt = 'Verifică dacă mesajul este queued, accepted, delivered sau read.';
     const history = [{ id: 'selection', role: 'assistant' as const, text: 'Mesaj selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'Mesaj', source: 'conversation_messages', rows: [{ id: 'target', conversationId: 'selected' }] }] }];
