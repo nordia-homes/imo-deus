@@ -40,6 +40,38 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('finishes every phone-lookup page for the selected prospect without reading timelines', async () => {
+    const prompt = 'Verifică dacă numărul lui apare și la alte anunțuri.';
+    const history: any[] = [{ id: 'selection', role: 'assistant', text: 'Selectat', cards: [{ source: 'ownerListingFavorites', rows: [{ id: 'p' }] }] }];
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'page-2' } as any).mockResolvedValueOnce({ rows: [{ id: 'other' }], complete: true } as any);
+    const first = call('owner_prospects', { listingId: 'wrong', scope: 'agency_history' });
+    const last = call('owner_prospects', { listingId: 'p', cursor: 'model-transcribed-cursor' });
+    const model = scripted(first, final, last, call('goal_coverage', { requirements: [{ id: 'phone', sourceQuote: prompt, description: 'Alte anunțuri', resolution: 'answered', steps: [], evidenceCallIds: [last.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, history, { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(readOwnerProspects).toHaveBeenNthCalledWith(1, ctx, { listingId: 'p' }, undefined, undefined);
+    expect(readOwnerProspects).toHaveBeenNthCalledWith(2, ctx, { listingId: 'p', cursor: 'page-2' }, undefined, undefined);
+    expect(readTimeline).not.toHaveBeenCalled();
+    expect(JSON.stringify(model.respond.mock.calls)).toContain('page-2');
+  });
+  it('does not treat server-driven cursor progress as circular calls when the model omits cursors', async () => {
+    const prompt = 'Verifică dacă numărul lui apare și la alte anunțuri.';
+    vi.mocked(readOwnerProspects).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'second' } as any).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'third' } as any).mockResolvedValueOnce({ rows: [], complete: true } as any);
+    const reads = Array.from({ length: 3 }, () => call('owner_prospects', { listingId: 'p' }));
+    const model = scripted(...reads, call('goal_coverage', { requirements: [{ id: 'phone', sourceQuote: prompt, description: 'Verificat', resolution: 'answered', steps: [], evidenceCallIds: [reads[2].calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [{ role: 'assistant', text: 'Selectat', cards: [{ source: 'ownerListingFavorites', rows: [{ id: 'p' }] }] }] as any, { provider: model });
+    expect(result.metrics.status).toBe('success');
+    expect(result.metrics.tools.every(tool => tool.status === 'success')).toBe(true);
+    expect(readOwnerProspects).toHaveBeenNthCalledWith(3, ctx, { listingId: 'p', cursor: 'third' }, undefined, undefined);
+  });
+  it('asks for the missing phone before concluding there are no other listings', async () => {
+    const prompt = 'Verifică dacă numărul lui apare și la alte anunțuri.';
+    vi.mocked(readOwnerProspects).mockResolvedValue({ rows: [], complete: false, reason: 'missing_valid_phone' } as any);
+    const result = await planTurn(ctx, prompt, [{ role: 'assistant', text: 'Selectat', cards: [{ source: 'ownerListingFavorites', rows: [{ id: 'p' }] }] }] as any, { provider: scripted(call('owner_prospects', { listingId: 'p' })) });
+    expect(result.metrics.status).toBe('clarification');
+    expect(result.ownerHistoryContinuation).toEqual({ listingId: 'p', request: prompt });
+  });
+
   it('keeps owner history schemas compact while preserving discovery and all required reads', async () => {
     const prompt = 'Arată-mi toate interacțiunile cu acest proprietar.';
     vi.mocked(readOwnerProspects).mockResolvedValue({ rows: [{ resource: 'ownerListingFavorites', id: 'p', readMode: 'timeline' }], complete: true } as any);

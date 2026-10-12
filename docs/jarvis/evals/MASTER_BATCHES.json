@@ -2306,7 +2306,11 @@
           "sourceNumber": 261,
           "request": "Verifică dacă numărul lui apare și la alte anunțuri.",
           "requestSha256": "b9324a72344ece2abbaaf9a984b15bf40462946ea73ace48adc5a3902b43ad62",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_04.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0262",

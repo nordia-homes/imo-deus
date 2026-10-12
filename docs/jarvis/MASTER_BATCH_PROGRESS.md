@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Verificarea telefonului la alte anunțuri — 0261
+
+Comanda originală „Verifică dacă numărul lui apare și la alte anunțuri.” activează acum citirea prospectelor agenției după telefonul complet normalizat. Serverul fixează anunțul selectat și cursorul paginii următoare; nu permite încheierea înainte de citirea tuturor paginilor. Rezultatul distinge celelalte anunțuri de cel selectat și include explicit potrivirile inactive. Nu citește inutil istoricul și nu efectuează contacte sau modificări CRM.
+
+Probele inițiale au descoperit JSON imbricat incomplet la retranscrierea cursorului. `owner_prospects` are acum argumente native structurate, eliminând acea serializare suplimentară. Detectarea apelurilor repetitive folosește cursorul efectiv executat în acest flux, astfel încât trecerea la pagina a treia nu este considerată o buclă dacă modelul omite cursorul.
+
+Proba finală cu model real și Firestore local citește trei pagini, cu 105 anunțuri neasociate între potriviri, găsește formatele +40/0040 și exclude același nume cu alt telefon. Verifică și telefonul lipsă, întrebarea salvată, reluarea după răspuns, repetarea idempotentă și cazul fără alte potriviri. Nu sunt apeluri de instrument eșuate sau modificări CRM. Dovadă: [PROSPECTING_EXECUTION_BATCH_04.json](evals/PROSPECTING_EXECUTION_BATCH_04.json).
+
+Regresia 0260 a trecut cu model real pe noul contract, inclusiv clarificările de telefon și asociere; dovadă: [OWNER_PHONE_CONTRACT_REGRESSION_PARTIAL_0260.json](evals/OWNER_PHONE_CONTRACT_REGRESSION_PARTIAL_0260.json). Au trecut 58 teste unitare, TypeScript complet, lint, paritate, inventarul corpusului și buildul final cu 227 pagini.
+
+Versiuni **jarvis-81 / tools 107**. Total **102/1000** cu dovezi locale, **0 certificări complete în producție**. Domeniul este prospectarea agenției, nu toate anunțurile globale; numărul comun nu garantează identitatea persoanei. Scenariul 0260 rămâne parțial. Modificările nu sunt publicate în producție.
+
 ## Orele taskurilor și rezultatele apelurilor recuperate — 0260
 
 Istoricul asociat prin telefon păstrează acum ora și durata taskurilor, precum și rezultatul structurat, începutul, sfârșitul și durata apelurilor. Astfel, un apel al unui prospect șters nu pierde informația despre documentele disponibile sau rezultatul negocierii. Valorile explicite false și zero se păstrează; un task fără oră nu primește una inventată.

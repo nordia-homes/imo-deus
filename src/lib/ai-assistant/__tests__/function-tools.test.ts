@@ -43,3 +43,10 @@ it('normalizes id only for a single required native identifier and rejects contr
   expect(actionToolSchemas.delete_offer[0].safeParse(functionPayload('delete_offer', JSON.stringify({ payload: JSON.stringify({ id: 'ambiguous' }) }))).success).toBe(false);
   expect(actionToolSchemas.delete_viewing[0].safeParse(functionPayload('delete_viewing', JSON.stringify({ payload: JSON.stringify({ id: 'v', unrelated: true }) }))).success).toBe(false);
 });
+
+it('exposes owner lookup fields directly so cursors do not require nested JSON escaping', () => {
+  const schema = functionDefinition('owner_prospects').parameters as any;
+  expect(schema.properties).not.toHaveProperty('payload');
+  expect(schema.required).toEqual(['listingId', 'scope', 'cursor']);
+  expect(functionPayload('owner_prospects', JSON.stringify({ listingId: 'selected', scope: null, cursor: 'opaque-page' }))).toEqual({ listingId: 'selected', cursor: 'opaque-page' });
+});

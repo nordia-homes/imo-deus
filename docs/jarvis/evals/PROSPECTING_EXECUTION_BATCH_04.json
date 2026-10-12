@@ -1,0 +1,802 @@
+{
+  "scope": "0261: original prompt, actual model and local Firestore application reads. Three agency prospect pages, normalized phone variants, inactive matches, same-name exclusion, missing-phone persisted chat continuation, no-match case and no CRM writes. Not production or global owner-listing certification.",
+  "fixes": [
+    "Activate owner phone lookup for selected prospects without reading interaction timelines.",
+    "Bind selected ID and pagination cursor on the server; advancing cursor is not a repeated tool loop.",
+    "Advertise owner_prospects as a native structured function, removing nested JSON escaping.",
+    "Require every result page before closure; persist and resume missing-phone clarification."
+  ],
+  "limitations": [
+    "102 originals have local evidence; no full production certifications.",
+    "Search scope is agency prospects, including inactive records, not all global owner listings.",
+    "A shared phone does not prove legal identity."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0261",
+      "prompt": "Verifică dacă numărul lui apare și la alte anunțuri.",
+      "versions": {
+        "prompt": "jarvis-81",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "107",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-11T23:59:31.074Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "text": "Da. În prospectarea agenției am găsit alte două anunțuri asociate cu același număr normalizat:\n\n- **Apartament Magnolia** — activ.\n- **Casă Tei** — inactiv.\n\nAm exclus **Prospect Alfa**, anunțul selectat. Numărul comun nu garantează că anunțurile aparțin aceleiași persoane; verificarea acoperă doar prospectele înregistrate în prospectarea agenției, nu toate anunțurile existente.",
+      "cards": [
+        {
+          "type": "data",
+          "title": "Înregistrări asociate proprietarului",
+          "source": "ownerListingFavorites",
+          "rows": [
+            {
+              "id": "a-phone-match",
+              "title": "Apartament Magnolia",
+              "ownerName": null,
+              "ownerPhone": "+40 722 123 456",
+              "isFavoriteActive": true,
+              "matchBasis": "normalized_phone"
+            },
+            {
+              "id": "be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa",
+              "title": "Prospect Alfa",
+              "ownerName": "Alin Matei",
+              "ownerPhone": "0722123456",
+              "isFavoriteActive": true,
+              "matchBasis": "normalized_phone"
+            }
+          ],
+          "complete": false,
+          "nextCursor": "eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wNDMifQ",
+          "scope": "agency_prospects",
+          "normalizedPhone": "0722123456",
+          "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+          "outputType": "ANALYTICS_CARD"
+        },
+        {
+          "type": "data",
+          "title": "Înregistrări asociate proprietarului",
+          "source": "ownerListingFavorites",
+          "rows": [],
+          "complete": false,
+          "nextCursor": "eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wOTMifQ",
+          "scope": "agency_prospects",
+          "normalizedPhone": "0722123456",
+          "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+          "outputType": "ANALYTICS_CARD"
+        },
+        {
+          "type": "data",
+          "title": "Înregistrări asociate proprietarului",
+          "source": "ownerListingFavorites",
+          "rows": [
+            {
+              "id": "z-phone-match",
+              "title": "Casă Tei",
+              "ownerName": null,
+              "ownerPhone": "0040 722 123 456",
+              "isFavoriteActive": false,
+              "matchBasis": "normalized_phone"
+            }
+          ],
+          "complete": true,
+          "nextCursor": null,
+          "scope": "agency_prospects",
+          "normalizedPhone": "0722123456",
+          "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+          "outputType": "ANALYTICS_CARD"
+        }
+      ],
+      "actions": [],
+      "accessRefs": [],
+      "metrics": {
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3479,
+              "outputTokens": 51,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 3286,
+              "estimated": false
+            },
+            "costUsd": 0.00045555,
+            "latencyMs": 1550,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3863,
+              "outputTokens": 182,
+              "cachedTokens": 3286,
+              "cacheWriteTokens": 574,
+              "estimated": false
+            },
+            "costUsd": 0.00019590999999999999,
+            "latencyMs": 2401,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 4277,
+              "outputTokens": 194,
+              "cachedTokens": 3860,
+              "cacheWriteTokens": 414,
+              "estimated": false
+            },
+            "costUsd": 0.00018765,
+            "latencyMs": 2325,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 4898,
+              "outputTokens": 116,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 4806,
+              "estimated": false
+            },
+            "costUsd": 0.00066795,
+            "latencyMs": 2020,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 5039,
+              "outputTokens": 127,
+              "cachedTokens": 4806,
+              "cacheWriteTokens": 230,
+              "estimated": false
+            },
+            "costUsd": 0.00014061000000000002,
+            "latencyMs": 2161,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "owner_prospects",
+            "status": "success",
+            "latencyMs": 1163,
+            "version": "107",
+            "argumentsHash": "ebee617a4496417063d57c962d28817e551bff3a2ef9bd22d274c5c393318102"
+          },
+          {
+            "name": "owner_prospects",
+            "status": "success",
+            "latencyMs": 755,
+            "version": "107",
+            "argumentsHash": "1f5a6625d4ca11deda663396d37bdbf8b31b967951bb2036690aaf905c407173"
+          },
+          {
+            "name": "owner_prospects",
+            "status": "success",
+            "latencyMs": 199,
+            "version": "107",
+            "argumentsHash": "cf20e23b99d84e06a5b5ec80cd06208fc4e1f318829f3872e77cfa806dabc3c2"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 10,
+            "version": "107",
+            "argumentsHash": "894f4049c03da714e7f24887415e23a7da710a0698353dc4fe28c0561d827de2"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 13004,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "CLARIFY",
+          "confidence": 0.34,
+          "inputTokens": 483,
+          "outputTokens": 48,
+          "costUsd": 2.0286000000000002e-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 339,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        }
+      },
+      "goalCoverage": {
+        "requirements": [
+          {
+            "id": "phone_match_other_listings",
+            "sourceQuote": "Verifică dacă numărul lui apare și la alte anunțuri.",
+            "description": "Verifică în prospectarea agenției dacă telefonul prospectului selectat apare și la alte anunțuri; exclude anunțul selectat din lista rezultatelor.",
+            "resolution": "answered",
+            "steps": [],
+            "evidenceCallIds": [
+              "call_DSJXTBRcWyz8gu1QD6qwtYLQ"
+            ]
+          }
+        ]
+      },
+      "providerTrace": [
+        {
+          "calls": [
+            {
+              "id": "call_iNkAH7CGEPaqU9PVLNU9eyPc",
+              "name": "owner_prospects",
+              "arguments": "{\"listingId\":\"be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa\",\"scope\":null,\"cursor\":null}"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "calls": [
+            {
+              "id": "call_espQE3vZSo0Gx0y8uPxSOiX3",
+              "name": "owner_prospects",
+              "arguments": "{\"listingId\":\"be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa\",\"scope\":null,\"cursor\":\"eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wNDMifQ\"}"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "calls": [
+            {
+              "id": "call_DSJXTBRcWyz8gu1QD6qwtYLQ",
+              "name": "owner_prospects",
+              "arguments": "{\"listingId\":\"be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa\",\"scope\":null,\"cursor\":\"eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wOTMifQ\"}"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "calls": [
+            {
+              "id": "call_JtNUf28jsBHARR5mC0dC3BEd",
+              "name": "goal_coverage",
+              "arguments": "{\"requirements\":[{\"id\":\"phone_match_other_listings\",\"sourceQuote\":\"Verifică dacă numărul lui apare și la alte anunțuri.\",\"description\":\"Verifică în prospectarea agenției dacă telefonul prospectului selectat apare și la alte anunțuri; exclude anunțul selectat din lista rezultatelor.\",\"resolution\":\"answered\",\"steps\":[],\"evidenceCallIds\":[\"call_DSJXTBRcWyz8gu1QD6qwtYLQ\"]}]}"
+            }
+          ],
+          "errors": []
+        },
+        {
+          "calls": [],
+          "errors": []
+        }
+      ],
+      "question": {
+        "id": "be6dba8f-e079-40bb-87ab-a50fbb5ef667-question-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Prospectul nu are un telefon complet pentru asocierea înregistrărilor. Care este numărul de telefon al proprietarului? Voi relua citirea pentru același prospect.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [],
+            "complete": false,
+            "nextCursor": null,
+            "reason": "missing_valid_phone",
+            "scope": "agency_prospects",
+            "note": "Telefon complet indisponibil. Numele singur nu dovedește că două anunțuri aparțin aceleiași persoane.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-11T23:59:48.267Z",
+        "ownerHistoryContinuation": {
+          "listingId": "be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa",
+          "request": "Verifică dacă numărul lui apare și la alte anunțuri."
+        }
+      },
+      "resumed": {
+        "id": "be6dba8f-e079-40bb-87ab-a50fbb5ef667-answer-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Da. Am găsit două anunțuri suplimentare în prospectarea agenției cu același număr de telefon:\n\n- „Apartament Magnolia” — activ.\n- „Casă Tei” — inactiv.\n\nProspectul selectat inițial nu este inclus în această listă de alte anunțuri. Asocierea s-a făcut după numărul comun; acesta nu garantează că anunțurile aparțin aceleiași persoane. Verificarea acoperă prospectarea agenției, nu toate anunțurile existente.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [
+              {
+                "id": "a-phone-match",
+                "title": "Apartament Magnolia",
+                "ownerName": null,
+                "ownerPhone": "+40 722 123 456",
+                "isFavoriteActive": true,
+                "matchBasis": "normalized_phone"
+              }
+            ],
+            "complete": false,
+            "nextCursor": "eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wNDMifQ",
+            "scope": "agency_prospects",
+            "normalizedPhone": "0722123456",
+            "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [],
+            "complete": false,
+            "nextCursor": "eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wOTMifQ",
+            "scope": "agency_prospects",
+            "normalizedPhone": "0722123456",
+            "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [
+              {
+                "id": "z-phone-match",
+                "title": "Casă Tei",
+                "ownerName": null,
+                "ownerPhone": "0040 722 123 456",
+                "isFavoriteActive": false,
+                "matchBasis": "normalized_phone"
+              }
+            ],
+            "complete": true,
+            "nextCursor": null,
+            "scope": "agency_prospects",
+            "normalizedPhone": "0722123456",
+            "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T00:00:01.313Z"
+      },
+      "resumedTelemetry": {
+        "requestId": "be6dba8f-e079-40bb-87ab-a50fbb5ef667-answer",
+        "sessionId": "be6dba8f-e079-40bb-87ab-a50fbb5ef667",
+        "userId": "be6dba8f-e079-40bb-87ab-a50fbb5ef667",
+        "agencyId": "be6dba8f-e079-40bb-87ab-a50fbb5ef667",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3916,
+              "outputTokens": 51,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 3723,
+              "estimated": false
+            },
+            "costUsd": 0.000510175,
+            "latencyMs": 1451,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 4240,
+              "outputTokens": 182,
+              "cachedTokens": 3723,
+              "cacheWriteTokens": 514,
+              "estimated": false
+            },
+            "costUsd": 0.00019278,
+            "latencyMs": 2508,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 4654,
+              "outputTokens": 166,
+              "cachedTokens": 4237,
+              "cacheWriteTokens": 414,
+              "estimated": false
+            },
+            "costUsd": 0.00017742,
+            "latencyMs": 2580,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 5267,
+              "outputTokens": 125,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 5156,
+              "estimated": false
+            },
+            "costUsd": 0.0007181,
+            "latencyMs": 2016,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 5417,
+              "outputTokens": 142,
+              "cachedTokens": 5156,
+              "cacheWriteTokens": 258,
+              "estimated": false
+            },
+            "costUsd": 0.00015511000000000002,
+            "latencyMs": 2212,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "owner_prospects",
+            "status": "success",
+            "latencyMs": 766,
+            "version": "107",
+            "argumentsHash": "ebee617a4496417063d57c962d28817e551bff3a2ef9bd22d274c5c393318102"
+          },
+          {
+            "name": "owner_prospects",
+            "status": "success",
+            "latencyMs": 799,
+            "version": "107",
+            "argumentsHash": "1f5a6625d4ca11deda663396d37bdbf8b31b967951bb2036690aaf905c407173"
+          },
+          {
+            "name": "owner_prospects",
+            "status": "success",
+            "latencyMs": 219,
+            "version": "107",
+            "argumentsHash": "91c0f209d186e71513a54b4fa4adff3221d8b9891cef779631a91ecf4ae2749d"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 11,
+            "version": "107",
+            "argumentsHash": "50f61d55b90d652ec717504a2d7f28c4dfd007eb443859d85d91fc1a273a0a69"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 12877,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.31,
+          "inputTokens": 506,
+          "outputTokens": 51,
+          "costUsd": 2.1252000000000003e-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 284,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.001774837,
+        "tokens": 24717,
+        "versions": {
+          "prompt": "jarvis-81",
+          "routing": "luna-first-2",
+          "policy": "request-crm-13",
+          "tools": "107",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T00:00:01.365Z"
+      },
+      "noMatches": {
+        "text": "Am verificat toate paginile prospectării agenției pentru numărul 0722123456. Nu apare la alte anunțuri în rezultatele găsite; singurul rezultat este anunțul selectat „Prospect Alfa” (ID: be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa), deci nu îl număr ca alt anunț. Verificarea este limitată la prospectele agenției, nu la toate anunțurile existente. Un număr comun, dacă apare, nu garantează că este aceeași persoană.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [
+              {
+                "id": "be6dba8f-e079-40bb-87ab-a50fbb5ef667-alfa",
+                "title": "Prospect Alfa",
+                "ownerName": "Alin Matei",
+                "ownerPhone": "0722123456",
+                "isFavoriteActive": true,
+                "matchBasis": "normalized_phone"
+              }
+            ],
+            "complete": false,
+            "nextCursor": "eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wNDQifQ",
+            "scope": "agency_prospects",
+            "normalizedPhone": "0722123456",
+            "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [],
+            "complete": false,
+            "nextCursor": "eyJhZ2VuY3lJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2NyIsImxpc3RpbmdJZCI6ImJlNmRiYThmLWUwNzktNDBiYi04N2FiLWE1MGZiYjVlZjY2Ny1hbGZhIiwicGhvbmUiOiIwNzIyMTIzNDU2IiwiYWZ0ZXIiOiJtLXVucmVsYXRlZC0wOTQifQ",
+            "scope": "agency_prospects",
+            "normalizedPhone": "0722123456",
+            "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "title": "Înregistrări asociate proprietarului",
+            "source": "ownerListingFavorites",
+            "rows": [],
+            "complete": true,
+            "nextCursor": null,
+            "scope": "agency_prospects",
+            "normalizedPhone": "0722123456",
+            "note": "Anunțuri din prospectarea agenției cu același telefon. Un număr comun poate reprezenta mai multe persoane; nu este dovadă de identitate juridică. Nu include toate anunțurile globale sau conversațiile fără legătură înregistrată.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 3479,
+                "outputTokens": 51,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 3286,
+                "estimated": false
+              },
+              "costUsd": 0.00045555,
+              "latencyMs": 1396,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 3823,
+                "outputTokens": 182,
+                "cachedTokens": 3286,
+                "cacheWriteTokens": 534,
+                "estimated": false
+              },
+              "costUsd": 0.00019091,
+              "latencyMs": 2904,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 4237,
+                "outputTokens": 182,
+                "cachedTokens": 3820,
+                "cacheWriteTokens": 414,
+                "estimated": false
+              },
+              "costUsd": 0.00018125,
+              "latencyMs": 2959,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 4801,
+                "outputTokens": 107,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 4710,
+                "estimated": false
+              },
+              "costUsd": 0.00065135,
+              "latencyMs": 2277,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 4933,
+                "outputTokens": 153,
+                "cachedTokens": 4710,
+                "cacheWriteTokens": 220,
+                "estimated": false
+              },
+              "costUsd": 0.0001514,
+              "latencyMs": 2732,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "owner_prospects",
+              "status": "success",
+              "latencyMs": 721,
+              "version": "107",
+              "argumentsHash": "ebee617a4496417063d57c962d28817e551bff3a2ef9bd22d274c5c393318102"
+            },
+            {
+              "name": "owner_prospects",
+              "status": "success",
+              "latencyMs": 844,
+              "version": "107",
+              "argumentsHash": "7bb0f7ca180ed43caa02f0278f97d07097c8f577ce337942d019e1f811badda8"
+            },
+            {
+              "name": "owner_prospects",
+              "status": "success",
+              "latencyMs": 208,
+              "version": "107",
+              "argumentsHash": "4049d2586bfd75c5df3243989123009b18ba305b85963b8099a8c7ceedd649e1"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 13,
+              "version": "107",
+              "argumentsHash": "b09f5dc29590923c0fc317ce3f9b468140ce322de1f9750fc41e50da5c5074e0"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 14407,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "CLARIFY",
+            "confidence": 0.43,
+            "inputTokens": 483,
+            "outputTokens": 48,
+            "costUsd": 2.0286000000000002e-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 301,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "check_phone_other_listings",
+              "sourceQuote": "Verifică dacă numărul lui apare și la alte anunțuri.",
+              "description": "Verifică apariția numărului la alte anunțuri din prospectarea agenției, pe toate paginile citite.",
+              "resolution": "answered",
+              "steps": [],
+              "evidenceCallIds": [
+                "call_eHgHWalcHzOmfL1ekFPDOg7p"
+              ]
+            }
+          ]
+        }
+      },
+      "verification": "Original prompt, real model and local Firestore: all agency prospect pages read; normalized phone variants, inactive listing, same-name different-phone exclusion, missing-phone clarification and saved chat resumption, idempotent replay, no CRM mutations. Scope is agency prospects, not global listings or proof of identity."
+    }
+  ]
+}

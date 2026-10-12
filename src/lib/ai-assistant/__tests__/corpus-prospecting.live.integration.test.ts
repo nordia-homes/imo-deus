@@ -18,7 +18,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -48,6 +48,60 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]) {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 261) {
+        const batch = db.batch();
+        for (let i = 0; i < 105; i++) batch.set(favorites.doc(`m-unrelated-${String(i).padStart(3, '0')}`), { ownerName: 'Alin Matei', ownerPhone: '0733123456', title: 'CANARY_UNRELATED_PHONE' });
+        batch.set(favorites.doc('a-phone-match'), { ownerPhone: '+40 722 123 456', title: 'Apartament Magnolia', isFavoriteActive: true });
+        batch.set(favorites.doc('z-phone-match'), { ownerPhone: '0040 722 123 456', title: 'Casă Tei', isFavoriteActive: false });
+        await batch.commit();
+        const originalFavorites = (await favorites.get()).docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const originalRespond = OpenAIAdapter.prototype.respond;
+        const providerTrace: unknown[] = [];
+        const spy = vi.spyOn(OpenAIAdapter.prototype, 'respond').mockImplementation(async function (this: OpenAIAdapter, request) {
+          const response = await originalRespond.call(this, request);
+          providerTrace.push({ calls: response.calls, errors: request.input.filter((item: any) => item.type === 'function_call_output' && typeof item.output === 'string' && item.output.includes('"error"')) });
+          return response;
+        });
+        let result;
+        try { result = await planTurn(ctx, prompt, history); }
+        finally { spy.mockRestore(); }
+        report = { ...report, ...result, providerTrace };
+        expect(result.metrics.status, result.text).toBe('success');
+        expect(result.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(result.actions).toEqual([]);
+        expect(result.metrics.tools.filter(tool => tool.name === 'owner_prospects').length).toBeGreaterThanOrEqual(3);
+        expect(result.text).toMatch(/Magnolia/); expect(result.text).toMatch(/Tei/);
+        expect(result.text).toMatch(/inactiv/i); expect(result.text).toMatch(/agenți|agenti/i);
+        expect(JSON.stringify(result)).not.toContain('CANARY_UNRELATED_PHONE');
+        expect(result.metrics.tools.some(tool => tool.name === 'timeline')).toBe(false);
+        await source.update({ ownerPhone: '' });
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id }); await session.collection('messages').doc('selection').set(history[0]);
+        const question = await chatTurn(ctx, { sessionId: id, requestId: `${id}-question`, prompt, currentRecord: null });
+        expect(question.message.ownerHistoryContinuation).toEqual({ listingId: source.id, request: prompt });
+        const reply = { sessionId: id, requestId: `${id}-answer`, prompt: '+40 722 123 456', currentRecord: null };
+        const resumed = await chatTurn(ctx, reply);
+        const telemetry = (await agency.collection('assistantTelemetry').doc(reply.requestId).get()).data()!;
+        report = { ...report, question: question.message, resumed: resumed.message, resumedTelemetry: telemetry };
+        expect(telemetry.status, resumed.message.text).toBe('success');
+        expect(telemetry.tools.filter((tool: any) => tool.status !== 'success')).toEqual([]);
+        expect(resumed.message.text).toMatch(/Magnolia/); expect(resumed.message.text).toMatch(/Tei/);
+        expect(resumed.message.actions || []).toEqual([]);
+        expect(await chatTurn(ctx, reply)).toEqual(resumed);
+        expect((await source.get()).data()?.ownerPhone).toBe('');
+        expect((await favorites.get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))).toEqual(originalFavorites);
+        await source.update({ ownerPhone: '0722123456' });
+        await favorites.doc('a-phone-match').delete(); await favorites.doc('z-phone-match').delete();
+        const noMatches = await planTurn(ctx, prompt, history);
+        report = { ...report, noMatches };
+        expect(noMatches.metrics.status, noMatches.text).toBe('success');
+        expect(noMatches.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(noMatches.actions).toEqual([]);
+        expect(noMatches.text).toMatch(/nu.*(?:alte|alt)|niciun/i);
+        expect(noMatches.text).not.toMatch(/Magnolia|Tei/);
+        report = { ...report, executionVerified: true, verification: 'Original prompt, real model and local Firestore: all agency prospect pages read; normalized phone variants, inactive listing, same-name different-phone exclusion, missing-phone clarification and saved chat resumption, idempotent replay, no CRM mutations. Scope is agency prospects, not global listings or proof of identity.' };
+        return;
+      }
       if (number === 260) {
         const duplicateUrl = `https://example.com/${id}/shared-source`;
         const drafts = db.batch();
