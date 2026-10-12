@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare: cereri explicite fără previzualizare sau aprobarea agentului — 12 octombrie 2026
+
+Recunoașterea comenzii distingea insuficient între interdicția de trimitere și renunțarea la un pas manual. „Contactează proprietarii pe WhatsApp fără previzualizare” și „Nu îmi mai cere aprobarea. Găsește ... și contactează proprietarii pe WhatsApp” erau respinse de filtrul general de negații. Formulările explicite de renunțare la previzualizare ori la confirmarea agentului sunt acum recunoscute în contextul unei cereri de contactare.
+
+Interdicțiile de trimitere, lipsa acordului, condițiile, exemplele și cererile de ciornă rămân distincte. Niciun refuz înregistrat al proprietarului nu este eliminat, iar pregătirea verifică în continuare șablonul, destinatarul și costul. Probele complete verifică alegerea șablonului de prospectare dintre trei șabloane aprobate, trei mesaje independente, absența unui plan manual și reluarea fără duplicate.
+
+Regresia cu model real a identificat și o referință inexistentă la conexiune. Citirea catalogului poate recupera automat unica conexiune WhatsApp conectată, prin API-ul autorizat al aceleiași agenții. Corecția este explicită în rezultatul instrumentului și nu expediază mesaje. Nu se aplică dacă sunt mai multe conexiuni, dacă accesul este interzis, în afara unei comenzi de prospectare sau pentru erori incerte ale furnizorului.
+
+Au trecut 153 teste unitare distincte, 77 teste de integrare, toate cele 11 verificări cu model real la rerularea completă, TypeScript, ESLint, paritatea și buildul final cu 227 de pagini. Dovadă pentru comenzile noi: [WHATSAPP_NO_PREVIEW_COMMANDS_EXECUTION.json](evals/WHATSAPP_NO_PREVIEW_COMMANDS_EXECUTION.json). Cele două variante au expediat fiecare trei mesaje prin worker către Meta simulat și niciun mesaj suplimentar la reluarea comenzii.
+
+Versiuni jarvis-99 / tools 129. Inventarul rămâne 116/1000 dovezi locale cu model real și 0 certificări complete în producție. Variantele nu sunt scenarii originale noi; nu au fost contactate persoane reale și modificările nu sunt publicate în producție.
+
 ## Prospectare: continuare după un refuz cert al cozii — 12 octombrie 2026
 
 Un destinatar devenit neeligibil după pregătirea mesajelor nu mai oprește ceilalți destinatari independenți. Ruta de mesaje identifică refuzurile de validare în care mesajul nu a fost pus în coadă; executorul le păstrează ca respinse, cu motivul exact. Reluarea aceleiași execuții păstrează refuzul și cheile celorlalți pași, fără mesaje suplimentare. Rezultatele incerte, pierderea accesului și planurile mixte ori dependente opresc în continuare execuția.

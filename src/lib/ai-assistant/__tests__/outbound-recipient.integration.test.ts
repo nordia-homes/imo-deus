@@ -354,7 +354,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template', 'revoked-owner', 'other-agent-owner', 'revoked-at-queue'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template', 'revoked-owner', 'other-agent-owner', 'revoked-at-queue', 'without-preview', 'without-approval'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -364,7 +364,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     try {
       await f.agency.set({ city: 'București' });
       await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ agencyId: f.actor.agencyId, channel: 'whatsapp', status: 'connected', name: 'WhatsApp agenție test', appId: 'fixture-app', parentId: '123456', externalId: 'fixture-number', currency: 'EUR', updatedAt: new Date().toISOString(), capabilities: { send: { status: 'active' }, templates: { status: 'active' } } });
-      if (variant === 'dedicated-template') f.templates.data.splice(0, f.templates.data.length,
+      if (['dedicated-template', 'without-preview', 'without-approval'].includes(variant)) f.templates.data.splice(0, f.templates.data.length,
         { name: 'newsletter_oferte', language: 'ro', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Descoperă ofertele noi din newsletterul agenției.' }] },
         { name: 'prospectare_proprietari', language: 'ro', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Bună ziua, {{1}}. Vă contactăm pentru o posibilă colaborare privind proprietatea dumneavoastră.' }] },
         { name: 'confirmare_vizionare', language: 'ro', status: 'APPROVED', category: 'UTILITY', components: [{ type: 'BODY', text: 'Confirmați participarea la vizionare.' }] });
@@ -375,7 +375,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
         if (variant === 'shared-owner-long-titles' && index < 3) await db.collection('ownerListings').doc(id).update({ title: `Apartament test ${index} ` + 'Titlu lung cu diacritice ȘȚĂÎÂ. '.repeat(300), ...(index === 2 ? { ownerName: 'Proprietar 0', ownerPhone: '+40 722 333 300' } : {}) });
         if (variant === 'missing-phone' && index === 2) await db.collection('ownerListings').doc(id).update({ ownerPhone: '', phoneExtractionStatus: 'unavailable' });
       }
-      const prompt = variant === 'shared-owner-long-titles' ? f.request.prompt.replace('Găsește 3', 'Găsește doar 3') : variant === 'without-intermediaries' ? f.request.prompt.replace('apartamente', 'apartamente fără intermediari') : f.request.prompt;
+      const prompt = variant === 'shared-owner-long-titles' ? f.request.prompt.replace('Găsește 3', 'Găsește doar 3') : variant === 'without-intermediaries' ? f.request.prompt.replace('apartamente', 'apartamente fără intermediari') : variant === 'without-preview' ? f.request.prompt + ' fără previzualizare și fără să îmi ceri confirmare' : variant === 'without-approval' ? 'Nu îmi mai cere aprobarea. ' + f.request.prompt : f.request.prompt;
       const blockedConsent = f.agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722333302', 'marketing'));
       if (variant === 'revoked-owner') await blockedConsent.set({ status: 'revoked' });
       if (variant === 'other-agent-owner') {
@@ -400,7 +400,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-latest.json`, JSON.stringify({ variant, prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
       expect(result.message.planId, result.message.text).toBeUndefined();
       const jobs = await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get();
-      const expectedSends = ['standard', 'without-intermediaries', 'dedicated-template'].includes(variant) ? 3 : 2;
+      const expectedSends = ['standard', 'without-intermediaries', 'dedicated-template', 'without-preview', 'without-approval'].includes(variant) ? 3 : 2;
       expect(jobs.size, result.message.text).toBe(expectedSends);
       if (variant === 'revoked-at-queue') {
         expect(revokedAtQueue).toBe(true);
@@ -425,7 +425,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await drainOutbound(db as any); await drainOutbound(db as any);
       expect(templateSends()).toHaveLength(expectedSends);
       expect(templateSends().map(call => call[2].to).sort()).toEqual(variant === 'revoked-at-queue' ? ['40722333300', '40722333302'] : ['40722333300', '40722333301', '40722333302'].slice(0, expectedSends));
-      if (variant === 'dedicated-template') {
+      if (['dedicated-template', 'without-preview', 'without-approval'].includes(variant)) {
         expect(templateSends().map(call => call[2].template.name)).toEqual(Array(3).fill('prospectare_proprietari'));
         expect(result.message.text).not.toMatch(/previzualiz|confirmă|aprobați|aprobă|verifică planul/i);
         expect(result.message.cards?.some(card => /preview|previzualiz/i.test(card.title))).toBeFalsy();
@@ -436,6 +436,18 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-verified.json`, JSON.stringify({ variant, prompt: request.prompt, verifiedAt: new Date().toISOString(), sends: expectedSends, replaySends: 0, realProvider: false, newConversations: true, priceBoundaryIncluded: true, rentalsExcluded: true }, null, 2));
     } finally { for (const id of sources) await db.collection('ownerListings').doc(id).delete(); await f.rate.delete(); mocks.actor = null; }
   }, 240000);
+  it('recovers an invalid template connection through the real authorized catalog without sending', async () => {
+    const f = await prospectingFixture(); mocks.actor = f.ctx;
+    try {
+      const { dispatchTool } = await import('../tool-dispatch');
+      const result = await dispatchTool('existing_read', f.ctx, { operation: 'whatsapp_templates', params: { connectionId: 'missing-reference' }, query: {}, body: {} }, f.request.prompt, {});
+      expect(result.data.resolvedConnectionId).toBe(f.conversation.connectionId);
+      expect(result.data.data).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'colaborare' })]));
+      expect(result.actions).toEqual([]);
+      expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get()).empty).toBe(true);
+      expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); mocks.actor = null; }
+  });
   it('continues past a recipient revoked after preparation and replays the rejected execution without new jobs', async () => {
     const f = await prospectingFixture(); mocks.actor = f.ctx;
     try {

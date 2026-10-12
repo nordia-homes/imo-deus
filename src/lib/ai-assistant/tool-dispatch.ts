@@ -31,6 +31,7 @@ import { validateActionDates } from './temporal-policy';
 import { bindCalendarRevisions } from './calendar-revisions';
 import { bindAgencyRevisions } from './agency-revisions';
 import { prepareProspectingBatch } from './prospecting-batch';
+import { readProspectingOperation } from './prospecting-template-read';
 import { queryRecords, decorateRecords } from './record-query';
 import { operationCards } from './operation-cards';
 import { dataCatalog, capabilityStatus } from './catalog';
@@ -189,7 +190,7 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     data = payload.actionKind || !Object.hasOwn(operations, payload.operation) ? inputContract(payload.operation, payload.actionKind) : operationContract(payload.operation) as Record<string, unknown>;
   }
   else if (name === 'existing_read') {
-    requireTool(payload.operation, ctx.role || ''); data = await invokeOperation({ ...ctx, agentBudget: options.budget }, payload, true);
+    requireTool(payload.operation, ctx.role || ''); data = await readProspectingOperation({ ...ctx, agentBudget: options.budget }, payload);
     cards.push(...operationCards(payload.operation, operations[payload.operation].description, data));
     if (payload.params.saleId) refs.push({ resource: 'sales', id: payload.params.saleId }); if (payload.params.conversationId) refs.push({ resource: 'conversations', id: payload.params.conversationId });
     for (const row of data.conversations || []) refs.push({ resource: 'conversations', id: row.id }); for (const row of data.results || []) if (row.conversationId) refs.push({ resource: 'conversations', id: row.conversationId });
