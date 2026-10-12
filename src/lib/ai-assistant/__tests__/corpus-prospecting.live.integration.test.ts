@@ -32,7 +32,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -57,12 +57,42 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271, 272].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271, 272, 273].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 273) {
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id, createdAt: new Date().toISOString() });
+        await session.collection('messages').doc('selection').set(history[0]);
+        const request = { sessionId: id, requestId: `${id}-draft`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        const telemetry = (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data();
+        report = { ...report, final: result.message, telemetry };
+        expect(result.message.actions).toBeUndefined(); expect(result.message.planId).toBeUndefined();
+        expect(result.message.text).toContain('Alin Matei'); expect(result.message.text).toContain('Prospect Alfa');
+        expect(result.message.text).toMatch(/colabor/i); expect(result.message.text).toMatch(/nu (?:a fost|am) trimis|netrimis/i);
+        expect(result.message.text.length).toBeGreaterThan(180);
+        expect(result.message.text).not.toMatch(/\d\s*%|comision(?:ul)? (?:este|de)|am trimis|mesaj(?:ul)? (?:a fost )?livrat/i);
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        expect((await session.collection('messages').doc(request.requestId + '-assistant').get()).data()?.text).toBe(result.message.text);
+        for (const [key, row] of Object.entries(fixture)) expect((await favorites.doc(key).get()).data()).toEqual(row);
+        for (const collection of ['tasks', 'aiOutreachCalls', 'conversations', 'outboundMessages']) expect((await agency.collection(collection).get()).empty).toBe(true);
+        expect(settingsContext.invokes).toBe(0);
+        await favorites.doc(source.id).update({ ownerName: 'Ioana Popescu', title: 'Garsonieră Cișmigiu', ownerPhone: '' });
+        await source.update({ ownerPhone: '' });
+        const refreshed = await chatTurn(ctx, { ...request, requestId: `${id}-refreshed` });
+        report = { ...report, refreshed: refreshed.message };
+        expect(refreshed.message.actions).toBeUndefined();
+        expect(refreshed.message.text).toContain('Ioana Popescu'); expect(refreshed.message.text).toContain('Cișmigiu');
+        expect(refreshed.message.text).not.toMatch(/Alin Matei|Prospect Alfa|0722123456/);
+        expect(refreshed.message.text).toMatch(/nu (?:a fost|am) trimis|netrimis/i);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, executionVerified: true, verification: 'Original request, real model and persisted chatTurn: full collaboration draft with freshly read owner and listing, no invented numeric commission, persisted response/replay, prospect records unchanged, no external operation or AI call. Repeated request uses changed CRM name/title despite old conversation, succeeds without a phone. Text preparation only; no WhatsApp eligibility or production certification.' };
+        return;
+      }
       if (number === 272) {
         const session = agency.collection('assistantSessions').doc(id);
         await session.set({ ownerId: id, createdAt: new Date().toISOString() });

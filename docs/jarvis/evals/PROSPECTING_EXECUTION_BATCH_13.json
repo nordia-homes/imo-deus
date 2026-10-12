@@ -1,0 +1,245 @@
+{
+  "scope": "0273: original collaboration message request through persisted chatTurn with actual model and local Firestore.",
+  "fixes": [
+    "Require a selected prospect and fresh agency-scoped read; bind resource and ID on server.",
+    "Expose read and goal coverage only; no send or CRM mutation capability in this flow.",
+    "Persist the complete generated draft in conversation and label it as unsent in application code.",
+    "Use current name and title despite older conversation; missing phone does not block preparation."
+  ],
+  "validation": {
+    "typescript": "passed",
+    "actualModelScenario": "passed with refreshed-identity and missing-phone variant",
+    "productionBuild": "passed, 227 pages",
+    "unitTests": 107,
+    "lint": "passed"
+  },
+  "limitations": [
+    "113 original scenarios have local evidence; zero complete production certifications.",
+    "Draft preparation only: no WhatsApp eligibility, template availability, consent or delivery certification.",
+    "Original wording and listed variants verified; all paraphrases and voice/browser interactions not certified.",
+    "One live rerun omitted the unsent disclaimer; application now adds it independently and final rerun passed."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0273",
+      "prompt": "Pregătește un mesaj de colaborare pentru proprietar.",
+      "versions": {
+        "prompt": "jarvis-90",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "119",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T08:37:44.531Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "final": {
+        "id": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3-draft-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Ciornă de colaborare — nu a fost trimisă.\n\nBună ziua, Alin Matei! Vă contactez în legătură cu anunțul „Prospect Alfa”. Aș dori să discutăm despre o posibilă colaborare privind proprietatea. Dacă sunteți deschis la o discuție, vă rog să-mi spuneți când v-ar fi convenabil să vorbim. Mulțumesc!",
+        "cards": [
+          {
+            "type": "data",
+            "title": "ownerListingFavorites",
+            "source": "ownerListingFavorites",
+            "rows": [
+              {
+                "isFavoriteActive": true,
+                "reservedByAgentId": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3",
+                "reservedByAgentName": "Agent local",
+                "reservedAt": "2026-10-12T08:37:44.53Z",
+                "contactOutcome": null,
+                "collaborationStatus": null,
+                "takenByAgentId": null,
+                "notes": "Istoric existent.",
+                "updatedAt": "2026-10-01T07:00:00Z",
+                "ownerName": "Alin Matei",
+                "id": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3-alfa",
+                "title": "Prospect Alfa",
+                "ownerPhone": "0722123456",
+                "phoneExtractionStatus": "available"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T08:37:54.845Z"
+      },
+      "telemetry": {
+        "requestId": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3-draft",
+        "sessionId": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3",
+        "userId": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3",
+        "agencyId": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2344,
+              "outputTokens": 60,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2083,
+              "estimated": false
+            },
+            "costUsd": 0.00031647500000000004,
+            "latencyMs": 1582,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2785,
+              "outputTokens": 94,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2782,
+              "estimated": false
+            },
+            "costUsd": 0.00039505000000000003,
+            "latencyMs": 2453,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2904,
+              "outputTokens": 104,
+              "cachedTokens": 2782,
+              "cacheWriteTokens": 119,
+              "estimated": false
+            },
+            "costUsd": 9.499500000000001E-05,
+            "latencyMs": 2111,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 472,
+            "version": "119",
+            "argumentsHash": "0edc80b60f0ee449569f252ef1478c1f7c6ca0d0be2b74ed3789e4dc6471242e"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 28,
+            "version": "119",
+            "argumentsHash": "6fbeb99c80ce6b07c3995c2078b49b32d00879ea20f1c7434aa208f7a0a718e5"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 7064,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.22,
+          "inputTokens": 440,
+          "outputTokens": 51,
+          "costUsd": 1.848E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 333,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.000825,
+        "tokens": 8782,
+        "versions": {
+          "prompt": "jarvis-90",
+          "routing": "luna-first-2",
+          "policy": "request-crm-13",
+          "tools": "119",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T08:37:54.879Z"
+      },
+      "refreshed": {
+        "id": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3-refreshed-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Ciornă de colaborare — nu a fost trimisă.\n\nBună ziua, Ioana Popescu! Vă contactez în legătură cu anunțul „Garsonieră Cișmigiu”. Aș dori să discutăm despre o posibilă colaborare. Dacă sunteți deschisă la o discuție, vă rog să-mi spuneți când v-ar fi convenabil să vorbim. Mulțumesc!\n\nCiornă — mesajul nu a fost trimis.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "ownerListingFavorites",
+            "source": "ownerListingFavorites",
+            "rows": [
+              {
+                "isFavoriteActive": true,
+                "reservedByAgentId": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3",
+                "reservedByAgentName": "Agent local",
+                "reservedAt": "2026-10-12T08:37:44.53Z",
+                "contactOutcome": null,
+                "collaborationStatus": null,
+                "takenByAgentId": null,
+                "notes": "Istoric existent.",
+                "updatedAt": "2026-10-01T07:00:00Z",
+                "ownerName": "Ioana Popescu",
+                "ownerPhone": null,
+                "title": "Garsonieră Cișmigiu",
+                "id": "ef3cbc75-5b1b-4b36-ab8c-3f756b957ee3-alfa",
+                "phoneExtractionStatus": "available"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T08:38:02.818Z"
+      },
+      "verification": "Original request, real model and persisted chatTurn: full collaboration draft with freshly read owner and listing, no invented numeric commission, persisted response/replay, prospect records unchanged, no external operation or AI call. Repeated request uses changed CRM name/title despite old conversation, succeeds without a phone. Text preparation only; no WhatsApp eligibility or production certification."
+    }
+  ]
+}

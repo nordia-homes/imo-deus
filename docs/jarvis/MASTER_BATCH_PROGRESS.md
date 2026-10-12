@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Ciornă de colaborare pentru proprietar — 0273
+
+Cererea originală „Pregătește un mesaj de colaborare pentru proprietar.” citește prospectul selectat înainte de redactare. Serverul fixează resursa și ID-ul citirii; acest flux expune numai citirea și verificarea acoperirii cererii. Ciorna completă rămâne în conversația salvată, iar aplicația o etichetează explicit ca netrimisă. Nu se creează task, apel AI sau conversație WhatsApp și nu se înregistrează acordul proprietarului.
+
+Proba cu model real prin `chatTurn` a verificat numele și anunțul, textul integral, lipsa comisionului inventat, salvarea și reluarea răspunsului fără efecte externe. A doua cerere a preluat numele și titlul actualizate în CRM, în ciuda istoricului vechi, și a reușit fără telefon. O rulare intermediară a omis mențiunea „netrimis”; eticheta este acum adăugată de aplicație, iar proba finală a trecut. Au trecut 107 teste unitare, TypeScript, lint, paritatea și buildul final cu 227 de pagini. Dovadă: [PROSPECTING_EXECUTION_BATCH_13.json](evals/PROSPECTING_EXECUTION_BATCH_13.json).
+
+Versiuni **jarvis-90 / tools 119**. Total **113/1000** cu dovezi locale, **0 certificări complete în producție**. Scenariul cere redactare; eligibilitatea WhatsApp, șabloanele Meta și livrarea nu sunt certificate de această probă. Toate parafrazele și interfețele browser/voce nu sunt verificate. Modificările nu sunt publicate în producție.
+
 ## Task de apel uman în loc de apel AI — 0272
 
 Cererea originală cere acum ziua lipsă și păstrează prospectul selectat în conversația salvată. Răspunsul „Mâine la ora 10:30.” continuă cererea autorizată și creează un singur task pentru același prospect. Plannerul acestui flux nu are instrumente de lansare a apelului AI și respinge acțiunile pentru alt prospect.

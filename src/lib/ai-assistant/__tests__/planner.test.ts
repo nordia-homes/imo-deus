@@ -46,6 +46,19 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('binds collaboration drafts to a fresh selected prospect read and exposes no mutations', async () => {
+    const prompt = 'Pregătește un mesaj de colaborare pentru proprietar.';
+    const history = [{ id: 'selection', role: 'assistant' as const, text: 'Selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'Prospect', source: 'ownerListingFavorites', rows: [{ id: 'selected' }] }] }];
+    expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('clarification');
+    expect((await planTurn(ctx, prompt, history, { provider: scripted(final) })).metrics.status).toBe('partial');
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'selected', ownerName: 'Alin Matei' }], complete: true, nextCursor: null });
+    const read = call('read', { resource: 'contacts', id: 'invented', search: 'unrelated' });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'draft', sourceQuote: prompt, description: 'Ciornă', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, history, { provider: model });
+    expect(result.metrics.status).toBe('success'); expect(result.actions).toEqual([]); expect(result.text).toContain('Ciornă de colaborare — nu a fost trimisă.');
+    expect(readResource).toHaveBeenCalledWith(ctx, { resource: 'ownerListingFavorites', id: 'selected', limit: 30 });
+    expect(model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).toEqual(['read']);
+  });
   it('limits human callback planning to one task for the persisted prospect', async () => {
     const request = 'Creează task de apel uman în loc de apel AI.';
     const history = [{ id: 'question', role: 'assistant' as const, text: 'Pentru ce zi?', createdAt: new Date().toISOString(), prospectContinuation: { listingId: 'selected', request } }];

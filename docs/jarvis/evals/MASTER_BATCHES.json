@@ -2434,7 +2434,11 @@
           "sourceNumber": 273,
           "request": "Pregătește un mesaj de colaborare pentru proprietar.",
           "requestSha256": "ac82cb9f241df8c2c6596179f386e8d1fc1a1d7789214fe2ea564cf585ca5eb3",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_13.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0274",
