@@ -4,7 +4,7 @@ vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: provider, Vap
 import { launchAiOutreachCall } from '@/lib/ai-outreach/server';
 import { VapiDispatchError } from '@/lib/ai-outreach/vapi';
 function fixture(status = 'scheduled') {
-  const rows = new Map<string, any>([['agencies/a/aiOutreachCalls/c', { status, ownerListingId: 'l', ownerPhone: '+40722334455' }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
+  const rows = new Map<string, any>([['agencies/a/aiOutreach/settings', { enabled: true }], ['agencies/a/aiOutreachCalls/c', { status, ownerListingId: 'l', ownerPhone: '+40722334455' }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
   const ref = (path: string): any => ({ path, doc: (id: string) => ref(path + '/' + id), collection: (id: string) => ref(path + '/' + id), get: async () => ({ exists: rows.has(path), data: () => rows.get(path), docs: [...rows].filter(([key]) => key.startsWith(path + '/') && !key.slice(path.length + 1).includes('/')).map(([key, data]) => ({ id: key.split('/').at(-1), data: () => data })) }), set: async (data: any) => rows.set(path, { ...rows.get(path), ...data }) });
   let serial: Promise<any> = Promise.resolve();
   const db = { collection: ref, runTransaction: (work: any) => {
@@ -18,6 +18,29 @@ function fixture(status = 'scheduled') {
 }
 afterEach(() => vi.clearAllMocks());
 describe('outreach dispatch claims', () => {
+  it.each(['queued', 'scheduled'])('cancels %s when settings were disabled after the initial check', async status => {
+    const { input, rows } = fixture(status);
+    input.settings = { enabled: true };
+    rows.set('agencies/a/aiOutreach/settings', { enabled: false });
+    const result = await launchAiOutreachCall(input);
+    expect(result.call).toMatchObject({ status: 'canceled', outcome: 'uncalled', providerErrorCode: 'outreach_disabled' });
+    expect(rows.get('agencies/a/aiOutreachCalls/c').providerDispatchStartedAt).toBeUndefined();
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('treats missing configuration as disabled and preserves a newer owner status', async () => {
+    const { input, rows } = fixture(); rows.delete('agencies/a/aiOutreach/settings');
+    rows.set('agencies/a/aiOutreachOwnerListingStatuses/l', { latestAiCallId: 'newer', aiOutreachStatus: 'completed' });
+    expect((await launchAiOutreachCall(input)).call.status).toBe('canceled');
+    expect(rows.get('agencies/a/aiOutreachOwnerListingStatuses/l').aiOutreachStatus).toBe('completed');
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('passes the configuration read during the claim to the provider', async () => {
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreach/settings', { enabled: true, desiredCommissionValue: '4' });
+    provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
+    await launchAiOutreachCall(input);
+    expect(provider.mock.calls[0][0].settings).toMatchObject({ enabled: true, desiredCommissionValue: '4', timezone: 'Europe/Bucharest' });
+  });
   it('dispatches only once under concurrent launches and does not dispatch a canceled call', async () => {
     provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
     const { input } = fixture();

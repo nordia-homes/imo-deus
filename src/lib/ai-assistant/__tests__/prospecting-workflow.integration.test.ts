@@ -52,9 +52,32 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     const ctx = { agencyId, uid, role: 'agent', adminDb: db } as any;
     await db.collection('agencies').doc(agencyId).set({ city: 'Bucuresti', county: 'Bucuresti' });
     await db.collection('users').doc(uid).set({ agencyId, role: 'agent', name: 'Fixture' });
+    await db.collection('agencies').doc(agencyId).collection('aiOutreach').doc('settings').set({ enabled: true });
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('blocks disabled HTTP requests and cancels stale queued and scheduled launches before the provider', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    mocks.vapi.mockReset();
+    await agency.collection('aiOutreach').doc('settings').set({ enabled: false });
+    await agency.collection('ownerListingFavorites').doc('disabled-owner').set({ isFavoriteActive: true, ownerPhone: '0722123456' });
+    for (const scheduledAt of [null, '2030-10-12T07:00:00Z']) {
+      const response = await createOutreachCall(new NextRequest('http://localhost/api/ai-outreach/calls', { method: 'POST', body: JSON.stringify({ ownerListing: { id: 'disabled-owner', title: 'Disabled' }, scheduledAt }) }));
+      expect(response.status).toBe(403);
+    }
+    expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true);
+    for (const status of ['queued', 'scheduled']) {
+      const callRef = agency.collection('aiOutreachCalls').doc(status);
+      const call: any = { id: status, status, agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: status, ownerPhone: '0722123456' };
+      await callRef.set(call);
+      const result = await launchAiOutreachCall({ adminDb: db as any, callRef: callRef as any, call, settings: withDefaultAiOutreachSettings(ctx.agencyId, { enabled: true }) });
+      expect(result.call).toMatchObject({ status: 'canceled', providerErrorCode: 'outreach_disabled' });
+      expect(operationResult('outreach_start', result)).toMatchObject({ executionState: 'cancelled' });
+      expect((await callRef.get()).data()?.providerDispatchStartedAt).toBeUndefined();
+      expect((await agency.collection('aiOutreachOwnerListingStatuses').doc(status).get()).data()?.aiOutreachStatus).toBe('canceled');
+    }
+    expect(mocks.vapi).not.toHaveBeenCalled();
+  });
   it('sends only one provider call for concurrent HTTP requests on two listings with the same phone', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     mocks.vapi.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'simulated', raw: {} });

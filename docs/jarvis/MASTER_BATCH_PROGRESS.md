@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Configurația outreach și oprirea lansării după dezactivare — 0268; 0267 parțial
+
+Cererea originală „Verifică setările de outreach.” citește configurația actuală a agenției printr-un instrument dedicat. Jarvis prezintă activarea, comisioanele, intervalul în București, limitele și dreptul de editare. Citirea nu expune câmpuri arbitrare sau credențiale salvate accidental în document. Lipsa configurației înseamnă valorile implicite cu serviciul dezactivat, fără crearea unui document. Activarea nu certifică eligibilitatea proprietarului sau configurarea furnizorului.
+
+Lansarea apelurilor recitește acum setările în tranzacția de preluare a apelului. O configurație dezactivată sau absentă anulează apelul queued/scheduled înainte de furnizor, chiar dacă intrarea executorului avea o copie veche cu enabled=true. Rezultatul este anulare, nu apel efectuat. Starea proprietarului este sincronizată fără suprascrierea unui apel mai nou. Furnizorul primește configurația citită în tranzacția reușită.
+
+Au trecut proba 0268 cu model real pe două variante Firestore (configurație absentă și salvată), **86 teste unitare**, **22 teste Firestore**, TypeScript, lint, paritatea celor 180 de operații, inventarul corpusului și buildul final cu 227 de pagini. Dovezi: [PROSPECTING_EXECUTION_BATCH_06.json](evals/PROSPECTING_EXECUTION_BATCH_06.json) și [OUTREACH_DISABLED_PARTIAL_0267.json](evals/OUTREACH_DISABLED_PARTIAL_0267.json).
+
+Versiuni **jarvis-83 / tools 111**. Total **106/1000** cu dovezi locale, **0 certificări complete în producție**. Scenariul 0267 rămâne parțial: proba acoperă codul aplicației, fără comanda originală prin model și fără furnizor real. Dezactivarea după preluarea tranzacțională nu retrage un apel deja în curs de expediere. Modificările nu sunt publicate în producție.
+
 ## Consultarea apelurilor AI — 0263, 0264, 0265
 
 Jarvis citește acum lista apelurilor AI, apelurile eșuate și rezultatul ultimului apel printr-un instrument dedicat. Pentru liste, aplicația fixează filtrul cerut și cursorul și nu permite încheierea înaintea ultimei pagini, inclusiv când o pagină intermediară nu conține potriviri. Schema compactă elimină epuizarea bugetului de planificare observată în proba inițială cu mai multe pagini.

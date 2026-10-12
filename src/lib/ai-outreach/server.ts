@@ -260,6 +260,7 @@ export async function updateAiOutreachOwnerListingStatus(
 
 export async function launchAiOutreachCall(input: LaunchCallInput) {
   const { adminDb, callRef, call, settings, agencyName } = input;
+  let dispatchSettings = settings;
 
   const claimed = await adminDb.runTransaction(async tx => {
     const current = await tx.get(callRef);
@@ -270,6 +271,18 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     if (!current.exists || !['queued', 'scheduled'].includes(current.data()?.status) || current.data()?.providerDispatchStartedAt || current.data()?.vapiCallId) return false;
     if (owner.data()?.aiDoNotCall === true) throw new Error('Proprietarul are restricție Do Not Call.');
     if (!actor || actor.data()?.agencyId !== call.agencyId || !['agent', 'admin'].includes(actor.data()?.role)) throw new Error('Agentul nu mai are acces la agenție.');
+    // Settings participate in the dispatch claim: a concurrent disable forces
+    // the transaction to retry instead of launching with an earlier snapshot.
+    const settingsRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreach').doc('settings');
+    const currentSettings = await tx.get(settingsRef);
+    dispatchSettings = withDefaultAiOutreachSettings(call.agencyId, currentSettings.data());
+    if (dispatchSettings.enabled !== true) {
+      const updatedAt = new Date().toISOString();
+      const message = 'Apelurile AI sunt dezactivate pentru această agenție. Apelul nu a fost lansat.';
+      tx.update(callRef, { status: 'canceled', outcome: 'uncalled', providerErrorCode: 'outreach_disabled', providerErrorMessage: message, updatedAt });
+      if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: 'canceled', aiOutreachOutcome: 'uncalled', aiOutreachUpdatedAt: updatedAt, updatedAt }, { merge: true });
+      return false;
+    }
     const phone = normalizeAiOutreachPhone(current.data()?.ownerPhone);
     if (!/^0[237]\d{8}$/.test(phone)) throw new AiOutreachGuardError('Numărul proprietarului nu este valid pentru apel.', 400);
     if (phone !== normalizeAiOutreachPhone(call.ownerPhone)) throw new AiOutreachGuardError('Telefonul apelului s-a schimbat; recitește programarea.', 409);
@@ -324,7 +337,7 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
   });
 
   try {
-    const vapiResult = await createVapiOutboundCall({ call, settings, agencyName });
+    const vapiResult = await createVapiOutboundCall({ call, settings: dispatchSettings, agencyName });
 
     if (vapiResult.mode === 'not_configured') {
       const failedUpdate = {

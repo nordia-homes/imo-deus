@@ -2371,7 +2371,11 @@
           "sourceNumber": 268,
           "request": "Verifică setările de outreach.",
           "requestSha256": "59419dee072f43f04c812c82cdf07207e6f4b3caa10d3c93e7eec1015ee5c2b0",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0269",

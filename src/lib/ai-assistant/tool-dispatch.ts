@@ -121,6 +121,10 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     cards.push({ type: 'data', title: 'Sursă oficială consultată', source: 'legal', rows: [{ sourceUrl: data.sourceUrl, authority: data.authority, retrievedAt: data.retrievedAt, contentHash: data.contentHash, temporalValidityVerified: false }], note: data.note });
   } else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
+  else if (name === 'outreach_configuration') {
+    const { readOutreachConfiguration } = await import('./outreach-configuration'); data = await readOutreachConfiguration(ctx);
+    cards.push({ type: 'data', title: 'Setările apelurilor AI', source: 'aiOutreachSettings', ...data } as AssistantCard);
+  }
   else if (name === 'outreach_history') {
     const { readOutreachHistory } = await import('./outreach-history'); data = await readOutreachHistory(ctx, payload);
     cards.push({ type: 'data', title: 'Apeluri AI de prospectare', source: 'aiOutreachCalls', ...data } as AssistantCard);

@@ -1,5 +1,7 @@
 vi.mock('../outreach-history', async importOriginal => ({ ...await importOriginal<typeof import('../outreach-history')>(), readOutreachHistory: vi.fn() }));
 import { readOutreachHistory } from '../outreach-history';
+vi.mock('../outreach-configuration', () => ({ readOutreachConfiguration: vi.fn() }));
+import { readOutreachConfiguration } from '../outreach-configuration';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readField: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
@@ -42,6 +44,17 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it.each(['Verifică setările de outreach.', 'Verifică setările de outreach pentru apelurile AI.', 'Verifică setările apelurilor AI.'])('requires current configuration for %s', async prompt => {
+    vi.mocked(readOutreachConfiguration).mockResolvedValue({ rows: [{ enabled: false }], complete: true } as any);
+    const read = call('outreach_configuration', {});
+    const model = scripted(final, read, call('goal_coverage', { requirements: [{ id: 'settings', sourceQuote: prompt, description: 'Setări actuale', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    expect((await planTurn(ctx, prompt, [], { provider: model })).metrics.status).toBe('success');
+    expect(readOutreachConfiguration).toHaveBeenCalledWith(ctx);
+    expect(model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).not.toContain('goal_coverage');
+  });
+  it('does not certify outreach settings without reading them', async () => {
+    expect((await planTurn(ctx, 'Verifică setările de outreach.', [], { provider: scripted(final) })).metrics.status).toBe('partial');
+  });
   it('keeps AI call reading compact and binds the requested filter and pagination', async () => {
     const prompt = 'Care apeluri AI au eșuat?';
     vi.mocked(readOutreachHistory).mockResolvedValueOnce({ rows: [], complete: false, nextCursor: 'next' } as any).mockResolvedValueOnce({ rows: [], complete: true } as any);

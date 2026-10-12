@@ -1,0 +1,31 @@
+{
+  "scenarioId": "master-0267",
+  "prompt": "Nu porni apelul dacă serviciul este dezactivat.",
+  "status": "partial",
+  "executionVerified": false,
+  "scope": "Application dispatch boundary verified with unit tests and local Firestore. No real provider calls, natural-language execution of 0267 or production certification.",
+  "changes": [
+    "Read current agency configuration inside the transaction that claims queued or scheduled dispatch. A concurrent settings write conflicts with this transaction and forces reevaluation.",
+    "Disabled or absent configuration cancels the pending call with outreach_disabled, without providerDispatchStartedAt or a provider invocation.",
+    "Synchronize the owner status only when it does not point to a newer call.",
+    "Pass the current configuration from the successful claim to the provider instead of the caller's stale snapshot."
+  ],
+  "verified": [
+    "HTTP requests for immediate and scheduled calls reject disabled service before creating a call document.",
+    "Both queued and scheduled launches are canceled despite an enabled stale input snapshot.",
+    "Missing settings default to disabled; newer owner status is preserved.",
+    "Application operation result remains cancelled, not success; no provider invocation or dispatch timestamp is recorded.",
+    "Enabled dispatch uses the current commission settings and Europe/Bucharest timezone."
+  ],
+  "tests": {
+    "unit": "src/lib/ai-assistant/__tests__/outreach-dispatch.test.ts",
+    "firestore": "src/lib/ai-assistant/__tests__/prospecting-workflow.integration.test.ts",
+    "unitSuitePassed": 86,
+    "firestoreSuitePassed": 22
+  },
+  "limitations": [
+    "The dispatch claim is the decision boundary. Disabling settings after a claim has committed does not retract an outbound request already being sent or accepted by the provider.",
+    "The concurrent-disable transaction conflict itself has not been exercised in the emulator; tests exercise stale snapshots before the claim.",
+    "Full 0266 eligibility, natural-language execution of 0267, provider integration and production behavior remain uncertified."
+  ]
+}
