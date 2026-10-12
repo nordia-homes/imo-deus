@@ -129,6 +129,12 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     const { readOutreachPreflight } = await import('./outreach-preflight'); data = await readOutreachPreflight(ctx, payload);
     cards.push({ type: 'data', title: 'Verificare pentru apel AI', source: 'aiOutreachPreflight', rows: data.rows, complete: data.complete });
   }
+  else if (name === 'whatsapp_recipient_check') {
+    const { checkWhatsAppRecipient } = await import('./whatsapp-recipient-check');
+    data = await checkWhatsAppRecipient(ctx, payload.conversationId);
+    cards.push({ type: 'data', title: 'Eligibilitate WhatsApp', source: 'conversations', ...data } as AssistantCard);
+    refs.push({ resource: 'conversations', id: payload.conversationId });
+  }
   else if (name === 'outreach_configuration') {
     const { readOutreachConfiguration } = await import('./outreach-configuration'); data = await readOutreachConfiguration(ctx);
     cards.push({ type: 'data', title: 'Setările apelurilor AI', source: 'aiOutreachSettings', ...data } as AssistantCard);

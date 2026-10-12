@@ -1,0 +1,258 @@
+{
+  "scope": "0274: original eligibility assertion through actual model and persisted chatTurn, with a selected WhatsApp conversation.",
+  "fixes": [
+    "Native read-only recipient check with current global/service/marketing consent and response window.",
+    "Server binds the selected conversation, requires the check before goal coverage and excludes sending/consent writes.",
+    "No global refusal is not eligibility: missing consent stays unknown and concrete message preview remains required.",
+    "Preserve selected conversation when current page context is empty."
+  ],
+  "validation": {
+    "actualModelScenario": "passed: global opt-out and unknown consent variants",
+    "typescript": "passed",
+    "lint": "passed",
+    "unitTests": 112,
+    "relatedRuntimeEvidence": [
+      "WHATSAPP_ELIGIBILITY_PARTIAL_0274.json",
+      "WHATSAPP_MARKETING_ELIGIBILITY_PARTIAL_0274.json"
+    ],
+    "productionBuild": "passed, 227 pages"
+  },
+  "limitations": [
+    "114 original scenarios with local actual-model evidence; zero complete production certifications.",
+    "Original assertion checked in local Firestore; no real Meta provider or customer interaction.",
+    "Read check does not certify message/template eligibility, price or provider readiness. Existing queue/worker enforces actual sending conditions.",
+    "No guarantee of atomicity between local checks and provider invocation; previous dispatch limitations remain.",
+    "Initial actual-model fixture exposed empty page context hiding selection; fixed and final persisted chatTurn run passed."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0274",
+      "prompt": "Nu trimite WhatsApp dacă destinatarul nu este eligibil.",
+      "versions": {
+        "prompt": "jarvis-91",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "120",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T12:16:11.507Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "final": {
+        "id": "c57fdce5-fee6-4be8-8c63-fc2b4b3200ac-blocked-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Destinatarul a cerut oprirea mesajelor WhatsApp, iar trimiterea este blocată. Nu am trimis niciun mesaj.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Eligibilitate WhatsApp",
+            "source": "conversations",
+            "rows": [
+              {
+                "id": "selected-whatsapp",
+                "name": "Alin Matei",
+                "channel": "whatsapp",
+                "consent": {
+                  "all": "revoked",
+                  "service": "unknown",
+                  "marketing": "unknown"
+                },
+                "withinWindow": true,
+                "status": "blocked"
+              }
+            ],
+            "complete": true,
+            "blocked": true,
+            "sendAuthorized": false,
+            "reason": "Destinatarul a cerut oprirea mesajelor WhatsApp. Nu trimite.",
+            "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected-whatsapp"
+          }
+        ],
+        "createdAt": "2026-10-12T12:16:21.911Z"
+      },
+      "telemetry": {
+        "requestId": "c57fdce5-fee6-4be8-8c63-fc2b4b3200ac-blocked",
+        "sessionId": "c57fdce5-fee6-4be8-8c63-fc2b4b3200ac",
+        "userId": "c57fdce5-fee6-4be8-8c63-fc2b4b3200ac",
+        "agencyId": "c57fdce5-fee6-4be8-8c63-fc2b4b3200ac",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2013,
+              "outputTokens": 24,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 1895,
+              "estimated": false
+            },
+            "costUsd": 0.00026067500000000003,
+            "latencyMs": 2184,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2384,
+              "outputTokens": 98,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2381,
+              "estimated": false
+            },
+            "costUsd": 0.000346925,
+            "latencyMs": 2238,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2507,
+              "outputTokens": 47,
+              "cachedTokens": 2381,
+              "cacheWriteTokens": 123,
+              "estimated": false
+            },
+            "costUsd": 6.2985E-05,
+            "latencyMs": 2390,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "whatsapp_recipient_check",
+            "status": "success",
+            "latencyMs": 458,
+            "version": "120",
+            "argumentsHash": "148a909f9824b5c034212d77e23e05dccb653546c22fb7ffb63b7a0ce0f876a0"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 22,
+            "version": "120",
+            "argumentsHash": "352569b6d28b41cc1f1d378a38604d0c6407fe566783c76f646de007143b3e0d"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 7713,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.43,
+          "inputTokens": 446,
+          "outputTokens": 51,
+          "costUsd": 1.8732000000000003E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 349,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.0006893170000000001,
+        "tokens": 7570,
+        "versions": {
+          "prompt": "jarvis-91",
+          "routing": "luna-first-2",
+          "policy": "request-crm-13",
+          "tools": "120",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T12:16:21.946Z"
+      },
+      "unknown": {
+        "id": "c57fdce5-fee6-4be8-8c63-fc2b4b3200ac-unknown-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Nu am trimis niciun mesaj. Nu există refuz global înregistrat, dar acordurile pentru toate categoriile sunt necunoscute, iar asta nu înseamnă că există acord. Destinatarul nu poate fi declarat eligibil fără previzualizarea mesajului concret și verificarea condițiilor aferente.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Eligibilitate WhatsApp",
+            "source": "conversations",
+            "rows": [
+              {
+                "id": "selected-whatsapp",
+                "name": "Alin Matei",
+                "channel": "whatsapp",
+                "consent": {
+                  "all": "unknown",
+                  "service": "unknown",
+                  "marketing": "unknown"
+                },
+                "withinWindow": true,
+                "status": "needs_message_preview"
+              }
+            ],
+            "complete": true,
+            "blocked": false,
+            "sendAuthorized": false,
+            "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+            "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected-whatsapp"
+          }
+        ],
+        "createdAt": "2026-10-12T12:16:30.749Z"
+      },
+      "verification": "Original assertion through actual model and persisted chatTurn, selected WhatsApp conversation: global opt-out blocked, missing consent remains unknown and requires message preview, no mutation/consent/job/provider call, idempotent replay. Combined with separate real queue/worker emulator tests, not production certification."
+    }
+  ]
+}

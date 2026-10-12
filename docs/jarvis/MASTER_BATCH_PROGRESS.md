@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Verificarea destinatarului prin Jarvis — 0274
+
+Cererea originală „Nu trimite WhatsApp dacă destinatarul nu este eligibil.” verifică acum conversația selectată printr-un instrument nativ de citire. Serverul fixează destinatarul din selecție, cere citirea înainte de încheiere și nu expune trimiterea sau modificarea acordurilor în acest flux. Refuzul global înregistrat este raportat ca blocare; lipsa refuzului sau existența unui număr de telefon nu devin acord ori eligibilitate. Categoriile service/marketing sunt prezentate separat și mesajul concret rămâne supus previzualizării existente.
+
+Proba cu model real prin `chatTurn` a verificat cererea originală, refuzul global, răspunsul persistent și reluarea lui, apoi acordurile necunoscute după eliminarea refuzului. Nu sunt create mesaje outbound, acorduri sau acțiuni de trimitere. Prima rulare a găsit selecția ascunsă de contextul gol al paginii; corecția păstrează conversația salvată. Au trecut 112 teste unitare, TypeScript, lint, paritatea și buildul final cu 227 de pagini. Dovadă: [PROSPECTING_EXECUTION_BATCH_14.json](evals/PROSPECTING_EXECUTION_BATCH_14.json). Protecțiile cozii și workerului au dovezi separate în cele două rapoarte 0274 de mai jos.
+
+Versiuni **jarvis-91 / tools 120**. Total **114/1000** cu dovezi locale prin model, **0 certificări complete în producție**. Această verificare locală nu certifică tariful, aprobarea șablonului, disponibilitatea Meta sau livrarea; nu înlocuiește verificările mesajului concret înainte de expediere. Modificările nu sunt publicate în producție.
+
 ## Șabloane marketing și previzualizare actuală — progres parțial 0274
 
 Previzualizarea mesajului recitește acum destinatarul și acordul după obținerea șablonului, înainte să returneze rezultatul. Astfel, schimbarea destinatarului sau retragerea globală a acordului în timpul citirii șablonului nu produce o previzualizare validată pe date vechi.

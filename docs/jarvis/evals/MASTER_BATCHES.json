@@ -2445,7 +2445,11 @@
           "sourceNumber": 274,
           "request": "Nu trimite WhatsApp dacă destinatarul nu este eligibil.",
           "requestSha256": "d0a57427ccd1f78834eadb9e380c5f4f38015249cfb43883e9f88822bbccb939",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_14.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0275",
