@@ -1,3 +1,4 @@
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 export const OWNER_RESERVATION_TTL_MS = 4 * 60 * 60 * 1000;
 
 export function prospectOwner(row: Record<string, any>, at: number): string | null {
@@ -16,12 +17,12 @@ export function prospectPatch(row: Record<string, any>, patch: Record<string, an
     fields.notes = [row.notes || '', appendNote].filter(Boolean).join('\n');
     if (fields.notes.length > 10000) throw new Error('Notele prospectului depășesc limita; istoricul nu a fost trunchiat.');
   }
-  const resetOutcome = { contactOutcome: null, contactOutcomeAt: null, contactOutcomeByAgentId: null, contactOutcomeByAgentName: null };
+  const resetOutcome = { contactOutcome: null, contactOutcomeAt: null, contactOutcomePhone: null, contactOutcomeByAgentId: null, contactOutcomeByAgentName: null };
   const resetTaken = { takenByAgentId: null, takenByAgentName: null, takenAt: null };
   const ownershipChanged = prospectOwner(row, Date.parse(now)) !== uid;
   return {
     ...fields, updatedAt: now, updatedBy: uid,
-    ...(fields.contactOutcome !== undefined ? { ...resetTaken, contactOutcomeAt: fields.contactOutcome ? now : null, contactOutcomeByAgentId: fields.contactOutcome ? uid : null, contactOutcomeByAgentName: fields.contactOutcome ? name : null } : {}),
+    ...(fields.contactOutcome !== undefined ? { ...resetTaken, contactOutcomePhone: fields.contactOutcome ? normalizeRomanianPhone(row.ownerPhone) || null : null, contactOutcomeAt: fields.contactOutcome ? now : null, contactOutcomeByAgentId: fields.contactOutcome ? uid : null, contactOutcomeByAgentName: fields.contactOutcome ? name : null } : {}),
     ...(state ? { isFavoriteActive: true, ...resetOutcome,
       reservedByAgentId: ownershipChanged || state === 'reserved' ? uid : row.reservedByAgentId || uid,
       reservedByAgentName: ownershipChanged || state === 'reserved' ? name : row.reservedByAgentName || name,

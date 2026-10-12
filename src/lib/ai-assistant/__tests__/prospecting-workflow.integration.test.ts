@@ -92,6 +92,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect((await launchAiOutreachCall({ adminDb: db as any, callRef: otherRef as any, call: otherCall, settings })).call.status).toBe('calling');
     expect(mocks.vapi).toHaveBeenCalledTimes(1);
   });
+  it('records the contacted phone from the canonical source and blocks AI contact through another listing after phone edits', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), id = randomUUID(); listings.push(id);
+    await db.collection('ownerListings').doc(id).set({ publicationStatus: 'ready', isCanonical: true, ownerPhone: '+40 722 123 456' });
+    const favorite = agency.collection('ownerListingFavorites').doc(id);
+    await favorite.set({ isFavoriteActive: true, takenByAgentId: ctx.uid });
+    await executeAction(ctx, actionSchema.parse({ kind: 'update_prospect', listingId: id, patch: { contactOutcome: 'follow_up' } }), 'human-result');
+    expect((await favorite.get()).data()).toMatchObject({ contactOutcomePhone: '0722123456', contactOutcome: 'follow_up' });
+    await favorite.update({ ownerPhone: '0733123456', isFavoriteActive: false });
+    mocks.vapi.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'simulated', raw: {} });
+    const callRef = agency.collection('aiOutreachCalls').doc('after-human');
+    const call: any = { id: callRef.id, agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: 'other', ownerPhone: '0040 722 123 456', status: 'scheduled' };
+    await callRef.set(call);
+    const settings = withDefaultAiOutreachSettings(ctx.agencyId, { enabled: true });
+    const result = await launchAiOutreachCall({ adminDb: db as any, callRef: callRef as any, call, settings });
+    expect(result.call).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_phone_duplicate' });
+    expect(result.warning).toContain('rezultat de contact'); expect(mocks.vapi).not.toHaveBeenCalled();
+    expect((await favorite.get()).data()?.contactOutcomePhone).toBe('0722123456');
+  });
   it('paginates prospect interactions without mixing listings, snapshots or inaccessible events', async () => {
     const ctx = await fixture();
     const agency = db.collection('agencies').doc(ctx.agencyId);

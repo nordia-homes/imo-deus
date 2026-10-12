@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Rezultatul contactului uman oprește apelul AI duplicat — 0262, parțial
+
+Lansarea AI verifică acum și rezultatele de contact salvate pe celelalte prospecte ale agenției, inclusiv inactive. Un rezultat `negative` sau `follow_up`, cu dată validă și telefon corespunzător, anulează apelul AI pornit prin alt anunț. Un task planificat, numele comun sau un rezultat fără dată nu sunt considerate dovada unui contact efectuat.
+
+Salvarea unui rezultat prin executor reține `contactOutcomePhone`, normalizat, pentru a nu muta istoricul pe alt număr atunci când telefonul curent este editat. Dacă prospectul nu are telefon, se folosește numai sursa canonică disponibilă; dacă telefonul rămâne necunoscut, snapshotul este explicit null. Pentru înregistrările vechi fără snapshot se folosește telefonul prospectului; identitatea istorică nu poate fi reconstruită dacă acesta a fost schimbat. Resetarea explicită a rezultatului șterge și snapshotul; editarea notelor îl păstrează.
+
+Au trecut **38 teste unitare**, **20 teste Firestore**, TypeScript, lint, paritate, inventarul corpusului și buildul final cu 227 pagini. Proba de integrare execută actualizarea CRM reală, verifică snapshotul din sursa canonică, modifică telefonul și inactivează prospectul, apoi confirmă anularea apelului AI duplicat fără invocarea furnizorului simulat. Dovadă: [OWNER_HUMAN_CONTACT_PARTIAL_0262.json](evals/OWNER_HUMAN_CONTACT_PARTIAL_0262.json).
+
+Versiuni **jarvis-81 / tools 109**. Scenariul rămâne parțial: apelurile externe neînregistrate, rezultatele șterse și diferențierea scopului mesajelor nu sunt acoperite; performanța pe istorice mari rămâne neverificată. Total **102/1000** cu dovezi locale, **0 certificări complete în producție**. Nu au fost inițiate apeluri reale și modificările nu sunt publicate în producție.
+
 ## Prevenirea apelurilor AI duplicate între anunțuri — 0262, parțial
 
 Lansarea comună apelurilor AI imediate și programate folosește acum un document tranzacțional per telefon românesc normalizat, în agenție. Două anunțuri diferite nu mai pot porni simultan două apeluri la același număr. Istoricul vechi este verificat cu normalizarea +40/0040/spații, fără limitarea la ultimele 25 de ore: un apel în curs, un apel încheiat pentru alt anunț sau un refuz de contactare blochează lansarea duplicată.

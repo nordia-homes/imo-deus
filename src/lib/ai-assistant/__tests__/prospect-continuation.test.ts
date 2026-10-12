@@ -55,3 +55,11 @@ it('distinguishes yes/no association answers from phone answers, cancellation an
   expect(ownerHistoryReply('Nu știu.', history)?.associationAnswered).toBe(false);
   for (const answer of ['Anulează.', '0722123456', 'Programează o vizionare', 'Da, trimite mesaj']) expect(ownerHistoryReply(answer, history)).toBeUndefined();
 });
+
+it('freezes the contacted phone with a new outcome and clears it with an explicit outcome reset', () => {
+  const saved = prospectPatch({ ownerPhone: '+40 722 123 456' }, { contactOutcome: 'follow_up' }, 'u', 'Agent', '2026-10-12T10:00:00Z');
+  expect(saved.contactOutcomePhone).toBe('0722123456');
+  expect(prospectPatch(saved, { notes: 'Detalii' }, 'u', 'Agent', 'now')).not.toHaveProperty('contactOutcomePhone');
+  expect(prospectPatch(saved, { contactOutcome: null }, 'u', 'Agent', 'now').contactOutcomePhone).toBeNull();
+  expect(prospectPatch({}, { contactOutcome: 'negative' }, 'u', 'Agent', 'now').contactOutcomePhone).toBeNull();
+});

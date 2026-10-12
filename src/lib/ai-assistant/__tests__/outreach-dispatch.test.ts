@@ -66,6 +66,29 @@ describe('outreach dispatch claims', () => {
     rows.set('agencies/a/aiOutreachCalls/legacy', { status: 'completed', ownerListingId: 'l', ownerPhone: '0722334455' });
     await launchAiOutreachCall(input); expect(provider).toHaveBeenCalledTimes(1);
   });
+  it.each(['negative', 'follow_up'])('blocks a recorded human %s outcome on another listing, including inactive prospects', async contactOutcome => {
+    const { input, rows } = fixture();
+    rows.set('agencies/a/ownerListingFavorites/other', { ownerPhone: '0040 722 334 455', contactOutcome, contactOutcomeAt: '2026-01-01T10:00:00Z', isFavoriteActive: false });
+    expect((await launchAiOutreachCall(input)).call.status).toBe('canceled');
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('uses the phone recorded with the outcome instead of a later edited phone', async () => {
+    const { input, rows } = fixture();
+    const row = { ownerPhone: '0733123456', contactOutcomePhone: '0722334455', contactOutcome: 'follow_up', contactOutcomeAt: '2026-01-01T10:00:00Z' };
+    rows.set('agencies/a/ownerListingFavorites/other', row);
+    expect((await launchAiOutreachCall(input)).call.status).toBe('canceled'); expect(provider).not.toHaveBeenCalled();
+  });
+  it.each([
+    { contactOutcome: 'follow_up' },
+    { contactOutcome: 'negative', contactOutcomeAt: 'invalid' },
+    { contactOutcome: 'follow_up', contactOutcomeAt: '2026-01-01T10:00:00Z', contactOutcomePhone: null },
+    { contactOutcome: 'follow_up', contactOutcomeAt: '2026-01-01T10:00:00Z', contactOutcomePhone: '0733123456' },
+  ])('does not infer a completed contact at this phone from incomplete or mismatched evidence: %j', outcome => {
+    provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
+    const { input, rows } = fixture();
+    rows.set('agencies/a/ownerListingFavorites/other', { ownerPhone: '0722334455', ...outcome });
+    return launchAiOutreachCall(input).then(() => expect(provider).toHaveBeenCalledTimes(1));
+  });
   it('checks opt-out and current membership immediately before dispatch', async () => {
     const optedOut = fixture(); optedOut.rows.set('agencies/a/aiOutreachOwnerListingStatuses/l', { aiDoNotCall: true });
     await expect(launchAiOutreachCall(optedOut.input)).rejects.toThrow('Do Not Call');

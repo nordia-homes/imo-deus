@@ -284,8 +284,19 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     const related = history.docs.filter(doc => doc.id !== call.id && normalizeAiOutreachPhone(doc.data().ownerPhone) === phone);
     const refused = related.find(doc => doc.data().result?.doNotCall === true || doc.data().outcome === 'do_not_call');
     const duplicate = related.find(doc => doc.data().status === 'calling' || (doc.data().status === 'completed' && doc.data().ownerListingId !== call.ownerListingId));
-    if (refused || duplicate) {
-      const reason = refused ? 'Proprietarul a refuzat contactarea la acest număr.' : 'Numărul are deja un apel în curs sau un apel efectuat pentru alt anunț.';
+    const prospects = await tx.get(agency.collection('ownerListingFavorites'));
+    const recordedContact = prospects.docs.find(doc => {
+      const row = doc.data();
+      // A planned task or a name match is not evidence of a completed contact.
+      // New results freeze the phone at recording time; legacy rows have only
+      // the prospect phone. Explicit null means identity was unavailable.
+      const contactedPhone = Object.hasOwn(row, 'contactOutcomePhone') ? row.contactOutcomePhone : row.ownerPhone;
+      return doc.id !== call.ownerListingId && normalizeAiOutreachPhone(contactedPhone) === phone
+        && ['negative', 'follow_up'].includes(row.contactOutcome)
+        && typeof row.contactOutcomeAt === 'string' && Number.isFinite(Date.parse(row.contactOutcomeAt));
+    });
+    if (refused || duplicate || recordedContact) {
+      const reason = refused ? 'Proprietarul a refuzat contactarea la acest număr.' : recordedContact ? 'La acest număr există deja un rezultat de contact înregistrat pentru alt anunț.' : 'Numărul are deja un apel în curs sau un apel efectuat pentru alt anunț.';
       const updatedAt = new Date().toISOString();
       tx.update(callRef, { status: 'canceled', outcome: 'uncalled', providerErrorCode: refused ? 'owner_phone_do_not_call' : 'owner_phone_duplicate', providerErrorMessage: reason, updatedAt });
       if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: 'canceled', aiOutreachOutcome: 'uncalled', aiOutreachUpdatedAt: updatedAt, updatedAt }, { merge: true });

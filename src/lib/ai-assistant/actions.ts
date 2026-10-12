@@ -329,7 +329,12 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       }
       const owner = prospectOwner(favorite, Date.parse(now));
       if ((favorite.isFavoriteActive === false && !action.patch.state) || (ctx.role !== 'admin' && owner && owner !== ctx.uid)) throw new CommunicationError('Anunțul este lucrat de alt agent sau nu este activ.', 403);
-      const patch = prospectPatch(favorite, action.patch, ctx.uid, profile.data()?.name || '', now);
+      let contactPhone = favorite.ownerPhone;
+      if (action.patch.contactOutcome && !contactPhone) {
+        const source = await tx.get(ctx.adminDb.collection('ownerListings').doc(action.listingId));
+        if (source.data()?.publicationStatus === 'ready' && source.data()?.isCanonical === true) contactPhone = source.data()?.ownerPhone;
+      }
+      const patch = prospectPatch({ ...favorite, ownerPhone: contactPhone }, action.patch, ctx.uid, profile.data()?.name || '', now);
       if (snapshot.exists) tx.update(ref, patch);
       else tx.create(ref, { ownerListingId: action.listingId, isFavoriteActive: true, collaborationStatus: null, commissionValue: '', propertyAddress: '', notes: '', createdAt: now, createdBy: ctx.uid, ...patch });
       result = { listingId: action.listingId, link: '/owner-listings/favorite', executionState: 'succeeded', state: action.patch.state || null, takenByAgentId: patch.takenByAgentId || null, updatedAt: now, ...(action.patch.appendNote ? { appendedNote: action.patch.appendNote } : {}), ...(action.patch.contactOutcome !== undefined ? { contactOutcome: patch.contactOutcome } : {}), ...(action.patch.collaborationStatus !== undefined ? { collaborationStatus: patch.collaborationStatus } : {}) };

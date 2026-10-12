@@ -1,0 +1,41 @@
+{
+  "scenarioId": "master-0262",
+  "prompt": "Nu contacta de două ori același proprietar din două anunțuri.",
+  "runAt": "2026-10-12T00:29:25.904349+00:00",
+  "versions": {
+    "prompt": "jarvis-81",
+    "tools": "109"
+  },
+  "executionVerified": false,
+  "environment": "Local Firestore emulator, real CRM action executor and AI dispatch transaction, simulated Vapi provider. No external calls or real-model run in this batch.",
+  "verifiedBehaviors": [
+    "Recording a contact outcome saves the normalized contacted phone, using the ready canonical source when the agency favorite lacks a phone.",
+    "An outcome recorded on another listing blocks AI dispatch to that phone, including inactive prospects.",
+    "Editing the current phone does not change the phone associated with a newly recorded outcome.",
+    "Incomplete dates, different phones and explicit unknown contacted phones are not treated as evidence of contact at the target number.",
+    "Outcome clearing resets the phone snapshot; unrelated note edits preserve it.",
+    "Prior concurrency, provider uncertainty, agency isolation and membership checks still pass."
+  ],
+  "validation": {
+    "unitTests": 38,
+    "firestoreIntegrationTests": 20,
+    "typescript": "passed",
+    "lint": "passed",
+    "unitCommand": "npx vitest run --maxWorkers=2 src/lib/ai-assistant/__tests__/outreach-dispatch.test.ts src/lib/ai-assistant/__tests__/outreach-timezone.test.ts src/lib/ai-assistant/__tests__/prospect-continuation.test.ts",
+    "integrationCommand": "npm run test:jarvis:rules -- --prospecting-review",
+    "build": "passed, 227 pages",
+    "parity": "passed",
+    "corpusInventory": "passed"
+  },
+  "limitations": [
+    "Not a full 0262 certification: manual calls outside the app and message-purpose-aware deduplication remain uncovered.",
+    "Legacy outcomes without phone snapshots rely on the current prospect phone; historical identity cannot be reconstructed when it has changed.",
+    "Cleared outcomes and unrecorded contacts are not recovered by this current-state check.",
+    "Large agency history performance remains unverified; dispatch reads agency calls and prospects transactionally.",
+    "Not deployed to production."
+  ],
+  "corpusTotals": {
+    "localOriginalScenariosWithEvidence": 102,
+    "fullyCertifiedProductionScenarios": 0
+  }
+}
