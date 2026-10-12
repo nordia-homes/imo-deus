@@ -3,7 +3,8 @@ import { AiOutreachGuardError, assertCanCreateAiOutreachCall, getAiOutreachSetti
 import { isVapiOutboundConfigured } from '@/lib/ai-outreach/vapi';
 
 // A read-only preflight, never an authorization or a reservation of a call slot.
-export async function readOutreachPreflight(ctx: AssistantContext, input: { listingId: string }) {
+export async function readOutreachPreflight(ctx: AssistantContext, input: { listingId: string; scheduledAt?: string }) {
+  if (input.scheduledAt && (!Number.isFinite(Date.parse(input.scheduledAt)) || Date.parse(input.scheduledAt) <= Date.now())) return { complete: true, eligible: false, rows: [], reason: 'Data programării trebuie să fie în viitor.' };
   const agency = ctx.adminDb.collection('agencies').doc(ctx.agencyId);
   const blocked = (reason: string) => ({ complete: true, eligible: false, rows: [{ id: input.listingId, eligible: false, reason }], reason });
   const favorite = await agency.collection('ownerListingFavorites').doc(input.listingId).get();
@@ -16,7 +17,7 @@ export async function readOutreachPreflight(ctx: AssistantContext, input: { list
   const title = [saved.title, canonical?.title].find(value => typeof value === 'string' && value.trim());
   if (!title) return blocked('Lipsește titlul anunțului selectat.');
   try {
-    await assertCanCreateAiOutreachCall({ adminDb: ctx.adminDb, agencyId: ctx.agencyId, ownerListingId: input.listingId, settings: await getAiOutreachSettings(ctx.adminDb, ctx.agencyId) });
+    await assertCanCreateAiOutreachCall({ adminDb: ctx.adminDb, agencyId: ctx.agencyId, ownerListingId: input.listingId, scheduledAt: input.scheduledAt, settings: await getAiOutreachSettings(ctx.adminDb, ctx.agencyId) });
   } catch (error) {
     if (error instanceof AiOutreachGuardError) return blocked(error.message);
     throw error;
@@ -32,6 +33,6 @@ export async function readOutreachPreflight(ctx: AssistantContext, input: { list
       && ['negative', 'follow_up'].includes(row.contactOutcome) && typeof row.contactOutcomeAt === 'string' && Number.isFinite(Date.parse(row.contactOutcomeAt));
   })) return blocked('La acest număr există deja un rezultat de contact pentru alt anunț.');
   if (!isVapiOutboundConfigured()) return blocked('Furnizorul de apeluri AI nu este configurat.');
-  return { complete: true, eligible: true, rows: [{ id: input.listingId, title, eligible: true }], suggestedAction: { kind: 'existing_operation', operation: 'outreach_start', params: {}, query: {}, body: { ownerListing: { id: input.listingId, title } } },
+  return { complete: true, eligible: true, rows: [{ id: input.listingId, title, eligible: true }], suggestedAction: { kind: 'existing_operation', operation: 'outreach_start', params: {}, query: {}, body: { ownerListing: { id: input.listingId, title }, ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}) } },
     note: 'Verificare preliminară reușită. Niciun apel lansat. Copiază suggestedAction în propose_actions, apoi goal_coverage resolution=planned steps=[1]. Planul folosește aprobarea existentă a aplicației; eligibilitatea este reverificată la execuție. Configurarea furnizorului nu garantează disponibilitatea lui.' };
 }

@@ -32,7 +32,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -57,12 +57,37 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = (number >= 253 && number <= 261 || number === 266) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 270) {
+        settingsContext.provider.mockReset();
+        await agency.collection('aiOutreach').doc('settings').set({ enabled: true, callWindowStart: '09:00', callWindowEnd: '18:00' });
+        const clarification = await planTurn(ctx, prompt, history);
+        expect(clarification.metrics.status).toBe('clarification'); expect(clarification.actions).toEqual([]);
+        expect(clarification.text).toContain('dată și oră');
+        const followup = 'Mâine la ora 10:30.';
+        const messages: AssistantMessage[] = [...history, { id: 'original', role: 'user', text: prompt, createdAt: new Date().toISOString() }, { id: 'question', role: 'assistant', text: clarification.text, createdAt: new Date().toISOString() }];
+        const expected = resolveDatetime({ dayOffset: 1, time: '10:30' }).iso;
+        const planned = await planTurn(ctx, followup, messages);
+        report = { ...report, clarification, followup, planned };
+        expect(planned.metrics.status, planned.text).toBe('success');
+        expect(planned.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(planned.actions).toEqual([{ kind: 'existing_operation', operation: 'outreach_start', params: {}, query: {}, body: { ownerListing: { id: source.id, title: 'Prospect Alfa' }, scheduledAt: expected } }]);
+        const key = randomUUID(), receipt = await executeAction(ctx, planned.actions[0], key);
+        expect(receipt).toMatchObject({ executionState: 'queued', call: { status: 'scheduled', scheduledAt: expected } });
+        const saved = await agency.collection('aiOutreachCalls').get();
+        expect(saved.size).toBe(1); expect(saved.docs[0].data()).toMatchObject({ status: 'scheduled', scheduledAt: expected, ownerListingId: source.id, ownerPhone: '0722123456', vapiCallId: null });
+        const confirmation = executionConfirmation([{ kind: 'existing_operation', result: receipt }]);
+        expect(confirmation).toContain('10:30, ora Bucureștiului'); expect(confirmation).toContain('nu a fost încă efectuat');
+        expect(await executeAction(ctx, planned.actions[0], key)).toEqual(receipt);
+        expect(settingsContext.invokes).toBe(1); expect(settingsContext.provider).not.toHaveBeenCalled();
+        report = { ...report, receipt, confirmation, executionVerified: true, verification: 'Original scheduling command requests missing date/time; actual-model continuation preserves selected prospect, resolves tomorrow 10:30 Bucharest, checks eligibility for the requested time and prepares a scheduled action. Approved-action executor and real HTTP handler persist exactly one scheduled call in local Firestore, no provider invocation, correct confirmation and idempotent replay. Approval UI, scheduler and eventual real telephone call are not exercised.' };
+        return;
+      }
       if (number === 266) {
         settingsContext.provider.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'local-provider-call', raw: {} });
         await agency.collection('aiOutreach').doc('settings').set({ enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' });

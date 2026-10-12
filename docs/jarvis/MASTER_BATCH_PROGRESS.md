@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Programarea apelului după clarificarea orei — 0270
+
+Cererea originală „Programează apelul conform funcționalității existente.” cere acum data și ora lipsă pentru prospectul selectat. Răspunsul ulterior continuă aceeași programare: modelul calculează momentul în București, verifică eligibilitatea la ora cerută și pregătește acțiunea cu scheduledAt. Serverul respinge continuarea fără moment verificat, o acțiune diferită de cea verificată sau folosirea unei selecții vechi când lista nouă este ambiguă.
+
+Verificarea preliminară folosește intervalul permis la data programării și respinge trecutul. Proba cu model real pentru răspunsul „Mâine la ora 10:30.” a salvat prin ruta HTTP reală un singur apel scheduled în Firestore local, fără invocarea furnizorului. Confirmarea indică ora Bucureștiului și faptul că apelul nu este încă efectuat. Repetarea aceleiași execuții întoarce rezultatul existent fără duplicat.
+
+Au trecut **86 teste unitare**, **28 teste Firestore**, TypeScript, lint, paritatea operațiilor și buildul final cu **227 de pagini**. Dovadă: [PROSPECTING_EXECUTION_BATCH_10.json](evals/PROSPECTING_EXECUTION_BATCH_10.json). Versiuni **jarvis-87 / tools 116**. Total **110/1000** cu dovezi locale, **0 certificări complete în producție**.
+
+Clarificarea inițială este deterministă; continuarea folosește modelul real. Interfața de aprobare, reluarea conversației persistate, schedulerul la scadență și apelul telefonic efectiv nu sunt certificate de această probă. Sunt acoperite cererea originală și continuări recunoscute care încep cu data; toate variantele de limbaj natural nu sunt încă verificate. Modificările nu sunt publicate în producție.
+
 ## Lansarea apelului pentru prospectul selectat — 0266, probă locală cu model real
 
 Cererea originală „Pornește apelul AI dacă este eligibil și este aprobat.” are acum o verificare preliminară dedicată: prospect activ, telefon românesc complet, titlu actual, serviciu activ, interval București, limite zilnice și buget, refuzuri și contactări deja înregistrate la același număr. Lipsa selecției cere alegerea prospectului. Verificarea nu creează apeluri, nu modifică setări și nu ține loc de aprobare.

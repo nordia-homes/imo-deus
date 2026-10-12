@@ -46,6 +46,19 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('asks for scheduling time and rejects an immediate call or an unverified instant in the reply', async () => {
+    const history = [{ id: 'selection', role: 'assistant' as const, text: 'Prospect selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'Prospect', source: 'ownerListingFavorites', rows: [{ id: 'selected' }] }] }];
+    const initial = await planTurn(ctx, 'Programează apelul conform funcționalității existente.', history, { provider: scripted(final) });
+    expect(initial.metrics.status).toBe('clarification'); expect(initial.actions).toEqual([]);
+    const messages = [...history, { id: 'question', role: 'assistant' as const, text: initial.text, createdAt: new Date().toISOString() }];
+    for (const payload of [{ listingId: 'invented' }, { listingId: 'invented', scheduledAt: '2099-01-01T10:00:00Z' }]) {
+      const result = await planTurn(ctx, 'Mâine la 10:30.', messages, { provider: scripted(call('outreach_preflight', payload), final) });
+      expect(result.actions).toEqual([]); expect(result.metrics.status).toBe('partial');
+    }
+    expect(readOutreachPreflight).not.toHaveBeenCalled();
+    const ambiguous = [...history, { ...history[0], id: 'new-list', cards: [{ ...history[0].cards[0], rows: [{ id: 'other-a' }, { id: 'other-b' }] }] }, messages.at(-1)!];
+    expect((await planTurn(ctx, 'Mâine la 10:30.', ambiguous, { provider: scripted(final) })).metrics.status).toBe('clarification');
+  });
   it('requires a selected prospect and a preflight, even if the model tries to finish immediately', async () => {
     const prompt = 'Pornește apelul AI dacă este eligibil și este aprobat.';
     const noSelection = scripted(final);

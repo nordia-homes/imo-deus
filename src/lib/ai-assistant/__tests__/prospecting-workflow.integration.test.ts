@@ -1,4 +1,5 @@
 import { readOutreachPreflight } from '../outreach-preflight';
+import { resolveDatetime } from '../datetime';
 import { readOutreachHistory } from '../outreach-history';
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
@@ -60,6 +61,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('checks the requested future Bucharest window and persists a scheduled call without dispatch', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    mocks.vapi.mockReset(); mocks.configured = true;
+    await agency.collection('ownerListingFavorites').doc('scheduled-owner').set({ title: 'Programare', isFavoriteActive: true, ownerPhone: '0722123456' });
+    await agency.collection('aiOutreach').doc('settings').update({ callWindowStart: '10:00', callWindowEnd: '11:00' });
+    for (const scheduledAt of ['2020-01-01T10:00:00Z', resolveDatetime({ dayOffset: 1, time: '07:30' }).iso]) {
+      expect(await readOutreachPreflight(ctx, { listingId: 'scheduled-owner', scheduledAt })).toMatchObject({ eligible: false });
+    }
+    const scheduledAt = resolveDatetime({ dayOffset: 1, time: '10:30' }).iso;
+    const ready = await readOutreachPreflight(ctx, { listingId: 'scheduled-owner', scheduledAt });
+    expect(ready).toMatchObject({ eligible: true, suggestedAction: { body: { scheduledAt } } });
+    if (!('suggestedAction' in ready)) throw new Error('Expected an eligible scheduling action');
+    const response = await createOutreachCall(new NextRequest('http://localhost/api/ai-outreach/calls', { method: 'POST', body: JSON.stringify(ready.suggestedAction!.body) }));
+    expect(response.status).toBe(201);
+    const payload = await response.json(); expect(payload.call).toMatchObject({ status: 'scheduled', scheduledAt, vapiCallId: null });
+    expect((await agency.collection('aiOutreachCalls').doc(payload.call.id).get()).data()).toMatchObject({ status: 'scheduled', scheduledAt });
+    expect(mocks.vapi).not.toHaveBeenCalled();
+  });
   it('preflights current eligibility without creating calls, leaking secrets or accepting a foreign prospect', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     mocks.vapi.mockReset(); mocks.configured = true;

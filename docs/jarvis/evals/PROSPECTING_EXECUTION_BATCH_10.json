@@ -1,0 +1,299 @@
+{
+  "scope": "0270: scheduling command with missing time, deterministic clarification and actual-model continuation, approved-action executor, real HTTP handler and local Firestore. No provider invocation.",
+  "fixes": [
+    "Requests date/time when missing and resumes with the selected prospect; a newer ambiguous selection requires clarification.",
+    "Scheduling preflight checks the requested future instant and Bucharest call window.",
+    "Continuation requires a verified scheduledAt and exact eligible action; it cannot silently become an immediate call.",
+    "Persisted schedule confirmation uses Bucharest time and repeated executor key creates no duplicate."
+  ],
+  "validation": {
+    "unitTests": 86,
+    "firestoreTests": 28,
+    "typescript": "passed",
+    "lint": "passed",
+    "parity": "180 operations, 40 native action kinds, 46 UI files",
+    "productionBuild": "passed, 227 pages; existing nonfatal OpenTelemetry and Playwright-copy warnings"
+  },
+  "limitations": [
+    "110 original scenarios have local evidence; zero full production certifications.",
+    "The original prompt receives deterministic clarification; its date/time reply is processed by the actual model.",
+    "Approval UI, durable chat resumption, scheduler at due time and eventual external call are not exercised.",
+    "Compact routing covers the original request and recognized date-first replies; wider natural-language variants are not certified."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0270",
+      "prompt": "Programează apelul conform funcționalității existente.",
+      "versions": {
+        "prompt": "jarvis-87",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "116",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T02:31:47.767Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "clarification": {
+        "text": "Pentru ce dată și oră dorești programarea apelului AI? Orele sunt cele din București.",
+        "cards": [],
+        "actions": [],
+        "accessRefs": [],
+        "metrics": {
+          "models": [],
+          "tools": [],
+          "status": "clarification",
+          "elapsedMs": 3
+        }
+      },
+      "followup": "Mâine la ora 10:30.",
+      "planned": {
+        "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Verificare pentru apel AI",
+            "source": "aiOutreachPreflight",
+            "rows": [
+              {
+                "id": "909fdf3c-4afc-42f8-bf2c-4dcd3703fa9d-alfa",
+                "title": "Prospect Alfa",
+                "eligible": true
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "existing_operation",
+            "operation": "outreach_start",
+            "params": {},
+            "query": {},
+            "body": {
+              "ownerListing": {
+                "id": "909fdf3c-4afc-42f8-bf2c-4dcd3703fa9d-alfa",
+                "title": "Prospect Alfa"
+              },
+              "scheduledAt": "2026-10-13T07:30:00.000Z"
+            }
+          }
+        ],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7952,
+                "outputTokens": 46,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7770,
+                "estimated": false
+              },
+              "costUsd": 0.00101245,
+              "latencyMs": 1788,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8071,
+                "outputTokens": 67,
+                "cachedTokens": 7770,
+                "cacheWriteTokens": 298,
+                "estimated": false
+              },
+              "costUsd": 0.00014875,
+              "latencyMs": 2068,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8566,
+                "outputTokens": 107,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 8563,
+                "estimated": false
+              },
+              "costUsd": 0.001124175,
+              "latencyMs": 2803,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8700,
+                "outputTokens": 77,
+                "cachedTokens": 8563,
+                "cacheWriteTokens": 134,
+                "estimated": false
+              },
+              "costUsd": 0.00014118,
+              "latencyMs": 2065,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8802,
+                "outputTokens": 86,
+                "cachedTokens": 8697,
+                "cacheWriteTokens": 102,
+                "estimated": false
+              },
+              "costUsd": 0.00014301999999999997,
+              "latencyMs": 2242,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "resolve_datetime",
+              "status": "success",
+              "latencyMs": 477,
+              "version": "116",
+              "argumentsHash": "60295b14bf1024b463df7fee216fa37354336fecbea922aea2b80862425881ed"
+            },
+            {
+              "name": "outreach_preflight",
+              "status": "success",
+              "latencyMs": 370,
+              "version": "116",
+              "argumentsHash": "edf493fc49bc3bc1207c1c8408dddcfa71c9e4eb412cd754ddcc6a10a385a316"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 18,
+              "version": "116",
+              "argumentsHash": "dea5199f922cf0e75725accf47fee6beeb64bb3187b9d6b008ab6e9a13556dea"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 17,
+              "version": "116",
+              "argumentsHash": "e1e08d9e727ff3f293d03e0712e2af6b3bff5a824c50e078679bb2b989c5e00d"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 12332,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "CLARIFY",
+            "confidence": 0.25,
+            "inputTokens": 452,
+            "outputTokens": 48,
+            "costUsd": 1.8984000000000003e-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 380,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "call_schedule",
+              "sourceQuote": "Mâine la ora 10:30.",
+              "description": "Pregătește apelul pentru prospectul selectat mâine la 10:30, ora Bucureștiului.",
+              "resolution": "planned",
+              "steps": [
+                1
+              ],
+              "evidenceCallIds": []
+            }
+          ]
+        }
+      },
+      "receipt": {
+        "call": {
+          "id": "WwUs5Yj7j4S35Nit7oEp",
+          "agencyId": "909fdf3c-4afc-42f8-bf2c-4dcd3703fa9d",
+          "agentId": "909fdf3c-4afc-42f8-bf2c-4dcd3703fa9d",
+          "agentName": "Agent local",
+          "ownerListingId": "909fdf3c-4afc-42f8-bf2c-4dcd3703fa9d-alfa",
+          "ownerListingTitle": "Prospect Alfa",
+          "ownerListingLocation": "",
+          "ownerListingPrice": "",
+          "ownerPhone": "0722123456",
+          "callerNumber": null,
+          "phoneNumberId": null,
+          "vapiCallId": null,
+          "status": "scheduled",
+          "outcome": "queued",
+          "attemptNumber": 1,
+          "templateId": "owner_acquisition",
+          "scheduledAt": "2026-10-13T07:30:00.000Z",
+          "startedAt": null,
+          "endedAt": null,
+          "durationSeconds": null,
+          "cost": null,
+          "summary": "",
+          "transcript": "",
+          "recordingUrl": null,
+          "endedReason": null,
+          "providerErrorCode": null,
+          "providerErrorMessage": null,
+          "result": {
+            "desiredCommission": "3",
+            "minimumCommission": "2"
+          },
+          "createdBy": "909fdf3c-4afc-42f8-bf2c-4dcd3703fa9d",
+          "createdAt": "2026-10-12T02:32:02.880Z",
+          "updatedAt": "2026-10-12T02:32:02.880Z"
+        },
+        "operation": "outreach_start",
+        "businessStatus": "scheduled",
+        "executionState": "queued",
+        "verifiedAt": "2026-10-12T02:32:02.961Z",
+        "evidenceSource": "domain_handler",
+        "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+        "callId": "WwUs5Yj7j4S35Nit7oEp"
+      },
+      "confirmation": "Apelul AI este programat pentru 13.10.2026, 10:30, ora Bucureștiului. Apelul nu a fost încă efectuat. ID apel: WwUs5Yj7j4S35Nit7oEp.",
+      "verification": "Original scheduling command requests missing date/time; actual-model continuation preserves selected prospect, resolves tomorrow 10:30 Bucharest, checks eligibility for the requested time and prepares a scheduled action. Approved-action executor and real HTTP handler persist exactly one scheduled call in local Firestore, no provider invocation, correct confirmation and idempotent replay. Approval UI, scheduler and eventual real telephone call are not exercised."
+    }
+  ]
+}

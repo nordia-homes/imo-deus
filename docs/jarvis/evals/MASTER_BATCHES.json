@@ -2401,7 +2401,11 @@
           "sourceNumber": 270,
           "request": "Programează apelul conform funcționalității existente.",
           "requestSha256": "48f3973571d4464c0ec48f73ec7b5e147f6dc59319687c708796af985894966c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_10.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0271",
