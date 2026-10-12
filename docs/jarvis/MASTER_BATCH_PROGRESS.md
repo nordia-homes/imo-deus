@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Eligibilitate WhatsApp la trimitere — progres parțial 0274
+
+Coada și workerul reverifică acum fereastra de răspuns și acordul WhatsApp după estimarea inițială. În tranzacția cozii, retragerea acordului împiedică scrierea mesajului și a jobului. Workerul recitește acordul după pregătirea conexiunii și oprește expedierea dacă destinatarul nu mai este eligibil. Verificarea răspunsului deja primit păstrează prioritatea motivului de oprire a unui follow-up.
+
+Au trecut TypeScript, lint, paritatea, buildul final cu 227 de pagini, 43 de teste unitare și 43 de teste Firestore, inclusiv șase cazuri noi cu retragere globală, retragerea acordului de serviciu sau expirarea ferestrei între pași. Furnizorul simulat nu este apelat în aceste cazuri; reluarea workerului nu expediază mesajul blocat. Cazul eligibil existent continuă să trimită o singură dată. Dovadă: [WHATSAPP_ELIGIBILITY_PARTIAL_0274.json](evals/WHATSAPP_ELIGIBILITY_PARTIAL_0274.json).
+
+Acest increment întărește execuția reală, dar nu certifică cererea originală 0274 prin model. Totalul rămâne **113/1000** cu dovezi locale și **0 certificări complete în producție**. Cazurile noi folosesc mesaje de serviciu fără șablon; variantele de marketing și furnizorul Meta real nu sunt certificate. Verificarea locală nu formează o tranzacție cu furnizorul extern: o modificare după ultima citire nu poate retrage o cerere deja expediată. Modificările nu sunt publicate în producție.
+
 ## Ciornă de colaborare pentru proprietar — 0273
 
 Cererea originală „Pregătește un mesaj de colaborare pentru proprietar.” citește prospectul selectat înainte de redactare. Serverul fixează resursa și ID-ul citirii; acest flux expune numai citirea și verificarea acoperirii cererii. Ciorna completă rămâne în conversația salvată, iar aplicația o etichetează explicit ca netrimisă. Nu se creează task, apel AI sau conversație WhatsApp și nu se înregistrează acordul proprietarului.

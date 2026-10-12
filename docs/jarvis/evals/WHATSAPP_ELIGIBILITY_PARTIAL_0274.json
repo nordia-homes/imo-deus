@@ -1,0 +1,34 @@
+{
+  "scenarioId": "master-0274",
+  "prompt": "Nu trimite WhatsApp dacă destinatarul nu este eligibil.",
+  "status": "partial_runtime_hardening_not_full_corpus_certification",
+  "runAt": "2026-10-12T10:52:10.9557852Z",
+  "changes": [
+    "Re-read response window and WhatsApp global/scoped consent inside the queue transaction before any message/job write.",
+    "Re-read consent and response window after worker estimation and recipient checks, before provider invocation.",
+    "Preserve stop-on-reply reason before the final eligibility check."
+  ],
+  "validation": {
+    "lint": "passed",
+    "newRaceCases": 6,
+    "emulatorCommand": "npm run test:jarvis:rules -- --outbound-review",
+    "unitTests": 43,
+    "typescript": "passed",
+    "firestoreTests": 43,
+    "build": "passed, 227 pages"
+  },
+  "verifiedCases": [
+    "Global opt-out after estimation, before queue transaction: no job or message created.",
+    "Service consent revoked after estimation, before queue transaction: no job or message created.",
+    "Response window changed before queue transaction: no job or message created.",
+    "Same three changes during worker final connection preparation: zero provider calls, failed message/job, settled bookkeeping, no dispatch on replay.",
+    "Unchanged eligible recipient still reaches simulated provider once."
+  ],
+  "limitations": [
+    "Local Firestore with simulated provider; no real client contacted.",
+    "No actual-model execution of the original 0274 prompt in this increment; corpus stays 113/1000 with local model evidence.",
+    "New race fixtures cover free-form service messages; late marketing/template consent deletion and real Meta behavior are not certified.",
+    "Local rechecks are not atomic with the external provider call; a change after the final read cannot retract an already dispatched request.",
+    "Initial regression expected the stop-on-reply reason; check order corrected and all 43 integration tests passed."
+  ]
+}

@@ -14,6 +14,7 @@ import { matchContact } from '../actions';
 import { saveResultSet } from '../context';
 import { resolveMatchingRecipient } from '../matching-recipient';
 import { matchingRevision } from '../matching-revision';
+import { stableId } from '@/lib/communications/crypto';
 
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient through the real outbound queue and worker', () => {
   let db: Firestore;
@@ -231,6 +232,38 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const input = { text: 'Brief sintetic', requestId: randomUUID(), personalRecipient: personalRecipientProof(f.actor, conversation, profile) };
     return { ...f, profileRef, rate, token, input };
   }
+  async function withdrawEligibility(f: Awaited<ReturnType<typeof personalFixture>>, change: string) {
+    if (change === 'window') return f.ref.update({ lastInboundAt: '2020-01-01T00:00:00Z' });
+    return db.collection('agencies').doc(f.actor.agencyId).collection('communicationConsents')
+      .doc(stableId(f.conversation.connectionId, '40722123456', change)).set({ status: 'revoked' });
+  }
+  it.each(['all', 'service', 'window'])('rejects late eligibility change %s inside the queue transaction', async change => {
+    const f = await personalFixture();
+    const original = db.runTransaction.bind(db);
+    const transaction = vi.spyOn(db, 'runTransaction').mockImplementationOnce(async (callback: any) => {
+      await withdrawEligibility(f, change); return original(callback);
+    });
+    try {
+      await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow(/oprirea|retras|expirat/);
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect((await db.collection('communicationOutboundJobs').where('uid', '==', f.actor.uid).get()).empty).toBe(true);
+      expect(mocks.graph).not.toHaveBeenCalled();
+    } finally { transaction.mockRestore(); await f.rate.delete(); }
+  });
+  it.each(['all', 'service', 'window'])('stops dispatch when eligibility changes after estimate: %s', async change => {
+    const f = await personalFixture();
+    try {
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+      mocks.token.mockImplementationOnce(f.token).mockImplementationOnce(async () => { await withdrawEligibility(f, change); return f.token(); });
+      await drainOutbound(db as any);
+      expect(mocks.graph).not.toHaveBeenCalled();
+      const job = (await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data();
+      expect(job).toMatchObject({ status: 'failed', budgetSettled: true });
+      expect(job?.error).toMatch(/oprirea|retras|expirat/);
+      expect((await f.ref.collection('messages').doc(queued.messageId!).get()).data()?.status).toBe('failed');
+      await drainOutbound(db as any); expect(mocks.graph).not.toHaveBeenCalled();
+    } finally { await f.rate.delete(); }
+  });
   it.each(['phone', 'role', 'destination'])('refuses a changed personal %s in the queue transaction', async change => {
     const f = await personalFixture();
     mocks.token.mockImplementationOnce(async () => {

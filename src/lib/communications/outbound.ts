@@ -1,7 +1,7 @@
 import { bindViewingConfirmation, assertViewingTemplate } from './viewing-confirmation';
 import { viewingConfirmationLinkSchema } from '@/lib/crm/viewing-attendance';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
-import type { Firestore } from 'firebase-admin/firestore';
+import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { advanceStatus, budgetReservation, canReadConversation, withinResponseWindow, type Actor, type Conversation, type Message } from './model';
 import { agencyCollection, CommunicationError, getConversation, nowIso } from './server';
@@ -20,6 +20,17 @@ import { personalRecipientSchema, assertPersonalRecipient } from './personal-rec
 
 const inputSchema = z.object({ viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
+// Re-read mutable eligibility after preparation, including inside the queue transaction.
+async function assertCurrentRecipientEligibility(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput, category: string, tx?: Transaction) {
+  if (!input.template && !withinResponseWindow(conversation.lastInboundAt)) throw new CommunicationError('Fereastra de răspuns a expirat. Pregătește din nou mesajul.', 409);
+  if (conversation.channel !== 'whatsapp') return;
+  const consents = agencyCollection(db, actor.agencyId, 'communicationConsents');
+  const refs = ['all', category === 'marketing' ? 'marketing' : 'service'].map(scope => consents.doc(stableId(conversation.connectionId, conversation.externalParticipantId, scope)));
+  const [global, scoped] = await Promise.all(refs.map(ref => tx ? tx.get(ref) : ref.get()));
+  if (global.data()?.status === 'revoked') throw new CommunicationError('Contactul a cerut oprirea mesajelor WhatsApp.', 409);
+  if (scoped.data()?.status === 'revoked') throw new CommunicationError('Contactul a retras acordul pentru această comunicare.', 409);
+  if (input.template && scoped.data()?.status !== 'granted') throw new CommunicationError('Nu există consimțământ înregistrat pentru această comunicare.', 409);
+}
 export async function estimateSend(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput) {
   const { connection, token } = await connectionToken(db, actor, conversation.connectionId, 'send');
   if (conversation.channel === 'storia') throw new CommunicationError('Continuă răspunsul pe Storia.');
@@ -105,6 +116,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     assertRecipientRevision({ ...fresh.data(), id }, recipient);
     await assertPersonalRecipient(db, actor, { ...fresh.data(), id }, input.personalRecipient, tx);
     assertNoReplySince(fresh.data()!, input.stopOnReplySince);
+    await assertCurrentRecipientEligibility(db, actor, { ...fresh.data(), id } as Conversation, input, estimate.category, tx);
     await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
     const currentBinding = await bindViewingConfirmation(db, actor.agencyId, { ...fresh.data(), id }, input.viewingConfirmation, tx);
     if (JSON.stringify(currentBinding) !== JSON.stringify(binding)) throw new CommunicationError('Programarea s-a schimbat înaintea trimiterii.', 409);
@@ -178,6 +190,7 @@ export async function drainOutbound(db: Firestore) {
       const currentBinding = await bindViewingConfirmation(db, actor.agencyId, latestConversation, job.input.viewingConfirmation);
       if (JSON.stringify(currentBinding) !== JSON.stringify(job.viewingConfirmation || null)) throw new CommunicationError('Programarea sau participantul s-a schimbat.', 409);
       assertViewingTemplate(currentBinding, estimate.renderedText, Boolean(job.input.template));
+      await assertCurrentRecipientEligibility(db, actor, latestConversation, job.input, estimate.category);
       await messageRef.update({ status: 'sending' });
       attempted = true;
       const response = await graph(`/${connection.externalId}/messages`, token, { ...estimate.body, ...(connection.channel === 'whatsapp' ? { biz_opaque_callback_data: receiptCorrelation(row.id, connection.id) } : {}) });
