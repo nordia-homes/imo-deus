@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Formatul telefonului la furnizor și refuzul intervenit înaintea lansării — 0266, parțial
+
+Adaptorul trimite acum telefonul românesc complet în format internațional +40 către endpointul POST /call documentat de [Vapi](https://docs.vapi.ai/calls/outbound-calling). Formatele locale, +40 și 0040 sunt normalizate la transport; snapshotul din CRM nu este modificat. Numerele incomplete sunt respinse înaintea cererii HTTP și înaintea creării documentului de apel, inclusiv forma veche de opt cifre acceptată de normalizatorul general.
+
+Crearea apelului nu mai scrie aiDoNotCall=false. Astfel, un refuz salvat după verificarea inițială nu mai este șters de actualizarea stării apelului. Tranzacția de lansare vede refuzul, anulează apelul cu motiv și îl păstrează în evidența proprietarului. Răspunsul rămâne anulare, fără a pretinde că proprietarul a fost sunat.
+
+Au trecut **71 teste unitare**, **26 teste Firestore**, TypeScript, lint, paritatea celor 180 de operații, inventarul corpusului și buildul final cu 227 de pagini. Testul de transport verifică payloadul efectiv și păstrează ca incert un răspuns HTTP fără ID de apel. Proba HTTP/Firestore introduce refuzul exact între verificarea eligibilității și actualizarea stării, apoi verifică anularea, lipsa marcajului de expediere și zero apeluri către furnizorul simulat. Dovadă: [OUTREACH_PROVIDER_PARTIAL_0266.json](evals/OUTREACH_PROVIDER_PARTIAL_0266.json).
+
+Versiuni **jarvis-85 / tools 114**. Totalul rămâne **108/1000** cu dovezi locale, **0 certificări complete în producție**. Scenariul 0266 rămâne parțial: nu este certificat apelul real, fluxul de aprobare sau rezultatul conversației externe. Nu au fost efectuate apeluri reale și modificările nu sunt publicate în producție.
+
 ## Modificarea setărilor prin conversație — 0269; telefonul pentru 0266, parțial
 
 Cererea originală „Actualizează setările de outreach pe care am dreptul să le schimb.” citește configurația și drepturile actuale. Agentul fără drept de editare nu primește un plan de scriere. Administratorului i se cer valorile noi dacă lipsesc, iar răspunsul ulterior continuă aceeași cerere și pregătește numai câmpurile solicitate. Planul nu este prezentat drept salvare.

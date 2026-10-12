@@ -271,7 +271,6 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     const actorId = call.createdBy || call.agentId;
     const actor = actorId ? await tx.get(adminDb.collection('users').doc(actorId)) : null;
     if (!current.exists || !['queued', 'scheduled'].includes(current.data()?.status) || current.data()?.providerDispatchStartedAt || current.data()?.vapiCallId) return false;
-    if (owner.data()?.aiDoNotCall === true) throw new Error('Proprietarul are restricție Do Not Call.');
     if (!actor || actor.data()?.agencyId !== call.agencyId || !['agent', 'admin'].includes(actor.data()?.role)) throw new Error('Agentul nu mai are acces la agenție.');
     // Settings participate in the dispatch claim: a concurrent disable forces
     // the transaction to retry instead of launching with an earlier snapshot.
@@ -284,6 +283,7 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
       if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: 'canceled', aiOutreachOutcome: 'uncalled', aiOutreachUpdatedAt: updatedAt, updatedAt }, { merge: true });
       return false;
     };
+    if (owner.data()?.aiDoNotCall === true) return cancelBeforeDispatch('owner_do_not_call', 'Proprietarul a refuzat contactarea. Apelul nu a fost lansat.');
     if (dispatchSettings.enabled !== true) {
       return cancelBeforeDispatch('outreach_disabled', 'Apelurile AI sunt dezactivate pentru această agenție. Apelul nu a fost lansat.');
     }

@@ -16,6 +16,7 @@ vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: mocks.vapi, V
 import { POST as updateOutreachSettings } from '@/app/api/ai-outreach/settings/route';
 import { POST as createOutreachCall } from '@/app/api/ai-outreach/calls/route';
 import { launchAiOutreachCall } from '@/lib/ai-outreach/server';
+import * as outreachServer from '@/lib/ai-outreach/server';
 import { editableAiOutreachSettings, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import { POST } from '@/app/api/owner-listings/prospecting/route';
 import { searchProperties } from '../search';
@@ -57,6 +58,25 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('preserves a refusal recorded after eligibility checks and cancels before the provider', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    mocks.vapi.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'must-not-launch', raw: {} });
+    const owner = agency.collection('aiOutreachOwnerListingStatuses').doc('owner');
+    await agency.collection('ownerListingFavorites').doc('owner').set({ isFavoriteActive: true, ownerPhone: '0722123456' });
+    const spy = vi.spyOn(outreachServer, 'getAgentName').mockImplementationOnce(async () => {
+      await owner.set({ aiDoNotCall: true }); return 'Agent local';
+    });
+    try {
+      const response = await createOutreachCall(new NextRequest('http://localhost/api/ai-outreach/calls', { method: 'POST', body: JSON.stringify({ ownerListing: { id: 'owner', title: 'Refuz nou' } }) }));
+      expect(response.status).toBe(201);
+      const result = await response.json();
+      expect(result.call).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_do_not_call' });
+      expect(operationResult('outreach_start', result).executionState).toBe('cancelled');
+      expect((await owner.get()).data()).toMatchObject({ aiDoNotCall: true, aiOutreachStatus: 'canceled' });
+      expect((await agency.collection('aiOutreachCalls').doc(result.call.id).get()).data()?.providerDispatchStartedAt).toBeUndefined();
+      expect(mocks.vapi).not.toHaveBeenCalled();
+    } finally { spy.mockRestore(); }
+  });
   it('launches with a missing prospect phone from the ready canonical source, never a supplied or invalid override', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), listingId = randomUUID(); listings.push(listingId);
     const source = db.collection('ownerListings').doc(listingId), favorite = agency.collection('ownerListingFavorites').doc(listingId);
@@ -67,6 +87,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     expect((await request()).status).toBe(400);
     await source.update({ publicationStatus: 'ready', isCanonical: false }); expect((await request()).status).toBe(400);
     await source.update({ isCanonical: true }); await favorite.update({ ownerPhone: 'invalid' }); expect((await request()).status).toBe(400);
+    await favorite.update({ ownerPhone: '22334455' }); expect((await request()).status).toBe(400);
     expect(mocks.vapi).not.toHaveBeenCalled(); expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true);
     await favorite.update({ ownerPhone: '' });
     const response = await request(), payload = await response.json(); expect(response.status).toBe(201);

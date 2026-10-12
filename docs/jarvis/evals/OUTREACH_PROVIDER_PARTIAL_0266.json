@@ -1,0 +1,26 @@
+{
+  "scenarioId": "master-0266",
+  "status": "partial",
+  "executionVerified": false,
+  "scope": "Provider request formatting and concurrent refusal protection in application code. HTTP transport and phone provider are simulated; no real call or production certification.",
+  "versions": { "prompt": "jarvis-85", "tools": "114" },
+  "reference": "https://docs.vapi.ai/calls/outbound-calling",
+  "fixes": [
+    "Send a complete Romanian destination in international +40 format to the documented POST /call endpoint; retain the original CRM snapshot.",
+    "Reject incomplete or unsupported numbers before provider HTTP and before creating a CRM call document.",
+    "Creating a call no longer writes aiDoNotCall=false, preserving a refusal recorded after the initial eligibility check.",
+    "The dispatch transaction cancels a refused call with owner_do_not_call without invoking the provider or clearing the refusal."
+  ],
+  "validation": {
+    "unitTests": 71,
+    "firestoreTests": 26,
+    "transportTest": "src/lib/ai-assistant/__tests__/outreach-provider.test.ts",
+    "firestoreTest": "src/lib/ai-assistant/__tests__/prospecting-workflow.integration.test.ts",
+    "raceEvidence": "The HTTP-route test writes a refusal through getAgentName after eligibility validation and before owner-status update, then verifies persisted refusal, canceled call, absent dispatch timestamp and zero provider calls."
+  },
+  "limitations": [
+    "Full natural-language launch, approval UI, live provider readiness and external conversation result remain uncertified.",
+    "This does not retract requests already dispatched or accepted by the provider.",
+    "The original-scenario local real-model count remains 108/1000; there are zero complete production certifications."
+  ]
+}

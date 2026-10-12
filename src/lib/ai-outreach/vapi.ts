@@ -1,4 +1,5 @@
 import type { AiOutreachCall, AiOutreachSettings } from '@/lib/ai-outreach/types';
+import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
 
 type CreateVapiOutboundCallInput = {
   call: AiOutreachCall;
@@ -62,7 +63,9 @@ export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput)
     };
   }
 
-  const response = await fetch('https://api.vapi.ai/call/phone', {
+  const localPhone = normalizeRomanianPhone(input.call.ownerPhone);
+  if (!/^0[237]\d{8}$/.test(localPhone)) throw new VapiDispatchError('Numărul destinatarului nu este un număr românesc complet.', true);
+  const response = await fetch('https://api.vapi.ai/call', {
     signal: AbortSignal.timeout(30000),
     method: 'POST',
     headers: {
@@ -73,7 +76,7 @@ export async function createVapiOutboundCall(input: CreateVapiOutboundCallInput)
       assistantId,
       phoneNumberId,
       customer: {
-        number: input.call.ownerPhone,
+        number: `+40${localPhone.slice(1)}`,
       },
       assistantOverrides: buildAssistantOverrides(input),
       metadata: {

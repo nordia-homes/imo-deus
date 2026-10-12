@@ -143,7 +143,8 @@ describe('outreach dispatch claims', () => {
   });
   it('checks opt-out and current membership immediately before dispatch', async () => {
     const optedOut = fixture(); optedOut.rows.set('agencies/a/aiOutreachOwnerListingStatuses/l', { aiDoNotCall: true });
-    await expect(launchAiOutreachCall(optedOut.input)).rejects.toThrow('Do Not Call');
+    expect((await launchAiOutreachCall(optedOut.input)).call).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_do_not_call' });
+    expect(optedOut.rows.get('agencies/a/aiOutreachOwnerListingStatuses/l').aiDoNotCall).toBe(true);
     const revoked = fixture(); revoked.rows.set('users/u', { agencyId: 'other', role: 'agent' });
     await expect(launchAiOutreachCall(revoked.input)).rejects.toThrow('acces');
     expect(provider).not.toHaveBeenCalled();

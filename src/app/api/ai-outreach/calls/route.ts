@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       ownerPhone,
     };
 
-    if (!ownerPhone) {
+    if (!/^0[237]\d{8}$/.test(ownerPhone)) {
       return NextResponse.json({ message: 'Anuntul nu are numar de telefon valid pentru apel AI.' }, { status: 400 });
     }
 
@@ -127,7 +127,6 @@ export async function POST(request: NextRequest) {
       aiOutreachOutcome: call.outcome,
       aiOutreachUpdatedAt: timestamp,
       createdAt: timestamp,
-      aiDoNotCall: false,
     });
 
     if (body.scheduledAt) {
