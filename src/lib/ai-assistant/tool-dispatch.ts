@@ -30,7 +30,7 @@ import { analyzeRecords, resolveDatetime } from './deterministic';
 import { validateActionDates } from './temporal-policy';
 import { bindCalendarRevisions } from './calendar-revisions';
 import { bindAgencyRevisions } from './agency-revisions';
-import { bindBusinessRevisions } from './business-revisions';
+import { prepareProspectingBatch } from './prospecting-batch';
 import { queryRecords, decorateRecords } from './record-query';
 import { operationCards } from './operation-cards';
 import { dataCatalog, capabilityStatus } from './catalog';
@@ -198,7 +198,8 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     validateActionDates(payload.actions, options.verifiedDates || new Set());
     for (const action of payload.actions as AssistantAction[]) if (action.kind === 'update_property_status' && action.status === 'Vândut' && !action.soldPrice) throw new Error('Cere agentului prețul real de vânzare înainte de pregătirea planului.');
     for (const action of payload.actions as AssistantAction[]) if (action.kind === 'existing_operation') { requireTool(action.operation, ctx.role || ''); if (!Object.hasOwn(operations, action.operation) || isReadOperation(action.operation)) throw new Error('Acțiune handler invalidă.'); }
-    actions.push(...await bindBusinessRevisions(ctx, await bindAgencyRevisions(ctx, await bindCalendarRevisions(ctx, payload.actions)))); data = { prepared: actions.length, executed: false };
+    const batch = await prepareProspectingBatch(ctx, await bindAgencyRevisions(ctx, await bindCalendarRevisions(ctx, payload.actions)));
+    actions.push(...batch.actions); data = { prepared: actions.length, executed: false, blockedProspects: batch.blockedProspects, preparedListingIds: batch.preparedListingIds };
   } else if (name === 'remember_preference') {
     if (!/\b(memoreaz|retine|reține|remember)/i.test(prompt)) throw new Error('Memorarea necesită cererea explicită a agentului.');
     data = await rememberPreference(ctx, payload.key, payload.value);

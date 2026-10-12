@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare: un destinatar blocat nu oprește mesajele independente — 12 octombrie 2026
+
+Pregătirea lotului tratează separat fiecare mesaj independent de prospectare. Un refuz WhatsApp sau o conversație atribuită altui agent nu mai anulează mesajele pregătite pentru ceilalți proprietari. Modelul primește pașii efectiv pregătiți și motivele pentru destinatarii blocați; nu trebuie să repete lotul ori să ceară aprobarea textului. Deduplicarea se păstrează în lot și între propuneri. Planurile mixte, cele cu referințe între pași și cererile fără autorizare explicită își păstrează pregătirea existentă.
+
+Aplicația păstrează pe server cerințele neîndeplinite pentru destinatarii blocați, inclusiv când modelul le omite din acoperirea cererii. Prin urmare, contactarea a doi dintre trei proprietari nu este raportată drept succes integral. Pregătirea reușită ulterior elimină motivul anterior pentru același anunț. Trimiterea autonomă rămâne limitată la mesaje pregătite de server și acoperite de plan; refuzurile și accesul nu sunt modificate pentru a forța expedierea.
+
+Au trecut 122 teste unitare, 75 teste de integrare și 8 verificări cu model real, TypeScript, ESLint, paritatea și buildul final cu 227 de pagini. Cele două variante noi au trimis exact două șabloane către furnizorul simulat, au păstrat refuzul/atribuirea celuilalt proprietar și nu au retrimis la reluarea requestului. Testul de integrare suplimentar verifică și raportarea omisiunii modelului. Dovadă: [WHATSAPP_INDEPENDENT_RECIPIENTS_EXECUTION.json](evals/WHATSAPP_INDEPENDENT_RECIPIENTS_EXECUTION.json).
+
+Versiuni jarvis-99 / tools 127. Inventarul rămâne 116/1000 dovezi locale cu model real și 0 certificări complete în producție. Acestea sunt variante suplimentare, nu scenarii originale noi. Nu s-au contactat persoane reale și modificările nu sunt publicate în producție.
+
 ## Prospectare directă cu șablonul dedicat, fără previzualizare manuală — 12 octombrie 2026
 
 Clarificarea utilizatorului prevalează asupra unui flux cu previzualizare obligatorie: comanda explicită de prospectare WhatsApp autorizează expedierea șablonului dedicat, fără ca agentul să confirme textul, mesajul sau planul. Costul și eligibilitatea se verifică intern în pregătire și în expeditor. Consultarea șabloanelor sau previzualizarea cerută expres rămân operații separate, niciodată pași manuali obligatorii ai prospectării. Completările nefinalizate pentru un nou instrument de previzualizare au fost retrase.

@@ -37,6 +37,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   }
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
   let goalCoverage: GoalCoverage | undefined;
+  const blockedProspects = new Map<string, string>();
   const successfulReads = new Set<string>();
   const budget = options.budget || new AgentBudget(), provider = options.provider || new OpenAIAdapter();
   const verifiedDates = options.verifiedDates || explicitInstants(prompt);
@@ -47,6 +48,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   let collaborationDraft = false;
   const verifiedMutationPlan = () => actions.length > 0 && !!goalCoverage?.requirements.every(row => ['planned', 'answered'].includes(row.resolution)) && metrics.tools.at(-1)?.name === 'goal_coverage' && metrics.tools.at(-1)?.status === 'success';
   const finish = (text: string, status = 'success') => {
+    if (blockedProspects.size) {
+      if (goalCoverage) goalCoverage = { requirements: [...goalCoverage.requirements, ...[...blockedProspects].map(([listingId, reason], index) => ({
+        id: `blocked-prospect-${index}`, sourceQuote: prompt.slice(0, 1000), description: `Proprietar necontactat (${listingId}): ${reason}`,
+        resolution: 'needs_clarification' as const, steps: [], evidenceCallIds: [],
+      }))] };
+      else text += '\nProprietari necontactați: ' + [...blockedProspects].map(([id, reason]) => `${id}: ${reason}`).join('; ');
+      if (status === 'success') status = 'clarification';
+    }
     if (status === 'success' && goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) status = goalCoverage.requirements.some(row => row.resolution === 'needs_clarification') ? 'clarification' : 'partial';
     metrics.status = status; metrics.elapsedMs = Date.now() - childStarted;
     for (const card of cards) card.outputType ||= card.title.includes('Matching') ? 'PROPERTY_MATCH_LIST' : ['owners', 'crm', 'properties'].includes(card.source) ? 'PROPERTY_LIST' : card.source === 'contacts' ? 'CLIENT_LIST' : card.source === 'viewings' ? 'VIEWING_CARD' : card.source === 'tasks' ? 'TASK_CARD' : card.source === 'insights' ? 'INSIGHT_CARD' : /campaign|meta|tiktok/.test(card.source) ? 'CAMPAIGN_CARD' : 'ANALYTICS_CARD';
@@ -250,6 +259,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             if (prospectRead && !historyReady()) throw new Error('Citirea nu este completă: termină paginile owner_prospects și citirile timeline cerute de rezultatele readMode=timeline.');
             goalCoverage = validateGoalCoverage(payload, prompt, actions.length, successfulReads);
             response.data = { accepted: true, requirements: goalCoverage.requirements.length, unresolved: goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.id) };
+          }
+          if (name === 'propose_actions') {
+            for (const id of Array.isArray(response.data.preparedListingIds) ? response.data.preparedListingIds : []) if (typeof id === 'string') blockedProspects.delete(id);
+            for (const blocked of Array.isArray(response.data.blockedProspects) ? response.data.blockedProspects : []) if (typeof blocked?.listingId === 'string' && typeof blocked.reason === 'string') blockedProspects.set(blocked.listingId, blocked.reason);
           }
           if (response.actions.length) {
             const unique = uniqueProspectingProposals(actions, response.actions);

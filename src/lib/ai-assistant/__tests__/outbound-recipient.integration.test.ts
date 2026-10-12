@@ -354,7 +354,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template', 'revoked-owner', 'other-agent-owner'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -376,6 +376,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
         if (variant === 'missing-phone' && index === 2) await db.collection('ownerListings').doc(id).update({ ownerPhone: '', phoneExtractionStatus: 'unavailable' });
       }
       const prompt = variant === 'shared-owner-long-titles' ? f.request.prompt.replace('Găsește 3', 'Găsește doar 3') : variant === 'without-intermediaries' ? f.request.prompt.replace('apartamente', 'apartamente fără intermediari') : f.request.prompt;
+      const blockedConsent = f.agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722333302', 'marketing'));
+      if (variant === 'revoked-owner') await blockedConsent.set({ status: 'revoked' });
+      if (variant === 'other-agent-owner') {
+        const id = stableId(f.conversation.connectionId, '40722333302');
+        await f.agency.collection('conversations').doc(id).set({ id, agencyId: f.actor.agencyId, channel: 'whatsapp', connectionId: f.conversation.connectionId, externalParticipantId: '40722333302', assigneeId: 'another-agent', collaboratorIds: [], name: 'Proprietar 2' });
+      }
       const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };
       const result = await chatTurn(mocks.actor, request);
       await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
@@ -388,6 +394,13 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
         expect(result.message.text).toContain('Cerințe încă neîndeplinite');
         expect(result.message.text).toMatch(/telefon|număr/);
         expect((await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data()?.status).toBe('partial');
+      }
+      if (['revoked-owner', 'other-agent-owner'].includes(variant)) {
+        expect(result.message.text).toContain('Cerințe încă neîndeplinite');
+        expect(result.message.text).toMatch(variant === 'revoked-owner' ? /retras|refuz/ : /altui agent/);
+        expect((await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data()?.status).toBe('partial');
+        if (variant === 'revoked-owner') expect((await blockedConsent.get()).data()).toEqual({ status: 'revoked' });
+        else expect((await f.agency.collection('conversations').doc(stableId(f.conversation.connectionId, '40722333302')).get()).data()?.assigneeId).toBe('another-agent');
       }
       await drainOutbound(db as any); await drainOutbound(db as any);
       expect(templateSends()).toHaveLength(expectedSends);
@@ -426,18 +439,19 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       expect(repeated.map(action => action.kind === 'existing_operation' && action.params.conversationId)).toEqual(actions.map(action => action.kind === 'existing_operation' && action.params.conversationId));
     } finally { await f.rate.delete(); }
   });
-  it('sends each recipient once when the planner proposes overlapping batches', async () => {
+  it.each(['overlap', 'revoked-omitted-from-model-coverage'])('sends each eligible recipient once across batches: %s', async variant => {
     const f = await prospectingFixture();
     mocks.actor = f.ctx;
     try {
       const { planTurn } = await import('../planner');
       const { executeSafePrefix } = await import('../autonomy');
       await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ channel: 'whatsapp', status: 'connected' });
-      for (const [index, id] of ['first', 'second'].entries()) await f.agency.collection('ownerListingFavorites').doc(id).set({ ownerName: `Proprietar ${index}`, ownerPhone: `072244440${index}` });
+      for (const [index, id] of ['first', 'second', 'blocked'].entries()) await f.agency.collection('ownerListingFavorites').doc(id).set({ ownerName: `Proprietar ${index}`, ownerPhone: `072244440${index}` });
+      if (variant !== 'overlap') await f.agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722444402', 'marketing')).set({ status: 'revoked' });
       const action = (listingId: string) => ({ kind: 'existing_operation', operation: 'message_send', params: {}, query: {}, body: { prospectingListingId: listingId, prospectingConnectionId: f.conversation.connectionId, template: { name: 'colaborare', language: 'ro', parameters: ['Proprietar'] } } });
       const calls = [
         { name: 'propose_actions', payload: { actions: [action('first')] } },
-        { name: 'propose_actions', payload: { actions: [action('first'), action('second')] } },
+        { name: 'propose_actions', payload: { actions: [action('first'), ...(variant !== 'overlap' ? [action('blocked')] : []), action('second')] } },
         { name: 'goal_coverage', payload: { requirements: [{ id: 'send', sourceQuote: 'contactează proprietarii pe whatsapp', description: 'Contactare proprietari', resolution: 'planned', steps: [1, 2], evidenceCallIds: [] }] } },
       ];
       let index = 0;
@@ -447,7 +461,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
         return { calls: call ? [call] : [], items: call ? [{ type: 'function_call', call_id: id, name: call.name, arguments: call.arguments }] : [], text: call ? '' : 'Mesaje pregătite.', intentStatus: 'answer' as const, status: 'completed', latencyMs: 1, usage: { inputTokens: 100, outputTokens: 30, cachedTokens: 0, cacheWriteTokens: 0, estimated: false } };
       }) };
       const planned = await planTurn(f.ctx, f.request.prompt, [], { provider });
-      expect(planned.metrics.status).toBe('success');
+      expect(planned.metrics.status).toBe(variant === 'overlap' ? 'success' : 'clarification');
+      if (variant !== 'overlap') {
+        expect(planned.goalCoverage?.requirements).toEqual(expect.arrayContaining([expect.objectContaining({ resolution: 'needs_clarification', description: expect.stringContaining('blocked') })]));
+        const { canExecutePreparedProspecting } = await import('../prospecting-plan');
+        expect(canExecutePreparedProspecting(f.request.prompt, planned.metrics.status, planned.actions, planned.goalCoverage)).toBe(true);
+      }
       expect(planned.actions).toHaveLength(2);
       const executed = await executeSafePrefix(f.ctx, randomUUID(), planned.actions, f.request.prompt);
       expect(executed.blocked).toBe(false); expect(executed.results).toHaveLength(2);
