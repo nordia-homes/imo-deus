@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import cases from '../evaluation-cases.json';
 import { toolRegistry, requireTool, inputContract, discoverTools } from '../registry';
+
+it('restricts outreach configuration writes to administrators while preserving agent reads', () => {
+  expect(() => requireTool('outreach_settings_update', 'agent')).toThrow();
+  expect(() => requireTool('outreach_settings_update', 'admin')).not.toThrow();
+  expect(() => requireTool('outreach_configuration', 'agent')).not.toThrow();
+  expect(discoverTools('outreach', 0, 50, 'agent').tools.some(tool => tool.id === 'outreach_settings_update')).toBe(false);
+});
 import { actionSchema } from '../contracts';
 import { routeModel } from '../models';
 describe('versioned task corpus and runtime contracts', () => {

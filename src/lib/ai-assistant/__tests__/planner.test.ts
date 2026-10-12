@@ -44,7 +44,7 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
-  it.each(['Verifică setările de outreach.', 'Verifică setările de outreach pentru apelurile AI.', 'Verifică setările apelurilor AI.'])('requires current configuration for %s', async prompt => {
+  it.each(['Verifică setările de outreach.', 'Verifică setările de outreach pentru apelurile AI.', 'Verifică setările apelurilor AI.', 'Nu porni apelul dacă serviciul este dezactivat.'])('requires current configuration for %s', async prompt => {
     vi.mocked(readOutreachConfiguration).mockResolvedValue({ rows: [{ enabled: false }], complete: true } as any);
     const read = call('outreach_configuration', {});
     const model = scripted(final, read, call('goal_coverage', { requirements: [{ id: 'settings', sourceQuote: prompt, description: 'Setări actuale', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);

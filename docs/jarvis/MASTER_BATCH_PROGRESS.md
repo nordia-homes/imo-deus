@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Comanda de blocare și revalidarea orei apelului — 0267; 0266/0269 parțial
+
+Cererea originală „Nu porni apelul dacă serviciul este dezactivat.” verifică acum configurația actuală și răspunde fără lansare sau reactivare. Modelul real a executat citirea în trei variante locale: document absent, serviciu dezactivat și serviciu activ. În fiecare caz sunt verificate lipsa acțiunilor de pornire, a modificărilor configurației și a documentelor de apel. Starea activă nu transformă o cerere negativă într-o autorizație de lansare.
+
+La preluarea tranzacțională, lansarea recitește data salvată și intervalul actual al agenției. Programarea viitoare rămâne intactă, fără furnizor invocat, chiar dacă executorul avea o copie veche cu o dată deja trecută. O programare fără dată validă sau o lansare în afara intervalului permis este anulată cu motiv. Orele sunt evaluate în București, inclusiv intervalele care trec peste miezul nopții.
+
+Actualizarea setărilor respinge orele invalide, câmpurile necunoscute și patchurile goale. Scrierea este disponibilă în registrul Jarvis numai administratorilor, în concordanță cu handlerul existent. Formularul trimite numai câmpurile editabile; identitatea agenției și metadatele documentului nu ajung în patch. Proba HTTP verifică salvarea normală din formular, un interval nocturn și păstrarea câmpurilor nemodificate.
+
+Au trecut **150 teste unitare**, **24 teste Firestore**, proba 0267 cu model real, TypeScript, lint, contractele regenerate, paritatea celor 180 de operații, inventarul corpusului și buildul final cu 227 de pagini. Dovadă: [PROSPECTING_EXECUTION_BATCH_07.json](evals/PROSPECTING_EXECUTION_BATCH_07.json). Versiuni **jarvis-84 / tools 112**. Total **107/1000** cu dovezi locale, **0 certificări complete în producție**.
+
+Proba locală 0267 completează verificarea conversațională lipsă în raportul anterior. Nu certifică lansarea reală 0266, modificarea setărilor prin limbaj natural 0269, disponibilitatea furnizorului sau concurența limitelor zilnice. Dezactivarea după preluarea tranzacțională nu retrage o cerere deja expediată. Nu au fost efectuate apeluri reale și modificările nu sunt publicate în producție.
+
 ## Configurația outreach și oprirea lansării după dezactivare — 0268; 0267 parțial
 
 Cererea originală „Verifică setările de outreach.” citește configurația actuală a agenției printr-un instrument dedicat. Jarvis prezintă activarea, comisioanele, intervalul în București, limitele și dreptul de editare. Citirea nu expune câmpuri arbitrare sau credențiale salvate accidental în document. Lipsa configurației înseamnă valorile implicite cu serviciul dezactivat, fără crearea unui document. Activarea nu certifică eligibilitatea proprietarului sau configurarea furnizorului.

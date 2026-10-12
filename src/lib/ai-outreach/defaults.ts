@@ -19,6 +19,12 @@ export const DEFAULT_AI_OUTREACH_SETTINGS: Omit<AiOutreachSettings, 'agencyId'> 
   discloseAi: true,
 };
 
+export function editableAiOutreachSettings(settings: AiOutreachSettings) {
+  return Object.fromEntries(Object.keys(DEFAULT_AI_OUTREACH_SETTINGS)
+    .filter(key => settings[key as keyof AiOutreachSettings] !== undefined)
+    .map(key => [key, settings[key as keyof AiOutreachSettings]]));
+}
+
 export function withDefaultAiOutreachSettings(agencyId: string, partial?: Partial<AiOutreachSettings> | null): AiOutreachSettings {
   return {
     ...DEFAULT_AI_OUTREACH_SETTINGS,

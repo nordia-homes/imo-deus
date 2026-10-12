@@ -57,7 +57,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAgency } from '@/context/AgencyContext';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { AI_OUTREACH_TIMEZONE, DEFAULT_AI_OUTREACH_SETTINGS } from '@/lib/ai-outreach/defaults';
+import { AI_OUTREACH_TIMEZONE, DEFAULT_AI_OUTREACH_SETTINGS, editableAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import {
   AI_OUTREACH_OUTCOME_META,
   getAiOutreachOutcomeMeta,
@@ -473,7 +473,7 @@ export default function AiCallsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(editableAiOutreachSettings(settings)),
       });
       const payload = await response.json().catch(() => ({}));
 

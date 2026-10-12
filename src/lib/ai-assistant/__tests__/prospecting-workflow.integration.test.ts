@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ context: null as any, invoke: vi.fn(), queue: vi.fn(), cancel: vi.fn(), plan: vi.fn(), vapi: vi.fn() }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
-vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.context }));
+vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.context, requireAgencyAdminFromBearerToken: async () => { if (mocks.context.role !== 'admin') throw Object.assign(new Error('Administrator required'), { status: 403 }); return mocks.context; } }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn(), agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
 vi.mock('@/lib/owner-listings/olx-phone-queue', () => ({ upsertProspectingOlxPhoneQueueEntry: mocks.queue, cancelProspectingOlxPhoneQueueEntry: mocks.cancel }));
 vi.mock('@/lib/owner-listings/enrichment-queue', () => ({ upsertPubli24ProspectingPhoneQueueEntry: mocks.queue, cancelProspectingPubli24PhoneQueueEntry: mocks.cancel }));
@@ -13,9 +13,10 @@ vi.mock('@/lib/owner-listings/olx-agent-connection', () => ({ getAgentOlxConnect
 vi.mock('../operations', () => ({ operations: { owner_prospect: { method: 'POST', path: '/api/owner-listings/prospecting' } }, isReadOperation: () => false, invokeOperation: mocks.invoke }));
 vi.mock('../workspace', () => ({ getPlan: mocks.plan }));
 vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: mocks.vapi, VapiDispatchError: class extends Error {} }));
+import { POST as updateOutreachSettings } from '@/app/api/ai-outreach/settings/route';
 import { POST as createOutreachCall } from '@/app/api/ai-outreach/calls/route';
 import { launchAiOutreachCall } from '@/lib/ai-outreach/server';
-import { withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
+import { editableAiOutreachSettings, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import { POST } from '@/app/api/owner-listings/prospecting/route';
 import { searchProperties } from '../search';
 import { selectContext } from '../context-selection';
@@ -52,10 +53,45 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     const ctx = { agencyId, uid, role: 'agent', adminDb: db } as any;
     await db.collection('agencies').doc(agencyId).set({ city: 'Bucuresti', county: 'Bucuresti' });
     await db.collection('users').doc(uid).set({ agencyId, role: 'agent', name: 'Fixture' });
-    await db.collection('agencies').doc(agencyId).collection('aiOutreach').doc('settings').set({ enabled: true });
+    await db.collection('agencies').doc(agencyId).collection('aiOutreach').doc('settings').set({ enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' });
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('validates settings patches and preserves permissions and unspecified configuration', async () => {
+    const ctx = await fixture(), ref = db.collection('agencies').doc(ctx.agencyId).collection('aiOutreach').doc('settings');
+    const initial = { enabled: true, desiredCommissionValue: '4', callWindowStart: '09:00', callWindowEnd: '18:00' };
+    await ref.set(initial);
+    const update = (body: unknown) => updateOutreachSettings(new NextRequest('http://localhost/api/ai-outreach/settings', { method: 'POST', body: JSON.stringify(body) }));
+    expect((await update({ enabled: false })).status).toBe(403);
+    ctx.role = 'admin';
+    for (const body of [{}, { unknownSetting: true }, { callWindowStart: '24:00' }, { callWindowEnd: '09:70' }, { callWindowStart: '9' }, { timezone: 'UTC' }]) {
+      expect((await update(body)).status).toBe(400);
+      expect((await ref.get()).data()).toEqual(initial);
+    }
+    expect((await update({ callWindowStart: '22:00', callWindowEnd: '02:00' })).status).toBe(200);
+    expect((await ref.get()).data()).toMatchObject({ enabled: true, desiredCommissionValue: '4', callWindowStart: '22:00', callWindowEnd: '02:00', timezone: 'Europe/Bucharest' });
+    const uiPayload = editableAiOutreachSettings(withDefaultAiOutreachSettings(ctx.agencyId, { ...(await ref.get()).data(), id: 'settings', createdAt: '2026-01-01T00:00:00Z' }));
+    expect(uiPayload).not.toHaveProperty('agencyId'); expect(uiPayload).not.toHaveProperty('id'); expect(uiPayload).not.toHaveProperty('createdAt');
+    expect((await update(uiPayload)).status).toBe(200);
+  });
+  it('preserves future schedules and rechecks a changed call window using persisted state', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    mocks.vapi.mockReset();
+    const callRef = agency.collection('aiOutreachCalls').doc('future');
+    const call: any = { id: 'future', status: 'scheduled', agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: 'future', ownerPhone: '0722123456', scheduledAt: '2020-01-01T10:00:00Z' };
+    const future = { ...call, scheduledAt: new Date(Date.now() + 86400000).toISOString() };
+    await callRef.set(future);
+    const settings = withDefaultAiOutreachSettings(ctx.agencyId, { enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' });
+    expect((await launchAiOutreachCall({ adminDb: db as any, callRef: callRef as any, call, settings })).call.status).toBe('scheduled');
+    expect((await callRef.get()).data()).toEqual(future);
+    const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Bucharest', hour: '2-digit', hourCycle: 'h23' }).format(new Date()));
+    const closedHour = String((hour + 12) % 24).padStart(2, '0');
+    await agency.collection('aiOutreach').doc('settings').update({ callWindowStart: `${closedHour}:00`, callWindowEnd: `${closedHour}:01` });
+    await callRef.set(call);
+    expect((await launchAiOutreachCall({ adminDb: db as any, callRef: callRef as any, call, settings })).call).toMatchObject({ status: 'canceled', providerErrorCode: 'outreach_outside_window' });
+    expect((await callRef.get()).data()?.providerDispatchStartedAt).toBeUndefined();
+    expect(mocks.vapi).not.toHaveBeenCalled();
+  });
   it('blocks disabled HTTP requests and cancels stale queued and scheduled launches before the provider', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     mocks.vapi.mockReset();
@@ -103,7 +139,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     const settings = withDefaultAiOutreachSettings(ctx.agencyId, { enabled: true });
     await agency.collection('aiOutreachCalls').doc('legacy').set({ ownerPhone: '+40 722 123 456', ownerListingId: 'old', status: 'completed', createdAt: '2020-01-01T10:00:00Z' });
     const callRef = agency.collection('aiOutreachCalls').doc('new');
-    const call: any = { id: 'new', agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: 'other', ownerPhone: '0040 722 123 456', status: 'scheduled' };
+    const call: any = { id: 'new', agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: 'other', ownerPhone: '0040 722 123 456', status: 'scheduled', scheduledAt: '2020-01-01T10:00:00Z' };
     await callRef.set(call);
     expect((await launchAiOutreachCall({ adminDb: db as any, callRef: callRef as any, call, settings })).call.providerErrorCode).toBe('owner_phone_duplicate');
     await agency.collection('aiOutreachCalls').doc('legacy').update({ status: 'failed', result: { doNotCall: true } });
@@ -126,7 +162,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     await favorite.update({ ownerPhone: '0733123456', isFavoriteActive: false });
     mocks.vapi.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'simulated', raw: {} });
     const callRef = agency.collection('aiOutreachCalls').doc('after-human');
-    const call: any = { id: callRef.id, agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: 'other', ownerPhone: '0040 722 123 456', status: 'scheduled' };
+    const call: any = { id: callRef.id, agencyId: ctx.agencyId, agentId: ctx.uid, ownerListingId: 'other', ownerPhone: '0040 722 123 456', status: 'scheduled', scheduledAt: '2020-01-01T10:00:00Z' };
     await callRef.set(call);
     const settings = withDefaultAiOutreachSettings(ctx.agencyId, { enabled: true });
     const result = await launchAiOutreachCall({ adminDb: db as any, callRef: callRef as any, call, settings });

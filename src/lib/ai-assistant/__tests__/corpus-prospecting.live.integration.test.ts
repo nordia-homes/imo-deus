@@ -18,7 +18,7 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 268]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 267, 268]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -48,6 +48,24 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 267) {
+        const settingsRef = agency.collection('aiOutreach').doc('settings');
+        const variants = [];
+        for (const enabled of [null, false, true]) {
+          if (enabled !== null) await settingsRef.set({ enabled });
+          const result = await planTurn(ctx, prompt, []);
+          expect(result.metrics.status, result.text).toBe('success'); expect(result.actions).toEqual([]);
+          expect(result.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+          expect(result.cards.find(card => card.source === 'aiOutreachSettings')).toMatchObject({ rows: [{ enabled: enabled === true }] });
+          expect(result.text).toMatch(enabled === true ? /activ/i : /dezactiv|inactiv/i);
+          expect(result.text).toMatch(/nu.*(porn|lans|iniț|init)/i);
+          expect((await settingsRef.get()).data()).toEqual(enabled === null ? undefined : { enabled });
+          expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true);
+          variants.push({ enabled, ...result });
+        }
+        report = { ...report, variants, executionVerified: true, verification: 'Original negative command, actual model and application configuration reads with absent, disabled and enabled settings. No launch actions, activation, call records or external effects.' };
+        return;
+      }
       if (number === 268) {
         const settingsRef = agency.collection('aiOutreach').doc('settings');
         const result = await planTurn(ctx, prompt, []); report = { ...report, ...result };

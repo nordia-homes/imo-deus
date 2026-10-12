@@ -14,14 +14,14 @@ const settingsSchema = z.object({
   allowVerbalAgreement: z.boolean().optional(),
   allowExactAddressCollection: z.boolean().optional(),
   defaultTemplateId: z.string().trim().min(1).optional(),
-  callWindowStart: z.string().trim().min(1).optional(),
-  callWindowEnd: z.string().trim().min(1).optional(),
+  callWindowStart: z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Ora de început trebuie să fie HH:mm (00:00–23:59).').optional(),
+  callWindowEnd: z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Ora de sfârșit trebuie să fie HH:mm (00:00–23:59).').optional(),
   timezone: z.literal(AI_OUTREACH_TIMEZONE).optional(),
   maxDailyCalls: z.coerce.number().int().min(1).max(10000).optional(),
   monthlyBudgetCap: z.coerce.number().min(0).nullable().optional(),
   recordCalls: z.boolean().optional(),
   discloseAi: z.boolean().optional(),
-});
+}).strict().refine(value => Object.keys(value).length > 0, 'Precizează cel puțin o setare de modificat.');
 
 function formatError(error: unknown) {
   if (error instanceof z.ZodError) {

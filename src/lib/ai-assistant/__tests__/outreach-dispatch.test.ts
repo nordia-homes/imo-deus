@@ -4,7 +4,7 @@ vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: provider, Vap
 import { launchAiOutreachCall } from '@/lib/ai-outreach/server';
 import { VapiDispatchError } from '@/lib/ai-outreach/vapi';
 function fixture(status = 'scheduled') {
-  const rows = new Map<string, any>([['agencies/a/aiOutreach/settings', { enabled: true }], ['agencies/a/aiOutreachCalls/c', { status, ownerListingId: 'l', ownerPhone: '+40722334455' }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
+  const rows = new Map<string, any>([['agencies/a/aiOutreach/settings', { enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' }], ['agencies/a/aiOutreachCalls/c', { status, scheduledAt: '2020-01-01T10:00:00Z', ownerListingId: 'l', ownerPhone: '+40722334455' }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
   const ref = (path: string): any => ({ path, doc: (id: string) => ref(path + '/' + id), collection: (id: string) => ref(path + '/' + id), get: async () => ({ exists: rows.has(path), data: () => rows.get(path), docs: [...rows].filter(([key]) => key.startsWith(path + '/') && !key.slice(path.length + 1).includes('/')).map(([key, data]) => ({ id: key.split('/').at(-1), data: () => data })) }), set: async (data: any) => rows.set(path, { ...rows.get(path), ...data }) });
   let serial: Promise<any> = Promise.resolve();
   const db = { collection: ref, runTransaction: (work: any) => {
@@ -16,11 +16,40 @@ function fixture(status = 'scheduled') {
   } };
   return { rows, input: { adminDb: db, callRef: ref('agencies/a/aiOutreachCalls/c'), call: { id: 'c', agencyId: 'a', ownerListingId: 'l', agentId: 'u', status, ownerPhone: '+40722334455' }, settings: {}, agencyName: 'Agency' } as any };
 }
-afterEach(() => vi.clearAllMocks());
+afterEach(() => { vi.clearAllMocks(); vi.useRealTimers(); });
 describe('outreach dispatch claims', () => {
+  it('keeps a future schedule unchanged even when passed an old due snapshot', async () => {
+    const { input, rows } = fixture();
+    const scheduledAt = new Date(Date.now() + 3600000).toISOString();
+    rows.get('agencies/a/aiOutreachCalls/c').scheduledAt = scheduledAt;
+    const before = structuredClone(rows.get('agencies/a/aiOutreachCalls/c'));
+    const result = await launchAiOutreachCall(input);
+    expect(result.call.status).toBe('scheduled'); expect(result.warning).toContain('nu a sosit');
+    expect(rows.get('agencies/a/aiOutreachCalls/c')).toEqual(before); expect(provider).not.toHaveBeenCalled();
+  });
+  it.each([undefined, 'invalid'])('cancels a scheduled call with invalid date %s', async scheduledAt => {
+    const { input, rows } = fixture(); rows.get('agencies/a/aiOutreachCalls/c').scheduledAt = scheduledAt;
+    expect((await launchAiOutreachCall(input)).call.providerErrorCode).toBe('outreach_invalid_schedule');
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('rechecks the current Bucharest call window instead of stale unrestricted settings', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-12T04:30:00Z'));
+    const { input, rows } = fixture('queued');
+    rows.set('agencies/a/aiOutreach/settings', { enabled: true, callWindowStart: '09:00', callWindowEnd: '18:00' });
+    input.settings = { enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' };
+    expect((await launchAiOutreachCall(input)).call.providerErrorCode).toBe('outreach_outside_window');
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('allows a due call within an overnight Bucharest window', async () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-12T20:30:00Z'));
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreach/settings', { enabled: true, callWindowStart: '22:00', callWindowEnd: '02:00' });
+    provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
+    expect((await launchAiOutreachCall(input)).call.status).toBe('calling'); expect(provider).toHaveBeenCalledTimes(1);
+  });
   it.each(['queued', 'scheduled'])('cancels %s when settings were disabled after the initial check', async status => {
     const { input, rows } = fixture(status);
-    input.settings = { enabled: true };
+    input.settings = { enabled: true, callWindowStart: '00:00', callWindowEnd: '00:00' };
     rows.set('agencies/a/aiOutreach/settings', { enabled: false });
     const result = await launchAiOutreachCall(input);
     expect(result.call).toMatchObject({ status: 'canceled', outcome: 'uncalled', providerErrorCode: 'outreach_disabled' });
@@ -36,10 +65,10 @@ describe('outreach dispatch claims', () => {
   });
   it('passes the configuration read during the claim to the provider', async () => {
     const { input, rows } = fixture();
-    rows.set('agencies/a/aiOutreach/settings', { enabled: true, desiredCommissionValue: '4' });
+    rows.set('agencies/a/aiOutreach/settings', { enabled: true, desiredCommissionValue: '4', callWindowStart: '00:00', callWindowEnd: '00:00' });
     provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
     await launchAiOutreachCall(input);
-    expect(provider.mock.calls[0][0].settings).toMatchObject({ enabled: true, desiredCommissionValue: '4', timezone: 'Europe/Bucharest' });
+    expect(provider.mock.calls[0][0].settings).toMatchObject({ enabled: true, desiredCommissionValue: '4', callWindowStart: '00:00', callWindowEnd: '00:00', timezone: 'Europe/Bucharest' });
   });
   it('dispatches only once under concurrent launches and does not dispatch a canceled call', async () => {
     provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
@@ -52,7 +81,7 @@ describe('outreach dispatch claims', () => {
   it('serializes launches from different listings sharing the same normalized phone', async () => {
     provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
     const { input, rows } = fixture();
-    rows.set('agencies/a/aiOutreachCalls/other', { status: 'scheduled', ownerListingId: 'other-listing', ownerPhone: '0040 722 334 455' });
+    rows.set('agencies/a/aiOutreachCalls/other', { status: 'scheduled', scheduledAt: '2020-01-01T10:00:00Z', ownerListingId: 'other-listing', ownerPhone: '0040 722 334 455' });
     const other = { ...input, callRef: input.adminDb.collection('agencies').doc('a').collection('aiOutreachCalls').doc('other'), call: { ...input.call, id: 'other', ownerListingId: 'other-listing', ownerPhone: '0040 722 334 455' } };
     await Promise.all([launchAiOutreachCall(input), launchAiOutreachCall(other)]);
     expect(provider).toHaveBeenCalledTimes(1);
@@ -60,7 +89,7 @@ describe('outreach dispatch claims', () => {
   });
   it.each(['completed', 'calling'])('blocks legacy %s calls from another listing', async status => {
     const { input, rows } = fixture();
-    rows.set('agencies/a/aiOutreachCalls/legacy', { status, ownerListingId: 'old-listing', ownerPhone: '0722 334 455' });
+    rows.set('agencies/a/aiOutreachCalls/legacy', { status, scheduledAt: '2020-01-01T10:00:00Z', ownerListingId: 'old-listing', ownerPhone: '0722 334 455' });
     const result = await launchAiOutreachCall(input);
     expect(result.call.status).toBe('canceled'); expect(provider).not.toHaveBeenCalled();
   });

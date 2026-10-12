@@ -2364,7 +2364,11 @@
           "sourceNumber": 267,
           "request": "Nu porni apelul dacă serviciul este dezactivat.",
           "requestSha256": "9c0da5650ecf150b8a87dbfbec1e26f89150ce3f8f355d3e229da6c421145c2b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0268",

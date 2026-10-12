@@ -261,8 +261,10 @@ export async function updateAiOutreachOwnerListingStatus(
 export async function launchAiOutreachCall(input: LaunchCallInput) {
   const { adminDb, callRef, call, settings, agencyName } = input;
   let dispatchSettings = settings;
+  let deferredWarning: string | undefined;
 
   const claimed = await adminDb.runTransaction(async tx => {
+    deferredWarning = undefined;
     const current = await tx.get(callRef);
     const ownerRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
     const owner = await tx.get(ownerRef);
@@ -276,13 +278,25 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     const settingsRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreach').doc('settings');
     const currentSettings = await tx.get(settingsRef);
     dispatchSettings = withDefaultAiOutreachSettings(call.agencyId, currentSettings.data());
-    if (dispatchSettings.enabled !== true) {
+    const cancelBeforeDispatch = (code: string, message: string) => {
       const updatedAt = new Date().toISOString();
-      const message = 'Apelurile AI sunt dezactivate pentru această agenție. Apelul nu a fost lansat.';
-      tx.update(callRef, { status: 'canceled', outcome: 'uncalled', providerErrorCode: 'outreach_disabled', providerErrorMessage: message, updatedAt });
+      tx.update(callRef, { status: 'canceled', outcome: 'uncalled', providerErrorCode: code, providerErrorMessage: message, updatedAt });
       if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: 'canceled', aiOutreachOutcome: 'uncalled', aiOutreachUpdatedAt: updatedAt, updatedAt }, { merge: true });
       return false;
+    };
+    if (dispatchSettings.enabled !== true) {
+      return cancelBeforeDispatch('outreach_disabled', 'Apelurile AI sunt dezactivate pentru această agenție. Apelul nu a fost lansat.');
     }
+    const dispatchTime = new Date();
+    const scheduledAt = current.data()?.scheduledAt;
+    if (current.data()?.status === 'scheduled' && (typeof scheduledAt !== 'string' || !Number.isFinite(Date.parse(scheduledAt)))) {
+      return cancelBeforeDispatch('outreach_invalid_schedule', 'Programarea apelului nu are o dată validă. Apelul nu a fost lansat.');
+    }
+    if (typeof scheduledAt === 'string' && Date.parse(scheduledAt) > dispatchTime.getTime()) {
+      deferredWarning = 'Ora programării nu a sosit. Apelul rămâne programat și nu a fost lansat.';
+      return false;
+    }
+    if (!isWithinCallWindow(dispatchTime, dispatchSettings)) return cancelBeforeDispatch('outreach_outside_window', 'Apelul nu a fost lansat: ora curentă din București este în afara intervalului permis.');
     const phone = normalizeAiOutreachPhone(current.data()?.ownerPhone);
     if (!/^0[237]\d{8}$/.test(phone)) throw new AiOutreachGuardError('Numărul proprietarului nu este valid pentru apel.', 400);
     if (phone !== normalizeAiOutreachPhone(call.ownerPhone)) throw new AiOutreachGuardError('Telefonul apelului s-a schimbat; recitește programarea.', 409);
@@ -323,7 +337,7 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
   });
   if (!claimed) {
     const current = await callRef.get();
-    return { call: { ...call, ...current.data() } as AiOutreachCall, warning: current.data()?.providerErrorMessage || 'Apelul este deja lansat, anulat sau preluat de altă execuție. Nu a fost retrimis.' };
+    return { call: { ...call, ...current.data() } as AiOutreachCall, warning: deferredWarning || current.data()?.providerErrorMessage || 'Apelul este deja lansat, anulat sau preluat de altă execuție. Nu a fost retrimis.' };
   }
   const persistProviderResult = async (patch: Record<string, unknown>) => adminDb.runTransaction(async tx => {
     const ownerRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
