@@ -4,8 +4,8 @@ vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: provider, Vap
 import { launchAiOutreachCall } from '@/lib/ai-outreach/server';
 import { VapiDispatchError } from '@/lib/ai-outreach/vapi';
 function fixture(status = 'scheduled') {
-  const rows = new Map<string, any>([['agencies/a/aiOutreachCalls/c', { status, ownerListingId: 'l' }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
-  const ref = (path: string): any => ({ path, doc: (id: string) => ref(path + '/' + id), collection: (id: string) => ref(path + '/' + id), get: async () => ({ exists: rows.has(path), data: () => rows.get(path) }), set: async (data: any) => rows.set(path, { ...rows.get(path), ...data }) });
+  const rows = new Map<string, any>([['agencies/a/aiOutreachCalls/c', { status, ownerListingId: 'l', ownerPhone: '+40722334455' }], ['users/u', { agencyId: 'a', role: 'agent' }]]);
+  const ref = (path: string): any => ({ path, doc: (id: string) => ref(path + '/' + id), collection: (id: string) => ref(path + '/' + id), get: async () => ({ exists: rows.has(path), data: () => rows.get(path), docs: [...rows].filter(([key]) => key.startsWith(path + '/') && !key.slice(path.length + 1).includes('/')).map(([key, data]) => ({ id: key.split('/').at(-1), data: () => data })) }), set: async (data: any) => rows.set(path, { ...rows.get(path), ...data }) });
   let serial: Promise<any> = Promise.resolve();
   const db = { collection: ref, runTransaction: (work: any) => {
     const result = serial.then(async () => {
@@ -25,6 +25,46 @@ describe('outreach dispatch claims', () => {
     expect(provider).toHaveBeenCalledTimes(1);
     await launchAiOutreachCall(fixture('canceled').input);
     expect(provider).toHaveBeenCalledTimes(1);
+  });
+  it('serializes launches from different listings sharing the same normalized phone', async () => {
+    provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreachCalls/other', { status: 'scheduled', ownerListingId: 'other-listing', ownerPhone: '0040 722 334 455' });
+    const other = { ...input, callRef: input.adminDb.collection('agencies').doc('a').collection('aiOutreachCalls').doc('other'), call: { ...input.call, id: 'other', ownerListingId: 'other-listing', ownerPhone: '0040 722 334 455' } };
+    await Promise.all([launchAiOutreachCall(input), launchAiOutreachCall(other)]);
+    expect(provider).toHaveBeenCalledTimes(1);
+    expect(rows.get('agencies/a/aiOutreachCalls/other')).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_phone_duplicate' });
+  });
+  it.each(['completed', 'calling'])('blocks legacy %s calls from another listing', async status => {
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreachCalls/legacy', { status, ownerListingId: 'old-listing', ownerPhone: '0722 334 455' });
+    const result = await launchAiOutreachCall(input);
+    expect(result.call.status).toBe('canceled'); expect(provider).not.toHaveBeenCalled();
+  });
+  it('does not retry another listing after a phone-level refusal, even on a failed call', async () => {
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreachCalls/legacy', { status: 'failed', ownerListingId: 'old-listing', ownerPhone: '0040722334455', result: { doNotCall: true } });
+    expect((await launchAiOutreachCall(input)).call.providerErrorCode).toBe('owner_phone_do_not_call');
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('allows a definitively failed call to be retried and preserves agency isolation', async () => {
+    provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreachCalls/legacy', { status: 'failed', ownerListingId: 'old-listing', ownerPhone: '0722334455' });
+    rows.set('agencies/foreign/aiOutreachCalls/legacy', { status: 'completed', ownerListingId: 'old-listing', ownerPhone: '0722334455' });
+    await launchAiOutreachCall(input); expect(provider).toHaveBeenCalledTimes(1);
+  });
+  it.each(['0733123456', '0722'])('rejects stale or invalid persisted phone %s before provider dispatch', async ownerPhone => {
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreachCalls/c', { ...rows.get('agencies/a/aiOutreachCalls/c'), ownerPhone });
+    await expect(launchAiOutreachCall(input)).rejects.toThrow(/Telefonul|Numărul/);
+    expect(provider).not.toHaveBeenCalled();
+  });
+  it('allows an intentional follow-up on the same listing after a completed call', async () => {
+    provider.mockResolvedValue({ mode: 'live', vapiCallId: 'remote', raw: {} });
+    const { input, rows } = fixture();
+    rows.set('agencies/a/aiOutreachCalls/legacy', { status: 'completed', ownerListingId: 'l', ownerPhone: '0722334455' });
+    await launchAiOutreachCall(input); expect(provider).toHaveBeenCalledTimes(1);
   });
   it('checks opt-out and current membership immediately before dispatch', async () => {
     const optedOut = fixture(); optedOut.rows.set('agencies/a/aiOutreachOwnerListingStatuses/l', { aiDoNotCall: true });

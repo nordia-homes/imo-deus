@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prevenirea apelurilor AI duplicate între anunțuri — 0262, parțial
+
+Lansarea comună apelurilor AI imediate și programate folosește acum un document tranzacțional per telefon românesc normalizat, în agenție. Două anunțuri diferite nu mai pot porni simultan două apeluri la același număr. Istoricul vechi este verificat cu normalizarea +40/0040/spații, fără limitarea la ultimele 25 de ore: un apel în curs, un apel încheiat pentru alt anunț sau un refuz de contactare blochează lansarea duplicată.
+
+Cererea duplicată este salvată ca anulată, cu motiv, iar starea prospectului este sincronizată dacă încă indică acel apel. Rezultatul consumat de Jarvis rămâne `cancelled`, nu succes extern. Telefonul curent este revalidat înaintea furnizorului; accesul agentului și opt-out-ul existent rămân obligatorii. Un apel eșuat definitiv poate fi reîncercat; un follow-up intenționat pe același anunț rămâne posibil după încheierea apelului anterior, în limitele existente.
+
+Au trecut **25 teste unitare**, **19 teste Firestore**, TypeScript, lint, paritate, inventarul corpusului și buildul final cu 227 pagini. Proba prin două cereri HTTP concurente produce exact un apel la furnizorul simulat și o anulare. Verificarea a durat 6,1 secunde în emulator; timeoutul implicit de 5 secunde al testului a fost ajustat la 30 pentru reîncercările tranzacționale, fără modificarea limitelor aplicației. Dovadă: [OWNER_PHONE_DISPATCH_PARTIAL_0262.json](evals/OWNER_PHONE_DISPATCH_PARTIAL_0262.json).
+
+Versiuni **jarvis-81 / tools 108**. Scenariul rămâne parțial pentru celelalte canale de contactare. Compatibilitatea cu apelurile vechi citește istoricul agenției în tranzacție; performanța la volume mari nu este certificată. Programările duplicate pot exista înaintea lansării, dar nu se trimit de două ori. Totalul rămâne **102/1000** cu dovezi locale și **0 certificări complete în producție**. Nu au fost inițiate apeluri reale și modificările nu sunt publicate în producție.
+
 ## Verificarea telefonului la alte anunțuri — 0261
 
 Comanda originală „Verifică dacă numărul lui apare și la alte anunțuri.” activează acum citirea prospectelor agenției după telefonul complet normalizat. Serverul fixează anunțul selectat și cursorul paginii următoare; nu permite încheierea înainte de citirea tuturor paginilor. Rezultatul distinge celelalte anunțuri de cel selectat și include explicit potrivirile inactive. Nu citește inutil istoricul și nu efectuează contacte sau modificări CRM.

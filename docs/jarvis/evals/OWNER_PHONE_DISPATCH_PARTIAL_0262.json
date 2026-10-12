@@ -1,0 +1,43 @@
+{
+  "scenarioId": "master-0262",
+  "prompt": "Nu contacta de două ori același proprietar din două anunțuri.",
+  "runAt": "2026-10-12T00:17:34.643553+00:00",
+  "versions": {
+    "prompt": "jarvis-81",
+    "tools": "108"
+  },
+  "executionVerified": false,
+  "environment": "Local Firestore emulator, actual HTTP handler and dispatch transaction, simulated Vapi provider. No real model run or external phone call in this batch.",
+  "verifiedBehaviors": [
+    "Two concurrent HTTP requests for distinct listings with +40 and 0040 variants produce one simulated provider dispatch and one canceled call.",
+    "Canceled call and owner-listing status persist; operationResult reports cancelled, not external success.",
+    "Legacy completed calls from another listing block re-contact regardless of age.",
+    "Phone-level do-not-call history blocks dispatch even when the earlier call status is failed.",
+    "Current actor membership and per-listing opt-out remain checked.",
+    "Invalid or changed persisted phone stops dispatch; uncertain provider outcomes remain protected against automatic redispatch.",
+    "Definitively failed calls may be retried; a completed call on the same listing does not disable intentional follow-up.",
+    "Other agencies remain isolated."
+  ],
+  "validation": {
+    "unitTests": 25,
+    "firestoreIntegrationTests": 19,
+    "concurrentHttpCaseMs": 6077,
+    "unitCommand": "npx vitest run --maxWorkers=2 src/lib/ai-assistant/__tests__/outreach-dispatch.test.ts src/lib/ai-assistant/__tests__/outreach-timezone.test.ts",
+    "integrationCommand": "npm run test:jarvis:rules -- --prospecting-review",
+    "build": "passed, 227 pages",
+    "typescript": "passed",
+    "lint": "passed",
+    "parity": "passed",
+    "corpusInventory": "passed"
+  },
+  "limitations": [
+    "0262 is partial: this batch covers AI dispatch only, not all human calls or messaging channels.",
+    "No production certification or deployment.",
+    "Legacy compatibility currently scans agency call history inside the dispatch transaction; large-history performance is not certified.",
+    "Distinct scheduled call records may exist before dispatch; duplicate delivery is prevented at dispatch time."
+  ],
+  "corpusTotals": {
+    "localOriginalScenariosWithEvidence": 102,
+    "fullyCertifiedProductionScenarios": 0
+  }
+}

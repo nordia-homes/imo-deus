@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { AI_OUTREACH_TIMEZONE, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import { createVapiOutboundCall, VapiDispatchError } from '@/lib/ai-outreach/vapi';
@@ -269,14 +270,36 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     if (!current.exists || !['queued', 'scheduled'].includes(current.data()?.status) || current.data()?.providerDispatchStartedAt || current.data()?.vapiCallId) return false;
     if (owner.data()?.aiDoNotCall === true) throw new Error('Proprietarul are restricție Do Not Call.');
     if (!actor || actor.data()?.agencyId !== call.agencyId || !['agent', 'admin'].includes(actor.data()?.role)) throw new Error('Agentul nu mai are acces la agenție.');
+    const phone = normalizeAiOutreachPhone(current.data()?.ownerPhone);
+    if (!/^0[237]\d{8}$/.test(phone)) throw new AiOutreachGuardError('Numărul proprietarului nu este valid pentru apel.', 400);
+    if (phone !== normalizeAiOutreachPhone(call.ownerPhone)) throw new AiOutreachGuardError('Telefonul apelului s-a schimbat; recitește programarea.', 409);
+    const agency = adminDb.collection('agencies').doc(call.agencyId);
+    // Every dispatch for this normalized phone writes the same document. The
+    // transaction retry serializes different listing IDs, not just one call ID.
+    const phoneRef = agency.collection('aiOutreachPhoneClaims').doc(createHash('sha256').update(phone).digest('hex'));
+    await tx.get(phoneRef);
+    // Legacy calls predate phone claims and may store +40, 0040 or spaced phones.
+    // Read agency history rather than relying on a raw-string equality query.
+    const history = await tx.get(agency.collection('aiOutreachCalls'));
+    const related = history.docs.filter(doc => doc.id !== call.id && normalizeAiOutreachPhone(doc.data().ownerPhone) === phone);
+    const refused = related.find(doc => doc.data().result?.doNotCall === true || doc.data().outcome === 'do_not_call');
+    const duplicate = related.find(doc => doc.data().status === 'calling' || (doc.data().status === 'completed' && doc.data().ownerListingId !== call.ownerListingId));
+    if (refused || duplicate) {
+      const reason = refused ? 'Proprietarul a refuzat contactarea la acest număr.' : 'Numărul are deja un apel în curs sau un apel efectuat pentru alt anunț.';
+      const updatedAt = new Date().toISOString();
+      tx.update(callRef, { status: 'canceled', outcome: 'uncalled', providerErrorCode: refused ? 'owner_phone_do_not_call' : 'owner_phone_duplicate', providerErrorMessage: reason, updatedAt });
+      if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: 'canceled', aiOutreachOutcome: 'uncalled', aiOutreachUpdatedAt: updatedAt, updatedAt }, { merge: true });
+      return false;
+    }
     const now = new Date().toISOString();
+    tx.set(phoneRef, { callId: call.id, ownerListingId: call.ownerListingId, updatedAt: now });
     tx.update(callRef, { status: 'calling', outcome: 'calling', providerDispatchStartedAt: now, updatedAt: now });
     tx.set(ownerRef, { agencyId: call.agencyId, ownerListingId: call.ownerListingId, latestAiCallId: call.id, aiOutreachStatus: 'calling', aiOutreachOutcome: 'calling', aiOutreachUpdatedAt: now, updatedAt: now }, { merge: true });
     return true;
   });
   if (!claimed) {
     const current = await callRef.get();
-    return { call: { ...call, ...current.data() } as AiOutreachCall, warning: 'Apelul este deja lansat, anulat sau preluat de altă execuție. Nu a fost retrimis.' };
+    return { call: { ...call, ...current.data() } as AiOutreachCall, warning: current.data()?.providerErrorMessage || 'Apelul este deja lansat, anulat sau preluat de altă execuție. Nu a fost retrimis.' };
   }
   const persistProviderResult = async (patch: Record<string, unknown>) => adminDb.runTransaction(async tx => {
     const ownerRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
