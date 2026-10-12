@@ -7,6 +7,10 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
     if (step.kind === 'stop_prospect_followups' && receipt?.executionState === 'succeeded' && Array.isArray(receipt.canceledCallIds) && Array.isArray(receipt.removedTaskIds) && Array.isArray(receipt.activeCallIds)) return receipt.refusalVerified === true
       ? `Pentru prospectul ${receipt.listingId}: ${receipt.canceledCallIds.length} apeluri AI anulate, ${receipt.removedTaskIds.length} taskuri de apel/follow-up eliminate și păstrate în arhivă. Au fost incluse numai taskurile pe care le poți opri.${receipt.activeCallIds.length ? ` ${receipt.activeCallIds.length} apeluri ajunse sau posibil ajunse la furnizor nu au fost oprite.` : ''}`
       : 'Nu există un refuz înregistrat pentru acest prospect. Nu am oprit apeluri sau taskuri.';
+    if (step.kind === 'existing_operation' && receipt?.operation === 'message_send' && typeof receipt.messageId === 'string' && receipt.messageId) {
+      if (receipt.executionState === 'queued') return `Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: ${receipt.messageId}.`;
+      if (receipt.businessStatus === 'accepted') return `Furnizorul a acceptat mesajul; livrarea nu este încă confirmată. ID: ${receipt.messageId}.`;
+    }
     if (step.kind === 'existing_operation' && receipt?.operation === 'outreach_start') return outreachConfirmation(receipt);
     if (step.kind === 'existing_operation' && receipt?.operation === 'outreach_settings_update' && receipt.executionState === 'succeeded' && receipt.settings && typeof receipt.settings === 'object') {
       const settings = receipt.settings as Record<string, unknown>;

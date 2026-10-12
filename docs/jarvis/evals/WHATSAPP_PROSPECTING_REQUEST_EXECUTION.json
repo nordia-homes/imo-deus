@@ -1,0 +1,193 @@
+{
+  "scenario": "user-request-whatsapp-prospecting-three-new-owners",
+  "originalCorpusScenario": false,
+  "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+  "verifiedAt": "2026-10-12T13:24:02.374Z",
+  "executionVerified": true,
+  "productionCertified": false,
+  "environment": "Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta",
+  "versions": {
+    "prompt": "jarvis-94",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "123",
+    "memory": "2",
+    "skills": "3"
+  },
+  "checks": {
+    "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+    "verifiedAt": "2026-10-12T13:24:02.374Z",
+    "sends": 3,
+    "replaySends": 0,
+    "realProvider": false,
+    "newConversations": true,
+    "priceBoundaryIncluded": true,
+    "rentalsExcluded": true
+  },
+  "finalResponse": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 98f680f166d545cf87ea974a2154e8f878b373a2b90d67eed4185a112783e3ba.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 0eb008efe769b40fa850942b6f52e7e626ff87aa62c47d3bbdad8c155c8c30a0.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 88f673ea114c68833e1d3d631a2dd89b6765c9d09192764804ae112ae41ef03a.\nAcțiuni executate: 3. Starea mesajelor este disponibilă în Inbox.",
+  "tools": [
+    {
+      "name": "search_properties",
+      "status": "success",
+      "latencyMs": 484,
+      "version": "123",
+      "argumentsHash": "33dfb2a0e252b30d1cba1d82bd5739e016dc16b49492af316b7f57e510e0a86d"
+    },
+    {
+      "name": "existing_read",
+      "status": "success",
+      "latencyMs": 161,
+      "version": "123",
+      "argumentsHash": "adbd1496411a59eff1784cd7b6115de4a3a8a7f82d288193fcef327d2f607ab9"
+    },
+    {
+      "name": "existing_read",
+      "status": "success",
+      "latencyMs": 30,
+      "version": "123",
+      "argumentsHash": "7477b17a50f62adb5eef98dd4cc48bbae54e99942a45205b2924a6bbb76b38e6"
+    },
+    {
+      "name": "propose_actions",
+      "status": "success",
+      "latencyMs": 372,
+      "version": "123",
+      "argumentsHash": "a0cb32b861cb4ba486ed17140fe24d335ee2efeb1a6844f11f919df39edbc0d2"
+    },
+    {
+      "name": "goal_coverage",
+      "status": "success",
+      "latencyMs": 16,
+      "version": "123",
+      "argumentsHash": "c54016d2c1e17ac4aeb6e5b99308d20b3d7a1d3088a0f4957e4ac3ad572f79c0"
+    }
+  ],
+  "models": [
+    {
+      "decision": {
+        "logical": "LUNA",
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "reason": "luna_first",
+        "version": "luna-first-2"
+      },
+      "usage": {
+        "inputTokens": 3590,
+        "outputTokens": 91,
+        "cachedTokens": 0,
+        "cacheWriteTokens": 3252,
+        "estimated": false
+      },
+      "costUsd": 0.0004858,
+      "latencyMs": 3113,
+      "pricingVersion": "openai-standard-2026-10-04",
+      "outcome": "success"
+    },
+    {
+      "decision": {
+        "logical": "LUNA",
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "reason": "luna_first",
+        "version": "luna-first-2"
+      },
+      "usage": {
+        "inputTokens": 4399,
+        "outputTokens": 36,
+        "cachedTokens": 3252,
+        "cacheWriteTokens": 1144,
+        "estimated": false
+      },
+      "costUsd": 0.00019381999999999998,
+      "latencyMs": 2269,
+      "pricingVersion": "openai-standard-2026-10-04",
+      "outcome": "success"
+    },
+    {
+      "decision": {
+        "logical": "LUNA",
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "reason": "luna_first",
+        "version": "luna-first-2"
+      },
+      "usage": {
+        "inputTokens": 4683,
+        "outputTokens": 67,
+        "cachedTokens": 4396,
+        "cacheWriteTokens": 284,
+        "estimated": false
+      },
+      "costUsd": 0.00011326,
+      "latencyMs": 4120,
+      "pricingVersion": "openai-standard-2026-10-04",
+      "outcome": "success"
+    },
+    {
+      "decision": {
+        "logical": "LUNA",
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "reason": "luna_first",
+        "version": "luna-first-2"
+      },
+      "usage": {
+        "inputTokens": 4884,
+        "outputTokens": 347,
+        "cachedTokens": 4680,
+        "cacheWriteTokens": 201,
+        "estimated": false
+      },
+      "costUsd": 0.00024572499999999997,
+      "latencyMs": 6655,
+      "pricingVersion": "openai-standard-2026-10-04",
+      "outcome": "success"
+    },
+    {
+      "decision": {
+        "logical": "LUNA",
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "reason": "luna_first",
+        "version": "luna-first-2"
+      },
+      "usage": {
+        "inputTokens": 5262,
+        "outputTokens": 176,
+        "cachedTokens": 4881,
+        "cacheWriteTokens": 378,
+        "estimated": false
+      },
+      "costUsd": 0.00018436,
+      "latencyMs": 4965,
+      "pricingVersion": "openai-standard-2026-10-04",
+      "outcome": "success"
+    },
+    {
+      "decision": {
+        "logical": "LUNA",
+        "model": "gpt-6-luna",
+        "effort": "low",
+        "reason": "luna_first",
+        "version": "luna-first-2"
+      },
+      "usage": {
+        "inputTokens": 5463,
+        "outputTokens": 159,
+        "cachedTokens": 5259,
+        "cacheWriteTokens": 201,
+        "estimated": false
+      },
+      "costUsd": 0.000157515,
+      "latencyMs": 4340,
+      "pricingVersion": "openai-standard-2026-10-04",
+      "outcome": "success"
+    }
+  ],
+  "status": "success",
+  "limitations": [
+    "WhatsApp/Meta simulated; no real recipients contacted",
+    "Does not increment the 1000-scenario original corpus count",
+    "Provider acceptance is not delivery confirmation"
+  ]
+}

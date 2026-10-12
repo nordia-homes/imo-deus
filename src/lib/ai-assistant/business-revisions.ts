@@ -2,11 +2,12 @@ import { getResource, type AssistantContext } from './access';
 import type { AssistantAction } from './contracts';
 import { recipientRevision, assertRecipientRevision } from '@/lib/communications/recipient-revision';
 import { prepareMessage } from './message-preparation';
+import { prospectingConversation } from './prospecting-conversation';
 import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 
 export async function bindBusinessRevisions(ctx: AssistantContext, actions: AssistantAction[]): Promise<AssistantAction[]> {
   const snapshots = new Map<string, Promise<Record<string, any>>>();
-  return Promise.all(actions.map(async action => {
+  const prepared: AssistantAction[] = await Promise.all(actions.map(async action => {
     if (action.kind === 'existing_operation' && action.operation === 'tiktok_studio_render') {
       const id = action.params.projectId;
       // A project created by a prior approved step binds its version from that receipt.
@@ -32,13 +33,14 @@ export async function bindBusinessRevisions(ctx: AssistantContext, actions: Assi
       return { ...action, body: { ...action.body, expectedDraftRevision: revision, draftPreview: { description: draft.description, videoTourUrl: draft.videoTourUrl, privacyLevel: draft.privacyLevel || null, hashtags: draft.hashtags || [] } } };
     }
     if (action.kind === 'existing_operation' && action.operation === 'message_send') {
-      const id = action.params.conversationId;
+      const id = action.params.conversationId || (typeof action.body.prospectingListingId === 'string' && typeof action.body.prospectingConnectionId === 'string' && action.body.template
+        ? await prospectingConversation(ctx, action.body.prospectingListingId, action.body.prospectingConnectionId) : undefined);
       if (!id || id.startsWith('@step:')) throw new Error('Mesajul necesită o conversație existentă și un destinatar concret înainte de aprobare. Creează conversația, apoi pregătește trimiterea.');
       const key = `conversations/${id}`;
       if (!snapshots.has(key)) snapshots.set(key, getResource(ctx, 'conversations', id));
       const record = await snapshots.get(key)!;
       if (action.body.expectedRecipientRevision !== undefined) assertRecipientRevision(record, action.body.expectedRecipientRevision);
-      return { ...action, body: await prepareMessage(ctx, id, { ...action.body, expectedRecipientRevision: recipientRevision(record) }) };
+      return { ...action, params: { ...action.params, conversationId: id }, body: await prepareMessage(ctx, id, { ...action.body, expectedRecipientRevision: recipientRevision(record) }) };
     }
     if (action.kind === 'existing_operation' && action.operation === 'file_apply' && action.body.destination === 'property_rlv') {
       const id = action.body.propertyId;
@@ -63,4 +65,14 @@ export async function bindBusinessRevisions(ctx: AssistantContext, actions: Assi
     const record = await snapshots.get(key)!;
     return { ...action, expectedUpdatedAt: record.updatedAt || null };
   }));
+  // Mixed plans may contain positional @step dependencies; do not renumber them.
+  if (!prepared.every(action => action.kind === 'existing_operation' && action.operation === 'message_send' && action.body.prospectingConsentReceiptId)) return prepared;
+  const recipients = new Set<string>();
+  return prepared.filter(action => {
+    if (action.kind !== 'existing_operation' || action.operation !== 'message_send' || !action.body.prospectingConsentReceiptId) return true;
+    const id = action.params.conversationId;
+    if (recipients.has(id)) return false;
+    recipients.add(id);
+    return true;
+  });
 }

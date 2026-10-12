@@ -3,9 +3,10 @@ import { personalRecipientProof } from '@/lib/communications/personal-recipient'
 vi.mock('@/lib/communications/whatsapp-config', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/communications/whatsapp-config')>(), assertWhatsAppAccess: () => {}, whatsappAppId: () => 'fixture-app' }));
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ token: vi.fn(), graph: vi.fn() }));
+const mocks = vi.hoisted(() => ({ token: vi.fn(), graph: vi.fn(), actor: null as any }));
+vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.actor }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
-vi.mock('@/lib/communications/meta', () => ({ connectionToken: mocks.token, graph: mocks.graph, MetaGraphError: class extends Error { providerStatus = 500; } }));
+vi.mock('@/lib/communications/meta', () => ({ connectionToken: mocks.token, graph: mocks.graph, onboardingConfig: () => ({ configured: true }), MetaGraphError: class extends Error { providerStatus = 500; } }));
 import { queueMessage, drainOutbound } from '@/lib/communications/outbound';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { bindBusinessRevisions } from '../business-revisions';
@@ -264,6 +265,75 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting: actual model searches three sales and executes new-recipient templates in one chat turn', async () => {
+    const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
+    if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
+    const { chatTurn } = await import('../workspace');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const f = await prospectingFixture(), sources: string[] = [];
+    mocks.actor = { ...f.ctx, authorization: 'Bearer fixture' };
+    try {
+      await f.agency.set({ city: 'București' });
+      await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ agencyId: f.actor.agencyId, channel: 'whatsapp', status: 'connected', name: 'WhatsApp agenție test', appId: 'fixture-app', parentId: '123456', externalId: 'fixture-number', currency: 'EUR', updatedAt: new Date().toISOString(), capabilities: { send: { status: 'active' }, templates: { status: 'active' } } });
+      const variants = [{ price: '120000 EUR' }, { price: '125000 EUR' }, { price: '130000 EUR' }, { price: '130001 EUR' }, { price: '600 EUR', transactionType: 'rent' }, { location: 'București, Militari' }];
+      for (const [index, patch] of variants.entries()) {
+        const id = `${f.actor.agencyId}-offer-${index}`; sources.push(id);
+        await db.collection('ownerListings').doc(id).set({ scopeKey: 'bucuresti-ilfov', publicationStatus: 'ready', isCanonical: true, location: 'București, Titan', propertyType: 'apartment', transactionType: 'sale', roomsValue: 2, price: '120000 EUR', title: `Apartament test ${index}`, ownerName: `Proprietar ${index}`, ownerPhone: `072233330${index}`, lastVerifiedAt: new Date().toISOString(), link: `https://example.test/${index}`, ...patch });
+      }
+      const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt: f.request.prompt, currentRecord: null };
+      const result = await chatTurn(mocks.actor, request);
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile('.tmp/jarvis-whatsapp-prospecting/latest.json', JSON.stringify({ prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
+      expect(result.message.planId, result.message.text).toBeUndefined();
+      const jobs = await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get();
+      expect(jobs.size, result.message.text).toBe(3);
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(3);
+      expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722333300', '40722333301', '40722333302']);
+      for (const job of jobs.docs) expect((await job.ref.get()).data()?.status).toBe('accepted');
+      await chatTurn(mocks.actor, request); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(3);
+      await writeFile('.tmp/jarvis-whatsapp-prospecting/verified.json', JSON.stringify({ prompt: request.prompt, verifiedAt: new Date().toISOString(), sends: 3, replaySends: 0, realProvider: false, newConversations: true, priceBoundaryIncluded: true, rentalsExcluded: true }, null, 2));
+    } finally { for (const id of sources) await db.collection('ownerListings').doc(id).delete(); await f.rate.delete(); mocks.actor = null; }
+  }, 240000);
+  it('creates three owner conversations, records consent and sends all templates without preexisting contacts', async () => {
+    const f = await prospectingFixture();
+    try {
+      await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ channel: 'whatsapp', status: 'connected' });
+      const listings = ['first', 'second', 'third', 'same-owner'];
+      for (const [index, id] of listings.entries()) await f.agency.collection('ownerListingFavorites').doc(id).set({ ownerName: `Proprietar ${index}`, ownerPhone: index === 3 ? '0722111100' : `072211110${index}` });
+      const proposed = listings.map(id => ({ kind: 'existing_operation' as const, operation: 'message_send' as const, params: {}, query: {}, body: { prospectingListingId: id, prospectingConnectionId: f.conversation.connectionId, template: { name: 'colaborare', language: 'ro', parameters: ['Proprietar'] } } }));
+      const actions = await bindBusinessRevisions(f.ctx, proposed);
+      expect(actions).toHaveLength(3);
+      expect((await f.agency.collection('contacts').get()).empty).toBe(true);
+      for (const [index, action] of actions.entries()) {
+        if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+        const conversation = await f.agency.collection('conversations').doc(action.params.conversationId).get();
+        expect(conversation.data()).toMatchObject({ phone: `4072211110${index}`, contactId: null, assigneeId: f.actor.uid });
+        await queueMessage(db as any, f.actor, conversation.id, { ...action.body, requestId: randomUUID() });
+      }
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(3);
+      expect(new Set(templateSends().map(call => call[2].to)).size).toBe(3);
+      const repeated = await bindBusinessRevisions(f.ctx, proposed);
+      expect(repeated.map(action => action.kind === 'existing_operation' && action.params.conversationId)).toEqual(actions.map(action => action.kind === 'existing_operation' && action.params.conversationId));
+    } finally { await f.rate.delete(); }
+  });
+  it.each(['missing-phone', 'disconnected', 'other-agent', 'revoked', 'not-requested'])('does not create or take over a prospecting conversation: %s', async change => {
+    const f = await prospectingFixture();
+    try {
+      const connectionId = f.conversation.connectionId;
+      await f.agency.collection('channelConnections').doc(connectionId).set({ channel: 'whatsapp', status: change === 'disconnected' ? 'disconnected' : 'connected' });
+      if (change === 'missing-phone') await f.listing.update({ ownerPhone: '' });
+      if (change === 'not-requested') f.ctx.prospectingRequest.prompt = 'Caută apartamente în Titan';
+      const id = stableId(connectionId, '40722123456');
+      if (change === 'other-agent') await f.agency.collection('conversations').doc(id).set({ ...f.conversation, id, channel: 'whatsapp', externalParticipantId: '40722123456', assigneeId: 'other', collaboratorIds: [] });
+      if (change === 'revoked') await f.consent.set({ status: 'revoked' });
+      await expect(bindBusinessRevisions(f.ctx, [{ kind: 'existing_operation', operation: 'message_send', params: {}, query: {}, body: { prospectingListingId: f.listing.id, prospectingConnectionId: connectionId, template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] } } }])).rejects.toThrow();
+      if (change !== 'other-agent') expect((await f.agency.collection('conversations').doc(id).get()).exists).toBe(false);
+      expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); }
+  });
   it('records an agent request attestation and dispatches the template once without an Inbox consent step', async () => {
     const f = await prospectingFixture();
     try {

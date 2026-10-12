@@ -6,7 +6,7 @@ import { recordProspectingConsent } from './prospecting-consent';
 
 export async function prepareMessage(ctx: AssistantContext, conversationId: string, body: Record<string, unknown>) {
   // The quote is derived by the domain service, never accepted from model input.
-  const { sendApproval: _supplied, prospectingListingId, prospectingConsentReceiptId: _receipt, ...content } = body;
+  const { sendApproval: _supplied, prospectingListingId, prospectingConnectionId: _connection, prospectingConsentReceiptId: _receipt, ...content } = body;
   // Explicit contact requests attest prior phone consent even if the later quote fails.
   const receipt = prospectingListingId !== undefined && content.template
     ? await recordProspectingConsent(ctx, conversationId, String(prospectingListingId), String(content.expectedRecipientRevision || '')) : undefined;

@@ -40,6 +40,18 @@ function call(name: string, payload: unknown): ProviderResult {
   return { calls: [fn], items: [{ type: 'function_call', call_id: fn.id, name, arguments: fn.arguments }], text: '', usage, status: 'completed', latencyMs: 1 };
 }
 const final: ProviderResult = { calls: [], items: [], text: 'Rezultate confirmate.', intentStatus: 'answer', usage, status: 'completed', latencyMs: 1 };
+it('keeps explicit WhatsApp prospecting within the first-call budget with concrete delivery instructions', async () => {
+  const prompt = 'Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp';
+  const respond = vi.fn(async (_request: unknown) => ({ ...final, intentStatus: 'clarification' as const }));
+  await planTurn({ ...ctx, prospectingRequest: { sessionId: 'session', requestId: 'request', prompt } }, prompt, [], { provider: { id: 'fixture', respond } });
+  expect(respond).toHaveBeenCalledTimes(1);
+  const request = respond.mock.calls[0][0] as any;
+  expect(request.tools.map((tool: any) => tool.name)).toContain('search_properties');
+  expect(request.tools.map((tool: any) => tool.name)).not.toContain('create_task');
+  expect(request.instructions).toContain('prospectingConnectionId');
+  expect(request.instructions).toContain('whatsapp_templates');
+  expect(Buffer.byteLength(request.instructions)).toBeLessThan(10000);
+});
 function scripted(...responses: (ProviderResult | Error)[]) {
   const respond = vi.fn(); for (const response of responses) response instanceof Error ? respond.mockRejectedValueOnce(response) : respond.mockResolvedValueOnce(response);
   respond.mockResolvedValue(final);

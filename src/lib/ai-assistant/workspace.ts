@@ -101,7 +101,8 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       }) };
     }
     if (autonomous.results.length || autonomous.blocked) {
-      result.text = `Acțiuni executate: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
+      const hasOutbound = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'message_send');
+      result.text = `Acțiuni executate: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : hasOutbound ? 'Starea mesajelor este disponibilă în Inbox.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       const confirmation = executionConfirmation(autonomous.results);
       if (confirmation) result.text = `${confirmation}\n${result.text}`;
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Rezultatele cererii', source: 'autonomy', rows: autonomous.results });

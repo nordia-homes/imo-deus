@@ -8,6 +8,7 @@ import { OWNER_SEARCH_VERSION, ownerRooms, ownerPriceCurrency, parseOwnerPrice, 
 import { createHash } from 'node:crypto';
 import { constructionYearEvidence, constructionYearFilterSatisfied, matchesConstructionYear, validateSearchCriteria, searchTransaction, RENT_SEARCH_CEILING_EUR } from './search-criteria';
 import { importedListingIds } from './imported-listings';
+import { requestsWhatsappProspecting } from './prospecting-consent';
 
 export function listingCurrency(price: unknown): 'EUR' | 'RON' | 'unknown' {
   return ownerPriceCurrency(price);
@@ -104,6 +105,7 @@ export async function searchProperties(ctx: AssistantContext, input: AssistantSe
       if (!searchMatches(row, input)) continue;
       if (imported.has(doc.id)) { excludedImported++; continue; }
       rows.push({ ...constructionYearEvidence(row), yearFilterSatisfied: (input.yearMin !== undefined || input.yearMax !== undefined) ? constructionYearFilterSatisfied(row, input) === true : null, id: doc.id, title: row.title || '', transactionType: row.transactionType || null, location: row.location || row.zone || '', price: row.price, rooms: input.source === 'owners' ? ownerRooms(row) : row.rooms ?? null, squareFootage: row.squareFootage || row.areaValue || row.area || null, imageUrl: row.imageUrl || row.image || (Array.isArray(row.images) ? typeof row.images[0]==='string' ? row.images[0] : row.images[0]?.url : null) || null, status: row.status || null, source: input.source, link: input.source === 'owners' ? row.link || '' : `/properties/${doc.id}`, lastVerifiedAt: row.lastVerifiedAt || null });
+      if (input.source === 'owners' && requestsWhatsappProspecting(ctx.prospectingRequest?.prompt || '')) Object.assign(rows[rows.length - 1], { ownerName: row.ownerName || null, ownerPhone: row.ownerPhone || null, phoneExtractionStatus: row.phoneExtractionStatus || null });
       if (rows.length === input.limit) break;
     }
     if (snapshot.size < batchSize && cursor === snapshot.docs.at(-1)?.id) { complete = true; break; }

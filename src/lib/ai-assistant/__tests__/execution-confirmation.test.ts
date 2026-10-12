@@ -1,6 +1,13 @@
 import { expect, it } from 'vitest';
 import { viewingConfirmation, executionConfirmation } from '../execution-confirmation';
 import { operationResult } from '../operation-result';
+it('confirms queued messages without claiming delivery and requires a concrete receipt', () => {
+  const confirm = (raw: Record<string, unknown>) => executionConfirmation([{ kind: 'existing_operation', result: operationResult('message_send', raw) }]);
+  expect(confirm({ messageId: 'message-1', status: 'queued' })).toContain('coada de trimitere');
+  expect(confirm({ messageId: 'message-1', status: 'queued' })).toContain('Livrarea este încă în așteptare');
+  expect(confirm({ messageId: 'message-1', status: 'accepted' })).toContain('livrarea nu este încă confirmată');
+  expect(confirm({ status: 'queued' })).toBe('');
+});
 it('confirms follow-up stopping only from execution and separately reports ongoing calls', () => {
   expect(executionConfirmation([{ kind: 'stop_prospect_followups', listingId: 'p' }])).toBe('');
   const result = { executionState: 'succeeded', listingId: 'p', refusalVerified: true, canceledCallIds: ['c'], removedTaskIds: ['t'], activeCallIds: ['running'] };

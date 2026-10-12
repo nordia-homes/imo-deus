@@ -10,6 +10,15 @@ import { tikTokScheduleRevision } from '@/lib/tiktok-schedule-revision';
 const ctx = {} as AssistantContext;
 const recipient = { id: 'conv', agencyId: 'agency', channel: 'messenger', connectionId: 'connection', externalParticipantId: 'participant', contactId: 'contact' };
 const send = { kind: 'existing_operation' as const, operation: 'message_send', params: { conversationId: 'conv' }, query: {}, body: { text: 'Oferta concretă' } };
+it('deduplicates owner-only batches while preserving positional dependencies in mixed plans', async () => {
+  vi.mocked(getResource).mockResolvedValue(recipient);
+  const prospect = { ...send, body: { ...send.body, prospectingConsentReceiptId: 'server-receipt' } };
+  expect(await bindBusinessRevisions(ctx, [prospect, prospect])).toHaveLength(1);
+  const task = { kind: 'create_task' as const, description: 'Follow up', dueDate: '2030-01-01', duration: 30, contactId: '@step:2:contactId' };
+  const mixed = await bindBusinessRevisions(ctx, [prospect, prospect, task]);
+  expect(mixed).toHaveLength(3);
+  expect(mixed[2]).toEqual(task);
+});
 beforeEach(() => vi.mocked(getResource).mockReset());
 const schedule = { kind: 'existing_operation' as const, operation: 'tiktok_post_schedule', params: { draftId: 'draft' }, query: {}, body: { confirm: true, runAt: '2030-01-01T10:00:00Z' } };
 const draft = { agencyId: 'a', createdByUid: 'u', status: 'draft', consentedAt: '2026-01-01', description: 'Postare aprobată', videoTourUrl: 'https://example.test/video.mp4', privacyLevel: 'SELF_ONLY' };

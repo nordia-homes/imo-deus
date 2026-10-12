@@ -57,6 +57,10 @@ if (process.argv.includes('--corpus-owner-search-live')) {
   if (!process.argv.includes('--with-regressions')) command = command.slice(0, command.indexOf(' src/lib/'));
   command += ' src/lib/ai-assistant/__tests__/corpus-owner-search.live.integration.test.ts';
 }
+if (process.argv.includes('--prospecting-whatsapp-live')) {
+  process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE = 'true';
+  command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/outbound-recipient.integration.test.ts --testNamePattern="live prospecting" --testTimeout=240000';
+}
 if (process.argv.includes('--corpus-prospecting-live')) {
   process.env.JARVIS_PROSPECTING_LIVE = 'true';
   const selected = process.argv.find(arg => /^--case=master-\d{4}$/.test(arg));
