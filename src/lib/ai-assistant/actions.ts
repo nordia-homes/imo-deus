@@ -19,7 +19,7 @@ import { invokeOperation, operations, isReadOperation } from './operations';
 import { toPropertySeed } from '@/lib/owner-listings/utils';
 import { ownerPriceCurrency } from '@/lib/owner-listings/search-index';
 import type { OwnerListingDetail } from '@/lib/owner-listings/types';
-import { OperationFailure, unconfirmedOperationResult } from './operation-error';
+import { OperationFailure, unconfirmedOperationResult, confirmedQueueRejection } from './operation-error';
 import { assertPropertyActivation, initialContactPreferences, propertyLifecyclePatch, propertyStatusReasonLabels, type propertyLifecycleSchema } from '@/lib/crm/action-fields';
 import { z } from 'zod';
 import { createSaleFromProperty, DEFAULT_SALES_EMAIL_TEMPLATES } from '@/lib/sales';
@@ -65,6 +65,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       if (previous.exists) {
         if (previous.data()?.actorId !== ctx.uid || payloadHash([previous.data()?.action]) !== payloadHash([action])) throw new CommunicationError('Identificatorul execuției aparține altei comenzi.', 409);
         if (previous.data()?.status === 'completed') return previous.data()?.result;
+        if (action.operation === 'message_send' && previous.data()?.status === 'rejected' && previous.data()?.result?.queueOutcome === 'not_queued') throw new OperationFailure(previous.data()?.error || 'Mesajul nu a fost pus în coadă.', previous.data()?.httpStatus || 409, previous.data()!.result);
         throw new CommunicationError('Execuția anterioară trebuie verificată înainte de repetare.', 409);
       }
       tx.create(ledger, { actorId: ctx.uid, action, status: 'running', startedAt: new Date().toISOString() });
@@ -87,7 +88,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       await ledger.update({ status: 'completed', result: safeData(result), completedAt: new Date().toISOString() });
       return result;
     } catch (error) {
-      await ledger.update({ status: 'unknown', error: error instanceof Error ? error.message : 'Rezultat neconfirmat.', ...(error instanceof OperationFailure ? { result: error.result } : {}) });
+      const rejected = action.operation === 'message_send' && confirmedQueueRejection(error);
+      await ledger.update({ status: rejected ? 'rejected' : 'unknown', ...(rejected ? { httpStatus: error.status } : {}), error: error instanceof Error ? error.message : 'Rezultat neconfirmat.', ...(error instanceof OperationFailure ? { result: error.result } : {}) });
       throw error;
     }
   }

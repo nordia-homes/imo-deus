@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare: continuare după un refuz cert al cozii — 12 octombrie 2026
+
+Un destinatar devenit neeligibil după pregătirea mesajelor nu mai oprește ceilalți destinatari independenți. Ruta de mesaje identifică refuzurile de validare în care mesajul nu a fost pus în coadă; executorul le păstrează ca respinse, cu motivul exact. Reluarea aceleiași execuții păstrează refuzul și cheile celorlalți pași, fără mesaje suplimentare. Rezultatele incerte, pierderea accesului și planurile mixte ori dependente opresc în continuare execuția.
+
+Răspunsul final numără numai mesajele acceptate de coadă, afișează separat refuzul și marchează cererea parțial îndeplinită. Nu confundă punerea în coadă cu livrarea WhatsApp. Verificarea cu model real a evidențiat și o recuperare insuficientă după referințe invalide în acoperirea planului: serverul furnizează acum citatul, pașii existenți și ID-urile citirilor reușite pentru corectare, fără acceptarea automată a unei acoperiri neverificate.
+
+Au trecut 156 teste unitare distincte, 76 teste de integrare și toate cele 9 verificări cu model real la rerularea finală, TypeScript, ESLint, paritatea și buildul final cu 227 de pagini. Cazul nou retrage acordul în timpul execuției, după pregătirea reușită; celelalte două mesaje sunt acceptate de furnizorul simulat, refuzul rămâne înregistrat și reluarea nu retrimite. Dovadă: [WHATSAPP_QUEUE_REJECTION_EXECUTION.json](evals/WHATSAPP_QUEUE_REJECTION_EXECUTION.json).
+
+Versiuni jarvis-99 / tools 128. Inventarul rămâne 116/1000 dovezi locale cu model real și 0 certificări complete în producție. Acestea sunt variante suplimentare, nu scenarii originale noi. Nu au fost contactate persoane reale; modificările nu sunt publicate în producție.
+
 ## Prospectare: un destinatar blocat nu oprește mesajele independente — 12 octombrie 2026
 
 Pregătirea lotului tratează separat fiecare mesaj independent de prospectare. Un refuz WhatsApp sau o conversație atribuită altui agent nu mai anulează mesajele pregătite pentru ceilalți proprietari. Modelul primește pașii efectiv pregătiți și motivele pentru destinatarii blocați; nu trebuie să repete lotul ori să ceară aprobarea textului. Deduplicarea se păstrează în lot și între propuneri. Planurile mixte, cele cu referințe între pași și cererile fără autorizare explicită își păstrează pregătirea existentă.

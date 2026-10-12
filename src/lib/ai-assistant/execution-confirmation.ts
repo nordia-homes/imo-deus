@@ -4,6 +4,7 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'message_send' && receipt.queueOutcome === 'not_queued') return `Mesaj nepus în coadă (${receipt.conversationId}): ${receipt.reason}`;
     if (step.kind === 'stop_prospect_followups' && receipt?.executionState === 'succeeded' && Array.isArray(receipt.canceledCallIds) && Array.isArray(receipt.removedTaskIds) && Array.isArray(receipt.activeCallIds)) return receipt.refusalVerified === true
       ? `Pentru prospectul ${receipt.listingId}: ${receipt.canceledCallIds.length} apeluri AI anulate, ${receipt.removedTaskIds.length} taskuri de apel/follow-up eliminate și păstrate în arhivă. Au fost incluse numai taskurile pe care le poți opri.${receipt.activeCallIds.length ? ` ${receipt.activeCallIds.length} apeluri ajunse sau posibil ajunse la furnizor nu au fost oprite.` : ''}`
       : 'Nu există un refuz înregistrat pentru acest prospect. Nu am oprit apeluri sau taskuri.';

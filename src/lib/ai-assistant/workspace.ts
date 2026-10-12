@@ -94,17 +94,19 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
     }
     result.actions = autonomous.actions;
+    const rejectedMessages = autonomous.results.filter(step => (step.result as Record<string, unknown> | undefined)?.queueOutcome === 'not_queued');
     if (result.goalCoverage && autonomous.results.length) {
       const consumed = autonomous.results.length;
       result.goalCoverage = { requirements: result.goalCoverage.requirements.map(row => {
         if (row.resolution !== 'planned') return row;
+        if (row.steps.some(step => rejectedMessages.some(rejected => rejected.step === step))) return { ...row, resolution: 'needs_clarification' as const, steps: [], evidenceCallIds: [], description: row.description + ' — cel puțin un mesaj nu a fost pus în coadă.' };
         const remaining = row.steps.filter(step => step > consumed).map(step => step - consumed);
         return remaining.length ? { ...row, steps: remaining } : { ...row, resolution: 'answered' as const, steps: [], evidenceCallIds: [`autonomy:${input.requestId}`] };
       }) };
     }
     if (autonomous.results.length || autonomous.blocked) {
       const hasOutbound = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'message_send');
-      result.text = `Acțiuni executate: ${autonomous.results.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : hasOutbound ? 'Starea mesajelor este disponibilă în Inbox.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
+      result.text = `Acțiuni executate: ${autonomous.results.length - rejectedMessages.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : hasOutbound ? 'Starea mesajelor este disponibilă în Inbox.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       const confirmation = executionConfirmation(autonomous.results);
       if (confirmation) result.text = `${confirmation}\n${result.text}`;
       const missing = result.goalCoverage?.requirements.filter(row => ['needs_clarification', 'unsupported'].includes(row.resolution)) || [];
@@ -113,7 +115,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
         result.metrics.status = 'partial';
       }
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Rezultatele cererii', source: 'autonomy', rows: autonomous.results });
-      if (autonomous.blocked) result.metrics.status = 'partial';
+      if (autonomous.blocked || rejectedMessages.length) result.metrics.status = 'partial';
     }
     const planId = result.actions.length ? randomUUID() : undefined;
     const pendingProspect = pendingProspectRequest(planningPrompt, result.metrics.status, history);

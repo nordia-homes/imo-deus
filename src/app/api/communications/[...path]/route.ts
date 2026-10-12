@@ -12,8 +12,10 @@ import { assertWhatsAppAccess, whatsappAppId } from '@/lib/communications/whatsa
 export const runtime = 'nodejs';
 type RouteContext = { params: Promise<{ path: string[] }> };
 async function handle(request: NextRequest, route: RouteContext) {
+  let queueRequest = false;
   try {
     const { path } = await route.params; const [resource, id, action, commentId, commentAction] = path;
+    queueRequest = request.method === 'POST' && resource === 'conversations' && Boolean(id) && action === 'messages';
     const isRead = request.method === 'GET';
     const admin = ['connect', 'assets', 'whatsapp', 'budget', 'posts', 'migrate', 'consent'].includes(resource) || (['connections', 'templates'].includes(resource) && !isRead);
     const actor = await context(request, admin); const db = actor.adminDb;
@@ -95,7 +97,10 @@ async function handle(request: NextRequest, route: RouteContext) {
     } else throw new CommunicationError('Acțiune indisponibilă.', 404);
     return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) {
-    return NextResponse.json({ message: error instanceof z.ZodError ? error.issues[0]?.message : error instanceof Error ? error.message : 'Operația a eșuat.' }, { status: error instanceof CommunicationError ? error.status : error instanceof z.ZodError ? 400 : 500 });
+    const status = error instanceof CommunicationError ? error.status : error instanceof z.ZodError ? 400 : 500;
+    // Queue validation rejections cannot represent a provider send; infrastructure errors remain uncertain.
+    const rejected = queueRequest && [400, 402, 403, 404, 409].includes(status);
+    return NextResponse.json({ message: error instanceof z.ZodError ? error.issues[0]?.message : error instanceof Error ? error.message : 'Operația a eșuat.', ...(rejected ? { queueOutcome: 'not_queued' } : {}) }, { status });
   }
 }
 export const GET = handle; export const POST = handle; export const PATCH = handle; export const DELETE = handle;

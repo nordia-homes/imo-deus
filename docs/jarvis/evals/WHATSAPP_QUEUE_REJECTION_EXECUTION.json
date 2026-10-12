@@ -1,0 +1,238 @@
+{
+  "scope": "Supplemental variant: recipient revoked during queue execution after successful preparation",
+  "environment": "Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta",
+  "realProvider": false,
+  "verification": {
+    "variant": "revoked-at-queue",
+    "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+    "verifiedAt": "2026-10-12T15:16:30.867Z",
+    "sends": 2,
+    "replaySends": 0,
+    "realProvider": false,
+    "newConversations": true,
+    "priceBoundaryIncluded": true,
+    "rentalsExcluded": true
+  },
+  "finalText": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: bc5b19abbba503c7018e71ff62545e92f5457dd13f35836a29b8fffa1446d617.\nMesaj nepus în coadă (08b691b06c48191e56d628aa35d70089a827fe10c68c5b08ea215fae3069b824): Nu există consimțământ înregistrat pentru această comunicare.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 09afd54985378c59617ef823efb9f2b7c77868723e9dcfc1e27f0e42de978134.\nAcțiuni executate: 2. Starea mesajelor este disponibilă în Inbox.\nCerințe încă neîndeplinite: Pregătire WhatsApp pentru proprietarii ofertelor găsite; mesajele sunt pregătite, nu livrate. — cel puțin un mesaj nu a fost pus în coadă.",
+  "telemetry": {
+    "requestId": "5356a1bc-e9a9-4c5a-b841-fbe0eeba1f7b",
+    "sessionId": "e804f07c-e800-4bb6-a259-d2c2abd24d40",
+    "userId": "cdf52465-f4e4-4d20-a679-1779c44c067f",
+    "agencyId": "2d83af84-e4cf-41e6-b80a-b38f993de914",
+    "models": [
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 4023,
+          "outputTokens": 91,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 3685,
+          "estimated": false
+        },
+        "costUsd": 0.0005399249999999999,
+        "latencyMs": 1879,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 4831,
+          "outputTokens": 36,
+          "cachedTokens": 3685,
+          "cacheWriteTokens": 1143,
+          "estimated": false
+        },
+        "costUsd": 0.000198025,
+        "latencyMs": 1378,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5117,
+          "outputTokens": 64,
+          "cachedTokens": 4828,
+          "cacheWriteTokens": 286,
+          "estimated": false
+        },
+        "costUsd": 0.00011632999999999999,
+        "latencyMs": 1663,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5316,
+          "outputTokens": 338,
+          "cachedTokens": 5114,
+          "cacheWriteTokens": 199,
+          "estimated": false
+        },
+        "costUsd": 0.000245315,
+        "latencyMs": 2903,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5773,
+          "outputTokens": 173,
+          "cachedTokens": 5313,
+          "cacheWriteTokens": 457,
+          "estimated": false
+        },
+        "costUsd": 0.00019705500000000002,
+        "latencyMs": 2272,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 5971,
+          "outputTokens": 149,
+          "cachedTokens": 5770,
+          "cacheWriteTokens": 198,
+          "estimated": false
+        },
+        "costUsd": 0.00015725,
+        "latencyMs": 2537,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      }
+    ],
+    "tools": [
+      {
+        "name": "search_properties",
+        "status": "success",
+        "latencyMs": 65,
+        "version": "128",
+        "argumentsHash": "33dfb2a0e252b30d1cba1d82bd5739e016dc16b49492af316b7f57e510e0a86d"
+      },
+      {
+        "name": "existing_read",
+        "status": "success",
+        "latencyMs": 17,
+        "version": "128",
+        "argumentsHash": "adbd1496411a59eff1784cd7b6115de4a3a8a7f82d288193fcef327d2f607ab9"
+      },
+      {
+        "name": "existing_read",
+        "status": "success",
+        "latencyMs": 17,
+        "version": "128",
+        "argumentsHash": "9b2fde0c74d8186684d778183d9b5ba78bf7b721e96c4d9890342aa2603f3fc8"
+      },
+      {
+        "name": "propose_actions",
+        "status": "success",
+        "latencyMs": 778,
+        "version": "128",
+        "argumentsHash": "1261007b3a3cfb0849690aa11855725468a87bf785b65de1be329a35c8489032"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "success",
+        "latencyMs": 12,
+        "version": "128",
+        "argumentsHash": "cd9f0dcf781132d21d531eedf611937374405287b2519e2bb1e46bca41443edb"
+      }
+    ],
+    "status": "partial",
+    "elapsedMs": 13821,
+    "jev": {
+      "mode": "shadow",
+      "model": "jev-1.13.0",
+      "route": "JARVIS_PLANNER",
+      "confidence": 0.92,
+      "inputTokens": 486,
+      "outputTokens": 51,
+      "costUsd": 2.0412000000000004E-05,
+      "estimated": false,
+      "actualRoute": "JARVIS_PLANNER",
+      "latencyMs": 275,
+      "status": "ok",
+      "reasonCode": "shadow_only"
+    },
+    "requiresApproval": false,
+    "costUsd": 0.001474312,
+    "tokens": 32419,
+    "versions": {
+      "prompt": "jarvis-99",
+      "routing": "luna-first-2",
+      "policy": "request-crm-14",
+      "tools": "128",
+      "memory": "2",
+      "skills": "3"
+    },
+    "configuration": {
+      "flags": {
+        "memory": true,
+        "subagents": true,
+        "autonomousWorkflows": true,
+        "proactiveInsights": true,
+        "automations": true,
+        "mcp": false,
+        "solEscalation": true
+      },
+      "regionalProcessing": false,
+      "defaultLimits": {
+        "maxSteps": 12,
+        "maxToolCalls": 24,
+        "maxTokens": 70000,
+        "maxCost": 0.12,
+        "maxExecutionMs": 120000,
+        "maxParallel": 3,
+        "maxOutputTokens": 2200
+      }
+    },
+    "timestamp": "2026-10-12T15:16:30.127Z"
+  },
+  "safeguards": [
+    "No customer messages",
+    "Two independent sends; one definitive rejection",
+    "Rejected execution replay creates no new jobs",
+    "Uncertain errors and mixed plans still stop",
+    "Actual model regression found coverage-reference failure; correction context added and suite rerun"
+  ]
+}

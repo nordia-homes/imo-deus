@@ -323,7 +323,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           // Permissions, missing records, infrastructure outages and tool timeouts are
           // not evidence that a more expensive model can solve the task.
           if (error instanceof z.ZodError || error instanceof SyntaxError || (error instanceof Error && /Instrumentul nu este disponibil|Planificare circulară|Tool nepermis|Tool necunoscut/.test(error.message))) invalidCalls++;
-          status = 'failed'; data = { error: error instanceof z.ZodError ? 'Argumente/rezultat invalid: ' + error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('; ') : error instanceof Error ? error.message : 'Tool refuzat.' };
+          const failure = { error: error instanceof z.ZodError ? 'Argumente/rezultat invalid: ' + error.issues.map(issue => `${issue.path.join('.')}: ${issue.message}`).join('; ') : error instanceof Error ? error.message : 'Tool refuzat.' };
+          status = 'failed'; data = failure;
+          if (name === 'goal_coverage') data = { ...failure, correctionContext: {
+            sourceQuote: prompt.slice(0, 1000),
+            preparedSteps: actions.map((_, index) => index + 1),
+            successfulReadCallIds: [...successfulReads].slice(-20),
+            instruction: 'Corectează goal_coverage folosind citate exacte, pașii pregătiți și numai ID-urile citirilor reușite. Nu folosi ID-ul propunerii ca dovadă de citire. Nu repeta acțiunile. Contextul nu confirmă singur îndeplinirea cerințelor.',
+          } };
         }
         metrics.tools.push({ name: toolRegistry.has(name) ? name : 'unknown_tool', status, latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
         input.push({ type: 'function_call_output', call_id: call.id, output: compressedResult(data, 7000) });

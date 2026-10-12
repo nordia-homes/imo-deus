@@ -354,7 +354,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template', 'revoked-owner', 'other-agent-owner'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries', 'dedicated-template', 'revoked-owner', 'other-agent-owner', 'revoked-at-queue'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -383,6 +383,18 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
         await f.agency.collection('conversations').doc(id).set({ id, agencyId: f.actor.agencyId, channel: 'whatsapp', connectionId: f.conversation.connectionId, externalParticipantId: '40722333302', assigneeId: 'another-agent', collaboratorIds: [], name: 'Proprietar 2' });
       }
       const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };
+      const queueConsent = f.agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722333301', 'marketing'));
+      let revokedAtQueue = false;
+      if (variant === 'revoked-at-queue') mocks.graph.mockImplementation(async (path: string) => {
+        if (path.includes('/message_templates?')) {
+          const executions = await f.agency.collection('assistantExecutions').get();
+          if (!revokedAtQueue && executions.docs.some(doc => doc.data().status === 'running' && doc.data().action?.params?.conversationId === stableId(f.conversation.connectionId, '40722333301'))) {
+            await queueConsent.set({ status: 'revoked' }); revokedAtQueue = true;
+          }
+          return f.templates;
+        }
+        return { messages: [{ id: randomUUID() }] };
+      });
       const result = await chatTurn(mocks.actor, request);
       await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
       await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-latest.json`, JSON.stringify({ variant, prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
@@ -390,6 +402,14 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       const jobs = await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get();
       const expectedSends = ['standard', 'without-intermediaries', 'dedicated-template'].includes(variant) ? 3 : 2;
       expect(jobs.size, result.message.text).toBe(expectedSends);
+      if (variant === 'revoked-at-queue') {
+        expect(revokedAtQueue).toBe(true);
+        expect(result.message.text).toContain('Mesaj nepus în coadă');
+        expect(result.message.text).toContain('Acțiuni executate: 2.');
+        expect((await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data()?.status).toBe('partial');
+        expect((await queueConsent.get()).data()).toEqual({ status: 'revoked' });
+        expect((await f.agency.collection('assistantExecutions').get()).docs.filter(doc => doc.data().status === 'rejected')).toHaveLength(1);
+      }
       if (variant === 'missing-phone') {
         expect(result.message.text).toContain('Cerințe încă neîndeplinite');
         expect(result.message.text).toMatch(/telefon|număr/);
@@ -404,7 +424,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       }
       await drainOutbound(db as any); await drainOutbound(db as any);
       expect(templateSends()).toHaveLength(expectedSends);
-      expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722333300', '40722333301', '40722333302'].slice(0, expectedSends));
+      expect(templateSends().map(call => call[2].to).sort()).toEqual(variant === 'revoked-at-queue' ? ['40722333300', '40722333302'] : ['40722333300', '40722333301', '40722333302'].slice(0, expectedSends));
       if (variant === 'dedicated-template') {
         expect(templateSends().map(call => call[2].template.name)).toEqual(Array(3).fill('prospectare_proprietari'));
         expect(result.message.text).not.toMatch(/previzualiz|confirmă|aprobați|aprobă|verifică planul/i);
@@ -416,6 +436,31 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-verified.json`, JSON.stringify({ variant, prompt: request.prompt, verifiedAt: new Date().toISOString(), sends: expectedSends, replaySends: 0, realProvider: false, newConversations: true, priceBoundaryIncluded: true, rentalsExcluded: true }, null, 2));
     } finally { for (const id of sources) await db.collection('ownerListings').doc(id).delete(); await f.rate.delete(); mocks.actor = null; }
   }, 240000);
+  it('continues past a recipient revoked after preparation and replays the rejected execution without new jobs', async () => {
+    const f = await prospectingFixture(); mocks.actor = f.ctx;
+    try {
+      const { executeSafePrefix } = await import('../autonomy');
+      const { executionConfirmation } = await import('../execution-confirmation');
+      await f.agency.collection('channelConnections').doc(f.conversation.connectionId).set({ channel: 'whatsapp', status: 'connected' });
+      for (const [index, id] of ['first', 'middle', 'last'].entries()) await f.agency.collection('ownerListingFavorites').doc(id).set({ ownerName: `Proprietar ${index}`, ownerPhone: `072255550${index}` });
+      const proposed = ['first', 'middle', 'last'].map(id => ({ kind: 'existing_operation' as const, operation: 'message_send' as const, params: {}, query: {}, body: { prospectingListingId: id, prospectingConnectionId: f.conversation.connectionId, template: { name: 'colaborare', language: 'ro', parameters: ['Proprietar'] } } }));
+      const actions = await bindBusinessRevisions(f.ctx, proposed);
+      const consent = f.agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722555501', 'marketing'));
+      await consent.set({ status: 'revoked' });
+      const requestId = randomUUID();
+      const executed = await executeSafePrefix(f.ctx, requestId, actions, f.request.prompt);
+      expect(executed.blocked).toBe(false); expect(executed.actions).toEqual([]); expect(executed.results).toHaveLength(3);
+      expect(executed.results[1].result).toMatchObject({ executionState: 'failed', queueOutcome: 'not_queued' });
+      expect(executionConfirmation(executed.results)).toContain('Mesaj nepus în coadă');
+      expect((await f.agency.collection('assistantExecutions').get()).docs.map(doc => doc.data().status).sort()).toEqual(['completed', 'completed', 'rejected']);
+      const replay = await executeSafePrefix(f.ctx, requestId, actions, f.request.prompt);
+      expect(replay.results).toEqual(executed.results);
+      expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get()).size).toBe(2);
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722555500', '40722555502']);
+      expect((await consent.get()).data()).toEqual({ status: 'revoked' });
+    } finally { await f.rate.delete(); mocks.actor = null; }
+  });
   it('creates three owner conversations, records consent and sends all templates without preexisting contacts', async () => {
     const f = await prospectingFixture();
     try {

@@ -392,6 +392,22 @@ describe('Responses tool planning', () => {
     expect(changed.goalCoverage).toBeUndefined();
     expect(executeAction).not.toHaveBeenCalled();
   });
+  it('returns authoritative references to repair coverage without accepting proposal IDs as read evidence', async () => {
+    const prompt = 'Citește clientul c1 și creează o sarcină la 2030-01-01T10:00:00Z.';
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'c1' }], complete: true } as any);
+    const read = call('read', { resource: 'contacts', id: 'c1' });
+    const proposal = call('propose_actions', { actions: [{ kind: 'create_task', description: 'Sarcină', dueDate: '2030-01-01T10:00:00.000Z' }] });
+    const coverage = (evidenceCallIds: string[]) => call('goal_coverage', { requirements: [{ id: 'task', sourceQuote: prompt, description: 'Citire și sarcină', resolution: 'planned', steps: [1], evidenceCallIds }] });
+    const invalid = coverage([proposal.calls[0].id]);
+    const model = scripted(read, proposal, invalid, coverage([read.calls[0].id]), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    const input = (model.respond.mock.calls[3][0] as any).input;
+    const output = JSON.parse(input.find((item: any) => item.type === 'function_call_output' && item.call_id === invalid.calls[0].id).output);
+    expect(output.correctionContext).toMatchObject({ sourceQuote: prompt, preparedSteps: [1], successfulReadCallIds: [read.calls[0].id] });
+    expect(result.metrics.tools.map(tool => tool.status)).toEqual(['success', 'success', 'failed', 'success']);
+    expect(result.goalCoverage?.requirements[0].evidenceCallIds).toEqual([read.calls[0].id]);
+    expect(result.metrics.status).toBe('success'); expect(executeAction).not.toHaveBeenCalled();
+  });
   it('finishes composing a multi-action workflow after the first proposal', async () => {
     const model = scripted(
       call('propose_actions', { actions: [{ kind: 'create_task', description: 'Primul pas', dueDate: '2030-01-01T10:00:00.000Z' }] }),

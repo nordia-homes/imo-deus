@@ -6,6 +6,7 @@ import { continuePlanRevision } from './plan-revisions';
 import { MAX_PLAN_ACTIONS } from './plan-limits';
 import { featureFlags } from './skills';
 import { requestsWhatsappProspecting } from './prospecting-consent';
+import { confirmedQueueRejection } from './operation-error';
 const SAFE_KINDS = new Set(['delete_task', 'create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
 // These CRM commands are authorized by the agent's request, without a saved opt-in.
 const CRM_VERBS: Record<string, string> = {
@@ -82,13 +83,19 @@ function remapReferences(value: unknown, completed: Record<string, unknown>[]): 
 export async function executeSafePrefix(ctx: AssistantContext, requestId: string, actions: AssistantAction[], prompt: string) {
   const results: Record<string, unknown>[] = [];
   const policy = await autonomyPolicy(ctx);
+  const independentProspecting = actions.length > 0 && actions.every(action => action.kind === 'existing_operation' && action.operation === 'message_send' && requestAuthorizedCrmAction(action) && explicitlyRequestedSafeAction(action, prompt)) && !JSON.stringify(actions).includes('@step:');
   try {
     for (const action of actions.slice(0, MAX_PLAN_ACTIONS)) {
       if (!(requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action)) || !explicitlyRequestedSafeAction(action, prompt)) break;
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');
       const resolved = continuePlanRevision(resolveAction(action, results), results);
-      const result = await executeAction(ctx, resolved, `${requestId}-safe-${results.length}`);
+      let result;
+      try { result = await executeAction(ctx, resolved, `${requestId}-safe-${results.length}`); }
+      catch (error) {
+        if (!independentProspecting || !confirmedQueueRejection(error)) throw error;
+        result = { operation: 'message_send', executionState: 'failed', queueOutcome: 'not_queued', reason: error.message, conversationId: action.kind === 'existing_operation' ? action.params.conversationId : null };
+      }
       results.push({ step: results.length + 1, kind: action.kind, result });
     }
     return { actions: actions.slice(results.length).map(action => continuePlanRevision(actionSchema.parse(remapReferences(action, results)), results)), results, blocked: false };

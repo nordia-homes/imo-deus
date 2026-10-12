@@ -3,6 +3,7 @@ vi.mock('../access', () => ({ collectionFor: (ctx: any) => ({ doc: () => ({ get:
 vi.mock('../actions', () => ({ executeAction: vi.fn(async () => ({ propertyId: 'imported' })) }));
 import { executeSafePrefix as runSafePrefix, safeAutonomousAction } from '../autonomy';
 import { executeAction } from '../actions';
+import { OperationFailure } from '../operation-error';
 import type { AssistantAction } from '../contracts';
 import type { AssistantContext } from '../access';
 const ctx = () => ({ uid: 'u', agencyId: 'a', role: 'agent', policy: { ownerId: 'u', role: 'agent', enabled: true, expiresAt: Date.now() + 60000 }, adminDb: { collection: () => ({ doc: () => ({ get: async () => ({ data: () => ({ agencyId: 'a', role: 'agent' }) }) }) }) } }) as unknown as AssistantContext;
@@ -12,6 +13,26 @@ const message: AssistantAction = { kind: 'existing_operation', operation: 'messa
 const executeSafePrefix = (context: AssistantContext, id: string, actions: AssistantAction[]) => runSafePrefix(context, id, actions, 'Importă anunțurile selectate în CRM.');
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllEnvs(); });
 describe('explicit scoped autonomy', () => {
+  const prospectingActions = (): AssistantAction[] => ['first', 'middle', 'last'].map(conversationId => ({ kind: 'existing_operation', operation: 'message_send', params: { conversationId }, query: {}, body: { template: { name: 'prospectare' }, prospectingConsentReceiptId: 'server-receipt', sendApproval: { amountMicros: 500000 } } }));
+  const prospectingPrompt = 'Contactează proprietarii pe WhatsApp';
+  it('continues independent recipients after a definitive queue rejection and preserves execution keys', async () => {
+    vi.mocked(executeAction).mockResolvedValueOnce({ propertyId: 'first' }).mockRejectedValueOnce(new OperationFailure('Acord retras', 409, { queueOutcome: 'not_queued' })).mockResolvedValueOnce({ propertyId: 'last' });
+    const result = await runSafePrefix(ctx(), 'batch', prospectingActions(), prospectingPrompt);
+    expect(result.blocked).toBe(false); expect(result.actions).toEqual([]);
+    expect(result.results.map(row => row.step)).toEqual([1, 2, 3]);
+    expect(result.results[1].result).toMatchObject({ operation: 'message_send', executionState: 'failed', queueOutcome: 'not_queued', conversationId: 'middle' });
+    expect(vi.mocked(executeAction).mock.calls.map(call => call[2])).toEqual(['batch-safe-0', 'batch-safe-1', 'batch-safe-2']);
+  });
+  it.each([new Error('Connection lost'), new OperationFailure('Unknown', 500, { queueOutcome: 'not_queued' }), new OperationFailure('Conflict', 409, {})])('stops remaining recipients when absence of queueing is not proven: %s', async error => {
+    vi.mocked(executeAction).mockRejectedValueOnce(error);
+    const result = await runSafePrefix(ctx(), 'uncertain', prospectingActions(), prospectingPrompt);
+    expect(result.blocked).toBe(true); expect(executeAction).toHaveBeenCalledTimes(1);
+  });
+  it('does not continue a mixed plan after a definitive queue rejection', async () => {
+    vi.mocked(executeAction).mockRejectedValueOnce(new OperationFailure('Rejected', 409, { queueOutcome: 'not_queued' }));
+    const result = await runSafePrefix(ctx(), 'mixed', [...prospectingActions(), task], prospectingPrompt);
+    expect(result.blocked).toBe(true); expect(executeAction).toHaveBeenCalledTimes(1);
+  });
   it('executes requested prospecting templates without another opt-in only after server preparation', async () => {
     const context = ctx(); (context as any).policy = undefined;
     const action: AssistantAction = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'conv' }, query: {}, body: { template: { name: 'prospectare' }, prospectingConsentReceiptId: 'server-receipt', sendApproval: { amountMicros: 500000 } } };
