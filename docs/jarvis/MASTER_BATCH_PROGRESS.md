@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Rezervările altor agenți — scenariul 0286 — 12 octombrie 2026
+
+„Care prospecte sunt rezervate altui agent?” citește toate paginile prospectelor agenției și filtrează pe server numai rezervările active ale altor agenți. Prospectele proprii, inactive, preluate, cu rezultat de contact și rezervările expirate nu sunt prezentate ca rezervări valabile ale altui agent. Se afișează agentul responsabil; ora rezervării este formatată în București. O dată lipsă sau invalidă nu eliberează atribuirea și nu produce o expirare inventată.
+
+Citirea reutilizează paginarea verificată pentru prospectele proprii, fixează resursa și cursorul pe server și nu expune instrumente de modificare. Proba cu model real și chatTurn a parcurs 57 de înregistrări, cu prima pagină fără potriviri, și a returnat exact cele două rezervări așteptate. A verificat agentul, păstrarea tuturor înregistrărilor, reluarea idempotentă și recitirea listei goale după dezactivare. Scenariul 0288 a trecut din nou ca regresie. Dovadă: [PROSPECTING_EXECUTION_BATCH_19.json](evals/PROSPECTING_EXECUTION_BATCH_19.json).
+
+Revizuirea răspunsului inițial a identificat o eroare pe care prima probă nu o verifica: ora începerii rezervării era prezentată ca termen de expirare. Serverul returnează acum separat expiresLocal, calculat cu durata CRM de patru ore efective. Proba finală verifică ora din răspunsul modelului, iar testul determinist acoperă trecerea la ora de iarnă. Dovada inițială este păstrată ca nereușită; nu este folosită pentru certificare.
+
+Au trecut 62 de teste unitare la rularea separată, cele două scenarii cu model real, ESLint, paritatea și buildul final cu TypeScript și 227 de pagini. Rularea unitară simultană cu primul build a depășit timeoutul de inițializare și a perturbat mock-urile testelor următoare; reluarea separată a trecut fără modificarea pragului de timeout.
+
+Versiuni jarvis-102 / tools 132. Inventarul crește la 119/1000 dovezi locale cu model real, cu 0 certificări complete în producție. Nu au fost contactate persoane reale. Modificările nu sunt publicate în producție.
+
 ## Prospectele proprii active — scenariul 0288 — 12 octombrie 2026
 
 „Găsește prospectele mele active.” folosește acum citirea paginată a prospectelor agenției, cu filtrare pe server după agentul autentificat. Se reutilizează regulile CRM: preluarea are prioritate, apoi atribuirea prin rezultatul contactului, apoi rezervarea neexpirată. Sunt excluse înregistrările inactive, neatribuite și rezervările expirate. Crearea unui prospect de către agent nu îl face automat proprietarul atribuirii.

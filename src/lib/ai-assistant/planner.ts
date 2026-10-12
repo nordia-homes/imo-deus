@@ -25,7 +25,7 @@ import { functionDefinition, functionPayload } from './function-tools';
 import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation } from './jev';
 import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
 import { selectedMessageStatus, selectedMessageReference } from './message-status';
-import { ownActiveProspects } from './active-prospects';
+import { ownActiveProspects, otherReservedProspects } from './active-prospects';
 import { operationCards } from './operation-cards';
 import { validatePlannedDependencies } from './dependencies';
 
@@ -88,7 +88,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const humanTaskListingId = pendingProspect?.listingId || selectedHistoryListingId;
   if (humanCallTask && !humanTaskListingId) return finish('Selectează prospectul pentru taskul de apel uman.', 'clarification');
   const historyPrompt = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  const myActiveProspects = /^(gaseste|arata|afiseaza|listeaza)(?:-mi)?\s+(?:toate\s+)?prospectele\s+mele\s+active[.!?\s]*$/.test(historyPrompt);
+  let prospectAssignmentRead = /^(gaseste|arata|afiseaza|listeaza)(?:-mi)?\s+(?:toate\s+)?prospectele\s+mele\s+active[.!?\s]*$/.test(historyPrompt);
+  const otherReservations = /^(care prospecte sunt rezervate altui agent|(?:arata|afiseaza|listeaza)(?:-mi)? prospectele rezervate altor agenti)[.!?\s]*$/.test(historyPrompt);
+  prospectAssignmentRead ||= otherReservations;
   let activeProspectsComplete = false, activeProspectsCursor: string | undefined;
   const activeProspectsAt = Date.now();
   const messageStatus = /^(verifica|arata|afiseaza)\b.*\bmesaj\w*\b/.test(historyPrompt) && /\b(queued|accepted|delivered|read|stare|starea|livrat|citit)\b/.test(historyPrompt) && !/\b(trimite|retrimite|sterge|modifica)\b/.test(historyPrompt);
@@ -151,11 +153,12 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   else if (!options.allowedTools?.includes('whatsapp_recipient_check')) { const index = available.indexOf('whatsapp_recipient_check'); if (index >= 0) available.splice(index, 1); }
   if (!whatsappTemplates && !options.allowedTools?.includes('whatsapp_template_check')) { const index = available.indexOf('whatsapp_template_check'); if (index >= 0) available.splice(index, 1); }
   if (messageStatus) available.splice(0, available.length, ...available.filter(name => ['existing_read', 'goal_coverage'].includes(name)));
-  if (myActiveProspects) available.splice(0, available.length, ...available.filter(name => ['read', 'goal_coverage'].includes(name)));
-  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child || prospectRead || outreachRead || outreachSettingsRead || collaborationDraft || whatsappCheck || messageStatus || myActiveProspects });
+  if (prospectAssignmentRead) available.splice(0, available.length, ...available.filter(name => ['read', 'goal_coverage'].includes(name)));
+  const instructions = buildInstructions(ctx, { readiness, memory: ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: options.summary, readOnly: options.child || prospectRead || outreachRead || outreachSettingsRead || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead });
   const tools = available.map(functionDefinition);
   const input: any[] = contextMessages(history); input.push({ role: 'user', content: prompt });
-  if (myActiveProspects) input.push({ role: 'developer', content: 'Citește read resource=ownerListingFavorites limit=50 fără id/search. Serverul filtrează prospectele active ale agentului autentificat conform atribuirii CRM, inclusiv expirarea rezervărilor. Continuă toate paginile nextCursor până la complete=true, chiar dacă o pagină nu conține potriviri. Listează rezultatele tuturor paginilor; acestea sunt prospecte, nu proprietari deduplicați. Nu modifica și nu rezerva nimic. Apoi goal_coverage resolution=answered steps=[] evidenceCallIds citirea completă. Dacă nu există rezultate după ultima pagină, spune că nu ai prospecte active atribuite în agenția curentă.' });
+  if (prospectAssignmentRead && !otherReservations) input.push({ role: 'developer', content: 'Citește read resource=ownerListingFavorites limit=50 fără id/search. Serverul filtrează prospectele active ale agentului autentificat conform atribuirii CRM, inclusiv expirarea rezervărilor. Continuă toate paginile nextCursor până la complete=true, chiar dacă o pagină nu conține potriviri. Listează rezultatele tuturor paginilor; acestea sunt prospecte, nu proprietari deduplicați. Nu modifica și nu rezerva nimic. Apoi goal_coverage resolution=answered steps=[] evidenceCallIds citirea completă. Dacă nu există rezultate după ultima pagină, spune că nu ai prospecte active atribuite în agenția curentă.' });
+  if (otherReservations) input.push({ role: 'developer', content: 'Citește read resource=ownerListingFavorites limit=50, fără id/search. Serverul selectează rezervările active ale altor agenți, excluzând prospectele preluate, cu rezultat de contact, inactive și rezervările expirate. Continuă toate paginile nextCursor până la complete=true, chiar dacă o pagină este goală. Prezintă toate prospectele și agentName sau agentId dacă numele lipsește. Prezintă termenul de expirare expiresLocal exact cum este returnat, inclusiv data și ora. reservedLocal este începutul rezervării, NICIODATĂ termenul expirării. Ambele sunt deja ora Bucureștiului; nu adăuga sau converti orele. expirationKnown=false înseamnă dată lipsă/invalidă: atribuirea rămâne protejată, nu inventa data expirării. Nu prelua și nu modifica nimic. La final goal_coverage resolution=answered steps=[] evidenceCallIds citirea completă. Dacă lista finală este goală, spune că nu există rezervări ale altor agenți în datele citite.' });
   if (requestsWhatsappProspecting(ctx.prospectingRequest?.prompt || '')) input.push({ role: 'developer', content: 'Solicitarea explicită de contactare WhatsApp a proprietarilor reprezintă declarația agentului că a obținut anterior acordul telefonic pentru prospectare. Pentru message_send cu template de prospectare, include body.prospectingListingId cu ID-ul concret al anunțului selectat din owners sau ownerListingFavorites. Caută ofertele prin search_properties, respectând toate filtrele și numărul cerut; selectează proprietarii rezultați, fără a repeta același telefon. Citește conexiunile și șabloanele disponibile. Dacă nu există conversația, propune direct message_send cu params={}, body.prospectingListingId și body.prospectingConnectionId, plus template cu parametrii reali. Serverul creează/reutilizează conversația concretă, apoi pregătește și execută trimiterea în aceeași cerere; nu cere agentului să creeze contactul sau conversația. Dacă ai conversație existentă, citește-o; telefonul trebuie să coincidă. Nu inventa conexiuni/șabloane; la opțiuni ambigue cere alegerea. Serverul înregistrează declarația și sursa fără formular sau acord suplimentar din Inbox. Nu inventa un răspuns al proprietarului sau data apelului. Refuzurile existente rămân prioritare. Folosește numai șablonul aprobat și verifică costul/configurația. Nu atribui această regulă unui număr public fără solicitare explicită. Nu declara livrare înainte de confirmarea furnizorului.' });
   if (whatsappHumanConsent) input.push({ role: 'developer', content: 'Cererea privește fluxul uman de înregistrare a acordului. După citirea whatsapp_recipient_check, include linkul humanConsent.url pentru conversația exactă și pașii: Inbox → Consimțământ WhatsApp → scopul real (marketing ori service), dovada și data acordului real, apoi Înregistrează. Numai administratorul poate salva în fluxul existent; canRecord=false înseamnă că agentul trebuie să implice administratorul. Nu cere dovezi în chat, nu înregistra consimțământul prin AI și nu declara acordul salvat. Spune explicit că pasul uman rămâne de făcut. Înregistrarea acordului nu trimite mesajul.' });
   if (whatsappPublicNumber) input.push({ role: 'developer', content: 'Numărul public nu dovedește acordul WhatsApp. Citește starea reală; dacă este unknown, explică lipsa dovezii fără să schimbi acordul. Nu presupune că există refuz dacă statusul este unknown. Nu contacta destinatarul.' });
@@ -180,7 +183,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       reservingNextTurn = true;
       budget.step(); await emit('planning', 'Interpretez cererea și aleg următorul pas.');
       let decision = routeModel({ invalidCalls, remainingCost: budget.limits.maxCost - budget.cost });
-      const turnTools = ((myActiveProspects && !activeProspectsComplete) || (messageStatus && !messageStatusRead) || (whatsappCheck && !whatsappChecked) || (collaborationDraft && !collaborationDraftRead) || (prospectRead && !historyReady()) || ((outreachRead || outreachSettingsRead || outreachLaunch) && !outreachComplete)) ? tools.filter(tool => tool.name !== 'goal_coverage') : tools;
+      const turnTools = ((prospectAssignmentRead && !activeProspectsComplete) || (messageStatus && !messageStatusRead) || (whatsappCheck && !whatsappChecked) || (collaborationDraft && !collaborationDraftRead) || (prospectRead && !historyReady()) || ((outreachRead || outreachSettingsRead || outreachLaunch) && !outreachComplete)) ? tools.filter(tool => tool.name !== 'goal_coverage') : tools;
       const reservation = requestReservation(instructions,input,turnTools,previousReservation), inputBytes = reservation.tokens;
       const outputLimit = options.child ? 1200 : budget.limits.maxOutputTokens;
       budget.reserve(decision.model, inputBytes, outputLimit);
@@ -204,10 +207,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
       input.push(...result.items);
       if (!result.calls.length) {
-        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && (metrics.tools.length > 0 || prospectRead || outreachRead || outreachSettingsRead || outreachLaunch || collaborationDraft || whatsappCheck || messageStatus || myActiveProspects);
+        const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && (metrics.tools.length > 0 || prospectRead || outreachRead || outreachSettingsRead || outreachLaunch || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead);
         if (needsCoverage && result.text?.trim() && result.status !== 'incomplete' && !['clarification', 'refusal'].includes(result.intentStatus || '')) {
           if (closureAttempts++ >= 2) return finish('Acoperirea cererii nu a putut fi verificată. Rezultatele sunt parțiale, iar acțiunile pregătite nu au fost executate.', 'partial');
-          input.push({ role: 'developer', content: myActiveProspects && !activeProspectsComplete ? 'Citește toate paginile read resource=ownerListingFavorites, inclusiv după pagini fără potriviri.' : outreachLaunch && !outreachComplete ? 'Citește ' + outreachReadTool + ' pentru prospectul selectat înainte de încheiere.' : outreachSettingsRead && !outreachComplete ? 'Citește configurația actuală prin outreach_configuration {} înainte de goal_coverage sau răspuns.' : outreachRead && !outreachComplete ? 'Citește toate paginile apelurilor înainte de goal_coverage. Următorul apel obligatoriu: outreach_history ' + JSON.stringify({ mode: outreachMode, ...(outreachCursor ? { cursor: outreachCursor } : {}) }) : prospectRead && !historyReady()
+          input.push({ role: 'developer', content: prospectAssignmentRead && !activeProspectsComplete ? 'Citește toate paginile read resource=ownerListingFavorites, inclusiv după pagini fără potriviri.' : outreachLaunch && !outreachComplete ? 'Citește ' + outreachReadTool + ' pentru prospectul selectat înainte de încheiere.' : outreachSettingsRead && !outreachComplete ? 'Citește configurația actuală prin outreach_configuration {} înainte de goal_coverage sau răspuns.' : outreachRead && !outreachComplete ? 'Citește toate paginile apelurilor înainte de goal_coverage. Următorul apel obligatoriu: outreach_history ' + JSON.stringify({ mode: outreachMode, ...(outreachCursor ? { cursor: outreachCursor } : {}) }) : prospectRead && !historyReady()
             ? 'Istoricul mai are citiri obligatorii. goal_coverage devine disponibil numai după finalizarea lor; nu îl căuta prin discover_tools. Execută aceste apeluri și continuă paginile returnate: ' + JSON.stringify([...(historyDiscoveryComplete ? [] : [{ tool: 'owner_prospects', payload: historyDiscoveryCall }]), ...[...pendingHistoryCalls.values()].slice(0, 10).map(payload => ({ tool: 'timeline', payload }))])
             : 'Verificarea serverului: cererea nu are încă goal_coverage valid. Nu încheia după primul pas. Compară TOATĂ cererea utilizatorului cu citirile și acțiunile deja pregătite; continuă numai pașii lipsă, fără să repeți propunerile existente. Apelează goal_coverage cu citate exacte și dovezi reale. Dacă lipsesc date, acces sau capabilități, declară explicit cerințele neacoperite. Nu inventa succesul și nu ocoli aprobările.' });
           await emit('verify_request_coverage', 'Verific cerințele rămase înainte de încheierea răspunsului.');
@@ -229,7 +232,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           if (options.allowedTools && !options.allowedTools.includes(name)) throw new Error('Tool nepermis subagentului.');
           const definition = requireTool(name, ctx.role || ''), payload = definition.inputSchema.parse(JSON.parse(parsed.payload));
           if (whatsappCheck && name === whatsappReadTool) payload.conversationId = selectedConversationId;
-          if (myActiveProspects && name === 'read') { payload.resource = 'ownerListingFavorites'; payload.limit = 50; delete payload.id; delete payload.search; if (activeProspectsCursor) payload.cursor = activeProspectsCursor; else delete payload.cursor; }
+          if (prospectAssignmentRead && name === 'read') { payload.resource = 'ownerListingFavorites'; payload.limit = 50; delete payload.id; delete payload.search; if (activeProspectsCursor) payload.cursor = activeProspectsCursor; else delete payload.cursor; }
           if (messageStatus && name === 'existing_read') { payload.operation = 'conversation_messages'; payload.params = { conversationId: selectedMessage!.conversationId }; payload.query = { target: selectedMessage!.id }; payload.body = {}; }
           if (collaborationDraft && name === 'read') { payload.resource = 'ownerListingFavorites'; payload.id = selectedHistoryListingId; delete payload.search; delete payload.cursor; }
           if (prospectRead && name === 'owner_prospects' && typeof selectedHistoryListingId === 'string') { payload.listingId = selectedHistoryListingId; if (prospectHistory) payload.scope = 'agency_history'; else { delete payload.scope; if (typeof historyDiscoveryCall.cursor === 'string') payload.cursor = historyDiscoveryCall.cursor; else delete payload.cursor; } }
@@ -240,7 +243,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             if (!outreachScheduleReply && payload.scheduledAt) throw new Error('Cererea de lansare imediată nu autorizează programarea pentru alt moment.');
           }
           if (outreachRead && name === 'outreach_history') { payload.mode = outreachMode; if (outreachCursor) payload.cursor = outreachCursor; else delete payload.cursor; }
-          const signature = name + ':' + ((myActiveProspects && name === 'read') || (prospectPhoneLookup && name === 'owner_prospects') || (outreachRead && name === 'outreach_history') ? JSON.stringify(payload) : parsed.payload); const repeated = (repetitions.get(signature) || 0) + 1; repetitions.set(signature, repeated); if (repeated > 2) throw new Error('Planificare circulară fără progres.');
+          const signature = name + ':' + ((prospectAssignmentRead && name === 'read') || (prospectPhoneLookup && name === 'owner_prospects') || (outreachRead && name === 'outreach_history') ? JSON.stringify(payload) : parsed.payload); const repeated = (repetitions.get(signature) || 0) + 1; repetitions.set(signature, repeated); if (repeated > 2) throw new Error('Planificare circulară fără progres.');
           await emit(name, definition.description);
           let timer: ReturnType<typeof setTimeout> | undefined;
           let response;
@@ -259,12 +262,12 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           try { response = await Promise.race([invoke(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Tool timeout; rezultatul nu este confirmat.')), Math.min(definition.timeoutMs, Math.max(1, budget.limits.maxExecutionMs - (Date.now() - budget.started)))); })]); }
           finally { if (timer) clearTimeout(timer); }
           definition.outputSchema.parse(response.data);
-          if (myActiveProspects && name === 'read') {
-            const rows = ownActiveProspects(Array.isArray(response.data.rows) ? response.data.rows : [], ctx.uid, activeProspectsAt);
+          if (prospectAssignmentRead && name === 'read') {
+            const rows = (otherReservations ? otherReservedProspects : ownActiveProspects)(Array.isArray(response.data.rows) ? response.data.rows : [], ctx.uid, activeProspectsAt);
             activeProspectsComplete = response.data.complete === true;
             activeProspectsCursor = typeof response.data.nextCursor === 'string' ? response.data.nextCursor : undefined;
-            response.data = { ...response.data, rows, scope: 'current_agent', evaluatedAt: new Date(activeProspectsAt).toISOString() };
-            response.cards = [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospectele mele active', rows, complete: activeProspectsComplete }];
+            response.data = { ...response.data, rows, scope: otherReservations ? 'other_agents_reservations' : 'current_agent', evaluatedAt: new Date(activeProspectsAt).toISOString() };
+            response.cards = [{ type: 'data', source: 'ownerListingFavorites', title: otherReservations ? 'Prospecte rezervate altor agenți' : 'Prospectele mele active', rows, complete: activeProspectsComplete }];
           }
           if (messageStatus && name === 'existing_read') {
             response.data = selectedMessageStatus(response.data, String(selectedMessage!.id));
@@ -280,7 +283,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           if (outreachLaunch && name === outreachReadTool) { outreachComplete = response.data.complete === true; outreachLaunchAction = (followupStop ? response.data.refused === true : response.data.eligible === true) ? response.data.suggestedAction as AssistantAction : undefined; }
           validatePlannedDependencies(response.actions, actions.length);
           if (name === 'goal_coverage') {
-            if (myActiveProspects && !activeProspectsComplete) throw new Error('Citește toate paginile prospectelor înainte de încheiere.');
+            if (prospectAssignmentRead && !activeProspectsComplete) throw new Error('Citește toate paginile prospectelor înainte de încheiere.');
             if (messageStatus && !messageStatusRead) throw new Error('Citește mesajul selectat înainte de încheiere.');
             if (whatsappCheck && !whatsappChecked) throw new Error('Verifică destinatarul înainte de încheiere.');
             if (collaborationDraft && !collaborationDraftRead) throw new Error('Citește prospectul selectat înainte de redactarea ciornei.');

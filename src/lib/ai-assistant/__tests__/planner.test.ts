@@ -61,6 +61,17 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('lists other-agent reservations without exposing writes or certifying an unread list', async () => {
+    const prompt = 'Care prospecte sunt rezervate altui agent?';
+    expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('partial');
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'other', isFavoriteActive: true, reservedByAgentId: 'other', reservedAt: new Date().toISOString() }, { id: 'mine', isFavoriteActive: true, reservedByAgentId: 'u' }], complete: true, nextCursor: null });
+    const read = call('read', { resource: 'contacts', id: 'wrong', limit: 1 });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'list', sourceQuote: prompt, description: 'Rezervările altor agenți', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.cards.flatMap(card => card.rows).map(row => row.id)).toEqual(['other']);
+    expect(result.actions).toEqual([]); expect(result.metrics.status).toBe('success');
+    expect(model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).toEqual(['read']);
+  });
   it('reads every active-prospect page with server-bound scope even when the model repeats a wrong selection', async () => {
     const prompt = 'Găsește prospectele mele active.';
     expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('partial');

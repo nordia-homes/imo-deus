@@ -32,8 +32,10 @@ import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 import { stableId } from '@/lib/communications/crypto';
+import { zonedParts } from '../zoned-time';
+import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 288]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 288]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -64,6 +66,39 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 286) {
+        await db.recursiveDelete(favorites);
+        const other = { ...base, reservedByAgentId: 'agent-beta', reservedByAgentName: 'Agent Beta' };
+        const expected = [{ ...other, id: 'z-valid', title: 'Rezervat Magnolia' }, { ...other, id: 'z-undated', title: 'Rezervat Tei', reservedAt: null }];
+        const records = [...Array.from({ length: 51 }, (_, index) => ({ ...base, id: `a-${String(index).padStart(3, '0')}`, title: 'Prospect propriu' })), ...expected,
+          { ...other, id: 'z-expired', title: 'Expirat', reservedAt: '2020-01-01T00:00:00Z' },
+          { ...other, id: 'z-taken', takenByAgentId: 'agent-beta', title: 'Preluat' },
+          { ...other, id: 'z-outcome', contactOutcome: 'follow_up', contactOutcomeByAgentId: 'agent-beta', title: 'Contactat' },
+          { ...other, id: 'z-removed', isFavoriteActive: false, title: 'Inactiv' }];
+        for (const row of records) { const { id: key, ...data } = row; await favorites.doc(key).set(data); }
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id, createdAt: new Date().toISOString() });
+        const request = { sessionId: id, requestId: `${id}-reservations`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        report = { ...report, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data() };
+        expect(result.message.cards?.flatMap(card => card.rows).map(row => row.id).sort()).toEqual(expected.map(row => row.id).sort());
+        for (const row of expected) expect(result.message.text).toContain(row.title);
+        expect(result.message.text).toContain('Agent Beta');
+        const expires = zonedParts(new Date(Date.parse(base.reservedAt) + OWNER_RESERVATION_TTL_MS), 'Europe/Bucharest');
+        expect(result.message.text).toContain(expires.time);
+        expect(result.message.cards?.flatMap(card => card.rows).find(row => row.id === 'z-valid')).toMatchObject({ expiresLocal: `${expires.date} ${expires.time} (ora București)` });
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect((report.telemetry as any).status).toBe('success');
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        for (const row of records) { const { id: key, ...data } = row; expect((await favorites.doc(key).get()).data()).toEqual(data); }
+        for (const row of expected) await favorites.doc(row.id).update({ isFavoriteActive: false });
+        const empty = await chatTurn(ctx, { ...request, requestId: `${id}-empty` });
+        expect(empty.message.cards?.flatMap(card => card.rows)).toEqual([]);
+        expect(empty.message.text).toMatch(/nu (?:am|există)|niciun/i);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, empty: empty.message, executionVerified: true, verification: 'Original command through actual model and persisted chatTurn, local Firestore: 57 prospects, empty matching first page, exact two other-agent reservations with agent identity; own, expired, taken, contacted and inactive excluded. Undated reservation remains protected. No record mutation or provider call. Idempotent replay and fresh empty list after deactivation. Local evidence only.' };
+        return;
+      }
       if (number === 288) {
         // Empty matching first page must not hide the agent's later prospects.
         await db.recursiveDelete(favorites);
