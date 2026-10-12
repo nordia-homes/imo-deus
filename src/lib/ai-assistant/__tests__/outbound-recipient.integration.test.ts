@@ -232,7 +232,76 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const input = { text: 'Brief sintetic', requestId: randomUUID(), personalRecipient: personalRecipientProof(f.actor, conversation, profile) };
     return { ...f, profileRef, rate, token, input };
   }
-  async function withdrawEligibility(f: Awaited<ReturnType<typeof personalFixture>>, change: string) {
+  async function marketingFixture() {
+    const f = await personalFixture();
+    await f.ref.update({ lastInboundAt: '2020-01-01T00:00:00Z' });
+    await f.rate.update({ category: 'marketing', amountMicros: 500000 });
+    const agency = db.collection('agencies').doc(f.actor.agencyId);
+    const budget = agency.collection('communicationBudgets').doc(new Date().toISOString().slice(0, 7) + '-EUR');
+    await budget.set({ currency: 'EUR', limitMicros: 2000000, spentMicros: 0, reservedMicros: 0 });
+    const consent = agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722123456', 'marketing'));
+    await consent.set({ status: 'granted' });
+    const token = async () => { const value = await f.token(); return { ...value, connection: { ...value.connection, parentId: '123456' } }; };
+    mocks.token.mockImplementation(token);
+    const templates = { data: [{ name: 'colaborare', language: 'ro', status: 'APPROVED', category: 'MARKETING', components: [{ type: 'BODY', text: 'Bună ziua, {{1}}. Discutăm o colaborare?' }] }] };
+    mocks.graph.mockImplementation(async (path: string) => path.includes('/message_templates?') ? templates : { messages: [{ id: randomUUID() }] });
+    const actions = await bindBusinessRevisions({ ...f.actor, adminDb: db } as any, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] } } }]);
+    const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
+    return { ...f, token, consent, budget, templates, input: { ...action.body, requestId: randomUUID() } };
+  }
+  const templateSends = () => mocks.graph.mock.calls.filter(call => /\/messages$/.test(call[0]));
+  async function revokeMarketing(f: Awaited<ReturnType<typeof marketingFixture>>, change: string) {
+    if (change === 'deleted') return f.consent.delete();
+    if (change === 'global') return withdrawEligibility(f, 'all');
+    return f.consent.set({ status: 'revoked' });
+  }
+  it.each(['revoked', 'deleted', 'global'])('does not queue an approved marketing template after late consent %s', async change => {
+    const f = await marketingFixture(), original = db.runTransaction.bind(db);
+    const transaction = vi.spyOn(db, 'runTransaction').mockImplementationOnce(async (callback: any) => { await revokeMarketing(f, change); return original(callback); });
+    try {
+      await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow(/consimțământ|retras|oprirea/);
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect((await f.budget.get()).data()?.reservedMicros).toBe(0);
+      expect(templateSends()).toHaveLength(0);
+    } finally { transaction.mockRestore(); await f.rate.delete(); }
+  });
+  it.each(['revoked', 'deleted', 'global'])('releases marketing reservation without dispatch after late consent %s', async change => {
+    const f = await marketingFixture();
+    try {
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+      expect((await f.budget.get()).data()?.reservedMicros).toBe(500000);
+      mocks.token.mockImplementationOnce(f.token).mockImplementationOnce(async () => { await revokeMarketing(f, change); return f.token(); });
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(0);
+      expect((await f.budget.get()).data()).toMatchObject({ reservedMicros: 0, spentMicros: 0 });
+      expect((await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data()).toMatchObject({ status: 'failed', budgetSettled: true });
+    } finally { await f.rate.delete(); }
+  });
+  it.each(['consent', 'recipient'])('rechecks %s after template retrieval before returning a fresh preview', async change => {
+    const f = await marketingFixture();
+    mocks.graph.mockImplementationOnce(async () => {
+      if (change === 'consent') await revokeMarketing(f, 'global');
+      else await f.ref.update({ externalParticipantId: '40722999999' });
+      return f.templates;
+    });
+    try {
+      await expect(queueMessage(db as any, f.actor, f.ref.id, f.input, true)).rejects.toThrow(change === 'consent' ? 'oprirea' : 'Destinatarul');
+      expect(templateSends()).toHaveLength(0);
+      expect((await f.budget.get()).data()?.reservedMicros).toBe(0);
+    } finally { await f.rate.delete(); }
+  });
+  it('dispatches an eligible approved marketing template once and keeps cost reserved until receipt', async () => {
+    const f = await marketingFixture();
+    try {
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(1);
+      expect(templateSends()[0][2]).toMatchObject({ type: 'template', to: '40722123456', template: { name: 'colaborare', language: { code: 'ro' } } });
+      expect((await f.budget.get()).data()).toMatchObject({ reservedMicros: 500000, spentMicros: 0 });
+      expect((await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data()?.status).toBe('accepted');
+    } finally { await f.rate.delete(); }
+  });
+  async function withdrawEligibility(f: Pick<Awaited<ReturnType<typeof personalFixture>>, 'actor' | 'conversation' | 'ref'>, change: string) {
     if (change === 'window') return f.ref.update({ lastInboundAt: '2020-01-01T00:00:00Z' });
     return db.collection('agencies').doc(f.actor.agencyId).collection('communicationConsents')
       .doc(stableId(f.conversation.connectionId, '40722123456', change)).set({ status: 'revoked' });

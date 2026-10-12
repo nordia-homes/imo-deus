@@ -100,7 +100,12 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   assertViewingTemplate(binding, estimate.renderedText, Boolean(input.template));
   if (input.sendApproval !== undefined || (!preview && input.expectedRecipientRevision !== undefined)) assertSendApproval(input.sendApproval, estimate);
   const attachment = input.attachmentId ? (await agencyCollection(db, actor.agencyId, 'communicationMedia').doc(input.attachmentId).get()).data() : null;
-  if (preview) return { estimate: { amountMicros: estimate.amount, currency: estimate.currency, category: estimate.category }, withinWindow: withinResponseWindow(conversation.lastInboundAt), renderedText: estimate.renderedText };
+  if (preview) {
+    const latest = await getConversation(db, actor, id);
+    assertRecipientRevision(latest, recipient);
+    await assertCurrentRecipientEligibility(db, actor, latest, input, estimate.category);
+    return { estimate: { amountMicros: estimate.amount, currency: estimate.currency, category: estimate.category }, withinWindow: withinResponseWindow(latest.lastInboundAt), renderedText: estimate.renderedText };
+  }
   const jobId = stableId(actor.agencyId, input.requestId);
   const job = db.collection('communicationOutboundJobs').doc(jobId);
   const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(id);

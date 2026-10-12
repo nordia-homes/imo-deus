@@ -1,0 +1,29 @@
+{
+  "scenarioId": "master-0274",
+  "status": "partial_runtime_hardening_not_full_corpus_certification",
+  "runAt": "2026-10-12T12:11:38.1637947Z",
+  "change": "Re-read current recipient and consent before returning a message preview, after template retrieval.",
+  "validation": {
+    "build": "passed, 227 pages",
+    "newTemplateCases": 9,
+    "firestoreTests": 52,
+    "lint": "passed",
+    "unitTests": 43,
+    "typescript": "passed",
+    "command": "npm run test:jarvis:rules -- --outbound-review"
+  },
+  "verified": [
+    "Approved MARKETING template with granted consent outside the response window.",
+    "Scoped consent revoked or deleted, and global opt-out, between estimate and queue: no message and no cost reservation.",
+    "Same changes after worker estimate: no provider dispatch and full release of 500000 EUR micros reserved, without spending or repeat dispatch.",
+    "Global consent or recipient changes during template retrieval: preview rejected.",
+    "Eligible template accepted exactly once by simulated provider; charge remains reserved until receipt."
+  ],
+  "limitations": [
+    "Local Firestore and simulated Meta only; no real recipient contacted.",
+    "No new original-prompt run with actual model; corpus remains 113/1000 local model evidence, zero complete production certifications.",
+    "External delivery receipts, template approval changes during dispatch and real Meta behavior not certified by these tests.",
+    "Final local eligibility read and external provider request are not atomic.",
+    "One intermediate emulator run exceeded the default 5-second test timeout and interfered with a later test. Outbound review now uses 20 seconds per test; final suite passed. Application timeouts unchanged."
+  ]
+}

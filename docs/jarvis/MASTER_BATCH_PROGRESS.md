@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Șabloane marketing și previzualizare actuală — progres parțial 0274
+
+Previzualizarea mesajului recitește acum destinatarul și acordul după obținerea șablonului, înainte să returneze rezultatul. Astfel, schimbarea destinatarului sau retragerea globală a acordului în timpul citirii șablonului nu produce o previzualizare validată pe date vechi.
+
+Cele nouă cazuri noi folosesc un șablon MARKETING aprobat și un tarif nenul, în afara ferestrei de răspuns. Retragerea/ștergerea acordului de marketing și refuzul global sunt verificate înainte de coadă și după estimarea workerului. Mesajele blocate nu ajung la furnizor, rezervarea de 500.000 micros EUR este eliberată fără cheltuire, iar reluarea nu expediază. Cazul eligibil este acceptat o singură dată de furnizorul simulat și păstrează costul rezervat până la receipt.
+
+Au trecut **52 teste Firestore**, **43 teste unitare**, TypeScript, lint, paritatea și buildul cu **227 de pagini**. Limita suitei locale outbound este acum 20 de secunde per test, după un timeout intermediar de 5 secunde și interferența lui cu un test ulterior; timpii aplicației nu sunt modificați. Dovadă: [WHATSAPP_MARKETING_ELIGIBILITY_PARTIAL_0274.json](evals/WHATSAPP_MARKETING_ELIGIBILITY_PARTIAL_0274.json).
+
+Totalul rămâne **113/1000** cu dovezi locale prin model și **0 certificări complete în producție**. Nu s-a executat din nou cererea originală prin model și nu s-a contactat niciun destinatar real. Schimbarea aprobării șablonului în timpul expedierii și receipt-urile reale Meta nu sunt certificate aici. Modificările nu sunt publicate în producție.
+
 ## Eligibilitate WhatsApp la trimitere — progres parțial 0274
 
 Coada și workerul reverifică acum fereastra de răspuns și acordul WhatsApp după estimarea inițială. În tranzacția cozii, retragerea acordului împiedică scrierea mesajului și a jobului. Workerul recitește acordul după pregătirea conexiunii și oprește expedierea dacă destinatarul nu mai este eligibil. Verificarea răspunsului deja primit păstrează prioritatea motivului de oprire a unui follow-up.
