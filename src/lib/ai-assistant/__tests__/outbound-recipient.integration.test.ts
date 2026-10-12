@@ -265,7 +265,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const prepare = () => bindBusinessRevisions(ctx, [{ kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { template: { name: 'colaborare', language: 'ro', parameters: ['Alin'] }, prospectingListingId: listing.id } }]);
     return { ...f, agency, request, session, listing, ctx, prepare };
   }
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true').each(['standard', 'shared-owner-long-titles', 'missing-phone', 'without-intermediaries'])('live prospecting %s: actual model searches and executes eligible new-recipient templates in one chat turn', async variant => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -282,13 +282,14 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
         if (variant === 'shared-owner-long-titles' && index < 3) await db.collection('ownerListings').doc(id).update({ title: `Apartament test ${index} ` + 'Titlu lung cu diacritice ȘȚĂÎÂ. '.repeat(300), ...(index === 2 ? { ownerName: 'Proprietar 0', ownerPhone: '+40 722 333 300' } : {}) });
         if (variant === 'missing-phone' && index === 2) await db.collection('ownerListings').doc(id).update({ ownerPhone: '', phoneExtractionStatus: 'unavailable' });
       }
-      const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt: variant === 'shared-owner-long-titles' ? f.request.prompt.replace('Găsește 3', 'Găsește doar 3') : f.request.prompt, currentRecord: null };
+      const prompt = variant === 'shared-owner-long-titles' ? f.request.prompt.replace('Găsește 3', 'Găsește doar 3') : variant === 'without-intermediaries' ? f.request.prompt.replace('apartamente', 'apartamente fără intermediari') : f.request.prompt;
+      const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };
       const result = await chatTurn(mocks.actor, request);
       await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
       await writeFile(`.tmp/jarvis-whatsapp-prospecting/${variant}-latest.json`, JSON.stringify({ variant, prompt: request.prompt, final: result.message, telemetry: (await f.agency.collection('assistantTelemetry').doc(request.requestId).get()).data(), environment: 'Actual model, real search/chat/preparation/API/queue/worker; Firestore emulator and simulated Meta' }, null, 2));
       expect(result.message.planId, result.message.text).toBeUndefined();
       const jobs = await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get();
-      const expectedSends = variant === 'standard' ? 3 : 2;
+      const expectedSends = ['standard', 'without-intermediaries'].includes(variant) ? 3 : 2;
       expect(jobs.size, result.message.text).toBe(expectedSends);
       if (variant === 'missing-phone') {
         expect(result.message.text).toContain('Cerințe încă neîndeplinite');

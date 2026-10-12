@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectare WhatsApp: filtrele ofertelor nu interzic contactarea — 12 octombrie 2026
+
+Solicitările explicite care includ „fără intermediari”, „fără agenții” sau „fără comision” sunt recunoscute acum ca solicitări de contactare. Aceste expresii descriu ofertele; anterior, simpla prezență a cuvântului „fără” dezactiva fluxul de prospectare autorizat prin solicitare. Excepția este limitată la cele trei expresii complete. „Fără acord”, „nu trimite”, condițiile, exemplele și cererile de ciornă continuă să nu acorde permisiunea de expediere, inclusiv în aceeași cerere cu un filtru admis. Recunoașterea intenției nu certifică absența comisionului unei oferte.
+
+Cererea „Găsește 3 apartamente fără intermediari în Titan sub 130000 euro și contactează proprietarii pe whatsapp” a fost executată prin model real și serviciile aplicației, cu Firestore local și Meta simulat: trei destinatari, trei șabloane acceptate, zero retrimiteri la reluarea aceluiași request. Au fost rerulate cu succes și variantele standard, proprietar comun cu titluri lungi și telefon lipsă. Dovada: [WHATSAPP_PROSPECTING_FILTERS_EXECUTION.json](evals/WHATSAPP_PROSPECTING_FILTERS_EXECUTION.json).
+
+Validare: 94 teste unitare, 69 teste de integrare, 4 variante cu model real; TypeScript, ESLint, manifestul de paritate și buildul final cu 227 de pagini trecute. Versiuni jarvis-96 / tools 125. Aceste probe suplimentare nu măresc inventarul original: 115/1000 dovezi locale cu model real și 0 certificări complete în producție. Nu au fost contactate persoane reale. Modificările nu sunt publicate în producție.
+
 ## Prospectare WhatsApp: destinatari comuni, date lipsă și rezultate lungi — 12 octombrie 2026
 
 Au fost verificate trei variante cu model real și fluxul efectiv chat → căutare → pregătire → API → coadă → worker, pe Firestore local și Meta simulat. Dovadă: [WHATSAPP_PROSPECTING_VARIANTS_EXECUTION.json](evals/WHATSAPP_PROSPECTING_VARIANTS_EXECUTION.json). Cazul obișnuit trimite trei șabloane. Trei anunțuri cu titluri foarte lungi și un proprietar comun produc două mesaje către două numere distincte; formularea „Găsește doar 3...” este recunoscută ca solicitare explicită. Când al treilea anunț nu are telefon, cele două mesaje eligibile sunt executate, iar lipsa telefonului rămâne indicată în răspuns și starea cererii este `partial`. Nu sunt inventate date și nu este declarat succes integral pentru proprietarul necontactat. Reluarea fiecărui request nu retrimite mesajele.

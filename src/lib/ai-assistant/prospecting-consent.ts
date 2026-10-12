@@ -8,10 +8,13 @@ import { assertRecipientRevision, recipientRevision } from '@/lib/communications
 // This is an agent's attestation of prior telephone consent, never a recipient reply.
 export function requestsWhatsappProspecting(prompt: string) {
   const text = normalized(prompt);
+  // Property filters are not a prohibition on contacting the owner. Remove only
+  // these complete phrases; keep all other negations/conditions fail-closed.
+  const contactIntent = text.replace(/\bfara\s+(?:comision|intermediari|agentii)\b/g, ' ');
   return /\bwhatsapp\b/.test(text)
     && /\b(proprietar\w*|prospect\w*)\b/.test(text)
     && /\b(contacteaza|contactati|trimite|trimiteti|scrie|scrieti)\b/.test(text)
-    && !/\b(nu|fara|daca|cand|exemplu|exemplificare|ipotetic|pregateste|ciorna|preview|verifica|arata|explica|cum)\b/.test(text);
+    && !/\b(nu|fara|daca|cand|exemplu|exemplificare|ipotetic|pregateste|ciorna|preview|verifica|arata|explica|cum)\b/.test(contactIntent);
 }
 
 export async function recordProspectingConsent(ctx: AssistantContext, conversationId: string, listingId: string, expectedRevision: string) {
