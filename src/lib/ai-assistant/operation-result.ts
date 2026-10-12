@@ -13,6 +13,7 @@ const aliases: Record<string, [string, string]> = {
 };
 export function operationResult(operation: string, raw: Record<string, any>, readOnly = false) {
   const result = safeData(raw), alias = aliases[operation];
+  if (operation === 'outreach_start') result.operation = operation;
   const state = result.status || result.job?.status || result.call?.status || result.draft?.status || result.campaign?.status || result.operation?.status || result.operation?.state;
   if (typeof state === 'string') result.businessStatus = state;
   const key = String(state || '').toLowerCase();

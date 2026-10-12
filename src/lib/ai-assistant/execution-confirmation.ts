@@ -4,6 +4,7 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (step.kind === 'existing_operation' && receipt?.operation === 'outreach_start') return outreachConfirmation(receipt);
     if (step.kind === 'existing_operation' && receipt?.operation === 'outreach_settings_update' && receipt.executionState === 'succeeded' && receipt.settings && typeof receipt.settings === 'object') {
       const settings = receipt.settings as Record<string, unknown>;
       return `Setările apelurilor AI au fost salvate.${typeof settings.maxDailyCalls === 'number' ? ` Limita zilnică: ${settings.maxDailyCalls} apeluri.` : ''}${typeof settings.callWindowStart === 'string' && typeof settings.callWindowEnd === 'string' ? ` Interval: ${settings.callWindowStart}–${settings.callWindowEnd}, ora Bucureștiului.` : ''}`;
@@ -22,6 +23,21 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
     const relation = [typeof receipt.ownerListingId === 'string' ? `Prospect: ${receipt.ownerListingTitle || receipt.ownerListingId}. ID prospect: ${receipt.ownerListingId}.` : '', typeof receipt.propertyId === 'string' ? `Proprietate: ${receipt.propertyTitle || receipt.propertyId}.` : '', typeof receipt.contactId === 'string' ? `Client: ${receipt.contactName || receipt.contactId}.` : '', typeof receipt.participantName === 'string' && receipt.participantName ? `Participant: ${receipt.participantName}.` : ''].filter(Boolean).join(' ');
     return `Task ${verb}${typeof receipt.description === 'string' ? `: „${receipt.description}”` : ''}.${date ? ` Data: ${date}${typeof receipt.startTime === 'string' && receipt.startTime ? `, ${receipt.startTime}, ora Bucureștiului` : ''}.` : ''}${relation ? ` ${relation}` : ''} ID: ${receipt.taskId}.`;
   }).filter(Boolean).join('\n');
+}
+
+function outreachConfirmation(receipt: Record<string, unknown>): string {
+  const call = receipt.call as Record<string, unknown> | undefined;
+  if (!call || typeof receipt.callId !== 'string' || !receipt.callId.trim() || call.id !== receipt.callId) return '';
+  const reference = ` ID apel: ${receipt.callId}.`;
+  if (receipt.executionState === 'unknown' || call.providerErrorCode === 'vapi_create_unknown') return `Lansarea apelului AI este incertă. Verifică starea apelului înainte de o nouă încercare.${reference}`;
+  if (receipt.executionState === 'cancelled' && call.status === 'canceled') return `Apelul AI a fost anulat.${reference}`;
+  if (receipt.executionState === 'failed' && call.status === 'failed') return `Apelul AI a eșuat.${reference}`;
+  if (receipt.executionState === 'running' && call.status === 'calling' && typeof call.vapiCallId === 'string' && call.vapiCallId.trim()) return `Furnizorul a acceptat apelul AI. Rezultatul conversației este încă în așteptare.${reference}`;
+  if (receipt.executionState === 'queued' && call.status === 'scheduled' && typeof call.scheduledAt === 'string' && Number.isFinite(Date.parse(call.scheduledAt)) && Date.parse(call.scheduledAt) > Date.now()) {
+    const when = new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(call.scheduledAt));
+    return `Apelul AI este programat pentru ${when}, ora Bucureștiului. Apelul nu a fost încă efectuat.${reference}`;
+  }
+  return '';
 }
 
 export function viewingConfirmation(results: Record<string, unknown>[]): string {

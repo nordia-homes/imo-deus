@@ -1,5 +1,28 @@
 import { expect, it } from 'vitest';
 import { viewingConfirmation, executionConfirmation } from '../execution-confirmation';
+import { operationResult } from '../operation-result';
+
+it('confirms provider acceptance without claiming a finished conversation', () => {
+  const call = { id: 'call-1', status: 'calling', vapiCallId: 'provider-1' };
+  const confirm = (patch = {}) => executionConfirmation([{ kind: 'existing_operation', result: operationResult('outreach_start', { call: { ...call, ...patch } }) }]);
+  expect(confirm()).toContain('Furnizorul a acceptat apelul AI.');
+  expect(confirm()).toContain('Rezultatul conversației este încă în așteptare.');
+  expect(confirm({ vapiCallId: '' })).toBe('');
+  expect(confirm({ providerErrorCode: 'vapi_create_unknown' })).toContain('incertă');
+  expect(confirm({ providerErrorCode: 'vapi_create_unknown' })).not.toContain('a acceptat');
+  expect(confirm({ status: 'canceled' })).toContain('anulat');
+  expect(confirm({ status: 'failed' })).toContain('eșuat');
+});
+
+it('confirms only a future saved schedule in Bucharest time', () => {
+  const confirm = (scheduledAt: string) => executionConfirmation([{ kind: 'existing_operation', result: operationResult('outreach_start', { call: { id: 'call-2', status: 'scheduled', scheduledAt } }) }]);
+  expect(confirm('2099-01-01T05:30:00Z')).toContain('07:30, ora Bucureștiului');
+  expect(confirm('2099-07-01T04:30:00Z')).toContain('07:30, ora Bucureștiului');
+  expect(confirm('2099-01-01T05:30:00Z')).toContain('nu a fost încă efectuat');
+  expect(confirm('2020-01-01T05:30:00Z')).toBe('');
+  expect(confirm('invalid')).toBe('');
+  expect(executionConfirmation([{ kind: 'existing_operation', result: { operation: 'outreach_start', callId: 'other', executionState: 'running', call: { id: 'call-2', status: 'calling', vapiCallId: 'provider' } } }])).toBe('');
+});
 it('confirms settings only after a successful committed receipt', () => {
   const result = { operation: 'outreach_settings_update', settings: { maxDailyCalls: 12, callWindowStart: '10:00', callWindowEnd: '17:30' } };
   for (const executionState of ['accepted_unverified', 'failed', 'unknown']) expect(executionConfirmation([{ kind: 'existing_operation', result: { ...result, executionState } }])).toBe('');

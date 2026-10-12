@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Confirmarea stării apelului în conversație — 0266, parțial
+
+Confirmarea execuției recunoaște acum rezultatul operației outreach_start și identificatorul apelului salvat. Acceptarea furnizorului este afișată numai pentru starea calling cu ID extern; nu este prezentată drept conversație încheiată. Programările viitoare au dată și oră București, inclusiv diferența vară/iarnă. Anularea, eșecul și lansarea incertă au mesaje distincte. Rezultatele fără identificator concordant sau programările expirate nu primesc o confirmare de succes.
+
+Validare: **26 teste unitare**, **26 teste în emulatorul Firestore**, TypeScript și lint trecute. Confirmarea a fost verificată și pe răspunsul rutei HTTP reale, cu furnizor simulat, pentru acceptare și refuzul intervenit înaintea lansării. Nu s-a reluat buildul de producție pentru această modificare. Nu s-a rulat modelul real în acest lot și nu s-au efectuat apeluri externe.
+
+Totalul rămâne **108/1000** cu dovezi locale și **0 certificări complete în producție**. Scenariul 0266 rămâne parțial; mai trebuie validat traseul conversațional complet de la solicitare la plan și execuție. Modificările nu sunt publicate în producție.
+
 ## Formatul telefonului la furnizor și refuzul intervenit înaintea lansării — 0266, parțial
 
 Adaptorul trimite acum telefonul românesc complet în format internațional +40 către endpointul POST /call documentat de [Vapi](https://docs.vapi.ai/calls/outbound-calling). Formatele locale, +40 și 0040 sunt normalizate la transport; snapshotul din CRM nu este modificat. Numerele incomplete sunt respinse înaintea cererii HTTP și înaintea creării documentului de apel, inclusiv forma veche de opt cifre acceptată de normalizatorul general.

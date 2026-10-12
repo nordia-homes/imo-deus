@@ -24,6 +24,7 @@ import { selectContext } from '../context-selection';
 import { actionSchema, searchSchema } from '../contracts';
 import { executeAction } from '../actions';
 import { operationResult } from '../operation-result';
+import { executionConfirmation } from '../execution-confirmation';
 import { readPlanOutcomes } from '../plan-outcomes';
 import { readResource } from '../access';
 import { executeSafePrefix } from '../autonomy';
@@ -72,6 +73,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
       const result = await response.json();
       expect(result.call).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_do_not_call' });
       expect(operationResult('outreach_start', result).executionState).toBe('cancelled');
+      expect(executionConfirmation([{ kind: 'existing_operation', result: operationResult('outreach_start', result) }])).toContain('Apelul AI a fost anulat.');
       expect((await owner.get()).data()).toMatchObject({ aiDoNotCall: true, aiOutreachStatus: 'canceled' });
       expect((await agency.collection('aiOutreachCalls').doc(result.call.id).get()).data()?.providerDispatchStartedAt).toBeUndefined();
       expect(mocks.vapi).not.toHaveBeenCalled();
@@ -92,6 +94,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     await favorite.update({ ownerPhone: '' });
     const response = await request(), payload = await response.json(); expect(response.status).toBe(201);
     expect(payload.call).toMatchObject({ status: 'calling', ownerPhone: '0722123456', vapiCallId: 'simulated-source-phone' });
+    expect(executionConfirmation([{ kind: 'existing_operation', result: operationResult('outreach_start', payload) }])).toContain('Furnizorul a acceptat apelul AI.');
     expect(mocks.vapi).toHaveBeenCalledTimes(1);
     expect(mocks.vapi.mock.calls[0][0].call.ownerPhone).toBe('0722123456');
     expect((await agency.collection('aiOutreachCalls').doc(payload.call.id).get()).data()?.ownerPhone).toBe('0722123456');
