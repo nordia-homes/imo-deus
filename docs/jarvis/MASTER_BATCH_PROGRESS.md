@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Refuz persistent și oprirea follow-up-urilor AI nelansate — 0271, parțial
+
+Webhookul salvează acum tranzacțional starea apelului și refuzul proprietarului. Un eveniment ulterior fără refuz nu șterge aiDoNotCall și nici dovada refuzului din rezultatul apelului. Evenimentele de început sosite după o stare terminală nu readuc apelul în curs. Un apel vechi nu înlocuiește starea ultimului apel al proprietarului.
+
+După refuz, aiNextFollowUpAt este golit și apelurile queued/scheduled ale aceluiași anunț sunt anulate, cu reverificare tranzacțională înaintea fiecărei anulări. Apelurile deja expediate și cele pentru alte anunțuri rămân nemodificate. Pentru alte anunțuri cu același telefon rămâne verificarea existentă de refuz la lansare. Câmpul opțional confidence lipsă nu mai produce o scriere undefined în Firestore.
+
+Au trecut **50 teste unitare**, **29 teste Firestore**, TypeScript, lint și buildul final cu **227 de pagini**. Testul folosește ruta HTTP reală de webhook și verifică refuzul, anularea, evenimentele întârziate și păstrarea stării unui apel mai nou, fără apeluri către furnizor. Prima rulare a găsit eroarea confidence, corectată, și un HTTP 500 la testul concurent existent; acesta a trecut la reluare fără schimbarea codului de dispatch. Cauza acelui 500 nu este stabilită și stabilitatea sub concurență nu este certificată.
+
+Scenariul 0271 rămâne parțial: comanda conversațională de oprire, taskurile de apel uman, refuzurile înregistrate manual și furnizorul real nu sunt acoperite de această probă. Nu se pretinde închiderea unui apel deja lansat. Dovadă: [OUTREACH_REFUSAL_PARTIAL_0271.json](evals/OUTREACH_REFUSAL_PARTIAL_0271.json). Totalul rămâne **110/1000** cu dovezi locale, **0 certificări complete în producție**. Modificările nu sunt publicate în producție.
+
 ## Programarea apelului după clarificarea orei — 0270
 
 Cererea originală „Programează apelul conform funcționalității existente.” cere acum data și ora lipsă pentru prospectul selectat. Răspunsul ulterior continuă aceeași programare: modelul calculează momentul în București, verifică eligibilitatea la ora cerută și pregătește acțiunea cu scheduledAt. Serverul respinge continuarea fără moment verificat, o acțiune diferită de cea verificată sau folosirea unei selecții vechi când lista nouă este ambiguă.

@@ -1,0 +1,29 @@
+{
+  "scenarioId": "master-0271",
+  "executionVerified": false,
+  "scope": "Partial domain implementation: real webhook HTTP handler and local Firestore, without actual model, phone provider calls or production certification.",
+  "verified": [
+    "A do-not-call result persists the owner refusal and clears the next AI follow-up time.",
+    "Undispatched queued and scheduled calls for the same listing are canceled transactionally.",
+    "Already dispatched calls and other listings remain unchanged.",
+    "Late start events do not reopen terminal calls; later events without refusal do not erase existing refusal.",
+    "An old call does not replace the owner's newer latest-call status.",
+    "An absent optional confidence value is omitted rather than sent to Firestore as undefined."
+  ],
+  "validation": {
+    "unitTests": 50,
+    "firestoreTests": 29,
+    "typescript": "passed",
+    "lint": "passed",
+    "productionBuild": "passed, 227 pages"
+  },
+  "initialFailures": [
+    "Undefined result.confidence rejected by Firestore: fixed and verified through the real webhook handler.",
+    "Existing concurrent two-listing launch test returned one HTTP 500 on the first run, then passed unchanged on rerun. Root cause not established; concurrent stability is not certified."
+  ],
+  "remaining": [
+    "Conversation command and actual-model execution for the original scenario.",
+    "Human callback tasks and manually recorded refusals.",
+    "Live provider verification and stopping an already launched call."
+  ]
+}

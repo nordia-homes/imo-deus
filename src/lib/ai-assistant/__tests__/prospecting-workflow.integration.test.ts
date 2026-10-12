@@ -1,3 +1,4 @@
+import { POST as outreachWebhook } from '@/app/api/ai-outreach/vapi/webhook/route';
 import { readOutreachPreflight } from '../outreach-preflight';
 import { resolveDatetime } from '../datetime';
 import { readOutreachHistory } from '../outreach-history';
@@ -6,7 +7,7 @@ import { Firestore } from '@google-cloud/firestore';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ context: null as any, invoke: vi.fn(), queue: vi.fn(), cancel: vi.fn(), plan: vi.fn(), vapi: vi.fn(), configured: true }));
-vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
+vi.mock('@/firebase/admin', () => ({ adminAuth: {}, get adminDb() { return mocks.context.adminDb; } }));
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.context, requireAgencyAdminFromBearerToken: async () => { if (mocks.context.role !== 'admin') throw Object.assign(new Error('Administrator required'), { status: 403 }); return mocks.context; } }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, getConversation: vi.fn(), agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
 vi.mock('@/lib/owner-listings/olx-phone-queue', () => ({ upsertProspectingOlxPhoneQueueEntry: mocks.queue, cancelProspectingOlxPhoneQueueEntry: mocks.cancel }));
@@ -61,6 +62,31 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('keeps refusal sticky across late webhooks and cancels only undispatched same-listing follow-ups', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), calls = agency.collection('aiOutreachCalls');
+    mocks.vapi.mockReset();
+    const callId = randomUUID();
+    const owner = agency.collection('aiOutreachOwnerListingStatuses').doc('refused-owner');
+    await owner.set({ latestAiCallId: 'future', aiNextFollowUpAt: '2099-01-01T10:00:00Z' });
+    const base = { agencyId: ctx.agencyId, ownerListingId: 'refused-owner', ownerPhone: '0722123456' };
+    await calls.doc(callId).set({ ...base, id: callId, status: 'calling', vapiCallId: 'provider-refusal' });
+    await calls.doc('future').set({ ...base, id: 'future', status: 'scheduled' });
+    await calls.doc('queued').set({ ...base, id: 'queued', status: 'queued' });
+    await calls.doc('claimed').set({ ...base, id: 'claimed', status: 'calling', providerDispatchStartedAt: new Date().toISOString() });
+    await calls.doc('unrelated').set({ ...base, id: 'unrelated', ownerListingId: 'other', status: 'scheduled' });
+    const send = (type: string, structuredData = {}) => outreachWebhook(new NextRequest('http://localhost/api/ai-outreach/vapi/webhook', { method: 'POST', headers: { 'x-vapi-secret': process.env.VAPI_WEBHOOK_SECRET || '' }, body: JSON.stringify({ type, call: { id: 'provider-refusal', metadata: { aiOutreachCallId: callId } }, analysis: { structuredData } }) }));
+    expect((await send('end-of-call-report', { outcome: 'do_not_call', doNotCall: true })).status).toBe(200);
+    expect((await owner.get()).data()).toMatchObject({ aiDoNotCall: true, aiNextFollowUpAt: null, latestAiCallId: 'future', aiOutreachStatus: 'canceled' });
+    for (const id of ['future', 'queued']) expect((await calls.doc(id).get()).data()).toMatchObject({ status: 'canceled', providerErrorCode: 'owner_do_not_call' });
+    expect((await calls.doc('claimed').get()).data()?.status).toBe('calling');
+    expect((await calls.doc('unrelated').get()).data()?.status).toBe('scheduled');
+    await send('call-started');
+    expect((await calls.doc(callId).get()).data()).toMatchObject({ status: 'completed', outcome: 'do_not_call', lastWebhookType: 'end-of-call-report' });
+    await send('end-of-call-report', { outcome: 'no_answer', doNotCall: false });
+    expect((await calls.doc(callId).get()).data()).toMatchObject({ status: 'completed', outcome: 'do_not_call', result: { doNotCall: true } });
+    expect((await owner.get()).data()).toMatchObject({ aiDoNotCall: true, latestAiCallId: 'future', aiOutreachStatus: 'canceled' });
+    expect(mocks.vapi).not.toHaveBeenCalled();
+  }, 30000);
   it('checks the requested future Bucharest window and persists a scheduled call without dispatch', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     mocks.vapi.mockReset(); mocks.configured = true;
@@ -211,7 +237,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     await agency.collection('ownerListingFavorites').doc('second').set({ isFavoriteActive: true, ownerPhone: '0040 722 123 456' });
     const request = (id: string) => createOutreachCall(new NextRequest('http://localhost/api/ai-outreach/calls', { method: 'POST', body: JSON.stringify({ ownerListing: { id, title: id } }) }));
     const responses = await Promise.all([request('first'), request('second')]);
-    expect(responses.map(response => response.status)).toEqual([201, 201]);
+    expect(responses.map(response => response.status), JSON.stringify(await Promise.all(responses.map(response => response.clone().json())))).toEqual([201, 201]);
     const results = await Promise.all(responses.map(response => response.json()));
     expect(results.map(result => result.call.status).sort()).toEqual(['calling', 'canceled']);
     expect(mocks.vapi).toHaveBeenCalledTimes(1);

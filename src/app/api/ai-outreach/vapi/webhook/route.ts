@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normalizeVapiEndedReason } from '@/lib/ai-outreach/status';
 import { adminDb } from '@/firebase/admin';
 import type { AiOutreachCallResult, AiOutreachOutcome } from '@/lib/ai-outreach/types';
-import { updateAiOutreachOwnerListingStatus } from '@/lib/ai-outreach/server';
+import { persistOutreachWebhook } from '@/lib/ai-outreach/webhook-state';
 
 export const runtime = 'nodejs';
 
@@ -115,7 +115,7 @@ function extractResult(payload: Record<string, unknown>, outcome: AiOutreachOutc
     doNotCall: outcome === 'do_not_call' || Boolean(structured?.doNotCall),
     alreadyHasAgency: outcome === 'already_has_agency' || Boolean(structured?.alreadyHasAgency),
     alreadySold: outcome === 'already_sold' || Boolean(structured?.alreadySold),
-    confidence: getNumber(structured?.confidence) ?? undefined,
+    ...(getNumber(structured?.confidence) !== null ? { confidence: getNumber(structured?.confidence)! } : {}),
   };
 }
 
@@ -144,7 +144,6 @@ export async function POST(request: NextRequest) {
   }
 
   const callDoc = querySnapshot.docs[0];
-  const callData = callDoc.data() as { agencyId?: string; ownerListingId?: string };
   const timestamp = new Date().toISOString();
   const messageType = getNestedString(payload, [['type'], ['message', 'type']]);
   const endedReason = getNestedString(payload, [['endedReason'], ['message', 'endedReason']]);
@@ -172,34 +171,13 @@ export async function POST(request: NextRequest) {
     update.transcript = getNestedString(payload, [['transcript'], ['artifact', 'transcript'], ['message', 'transcript'], ['message', 'artifact', 'transcript']]);
     update.recordingUrl = getNestedString(payload, [['recordingUrl'], ['artifact', 'recordingUrl'], ['message', 'recordingUrl'], ['message', 'artifact', 'recordingUrl']]) || null;
     update.result = result;
-
-    if (callData.agencyId && callData.ownerListingId) {
-      await updateAiOutreachOwnerListingStatus(adminDb, callData.agencyId, callData.ownerListingId, {
-        latestAiCallId: callDoc.id,
-        aiOutreachStatus: 'completed',
-        aiOutreachOutcome: outcome,
-        aiOutreachUpdatedAt: timestamp,
-        aiCollaborationStatus: result.collaborationStatus,
-        aiAcceptedCommissionValue: result.acceptedCommissionValue || null,
-        aiDoNotCall: Boolean(result.doNotCall),
-      });
-    }
   } else if (messageType.includes('start') || messageType.includes('in-progress')) {
     update.status = 'calling';
     update.outcome = 'calling';
     update.startedAt = timestamp;
-
-    if (callData.agencyId && callData.ownerListingId) {
-      await updateAiOutreachOwnerListingStatus(adminDb, callData.agencyId, callData.ownerListingId, {
-        latestAiCallId: callDoc.id,
-        aiOutreachStatus: 'calling',
-        aiOutreachOutcome: 'calling',
-        aiOutreachUpdatedAt: timestamp,
-      });
-    }
   }
 
-  await callDoc.ref.set(update, { merge: true });
+  await persistOutreachWebhook(adminDb, callDoc.ref, update);
   await callDoc.ref.collection('events').add({ payload, createdAt: timestamp });
 
   return NextResponse.json({ ok: true }, { status: 200 });
