@@ -2386,7 +2386,11 @@
           "sourceNumber": 269,
           "request": "Actualizează setările de outreach pe care am dreptul să le schimb.",
           "requestSha256": "cfa66ef702c8ea1110c3883552aaae578d839cf46e45aa89bf91eb7cf8acf310",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0270",

@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest';
 import { viewingConfirmation, executionConfirmation } from '../execution-confirmation';
+it('confirms settings only after a successful committed receipt', () => {
+  const result = { operation: 'outreach_settings_update', settings: { maxDailyCalls: 12, callWindowStart: '10:00', callWindowEnd: '17:30' } };
+  for (const executionState of ['accepted_unverified', 'failed', 'unknown']) expect(executionConfirmation([{ kind: 'existing_operation', result: { ...result, executionState } }])).toBe('');
+  expect(executionConfirmation([{ kind: 'existing_operation', result: { ...result, executionState: 'succeeded' } }])).toBe('Setările apelurilor AI au fost salvate. Limita zilnică: 12 apeluri. Interval: 10:00–17:30, ora Bucureștiului.');
+});
 it('confirms prospect takeover only from a successful saved receipt', () => {
   expect(executionConfirmation([{ kind: 'update_prospect', result: { listingId: 'p', executionState: 'succeeded', state: 'taken', takenByAgentId: 'u' } }])).toBe('Prospect preluat. ID: p.');
   expect(executionConfirmation([{ kind: 'update_prospect', result: { listingId: 'p', state: 'taken' } }])).toBe('');

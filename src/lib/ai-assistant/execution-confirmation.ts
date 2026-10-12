@@ -4,6 +4,10 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (step.kind === 'existing_operation' && receipt?.operation === 'outreach_settings_update' && receipt.executionState === 'succeeded' && receipt.settings && typeof receipt.settings === 'object') {
+      const settings = receipt.settings as Record<string, unknown>;
+      return `Setările apelurilor AI au fost salvate.${typeof settings.maxDailyCalls === 'number' ? ` Limita zilnică: ${settings.maxDailyCalls} apeluri.` : ''}${typeof settings.callWindowStart === 'string' && typeof settings.callWindowEnd === 'string' ? ` Interval: ${settings.callWindowStart}–${settings.callWindowEnd}, ora Bucureștiului.` : ''}`;
+    }
     if (step.kind === 'update_prospect' && receipt?.executionState === 'succeeded' && typeof receipt.listingId === 'string' && receipt.listingId) {
       const state = receipt.state === 'taken' && typeof receipt.takenByAgentId === 'string' && receipt.takenByAgentId ? 'preluat' : 'actualizat';
       const details = [receipt.contactOutcome === 'negative' ? 'Rezultat apel: negativ.' : receipt.contactOutcome === 'follow_up' ? 'Rezultat apel: de revenit.' : '', receipt.collaborationStatus === 'collaborates' ? 'Colaborează.' : receipt.collaborationStatus === 'does_not_collaborate' ? 'Nu colaborează.' : '', typeof receipt.appendedNote === 'string' ? `Notă adăugată: „${receipt.appendedNote}”.` : ''].filter(Boolean).join(' ');

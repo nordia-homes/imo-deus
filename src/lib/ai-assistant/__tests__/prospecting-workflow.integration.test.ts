@@ -57,6 +57,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('launches with a missing prospect phone from the ready canonical source, never a supplied or invalid override', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId), listingId = randomUUID(); listings.push(listingId);
+    const source = db.collection('ownerListings').doc(listingId), favorite = agency.collection('ownerListingFavorites').doc(listingId);
+    mocks.vapi.mockReset().mockResolvedValue({ mode: 'live', vapiCallId: 'simulated-source-phone', raw: {} });
+    await source.set({ publicationStatus: 'draft', isCanonical: true, ownerPhone: '+40 722 123 456' });
+    await favorite.set({ isFavoriteActive: true, ownerPhone: '' });
+    const request = () => createOutreachCall(new NextRequest('http://localhost/api/ai-outreach/calls', { method: 'POST', body: JSON.stringify({ ownerListing: { id: listingId, title: 'Sursă canonică', ownerPhone: '0733123456' } }) }));
+    expect((await request()).status).toBe(400);
+    await source.update({ publicationStatus: 'ready', isCanonical: false }); expect((await request()).status).toBe(400);
+    await source.update({ isCanonical: true }); await favorite.update({ ownerPhone: 'invalid' }); expect((await request()).status).toBe(400);
+    expect(mocks.vapi).not.toHaveBeenCalled(); expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true);
+    await favorite.update({ ownerPhone: '' });
+    const response = await request(), payload = await response.json(); expect(response.status).toBe(201);
+    expect(payload.call).toMatchObject({ status: 'calling', ownerPhone: '0722123456', vapiCallId: 'simulated-source-phone' });
+    expect(mocks.vapi).toHaveBeenCalledTimes(1);
+    expect(mocks.vapi.mock.calls[0][0].call.ownerPhone).toBe('0722123456');
+    expect((await agency.collection('aiOutreachCalls').doc(payload.call.id).get()).data()?.ownerPhone).toBe('0722123456');
+  });
   it('validates settings patches and preserves permissions and unspecified configuration', async () => {
     const ctx = await fixture(), ref = db.collection('agencies').doc(ctx.agencyId).collection('aiOutreach').doc('settings');
     const initial = { enabled: true, desiredCommissionValue: '4', callWindowStart: '09:00', callWindowEnd: '18:00' };
@@ -73,7 +91,11 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     const uiPayload = editableAiOutreachSettings(withDefaultAiOutreachSettings(ctx.agencyId, { ...(await ref.get()).data(), id: 'settings', createdAt: '2026-01-01T00:00:00Z' }));
     expect(uiPayload).not.toHaveProperty('agencyId'); expect(uiPayload).not.toHaveProperty('id'); expect(uiPayload).not.toHaveProperty('createdAt');
     expect((await update(uiPayload)).status).toBe(200);
-  });
+    const responses = await Promise.all([update({ maxDailyCalls: 12 }), update({ desiredCommissionValue: '5' })]);
+    expect(responses.map(response => response.status)).toEqual([200, 200]);
+    for (const response of responses) expect(operationResult('outreach_settings_update', await response.json())).toMatchObject({ operation: 'outreach_settings_update', executionState: 'succeeded' });
+    expect((await ref.get()).data()).toMatchObject({ maxDailyCalls: 12, desiredCommissionValue: '5', callWindowStart: '22:00', callWindowEnd: '02:00' });
+  }, 30000);
   it('preserves future schedules and rechecks a changed call window using persisted state', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     mocks.vapi.mockReset();

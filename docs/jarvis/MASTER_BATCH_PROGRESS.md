@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Modificarea setărilor prin conversație — 0269; telefonul pentru 0266, parțial
+
+Cererea originală „Actualizează setările de outreach pe care am dreptul să le schimb.” citește configurația și drepturile actuale. Agentul fără drept de editare nu primește un plan de scriere. Administratorului i se cer valorile noi dacă lipsesc, iar răspunsul ulterior continuă aceeași cerere și pregătește numai câmpurile solicitate. Planul nu este prezentat drept salvare.
+
+Handlerul salvează patchul într-o tranzacție: modificări concurente la câmpuri diferite se păstrează, în loc să rescrie configurația din copii învechite. Receiptul de succes este emis după commit, iar confirmarea în conversație folosește acel rezultat, cu limita zilnică și intervalul București. Reluarea aceleiași execuții întoarce receiptul salvat fără încă o scriere.
+
+Pornirea apelului poate folosi acum telefonul din anunțul canonic cu publicationStatus=ready când telefonul lipsește din prospect. Numărul explicit salvat, chiar invalid, nu este înlocuit automat; un număr transmis arbitrar în cererea HTTP este ignorat. Sursele draft sau necanonice nu furnizează telefonul. Proba HTTP verifică numărul transmis furnizorului simulat și cel salvat în apel.
+
+Au trecut proba 0269 cu model real, **118 teste unitare**, **25 teste Firestore**, TypeScript, lint, paritatea celor 180 de operații, inventarul corpusului și buildul final cu 227 de pagini. Proba concurentă a necesitat timeout de 30 secunde în loc de 5 pentru reîncercările Firestore; limitele aplicației nu au fost mărite. Dovadă: [PROSPECTING_EXECUTION_BATCH_08.json](evals/PROSPECTING_EXECUTION_BATCH_08.json). Versiuni **jarvis-85 / tools 113**. Total **108/1000** cu dovezi locale, **0 certificări complete în producție**.
+
+Proba continuării folosește mesajele conversației și executorul pentru acțiunea aprobată; nu certifică interfața aprobării sau reluarea din chat persistent. Scenariul 0266 rămâne parțial, fără apel real certificat. Nu au fost contactați clienți și modificările nu sunt publicate în producție.
+
 ## Comanda de blocare și revalidarea orei apelului — 0267; 0266/0269 parțial
 
 Cererea originală „Nu porni apelul dacă serviciul este dezactivat.” verifică acum configurația actuală și răspunde fără lansare sau reactivare. Modelul real a executat citirea în trei variante locale: document absent, serviciu dezactivat și serviciu activ. În fiecare caz sunt verificate lipsa acțiunilor de pornire, a modificărilor configurației și a documentelor de apel. Starea activă nu transformă o cerere negativă într-o autorizație de lansare.

@@ -75,7 +75,15 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
-    const ownerPhone = normalizeAiOutreachPhone(favoriteSnapshot.data()?.ownerPhone);
+    const savedPhone = favoriteSnapshot.data()?.ownerPhone;
+    let phoneSource = savedPhone;
+    // Match the prospect read path: a ready canonical listing can provide a
+    // missing phone, but must not silently replace an explicitly saved number.
+    if (savedPhone == null || typeof savedPhone === 'string' && !savedPhone.trim()) {
+      const source = await context.adminDb.collection('ownerListings').doc(body.ownerListing.id).get();
+      if (source.data()?.publicationStatus === 'ready' && source.data()?.isCanonical === true) phoneSource = source.data()?.ownerPhone;
+    }
+    const ownerPhone = normalizeAiOutreachPhone(phoneSource);
     const ownerListing: AiOwnerListingSnapshot = {
       ...body.ownerListing,
       ownerPhone,

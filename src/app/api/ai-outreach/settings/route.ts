@@ -54,18 +54,17 @@ export async function POST(request: NextRequest) {
     const context = await requireAgencyAdminFromBearerToken(request.headers.get('authorization'));
     const body = settingsSchema.parse(await request.json().catch(() => ({})));
     const ref = context.adminDb.collection('agencies').doc(context.agencyId).collection('aiOutreach').doc('settings');
-    const current = await ref.get();
-    const timestamp = new Date().toISOString();
-    const next = withDefaultAiOutreachSettings(context.agencyId, {
-      ...(current.data() || {}),
-      ...body,
-      createdAt: current.data()?.createdAt || timestamp,
-      updatedAt: timestamp,
+    const next = await context.adminDb.runTransaction(async tx => {
+      const current = await tx.get(ref);
+      const timestamp = new Date().toISOString();
+      const settings = withDefaultAiOutreachSettings(context.agencyId, {
+        ...(current.data() || {}), ...body,
+        createdAt: current.data()?.createdAt || timestamp, updatedAt: timestamp,
+      });
+      tx.set(ref, settings, { merge: true });
+      return settings;
     });
-
-    await ref.set(next, { merge: true });
-
-    return NextResponse.json({ settings: next }, { status: 200 });
+    return NextResponse.json({ settings: next, operation: 'outreach_settings_update', status: 'completed', changedFields: Object.keys(body) }, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);
     return NextResponse.json({ message: formatted.message }, { status: formatted.status });

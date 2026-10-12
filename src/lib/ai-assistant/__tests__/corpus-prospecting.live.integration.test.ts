@@ -3,22 +3,35 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { Firestore } from '@google-cloud/firestore';
 import dotenv from 'dotenv';
 import { expect, it, vi } from 'vitest';
-vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: vi.fn() }));
+const settingsContext = vi.hoisted(() => ({ current: null as any, invokes: 0 }));
+vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: vi.fn(), requireAgencyAdminFromBearerToken: async () => {
+  if (settingsContext.current?.role !== 'admin') throw Object.assign(new Error('Administrator required'), { status: 403 }); return settingsContext.current;
+} }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
-vi.mock('../operations', () => ({ operations: {}, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: () => { throw new Error('External calls excluded'); } }));
+vi.mock('../operations', () => ({ operations: { outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
+  if (input.operation !== 'outreach_settings_update') throw new Error('External calls excluded');
+  settingsContext.invokes++;
+  const { POST } = await import('@/app/api/ai-outreach/settings/route');
+  const { NextRequest } = await import('next/server');
+  const { operationResult } = await import('../operation-result');
+  const response = await POST(new NextRequest('http://localhost/api/ai-outreach/settings', { method: 'POST', body: JSON.stringify(input.body) }));
+  if (!response.ok) throw new Error('Settings handler rejected request');
+  return operationResult(input.operation, await response.json());
+} }));
 import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
 import { planTurn } from '../planner';
 import { OpenAIAdapter } from '../provider';
 import { executeSafePrefix } from '../autonomy';
 import { executionConfirmation } from '../execution-confirmation';
+import { executeAction } from '../actions';
 import { VERSIONS } from '../models';
 import type { AssistantContext } from '../access';
 import type { AssistantMessage } from '../contracts';
 import { chatTurn } from '../workspace';
 import { resolveDatetime } from '../datetime';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 267, 268]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 267, 268, 269]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -28,6 +41,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
     const db = new Firestore({ projectId: 'demo-imodeus-corpus-prospecting' });
     const id = randomUUID(), agency = db.collection('agencies').doc(id), profile = db.collection('users').doc(id);
     const ctx = { uid: id, agencyId: id, role: 'agent', adminDb: db } as unknown as AssistantContext;
+    settingsContext.current = ctx; settingsContext.invokes = 0;
     const favorites = agency.collection('ownerListingFavorites');
     const source = db.collection('ownerListings').doc(`${id}-alfa`);
     const relatedSource = db.collection('ownerListings').doc(`${id}-related`);
@@ -48,6 +62,39 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 269) {
+        const ref = agency.collection('aiOutreach').doc('settings');
+        const initial = { enabled: false, desiredCommissionValue: '4', callWindowStart: '09:00', callWindowEnd: '18:00', maxDailyCalls: 50 };
+        await ref.set(initial);
+        const agent = await planTurn(ctx, prompt, []);
+        expect(agent.actions).toEqual([]); expect(agent.text).toMatch(/administrator/i);
+        expect(agent.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect((await ref.get()).data()).toEqual(initial);
+        ctx.role = 'admin'; await profile.update({ role: 'admin' });
+        const clarification = await planTurn(ctx, prompt, []);
+        expect(clarification.actions).toEqual([]); expect(clarification.text).toMatch(/ce|care|specific|indic|dorești|doresti/i);
+        expect((await ref.get()).data()).toEqual(initial);
+        const followup = 'Setează limita la 12 apeluri pe zi și intervalul de la 10:00 la 17:30.';
+        const messages: AssistantMessage[] = [{ id: 'request', role: 'user', text: prompt, createdAt: new Date().toISOString() }, { id: 'clarification', role: 'assistant', text: clarification.text, createdAt: new Date().toISOString() }];
+        const planned = await planTurn(ctx, followup, messages);
+        report = { ...report, agent, clarification, planned };
+        expect(planned.metrics.status, planned.text).toBe('success');
+        expect(planned.metrics.tools.filter(tool => tool.status !== 'success')).toEqual([]);
+        expect(planned.actions).toEqual([{ kind: 'existing_operation', operation: 'outreach_settings_update', params: {}, query: {}, body: { maxDailyCalls: 12, callWindowStart: '10:00', callWindowEnd: '17:30' } }]);
+        expect((await ref.get()).data()).toEqual(initial);
+        const key = randomUUID();
+        const receipt = await executeAction(ctx, planned.actions[0], key);
+        expect(receipt).toMatchObject({ operation: 'outreach_settings_update', executionState: 'succeeded' });
+        const saved = (await ref.get()).data();
+        expect(saved).toMatchObject({ ...initial, maxDailyCalls: 12, callWindowStart: '10:00', callWindowEnd: '17:30', timezone: 'Europe/Bucharest' });
+        const confirmation = executionConfirmation([{ kind: 'existing_operation', result: receipt }]);
+        expect(confirmation).toMatch(/salvate/); expect(confirmation).toContain('12'); expect(confirmation).toContain('17:30');
+        expect(await executeAction(ctx, planned.actions[0], key)).toEqual(receipt);
+        expect(settingsContext.invokes).toBe(1); expect((await ref.get()).data()).toEqual(saved);
+        expect((await agency.collection('aiOutreachCalls').get()).empty).toBe(true);
+        report = { ...report, receipt, confirmation, executionVerified: true, verification: 'Original prompt, actual model with agent restriction and admin clarification, model continuation with explicit values, approved-action executor with real settings handler and local Firestore, preserved unspecified fields, committed receipt confirmation and idempotent replay. Approval UI is not exercised; no calls.' };
+        return;
+      }
       if (number === 267) {
         const settingsRef = agency.collection('aiOutreach').doc('settings');
         const variants = [];

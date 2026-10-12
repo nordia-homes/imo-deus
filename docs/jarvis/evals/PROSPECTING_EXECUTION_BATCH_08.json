@@ -1,0 +1,548 @@
+{
+  "scope": "0269: original prompt, actual model, agent restriction, admin clarification and continuation, approved-action executor against the real settings handler with local Firestore. No live calls or production certification.",
+  "fixes": [
+    "Compact settings-edit planning preserves admin-only access and requests missing values.",
+    "Settings patches are committed transactionally, preserving concurrent changes to unspecified fields.",
+    "Committed settings receipts produce deterministic Romanian confirmation and idempotent replay.",
+    "Call creation can resolve a missing prospect phone from a ready canonical source; explicit saved numbers and source visibility remain authoritative."
+  ],
+  "validation": {
+    "unitTests": 118,
+    "firestoreTests": 25
+  },
+  "limitations": [
+    "108 original scenarios have local real-model evidence; zero full production certifications.",
+    "The approval UI and persisted-chat clarification resume are not exercised by this test; the continuation uses conversation messages and the approved-action executor.",
+    "Phone-source fallback is partial implementation evidence for 0266, not certification of a full real call.",
+    "Concurrent writes to the same setting retain normal last-commit semantics; only independent fields are shown preserved."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0269",
+      "prompt": "Actualizează setările de outreach pe care am dreptul să le schimb.",
+      "versions": {
+        "prompt": "jarvis-85",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "113",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T01:36:30.24Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "agent": {
+        "text": "Setările actuale sunt: outreach dezactivat; comision dorit 4%, minim 2% (negocierea permisă); fereastră de apel 09:00–18:00, ora Bucureștiului; maximum 50 de apeluri pe zi; plafonul lunar este nelimitat (`null`). Ai `canEdit=false`, deci numai administratorul poate modifica setările. Nu am făcut modificări și nu am pornit apeluri. Dacă dorești actualizarea, cere-i administratorului să o facă.\nCerințe încă neacoperite: Actualizează setările de outreach pe care agentul are dreptul să le schimbe.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Setările apelurilor AI",
+            "source": "aiOutreachSettings",
+            "rows": [
+              {
+                "enabled": false,
+                "desiredCommissionValue": "4",
+                "minimumCommissionValue": "2",
+                "commissionType": "percent",
+                "allowNegotiation": true,
+                "allowVerbalAgreement": true,
+                "allowExactAddressCollection": true,
+                "defaultTemplateId": "owner_acquisition",
+                "callWindowStart": "09:00",
+                "callWindowEnd": "18:00",
+                "timezone": "Europe/Bucharest",
+                "maxDailyCalls": 50,
+                "monthlyBudgetCap": null,
+                "recordCalls": true,
+                "discloseAi": true
+              }
+            ],
+            "complete": true,
+            "persisted": true,
+            "canEdit": false,
+            "note": "Configurația actuală a agenției; lipsa documentului folosește valorile implicite cu serviciul dezactivat. Orele sunt București. Numai administratorul modifică aceste setări. enabled nu dovedește eligibilitatea unui proprietar sau configurarea furnizorului. Nu modifica setări și nu lansa apeluri pentru această citire.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7917,
+                "outputTokens": 15,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7914,
+                "estimated": false
+              },
+              "costUsd": 0.00099705,
+              "latencyMs": 2651,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8161,
+                "outputTokens": 100,
+                "cachedTokens": 7914,
+                "cacheWriteTokens": 244,
+                "estimated": false
+              },
+              "costUsd": 0.00015994,
+              "latencyMs": 3012,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8289,
+                "outputTokens": 129,
+                "cachedTokens": 8158,
+                "cacheWriteTokens": 128,
+                "estimated": false
+              },
+              "costUsd": 0.00016238,
+              "latencyMs": 3402,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "outreach_configuration",
+              "status": "success",
+              "latencyMs": 449,
+              "version": "113",
+              "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 27,
+              "version": "113",
+              "argumentsHash": "2eb6c737030e1ce8d1620198cf850bfea8b2e29c8263d1614592b675c45e6f32"
+            }
+          ],
+          "status": "clarification",
+          "elapsedMs": 9995,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.62,
+            "inputTokens": 458,
+            "outputTokens": 51,
+            "costUsd": 1.9236E-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 333,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "r1",
+              "sourceQuote": "Actualizează setările de outreach pe care am dreptul să le schimb.",
+              "description": "Actualizează setările de outreach pe care agentul are dreptul să le schimbe.",
+              "resolution": "needs_clarification",
+              "steps": [],
+              "evidenceCallIds": [
+                "call_fpK0xlaiPz5Sjov5QDAX2ZgZ"
+              ]
+            }
+          ]
+        }
+      },
+      "clarification": {
+        "text": "Am verificat configurația. Ai dreptul să o modifici (`canEdit=true`), însă nu ai specificat valorile noi. Setările actuale sunt: outreach dezactivat; comision dorit 4%, minim 2%; interval 09:00–18:00, ora Bucureștiului; maximum 50 de apeluri/zi; plafon lunar fără limită (`null`). Spune-mi ce câmpuri și valori vrei să schimb, de exemplu: `enabled`, `desiredCommissionValue`, `minimumCommissionValue`, `callWindowStart`, `callWindowEnd`, `maxDailyCalls` sau `monthlyBudgetCap`. Nu am modificat setările și nu am pornit apeluri.\nCerințe încă neacoperite: Actualizarea setărilor solicitată, dar nu au fost precizate valorile noi.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Setările apelurilor AI",
+            "source": "aiOutreachSettings",
+            "rows": [
+              {
+                "enabled": false,
+                "desiredCommissionValue": "4",
+                "minimumCommissionValue": "2",
+                "commissionType": "percent",
+                "allowNegotiation": true,
+                "allowVerbalAgreement": true,
+                "allowExactAddressCollection": true,
+                "defaultTemplateId": "owner_acquisition",
+                "callWindowStart": "09:00",
+                "callWindowEnd": "18:00",
+                "timezone": "Europe/Bucharest",
+                "maxDailyCalls": 50,
+                "monthlyBudgetCap": null,
+                "recordCalls": true,
+                "discloseAi": true
+              }
+            ],
+            "complete": true,
+            "persisted": true,
+            "canEdit": true,
+            "note": "Configurația actuală a agenției; lipsa documentului folosește valorile implicite cu serviciul dezactivat. Orele sunt București. Numai administratorul modifică aceste setări. enabled nu dovedește eligibilitatea unui proprietar sau configurarea furnizorului. Nu modifica setări și nu lansa apeluri pentru această citire.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 7917,
+                "outputTokens": 15,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 7914,
+                "estimated": false
+              },
+              "costUsd": 0.00099705,
+              "latencyMs": 1370,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8162,
+                "outputTokens": 131,
+                "cachedTokens": 7914,
+                "cacheWriteTokens": 245,
+                "estimated": false
+              },
+              "costUsd": 0.000175565,
+              "latencyMs": 2179,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8322,
+                "outputTokens": 167,
+                "cachedTokens": 8159,
+                "cacheWriteTokens": 160,
+                "estimated": false
+              },
+              "costUsd": 0.00018538999999999999,
+              "latencyMs": 3282,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "outreach_configuration",
+              "status": "success",
+              "latencyMs": 27,
+              "version": "113",
+              "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 22,
+              "version": "113",
+              "argumentsHash": "37e38826f72081960645f54937a4ed748e17ed531036c91e24c79057d28614b0"
+            }
+          ],
+          "status": "clarification",
+          "elapsedMs": 7173,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.64,
+            "inputTokens": 458,
+            "outputTokens": 51,
+            "costUsd": 1.9236E-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 244,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "outreach_update",
+              "sourceQuote": "Actualizează setările de outreach pe care am dreptul să le schimb.",
+              "description": "Actualizarea setărilor solicitată, dar nu au fost precizate valorile noi.",
+              "resolution": "needs_clarification",
+              "steps": [],
+              "evidenceCallIds": [
+                "call_gq59zVO1ZBgX0mfiBNfZJubC"
+              ]
+            }
+          ]
+        }
+      },
+      "planned": {
+        "text": "Am pregătit 1 acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "Setările apelurilor AI",
+            "source": "aiOutreachSettings",
+            "rows": [
+              {
+                "enabled": false,
+                "desiredCommissionValue": "4",
+                "minimumCommissionValue": "2",
+                "commissionType": "percent",
+                "allowNegotiation": true,
+                "allowVerbalAgreement": true,
+                "allowExactAddressCollection": true,
+                "defaultTemplateId": "owner_acquisition",
+                "callWindowStart": "09:00",
+                "callWindowEnd": "18:00",
+                "timezone": "Europe/Bucharest",
+                "maxDailyCalls": 50,
+                "monthlyBudgetCap": null,
+                "recordCalls": true,
+                "discloseAi": true
+              }
+            ],
+            "complete": true,
+            "persisted": true,
+            "canEdit": true,
+            "note": "Configurația actuală a agenției; lipsa documentului folosește valorile implicite cu serviciul dezactivat. Orele sunt București. Numai administratorul modifică aceste setări. enabled nu dovedește eligibilitatea unui proprietar sau configurarea furnizorului. Nu modifica setări și nu lansa apeluri pentru această citire.",
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "actions": [
+          {
+            "kind": "existing_operation",
+            "operation": "outreach_settings_update",
+            "params": {},
+            "query": {},
+            "body": {
+              "maxDailyCalls": 12,
+              "callWindowStart": "10:00",
+              "callWindowEnd": "17:30"
+            }
+          }
+        ],
+        "accessRefs": [],
+        "metrics": {
+          "models": [
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8132,
+                "outputTokens": 15,
+                "cachedTokens": 0,
+                "cacheWriteTokens": 8129,
+                "estimated": false
+              },
+              "costUsd": 0.001023925,
+              "latencyMs": 1366,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8376,
+                "outputTokens": 69,
+                "cachedTokens": 8129,
+                "cacheWriteTokens": 244,
+                "estimated": false
+              },
+              "costUsd": 0.00014659,
+              "latencyMs": 1906,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8472,
+                "outputTokens": 104,
+                "cachedTokens": 8373,
+                "cacheWriteTokens": 96,
+                "estimated": false
+              },
+              "costUsd": 0.00014803,
+              "latencyMs": 1793,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            },
+            {
+              "decision": {
+                "logical": "LUNA",
+                "model": "gpt-6-luna",
+                "effort": "low",
+                "reason": "luna_first",
+                "version": "luna-first-2"
+              },
+              "usage": {
+                "inputTokens": 8601,
+                "outputTokens": 91,
+                "cachedTokens": 8469,
+                "cacheWriteTokens": 129,
+                "estimated": false
+              },
+              "costUsd": 0.000146615,
+              "latencyMs": 1971,
+              "pricingVersion": "openai-standard-2026-10-04",
+              "outcome": "success"
+            }
+          ],
+          "tools": [
+            {
+              "name": "outreach_configuration",
+              "status": "success",
+              "latencyMs": 40,
+              "version": "113",
+              "argumentsHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+            },
+            {
+              "name": "propose_actions",
+              "status": "success",
+              "latencyMs": 11,
+              "version": "113",
+              "argumentsHash": "d600b610e73e27f27a61e4c7c5c8f005349ad6b18a7696d61abebd74c8d1e5be"
+            },
+            {
+              "name": "goal_coverage",
+              "status": "success",
+              "latencyMs": 9,
+              "version": "113",
+              "argumentsHash": "adb253bebbaae2aa513d57c7240958e032d38360f1b61ffcc4d63f28e975e695"
+            }
+          ],
+          "status": "success",
+          "elapsedMs": 7395,
+          "jev": {
+            "mode": "shadow",
+            "model": "jev-1.13.0",
+            "route": "JARVIS_PLANNER",
+            "confidence": 0.76,
+            "inputTokens": 471,
+            "outputTokens": 51,
+            "costUsd": 1.9782E-05,
+            "estimated": false,
+            "actualRoute": "JARVIS_PLANNER",
+            "latencyMs": 248,
+            "status": "ok",
+            "reasonCode": "shadow_only"
+          }
+        },
+        "goalCoverage": {
+          "requirements": [
+            {
+              "id": "update_outreach_settings",
+              "sourceQuote": "Setează limita la 12 apeluri pe zi și intervalul de la 10:00 la 17:30.",
+              "description": "Setează limita zilnică la 12 apeluri și fereastra de outreach la 10:00–17:30, ora Bucureștiului.",
+              "resolution": "planned",
+              "steps": [
+                1
+              ],
+              "evidenceCallIds": []
+            }
+          ]
+        }
+      },
+      "receipt": {
+        "settings": {
+          "enabled": false,
+          "desiredCommissionValue": "4",
+          "minimumCommissionValue": "2",
+          "commissionType": "percent",
+          "allowNegotiation": true,
+          "allowVerbalAgreement": true,
+          "allowExactAddressCollection": true,
+          "defaultTemplateId": "owner_acquisition",
+          "callWindowStart": "10:00",
+          "callWindowEnd": "17:30",
+          "timezone": "Europe/Bucharest",
+          "maxDailyCalls": 12,
+          "monthlyBudgetCap": null,
+          "recordCalls": true,
+          "discloseAi": true,
+          "createdAt": "2026-10-12T01:36:57.371Z",
+          "updatedAt": "2026-10-12T01:36:57.371Z",
+          "agencyId": "590483bd-37be-4c5b-806d-61f116c1aacb"
+        },
+        "operation": "outreach_settings_update",
+        "status": "completed",
+        "changedFields": [
+          "callWindowStart",
+          "callWindowEnd",
+          "maxDailyCalls"
+        ],
+        "businessStatus": "completed",
+        "executionState": "succeeded",
+        "verifiedAt": "2026-10-12T01:36:57.385Z",
+        "evidenceSource": "domain_handler"
+      },
+      "confirmation": "Setările apelurilor AI au fost salvate. Limita zilnică: 12 apeluri. Interval: 10:00–17:30, ora Bucureștiului.",
+      "verification": "Original prompt, actual model with agent restriction and admin clarification, model continuation with explicit values, approved-action executor with real settings handler and local Firestore, preserved unspecified fields, committed receipt confirmation and idempotent replay. Approval UI is not exercised; no calls."
+    }
+  ]
+}
