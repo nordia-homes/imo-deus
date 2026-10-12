@@ -46,6 +46,16 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('limits human callback planning to one task for the persisted prospect', async () => {
+    const request = 'Creează task de apel uman în loc de apel AI.';
+    const history = [{ id: 'question', role: 'assistant' as const, text: 'Pentru ce zi?', createdAt: new Date().toISOString(), prospectContinuation: { listingId: 'selected', request } }];
+    const model = scripted(call('propose_actions', { actions: [{ kind: 'create_task', ownerListingId: 'wrong', description: 'Apel uman', dueDate: '2099-01-01' }] }), final);
+    const result = await planTurn(ctx, request + '\n2099-01-01', history, { provider: model });
+    expect(result.actions).toEqual([]);
+    const names = model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name);
+    expect(names).toContain('create_task'); expect(names).not.toContain('outreach_preflight'); expect(names).not.toContain('update_prospect');
+    expect(model.respond.mock.calls[0][0].input.some((item: any) => item.role === 'developer' && item.content.includes('ownerListingId=selected'))).toBe(true);
+  });
   it('asks for scheduling time and rejects an immediate call or an unverified instant in the reply', async () => {
     const history = [{ id: 'selection', role: 'assistant' as const, text: 'Prospect selectat', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, title: 'Prospect', source: 'ownerListingFavorites', rows: [{ id: 'selected' }] }] }];
     const initial = await planTurn(ctx, 'Programează apelul conform funcționalității existente.', history, { provider: scripted(final) });

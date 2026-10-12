@@ -1,0 +1,347 @@
+{
+  "scope": "0272: original command through persisted chatTurn with actual model and local Firestore.",
+  "fixes": [
+    "Ask for the missing day and persist selected prospect across clarification.",
+    "Authorize only one human callback task for the same prospect from the original request.",
+    "Restrict human callback planning to task/read/date tools and reject other mutation targets."
+  ],
+  "validation": {
+    "unitTests": 106,
+    "actualModelScenario": "passed",
+    "firestoreTests": 30,
+    "productionBuild": "passed, 227 pages",
+    "typescript": "passed",
+    "lint": "passed"
+  },
+  "limitations": [
+    "112 original scenarios have local evidence; zero complete production certifications.",
+    "No browser, voice UI or real telephone provider certification.",
+    "Focused original wording and a next-day timed reply; arbitrary paraphrases and missing-phone variants not certified.",
+    "An initial test used a nonexistent localDate property; corrected to local date slice and rerun passed.",
+    "Initial parallel unit run timed out in an existing planner test and cascaded; isolated and final runs passed."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0272",
+      "prompt": "Creează task de apel uman în loc de apel AI.",
+      "versions": {
+        "prompt": "jarvis-89",
+        "routing": "luna-first-2",
+        "policy": "request-crm-13",
+        "tools": "118",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-12T08:02:47.928Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "clarification": {
+        "id": "10041ad9-7b25-4d65-9c22-97355dd7a65a-question-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Pentru ce zi dorești taskul de apel uman? Poți indica și ora, în fusul Bucureștiului.",
+        "cards": [],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T08:02:50.402Z",
+        "prospectContinuation": {
+          "listingId": "10041ad9-7b25-4d65-9c22-97355dd7a65a-alfa",
+          "request": "Creează task de apel uman în loc de apel AI."
+        }
+      },
+      "final": {
+        "id": "10041ad9-7b25-4d65-9c22-97355dd7a65a-answer-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Task creat: „Apel uman către proprietarul prospectului”. Data: 2026-10-13, 10:30, ora Bucureștiului. Prospect: Prospect Alfa. ID prospect: 10041ad9-7b25-4d65-9c22-97355dd7a65a-alfa. Participant: Alin Matei. ID: 10041ad9-7b25-4d65-9c22-97355dd7a65a-answer-safe-0.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+        "cards": [
+          {
+            "type": "data",
+            "title": "ownerListingFavorites",
+            "source": "ownerListingFavorites",
+            "rows": [
+              {
+                "isFavoriteActive": true,
+                "reservedByAgentId": "10041ad9-7b25-4d65-9c22-97355dd7a65a",
+                "reservedByAgentName": "Agent local",
+                "reservedAt": "2026-10-12T08:02:47.928Z",
+                "contactOutcome": null,
+                "collaborationStatus": null,
+                "takenByAgentId": null,
+                "notes": "Istoric existent.",
+                "updatedAt": "2026-10-01T07:00:00Z",
+                "ownerName": "Alin Matei",
+                "id": "10041ad9-7b25-4d65-9c22-97355dd7a65a-alfa",
+                "title": "Prospect Alfa",
+                "ownerPhone": "0722123456",
+                "phoneExtractionStatus": "available"
+              }
+            ],
+            "nextCursor": null,
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "outputType": "ACTION_RESULT",
+            "title": "Rezultatele cererii",
+            "source": "autonomy",
+            "rows": [
+              {
+                "step": 1,
+                "kind": "create_task",
+                "result": {
+                  "taskId": "10041ad9-7b25-4d65-9c22-97355dd7a65a-answer-safe-0",
+                  "link": "/tasks",
+                  "description": "Apel uman către proprietarul prospectului",
+                  "status": "open",
+                  "dueDate": "2026-10-13T07:30:00Z",
+                  "startTime": "10:30",
+                  "participantName": "Alin Matei",
+                  "contactId": null,
+                  "contactName": null,
+                  "propertyId": null,
+                  "propertyTitle": null,
+                  "ownerListingId": "10041ad9-7b25-4d65-9c22-97355dd7a65a-alfa",
+                  "ownerListingTitle": "Prospect Alfa"
+                }
+              }
+            ]
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-12T08:03:06.141Z"
+      },
+      "tasks": [
+        {
+          "ownerListingId": "10041ad9-7b25-4d65-9c22-97355dd7a65a-alfa",
+          "startTime": "10:30",
+          "description": "Apel uman către proprietarul prospectului",
+          "dueDate": "2026-10-13T07:30:00Z",
+          "participantName": "Alin Matei",
+          "participantPhone": "0722123456",
+          "ownerListingTitle": "Prospect Alfa",
+          "id": "10041ad9-7b25-4d65-9c22-97355dd7a65a-answer-safe-0",
+          "status": "open",
+          "agentId": "10041ad9-7b25-4d65-9c22-97355dd7a65a",
+          "agentName": "Agent local",
+          "createdAt": "2026-10-12T08:03:05.938Z"
+        }
+      ],
+      "telemetry": {
+        "requestId": "10041ad9-7b25-4d65-9c22-97355dd7a65a-answer",
+        "sessionId": "10041ad9-7b25-4d65-9c22-97355dd7a65a",
+        "userId": "10041ad9-7b25-4d65-9c22-97355dd7a65a",
+        "agencyId": "10041ad9-7b25-4d65-9c22-97355dd7a65a",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 8815,
+              "outputTokens": 60,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 8665,
+              "estimated": false
+            },
+            "costUsd": 0.001128125,
+            "latencyMs": 2126,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 9087,
+              "outputTokens": 46,
+              "cachedTokens": 8665,
+              "cacheWriteTokens": 419,
+              "estimated": false
+            },
+            "costUsd": 0.000162325,
+            "latencyMs": 1857,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 9206,
+              "outputTokens": 111,
+              "cachedTokens": 9084,
+              "cacheWriteTokens": 119,
+              "estimated": false
+            },
+            "costUsd": 0.000161515,
+            "latencyMs": 2805,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 9347,
+              "outputTokens": 135,
+              "cachedTokens": 9203,
+              "cacheWriteTokens": 141,
+              "estimated": false
+            },
+            "costUsd": 0.00017745499999999997,
+            "latencyMs": 2589,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 9509,
+              "outputTokens": 115,
+              "cachedTokens": 9344,
+              "cacheWriteTokens": 162,
+              "estimated": false
+            },
+            "costUsd": 0.00017149,
+            "latencyMs": 2059,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 9649,
+              "outputTokens": 71,
+              "cachedTokens": 9506,
+              "cacheWriteTokens": 140,
+              "estimated": false
+            },
+            "costUsd": 0.00014836000000000002,
+            "latencyMs": 2486,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 426,
+            "version": "118",
+            "argumentsHash": "ca702766dbabcc10454899cb6d3dee81b40e798ffe5ecb88271ac6c9d502a479"
+          },
+          {
+            "name": "resolve_datetime",
+            "status": "success",
+            "latencyMs": 489,
+            "version": "118",
+            "argumentsHash": "60295b14bf1024b463df7fee216fa37354336fecbea922aea2b80862425881ed"
+          },
+          {
+            "name": "propose_actions",
+            "status": "failed",
+            "latencyMs": 16,
+            "version": "118",
+            "argumentsHash": "be296bdd3d460945364d27e3cc49213c2b4286affe4cf4cf35264e616f5d8c5f"
+          },
+          {
+            "name": "propose_actions",
+            "status": "success",
+            "latencyMs": 19,
+            "version": "118",
+            "argumentsHash": "116861de355a040f42ed9f9f4a655f8e21bbf0396f1fcc1c0ba805bccb33fe2a"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 10,
+            "version": "118",
+            "argumentsHash": "6666b9ca27189ce4eb3b3e9a0fd699181ae5594dc455077516cb84dc416380ff"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 15301,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "JARVIS_PLANNER",
+          "confidence": 0.91,
+          "inputTokens": 472,
+          "outputTokens": 51,
+          "costUsd": 1.9824000000000002E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 326,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.001969094,
+        "tokens": 56674,
+        "versions": {
+          "prompt": "jarvis-89",
+          "routing": "luna-first-2",
+          "policy": "request-crm-13",
+          "tools": "118",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-12T08:03:06.193Z"
+      },
+      "verification": "Actual model and persisted chatTurn clarification/reply; saved human callback task with prospect, participant, phone and Bucharest date/time; persisted confirmation; idempotent replay; no AI call. Local Firestore only, no production or browser certification."
+    }
+  ]
+}

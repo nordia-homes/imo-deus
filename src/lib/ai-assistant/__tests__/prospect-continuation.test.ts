@@ -8,6 +8,16 @@ const prompt = 'Actualizează statusul prospectului selectat.';
 const pending = pendingProspectRequest(prompt, 'clarification', [selection]);
 const clarification: AssistantMessage = { ...selection, cards: [], prospectContinuation: pending };
 const action: AssistantAction = { kind: 'update_prospect', listingId: 'p', patch: { collaborationStatus: 'collaborates' } };
+it('resumes the human callback task only for the selected prospect and respects cancellation', () => {
+  const request = 'Creează task de apel uman în loc de apel AI.';
+  const history: AssistantMessage[] = [{ ...clarification, prospectContinuation: pendingProspectRequest(request, 'clarification', [selection]) }];
+  const task: AssistantAction = { kind: 'create_task', ownerListingId: 'p', description: 'Apel uman', dueDate: '2026-10-13' };
+  expect(prospectClarification(request, [selection])).toContain('ce zi');
+  expect(prospectExecutionPrompt('Mâine.', [task], history)).toContain(request);
+  expect(prospectExecutionPrompt('Mâine.', [{ ...task, ownerListingId: 'q' }], history)).toBe('Mâine.');
+  expect(prospectExecutionPrompt('Anulează.', [task], history)).toBe('Anulează.');
+  expect(prospectExecutionPrompt('Mâine.', [task, task], history)).toBe('Mâine.');
+});
 it('retains only a single selected prospect for an unresolved request', () => {
   expect(prospectClarification(prompt, [selection])).toContain('Ce status');
   expect(prospectClarification('Schimbă starea prospectului curent.', [selection])).toContain('Ce status');

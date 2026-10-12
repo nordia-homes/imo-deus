@@ -2423,7 +2423,11 @@
           "sourceNumber": 272,
           "request": "Creează task de apel uman în loc de apel AI.",
           "requestSha256": "78a622929997edc8a3ea05c49e8b2e3f6244989a79f6b1411f869106491e7b83",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_12.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0273",

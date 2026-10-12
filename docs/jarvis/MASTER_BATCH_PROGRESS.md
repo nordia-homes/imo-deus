@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Task de apel uman în loc de apel AI — 0272
+
+Cererea originală cere acum ziua lipsă și păstrează prospectul selectat în conversația salvată. Răspunsul „Mâine la ora 10:30.” continuă cererea autorizată și creează un singur task pentru același prospect. Plannerul acestui flux nu are instrumente de lansare a apelului AI și respinge acțiunile pentru alt prospect.
+
+Proba cu model real prin `chatTurn` a verificat taskul efectiv salvat, participantul Alin Matei, telefonul din sursa prospectului, data și ora Bucureștiului, confirmarea persistentă și reluarea fără duplicare. Nu s-a creat niciun apel AI. Au trecut 106 teste unitare, 30 de teste Firestore, TypeScript, lint, paritatea și buildul final cu 227 de pagini. Dovadă: [PROSPECTING_EXECUTION_BATCH_12.json](evals/PROSPECTING_EXECUTION_BATCH_12.json).
+
+Versiuni **jarvis-89 / tools 118**. Total **112/1000** cu dovezi locale, **0 certificări complete în producție**. Sunt verificate formularea originală și răspunsul cu zi și oră; nu sunt certificate toate parafrazele, variantele fără telefon, interfața vocală sau browserul. Modificările nu sunt publicate în producție.
+
 ## Oprirea follow-up-ului prin comanda agentului — 0271
 
 Cererea originală „Oprește follow-up-ul dacă proprietarul a refuzat.” verifică refuzul actual pentru prospectul selectat și continuă cu o acțiune nativă. Solicitarea agentului autorizează această modificare CRM, fără activarea unei permisiuni suplimentare. Lipsa refuzului înregistrat nu este transformată într-un refuz inventat și nu produce acțiuni.
