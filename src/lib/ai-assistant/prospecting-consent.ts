@@ -1,3 +1,4 @@
+import { prospectOwner } from '@/lib/crm/prospect';
 import { canReadResource, collectionFor, getResource, type AssistantContext } from './access';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { normalized } from './contracts';
@@ -47,6 +48,8 @@ export async function recordProspectingConsent(ctx: AssistantContext, conversati
     ]);
     if (owner.data()?.ownerId !== ctx.uid || message.data()?.role !== 'user' || message.data()?.text !== request.prompt || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Solicitarea sau accesul agentului nu mai este valid.');
     if (!freshConversation.exists || !canReadResource(ctx, 'conversations', freshConversation.data()!) || recipientRevision({ ...freshConversation.data(), id: conversationId }) !== expectedRevision) throw new Error('Destinatarul sau accesul s-a schimbat.');
+    const assignedOwner = prospectOwner(freshListing.data() || {}, Date.now());
+    if (ctx.role !== 'admin' && assignedOwner && assignedOwner !== ctx.uid) throw new Error('Prospectul este atribuit altui agent.');
     const canonical = source.data();
     const currentPhone = freshListing.data()?.ownerPhone || (canonical?.publicationStatus === 'ready' && canonical.isCanonical === true ? canonical.ownerPhone : '');
     if (normalizeRomanianPhone(currentPhone) !== phone) throw new Error('Telefonul anunțului s-a schimbat.');

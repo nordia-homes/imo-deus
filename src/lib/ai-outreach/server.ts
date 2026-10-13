@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { prospectOwner } from '@/lib/crm/prospect';
 import type { DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { AI_OUTREACH_TIMEZONE, withDefaultAiOutreachSettings } from '@/lib/ai-outreach/defaults';
 import { createVapiOutboundCall, VapiDispatchError } from '@/lib/ai-outreach/vapi';
@@ -263,8 +264,13 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
   let dispatchSettings = settings;
   let deferredWarning: string | undefined;
 
-  const claimed = await adminDb.runTransaction(async tx => {
+  const claimDispatch = () => adminDb.runTransaction(async tx => {
     deferredWarning = undefined;
+    // Acquire the shared phone lock before per-call locks. Otherwise two calls
+    // can each lock their own row and deadlock while reading the shared history.
+    const agency = adminDb.collection('agencies').doc(call.agencyId);
+    const phoneRef = agency.collection('aiOutreachPhoneClaims').doc(createHash('sha256').update(normalizeAiOutreachPhone(call.ownerPhone)).digest('hex'));
+    await tx.get(phoneRef);
     const current = await tx.get(callRef);
     const ownerRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreachOwnerListingStatuses').doc(call.ownerListingId);
     const owner = await tx.get(ownerRef);
@@ -276,6 +282,8 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     // the transaction to retry instead of launching with an earlier snapshot.
     const settingsRef = adminDb.collection('agencies').doc(call.agencyId).collection('aiOutreach').doc('settings');
     const currentSettings = await tx.get(settingsRef);
+    const currentProspect = await tx.get(adminDb.collection('agencies').doc(call.agencyId).collection('ownerListingFavorites').doc(call.ownerListingId));
+    const assignedOwner = prospectOwner(currentProspect.data() || {}, Date.now());
     dispatchSettings = withDefaultAiOutreachSettings(call.agencyId, currentSettings.data());
     const cancelBeforeDispatch = (code: string, message: string) => {
       const updatedAt = new Date().toISOString();
@@ -283,6 +291,7 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
       if (!owner.data()?.latestAiCallId || owner.data()?.latestAiCallId === call.id) tx.set(ownerRef, { latestAiCallId: call.id, aiOutreachStatus: 'canceled', aiOutreachOutcome: 'uncalled', aiOutreachUpdatedAt: updatedAt, updatedAt }, { merge: true });
       return false;
     };
+    if (actor.data()?.role !== 'admin' && assignedOwner && assignedOwner !== actorId) return cancelBeforeDispatch('prospect_reassigned', 'Prospectul este atribuit altui agent. Apelul nu a fost lansat.');
     if (owner.data()?.aiDoNotCall === true) return cancelBeforeDispatch('owner_do_not_call', 'Proprietarul a refuzat contactarea. Apelul nu a fost lansat.');
     if (dispatchSettings.enabled !== true) {
       return cancelBeforeDispatch('outreach_disabled', 'Apelurile AI sunt dezactivate pentru această agenție. Apelul nu a fost lansat.');
@@ -300,11 +309,6 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     const phone = normalizeAiOutreachPhone(current.data()?.ownerPhone);
     if (!/^0[237]\d{8}$/.test(phone)) throw new AiOutreachGuardError('Numărul proprietarului nu este valid pentru apel.', 400);
     if (phone !== normalizeAiOutreachPhone(call.ownerPhone)) throw new AiOutreachGuardError('Telefonul apelului s-a schimbat; recitește programarea.', 409);
-    const agency = adminDb.collection('agencies').doc(call.agencyId);
-    // Every dispatch for this normalized phone writes the same document. The
-    // transaction retry serializes different listing IDs, not just one call ID.
-    const phoneRef = agency.collection('aiOutreachPhoneClaims').doc(createHash('sha256').update(phone).digest('hex'));
-    await tx.get(phoneRef);
     // Legacy calls predate phone claims and may store +40, 0040 or spaced phones.
     // Read agency history rather than relying on a raw-string equality query.
     const history = await tx.get(agency.collection('aiOutreachCalls'));
@@ -335,6 +339,17 @@ export async function launchAiOutreachCall(input: LaunchCallInput) {
     tx.set(ownerRef, { agencyId: call.agencyId, ownerListingId: call.ownerListingId, latestAiCallId: call.id, aiOutreachStatus: 'calling', aiOutreachOutcome: 'calling', aiOutreachUpdatedAt: now, updatedAt: now }, { merge: true });
     return true;
   });
+  let claimed = false;
+  for (let attempt = 0; ; attempt += 1) {
+    try { claimed = await claimDispatch(); break; }
+    catch (error) {
+      // Some Firestore backends close a contended transaction with code 3,
+      // which the SDK does not retry. Retry only this aborted claim, never
+      // the external provider request that follows a successful commit.
+      if (attempt >= 2 || !(error instanceof Error) || (error as Error & { code?: number }).code !== 3 || !/transaction is invalid or closed/i.test(error.message)) throw error;
+      await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+    }
+  }
   if (!claimed) {
     const current = await callRef.get();
     return { call: { ...call, ...current.data() } as AiOutreachCall, warning: deferredWarning || current.data()?.providerErrorMessage || 'Apelul este deja lansat, anulat sau preluat de altă execuție. Nu a fost retrimis.' };

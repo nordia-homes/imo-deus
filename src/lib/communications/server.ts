@@ -26,7 +26,7 @@ export async function getConversation(db: Firestore, actor: Actor, id: string) {
 }
 export async function listConversations(db: Firestore, actor: Actor, params: URLSearchParams) {
   if (params.get('status') === 'unassigned') {
-    if (actor.role !== 'admin') throw new CommunicationError('Administrator necesar pentru conversațiile neatribuite.', 403);
+    if (!['agent', 'admin'].includes(actor.role || '')) throw new CommunicationError('Acces interzis.', 403);
     let pending = agencyCollection(db, actor.agencyId, 'conversations').where('assigneeId', '==', null).orderBy('lastMessageAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
     const cursor = params.get('cursor');
     if (cursor) { const previous = await getConversation(db, actor, cursor); pending = pending.startAfter(previous.lastMessageAt, cursor); }
@@ -34,7 +34,8 @@ export async function listConversations(db: Firestore, actor: Actor, params: URL
     return { conversations: docs.docs.map(d => ({ ...d.data(), id: d.id } as Conversation)), cursor: docs.size === 30 ? docs.docs.at(-1)!.id : null };
   }
   let query = agencyCollection(db, actor.agencyId, 'conversations').orderBy('lastMessageAt', 'desc').orderBy(FieldPath.documentId(), 'desc');
-  if (actor.role !== 'admin') query = query.where('accessUids', 'array-contains', actor.uid);
+  if (actor.role === 'agent') query = query.where('assigneeId', '==', actor.uid);
+  else if (actor.role !== 'admin') query = query.where('accessUids', 'array-contains', actor.uid);
   const channel = params.get('channel'); const state = params.get('status');
   if (channel && channel !== 'all') query = query.where('channel', '==', channel);
   if (state && state !== 'all') query = query.where('status', '==', state);
@@ -58,7 +59,7 @@ const patchSchema = z.object({ status: z.enum(['new', 'open', 'waiting', 'snooze
 export async function updateConversation(db: Firestore, actor: Actor, id: string, body: unknown) {
   const patch = patchSchema.parse(body);
   await getConversation(db, actor, id);
-  if (patch.assigneeId !== undefined && actor.role !== 'admin') throw new CommunicationError('Numai administratorul poate realoca conversația.', 403);
+
   if (patch.assigneeId) {
     const profile = await db.collection('users').doc(patch.assigneeId).get();
     if (profile.data()?.agencyId !== actor.agencyId) throw new CommunicationError('Agentul nu aparține agenției.');
@@ -68,6 +69,7 @@ export async function updateConversation(db: Firestore, actor: Actor, id: string
   await db.runTransaction(async tx => {
     const snap = await tx.get(ref); const row = snap.data() as Conversation;
     if (!canReadConversation(actor, row)) throw new CommunicationError('Acces revocat.', 403);
+    if (patch.assigneeId !== undefined && actor.role !== 'admin' && !(actor.role === 'agent' && row.assigneeId === null && patch.assigneeId === actor.uid)) throw new CommunicationError('Poți prelua doar pentru tine o conversație neatribuită.', 403);
     if (row.version !== patch.version) throw new CommunicationError('Conversația a fost modificată. Reîncarcă înainte de salvare.', 409);
     const data: Record<string, unknown> = { version: row.version + 1 };
     if (patch.status) data.status = patch.status;

@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Acces agenți: prospectare și WhatsApp — 13 octombrie 2026
+
+Conform alegerii utilizatorului, agenții lucrează pe prospectele și conversațiile proprii sau neatribuite. Inbox include lista neatribuită și preluarea pentru sine; agenții pot înregistra acordul WhatsApp cu dovezi și pot trimite șabloanele eligibile. Colaborarea veche nu mai oferă agenților acces la conversațiile atribuite altcuiva. Conexiunea, bugetul și administrarea șabloanelor la nivelul agenției rămân la administrator.
+
+API-ul, regulile Firestore și interogările Inbox folosesc aceeași limită de acces. Sunt adăugate șapte indexuri pentru listele după agent. Prospectarea, importul, acordul și crearea conversației folosesc atribuirea efectivă (preluare, rezultat de contact, rezervare activă). Apelurile recitesc atribuirea înaintea lansării, inclusiv după o programare. Mutarea blocării comune a telefonului și reîncercarea limitată exclusiv a tranzacției închise de Firestore rezolvă eroarea descoperită la două cereri concurente; apelul furnizorului rămâne în afara reîncercării.
+
+Au trecut 141 teste unitare și 114 teste de integrare, inclusiv API → coadă → worker → șablon, reatribuire, acces interzis la alt agent și altă agenție, listări și reguli Firestore, plus apeluri concurente. Cele 12 probe opționale cu model real nu au fost rulate în această suită. Furnizorii Meta/Vapi sunt simulați și nu s-au contactat persoane reale. Nu se adaugă scenarii certificate: inventarul rămâne 120/1000 dovezi locale cu model real și 0 certificări complete în producție. Buildul final cu TypeScript și 227 de pagini, verificarea parității și inventarul au trecut. ESLint: zero erori, trei avertismente preexistente de efecte React în Inbox. Versiuni jarvis-104 / tools 134. Modificările necesită publicarea aplicației, regulilor și indexurilor pentru a deveni active în producție.
+
 ## Preluări numai cu drept — scenariul 0287 — 13 octombrie 2026
 
 „Nu le prelua fără drept.” este tratată ca o restricție, nu ca o comandă de preluare a prospectelor disponibile. Jarvis citește toate paginile atribuirilor din agenție, fără instrumente de scriere, și afișează prospectele rezervate, preluate sau cu rezultat de contact atribuit altor agenți. Atribuirile inactive rămân vizibile dacă executorul încă le protejează. Serverul furnizează explicit valabilitatea rezervării și expirarea în București.

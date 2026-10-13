@@ -1,3 +1,4 @@
+import { prospectOwner } from '@/lib/crm/prospect';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
@@ -75,6 +76,8 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
+    const owner = prospectOwner(favoriteSnapshot.data() || {}, Date.now());
+    if (context.role !== 'admin' && owner && owner !== context.uid) return NextResponse.json({ message: 'Prospectul este atribuit altui agent.' }, { status: 403 });
     const savedPhone = favoriteSnapshot.data()?.ownerPhone;
     let phoneSource = savedPhone;
     // Match the prospect read path: a ready canonical listing can provide a

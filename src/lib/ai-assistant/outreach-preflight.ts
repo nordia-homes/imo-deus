@@ -1,3 +1,4 @@
+import { prospectOwner } from '@/lib/crm/prospect';
 import type { AssistantContext } from './access';
 import { AiOutreachGuardError, assertCanCreateAiOutreachCall, getAiOutreachSettings, normalizeAiOutreachPhone } from '@/lib/ai-outreach/server';
 import { isVapiOutboundConfigured } from '@/lib/ai-outreach/vapi';
@@ -10,6 +11,8 @@ export async function readOutreachPreflight(ctx: AssistantContext, input: { list
   const favorite = await agency.collection('ownerListingFavorites').doc(input.listingId).get();
   if (!favorite.exists || favorite.data()?.isFavoriteActive === false) return blocked('Anunțul nu este activ în prospectarea agenției.');
   const saved = favorite.data()!;
+  const owner = prospectOwner(saved, Date.now());
+  if (ctx.role !== 'admin' && owner && owner !== ctx.uid) return blocked('Prospectul este atribuit altui agent.');
   const source = await ctx.adminDb.collection('ownerListings').doc(input.listingId).get();
   const canonical = source.data()?.publicationStatus === 'ready' && source.data()?.isCanonical === true ? source.data() : undefined;
   const phone = normalizeAiOutreachPhone(saved.ownerPhone == null || typeof saved.ownerPhone === 'string' && !saved.ownerPhone.trim() ? canonical?.ownerPhone : saved.ownerPhone);

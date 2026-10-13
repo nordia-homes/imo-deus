@@ -419,7 +419,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { id: action.id, agentId: action.agentId };
     } else if (action.kind === 'import_owner_listing') {
       const favorite = await read('ownerListingFavorites', action.listingId);
-      if (favorite.isFavoriteActive === false || (ctx.role !== 'admin' && favorite.reservedByAgentId !== ctx.uid)) throw new CommunicationError('Anunțul trebuie să fie în prospectarea ta.', 403);
+      if (favorite.isFavoriteActive === false || (ctx.role !== 'admin' && prospectOwner(favorite, Date.parse(now)) && prospectOwner(favorite, Date.parse(now)) !== ctx.uid)) throw new CommunicationError('Anunțul trebuie să fie în prospectarea ta.', 403);
       const listing = await tx.get(ctx.adminDb.collection('ownerListings').doc(action.listingId));
       const row = listing.data();
       if (!row || row.publicationStatus !== 'ready' || row.isCanonical !== true) throw new CommunicationError('Anunțul nu mai este eligibil pentru import.', 409);

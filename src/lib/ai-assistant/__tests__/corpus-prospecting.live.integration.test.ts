@@ -167,10 +167,10 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
         const result = await chatTurn(ctx, request);
         report = { ...report, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data() };
         expect(result.message.actions).toBeUndefined(); expect(result.message.planId).toBeUndefined();
-        expect(result.message.cards?.flatMap(card => card.rows).find(row => row.id === conversation.id)).toMatchObject({ consent: { all: 'unknown', service: 'unknown', marketing: 'unknown' }, humanConsent: { canRecord: false, recordedByJarvis: false, url: '/inbox?conversationId=selected-whatsapp' } });
+        expect(result.message.cards?.flatMap(card => card.rows).find(row => row.id === conversation.id)).toMatchObject({ consent: { all: 'unknown', service: 'unknown', marketing: 'unknown' }, humanConsent: { canRecord: true, recordedByJarvis: false, url: '/inbox?conversationId=selected-whatsapp' } });
         if (number === 275) {
           expect(result.message.text).toContain('/inbox?conversationId=selected-whatsapp');
-          expect(result.message.text).toMatch(/administrator/); expect(result.message.text).toMatch(/dovad/);
+          expect(result.message.text).toMatch(/dovad/);
         } else {
           expect(result.message.text).toMatch(/public/); expect(result.message.text).toMatch(/nu.*(?:acord|consimțământ)|necunoscut|necunoscute/);
         }
@@ -179,7 +179,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
         expect((await conversation.collection('messages').get()).empty).toBe(true);
         expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', id).get()).empty).toBe(true);
         expect(settingsContext.invokes).toBe(0);
-        report = { ...report, executionVerified: number === 276, humanStepPending: number === 275, verification: number === 275 ? 'Actual model and persisted chatTurn guided the agent to the exact Inbox conversation and administrator evidence workflow. No consent written. Human recording remains pending; not complete corpus execution.' : 'Original assertion through actual model and persisted chatTurn with a public phone number: all consent scopes remain unknown, no consent inferred or written, no outbound message/job, idempotent replay. Local only.' };
+        report = { ...report, executionVerified: number === 276, humanStepPending: number === 275, verification: number === 275 ? 'Actual model and persisted chatTurn guided the agent to the exact Inbox conversation and agent evidence workflow. No consent written. Human recording remains pending; not complete corpus execution.' : 'Original assertion through actual model and persisted chatTurn with a public phone number: all consent scopes remain unknown, no consent inferred or written, no outbound message/job, idempotent replay. Local only.' };
         return;
       }
       if (number === 274) {

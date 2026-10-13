@@ -10,7 +10,7 @@ export function whatsappAccess(actor?: Actor) {
   const mode = process.env.WHATSAPP_ONBOARDING_MODE || 'disabled';
   const productionReady = configured && mode === 'production' && process.env.WHATSAPP_META_APPROVALS_READY === 'true' && process.env.WHATSAPP_DIRECT_BILLING_READY === 'true';
   const agencies = list(process.env.WHATSAPP_TEST_AGENCY_IDS);
-  const tester = Boolean(actor && actor.role === 'admin' && list(process.env.WHATSAPP_TEST_USER_IDS).includes(actor.uid) && (!agencies.length || agencies.includes(actor.agencyId)));
+  const tester = Boolean(actor && ['agent', 'admin'].includes(actor.role || '') && list(process.env.WHATSAPP_TEST_USER_IDS).includes(actor.uid) && (!agencies.length || agencies.includes(actor.agencyId)));
   return { whatsappConfigured: configured, whatsappProductionReady: productionReady, whatsappTestMode: mode === 'test', whatsappReady: configured && (productionReady || (mode === 'test' && tester)) };
 }
 export function assertWhatsAppAccess(actor: Actor) {

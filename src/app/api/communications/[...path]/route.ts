@@ -1,3 +1,4 @@
+import { canReadConversation, type Conversation } from '@/lib/communications/model';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { agencyCollection, addNote, CommunicationError, connectionList, context, getConversation, linkContact, listConversations, listMessages, migrateStoria, nowIso, startContactConversation, updateConversation } from '@/lib/communications/server';
@@ -17,7 +18,7 @@ async function handle(request: NextRequest, route: RouteContext) {
     const { path } = await route.params; const [resource, id, action, commentId, commentAction] = path;
     queueRequest = request.method === 'POST' && resource === 'conversations' && Boolean(id) && action === 'messages';
     const isRead = request.method === 'GET';
-    const admin = ['connect', 'assets', 'whatsapp', 'budget', 'posts', 'migrate', 'consent'].includes(resource) || (['connections', 'templates'].includes(resource) && !isRead);
+    const admin = ['connect', 'assets', 'whatsapp', 'budget', 'posts', 'migrate'].includes(resource) || (['connections', 'templates'].includes(resource) && !isRead);
     const actor = await context(request, admin); const db = actor.adminDb;
     const body = isRead ? null : await request.json();
     const params = request.nextUrl.searchParams;
@@ -62,8 +63,15 @@ async function handle(request: NextRequest, route: RouteContext) {
       const value = z.object({ conversationId: z.string(), purpose: z.enum(['marketing', 'service', 'all']), status: z.enum(['granted', 'revoked']), evidence: z.string().trim().min(10).max(2000) }).parse(body);
       const c = await getConversation(db, actor, value.conversationId);
       const ref = agencyCollection(db, actor.agencyId, 'communicationConsents').doc(stableId(c.connectionId, c.externalParticipantId, value.purpose));
-      const batch = db.batch(); const record = { ...value, recordedBy: actor.uid, recordedAt: nowIso() };
-      batch.set(ref, record); batch.create(ref.collection('history').doc(), record); await batch.commit(); result = { saved: true };
+      const record = { ...value, recordedBy: actor.uid, recordedAt: nowIso() };
+      await db.runTransaction(async tx => {
+        const profile = await tx.get(db.collection('users').doc(actor.uid));
+        const current = await tx.get(agencyCollection(db, actor.agencyId, 'conversations').doc(value.conversationId));
+        if (profile.data()?.agencyId !== actor.agencyId || profile.data()?.role !== actor.role || !['agent', 'admin'].includes(actor.role || '')) throw new CommunicationError('Acces revocat.', 403);
+        if (!current.exists || !canReadConversation(actor, current.data() as Conversation)) throw new CommunicationError('Acces revocat la conversație.', 403);
+        if (current.data()?.channel !== 'whatsapp' || current.data()?.connectionId !== c.connectionId || current.data()?.externalParticipantId !== c.externalParticipantId) throw new CommunicationError('Destinatarul s-a modificat. Recitește conversația.', 409);
+        tx.set(ref, record); tx.create(ref.collection('history').doc(), record);
+      }); result = { saved: true };
     } else if (resource === 'migrate' && request.method === 'POST') result = await migrateStoria(db, actor, body.cursor);
     else if (resource === 'posts' && isRead) {
       if (id && action === 'diagnostics' && !commentId) return NextResponse.json(await diagnoseSocialPost(db, actor, id, params.get('connectionId') || ''), { headers: { 'Cache-Control': 'no-store' } });

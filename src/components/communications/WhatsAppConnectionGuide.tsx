@@ -26,7 +26,7 @@ export default function WhatsAppConnectionGuide({ admin, onConnect, onTemplates,
       <span><Phone size={16} aria-hidden="true" /> Numărul agenției + un al doilea telefon</span>
       <span><FileText size={16} aria-hidden="true" /> Datele firmei + e-mail de business</span>
     </div>
-    {!admin && <p className="wa-connection-access-note"><strong>Configurarea necesită un administrator CRM.</strong> Poți parcurge ghidul; cere administratorului agenției să conecteze numărul, să configureze bugetul și să înregistreze acordul clientului.</p>}
+    {!admin && <p className="wa-connection-access-note"><strong>Configurarea necesită un administrator CRM.</strong> Poți parcurge ghidul; cere administratorului agenției să conecteze numărul, să configureze bugetul. Acordul clientului poate fi înregistrat și de agent, în Inbox.</p>}
     <div className="wa-connection-shortcuts" aria-label="Acțiuni pentru conectarea WhatsApp">
       {admin && <button className="wa-btn wa-primary" onClick={onConnect}><Phone size={16} aria-hidden="true" /> Conectează număr</button>}
       <a className="wa-btn" href="https://business.facebook.com/" target="_blank" rel="noopener noreferrer">Meta Business Suite <ArrowUpRight size={16} aria-hidden="true" /><span className="wa-visually-hidden"> (filă nouă)</span></a>

@@ -10,6 +10,7 @@ describe('communications isolation and policy', () => {
     expect(canReadConversation({ uid: 'user', agencyId: 'b', role: 'admin' }, conversation)).toBe(false);
     expect(canReadConversation({ uid: 'user', agencyId: 'a', role: 'agent' }, conversation)).toBe(true);
     expect(canReadConversation({ uid: 'other', agencyId: 'a', role: 'agent' }, conversation)).toBe(false);
+    expect(canReadConversation({ uid: 'other', agencyId: 'a', role: 'agent' }, { ...conversation, collaboratorIds: ['other'] })).toBe(false);
   });
   it('closes the response window at exactly 24 hours and rejects future/invalid dates', () => {
     const now = Date.parse('2026-09-27T12:00:00Z');

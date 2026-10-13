@@ -120,10 +120,10 @@ service cloud.firestore {
 
     function canReadConversation(agencyId, conversationId) {
       let conversation = get(/databases/$(database)/documents/agencies/$(agencyId)/conversations/$(conversationId)).data;
-      return isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || request.auth.uid in conversation.accessUids);
+      return isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || (getUserData(request.auth.uid).role == 'agent' && conversation.get('assigneeId', '') == null) || conversation.get('assigneeId', '') == request.auth.uid || (getUserData(request.auth.uid).role != 'agent' && request.auth.uid in conversation.accessUids));
     }
     match /agencies/{agencyId}/conversations/{conversationId} {
-      allow read: if isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || request.auth.uid in resource.data.accessUids);
+      allow read: if isUserInAgency(agencyId) && (isUserAdminForAgency(agencyId) || (getUserData(request.auth.uid).role == 'agent' && resource.data.get('assigneeId', '') == null) || resource.data.get('assigneeId', '') == request.auth.uid || (getUserData(request.auth.uid).role != 'agent' && request.auth.uid in resource.data.accessUids));
       allow write: if false;
       match /{subcollection}/{itemId} {
         allow read: if subcollection in ['messages', 'notes'] && canReadConversation(agencyId, conversationId);

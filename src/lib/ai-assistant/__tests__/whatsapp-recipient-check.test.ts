@@ -23,7 +23,7 @@ it('does not treat unknown or malformed consent as permission', async () => {
   expect(await checkWhatsAppRecipient(ctx, 'selected')).toMatchObject({ blocked: false, sendAuthorized: false, rows: [{ status: 'needs_message_preview', consent: { all: 'unknown', marketing: 'unknown', service: 'unknown' } }] });
 });
 it('links the human recording flow and distinguishes agent and administrator roles', async () => {
-  expect((await checkWhatsAppRecipient(ctx, 'selected')).rows[0].humanConsent).toMatchObject({ canRecord: false, requiredRole: 'admin', evidenceRequired: true, recordedByJarvis: false, url: '/inbox?conversationId=selected' });
+  expect((await checkWhatsAppRecipient(ctx, 'selected')).rows[0].humanConsent).toMatchObject({ canRecord: true, requiredRole: 'agent_or_admin', evidenceRequired: true, recordedByJarvis: false, url: '/inbox?conversationId=selected' });
   expect((await checkWhatsAppRecipient({ ...ctx, role: 'admin' }, 'selected')).rows[0].humanConsent.canRecord).toBe(true);
 });
 it('preserves category-specific withdrawal without claiming all message types eligible', async () => {

@@ -1,3 +1,4 @@
+import { prospectOwner } from '@/lib/crm/prospect';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
 import { stableId } from '@/lib/communications/crypto';
 import { normalizeRomanianPhone } from '@/lib/owner-listings/phone';
@@ -19,6 +20,8 @@ export async function prospectingConversation(ctx: AssistantContext, listingId: 
     ]);
     if (owner.data()?.ownerId !== ctx.uid || message.data()?.role !== 'user' || message.data()?.text !== request.prompt || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new Error('Solicitarea sau accesul agentului nu mai este valid.');
     if (connection.data()?.channel !== 'whatsapp' || connection.data()?.status !== 'connected') throw new Error('Alege o conexiune WhatsApp activă din agenție.');
+    const assignedOwner = prospectOwner(favorite.data() || {}, Date.now());
+    if (ctx.role !== 'admin' && assignedOwner && assignedOwner !== ctx.uid) throw new Error('Prospectul este atribuit altui agent.');
     const canonical = source.data()?.publicationStatus === 'ready' && source.data()?.isCanonical === true ? source.data() : undefined;
     if (!favorite.exists && !canonical) throw new Error('Anunțul proprietarului nu este disponibil.');
     const phone = normalizeRomanianPhone(favorite.data()?.ownerPhone || canonical?.ownerPhone);

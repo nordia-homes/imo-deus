@@ -1,3 +1,4 @@
+import { prospectOwner } from '@/lib/crm/prospect';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { assistantContext, collectionFor } from '@/lib/ai-assistant/access';
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     const result = await ctx.adminDb.runTransaction(async tx => {
       const [favorite, connection] = await Promise.all([tx.get(collectionFor(ctx, 'ownerListingFavorites').doc(input.listingId)), tx.get(collectionFor(ctx, 'channelConnections').doc(input.connectionId))]);
       const row = favorite.data();
-      if (!row || row.isFavoriteActive === false || (ctx.role !== 'admin' && row.reservedByAgentId !== ctx.uid)) throw new CommunicationError('Anunțul trebuie să fie în prospectarea ta.', 403);
+      if (!row || row.isFavoriteActive === false || (ctx.role !== 'admin' && prospectOwner(row, Date.now()) && prospectOwner(row, Date.now()) !== ctx.uid)) throw new CommunicationError('Anunțul trebuie să fie în prospectarea ta.', 403);
       if (connection.data()?.channel !== 'whatsapp' || connection.data()?.status !== 'connected') throw new CommunicationError('Alege un număr WhatsApp conectat.');
       const local = normalizeRomanianPhone(row.ownerPhone);
       if (!/^0[237]\d{8}$/.test(local)) throw new CommunicationError('Telefonul proprietarului nu este disponibil sau valid.');

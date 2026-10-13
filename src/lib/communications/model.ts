@@ -26,8 +26,8 @@ export type Message = {
 };
 export type Actor = { uid: string; agencyId: string; role?: string; automationFence?: import('@/lib/crm/automation-fence').AutomationFence };
 export function canReadConversation(actor: Actor, conversation: Pick<Conversation, 'agencyId' | 'assigneeId' | 'collaboratorIds'>) {
-  return actor.agencyId === conversation.agencyId && (actor.role === 'admin' ||
-    conversation.assigneeId === actor.uid || conversation.collaboratorIds.includes(actor.uid));
+  return actor.agencyId === conversation.agencyId && (actor.role === 'admin' || (actor.role === 'agent' && conversation.assigneeId === null) ||
+    conversation.assigneeId === actor.uid || (actor.role !== 'agent' && conversation.collaboratorIds.includes(actor.uid)));
 }
 export function normalizeSearch(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();

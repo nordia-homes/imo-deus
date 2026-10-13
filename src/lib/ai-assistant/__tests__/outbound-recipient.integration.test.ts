@@ -55,6 +55,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const input: Record<string, any> = { ...action.body, requestId: randomUUID() };
     return { actor, conversation, ref, input, actions, envelope };
   }
+  it('lets an agent record consent, claim an unassigned WhatsApp conversation and send, but rejects another agent assignment', async () => {
+    const f = await marketingFixture();
+    const ctx = { ...f.actor, adminDb: db } as any;
+    mocks.actor = ctx;
+    const { POST, GET } = await import('@/app/api/communications/[...path]/route');
+    const { NextRequest } = await import('next/server');
+    const { updateConversation } = await import('@/lib/communications/server');
+    await f.ref.update({ assigneeId: null, accessUids: [], lastMessageAt: new Date().toISOString() });
+    const list = await GET(new NextRequest('http://localhost/api/communications/conversations?status=unassigned'), { params: Promise.resolve({ path: ['conversations'] }) });
+    expect(list.status).toBe(200); expect((await list.json()).conversations.map((row: any) => row.id)).toContain(f.ref.id);
+    const consent = async (evidence = 'Acord telefonic real consemnat de agent.') => POST(new NextRequest('http://localhost/api/communications/consent', { method: 'POST', body: JSON.stringify({ conversationId: f.ref.id, purpose: 'marketing', status: 'granted', evidence }) }), { params: Promise.resolve({ path: ['consent'] }) });
+    expect((await consent('scurt')).status).toBe(400);
+    expect((await consent()).status).toBe(200);
+    const saved = db.collection('agencies').doc(f.actor.agencyId).collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722123456', 'marketing'));
+    expect((await saved.get()).data()).toMatchObject({ status: 'granted', recordedBy: f.actor.uid });
+    expect((await saved.collection('history').get()).size).toBe(1);
+    await updateConversation(db as any, f.actor, f.ref.id, { assigneeId: f.actor.uid, version: 1 });
+    expect((await f.ref.get()).data()?.assigneeId).toBe(f.actor.uid);
+    await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    await drainOutbound(db as any); expect(templateSends()).toHaveLength(1);
+    await f.ref.update({ assigneeId: 'other-agent', accessUids: ['other-agent'] });
+    expect((await consent()).status).toBe(403);
+    await expect(updateConversation(db as any, f.actor, f.ref.id, { assigneeId: f.actor.uid, version: 2 })).rejects.toMatchObject({ status: 403 });
+    await expect(queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID() })).rejects.toMatchObject({ status: 403 });
+    expect((await saved.collection('history').get()).size).toBe(1);
+    expect(templateSends()).toHaveLength(1);
+  }, 30000);
   it('resolves the second real matching result to its client conversation before preparing and queuing the message', async () => {
     const f = await fixture(), agency = db.collection('agencies').doc(f.actor.agencyId), ctx = { ...f.actor, adminDb: db } as any;
     await agency.collection('contacts').doc('contact').set({ name: 'Andrei', contactType: 'Cumparator', budget: 150000, preferences: { desiredRooms: 2, desiredPriceRangeMax: 150000 } });

@@ -63,7 +63,35 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
-  it('allows only one concurrent takeover and rechecks ownership and authenticated role on every execution', async () => {
+  it('rechecks prospect ownership before a scheduled outreach dispatch and denies another agent at the API', async () => {
+    const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
+    mocks.vapi.mockReset();
+    const favorite = agency.collection('ownerListingFavorites').doc('agent-scheduled');
+    await favorite.set({ isFavoriteActive: true, takenByAgentId: ctx.uid, title: 'Prospect', ownerPhone: '0722123456' });
+    const request = () => createOutreachCall(new NextRequest('http://localhost/api/ai-outreach/calls', { method: 'POST', body: JSON.stringify({ ownerListing: { id: favorite.id, title: 'Prospect' }, scheduledAt: new Date(Date.now() + 3600000).toISOString() }) }));
+    const response = await request(); expect(response.status).toBe(201);
+    const { call } = await response.json(); expect(call.status).toBe('scheduled');
+    await favorite.update({ takenByAgentId: 'other-agent' });
+    expect((await request()).status).toBe(403);
+    expect(await readOutreachPreflight(ctx, { listingId: favorite.id })).toMatchObject({ eligible: false, reason: 'Prospectul este atribuit altui agent.' });
+    const result = await launchAiOutreachCall({ adminDb: db as any, callRef: agency.collection('aiOutreachCalls').doc(call.id) as any, call, settings: withDefaultAiOutreachSettings(ctx.agencyId, { enabled: true }) });
+    expect(result.call).toMatchObject({ status: 'canceled', providerErrorCode: 'prospect_reassigned' });
+    expect(mocks.vapi).not.toHaveBeenCalled();
+  }, 30000);  it('permits prospecting actions for own or free records and rejects changing another agent prospect', async () => {
+    const ctx = await fixture(), id = randomUUID(); listings.push(id);
+    await db.collection('ownerListings').doc(id).set({ publicationStatus: 'ready', isCanonical: true, title: 'Prospect', source: 'manual' });
+    const ref = db.collection('agencies').doc(ctx.agencyId).collection('ownerListingFavorites').doc(id);
+    await ref.set({ isFavoriteActive: true, takenByAgentId: 'other', notes: 'Preserved' });
+    const original = (await ref.get()).data();
+    const send = (action: string) => POST(new NextRequest('http://localhost/api/owner-listings/prospecting', { method: 'POST', body: JSON.stringify({ listingId: id, action }) }));
+    for (const action of ['add', 'retry', 'remove']) expect((await send(action)).status).toBe(403);
+    expect((await ref.get()).data()).toEqual(original);
+    await ref.update({ takenByAgentId: ctx.uid });
+    expect((await send('remove')).status).toBe(200);
+    await ref.update({ takenByAgentId: null, reservedByAgentId: null });
+    expect((await send('add')).status).toBe(200);
+    expect((await ref.get()).data()).toMatchObject({ isFavoriteActive: true, reservedByAgentId: ctx.uid, notes: 'Preserved' });
+  });  it('allows only one concurrent takeover and rechecks ownership and authenticated role on every execution', async () => {
     const first = await fixture(), foreign = await fixture();
     const second = { ...foreign, agencyId: first.agencyId };
     await db.collection('users').doc(second.uid).update({ agencyId: first.agencyId });

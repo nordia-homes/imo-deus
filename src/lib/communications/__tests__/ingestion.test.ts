@@ -61,9 +61,9 @@ describe('durable ingestion', () => {
     expect(values.get(path)?.status).toBe('delivered');
     expect(values.get(`communicationOutboundJobs/${messageId}`)).toMatchObject({ status: 'delivered', budgetSettled: false });
   });
-  it('denies an unassigned agent and accepts the agency administrator', async () => {
+  it('allows agency agents to read unassigned conversations', async () => {
     const { db } = memoryDb(); const id = await ingestMessage(db, connection, message);
-    await expect(getConversation(db, { agencyId: 'agency', uid: 'agent', role: 'agent' }, id)).rejects.toThrow('acces');
+    await expect(getConversation(db, { agencyId: 'agency', uid: 'agent', role: 'agent' }, id)).resolves.toMatchObject({ name: 'customer' });
     await expect(getConversation(db, { agencyId: 'agency', uid: 'admin', role: 'admin' }, id)).resolves.toMatchObject({ name: 'customer' });
   });
 });

@@ -1,3 +1,4 @@
+import { prospectOwner } from '@/lib/crm/prospect';
 import { NextRequest, NextResponse } from 'next/server';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
@@ -104,6 +105,15 @@ export async function POST(request: NextRequest) {
 
     const listing = listingSnapshot.data() as OwnerListingSummary;
     const existing = favoriteSnapshot.data() || {};
+    const writeFavorite = async (data: Record<string, unknown>, options: { merge: true }) => context.adminDb.runTransaction(async tx => {
+      const fresh = await tx.get(favoriteRef);
+      const member = await tx.get(context.adminDb.collection('users').doc(context.uid));
+      const owner = prospectOwner(fresh.data() || {}, Date.now());
+      if (member.data()?.agencyId !== context.agencyId || member.data()?.role !== context.role || !['agent', 'admin'].includes(context.role || '')) throw Object.assign(new Error('Acces revocat.'), { status: 403 });
+      if (context.role !== 'admin' && owner && owner !== context.uid) throw Object.assign(new Error('Prospectul este atribuit altui agent.'), { status: 403 });
+      if (fresh.exists !== favoriteSnapshot.exists || (fresh.updateTime && favoriteSnapshot.updateTime && !fresh.updateTime.isEqual(favoriteSnapshot.updateTime))) throw Object.assign(new Error('Prospectul s-a modificat. Reîncarcă înainte de salvare.'), { status: 409 });
+      tx.set(favoriteRef, data, options);
+    });
     const userData = userSnapshot.data() as { name?: string; email?: string } | undefined;
     const agentName = userData?.name || userData?.email || 'Agent';
     const timestamp = new Date().toISOString();
@@ -111,7 +121,7 @@ export async function POST(request: NextRequest) {
     const publi24Url = getPubli24Url(listing);
 
     if (body.action === 'remove') {
-      await favoriteRef.set(
+      await writeFavorite(
         {
           isFavoriteActive: false,
           wasRemovedFromFavorites: true,
@@ -184,7 +194,7 @@ export async function POST(request: NextRequest) {
           ? 'Anuntul a fost adaugat in coada de preluare Publi24.'
           : 'Pentru aceasta sursa se folosesc datele publice disponibile.';
 
-    await favoriteRef.set(
+    await writeFavorite(
       {
         ownerListingId: body.listingId,
         isFavoriteActive: true,
