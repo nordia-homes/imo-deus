@@ -135,7 +135,10 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
   const activeJob = jobs.find((job) => ['scheduled', 'queued', 'running', 'cooldown'].includes(job.status)) || null;
   const latestJob = activeJob || jobs[0] || null;
   const isActive = Boolean(activeJob);
-  const completedGroups = latestJob?.groups.filter((group) => ['submitted', 'pending_approval', 'skipped', 'uncertain'].includes(group.status)).length || 0;
+  const completedGroups = latestJob?.groups.filter((group) => ['submitted', 'pending_approval', 'skipped', 'uncertain', 'error'].includes(group.status)).length || 0;
+  const submittedGroups = latestJob?.groups.filter((group) => ['submitted', 'pending_approval'].includes(group.status)).length || 0;
+  const failedGroups = latestJob?.groups.filter((group) => group.status === 'error') || [];
+  const groupErrors = [...new Set(failedGroups.map((group) => group.errorMessage).filter(Boolean))];
 
   function toggleGroup(url: string, checked: boolean) {
     setSelectedUrls((current) => checked ? [...current, url] : current.filter((item) => item !== url));
@@ -292,8 +295,16 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
               <div className="rounded-xl border border-white/8 bg-black/10 p-3">
                 <div className="flex items-center justify-between text-sm">
                   <span>{jobLabel(latestJob)}</span>
-                  <span>{completedGroups}/{latestJob.groups.length}</span>
+                  <span>{completedGroups}/{latestJob.groups.length} procesate</span>
                 </div>
+                <p className="mt-2 text-xs text-white/60">
+                  {submittedGroups} trimise către Facebook · {failedGroups.length} eșuate
+                </p>
+                {groupErrors.length > 0 ? (
+                  <div className="mt-2 space-y-1 text-xs text-rose-200" role="status">
+                    {groupErrors.map((message) => <p key={message}>{message}</p>)}
+                  </div>
+                ) : null}
                 {latestJob.status === 'scheduled' && latestJob.scheduledAt ? (
                   <p className="mt-2 flex items-center text-xs text-white/60">
                     <CalendarClock className="mr-1 h-3.5 w-3.5" />
@@ -312,7 +323,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
 
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs text-white/50">
-                <p>{formatDuration(selectedUrls.length)}</p>
+                <p>{formatDuration(activeJob?.groups.length || selectedUrls.length)}</p>
                 <p>pauză 90–120 sec. per cont</p>
               </div>
               {latestJob?.status === 'scheduled' ? (
@@ -341,7 +352,7 @@ export function FacebookCloudPublishingCard({ property }: { property: Property }
             {latestJob?.status === 'completed' ? (
               <p className="flex items-center text-xs text-emerald-200">
                 <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
-                Publicarea s-a încheiat. Poți porni un job nou.
+                Procesarea s-a încheiat: {submittedGroups} din {latestJob.groups.length} grupuri trimise către Facebook.
               </p>
             ) : null}
           </>

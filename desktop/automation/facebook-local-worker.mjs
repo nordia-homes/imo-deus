@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { chromium } from 'playwright';
+import { prepareFacebookPhotos, assertFacebookUploadAccepted } from './facebook-photo-upload.mjs';
 
 function argument(name) {
   const index = process.argv.indexOf(name);
@@ -248,9 +249,10 @@ async function clickPublish(page) {
   }
   const deadline = Date.now() + 120_000;
   while (!await button.isEnabled().catch(() => false)) {
+    await assertFacebookUploadAccepted(scope);
     if (Date.now() >= deadline) {
-      const error = new Error('Fotografiile nu au terminat incarcarea in Facebook.');
-      error.code = 'UPLOAD_TIMEOUT';
+      const error = new Error('Butonul Publică a rămas dezactivat timp de două minute. Verifică fotografiile și eventualele cerințe afișate de Facebook.');
+      error.code = 'PUBLISH_DISABLED_TIMEOUT';
       throw error;
     }
     await page.waitForTimeout(750);
@@ -318,6 +320,7 @@ async function main() {
       viewport: { width: 1280, height: 900 },
       args: ['--disable-blink-features=AutomationControlled', '--disable-notifications'],
     });
+    const photoFiles = await prepareFacebookPhotos(context, downloaded.files);
     const page = context.pages()[0] || await context.newPage();
     await page.goto(claim.group.url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
     await pause(page, 1_600, 2_800);
@@ -328,7 +331,7 @@ async function main() {
     }
     await openComposer(page);
     await fillComposer(page, claim.property.description);
-    await attachImages(page, downloaded.files);
+    await attachImages(page, photoFiles);
     await clickPublish(page);
     emit('result', { action: 'submitted', currentUrl: page.url() });
   } catch (error) {
