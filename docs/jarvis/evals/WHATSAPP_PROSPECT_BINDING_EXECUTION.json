@@ -1,0 +1,141 @@
+{
+  "date": "2026-10-13",
+  "scope": "Prospect assignment and phone revalidation through WhatsApp preparation, queue transaction and dispatch",
+  "versions": {
+    "tools": "135",
+    "prompt": "jarvis-105"
+  },
+  "realModel": true,
+  "realProvider": false,
+  "productionDeployed": false,
+  "unitTestsPassed": 80,
+  "integrationTestsPassed": 90,
+  "liveTestsPassed": 12,
+  "newIntegrationCases": 12,
+  "originalScenarioCountAdded": 0,
+  "regressionOriginalScenarios": [
+    "master-0277",
+    "master-0281"
+  ],
+  "checks": [
+    "late assignment, phone and inactive changes inside queue transaction",
+    "same changes and during-estimate reassignment before worker dispatch",
+    "rejected sends release reserved budget without provider invocation",
+    "own, unassigned, expired reservation and agency admin send once",
+    "Inbox uses persisted prospect link even without input listing ID",
+    "typechecked production build: 227 pages",
+    "ESLint and parity check passed"
+  ],
+  "variants": [
+    {
+      "variant": "standard",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:24:01.008Z",
+      "sends": 3,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "shared-owner-long-titles",
+      "prompt": "Găsește doar 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:24:18.401Z",
+      "sends": 2,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "missing-phone",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:24:37.733Z",
+      "sends": 2,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "without-intermediaries",
+      "prompt": "Găsește 3 apartamente fără intermediari în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:24:56.117Z",
+      "sends": 3,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "dedicated-template",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:25:17.372Z",
+      "sends": 3,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "revoked-owner",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:25:35.722Z",
+      "sends": 2,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "other-agent-owner",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:25:58.848Z",
+      "sends": 2,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "revoked-at-queue",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:26:26.442Z",
+      "sends": 2,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "without-preview",
+      "prompt": "Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp fără previzualizare și fără să îmi ceri confirmare",
+      "verifiedAt": "2026-10-13T18:26:44.843Z",
+      "sends": 3,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    },
+    {
+      "variant": "without-approval",
+      "prompt": "Nu îmi mai cere aprobarea. Găsește 3 apartamente în Titan sub 130000 euro și contactează proprietarii pe whatsapp",
+      "verifiedAt": "2026-10-13T18:27:03.96Z",
+      "sends": 3,
+      "replaySends": 0,
+      "realProvider": false,
+      "newConversations": true,
+      "priceBoundaryIncluded": true,
+      "rentalsExcluded": true
+    }
+  ]
+}

@@ -706,6 +706,67 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       expect(templateSends()).toHaveLength(0);
     } finally { await f.rate.delete(); }
   });
+  it.each(['assigned', 'phone', 'inactive'])('rejects prospect changes inside the queue transaction: %s', async change => {
+    const f = await prospectingFixture();
+    const [action] = await f.prepare();
+    if (action.kind !== 'existing_operation') throw new Error('Expected message');
+    expect(action.body.prospectingListingId).toBe(f.listing.id);
+    const original = db.runTransaction.bind(db);
+    const transaction = vi.spyOn(db, 'runTransaction').mockImplementationOnce(async (callback: any) => {
+      await f.listing.update(change === 'assigned' ? { takenByAgentId: 'another-agent' } : change === 'phone' ? { ownerPhone: '0722999999' } : { isFavoriteActive: false });
+      return original(callback);
+    });
+    try {
+      await expect(queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() })).rejects.toThrow(/Prospectul|Telefonul/);
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect((await f.budget.get()).data()?.reservedMicros).toBe(0);
+      expect(templateSends()).toHaveLength(0);
+    } finally { transaction.mockRestore(); await f.rate.delete(); }
+  });
+  it.each(['assigned', 'phone', 'inactive', 'during-estimate'])('rechecks prospect state after queueing without sending or billing: %s', async change => {
+    const f = await prospectingFixture();
+    try {
+      const [action] = await f.prepare();
+      if (action.kind !== 'existing_operation') throw new Error('Expected message');
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() });
+      const job = db.collection('communicationOutboundJobs').doc(queued.messageId!);
+      expect((await job.get()).data()?.input.prospectingListingId).toBe(f.listing.id);
+      if (change === 'during-estimate') mocks.token.mockImplementationOnce(async () => { await f.listing.update({ takenByAgentId: 'another-agent' }); return f.token(); });
+      else await f.listing.update(change === 'assigned' ? { takenByAgentId: 'another-agent' } : change === 'phone' ? { ownerPhone: '0722999999' } : { isFavoriteActive: false });
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(0);
+      expect((await job.get()).data()).toMatchObject({ status: 'failed', budgetSettled: true });
+      expect((await f.budget.get()).data()).toMatchObject({ reservedMicros: 0, spentMicros: 0 });
+    } finally { await f.rate.delete(); }
+  });
+  it.each(['own', 'unassigned', 'expired', 'admin'])('sends once with a currently eligible prospect: %s', async mode => {
+    const f = await prospectingFixture();
+    try {
+      if (mode === 'own') await f.listing.update({ takenByAgentId: f.actor.uid });
+      if (mode === 'expired') await f.listing.update({ reservedByAgentId: 'former-agent', reservedAt: '2020-01-01T00:00:00Z' });
+      if (mode === 'admin') {
+        f.actor.role = 'admin'; f.ctx.role = 'admin';
+        await db.collection('users').doc(f.actor.uid).update({ role: 'admin' });
+        await f.listing.update({ takenByAgentId: 'another-agent' });
+      }
+      const [action] = await f.prepare();
+      if (action.kind !== 'existing_operation') throw new Error('Expected message');
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, { ...action.body, requestId: randomUUID() });
+      await drainOutbound(db as any); await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(1);
+      expect((await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data()?.status).toBe('accepted');
+    } finally { await f.rate.delete(); }
+  });
+  it('checks the persisted prospect link for Inbox messages even when no prospect ID is supplied', async () => {
+    const f = await marketingFixture();
+    try {
+      await f.ref.update({ ownerListingId: 'linked-prospect' });
+      await db.collection('agencies').doc(f.actor.agencyId).collection('ownerListingFavorites').doc('linked-prospect').set({ ownerPhone: '0722123456', takenByAgentId: 'another-agent' });
+      await expect(queueMessage(db as any, f.actor, f.ref.id, f.input)).rejects.toThrow('altui agent');
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); }
+  });
   async function revokeMarketing(f: Awaited<ReturnType<typeof marketingFixture>>, change: string) {
     if (change === 'deleted') return f.consent.delete();
     if (change === 'global') return withdrawEligibility(f, 'all');

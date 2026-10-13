@@ -1,3 +1,4 @@
+import { assertProspectingRecipient } from './prospecting-recipient';
 import { bindViewingConfirmation, assertViewingTemplate } from './viewing-confirmation';
 import { viewingConfirmationLinkSchema } from '@/lib/crm/viewing-attendance';
 import { assertAutomationFence } from '@/lib/crm/automation-fence';
@@ -18,12 +19,13 @@ import { matchingSendSchema, assertMatchingSend } from './matching-send';
 import { assertNoReplySince } from '@/lib/ai-assistant/reply-stop';
 import { personalRecipientSchema, assertPersonalRecipient } from './personal-recipient';
 
-const inputSchema = z.object({ viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ prospectingListingId: z.string().regex(/^[a-zA-Z0-9_.:-]+$/).optional(), viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 // Re-read mutable eligibility after preparation, including inside the queue transaction.
 async function assertCurrentRecipientEligibility(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput, category: string, tx?: Transaction) {
   if (!input.template && !withinResponseWindow(conversation.lastInboundAt)) throw new CommunicationError('Fereastra de răspuns a expirat. Pregătește din nou mesajul.', 409);
   if (conversation.channel !== 'whatsapp') return;
+  await assertProspectingRecipient(db, actor, conversation, input.prospectingListingId, tx);
   const consents = agencyCollection(db, actor.agencyId, 'communicationConsents');
   const refs = ['all', category === 'marketing' ? 'marketing' : 'service'].map(scope => consents.doc(stableId(conversation.connectionId, conversation.externalParticipantId, scope)));
   const [global, scoped] = await Promise.all(refs.map(ref => tx ? tx.get(ref) : ref.get()));

@@ -13,7 +13,7 @@ export type Conversation = {
   status: 'new' | 'open' | 'waiting' | 'snoozed' | 'resolved' | 'spam';
   lastMessageAt: string; latestMessage: string; lastInboundAt: string | null;
   lastOutboundAt: string | null; needsReply: boolean; readBy: Record<string, string>;
-  externalUrl?: string; version: number; createdAt: string;
+  ownerListingId?: string; externalUrl?: string; version: number; createdAt: string;
 };
 export type Message = {
   viewingReply?: { viewingId?: string; participant?: 'client' | 'owner'; status: 'confirmed' | 'declined' | 'reschedule_requested' | 'unknown'; reason?: string; method?: string };

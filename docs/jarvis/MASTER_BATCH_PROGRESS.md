@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Prospectul WhatsApp verificat până la trimitere — 13 octombrie 2026
+
+Referința prospectului se păstrează acum în mesajul pregătit și în jobul de trimitere. Atribuirea conversației singură nu era suficientă: prospectul putea fi reatribuit altui agent după pregătire, iar conversația rămânea la agentul inițial. Coada și workerul recitesc prospectul, atribuirea efectivă, starea activă și telefonul, inclusiv după recuperarea șablonului. Mesajele Inbox folosesc și legătura salvată în conversație. O schimbare nepermisă oprește trimiterea înainte de Meta și eliberează bugetul rezervat.
+
+Au trecut 80 de teste unitare, 90 de integrare (12 cazuri noi) și toate cele 12 probe cu model real. Zece variante verifică executarea comenzii de prospectare până la trimiterea simulată și reluarea fără duplicate: standard, anunțuri cu același proprietar, telefon lipsă, fără intermediari, șablon dedicat, refuz WhatsApp, alt agent, refuz la punerea în coadă, fără previzualizare și fără aprobare suplimentară. Celelalte două sunt regresiile originale 0277 și 0281. Cazurile cu destinatari neeligibili verifică rezultat parțial explicit și continuarea celorlalte trimiteri, nu succes inventat pentru toate contactele.
+
+Buildul cu TypeScript și 227 de pagini, ESLint, paritatea și inventarul au trecut. Dovadă: [WHATSAPP_PROSPECT_BINDING_EXECUTION.json](evals/WHATSAPP_PROSPECT_BINDING_EXECUTION.json). Meta este simulat; nu au fost contactate persoane reale. Versiuni jarvis-105 / tools 135. Inventarul rămâne 120/1000 dovezi locale cu model real și 0 certificări complete în producție; acestea sunt regresii și variante, nu scenarii originale noi. Modificările nu sunt publicate în producție.
+
 ## Acces agenți: prospectare și WhatsApp — 13 octombrie 2026
 
 Conform alegerii utilizatorului, agenții lucrează pe prospectele și conversațiile proprii sau neatribuite. Inbox include lista neatribuită și preluarea pentru sine; agenții pot înregistra acordul WhatsApp cu dovezi și pot trimite șabloanele eligibile. Colaborarea veche nu mai oferă agenților acces la conversațiile atribuite altcuiva. Conexiunea, bugetul și administrarea șabloanelor la nivelul agenției rămân la administrator.
