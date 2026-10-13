@@ -63,6 +63,34 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('owner search to prospecti
     mocks.context = ctx; mocks.queue.mockClear(); mocks.invoke.mockClear();
     return ctx;
   }
+  it('allows only one concurrent takeover and rechecks ownership and authenticated role on every execution', async () => {
+    const first = await fixture(), foreign = await fixture();
+    const second = { ...foreign, agencyId: first.agencyId };
+    await db.collection('users').doc(second.uid).update({ agencyId: first.agencyId });
+    const ref = db.collection('agencies').doc(first.agencyId).collection('ownerListingFavorites').doc('contested');
+    await ref.set({ isFavoriteActive: true, notes: 'Păstrează istoricul.' });
+    const action = actionSchema.parse({ kind: 'update_prospect', listingId: ref.id, patch: { state: 'taken' } });
+    expect((await readResource(first, { resource: 'ownerListingFavorites', id: ref.id, limit: 1 })).rows[0].takenByAgentId).toBeUndefined();
+    expect((await readResource(second, { resource: 'ownerListingFavorites', id: ref.id, limit: 1 })).rows[0].takenByAgentId).toBeUndefined();
+    const outcomes = await Promise.allSettled([executeAction(first, action, 'race-first'), executeAction(second, action, 'race-second')]);
+    expect(outcomes.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+    expect(outcomes.find(result => result.status === 'rejected')).toMatchObject({ reason: { status: 403 } });
+    const winnerIndex = outcomes.findIndex(result => result.status === 'fulfilled');
+    const winner = [first, second][winnerIndex], loser = [first, second][1 - winnerIndex];
+    const saved = (await ref.get()).data()!;
+    expect(saved).toMatchObject({ takenByAgentId: winner.uid, notes: 'Păstrează istoricul.' });
+    const won = outcomes[winnerIndex];
+    expect(await executeAction(winner, action, winnerIndex === 0 ? 'race-first' : 'race-second')).toEqual(won.status === 'fulfilled' ? won.value : null);
+    await expect(executeAction({ ...loser, role: 'admin' }, action, 'forged-admin')).rejects.toMatchObject({ status: 403 });
+    expect((await ref.get()).data()).toEqual(saved);
+    await ref.update({ reservedAt: '2020-01-01T00:00:00Z' });
+    await expect(executeAction(loser, action, 'expired-but-taken')).rejects.toMatchObject({ status: 403 });
+    await ref.update({ takenByAgentId: null, contactOutcome: 'follow_up', contactOutcomeByAgentId: winner.uid });
+    await expect(executeAction(loser, action, 'expired-but-contacted')).rejects.toMatchObject({ status: 403 });
+    await ref.update({ contactOutcome: null, contactOutcomeByAgentId: null });
+    await executeAction(loser, action, 'genuinely-expired');
+    expect((await ref.get()).data()).toMatchObject({ takenByAgentId: loser.uid, notes: 'Păstrează istoricul.' });
+  }, 30000);
   it('rechecks refusal at execution and preserves completed, unrelated and foreign-agent tasks', async () => {
     const ctx = await fixture(), agency = db.collection('agencies').doc(ctx.agencyId);
     const favorite = agency.collection('ownerListingFavorites').doc('stop-owner');

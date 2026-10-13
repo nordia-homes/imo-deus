@@ -4,7 +4,7 @@ vi.mock('../outreach-configuration', () => ({ readOutreachConfiguration: vi.fn()
 import { readOutreachConfiguration } from '../outreach-configuration';
 vi.mock('../outreach-preflight', () => ({ readOutreachPreflight: vi.fn() }));
 import { readOutreachPreflight } from '../outreach-preflight';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 vi.mock('../access', () => ({ readResource: vi.fn(), readRelated: vi.fn(), readField: vi.fn() }));
 vi.mock('../search', () => ({ searchProperties: vi.fn() }));
 vi.mock('../owner-prospects', async importOriginal => ({ ...await importOriginal<typeof import('../owner-prospects')>(), readOwnerProspects: vi.fn() }));
@@ -24,6 +24,9 @@ import { ProviderError, type ProviderResult, type ModelProvider } from '../provi
 import { AgentBudget, BudgetExceeded, DEFAULT_LIMITS } from '../budget';
 import type { AssistantContext } from '../access';
 import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
+// Load the lazy tool graph before timed test bodies; a cold import can otherwise
+// time out the first case and leave its pending mocked reads in later cases.
+beforeAll(async () => { await import('../tool-dispatch'); }, 30000);
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 function provider(operation: string, payload: unknown) {
   vi.stubEnv('OPENAI_API_KEY', 'test-only');
@@ -61,6 +64,16 @@ function scripted(...responses: (ProviderResult | Error)[]) {
   return { id: 'fixture', respond } satisfies ModelProvider;
 }
 describe('Responses tool planning', () => {
+  it('treats a prohibition on unauthorized takeover as read-only, not an instruction to take free prospects', async () => {
+    const prompt = 'Nu le prelua fără drept.';
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'other', takenByAgentId: 'other' }, { id: 'free' }], complete: true, nextCursor: null });
+    const read = call('read', { resource: 'ownerListingFavorites', limit: 50 });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'guard', sourceQuote: prompt, description: 'Atribuiri protejate', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, [], { provider: model });
+    expect(result.actions).toEqual([]); expect(result.metrics.status).toBe('success');
+    expect(result.cards.flatMap(card => card.rows).map(row => row.id)).toEqual(['other']);
+    expect(model.respond.mock.calls.every(args => args[0].tools.every((tool: any) => ['read', 'goal_coverage'].includes(tool.name)))).toBe(true);
+  });
   it('lists other-agent reservations without exposing writes or certifying an unread list', async () => {
     const prompt = 'Care prospecte sunt rezervate altui agent?';
     expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('partial');

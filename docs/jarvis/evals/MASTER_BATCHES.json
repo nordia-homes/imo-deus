@@ -2556,7 +2556,11 @@
           "sourceNumber": 287,
           "request": "Nu le prelua fără drept.",
           "requestSha256": "f7d557e2aa0379161dbcbaf4366643623833ad2249ea19e17d2c72cd449571ac",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_20.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0288",

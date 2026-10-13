@@ -1,5 +1,14 @@
 import { expect, it } from 'vitest';
-import { ownActiveProspects, otherReservedProspects } from '../active-prospects';
+import { ownActiveProspects, otherReservedProspects, otherAssignedProspects } from '../active-prospects';
+
+it('keeps taken, contacted and inactive assignments protected even with an expired reservation', () => {
+  const base = { reservedByAgentId: 'other', reservedAt: '2020-01-01T00:00:00Z' };
+  expect(otherAssignedProspects([
+    { ...base, id: 'expired' }, { ...base, id: 'taken', takenByAgentId: 'other', takenByAgentName: 'Beta' },
+    { ...base, id: 'inactive', isFavoriteActive: false, contactOutcome: 'negative', contactOutcomeByAgentId: 'other' },
+    { ...base, id: 'mine', takenByAgentId: 'me' },
+  ], 'me', Date.now()).map(row => [row.id, row.ownership])).toEqual([['taken', 'taken'], ['inactive', 'contact_outcome']]);
+});
 
 it('lists only other agents reservations, keeps undated locks protected and formats Bucharest dates', () => {
   const at = Date.parse('2026-10-12T10:00:00Z');

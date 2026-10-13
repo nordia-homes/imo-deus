@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Preluări numai cu drept — scenariul 0287 — 13 octombrie 2026
+
+„Nu le prelua fără drept.” este tratată ca o restricție, nu ca o comandă de preluare a prospectelor disponibile. Jarvis citește toate paginile atribuirilor din agenție, fără instrumente de scriere, și afișează prospectele rezervate, preluate sau cu rezultat de contact atribuit altor agenți. Atribuirile inactive rămân vizibile dacă executorul încă le protejează. Serverul furnizează explicit valabilitatea rezervării și expirarea în București.
+
+Verificarea tranzacțională exista deja în executor. Proba nouă folosește doi agenți care citesc prospectul liber și încearcă simultan să îl preia: există exact un câștigător, iar celălalt nu suprascrie atribuirea. Verifică și reluarea idempotentă, refuzul unui rol admin fals, preluarea/rezultatul de contact care rămân prioritare după expirarea rezervării și preluarea legitimă cerută explicit după expirarea unei rezervări simple.
+
+Proba cu model real și chatTurn verifică citirea proaspătă a patru atribuiri, răspunsul fără preluare, lipsa planului și a modificărilor, precum și reluarea idempotentă. Revizuirea textului inițial a descoperit o generalizare greșită despre expirare; răspunsul final distinge rezervarea simplă expirată de preluare și de rezultatul de contact. Dovadă: [PROSPECTING_EXECUTION_BATCH_20.json](evals/PROSPECTING_EXECUTION_BATCH_20.json).
+
+Au trecut 64 de teste unitare și 31 de teste de integrare. Încărcarea lentă a grafului de instrumente a fost mutată în pregătirea suitei pentru a nu contamina testele următoare după un timeout; testul concurent permite 30 de secunde pentru reîncercările Firestore. Manifestul de paritate a fost regenerat pentru o linie UI deplasată în modificările deja existente, fără schimbarea numărului de operațiuni.
+
+ESLint, paritatea, verificarea inventarului și buildul final cu TypeScript și 227 de pagini au trecut. Versiuni jarvis-103 / tools 133. Inventarul crește la 120/1000 dovezi locale cu model real; rămân 0 certificări complete în producție. Nu au fost contactate persoane reale. Acest lot nu este publicat în producție.
+
 ## Rezervările altor agenți — scenariul 0286 — 12 octombrie 2026
 
 „Care prospecte sunt rezervate altui agent?” citește toate paginile prospectelor agenției și filtrează pe server numai rezervările active ale altor agenți. Prospectele proprii, inactive, preluate, cu rezultat de contact și rezervările expirate nu sunt prezentate ca rezervări valabile ale altui agent. Se afișează agentul responsabil; ora rezervării este formatată în București. O dată lipsă sau invalidă nu eliberează atribuirea și nu produce o expirare inventată.

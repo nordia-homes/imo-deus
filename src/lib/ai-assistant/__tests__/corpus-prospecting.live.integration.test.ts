@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 288]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,33 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 287) {
+        await favorites.doc(source.id).update({ reservedAt: '2020-01-01T00:00:00Z' });
+        await favorites.doc('beta').update({ reservedByAgentId: 'other', reservedByAgentName: 'Agent Beta' });
+        await favorites.doc('gamma').update({ takenByAgentId: 'other', takenByAgentName: 'Agent Beta', reservedAt: '2020-01-01T00:00:00Z' });
+        await favorites.doc('delta').update({ contactOutcomeByAgentId: 'other', contactOutcomeByAgentName: 'Agent Beta', reservedAt: '2020-01-01T00:00:00Z' });
+        await favorites.doc('epsilon').update({ takenByAgentId: 'other', takenByAgentName: 'Agent Beta' });
+        const before = (await favorites.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }));
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id, createdAt: new Date().toISOString() });
+        await session.collection('messages').doc('selection').set({ id: 'selection', role: 'assistant', text: 'Prospectele discutate sunt atribuite în agenție.', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'ownerListingFavorites', title: 'Prospecte', rows: before.map(row => ({ id: row.id })) }] });
+        const request = { sessionId: id, requestId: `${id}-rights`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        report = { ...report, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data() };
+        expect(result.message.cards?.flatMap(card => card.rows).map(row => row.id).sort()).toEqual(['beta', 'delta', 'epsilon', 'gamma']);
+        expect(result.message.cards?.flatMap(card => card.rows).find(row => row.id === 'beta')).toMatchObject({ reservationState: 'valid' });
+        expect(result.message.text).not.toMatch(/nu pot stabili|nu sunt afișate date/i);
+        expect(result.message.text).toMatch(/nu am preluat|n-am preluat|nu s-a.*prelu/i);
+        expect(result.message.text).toMatch(/expir/i);
+        expect(result.message.text).toMatch(/liber|disponibil/i);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect((report.telemetry as any).status).toBe('success');
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        for (const row of before) expect((await favorites.doc(row.id).get()).data()).toEqual(row.data);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, executionVerified: true, verification: 'Original prohibition with selected prospect list through actual model and persisted chatTurn. Fresh ownership read covers other-agent reserved, taken, contacted and inactive assignments, excludes free expired reservation; no plan, takeover, mutation or external call; idempotent replay. Transactional contention and role checks verified separately in prospecting-workflow integration. Local only.' };
+        return;
+      }
       if (number === 286) {
         await db.recursiveDelete(favorites);
         const other = { ...base, reservedByAgentId: 'agent-beta', reservedByAgentName: 'Agent Beta' };

@@ -1,0 +1,428 @@
+{
+  "transactionalVerification": {
+    "file": "src/lib/ai-assistant/__tests__/prospecting-workflow.integration.test.ts",
+    "cases": [
+      "one concurrent winner",
+      "fresh ownership after earlier read",
+      "forged admin rejected",
+      "taken/contact outcome survives expired reservation",
+      "simple expired reservation permits explicit takeover",
+      "idempotent winning execution"
+    ],
+    "passed": 31
+  },
+  "scope": "Original scenario 0287 through actual model and local Firestore; transactional race/rights checks use the real executor in separate emulator integration tests. No production certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0287",
+      "prompt": "Nu le prelua fără drept.",
+      "versions": {
+        "prompt": "jarvis-103",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "133",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-13T17:35:24.499Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": true,
+      "final": {
+        "id": "d7fc5686-6385-4b1d-aa3c-d08051d0b932-rights-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Nu am preluat nimic. Citirea completă a atribuirilor altor agenți arată:\n\n- **Prospect Beta** — rezervat de Agent Beta; rezervarea este valabilă și expiră la **14 octombrie 2026, ora 00:35 (București)**.\n- **Prospect Delta** — are un rezultat de contact atribuit lui Agent Beta; nu este o rezervare cu termen de expirare.\n- **Prospect Epsilon** și **Prospect Gamma** — sunt preluate de Agent Beta; Gamma apare activ, iar Epsilon inactiv.\n\nDacă expiră o rezervare simplă, prospectul se eliberează, dar această cerere nu îl preia. Expirarea rezervării nu anulează o preluare sau un rezultat de contact atribuit. Nu am verificat alte tipuri de drepturi decât starea atribuirilor afișată de CRM.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "ownerListingFavorites",
+            "title": "Atribuiri protejate ale altor agenți",
+            "rows": [
+              {
+                "id": "beta",
+                "title": "Prospect Beta",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "reservationState": "valid",
+                "expiresLocal": "2026-10-14 00:35 (ora București)",
+                "ownership": "reserved",
+                "isFavoriteActive": true
+              },
+              {
+                "id": "delta",
+                "title": "Prospect Delta",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "reservationState": "not_applicable",
+                "expiresLocal": null,
+                "ownership": "contact_outcome",
+                "isFavoriteActive": true
+              },
+              {
+                "id": "epsilon",
+                "title": "Prospect Epsilon",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "reservationState": "not_applicable",
+                "expiresLocal": null,
+                "ownership": "taken",
+                "isFavoriteActive": false
+              },
+              {
+                "id": "gamma",
+                "title": "Prospect Gamma",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "reservationState": "not_applicable",
+                "expiresLocal": null,
+                "ownership": "taken",
+                "isFavoriteActive": true
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-13T17:35:36.587Z"
+      },
+      "telemetry": {
+        "requestId": "d7fc5686-6385-4b1d-aa3c-d08051d0b932-rights",
+        "sessionId": "d7fc5686-6385-4b1d-aa3c-d08051d0b932",
+        "userId": "d7fc5686-6385-4b1d-aa3c-d08051d0b932",
+        "agencyId": "d7fc5686-6385-4b1d-aa3c-d08051d0b932",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2425,
+              "outputTokens": 35,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2126,
+              "estimated": false
+            },
+            "costUsd": 0.00031315,
+            "latencyMs": 1592,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2900,
+              "outputTokens": 111,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2897,
+              "estimated": false
+            },
+            "costUsd": 0.00041792500000000003,
+            "latencyMs": 3472,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 3036,
+              "outputTokens": 221,
+              "cachedTokens": 2897,
+              "cacheWriteTokens": 136,
+              "estimated": false
+            },
+            "costUsd": 0.00015676999999999998,
+            "latencyMs": 3726,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 466,
+            "version": "133",
+            "argumentsHash": "b4508c69622dcc6da59d1964f75e33d8d252a4cd67d6a594ccb3f277c4e15346"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 10,
+            "version": "133",
+            "argumentsHash": "1f1c42f02161df174d2ec6443a614237477b7a1fa34b9acbe55ec6be9ffe2ae7"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 9660,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "CLARIFY",
+          "confidence": 0.23,
+          "inputTokens": 431,
+          "outputTokens": 48,
+          "costUsd": 1.8102E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 324,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.000905947,
+        "tokens": 9207,
+        "versions": {
+          "prompt": "jarvis-103",
+          "routing": "luna-first-2",
+          "policy": "request-crm-14",
+          "tools": "133",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-13T17:35:36.642Z"
+      },
+      "verification": "Original prohibition with selected prospect list through actual model and persisted chatTurn. Fresh ownership read covers other-agent reserved, taken, contacted and inactive assignments, excludes free expired reservation; no plan, takeover, mutation or external call; idempotent replay. Transactional contention and role checks verified separately in prospecting-workflow integration. Local only."
+    }
+  ],
+  "initialRuns": [
+    {
+      "scenarioId": "master-0287",
+      "prompt": "Nu le prelua fără drept.",
+      "versions": {
+        "prompt": "jarvis-103",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "133",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-13T17:31:57.801Z",
+      "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+      "executionVerified": false,
+      "final": {
+        "id": "77178389-46ea-4cb2-acd2-952f83a744d0-rights-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Nu am preluat niciun prospect. Lista completă arată că Beta este rezervat, Delta are un rezultat de contact înregistrat, iar Epsilon și Gamma sunt deja preluate de Agent Beta. Chiar dacă o rezervare expiră, asta nu anulează atribuirea; nu pot prelua sau modifica prospecte atribuite fără drept.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "ownerListingFavorites",
+            "title": "Atribuiri protejate ale altor agenți",
+            "rows": [
+              {
+                "id": "beta",
+                "title": "Prospect Beta",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "ownership": "reserved",
+                "isFavoriteActive": true
+              },
+              {
+                "id": "delta",
+                "title": "Prospect Delta",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "ownership": "contact_outcome",
+                "isFavoriteActive": true
+              },
+              {
+                "id": "epsilon",
+                "title": "Prospect Epsilon",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "ownership": "taken",
+                "isFavoriteActive": false
+              },
+              {
+                "id": "gamma",
+                "title": "Prospect Gamma",
+                "agentId": "other",
+                "agentName": "Agent Beta",
+                "ownership": "taken",
+                "isFavoriteActive": true
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-13T17:32:09.246Z"
+      },
+      "telemetry": {
+        "requestId": "77178389-46ea-4cb2-acd2-952f83a744d0-rights",
+        "sessionId": "77178389-46ea-4cb2-acd2-952f83a744d0",
+        "userId": "77178389-46ea-4cb2-acd2-952f83a744d0",
+        "agencyId": "77178389-46ea-4cb2-acd2-952f83a744d0",
+        "models": [
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2309,
+              "outputTokens": 35,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2122,
+              "estimated": false
+            },
+            "costUsd": 0.00030145,
+            "latencyMs": 2702,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2724,
+              "outputTokens": 91,
+              "cachedTokens": 0,
+              "cacheWriteTokens": 2721,
+              "estimated": false
+            },
+            "costUsd": 0.000385925,
+            "latencyMs": 2400,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          },
+          {
+            "decision": {
+              "logical": "LUNA",
+              "model": "gpt-6-luna",
+              "effort": "low",
+              "reason": "luna_first",
+              "version": "luna-first-2"
+            },
+            "usage": {
+              "inputTokens": 2840,
+              "outputTokens": 91,
+              "cachedTokens": 2721,
+              "cacheWriteTokens": 116,
+              "estimated": false
+            },
+            "costUsd": 8.751000000000001E-05,
+            "latencyMs": 3017,
+            "pricingVersion": "openai-standard-2026-10-04",
+            "outcome": "success"
+          }
+        ],
+        "tools": [
+          {
+            "name": "read",
+            "status": "success",
+            "latencyMs": 484,
+            "version": "133",
+            "argumentsHash": "b4508c69622dcc6da59d1964f75e33d8d252a4cd67d6a594ccb3f277c4e15346"
+          },
+          {
+            "name": "goal_coverage",
+            "status": "success",
+            "latencyMs": 19,
+            "version": "133",
+            "argumentsHash": "9f53a74eb52dcb9f44b47664768b1336c10ae157d5a59ba128ca03004c7b77f7"
+          }
+        ],
+        "status": "success",
+        "elapsedMs": 9073,
+        "jev": {
+          "mode": "shadow",
+          "model": "jev-1.13.0",
+          "route": "CLARIFY",
+          "confidence": 0.27,
+          "inputTokens": 431,
+          "outputTokens": 48,
+          "costUsd": 1.8102E-05,
+          "estimated": false,
+          "actualRoute": "JARVIS_PLANNER",
+          "latencyMs": 373,
+          "status": "ok",
+          "reasonCode": "shadow_only"
+        },
+        "requiresApproval": false,
+        "costUsd": 0.0007929870000000001,
+        "tokens": 8569,
+        "versions": {
+          "prompt": "jarvis-103",
+          "routing": "luna-first-2",
+          "policy": "request-crm-14",
+          "tools": "133",
+          "memory": "2",
+          "skills": "3"
+        },
+        "configuration": {
+          "flags": {
+            "memory": true,
+            "subagents": true,
+            "autonomousWorkflows": true,
+            "proactiveInsights": true,
+            "automations": true,
+            "mcp": false,
+            "solEscalation": true
+          },
+          "regionalProcessing": false,
+          "defaultLimits": {
+            "maxSteps": 12,
+            "maxToolCalls": 24,
+            "maxTokens": 70000,
+            "maxCost": 0.12,
+            "maxExecutionMs": 120000,
+            "maxParallel": 3,
+            "maxOutputTokens": 2200
+          }
+        },
+        "timestamp": "2026-10-13T17:32:09.302Z"
+      },
+      "verification": "Original prohibition with selected prospect list through actual model and persisted chatTurn. Fresh ownership read covers other-agent reserved, taken, contacted and inactive assignments, excludes free expired reservation; no plan, takeover, mutation or external call; idempotent replay. Transactional contention and role checks verified separately in prospecting-workflow integration. Local only.",
+      "failure": "Manual wording review: expiration statement was too broad; must distinguish a simple expired reservation from taken/contact-outcome ownership."
+    }
+  ]
+}
