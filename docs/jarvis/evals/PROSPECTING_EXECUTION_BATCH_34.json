@@ -1,0 +1,689 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0316",
+      "prompt": "Trimite un template aprobat.",
+      "versions": {
+        "prompt": "jarvis-115",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "145",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, actual template catalog handler/queue/worker, local Firestore and simulated Meta. No model calls or external messages.",
+      "runs": [
+        {
+          "phase": "original-command",
+          "final": {
+            "id": "56affc26-190b-4547-91db-7dbf3536bf4b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege șablonul potrivit mesajului și răspunde cu „Șablon: nume:limbă”, folosind ID-ul din listă.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "89927e9a-e616-4caa-8bdb-f0d92054b28d",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "whatsappTemplates",
+                "title": "Șabloane eligibile",
+                "rows": [
+                  {
+                    "id": "colaborare:ro",
+                    "name": "colaborare",
+                    "language": "ro",
+                    "status": "APPROVED",
+                    "category": "MARKETING",
+                    "bodyParameterCount": 1,
+                    "bodyText": "Bună ziua, {{1}}. Discutăm o colaborare?",
+                    "supported": true,
+                    "approvedAndSupported": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "templateDraftInput",
+                "title": "Date necesare pentru șablon",
+                "rows": [
+                  {
+                    "mode": "send",
+                    "stage": "choice",
+                    "conversationId": "89927e9a-e616-4caa-8bdb-f0d92054b28d"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "89927e9a-e616-4caa-8bdb-f0d92054b28d"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:37.624Z"
+          }
+        },
+        {
+          "phase": "selected",
+          "final": {
+            "id": "638869cb-2d6c-4e06-a457-701c0cfef3ed-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Șablonul colaborare:ro necesită 1 valori, în ordinea {{1}}, {{2}} etc.\nBună ziua, {{1}}. Discutăm o colaborare?\nRăspunde cu „Parametri: valoare” pentru un câmp sau valori separate prin „;” pentru mai multe.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "89927e9a-e616-4caa-8bdb-f0d92054b28d",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "whatsappTemplates",
+                "title": "Șabloane eligibile",
+                "rows": [
+                  {
+                    "id": "colaborare:ro",
+                    "name": "colaborare",
+                    "language": "ro",
+                    "status": "APPROVED",
+                    "category": "MARKETING",
+                    "bodyParameterCount": 1,
+                    "bodyText": "Bună ziua, {{1}}. Discutăm o colaborare?",
+                    "supported": true,
+                    "approvedAndSupported": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "templateDraftInput",
+                "title": "Date necesare pentru șablon",
+                "rows": [
+                  {
+                    "mode": "send",
+                    "stage": "parameters",
+                    "conversationId": "89927e9a-e616-4caa-8bdb-f0d92054b28d",
+                    "templateId": "colaborare:ro",
+                    "signature": "3aea8e2bb17c3e172e149ebddf05e2764e463b525f2cf6d32ad4a4e72f0d38f9"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "89927e9a-e616-4caa-8bdb-f0d92054b28d"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:37.928Z"
+          }
+        },
+        {
+          "phase": "completed",
+          "final": {
+            "id": "77889ab8-9801-4a4c-bcc5-5ea78784ec16-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 0a1b8663d0e7ae6ed89d0e25f95f817ad2f72f7f537f9f0fc78ce83b777e9a0e.\nAcțiuni executate: 1. Starea mesajelor este disponibilă în Inbox.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "89927e9a-e616-4caa-8bdb-f0d92054b28d",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Șablon pregătit",
+                "rows": [
+                  {
+                    "id": "29d9d9f2fe668a275a9ae352b55732e8f56ec1e50877440a5f2ce2ed48a907fb",
+                    "sessionId": "960cbe76-9758-4087-a4b6-92fe1f130aa2",
+                    "conversationId": "89927e9a-e616-4caa-8bdb-f0d92054b28d",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "status": "prepared",
+                    "template": {
+                      "name": "colaborare",
+                      "language": "ro",
+                      "parameters": [
+                        "Alin"
+                      ]
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "0a1b8663d0e7ae6ed89d0e25f95f817ad2f72f7f537f9f0fc78ce83b777e9a0e",
+                      "status": "queued",
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T10:03:38.689Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "conversationId": "89927e9a-e616-4caa-8bdb-f0d92054b28d"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "89927e9a-e616-4caa-8bdb-f0d92054b28d"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:38.69Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0318",
+      "prompt": "Completează parametrii template-ului.",
+      "versions": {
+        "prompt": "jarvis-115",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "145",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, actual template catalog handler/queue/worker, local Firestore and simulated Meta. No model calls or external messages.",
+      "runs": [
+        {
+          "phase": "original-command",
+          "final": {
+            "id": "7bc71400-09e7-4a8e-9138-1e7ba630cb40-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege șablonul potrivit mesajului și răspunde cu „Șablon: nume:limbă”, folosind ID-ul din listă.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "whatsappTemplates",
+                "title": "Șabloane eligibile",
+                "rows": [
+                  {
+                    "id": "colaborare:ro",
+                    "name": "colaborare",
+                    "language": "ro",
+                    "status": "APPROVED",
+                    "category": "MARKETING",
+                    "bodyParameterCount": 1,
+                    "bodyText": "Bună ziua, {{1}}. Discutăm o colaborare?",
+                    "supported": true,
+                    "approvedAndSupported": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "templateDraftInput",
+                "title": "Date necesare pentru șablon",
+                "rows": [
+                  {
+                    "mode": "fill",
+                    "stage": "choice",
+                    "conversationId": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:39.998Z"
+          }
+        },
+        {
+          "phase": "selected",
+          "final": {
+            "id": "f214612e-85fa-4464-9f86-2999c5808136-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Șablonul colaborare:ro necesită 1 valori, în ordinea {{1}}, {{2}} etc.\nBună ziua, {{1}}. Discutăm o colaborare?\nRăspunde cu „Parametri: valoare” pentru un câmp sau valori separate prin „;” pentru mai multe.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "whatsappTemplates",
+                "title": "Șabloane eligibile",
+                "rows": [
+                  {
+                    "id": "colaborare:ro",
+                    "name": "colaborare",
+                    "language": "ro",
+                    "status": "APPROVED",
+                    "category": "MARKETING",
+                    "bodyParameterCount": 1,
+                    "bodyText": "Bună ziua, {{1}}. Discutăm o colaborare?",
+                    "supported": true,
+                    "approvedAndSupported": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "templateDraftInput",
+                "title": "Date necesare pentru șablon",
+                "rows": [
+                  {
+                    "mode": "fill",
+                    "stage": "parameters",
+                    "conversationId": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d",
+                    "templateId": "colaborare:ro",
+                    "signature": "3aea8e2bb17c3e172e149ebddf05e2764e463b525f2cf6d32ad4a4e72f0d38f9"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:40.466Z"
+          }
+        },
+        {
+          "phase": "completed",
+          "final": {
+            "id": "f4e0b1cd-df4d-4824-81b5-b562b728369e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Șablon completat:\nBună ziua, Alin. Discutăm o colaborare?\nNu am trimis mesajul. Poți cere trimiterea mesajului aprobat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Șablon pregătit",
+                "rows": [
+                  {
+                    "id": "45bebddfc4033f843e23704e285855a9b753f9dfc6c3962cf797fc74d78737ca",
+                    "sessionId": "d0a7c086-2ab8-4c62-a64d-f5ba22908ddb",
+                    "conversationId": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "status": "prepared",
+                    "template": {
+                      "name": "colaborare",
+                      "language": "ro",
+                      "parameters": [
+                        "Alin"
+                      ]
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "71a4f40e-5d91-4d74-b517-2d32f4efdb1d"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:41.169Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0320",
+      "prompt": "Folosește template-ul corect dacă politica o cere.",
+      "versions": {
+        "prompt": "jarvis-115",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "145",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, actual template catalog handler/queue/worker, local Firestore and simulated Meta. No model calls or external messages.",
+      "runs": [
+        {
+          "phase": "original-command",
+          "final": {
+            "id": "93bf3fc8-4ad0-4594-9ecd-e2f24b19314e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege șablonul potrivit mesajului și răspunde cu „Șablon: nume:limbă”, folosind ID-ul din listă.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "whatsappTemplates",
+                "title": "Șabloane eligibile",
+                "rows": [
+                  {
+                    "id": "colaborare:ro",
+                    "name": "colaborare",
+                    "language": "ro",
+                    "status": "APPROVED",
+                    "category": "MARKETING",
+                    "bodyParameterCount": 1,
+                    "bodyText": "Bună ziua, {{1}}. Discutăm o colaborare?",
+                    "supported": true,
+                    "approvedAndSupported": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "templateDraftInput",
+                "title": "Date necesare pentru șablon",
+                "rows": [
+                  {
+                    "mode": "policy",
+                    "stage": "choice",
+                    "conversationId": "496f6658-6656-44a0-8699-4a5d7ae04b92"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "496f6658-6656-44a0-8699-4a5d7ae04b92"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:45.741Z"
+          }
+        },
+        {
+          "phase": "selected",
+          "final": {
+            "id": "c0624149-baa5-4ee7-895f-b8da527191ac-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Șablonul colaborare:ro necesită 1 valori, în ordinea {{1}}, {{2}} etc.\nBună ziua, {{1}}. Discutăm o colaborare?\nRăspunde cu „Parametri: valoare” pentru un câmp sau valori separate prin „;” pentru mai multe.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "whatsappTemplates",
+                "title": "Șabloane eligibile",
+                "rows": [
+                  {
+                    "id": "colaborare:ro",
+                    "name": "colaborare",
+                    "language": "ro",
+                    "status": "APPROVED",
+                    "category": "MARKETING",
+                    "bodyParameterCount": 1,
+                    "bodyText": "Bună ziua, {{1}}. Discutăm o colaborare?",
+                    "supported": true,
+                    "approvedAndSupported": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "templateDraftInput",
+                "title": "Date necesare pentru șablon",
+                "rows": [
+                  {
+                    "mode": "policy",
+                    "stage": "parameters",
+                    "conversationId": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "templateId": "colaborare:ro",
+                    "signature": "3aea8e2bb17c3e172e149ebddf05e2764e463b525f2cf6d32ad4a4e72f0d38f9"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "496f6658-6656-44a0-8699-4a5d7ae04b92"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:45.992Z"
+          }
+        },
+        {
+          "phase": "completed",
+          "final": {
+            "id": "a278de7f-10ef-47bb-9eb7-f27d2701f3ed-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Șablon completat:\nBună ziua, Alin. Discutăm o colaborare?\nNu am trimis mesajul. Poți cere trimiterea mesajului aprobat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Șablon pregătit",
+                "rows": [
+                  {
+                    "id": "6e252502604287318dd35bb0cda94bbc3ddf921cf022612d54feba7d76520c95",
+                    "sessionId": "5cc6ecfa-4d5a-4c92-9936-2f4c7611cb32",
+                    "conversationId": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "status": "prepared",
+                    "template": {
+                      "name": "colaborare",
+                      "language": "ro",
+                      "parameters": [
+                        "Alin"
+                      ]
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "496f6658-6656-44a0-8699-4a5d7ae04b92"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:46.676Z"
+          }
+        },
+        {
+          "phase": "within-window",
+          "final": {
+            "id": "73129555-a9b5-4a07-92dd-001938eb7e14-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Fereastra de răspuns este deschisă: ea nu impune un șablon în acest moment. Eligibilitatea mesajului concret se verifică separat la trimitere. Nu am trimis mesaje.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "name": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Șablon pregătit",
+                "rows": [
+                  {
+                    "id": "6e252502604287318dd35bb0cda94bbc3ddf921cf022612d54feba7d76520c95",
+                    "sessionId": "5cc6ecfa-4d5a-4c92-9936-2f4c7611cb32",
+                    "conversationId": "496f6658-6656-44a0-8699-4a5d7ae04b92",
+                    "text": "Bună ziua, Alin. Discutăm o colaborare?",
+                    "status": "queued",
+                    "template": {
+                      "name": "colaborare",
+                      "language": "ro",
+                      "parameters": [
+                        "Alin"
+                      ]
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "496f6658-6656-44a0-8699-4a5d7ae04b92"
+              }
+            ],
+            "createdAt": "2026-10-16T10:03:48.068Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic",
+  "scope": "Original approved-template send, parameter completion and response-window template policy commands through persisted chat, current template catalog, server-owned drafts, actual domain queue/worker and simulated Meta. Missing template selection and parameters resolved through follow-up turns. No model calls or external messages; not production certification."
+}

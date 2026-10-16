@@ -116,6 +116,13 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(`Pași pregătiți pentru ${row.title}:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\n${disclaimer}\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.`);
     } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
   }
+  const { planTemplateRequest } = await import('./template-draft');
+  const templatePlan = await planTemplateRequest(ctx, prompt, history);
+  if (templatePlan) {
+    cards.push(...templatePlan.cards); actions.push(...templatePlan.actions);
+    if (templatePlan.conversationId) accessRefs.push({ resource: 'conversations', id: templatePlan.conversationId });
+    return finish(templatePlan.text, templatePlan.status);
+  }
   const { messageDraftCommand, draftPreparationRequest, latestDraftContext, createMessageDraft, getMessageDraft } = await import('./message-draft');
   const draftCommand = messageDraftCommand(prompt), preparation = draftPreparationRequest(prompt);
   const pendingDraft = latestDraftContext(history, 'outboundDraftInput');

@@ -569,6 +569,46 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(templateSends()).toHaveLength(0);
     } finally { await f.rate.delete(); }
   });
+  for (const scenarioId of ['master-0316', 'master-0318', 'master-0320']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')(`live prospecting ${scenarioId}: completes the selected approved template through persisted chat`, async () => {
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId); await session.set({ ownerId: f.actor.uid });
+    const selection = { role: 'assistant', createdAt: new Date().toISOString(), text: 'Destinatar selectat', cards: [{ type: 'data', source: 'conversations', title: 'WhatsApp', rows: [{ id: f.ref.id }] }] };
+    await session.collection('messages').doc('selection').set(selection);
+    const request = (text: string) => ({ sessionId, requestId: randomUUID(), prompt: text, currentRecord: null });
+    const runs: unknown[] = []; let verified = false;
+    try {
+      const initial = await chatTurn(mocks.actor, request(prompt)); runs.push({ phase: 'original-command', final: initial.message });
+      expect(initial.message.cards?.find(card => card.source === 'templateDraftInput')?.rows[0]).toMatchObject({ stage: 'choice' });
+      const choice = await chatTurn(mocks.actor, request('Șablon: colaborare:ro')); runs.push({ phase: 'selected', final: choice.message });
+      expect(choice.message.text).toContain('{{1}}'); expect(choice.message.cards?.find(card => card.source === 'templateDraftInput')?.rows[0]).toMatchObject({ stage: 'parameters' });
+      expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      const parameterRequest = request('Parametri: Alin'), completed = await chatTurn(mocks.actor, parameterRequest); runs.push({ phase: 'completed', final: completed.message });
+      expect(completed.message.planId).toBeUndefined(); expect(completed.message.actions).toBeUndefined(); expect(await chatTurn(mocks.actor, parameterRequest)).toEqual(completed);
+      const draftRow = completed.message.cards?.find(card => card.source === 'messageDrafts')?.rows[0]; expect(draftRow?.text).toBe('Bună ziua, Alin. Discutăm o colaborare?');
+      const draft = (await session.collection('outboundDrafts').doc(String(draftRow!.id)).get()).data()!;
+      expect(draft.body.template).toEqual({ name: 'colaborare', language: 'ro', parameters: ['Alin'] });
+      if (scenarioId === 'master-0316') expect((await f.ref.collection('messages').get()).size).toBe(1);
+      else { expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(completed.message.text).toContain('Nu am trimis'); await chatTurn(mocks.actor, request('Trimite mesajul aprobat.')); }
+      await drainOutbound(db as any); expect(templateSends()).toHaveLength(1);
+      expect(templateSends()[0][2]).toMatchObject({ type: 'template', template: { name: 'colaborare', language: { code: 'ro' }, components: [{ type: 'body', parameters: [{ type: 'text', text: 'Alin' }] }] } });
+      await chatTurn(mocks.actor, request('Trimite un template aprobat.')); await drainOutbound(db as any); expect(templateSends()).toHaveLength(1);
+      expect((await f.ref.collection('messages').get()).size).toBe(1);
+      if (scenarioId === 'master-0320') {
+        await f.ref.update({ lastInboundAt: new Date().toISOString() });
+        const open = await chatTurn(mocks.actor, request(prompt)); expect(open.message.text).toContain('nu impune un șablon'); expect(templateSends()).toHaveLength(1); runs.push({ phase: 'within-window', final: open.message });
+      }
+      verified = true;
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${scenarioId}-latest.json`, JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Deterministic persisted application chat, actual template catalog handler/queue/worker, local Firestore and simulated Meta. No model calls or external messages.', runs }, null, 2));
+      await f.rate.delete(); mocks.actor = null;
+    }
+  }, 120000);
   async function prospectingFixture() {
     const f = await marketingFixture();
     await f.consent.delete();

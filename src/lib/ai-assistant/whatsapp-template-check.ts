@@ -2,6 +2,11 @@ import { getResource, type AssistantContext } from './access';
 import { checkWhatsAppRecipient } from './whatsapp-recipient-check';
 import { invokeOperation } from './operations';
 
+export type WhatsAppTemplateRow = {
+  id: string; name: string; language: string; status: string; category: string;
+  bodyParameterCount: number; bodyText: string; supported: boolean; approvedAndSupported: boolean;
+};
+
 export async function checkWhatsAppTemplates(ctx: AssistantContext, conversationId: string) {
   const recipient = await checkWhatsAppRecipient(ctx, conversationId);
   const consent = recipient.rows[0].consent;
@@ -15,9 +20,10 @@ export async function checkWhatsAppTemplates(ctx: AssistantContext, conversation
   const result = await invokeOperation(ctx, { operation: 'whatsapp_templates', params: { connectionId: conversation.connectionId }, query: {}, body: {} });
   if (!Array.isArray(result.data)) throw new Error('Lista șabloanelor nu a fost confirmată.');
   // The domain handler computes support for parameters/components; Meta owns approval.
-  const rows = result.data.map((template: Record<string, any>) => ({
+  const rows: WhatsAppTemplateRow[] = result.data.map((template: Record<string, any>) => ({
     id: `${template.name}:${template.language}`, name: template.name, language: template.language,
     status: template.status, category: template.category, bodyParameterCount: template.bodyParameterCount,
+    bodyText: String(template.components?.find((component: Record<string, any>) => component.type?.toUpperCase() === 'BODY')?.text || ''),
     supported: template.sendable === true,
     approvedAndSupported: template.status === 'APPROVED' && template.sendable === true,
   }));

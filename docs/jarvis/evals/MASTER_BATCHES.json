@@ -2866,7 +2866,11 @@
           "sourceNumber": 316,
           "request": "Trimite un template aprobat.",
           "requestSha256": "a573231cd26cce3f84d002b8cedf472696047e504779cea518a358f4f8fa35f4",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_34.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0317",
@@ -2884,7 +2888,11 @@
           "sourceNumber": 318,
           "request": "Completează parametrii template-ului.",
           "requestSha256": "de236e0925f421d7ca83220f3f18fcba6b092d159be6a2f81dcac35a53baae2e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_34.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0319",
@@ -2902,7 +2910,11 @@
           "sourceNumber": 320,
           "request": "Folosește template-ul corect dacă politica o cere.",
           "requestSha256": "5356dd7368eaa65a434d2eb978c3e71517482e7153718e6e54ed7da862af6522",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_34.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0321",

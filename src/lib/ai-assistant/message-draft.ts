@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { collectionFor, getResource, type AssistantContext } from './access';
 import { normalized, type AssistantAction, type AssistantMessage } from './contracts';
@@ -42,6 +43,13 @@ export async function getMessageDraft(ctx: AssistantContext, sessionId: string, 
 }
 export async function createMessageDraft(ctx: AssistantContext, conversationId: string, text: string) {
   if (!text.trim() || text.trim().length > 4000) throw new Error('Textul trebuie să conțină între 1 și 4000 de caractere.');
+  return createPreparedDraft(ctx, conversationId, { text: text.trim() });
+}
+const templateDraftSchema = z.object({ name: z.string().min(1).max(100), language: z.string().min(1).max(30), parameters: z.array(z.string().min(1).max(1000)).max(20) }).strict();
+export async function createTemplateMessageDraft(ctx: AssistantContext, conversationId: string, template: z.infer<typeof templateDraftSchema>) {
+  return createPreparedDraft(ctx, conversationId, { template: templateDraftSchema.parse(template) });
+}
+async function createPreparedDraft(ctx: AssistantContext, conversationId: string, content: { text?: string; template?: z.infer<typeof templateDraftSchema> }) {
   const request = ctx.prospectingRequest;
   if (!request) throw new Error('Pregătirea necesită o cerere de chat persistentă.');
   const session = collectionFor(ctx, 'assistantSessions').doc(request.sessionId);
@@ -49,14 +57,14 @@ export async function createMessageDraft(ctx: AssistantContext, conversationId: 
   const ref = session.collection('outboundDrafts').doc(draftId);
   const conversation = await getResource(ctx, 'conversations', conversationId);
   const expectedRecipientRevision = recipientRevision(conversation);
-  const body = await prepareMessage(ctx, conversationId, { text: text.trim(), expectedRecipientRevision });
+  const body = await prepareMessage(ctx, conversationId, { ...content, expectedRecipientRevision });
   const row = { ownerId: ctx.uid, conversationId, body, status: 'prepared', createdAt: new Date().toISOString() };
   await ctx.adminDb.runTransaction(async tx => {
     await assertAutomationFence(ctx.adminDb, tx, ctx);
     const [parent, member, fresh, prior] = await Promise.all([tx.get(session), tx.get(ctx.adminDb.collection('users').doc(ctx.uid)), tx.get(collectionFor(ctx, 'conversations').doc(conversationId)), tx.get(ref)]);
     if (!['agent', 'admin'].includes(ctx.role || '') || parent.data()?.ownerId !== ctx.uid || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role || !fresh.exists || !canReadConversation(ctx, { ...fresh.data(), collaboratorIds: fresh.data()?.collaboratorIds || [] } as Conversation)) throw new Error('Acces revocat.');
     assertRecipientRevision({ ...fresh.data(), id: conversationId }, expectedRecipientRevision);
-    if (prior.exists) { if (prior.data()?.conversationId !== conversationId || prior.data()?.body.text !== text.trim()) throw new Error('Cererea a fost folosită pentru altă ciornă.'); return; }
+    if (prior.exists) { if (prior.data()?.conversationId !== conversationId || JSON.stringify([prior.data()?.body.text || '', prior.data()?.body.template || null]) !== JSON.stringify([content.text || '', content.template || null])) throw new Error('Cererea a fost folosită pentru altă ciornă.'); return; }
     tx.create(ref, row);
   });
   return { draftId, sessionId: request.sessionId, ...(await getMessageDraft(ctx, request.sessionId, draftId)) };

@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot șabloane WhatsApp complete — 16 octombrie 2026
+
+Trei scenarii verificate împreună: **0316, 0318, 0320**. Catalogul actual furnizează șabloanele aprobate și suportate, textul și numărul parametrilor. Pentru cererea generică fără șablon sau valori, Jarvis cere informațiile lipsă și reia fluxul din chatul persistent. „Trimite un template aprobat” păstrează autorizația inițială până la completarea parametrilor, fără încă un plan de aprobare; completarea simplă și verificarea politicii produc o ciornă fără trimitere. Acest flux generic nu schimbă trimiterea directă a șablonului dedicat de prospectare.
+
+La fiecare pas sunt recitite accesul, acordul și catalogul. Identitatea șablonului include limba, categoria, textul și numărul parametrilor: dacă se schimbă în timpul completării, valorile nu sunt aplicate automat unui alt conținut. Fereastra deschisă este explicată separat de eligibilitatea mesajului. Ciorna persistentă reutilizează coada și workerul existente, cu destinatar verificat, cost și cheie de deduplicare; repetarea cererii nu trimite din nou. Scenariile au verificat mesajul exact în payloadul Meta simulat și starea accepted, distinctă de delivered.
+
+Validare: **125 teste unitare/planner/autorizare, 95 teste de coadă/worker și 3/3 scenarii prin chat persistent și emulator**, plus ESLint, verificarea inventarului/parității și build complet trecut după corectarea tipului catalogului. Variante unitare pentru șablon schimbat sau suspendat, acord retras, număr incorect de parametri și anulare. Dovezi: [lot 34](evals/PROSPECTING_EXECUTION_BATCH_34.json). Inventar: **161/1000 dovezi locale** (133 cu model real, 28 deterministe). Nu sunt certificate selecția semantică automată pentru orice mesaj, toate reformulările naturale sau livrarea reală Meta. Fără mesaje externe; lot nepublicat în producție.
+
 ## Lot ciorne și trimitere explicită — 16 octombrie 2026
 
 Patru scenarii verificate: **0311, 0312, 0313, 0338**. Pregătirea mesajului caută destinatarul numai în conversațiile accesibile, cere ID-ul la nume ambiguu și textul exact dacă lipsește. Următorul răspuns completează informația lipsă și produce o ciornă persistentă în subcolecția server-managed a sesiunii. Acest lot pregătește textul indicat de agent; nu certifică generarea liberă de texte, șabloanele sau aprobarea unui lot de mesaje.

@@ -1,3 +1,4 @@
+import { templateCommand } from './template-draft';
 import { draftSendAction, messageDraftCommand } from './message-draft';
 import { simpleConversationEdit, requestedConversationEdit } from './conversation-edit';
 import { simpleConversationUpdate, requestedConversationUpdate } from './conversation-state';
@@ -49,7 +50,7 @@ export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
 }
 export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: string) {
-  if (draftSendAction(action)) return messageDraftCommand(prompt) === 'send';
+  if (draftSendAction(action)) return messageDraftCommand(prompt) === 'send' || templateCommand(prompt) === 'send';
   if (simpleConversationEdit(action)) return requestedConversationEdit(action, prompt);
   if (action.kind === 'existing_operation' && action.operation === 'conversation_update') return requestedConversationUpdate(action, prompt);
   if (action.kind === 'existing_operation' && action.operation === 'message_send') return requestAuthorizedCrmAction(action) && requestsWhatsappProspecting(prompt);
