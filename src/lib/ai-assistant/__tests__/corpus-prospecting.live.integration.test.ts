@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,35 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 289) {
+        await db.recursiveDelete(favorites);
+        const hidden = Array.from({ length: 51 }, (_, index) => ({ id: `a-${String(index).padStart(3, '0')}`, isFavoriteActive: true, takenByAgentId: 'other', title: 'Alt agent', contactOutcome: 'follow_up', ownerPhone: '0722123456' }));
+        const eligible = Array.from({ length: 12 }, (_, index) => ({ id: `z-${String(index).padStart(2, '0')}`, title: `Prospect Prioritar ${String(index).padStart(2, '0')}`, isFavoriteActive: true, ownerPhone: '0722123456', ...(index === 11 ? { contactOutcome: 'follow_up', contactOutcomeByAgentId: id } : {}) }));
+        const records = [...hidden, ...eligible, { id: 'b-refused', isFavoriteActive: true, contactOutcome: 'negative', ownerPhone: '0722123456' }, { id: 'b-inactive', isFavoriteActive: false, contactOutcome: 'follow_up', ownerPhone: '0722123456' }];
+        for (const row of records) { const { id: key, ...data } = row; await favorites.doc(key).set(data); }
+        await agency.collection('assistantSessions').doc(id).set({ ownerId: id, createdAt: new Date().toISOString() });
+        const request = { sessionId: id, requestId: `${id}-ranked`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        report = { ...report, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(request.requestId).get()).data() };
+        const expected = [eligible[11], ...eligible.slice(0, 9)];
+        const ranked = result.message.cards?.flatMap(card => card.rows) || [];
+        expect(ranked.map(row => row.id)).toEqual(expected.map(row => row.id));
+        expect(ranked.map(row => row.priorityScore)).toEqual([60, ...Array(9).fill(20)]);
+        let previous = -1;
+        for (const row of expected) { const position = result.message.text.indexOf(row.title); expect(position).toBeGreaterThan(previous); previous = position; }
+        expect(result.message.text).toMatch(/operațional/i);
+        expect(result.message.text).toMatch(/probabilit/i);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect((report.telemetry as any).status).toBe('success');
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        for (const row of records) { const { id: key, ...data } = row; expect((await favorites.doc(key).get()).data()).toEqual(data); }
+        for (const row of eligible) await favorites.doc(row.id).update({ isFavoriteActive: false });
+        const empty = await chatTurn(ctx, { ...request, requestId: `${id}-empty` });
+        expect(empty.message.cards?.flatMap(card => card.rows)).toEqual([]);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, empty: empty.message, executionVerified: true, verification: 'Original request through actual model and persisted chatTurn: 65 local CRM records, empty eligible first page, top candidate on final page, exactly ten globally ordered results with scores/reasons, own/unassigned scope, refusals/inactive/other-agent exclusion, no writes or contact, idempotent replay and fresh empty result. Operational heuristic, not sale probability.' };
+        return;
+      }
       if (number === 287) {
         await favorites.doc(source.id).update({ reservedAt: '2020-01-01T00:00:00Z' });
         await favorites.doc('beta').update({ reservedByAgentId: 'other', reservedByAgentName: 'Agent Beta' });

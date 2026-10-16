@@ -1,0 +1,335 @@
+{
+  "scope": "Original scenario 0289: operational ranking from current CRM follow-up and phone data; not a conversion prediction or production certification.",
+  "finalRuns": [{
+  "scenarioId": "master-0289",
+  "prompt": "Arată-mi cele mai promițătoare zece prospecte.",
+  "versions": {
+    "prompt": "jarvis-106",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "136",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T07:20:15.070Z",
+  "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+  "executionVerified": true,
+  "final": {
+    "id": "05ce261f-197d-4285-9231-bcd977cbc0a3-ranked-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Acestea sunt primele zece prospecte după **prioritate operațională** — nu reprezintă o probabilitate de vânzare. Clasamentul a fost calculat după citirea completă a setului disponibil; egalitățile sunt ordonate după ID.\n\n1. **Prospect Prioritar 11** — ID `z-11` — **60 puncte**: follow-up înregistrat (+40); telefon românesc valid (+20).\n2. **Prospect Prioritar 00** — ID `z-00` — **20 puncte**: telefon românesc valid (+20).\n3. **Prospect Prioritar 01** — ID `z-01` — **20 puncte**: telefon românesc valid (+20).\n4. **Prospect Prioritar 02** — ID `z-02` — **20 puncte**: telefon românesc valid (+20).\n5. **Prospect Prioritar 03** — ID `z-03` — **20 puncte**: telefon românesc valid (+20).\n6. **Prospect Prioritar 04** — ID `z-04` — **20 puncte**: telefon românesc valid (+20).\n7. **Prospect Prioritar 05** — ID `z-05` — **20 puncte**: telefon românesc valid (+20).\n8. **Prospect Prioritar 06** — ID `z-06` — **20 puncte**: telefon românesc valid (+20).\n9. **Prospect Prioritar 07** — ID `z-07` — **20 puncte**: telefon românesc valid (+20).\n10. **Prospect Prioritar 08** — ID `z-08` — **20 puncte**: telefon românesc valid (+20).",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [],
+        "complete": false,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [
+          {
+            "title": "Prospect Prioritar 11",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "contactOutcome": "follow_up",
+            "contactOutcomeByAgentId": "05ce261f-197d-4285-9231-bcd977cbc0a3",
+            "id": "z-11",
+            "priorityScore": 60,
+            "priorityReasons": [
+              "Follow-up înregistrat: +40",
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 00",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-00",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 01",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-01",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 02",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-02",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 03",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-03",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 04",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-04",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 05",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-05",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 06",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-06",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 07",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-07",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect Prioritar 08",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-08",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:20:35.163Z"
+  },
+  "telemetry": {
+    "requestId": "05ce261f-197d-4285-9231-bcd977cbc0a3-ranked",
+    "sessionId": "05ce261f-197d-4285-9231-bcd977cbc0a3",
+    "userId": "05ce261f-197d-4285-9231-bcd977cbc0a3",
+    "agencyId": "05ce261f-197d-4285-9231-bcd977cbc0a3",
+    "models": [
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2198,
+          "outputTokens": 35,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 1993,
+          "estimated": false
+        },
+        "costUsd": 0.000287125,
+        "latencyMs": 2609,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2359,
+          "outputTokens": 37,
+          "cachedTokens": 1993,
+          "cacheWriteTokens": 363,
+          "estimated": false
+        },
+        "costUsd": 0.00008410500000000001,
+        "latencyMs": 2238,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3238,
+          "outputTokens": 119,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 3235,
+          "estimated": false
+        },
+        "costUsd": 0.000464175,
+        "latencyMs": 2265,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3382,
+          "outputTokens": 425,
+          "cachedTokens": 3235,
+          "cacheWriteTokens": 144,
+          "estimated": false
+        },
+        "costUsd": 0.00026314999999999997,
+        "latencyMs": 3792,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      }
+    ],
+    "tools": [
+      {
+        "name": "read",
+        "status": "success",
+        "latencyMs": 1702,
+        "version": "136",
+        "argumentsHash": "b4508c69622dcc6da59d1964f75e33d8d252a4cd67d6a594ccb3f277c4e15346"
+      },
+      {
+        "name": "read",
+        "status": "success",
+        "latencyMs": 236,
+        "version": "136",
+        "argumentsHash": "33c2ce9139c77c68d4a09a3e31508956c9024a3d63afedde6e727585c65871c5"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "success",
+        "latencyMs": 11,
+        "version": "136",
+        "argumentsHash": "7c16aa59d798f4673f2b01f9587abbaf95ee15f5a175301c0b8905f493437423"
+      }
+    ],
+    "status": "success",
+    "elapsedMs": 13389,
+    "jev": {
+      "mode": "shadow",
+      "model": "jev-1.13.0",
+      "route": "CLARIFY",
+      "confidence": 0.11,
+      "inputTokens": 442,
+      "outputTokens": 48,
+      "costUsd": 0.000018564,
+      "estimated": false,
+      "actualRoute": "JARVIS_PLANNER",
+      "latencyMs": 382,
+      "status": "ok",
+      "reasonCode": "shadow_only"
+    },
+    "requiresApproval": false,
+    "costUsd": 0.001117119,
+    "tokens": 12283,
+    "versions": {
+      "prompt": "jarvis-106",
+      "routing": "luna-first-2",
+      "policy": "request-crm-14",
+      "tools": "136",
+      "memory": "2",
+      "skills": "3"
+    },
+    "configuration": {
+      "flags": {
+        "memory": true,
+        "subagents": true,
+        "autonomousWorkflows": true,
+        "proactiveInsights": true,
+        "automations": true,
+        "mcp": false,
+        "solEscalation": true
+      },
+      "regionalProcessing": false,
+      "defaultLimits": {
+        "maxSteps": 12,
+        "maxToolCalls": 24,
+        "maxTokens": 70000,
+        "maxCost": 0.12,
+        "maxExecutionMs": 120000,
+        "maxParallel": 3,
+        "maxOutputTokens": 2200
+      }
+    },
+    "timestamp": "2026-10-16T07:20:35.216Z"
+  },
+  "empty": {
+    "id": "05ce261f-197d-4285-9231-bcd977cbc0a3-empty-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Nu au fost returnate prospecte în rezultatul final, așadar nu există rezultate de afișat. Citirea a acoperit setul complet disponibil (65 de înregistrări scanate). Criteriul este prioritate operațională, nu probabilitate de vânzare.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [],
+        "complete": false,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:20:44.497Z"
+  },
+  "verification": "Original request through actual model and persisted chatTurn: 65 local CRM records, empty eligible first page, top candidate on final page, exactly ten globally ordered results with scores/reasons, own/unassigned scope, refusals/inactive/other-agent exclusion, no writes or contact, idempotent replay and fresh empty result. Operational heuristic, not sale probability."
+}]
+}

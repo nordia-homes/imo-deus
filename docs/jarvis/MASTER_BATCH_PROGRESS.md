@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Zece prospecte prioritare — scenariul 0289 — 16 octombrie 2026
+
+„Arată-mi cele mai promițătoare zece prospecte.” parcurge toate paginile CRM și calculează pe server un top global de maximum zece prospecte active, proprii sau neatribuite. Sunt excluse atribuirile altor agenți, rezultatele negative și refuzul de apel înregistrat. Clasamentul nu este prezentat până la încheierea citirii tuturor paginilor, inclusiv când prima pagină nu conține rezultate eligibile.
+
+Criteriile sunt explicite: follow-up înregistrat (+40), telefon românesc valid (+20), ID pentru departajarea egalităților. Este o prioritate operațională bazată pe aceste date, nu o probabilitate de vânzare și nici o evaluare a prețului sau cererii cumpărătorilor. Lipsa telefonului este indicată drept informație de completat înainte de apel. Cererea nu autorizează contactarea ori modificarea prospectelor.
+
+Au trecut 67 de teste unitare și proba cu model real prin chatTurn: 65 de înregistrări locale, primul lot fără rezultate eligibile, prospectul cu scor maxim pe pagina următoare, exact zece rezultate în ordinea așteptată, punctaje și explicații, reluare idempotentă, înregistrări nemodificate și recitire cu rezultat gol după dezactivare. Verificarea TypeScript, ESLint, paritatea și inventarul au trecut. Dovadă: [PROSPECTING_EXECUTION_BATCH_21.json](evals/PROSPECTING_EXECUTION_BATCH_21.json).
+
+Versiuni jarvis-106 / tools 136. Inventarul crește la 121/1000 dovezi locale cu model real, cu 0 certificări complete în producție. Nu au fost contactate persoane reale. Acest lot nu este publicat în producție.
+
 ## Prospectul WhatsApp verificat până la trimitere — 13 octombrie 2026
 
 Referința prospectului se păstrează acum în mesajul pregătit și în jobul de trimitere. Atribuirea conversației singură nu era suficientă: prospectul putea fi reatribuit altui agent după pregătire, iar conversația rămânea la agentul inițial. Coada și workerul recitesc prospectul, atribuirea efectivă, starea activă și telefonul, inclusiv după recuperarea șablonului. Mesajele Inbox folosesc și legătura salvată în conversație. O schimbare nepermisă oprește trimiterea înainte de Meta și eliberează bugetul rezervat.

@@ -2578,7 +2578,11 @@
           "sourceNumber": 289,
           "request": "Arată-mi cele mai promițătoare zece prospecte.",
           "requestSha256": "114701b884338d49bf35c0ff99768714333f8f4a10eb30e4446ef880d4be32ea",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_21.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0290",
