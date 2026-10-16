@@ -279,7 +279,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     return { ...f, token, consent, budget, templates, input: { ...action.body, requestId: randomUUID() } };
   }
   const templateSends = () => mocks.graph.mock.calls.filter(call => /\/messages$/.test(call[0]));
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting master-0281: reads the actual queued, accepted, delivered and read message without resending', async () => {
+  for (const scenarioId of ['master-0281', 'master-0314', 'master-0315']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')(`live prospecting ${scenarioId}: reads the actual queued, accepted, delivered and read message without resending`, async () => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -290,7 +290,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const { mkdir, writeFile } = await import('node:fs/promises');
     const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
     mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
-    const prompt = corpus.scenarios.find(row => row.id === 'master-0281')!.text;
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const runs: Record<string, unknown>[] = [];
     let verified = false;
     try {
@@ -335,7 +335,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       verified = true;
     } finally {
       await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
-      await writeFile('.tmp/jarvis-whatsapp-prospecting/master-0281-latest.json', JSON.stringify({ scenarioId: 'master-0281', prompt, versions: VERSIONS, executionVerified: verified, environment: 'Actual model, chat, API, queue, worker, receipt normalization and ingestion; local Firestore and simulated Meta, not production certification.', runs }, null, 2));
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${scenarioId}-latest.json`, JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Actual model, chat, API, queue, worker, receipt normalization and ingestion; local Firestore and simulated Meta, not production certification.', runs }, null, 2));
       await f.rate.delete(); mocks.actor = null;
     }
   }, 240000);
@@ -372,7 +372,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       expect(templateSends()).toHaveLength(0);
     } finally { await f.rate.delete(); mocks.actor = null; }
   });
-  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting master-0277: checks current templates after consent without sending', async () => {
+  for (const scenarioId of ['master-0277', 'master-0317']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')(`live prospecting ${scenarioId}: checks current templates after consent without sending`, async () => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
     if (!process.env.OPENAI_API_KEY) throw new Error('Model credential unavailable');
     const { chatTurn } = await import('../workspace');
@@ -381,8 +381,8 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const { mkdir, writeFile } = await import('node:fs/promises');
     const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
     mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
-    const prompt = corpus.scenarios.find(row => row.id === 'master-0277')!.text;
-    let report: Record<string, unknown> = { scenarioId: 'master-0277', prompt, versions: VERSIONS, executionVerified: false, environment: 'Actual model, chatTurn and template API; Firestore local and simulated Meta. No production certification.' };
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, executionVerified: false, environment: 'Actual model, chatTurn and template API; Firestore local and simulated Meta. No production certification.' };
     try {
       const templates = [
         ...f.templates.data,
@@ -423,7 +423,37 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       report = { ...report, executionVerified: true, verifiedAt: new Date().toISOString(), verification: 'Original request, current catalog through real API, approved/pending/unsupported distinction, fresh PAUSED state on next request, persisted replay, unchanged consent and zero outbound jobs/messages.' };
     } finally {
       await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
-      await writeFile('.tmp/jarvis-whatsapp-prospecting/master-0277-latest.json', JSON.stringify(report, null, 2));
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${scenarioId}-latest.json`, JSON.stringify(report, null, 2));
+      await f.rate.delete(); mocks.actor = null;
+    }
+  }, 240000);
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting master-0319: checks the current WhatsApp response window without sending', async () => {
+    const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const scenarioId = 'master-0319', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    const runs: unknown[] = []; let verified = false;
+    try {
+      for (const hours of [1, 25]) {
+        await f.ref.update({ lastInboundAt: new Date(Date.now() - hours * 3600000).toISOString() });
+        const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId); await session.set({ ownerId: f.actor.uid });
+        await session.collection('messages').doc('selection').set({ id: 'selection', role: 'assistant', createdAt: new Date().toISOString(), text: 'WhatsApp selectat', cards: [{ type: 'data', source: 'conversations', title: 'WhatsApp', rows: [{ id: f.ref.id }] }] });
+        const request = { sessionId, requestId: randomUUID(), prompt, currentRecord: null };
+        const result = await chatTurn(mocks.actor, request);
+        expect(result.message.cards?.flatMap(card => card.rows)).toEqual(expect.arrayContaining([expect.objectContaining({ withinWindow: hours === 1 })]));
+        expect(result.message.text).toMatch(/24/);
+        if (hours === 25) expect(result.message.text).toMatch(/afara|depăș|expirat/i);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect(await chatTurn(mocks.actor, request)).toEqual(result);
+        runs.push({ hours, final: result.message });
+      }
+      expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(templateSends()).toHaveLength(0); verified = true;
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${scenarioId}-latest.json`, JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Real model and persisted chat, local Firestore; no sends or production certification.', runs }, null, 2));
       await f.rate.delete(); mocks.actor = null;
     }
   }, 240000);

@@ -55,6 +55,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   if (action.kind === 'existing_operation') {
     const { requireTool } = await import('./registry'); requireTool(action.operation, ctx.role || '');
+    const { simpleConversationUpdate, executeConversationState } = await import('./conversation-state');
+    if (simpleConversationUpdate(action)) return executeConversationState(ctx, action, key);
     const op = Object.hasOwn(operations, action.operation) ? operations[action.operation] : undefined;
     if (!op || isReadOperation(action.operation)) throw new CommunicationError('Folosește citirea pentru această operație.');
     const claim = await ctx.adminDb.runTransaction(async tx => {

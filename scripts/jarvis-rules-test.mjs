@@ -60,8 +60,8 @@ if (process.argv.includes('--corpus-owner-search-live')) {
 }
 if (process.argv.includes('--prospecting-whatsapp-live')) {
   process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE = 'true';
-  const selected = process.argv.find(arg => /^--case=master-\d{4}$/.test(arg));
-  command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/outbound-recipient.integration.test.ts --testNamePattern="live prospecting' + (selected ? ' ' + selected.slice(7) : '') + '" --testTimeout=240000';
+  const selected = process.argv.find(arg => /^--case=master-\d{4}(?:,master-\d{4})*$/.test(arg));
+  command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/outbound-recipient.integration.test.ts --testNamePattern="live prospecting' + (selected ? ' (' + selected.slice(7).split(',').join('|') + ')' : '') + '" --testTimeout=240000';
 }
 if (process.argv.includes('--corpus-prospecting-live')) {
   process.env.JARVIS_PROSPECTING_LIVE = 'true';

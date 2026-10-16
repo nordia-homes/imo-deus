@@ -2832,14 +2832,22 @@
           "sourceNumber": 314,
           "request": "Spune-mi statusul real după trimitere.",
           "requestSha256": "afad723fa2c0af186921a2c510a49c8e68b3f3559a7390cbaec8c9c1990e30f8",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_28.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0315",
           "sourceNumber": 315,
           "request": "Nu spune delivered dacă mesajul este doar queued.",
           "requestSha256": "83a392372ecf4128d000f685b010f0502e8f8de138b2f3306b3918090fc9ddc1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_28.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0316",
@@ -2853,7 +2861,11 @@
           "sourceNumber": 317,
           "request": "Arată-mi template-urile disponibile.",
           "requestSha256": "ac32975b77ff0ffa0a08eb7e9baee8b6cbd0e1c6df839349f6f1866270c6a51c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_28.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0318",
@@ -2867,7 +2879,11 @@
           "sourceNumber": 319,
           "request": "Spune-mi dacă mesajul este în afara ferestrei permise.",
           "requestSha256": "52699d9de703153bd4aadc0f65108e7346d41e906b4ff22676be13f1999f0cd3",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_28.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0320",
@@ -2923,21 +2939,33 @@
           "sourceNumber": 327,
           "request": "Marchează conversația citită.",
           "requestSha256": "ea6d6799e0ebe5032f0ac05d37e4e10a3a20be5d91e51f650a2a54980e03eaad",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_29.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0328",
           "sourceNumber": 328,
           "request": "Marchează conversația închisă.",
           "requestSha256": "59a68f6f60f50dae17f4d766da2f2acabf982314079a09ec9065e20ce0760cc4",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_29.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0329",
           "sourceNumber": 329,
           "request": "Redeschide conversația.",
           "requestSha256": "c6b63d81d25f780e876b4485a61d4ac5d40ac7fe539d86c21df88f3579c956b3",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_29.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0330",

@@ -1,0 +1,263 @@
+{"executionMode":"deterministic","scope":"Original conversation read/close/reopen commands through persisted chat and atomic native executor in local Firestore. No outbound messages or production certification.","finalRuns":[{
+  "scenarioId": "master-0327",
+  "prompt": "Marchează conversația citită.",
+  "versions": {
+    "prompt": "jarvis-111",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "141",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:53:45.835Z",
+  "environment": "Deterministic planner, persisted chat and atomic native executor with local Firestore; no outbound messages.",
+  "executionVerified": true,
+  "final": {
+    "id": "e6b25c0c-1d67-4dbe-bdca-80b8ce258c31-state-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Conversația selected a fost marcată citită.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversație selectată",
+        "rows": [
+          {
+            "id": "selected"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "outputType": "ACTION_RESULT",
+        "title": "Rezultatele cererii",
+        "source": "autonomy",
+        "rows": [
+          {
+            "step": 1,
+            "kind": "existing_operation",
+            "result": {
+              "operation": "conversation_update",
+              "conversationId": "selected",
+              "executionState": "succeeded",
+              "state": "read",
+              "version": 2,
+              "verifiedAt": "2026-10-16T08:53:48.290Z"
+            }
+          }
+        ]
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "selected"
+      }
+    ],
+    "createdAt": "2026-10-16T08:53:48.299Z"
+  },
+  "saved": {
+    "agencyId": "e6b25c0c-1d67-4dbe-bdca-80b8ce258c31",
+    "assigneeId": "e6b25c0c-1d67-4dbe-bdca-80b8ce258c31",
+    "collaboratorIds": [],
+    "channel": "whatsapp",
+    "name": "Andrei",
+    "status": "open",
+    "needsReply": true,
+    "readBy": {
+      "other": "2026-01-01T00:00:00Z",
+      "e6b25c0c-1d67-4dbe-bdca-80b8ce258c31": "2026-10-16T08:53:48.290Z"
+    },
+    "version": 2
+  },
+  "missing": {
+    "text": "Selectează conversația pe care dorești să o actualizezi.",
+    "cards": [],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "clarification",
+      "elapsedMs": 2
+    }
+  },
+  "verification": "Original command changes only requested state in own/unassigned conversation and confirms persisted result, with atomic execution ledger, request replay, current-version conflict and revoked-assignment checks. No messages sent."
+},{
+  "scenarioId": "master-0328",
+  "prompt": "Marchează conversația închisă.",
+  "versions": {
+    "prompt": "jarvis-111",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "141",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:53:48.732Z",
+  "environment": "Deterministic planner, persisted chat and atomic native executor with local Firestore; no outbound messages.",
+  "executionVerified": true,
+  "final": {
+    "id": "cb9e9b9d-2e32-4316-abd3-30a8523d9c3e-state-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Conversația selected a fost închisă.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversație selectată",
+        "rows": [
+          {
+            "id": "selected"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "outputType": "ACTION_RESULT",
+        "title": "Rezultatele cererii",
+        "source": "autonomy",
+        "rows": [
+          {
+            "step": 1,
+            "kind": "existing_operation",
+            "result": {
+              "operation": "conversation_update",
+              "conversationId": "selected",
+              "executionState": "succeeded",
+              "state": "resolved",
+              "version": 2,
+              "verifiedAt": "2026-10-16T08:53:49.011Z"
+            }
+          }
+        ]
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "selected"
+      }
+    ],
+    "createdAt": "2026-10-16T08:53:49.021Z"
+  },
+  "saved": {
+    "agencyId": "cb9e9b9d-2e32-4316-abd3-30a8523d9c3e",
+    "assigneeId": null,
+    "collaboratorIds": [],
+    "channel": "whatsapp",
+    "name": "Andrei",
+    "needsReply": true,
+    "readBy": {
+      "other": "2026-01-01T00:00:00Z"
+    },
+    "version": 2,
+    "status": "resolved"
+  },
+  "missing": {
+    "text": "Selectează conversația pe care dorești să o actualizezi.",
+    "cards": [],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "clarification",
+      "elapsedMs": 1
+    }
+  },
+  "verification": "Original command changes only requested state in own/unassigned conversation and confirms persisted result, with atomic execution ledger, request replay, current-version conflict and revoked-assignment checks. No messages sent."
+},{
+  "scenarioId": "master-0329",
+  "prompt": "Redeschide conversația.",
+  "versions": {
+    "prompt": "jarvis-111",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "141",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:53:49.330Z",
+  "environment": "Deterministic planner, persisted chat and atomic native executor with local Firestore; no outbound messages.",
+  "executionVerified": true,
+  "final": {
+    "id": "7f80ea99-6661-4b50-adbc-5bc3b409fe30-state-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Conversația selected a fost redeschisă.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversație selectată",
+        "rows": [
+          {
+            "id": "selected"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "outputType": "ACTION_RESULT",
+        "title": "Rezultatele cererii",
+        "source": "autonomy",
+        "rows": [
+          {
+            "step": 1,
+            "kind": "existing_operation",
+            "result": {
+              "operation": "conversation_update",
+              "conversationId": "selected",
+              "executionState": "succeeded",
+              "state": "open",
+              "version": 2,
+              "verifiedAt": "2026-10-16T08:53:49.580Z"
+            }
+          }
+        ]
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "selected"
+      }
+    ],
+    "createdAt": "2026-10-16T08:53:49.589Z"
+  },
+  "saved": {
+    "agencyId": "7f80ea99-6661-4b50-adbc-5bc3b409fe30",
+    "assigneeId": "7f80ea99-6661-4b50-adbc-5bc3b409fe30",
+    "collaboratorIds": [],
+    "channel": "whatsapp",
+    "name": "Andrei",
+    "needsReply": true,
+    "readBy": {
+      "other": "2026-01-01T00:00:00Z"
+    },
+    "version": 2,
+    "status": "open"
+  },
+  "missing": {
+    "text": "Selectează conversația pe care dorești să o actualizezi.",
+    "cards": [],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "clarification",
+      "elapsedMs": 0
+    }
+  },
+  "verification": "Original command changes only requested state in own/unassigned conversation and confirms persisted result, with atomic execution ledger, request replay, current-version conflict and revoked-assignment checks. No messages sent."
+}]}

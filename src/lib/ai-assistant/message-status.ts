@@ -2,7 +2,7 @@ import { CommunicationError } from '@/lib/communications/server';
 import type { AssistantCard } from './contracts';
 
 export function selectedMessageReference(cards: AssistantCard[] = []) {
-  const candidates = cards.flatMap(card => card.source === 'conversation_messages' ? card.rows : card.source === 'autonomy' ? card.rows.flatMap(row => {
+  const candidates = cards.flatMap(card => ['conversation_messages', 'conversationMessages'].includes(card.source) ? card.rows : card.source === 'autonomy' ? card.rows.flatMap(row => {
     const result = row.result as Record<string, unknown> | undefined;
     return result?.operation === 'message_send' ? [{ id: result.messageId, conversationId: result.conversationId }] : [];
   }) : []).filter(row => typeof row.id === 'string' && typeof row.conversationId === 'string');

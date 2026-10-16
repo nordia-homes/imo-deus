@@ -10,7 +10,7 @@ vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken:
 vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: settingsContext.provider, isVapiOutboundConfigured: () => true, VapiDispatchError: class extends Error {} }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
-vi.mock('../operations', () => ({ operations: { outreach_start: { method: 'POST', path: '/api/ai-outreach/calls', description: 'Pornește apelul AI.' }, outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
+vi.mock('../operations', () => ({ operations: { conversation_update: { method: 'PATCH', path: '/api/communications/conversations/{conversationId}', description: 'Actualizare stare conversație.' }, outreach_start: { method: 'POST', path: '/api/ai-outreach/calls', description: 'Pornește apelul AI.' }, outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
   if (!['outreach_settings_update', 'outreach_start'].includes(input.operation)) throw new Error('External calls excluded');
   settingsContext.invokes++;
   const { POST } = input.operation === 'outreach_start' ? await import('@/app/api/ai-outreach/calls/route') : await import('@/app/api/ai-outreach/settings/route');
@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 327, 328, 329]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && !process.env.JARVIS_PROSPECTING_CASE.split(',').includes(scenarioId)) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,29 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if ([327, 328, 329].includes(number)) {
+        const convRef = agency.collection('conversations').doc('selected');
+        const row = { agencyId: id, assigneeId: number === 328 ? null : id, collaboratorIds: [], channel: 'whatsapp', name: 'Andrei', version: 1, status: number === 329 ? 'resolved' : 'open', needsReply: true, readBy: { other: '2026-01-01T00:00:00Z' } };
+        await convRef.set(row);
+        const session = agency.collection('assistantSessions').doc(id); await session.set({ ownerId: id });
+        await session.collection('messages').doc('selection').set({ id: 'selection', role: 'assistant', text: 'Conversație selectată', createdAt: new Date().toISOString(), cards: [{ type: 'data', source: 'conversations', title: 'Selectat', rows: [{ id: convRef.id }] }] });
+        const request = { sessionId: id, requestId: `${id}-state`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        const saved = (await convRef.get()).data()!;
+        expect(saved.version).toBe(2); expect(saved.needsReply).toBe(true); expect(saved.assigneeId).toBe(row.assigneeId);
+        if (number === 327) { expect(Date.parse(saved.readBy[id])).toBeGreaterThan(0); expect(saved.readBy.other).toBe(row.readBy.other); expect(saved.status).toBe(row.status); expect(result.message.text).toContain('marcată citită'); }
+        else { expect(saved.status).toBe(number === 328 ? 'resolved' : 'open'); expect(saved.readBy).toEqual(row.readBy); expect(result.message.text).toContain(number === 328 ? 'închisă' : 'redeschisă'); }
+        expect(await chatTurn(ctx, request)).toEqual(result); expect((await convRef.get()).data()).toEqual(saved);
+        const stale: any = { kind: 'existing_operation', operation: 'conversation_update', params: { conversationId: convRef.id }, query: {}, body: { version: 1, read: true } };
+        await expect(executeAction(ctx, stale, `${id}-stale`)).rejects.toThrow(/schimbat/);
+        await convRef.update({ assigneeId: 'other' });
+        await expect(executeAction(ctx, { ...stale, body: { version: 2, read: true } }, `${id}-revoked`)).rejects.toThrow(/revocat/);
+        expect((await convRef.get()).data()?.version).toBe(2);
+        expect((await convRef.collection('messages').get()).empty).toBe(true); expect(settingsContext.invokes).toBe(0);
+        const missing = await planTurn(ctx, prompt, []); expect(missing.metrics.status).toBe('clarification'); expect(missing.actions).toEqual([]);
+        report = { ...report, environment: 'Deterministic planner, persisted chat and atomic native executor with local Firestore; no outbound messages.', final: result.message, saved, missing, executionVerified: true, verification: 'Original command changes only requested state in own/unassigned conversation and confirms persisted result, with atomic execution ledger, request replay, current-version conflict and revoked-assignment checks. No messages sent.' }; return;
+      }
       if (number >= 301 && number <= 309) {
         const convs = agency.collection('conversations');
         const now = new Date().toISOString();

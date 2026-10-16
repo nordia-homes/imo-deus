@@ -12,6 +12,17 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot verificări WhatsApp și stări Inbox — 16 octombrie 2026
+
+Șapte scenarii finalizate în probele locale: **0314, 0315, 0317, 0319, 0327, 0328, 0329**. Pregătirea/trimiterea generală a mesajelor și celelalte scenarii intermediare rămân de verificat în loturile următoare; nu sunt incluse în această numărătoare.
+
+- 0314–0315: statusul mesajului selectat este recitit. Probe pentru queued, accepted, delivered și read prin coadă, worker și recepții Meta simulate; nicio retrimitere la verificare sau replay. Sunt acceptate și referințele din cardurile de mesaje ale lotului anterior.
+- 0317: catalogul curent separă șabloanele aprobate/suportate de PENDING, format nesuportat și PAUSED, fără a trimite sau modifica acordul.
+- 0319: explică fereastra actuală de 24 de ore fără să o confunde cu eligibilitatea completă a mesajului. Verificate momente din interior/exterior, iar testele deterministe acoperă exact limita de 24 de ore și date lipsă/invalide/viitoare.
+- 0327–0329: marcarea ca citită, închiderea și redeschiderea salvează numai câmpul cerut și versiunea. Permisiunea rezultă din solicitarea explicită, pentru conversația selectată. Executorul verifică apartenența, atribuirea și versiunea și salvează modificarea împreună cu dovada execuției într-o tranzacție. Reatribuirea și alte modificări nu sunt incluse în această autorizare. Confirmarea finală provine din rezultatul salvat.
+
+Validare: **114 teste unitare/planner/autorizare și 7/7 scenarii originale în emulator**; replay, conflicte de versiune și revocare de acces verificate. Contextul istoric și memoria sunt excluse din verificările WhatsApp/status, care primesc citirile curente. Dovezi: [lot 28, model real și Meta simulat](evals/PROSPECTING_EXECUTION_BATCH_28.json), [lot 29, modificări tranzacționale](evals/PROSPECTING_EXECUTION_BATCH_29.json). Inventar: **145/1000 dovezi locale** (131 cu model real, 14 deterministe), fără certificare integrală în producție. Nu s-au contactat destinatari reali. Lot nepublicat în producție.
+
 ## Lot conversații — scenariile 0301–0309 — 16 octombrie 2026
 
 Nouă scenarii verificate împreună prin chat persistent și Firestore local. **0301–0304:** conversații necitite conform readBy, activitate WhatsApp în ziua Bucureștiului, căutare după nume normalizat și ultimele zece mesaje în ordine cronologică. **0305–0307:** rezumat, întrebări fără răspuns și promisiuni, cu model real care primește exclusiv mesajele proaspăt citite. Sunt păstrate direcția, starea livrării și ID-urile; mesajele eșuate nu dovedesc promisiuni transmise, iar datele relative se raportează la data mesajului. **0308–0309:** căutare după cuvânt și după proprietate/cartier, inclusiv asocierea explicită a conversației cu proprietatea. Potrivirea pentru Titan nu include Titanic.
