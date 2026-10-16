@@ -1,0 +1,103 @@
+{
+  "scope": "Social access diagnosis after explicit post/account selection, using actual service and local Firestore. Meta probes simulated; no production certification or comment-read verification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0384",
+      "prompt": "Rulează diagnosticul social.",
+      "versions": {
+        "prompt": "jarvis-133",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "164",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, explicit selection and diagnostic service on local Firestore; four Meta GET probes simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "b26b5bed-fb5c-4c37-b762-6e5c79dd6f7c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege postarea și contul din listă: „Postare socială: ID; Cont social: ID”. Voi verifica accesul Meta la postarea selectată.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialDiagnosticsRequest",
+                "title": "Alege postarea și contul",
+                "rows": [
+                  {
+                    "id": "post:bd956acc-eaae-4608-88ca-4645a75754cd",
+                    "postId": "post",
+                    "connectionId": "bd956acc-eaae-4608-88ca-4645a75754cd",
+                    "propertyTitle": "Cișmigiu",
+                    "description": "Postare socială: post; Cont social: bd956acc-eaae-4608-88ca-4645a75754cd"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T16:22:00.652Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "331728c9-5d67-4760-be8b-c6980cbfe50a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Diagnosticul pentru postarea post, contul bd956acc-eaae-4608-88ca-4645a75754cd:\nValiditatea autorizării: confirmat\nAplicația autorizată corespunde: confirmat\nPostarea apare în primele 100 ale contului: confirmat\nPostarea poate fi citită direct: confirmat\nPermisiuni pentru comentarii: permisiunile cerute sunt prezente\nPagina asociată autorizării: corespunde paginii configurate\nDiagnosticul verifică autorizarea și accesul la postare. Nu verifică citirea comentariilor și nu reconectează contul. Absența din primele 100 de postări nu dovedește ștergerea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialDiagnostics",
+                "title": "Diagnostic social",
+                "rows": [
+                  {
+                    "id": "token",
+                    "name": "Validitatea autorizării",
+                    "description": "confirmat"
+                  },
+                  {
+                    "id": "app",
+                    "name": "Aplicația autorizată corespunde",
+                    "description": "confirmat"
+                  },
+                  {
+                    "id": "account",
+                    "name": "Postarea apare în primele 100 ale contului",
+                    "description": "confirmat"
+                  },
+                  {
+                    "id": "direct",
+                    "name": "Postarea poate fi citită direct",
+                    "description": "confirmat"
+                  },
+                  {
+                    "id": "permissions",
+                    "name": "Permisiuni pentru comentarii",
+                    "description": "permisiunile cerute sunt prezente"
+                  },
+                  {
+                    "id": "identity",
+                    "name": "Pagina asociată autorizării",
+                    "description": "corespunde paginii configurate"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T16:22:00.919Z"
+          }
+        }
+      ]
+    }
+  ]
+}

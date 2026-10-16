@@ -90,6 +90,7 @@ describe('Instagram post access diagnosis', () => {
     expect(result.channel).toBe('Instagram');
     expect(result.postInAccountList).toBe(true);
     expect(result.directPostReadable).toBe(true);
+    expect(result.conclusion).toContain('Citirea comentariilor nu a fost verificată');
     expect(mocks.graph).toHaveBeenCalledWith('/ig-account/media?fields=id&limit=100', 'private-page-token');
   });
 });

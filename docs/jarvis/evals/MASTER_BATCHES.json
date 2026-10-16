@@ -3545,7 +3545,11 @@
           "sourceNumber": 384,
           "request": "Rulează diagnosticul social.",
           "requestSha256": "372368af794629175978412eb87ab0ece231b2657295dc33974dc81dc7e2d66a",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_04.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0385",

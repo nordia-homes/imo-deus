@@ -202,7 +202,7 @@ export async function diagnoseSocialPost(db: Firestore, actor: Actor, postId: st
   else if (missingScopes?.length) conclusion = 'Tokenul paginii nu include permisiunile: ' + missingScopes.join(', ') + '. Reautorizează cu Comentarii selectat.';
   else if (listing.error) conclusion = 'Meta refuză și lista postărilor acestui cont: ' + listing.error;
   else if (listing.data?.data && !listing.data.data.some(item => item.id === destination.externalId)) conclusion = 'ID-ul salvat nu apare în primele 100 de postări ale contului. Verifică dacă postarea a fost ștearsă sau publicată în alt cont.';
-  else if (object.data?.id) conclusion = 'Postarea este accesibilă, dar cererea pentru comentarii este refuzată de Meta.';
+  else if (object.data?.id) conclusion = 'Postarea este accesibilă direct. Citirea comentariilor nu a fost verificată de acest diagnostic.';
   else if (listing.data?.data?.some(item => item.id === destination.externalId)) conclusion = 'Postarea apare în cont, dar Meta refuză accesul direct la ID-ul ei.';
   return {
     conclusion,

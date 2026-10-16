@@ -1,7 +1,21 @@
 import type { AssistantContext } from './access';
 import { normalized, type AssistantMessage } from './contracts';
-import { postInteraction } from '@/lib/communications/social';
+import { diagnoseSocialPost, postInteraction } from '@/lib/communications/social';
 
+export function socialDiagnosticsRequest(prompt: string) {
+  return normalized(prompt).replace(/[.!?]+$/, '') === 'ruleaza diagnosticul social';
+}
+export function socialDiagnosticRows(result: Awaited<ReturnType<typeof diagnoseSocialPost>>) {
+  const state = (value: unknown) => value === true ? 'confirmat' : value === false ? 'neconfirmat' : 'necunoscut';
+  return [
+    { id: 'token', name: 'Validitatea autorizării', description: state(result.tokenValid) },
+    { id: 'app', name: 'Aplicația autorizată corespunde', description: state(result.appMatches) },
+    { id: 'account', name: 'Postarea apare în primele 100 ale contului', description: state(result.postInAccountList) },
+    { id: 'direct', name: 'Postarea poate fi citită direct', description: state(result.directPostReadable) },
+    { id: 'permissions', name: 'Permisiuni pentru comentarii', description: result.missingScopes === null ? 'necunoscute' : result.missingScopes.length ? 'lipsesc permisiuni; reautorizează contul cu acces la comentarii' : 'permisiunile cerute sunt prezente' },
+    { id: 'identity', name: 'Pagina asociată autorizării', description: result.expectedPageId && result.tokenPageId ? result.expectedPageId === result.tokenPageId ? 'corespunde paginii configurate' : 'diferă de pagina configurată; reconectează contul corect' : 'identitate neconfirmată' },
+  ];
+}
 export function socialCommentsRequest(prompt: string) {
   return normalized(prompt).replace(/[.!?]+$/, '') === 'arata-mi comentariile recente';
 }
@@ -23,8 +37,10 @@ export function socialCommentRows(value: unknown) {
 }
 export async function prepareSocialComments(ctx: AssistantContext, prompt: string, history: AssistantMessage[]) {
   const selection = socialCommentsSelection(prompt);
-  const pending = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1)?.cards?.find(card => card.source === 'socialCommentsRequest')?.rows;
-  if (!socialCommentsRequest(prompt) && !(selection && pending)) return null;
+  const pendingCard = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1)?.cards?.find(card => ['socialCommentsRequest', 'socialDiagnosticsRequest'].includes(card.source));
+  const pending = pendingCard?.rows;
+  const diagnostic = socialDiagnosticsRequest(prompt) || Boolean(selection && pendingCard?.source === 'socialDiagnosticsRequest');
+  if (!socialCommentsRequest(prompt) && !socialDiagnosticsRequest(prompt) && !(selection && pending)) return null;
   const choices = await ctx.adminDb.runTransaction(async tx => {
     const profile = (await tx.get(ctx.adminDb.collection('users').doc(ctx.uid))).data();
     if (ctx.role !== 'admin' || profile?.role !== 'admin' || profile.agencyId !== ctx.agencyId) throw new Error('Acces indisponibil');
@@ -42,9 +58,14 @@ export async function prepareSocialComments(ctx: AssistantContext, prompt: strin
       });
     }).sort((a, b) => a.id.localeCompare(b.id));
   });
-  if (!selection) return { choices, comments: null, text: choices.length ? 'Alege postarea și contul din listă: „Postare socială: ID; Cont social: ID”. Voi citi comentariile disponibile prin integrarea Meta.' : 'Nu există postări publicate pe conexiuni active cu acces la comentarii.' };
+  if (!selection) return { diagnostic, choices, comments: null, text: choices.length ? 'Alege postarea și contul din listă: „Postare socială: ID; Cont social: ID”. ' + (diagnostic ? 'Voi verifica accesul Meta la postarea selectată.' : 'Voi citi comentariile disponibile prin integrarea Meta.') : 'Nu există postări publicate pe conexiuni active cu acces la comentarii.' };
   if (!pending?.some(row => row.postId === selection[1] && row.connectionId === selection[2]) || !choices.some(row => row.postId === selection[1] && row.connectionId === selection[2])) throw new Error('Selecția nu mai este disponibilă');
+  if (diagnostic) {
+    const result = await diagnoseSocialPost(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, selection[1], selection[2]);
+    const rows = socialDiagnosticRows(result);
+    return { diagnostic, choices: [], comments: { rows, complete: true }, text: 'Diagnosticul pentru postarea ' + selection[1] + ', contul ' + selection[2] + ':\n' + rows.map(row => row.name + ': ' + row.description).join('\n') + '\nDiagnosticul verifică autorizarea și accesul la postare. Nu verifică citirea comentariilor și nu reconectează contul. Absența din primele 100 de postări nu dovedește ștergerea.' };
+  }
   const result = await postInteraction(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, selection[1], selection[2], 'comments');
   const comments = socialCommentRows(result);
-  return { choices: [], comments, text: 'Am citit ' + comments.rows.length + ' comentarii pentru postarea ' + selection[1] + ', contul ' + selection[2] + '. Sunt ordonate după data disponibilă, în ora Bucureștiului.' + (comments.complete ? '' : ' Meta indică pagini suplimentare; lista reprezintă numai segmentul returnat de integrare (maximum 50).') };
+  return { diagnostic, choices: [], comments, text: 'Am citit ' + comments.rows.length + ' comentarii pentru postarea ' + selection[1] + ', contul ' + selection[2] + '. Sunt ordonate după data disponibilă, în ora Bucureștiului.' + (comments.complete ? '' : ' Meta indică pagini suplimentare; lista reprezintă numai segmentul returnat de integrare (maximum 50).') };
 }

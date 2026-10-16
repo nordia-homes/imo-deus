@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot diagnostic social — 16 octombrie 2026
+
+Scenariul **0384** păstrează selecția explicită a postării și contului și folosește serviciul existent pentru cele patru verificări Meta: identitatea autorizării, validitatea tokenului și permisiunile, lista postărilor contului și accesul direct la postare. Continuarea distinge diagnosticul de citirea comentariilor. Profilul, agenția și selecția eligibilă sunt recitite înaintea serviciului; permisiunile administrative și condițiile serviciului existent rămân aplicabile.
+
+Raportul prezintă separat dovezile confirmate, neconfirmate și necunoscute, fără tokenuri, URL-uri de autorizare sau erori brute. Absența din primele 100 de postări nu dovedește ștergerea. O verificare Meta eșuată nu devine acces confirmat. Diagnosticul nu testează comentariile și nu reconectează contul. A fost corectată și concluzia serviciului existent, care afirma nejustificat că citirea comentariilor este refuzată atunci când postarea era accesibilă direct.
+
+Validare: 69 teste unitare/regresie și 10 teste de integrare, inclusiv ambele canale, replay fără apeluri duplicate și probe Meta eșuate. Serviciul și citirea tokenului sintetic sunt reale în emulator; transportul Meta este simulat. ESLint, paritate și build complet (inclusiv TypeScript) trecute. Dovadă: [Social lot 04](evals/SOCIAL_EXECUTION_BATCH_04.json). **200/1000 dovezi locale** (133 cu model real, 67 deterministe). Fără certificare live în producție. Lot nepublicat.
+
 ## Lot citirea comentariilor sociale — 16 octombrie 2026
 
 Scenariul **0379** prezintă perechile postare/cont eligibile și continuă la selecția explicită „Postare socială: ID; Cont social: ID”. Recitește profilul, agenția, postarea publicată și capabilitatea de comentarii înainte de a folosi serviciul social existent. Conturile deconectate, selecțiile neofertate și postările șterse nu produc cereri către Meta. Permisiunea administrativă existentă se păstrează.

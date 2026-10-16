@@ -158,11 +158,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   try {
     const socialComments = await prepareSocialComments(ctx, prompt, history);
     if (socialComments) {
-      if (socialComments.choices.length) cards.push({ type: 'data', source: 'socialCommentsRequest', title: 'Alege postarea și contul', rows: socialComments.choices, complete: true });
-      if (socialComments.comments) cards.push({ type: 'data', source: 'socialComments', title: 'Comentarii disponibile', rows: socialComments.comments.rows, complete: socialComments.comments.complete });
+      if (socialComments.choices.length) cards.push({ type: 'data', source: socialComments.diagnostic ? 'socialDiagnosticsRequest' : 'socialCommentsRequest', title: 'Alege postarea și contul', rows: socialComments.choices, complete: true });
+      if (socialComments.comments) cards.push({ type: 'data', source: socialComments.diagnostic ? 'socialDiagnostics' : 'socialComments', title: socialComments.diagnostic ? 'Diagnostic social' : 'Comentarii disponibile', rows: socialComments.comments.rows, complete: socialComments.comments.complete });
       return finish(socialComments.text);
     }
-  } catch { return finish('Nu am putut citi comentariile: verifică accesul, conexiunea și selecția postării. Nu am trimis răspunsuri sau aprecieri.', 'unavailable'); }
+  } catch { return finish('Nu am putut verifica postarea socială: verifică accesul, conexiunea și selecția postării. Nu am trimis răspunsuri sau aprecieri.', 'unavailable'); }
   const { socialPostSearchRequest, searchSocialPosts } = await import('./social-post-search');
   const socialPostQuery = socialPostSearchRequest(prompt);
   if (socialPostQuery) {
