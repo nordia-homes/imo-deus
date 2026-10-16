@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,38 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 291) {
+        await db.recursiveDelete(favorites);
+        for (let index = 0; index < 51; index++) await favorites.doc(`a-${index}`).set({ isFavoriteActive: true, takenByAgentId: 'other', title: 'Inaccesibil', ownerPhone: '0733000000' });
+        await favorites.doc(source.id).set({ isFavoriteActive: true });
+        await favorites.doc('z-future').set({ isFavoriteActive: true, ownerPhone: '0722123457', title: 'Amânat' });
+        await favorites.doc('z-refused').set({ isFavoriteActive: true, ownerPhone: '0722123458', title: 'Refuzat' });
+        await favorites.doc('z-duplicate').set({ isFavoriteActive: true, ownerPhone: '+40722123456', title: 'Duplicat' });
+        const { bucharestDay } = await import('../owners-to-call-today');
+        const today = bucharestDay(Date.now());
+        await agency.collection('tasks').doc('due').set({ ownerListingId: source.id, agentId: id, status: 'open', description: 'Sună proprietarul', dueDate: today });
+        await agency.collection('tasks').doc('future').set({ ownerListingId: 'z-future', agentId: id, status: 'open', description: 'Apel proprietar', dueDate: '2099-01-01' });
+        await agency.collection('aiOutreachOwnerListingStatuses').doc('z-refused').set({ aiDoNotCall: true });
+        await agency.collection('assistantSessions').doc(id).set({ ownerId: id, createdAt: new Date().toISOString() });
+        const before = (await favorites.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }));
+        const request = { sessionId: id, requestId: `${id}-today`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        const rows = result.message.cards?.flatMap(card => card.rows) || [];
+        expect(rows.map(row => row.id)).toEqual([source.id]);
+        expect(rows[0]).toMatchObject({ ownerPhone: '0722123456', dueDate: today });
+        expect(result.message.text).toContain('scadent astăzi');
+        expect(result.message.text).not.toMatch(/Inaccesibil|Amânat|Refuzat|Duplicat/);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        expect((await favorites.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }))).toEqual(before);
+        await favorites.doc(source.id).update({ takenByAgentId: 'other' });
+        await favorites.doc('z-duplicate').update({ isFavoriteActive: false });
+        const refreshed = await chatTurn(ctx, { ...request, requestId: `${id}-refresh` });
+        expect(refreshed.message.cards?.flatMap(card => card.rows)).toEqual([]);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, environment: 'Application chat/executor with local Firestore; deterministic read-only route, no model or external calls.', final: result.message, refreshed: refreshed.message, executionVerified: true, verification: 'Original 0291 through persisted chat; full pagination, canonical phone fallback, due task, future exclusion, status refusal, phone deduplication, assignment refresh, replay and no CRM mutations.' };
+        return;
+      }
       if (number === 290) {
         await db.recursiveDelete(favorites);
         const rows = [

@@ -2600,7 +2600,11 @@
           "sourceNumber": 291,
           "request": "Spune-mi ce proprietari merită sunați azi.",
           "requestSha256": "2b497fe2dbf94173f168cab21e91cfd4ae3b542d4251d28bf4e0baf22f0175c0",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_23.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0292",

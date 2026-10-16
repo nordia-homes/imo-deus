@@ -12,6 +12,12 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Proprietari de sunat astăzi — scenariul 0291 — 16 octombrie 2026
+
+Comanda „Spune-mi ce proprietari merită sunați azi.” citește toate paginile prospectelor și taskurile/stările de apel ale agenției. Returnează numai prospecte active proprii ori neatribuite, cu telefon valid; exclude refuzurile și apelurile deja în coadă/programate/în curs, inclusiv la alte anunțuri cu același telefon. Prioritatea este operațională: task restant/scadent în ziua Bucureștiului, follow-up fără termen, apoi prospect activ. Termenele viitoare sau invalide nu sunt transformate în recomandări pentru astăzi. Telefoanele sunt deduplicate; răspunsul nu inițiază apeluri și nu depinde de activarea Vapi.
+
+Verificare: 71 de teste unitare/planner și scenariul original prin chat persistent cu Firestore local, peste 50 de prospecte, telefon canonic, refuz, termen viitor, duplicate, schimbare de atribuire și replay. Ruta acestei comenzi este deterministă: proba nu implică model real. Dovadă: [PROSPECTING_EXECUTION_BATCH_23.json](evals/PROSPECTING_EXECUTION_BATCH_23.json). Inventarul ajunge la **123/1000 dovezi locale de execuție** (122 cu model real, una deterministă); acestea nu certifică producția sau toate variantele de formulare. Modificările acestui lot nu sunt publicate în producție.
+
 ## Explicația clasamentului — scenariul 0290 — 16 octombrie 2026
 
 „Explică de ce le prioritizezi în ordinea aceasta.” folosește clasamentul complet din ultimul răspuns relevant, păstrează pozițiile și punctajele afișate și recitește toate paginile CRM înaintea explicației. Punctajul curent este raportat separat dacă datele s-au schimbat. Prospectele șterse, inactive, refuzate ori atribuite altor agenți sunt indicate doar prin poziția indisponibilă, fără detalii istorice. Fără un clasament selectat, Jarvis cere afișarea lui înainte să inventeze o justificare.

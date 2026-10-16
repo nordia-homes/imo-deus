@@ -76,6 +76,18 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   }
   const clarification = prospectClarification(prompt, history);
   if (clarification) return finish(clarification, 'clarification');
+  if (/^(?:spune-mi|arat[aă](?:-mi)?|afi[sș]eaz[aă](?:-mi)?) (?:ce )?proprietari(?:i)? (?:merit[aă] suna[tț]i|de sunat) (?:azi|ast[aă]zi)[.!?\s]*$/i.test(prompt.trim())) {
+    try {
+      const { readOwnersToCallToday } = await import('./owners-to-call-today');
+      const result = await readOwnersToCallToday(ctx);
+      cards.push({ type: 'data', source: 'ownerListingFavorites', title: `Proprietari de sunat — ${result.day}`, rows: result.rows, complete: true });
+      return finish(result.rows.length
+        ? `Pentru astăzi, ${result.day} (București), recomand în această ordine:\n` + result.rows.map((row, index) => `${index + 1}. ${row.ownerName || row.title} — ${row.ownerPhone}: ${row.reason}${row.dueDate ? ` (${row.dueDate})` : ''}.`).join('\n') + '\nPrioritate operațională: taskuri scadente, follow-up, apoi prospecte active. Un singur rezultat pentru fiecare telefon. Nu am inițiat apeluri.'
+        : `Nu am găsit proprietari eligibili de sunat astăzi, ${result.day} (București), între prospectele proprii și neatribuite. Nu am inițiat apeluri.`);
+    } catch {
+      return finish('Nu am putut verifica integral prospectele și termenele de apel. Reîncearcă solicitarea; nu am inițiat apeluri.', 'unavailable');
+    }
+  }
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
   const readiness = await automationReadiness(ctx);
   const contextHint = (prompt + ' ' + history.slice(-2).map(m=>m.text).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();

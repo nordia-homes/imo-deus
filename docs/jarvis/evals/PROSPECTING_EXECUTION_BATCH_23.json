@@ -1,0 +1,62 @@
+{"executionMode":"deterministic","scope":"Original 0291 through persisted application chat and local Firestore; deterministic read-only route, no model calls. Not production certification.","finalRuns":[{
+  "scenarioId": "master-0291",
+  "prompt": "Spune-mi ce proprietari merită sunați azi.",
+  "versions": {
+    "prompt": "jarvis-108",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "138",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:08:49.828Z",
+  "environment": "Application chat/executor with local Firestore; deterministic read-only route, no model or external calls.",
+  "executionVerified": true,
+  "final": {
+    "id": "88a43eb6-4705-4219-a9b0-e146ba202ddb-today-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Pentru astăzi, 2026-10-16 (București), recomand în această ordine:\n1. Nume vechi — 0722123456: Task de apel scadent astăzi (2026-10-16).\nPrioritate operațională: taskuri scadente, follow-up, apoi prospecte active. Un singur rezultat pentru fiecare telefon. Nu am inițiat apeluri.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Proprietari de sunat — 2026-10-16",
+        "rows": [
+          {
+            "id": "88a43eb6-4705-4219-a9b0-e146ba202ddb-alfa",
+            "title": "Prospect Alfa",
+            "ownerName": "Nume vechi",
+            "ownerPhone": "0722123456",
+            "reason": "Task de apel scadent astăzi",
+            "dueDate": "2026-10-16",
+            "priority": 2
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:09:00.963Z"
+  },
+  "refreshed": {
+    "id": "88a43eb6-4705-4219-a9b0-e146ba202ddb-refresh-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Nu am găsit proprietari eligibili de sunat astăzi, 2026-10-16 (București), între prospectele proprii și neatribuite. Nu am inițiat apeluri.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Proprietari de sunat — 2026-10-16",
+        "rows": [],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:09:02.162Z"
+  },
+  "verification": "Original 0291 through persisted chat; full pagination, canonical phone fallback, due task, future exclusion, status refusal, phone deduplication, assignment refresh, replay and no CRM mutations."
+}]}
