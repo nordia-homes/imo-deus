@@ -12,6 +12,12 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Regula publicării în grupurile Facebook — 16 octombrie 2026
+
+Clarificare explicită a utilizatorului: Jarvis folosește aceeași automatizare ca agentul, cu pozele și descrierea proprietății din CRM. Nu reformulează și nu înlocuiește descrierea cu draftul din conversație. Redactarea solicitată separat rămâne în conversație și nu modifică automat conținutul publicării în grupuri.
+
+Încercarea nefinalizată de a transfera draftul în job a fost eliminată înainte de commit. Schema strictă de creare nu acceptă suprascrierea descrierii, pozelor sau un postDraft. Verificările traversează chatul după redactarea unui draft, crearea jobului, apoi payloadul cloud simulat sau claim-ul runnerului local; compară exact descrierea, inclusiv diacriticele și paragrafele, și ordinea pozelor CRM. Nu sunt trimise postări externe și nu se adaugă scenarii noi la numărul de dovezi din corpus.
+
 ## Lot texte Facebook din datele proprietății — 16 octombrie 2026
 
 Scenariile **0372–0375** pregătesc și reformulează textul în conversație din câmpurile publice actuale ale proprietății selectate. Fiecare cerere recitește CRM-ul: modificarea prețului sau eliminarea dotărilor ajunge în noul draft, inclusiv când stilul comercial se păstrează. Nu sunt inventate facilități din descriere, apropierea de metrou, randament, comision sau disponibilitate. Datele proprietarului și notele interne nu intră în text. Moneda costurilor de publicitate nu schimbă moneda prețului proprietății.

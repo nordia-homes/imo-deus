@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { facebookCreateSchema, reserveFacebookTransaction } from '@/lib/facebook-job-create';
 import { facebookScheduleRequest, facebookScheduleExecutionPrompt } from '../facebook-schedule';
 describe('Facebook schedule command', () => {
+  it.each(['postDraft', 'propertyDescription', 'propertyImages'])('rejects a publication content override: %s', field => {
+    expect(facebookCreateSchema.safeParse({ propertyId: 'p', connectionId: 'c', groupUrls: ['https://www.facebook.com/groups/a'], [field]: 'replacement' }).success).toBe(false);
+  });
   it.each(['Cișmigiu', 'Cişmigiu', 'Cismigiu'])('normalizes %s', title => expect(facebookScheduleRequest('Programează apartamentul din ' + title + ' în toate grupurile Facebook eligibile mâine la 07:00.')).toEqual({ query: 'cismigiu', time: '07:00' }));
   it.each(['Nu programa apartamentul din Cișmigiu în toate grupurile Facebook eligibile mâine la 07:00.', 'Programează apartamentul din Cișmigiu în toate grupurile Facebook eligibile mâine la 27:00.'])('rejects %s', prompt => expect(facebookScheduleRequest(prompt)).toBeNull());
   it('validates immutable request identity and group URLs', () => {

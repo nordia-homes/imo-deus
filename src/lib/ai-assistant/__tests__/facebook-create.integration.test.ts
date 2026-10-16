@@ -7,7 +7,9 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.actor }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/facebook-cloud-server', async importOriginal => ({ ...await importOriginal<any>(), facebookRunnerRequest: mocks.runner }));
+vi.mock('@/lib/facebook-local-server', async importOriginal => ({ ...await importOriginal<any>(), requireFacebookLocalDevice: async () => ({ adminDb: mocks.actor.adminDb, agencyId: mocks.actor.agencyId, ownerUid: mocks.actor.uid, deviceId: 'device' }) }));
 import { POST } from '@/app/api/marketing/facebook-cloud/jobs/route';
+import { POST as claimLocalJob } from '@/app/api/marketing/facebook-local/runner/claim/route';
 import { createFacebookJob } from '@/lib/facebook-job-create';
 import { chatTurn } from '../workspace';
 import { tomorrowBucharest } from '../facebook-monitor';
@@ -38,6 +40,31 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
+  for (const mode of ['local', 'cloud']) it('publishes CRM description and photos, never the conversation draft: ' + mode, async () => {
+    const f = await fixture(mode), sessionId = randomUUID();
+    const description = 'Descrierea agentului: Cișmigiu.\n\nText păstrat EXACT — fără reformulare.';
+    const images = ['https://example.com/photo-2.jpg', 'https://example.com/photo-1.jpg'];
+    await f.property.update({ description, images, price: 130000, amenities: ['Balcon'] });
+    const draft = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Pregătește textul postării pentru proprietate.', currentRecord: { resource: 'properties', id: 'property' } });
+    expect(draft.message.cards?.find(card => card.source === 'facebookPostDraft')?.rows[0].text).not.toBe(description);
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: corpus.scenarios.find(row => row.id === 'master-0357')!.text, currentRecord: null });
+    const jobs = await f.jobs.get(); expect(jobs.size).toBe(1);
+    expect(jobs.docs[0].data().postDraft).toBeUndefined();
+    if (mode === 'cloud') {
+      expect(mocks.runner).toHaveBeenCalledTimes(1);
+      const payload = JSON.parse(mocks.runner.mock.calls[0][1].body);
+      expect(payload.propertyDescription).toBe(description); expect(payload.propertyImages).toEqual(images);
+    } else {
+      await jobs.docs[0].ref.update({ scheduledAt: new Date(Date.now() - 60000).toISOString() });
+      const response = await claimLocalJob(new NextRequest('http://localhost/api/marketing/facebook-local/runner/claim', { method: 'POST' }));
+      expect(response.status).toBe(200);
+      const { claim } = await response.json();
+      expect(claim.property.description).toBe(description); expect(claim.property.images).toEqual(images);
+      expect(mocks.runner).not.toHaveBeenCalled();
+    }
+    expect((await f.property.get()).data()).toMatchObject({ description, images });
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
   for (const mode of ['local', 'cloud']) it('executes master-0357 through chat with ' + mode, async () => {
     const f = await fixture(mode), scenarioId = 'master-0357', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const input = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };
