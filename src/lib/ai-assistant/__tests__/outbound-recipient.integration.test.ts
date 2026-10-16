@@ -1,3 +1,4 @@
+import { previousPropertyShare } from '@/lib/communications/property-share-history';
 import { randomUUID } from 'node:crypto';
 import { personalRecipientProof } from '@/lib/communications/personal-recipient';
 vi.mock('@/lib/communications/whatsapp-config', async importOriginal => ({ ...await importOriginal<typeof import('@/lib/communications/whatsapp-config')>(), assertWhatsAppAccess: () => {}, whatsappAppId: () => 'fixture-app' }));
@@ -730,7 +731,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const request = (text: string) => ({ sessionId, requestId: randomUUID(), prompt: text, currentRecord: null });
     try {
       if (scenarioId === 'master-0322') await agency.collection('conversations').doc('alternative').set({ ...f.conversation, id: 'alternative', lastMessageAt: new Date().toISOString() });
-      if (scenarioId === 'master-0323') await chatTurn(ctx, request('Trimite primele trei potriviri clientului.'));
+      if (scenarioId === 'master-0323') {
+        await chatTurn(ctx, request('Trimite primele trei potriviri clientului.'));
+        // Simulate sends created before the property-share ledger existed.
+        const ledger = await agency.collection('communicationPropertyShares').get();
+        for (const row of ledger.docs) await row.ref.delete();
+      }
       const input = request(prompt); let response = await chatTurn(ctx, input); runs.push({ phase: 'original', final: response.message });
       expect(response.message.planId).toBeUndefined(); expect(await chatTurn(ctx, input)).toEqual(response);
       if (scenarioId === 'master-0322') {
@@ -750,7 +756,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       expect((await f.ref.collection('messages').get()).docs.map(doc => ({ status: doc.data().status, error: doc.data().error || null }))).toEqual(selected.map(() => ({ status: 'accepted', error: null })));
       expect(mocks.graph.mock.calls.filter(call => /\/messages$/.test(String(call[0])))).toHaveLength(selected.length);
       expect((await f.ref.collection('messages').get()).docs.every(doc => doc.data().status === 'accepted')).toBe(true);
-      expect((await agency.collection('communicationPropertyShares').get()).size).toBe(selected.length);
+      expect((await agency.collection('communicationPropertyShares').get()).size).toBe(scenarioId === 'master-0323' ? 0 : selected.length);
       verified = true;
     } finally {
       const contact = (await agency.collection('contacts').doc('contact').get()).data();
@@ -759,6 +765,28 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await writeFile('.tmp/jarvis-whatsapp-prospecting/' + scenarioId + '-latest.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Deterministic persisted chat, actual portal recommendation/queue/worker on Firestore emulator; Meta simulated, no external messages.', runs }, null, 2)); mocks.actor = null;
     }
   }, 120000);
+  it.each(['queued', 'accepted', 'delivered', 'read', 'failed', 'unknown'])('recovers historical matching sends without resending: %s', async status => {
+    const f = await matchingFixture(), original = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    const ledger = db.collection('agencies').doc(f.actor.agencyId).collection('communicationPropertyShares').doc(stableId('contact', 'selected'));
+    await ledger.delete();
+    await db.collection('communicationOutboundJobs').doc(original.messageId).update({ status });
+    expect(await previousPropertyShare(db as any, f.actor.agencyId, 'contact', 'selected')).toMatchObject({ messageId: original.messageId, historical: true });
+    const results = await Promise.all([1, 2].map(() => queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID() })));
+    for (const result of results) expect(result).toMatchObject({ messageId: original.messageId, status, duplicate: true });
+    expect((await ledger.get()).data()).toMatchObject({ messageId: original.messageId, recoveredFromHistory: true });
+    expect((await f.ref.collection('messages').get()).size).toBe(1);
+    await drainOutbound(db as any);
+    expect(mocks.graph).toHaveBeenCalledTimes(status === 'queued' ? 1 : 0);
+  });
+  it.each(['agency', 'contact', 'property'])('does not confuse historical sends for another %s', async dimension => {
+    const f = await matchingFixture();
+    const old = db.collection('communicationOutboundJobs').doc(randomUUID());
+    await old.set({ agencyId: dimension === 'agency' ? 'different-agency' : f.actor.agencyId, conversationId: 'old-conversation', status: 'unknown', input: { matchingSelection: { contactId: dimension === 'contact' ? 'different-contact' : 'contact', propertyId: dimension === 'property' ? 'different-property' : 'selected' } } });
+    expect(await previousPropertyShare(db as any, f.actor.agencyId, 'contact', 'selected')).toBeNull();
+    const result = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    expect(result.messageId).not.toBe(old.id);
+    await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
+  });
   it('atomically prevents two distinct requests from sharing the same matching property twice', async () => {
     const f = await matchingFixture();
     const results = await Promise.all([queueMessage(db as any, f.actor, f.ref.id, { ...f.input, preventPropertyResend: true }), queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID(), preventPropertyResend: true })]);

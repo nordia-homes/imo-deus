@@ -1,6 +1,15 @@
 {
   "indexes": [
     {
+      "collectionGroup": "communicationOutboundJobs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "agencyId", "order": "ASCENDING" },
+        { "fieldPath": "input.matchingSelection.contactId", "order": "ASCENDING" },
+        { "fieldPath": "input.matchingSelection.propertyId", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "assistantTelemetry",
       "queryScope": "COLLECTION",
       "fields": [

@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Consolidare trimiteri istorice — 16 octombrie 2026
+
+Scenariile **0321–0323** verifică acum și joburile istorice cu identificator explicit de client și proprietate, create înaintea evidenței `communicationPropertyShares`. Aceeași verificare este folosită la pregătirea acțiunilor, executarea lor și înscrierea în coadă. O cerere nouă nu retrimite automat un mesaj queued/accepted/delivered/read/failed/unknown. Coada recuperează atomic evidența lipsă, inclusiv la două cereri simultane. Lectura din chat nu modifică istoricul.
+
+Căutarea separă agenția, clientul și proprietatea; nu deduce identitatea proprietății din textul unui mesaj generic. Aceste mesaje fără metadate de matching rămân în afara protecției istorice. Interogarea istorică este în afara tranzacției, iar evidența este recitită în tranzacție pentru a evita conflictele dintre interogări și crearea concurentă. La publicare trebuie instalat indexul nou din `firestore.indexes.json` înaintea aplicației.
+
+Verificări: **139 teste unitare, 111 teste coadă/worker/reguli și 3/3 scenarii prin chat**, inclusiv comanda 0323 cu evidența nouă eliminată intenționat. ESLint, paritatea operațiilor și buildul final complet trecute. Dovadă: [istoric proprietăți](evals/HISTORICAL_PROPERTY_SHARES.json). Furnizor simulat, fără mesaje externe.
+
+Aceasta consolidează scenarii existente; inventarul rămâne **167/1000 cu dovezi locale**, fără certificare integrală în producție.
+
 ## Lot trimitere proprietăți din matching — 16 octombrie 2026
 
 Trei scenarii verificate împreună: **0321, 0322, 0323**, folosind o proprietate selectată sau lista de matching salvată pentru client. Jarvis păstrează ordinea listei, recitește proprietățile active și clientul, creează recomandările în portalul clientului și pune mesajele cu linkul public în coada reală. Nu trimite linkuri CRM private. Dacă există mai multe conversații accesibile pentru același client, cere alegerea prin „Conversație: ID”, apoi continuă solicitarea inițială fără aprobare suplimentară. Resolverul include conversațiile proprii și neatribuite.
@@ -20,7 +30,7 @@ Coada creează atomic o evidență per client/proprietate pentru trimiterile cu 
 
 Validare: **139 teste unitare/planner/autorizare, 102 teste de coadă/worker și reguli Firestore, 3/3 scenarii prin chat și emulator**. Probe pentru reluare după alegerea destinatarului, recomandări persistate, payload cu link public, trei mesaje distincte acceptate de Meta simulat, repetare fără duplicate, concurență și recomandare eliminată/portal înlocuit înainte de expediere. ESLint, paritatea operațiilor și build final complet trecute, după corectarea tipului de retur al executorului. Dovadă: [lot 36](evals/PROSPECTING_EXECUTION_BATCH_36.json). Inventar: **167/1000 dovezi locale** (133 cu model real, 34 deterministe).
 
-Limite: probele folosesc fereastră de răspuns deschisă și context de matching salvat; nu certifică selecția liberă din orice pagină CRM, alegerea automată a șablonului în afara ferestrei sau identificarea trimiterilor istorice fără această evidență. Adăugarea în portal și trimiterea sunt etape distincte: dacă eligibilitatea se schimbă, recomandarea poate rămâne în portal fără mesaj trimis. Fără mesaje externe sau certificare în producție. Lot nepublicat; publicarea necesită și regulile Firestore actualizate.
+Limite: probele folosesc fereastră de răspuns deschisă și context de matching salvat; nu certifică selecția liberă din orice pagină CRM, alegerea automată a șablonului în afara ferestrei sau identificarea trimiterilor istorice fără metadate explicite de matching. Adăugarea în portal și trimiterea sunt etape distincte: dacă eligibilitatea se schimbă, recomandarea poate rămâne în portal fără mesaj trimis. Fără mesaje externe sau certificare în producție. Lot nepublicat; publicarea necesită și regulile Firestore actualizate.
 
 ## Lot sincronizare și eșecuri Communications — 16 octombrie 2026
 

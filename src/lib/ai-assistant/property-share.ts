@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { collectionFor, getResource, type AssistantContext } from './access';
+import { getResource, type AssistantContext } from './access';
 import { normalized, type AssistantAction, type AssistantMessage } from './contracts';
 import { resolveMatchingRecipient } from './matching-recipient';
 import { prepareMessage } from './message-preparation';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { matchingSendSchema, assertMatchingSend } from '@/lib/communications/matching-send';
-import { stableId } from '@/lib/communications/crypto';
+import { previousPropertyShare } from '@/lib/communications/property-share-history';
 import { queueMessage } from '@/lib/communications/outbound';
 import { operationResult } from './operation-result';
 import { latestDraftContext } from './message-draft';
@@ -43,7 +43,7 @@ export async function preparePropertyShares(ctx: AssistantContext, prompt: strin
     const selected = await resolveMatchingRecipient(ctx, summary, { resultSetId: list.resultSetId!, position, ...(conversationId ? { conversationId } : {}) });
     if (!selected.conversationId || !selected.matchingSelection) return { actions: [] as AssistantAction[], rows: [], list, mode, needsRecipient: true, conversations: selected.conversations };
     const binding = selected.matchingSelection;
-    const prior = (await collectionFor(ctx, 'communicationPropertyShares').doc(stableId(binding.contactId, binding.propertyId)).get()).data();
+    const prior = await previousPropertyShare(ctx.adminDb, ctx.agencyId, binding.contactId, binding.propertyId);
     rows.push({ id: binding.propertyId, conversationId: selected.conversationId, contactId: binding.contactId, alreadyQueued: Boolean(prior), messageId: prior?.messageId || null });
     if (!prior && mode !== 'duplicates') actions.push({ kind: 'existing_operation', operation: 'message_send', params: { conversationId: selected.conversationId }, query: {}, body: { matchingShare: binding } });
   }
@@ -54,7 +54,7 @@ export async function executePropertyShare(ctx: AssistantContext, action: Extrac
   const binding = matchingSendSchema.parse(action.body.matchingShare), conversationId = action.params.conversationId;
   const conversation = await getResource(ctx, 'conversations', conversationId);
   await assertMatchingSend(ctx.adminDb, ctx, conversation, binding);
-  const previous = (await collectionFor(ctx, 'communicationPropertyShares').doc(stableId(binding.contactId, binding.propertyId)).get()).data();
+  const previous = await previousPropertyShare(ctx.adminDb, ctx.agencyId, binding.contactId, binding.propertyId);
   if (previous) {
     const job = (await ctx.adminDb.collection('communicationOutboundJobs').doc(previous.messageId).get()).data();
     return { ...operationResult('message_send', { messageId: previous.messageId, status: job?.status || 'unknown' }), conversationId, propertyId: binding.propertyId, duplicate: true };

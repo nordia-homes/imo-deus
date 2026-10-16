@@ -1,3 +1,4 @@
+import { previousPropertyShare } from './property-share-history';
 import { assertProspectingRecipient } from './prospecting-recipient';
 import { bindViewingConfirmation, assertViewingTemplate } from './viewing-confirmation';
 import { viewingConfirmationLinkSchema } from '@/lib/crm/viewing-attendance';
@@ -113,6 +114,8 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   const job = db.collection('communicationOutboundJobs').doc(jobId);
   const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(id);
   const budgetRef = agencyCollection(db, actor.agencyId, 'communicationBudgets').doc(`${nowIso().slice(0, 7)}-${estimate.currency}`);
+  // Legacy lookup is read-only; the ledger is reread under the transaction lock.
+  const historicalShare = input.matchingSelection ? await previousPropertyShare(db, actor.agencyId, input.matchingSelection.contactId, input.matchingSelection.propertyId) : null;
   const queued = await db.runTransaction(async tx => {
     await assertAutomationFence(db, tx, actor);
     const [existing, fresh, budget] = await Promise.all([tx.get(job), tx.get(conversationRef), tx.get(budgetRef)]);
@@ -127,10 +130,12 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     await assertCurrentRecipientEligibility(db, actor, { ...fresh.data(), id } as Conversation, input, estimate.category, tx);
     await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
     const shareRef = input.matchingSelection ? agencyCollection(db, actor.agencyId, 'communicationPropertyShares').doc(stableId(input.matchingSelection.contactId, input.matchingSelection.propertyId)) : null;
-    const previousShare = shareRef ? await tx.get(shareRef) : null;
-    if (previousShare?.exists) {
-      const priorJob = await tx.get(db.collection('communicationOutboundJobs').doc(previousShare.data()!.messageId));
-      return { messageId: previousShare.data()!.messageId as string, status: priorJob.data()?.status || 'unknown', duplicate: true };
+    const ledger = shareRef ? await tx.get(shareRef) : null;
+    const previousShare = ledger?.exists ? { messageId: String(ledger.data()!.messageId), conversationId: String(ledger.data()!.conversationId), historical: false } : historicalShare;
+    if (previousShare) {
+      const priorJob = await tx.get(db.collection('communicationOutboundJobs').doc(previousShare.messageId));
+      if (previousShare.historical && shareRef) tx.create(shareRef, { contactId: input.matchingSelection!.contactId, propertyId: input.matchingSelection!.propertyId, messageId: previousShare.messageId, conversationId: previousShare.conversationId, createdAt: nowIso(), recoveredFromHistory: true });
+      return { messageId: previousShare.messageId, status: priorJob.data()?.status || 'unknown', duplicate: true };
     }
     const currentBinding = await bindViewingConfirmation(db, actor.agencyId, { ...fresh.data(), id }, input.viewingConfirmation, tx);
     if (JSON.stringify(currentBinding) !== JSON.stringify(binding)) throw new CommunicationError('Programarea s-a schimbat înaintea trimiterii.', 409);
