@@ -129,4 +129,37 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const result = await chatTurn(f.ctx, f.input);
     expect(result.message.cards?.some(card => card.source === 'socialComments')).not.toBe(true); expect(mocks.fetch).toHaveBeenCalledTimes(1);
   });
+  it('resumes at page eleven using a private checkpoint and replays without another fetch', async () => {
+    const f = await fixture();
+    mocks.fetch.mockImplementation(async (url: string) => {
+      const cursor = new URL(url).searchParams.get('after'); const page = cursor ? Number(cursor.split('-')[1]) + 1 : 1;
+      return new Response(JSON.stringify({ data: [{ id: String(page), message: 'Page ' + page }], ...(page < 11 ? { paging: { next: 'https://untrusted.invalid', cursors: { after: 'PRIVATE-' + page } } } : {}) }), { status: 200 });
+    });
+    const first = await chatTurn(f.ctx, f.input);
+    const pointer = first.message.cards?.find(card => card.source === 'socialCommentsContinuation')?.rows[0].id;
+    expect(pointer).toBeTruthy(); expect(JSON.stringify(first)).not.toContain('PRIVATE'); expect(mocks.fetch).toHaveBeenCalledTimes(10);
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Continuă comentariile' };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.cards?.[0].rows.map(row => row.id)).toEqual(['11']); expect(result.message.cards?.[0].complete).toBe(true);
+    expect(result.message.cards?.some(card => card.source === 'socialCommentsContinuation')).toBe(false);
+    expect(mocks.fetch).toHaveBeenCalledTimes(11); expect(new URL(mocks.fetch.mock.calls[10][0]).searchParams.get('after')).toBe('PRIVATE-10');
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(11);
+  });
+  it.each(['expired', 'owner', 'destination'])('rejects a %s checkpoint before provider calls', async reason => {
+    const f = await fixture(); let page = 0;
+    mocks.fetch.mockImplementation(async () => new Response(JSON.stringify({ data: [], paging: { next: 'https://untrusted.invalid', cursors: { after: 'cursor-' + ++page } } }), { status: 200 }));
+    const first = await chatTurn(f.ctx, f.input);
+    const id = first.message.cards?.find(card => card.source === 'socialCommentsContinuation')?.rows[0].id as string;
+    const ref = db.collection('agencies').doc(f.ctx.agencyId).collection('assistantResultSets').doc(id);
+    if (reason === 'expired') await ref.update({ expiresAt: 0 });
+    if (reason === 'owner') await ref.update({ ownerId: 'someone-else' });
+    if (reason === 'destination') await f.post.update({ ['destinations.' + f.connectionId + '.externalId']: '123_999' });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Continuă comentariile' });
+    expect(result.message.text).toContain('Nu am putut'); expect(mocks.fetch).toHaveBeenCalledTimes(10);
+  });
+  it('does not manufacture a continuation when the last answer offers none', async () => {
+    const f = await fixture();
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Continuă comentariile' });
+    expect(result.message.text).toContain('Nu există'); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
 });

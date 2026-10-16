@@ -160,6 +160,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     if (socialComments) {
       if (socialComments.choices.length) cards.push({ type: 'data', source: socialComments.diagnostic ? 'socialDiagnosticsRequest' : 'socialCommentsRequest', title: 'Alege postarea și contul', rows: socialComments.choices, complete: true });
       if (socialComments.comments) cards.push({ type: 'data', source: socialComments.diagnostic ? 'socialDiagnostics' : 'socialComments', title: socialComments.diagnostic ? 'Diagnostic social' : 'Comentarii disponibile', rows: socialComments.comments.rows, complete: socialComments.comments.complete });
+      if ('continuation' in socialComments && socialComments.continuation) cards.push({ type: 'data', source: 'socialCommentsContinuation', title: 'Continuare comentarii', rows: [socialComments.continuation], complete: true });
       return finish(socialComments.text);
     }
   } catch { return finish('Nu am putut verifica postarea socială: verifică accesul, conexiunea și selecția postării. Nu am trimis răspunsuri sau aprecieri.', 'unavailable'); }

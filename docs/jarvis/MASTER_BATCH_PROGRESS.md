@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Reluarea comentariilor după limita de pagini — 16 octombrie 2026
+
+După un segment incomplet cu un cursor valid, Jarvis oferă „Continuă comentariile”. Reluarea folosește un reper privat din assistantResultSets, colecția existentă gestionată exclusiv pe server. Reperul este legat de utilizator, agenție, postare, cont și ID-ul extern verificat; expiră după o oră. Conversația conține doar ID-ul reperului și instrucțiunea de continuare, fără cursorul Meta. Cursorii deja văzuți sunt păstrați ca hashuri, pentru detectarea buclelor între segmente. Limita de protecție a istoricului este de 1.000 de cursori.
+
+La „Continuă comentariile”, se citește următorul segment de maximum 10 pagini. Segmentul anterior rămâne în conversație; noul răspuns nu pretinde că reprezintă istoricul agregat. Un reper expirat, al altui utilizator sau al unei postări cu ID extern schimbat este respins înaintea apelului Meta. Fără reper în ultimul răspuns nu se inventează o selecție. Replay-ul aceleiași cereri reutilizează răspunsul persistent. Reperele expirate sunt refuzate la citire; acest lot nu configurează curățarea lor automată.
+
+Validare: 69 teste unitare/regresie și 22 teste de integrare, inclusiv reluare exact de la pagina 11 și lipsa apelurilor duplicate. ESLint, paritate și build complet (inclusiv TypeScript) trecute. Extensie a scenariului existent, fără ID-uri noi contabilizate: **200/1000 dovezi locale**. Meta este simulat în teste. Lot nepublicat.
+
 ## Continuarea citirii comentariilor între pagini — 16 octombrie 2026
 
 Fluxul scenariului **0379** nu se mai oprește automat după prima pagină. Folosește cursorul after din răspunsul Meta, validat și codificat ca parametru pe ruta fixă a postării. URL-ul next nu este urmat și nu este expus în conversație. Comentariile duplicate sunt eliminate după ID, iar rezultatul agregat este ordonat după data disponibilă, cu afișare în Europe/Bucharest.
