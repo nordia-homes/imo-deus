@@ -60,7 +60,7 @@ export async function readSocialCommentPages(ctx: AssistantContext, postId: stri
       result = await postInteraction(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, postId, connectionId, 'comments', undefined, after);
       segment = socialCommentRows(result);
     } catch (error) {
-      if (!page) throw error;
+      if (!page && !checkpoint) throw error;
       stopReason = 'următoarea pagină nu a putut fi citită'; break;
     }
     for (const row of segment.rows) if (!collected.has(row.id)) collected.set(row.id, row);

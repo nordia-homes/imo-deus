@@ -12,6 +12,12 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Păstrarea progresului la eroarea unei reluări — 16 octombrie 2026
+
+Când prima pagină a unei reluări de comentarii eșuează, Jarvis păstrează reperul și oferă din nou „Continuă comentariile”. Același cursor este folosit la noua solicitare; primele 10 pagini nu sunt recitite. Răspunsul eșuat rămâne explicit incomplet, fără comentarii inventate și fără detaliile brute ale furnizorului. Repetarea aceluiași requestId returnează răspunsul persistent; o nouă solicitare explicită reîncearcă pagina. Verificările de acces și de identitate a postării rămân înaintea apelului Meta și nu sunt transformate în reluări permise.
+
+Validare: 69 teste unitare/regresie și 24 teste de integrare trecute. Cele două cazuri noi verifică eroare HTTP și răspuns invalid pe pagina 11, păstrarea reperului, replay fără apel nou și recuperarea paginii 11 la următoarea solicitare. ESLint, paritate și build complet (inclusiv TypeScript) trecute. Corecție a scenariului existent: **200/1000 dovezi locale**, fără scenarii noi contabilizate. Meta simulat; lot nepublicat.
+
 ## Reluarea comentariilor după limita de pagini — 16 octombrie 2026
 
 După un segment incomplet cu un cursor valid, Jarvis oferă „Continuă comentariile”. Reluarea folosește un reper privat din assistantResultSets, colecția existentă gestionată exclusiv pe server. Reperul este legat de utilizator, agenție, postare, cont și ID-ul extern verificat; expiră după o oră. Conversația conține doar ID-ul reperului și instrucțiunea de continuare, fără cursorul Meta. Cursorii deja văzuți sunt păstrați ca hashuri, pentru detectarea buclelor între segmente. Limita de protecție a istoricului este de 1.000 de cursori.

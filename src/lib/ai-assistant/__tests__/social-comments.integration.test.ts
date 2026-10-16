@@ -162,4 +162,28 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Continuă comentariile' });
     expect(result.message.text).toContain('Nu există'); expect(mocks.fetch).not.toHaveBeenCalled();
   });
+  it.each(['http-error', 'invalid-response'])('keeps the resume cursor after %s and finishes on retry', async failure => {
+    const f = await fixture(); let failNext = true;
+    mocks.fetch.mockImplementation(async (url: string) => {
+      const cursor = new URL(url).searchParams.get('after'); const page = cursor ? Number(cursor.split('-')[1]) + 1 : 1;
+      if (page === 11 && failNext) {
+        failNext = false;
+        return new Response(JSON.stringify(failure === 'http-error' ? { error: { message: 'SECRET provider error' } } : { unexpected: 'SECRET invalid page' }), { status: failure === 'http-error' ? 503 : 200 });
+      }
+      return new Response(JSON.stringify({ data: [{ id: String(page), message: 'Page ' + page }], ...(page < 11 ? { paging: { next: 'https://untrusted.invalid', cursors: { after: 'PRIVATE-' + page } } } : {}) }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    const retryInput = { ...f.input, requestId: randomUUID(), prompt: 'Continuă comentariile' };
+    const failed = await chatTurn(f.ctx, retryInput);
+    expect(failed.message.cards?.[0].complete).toBe(false); expect(failed.message.cards?.[0].rows).toEqual([]);
+    expect(failed.message.cards?.some(card => card.source === 'socialCommentsContinuation')).toBe(true);
+    expect(failed.message.text).toContain('Lista este incompletă'); expect(JSON.stringify(failed)).not.toMatch(/SECRET|PRIVATE/);
+    expect(mocks.fetch).toHaveBeenCalledTimes(11);
+    expect((await chatTurn(f.ctx, retryInput)).message.id).toBe(failed.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(11);
+    const recovered = await chatTurn(f.ctx, { ...retryInput, requestId: randomUUID() });
+    expect(recovered.message.cards?.[0].complete).toBe(true); expect(recovered.message.cards?.[0].rows.map(row => row.id)).toEqual(['11']);
+    expect(recovered.message.cards?.some(card => card.source === 'socialCommentsContinuation')).toBe(false);
+    expect(mocks.fetch).toHaveBeenCalledTimes(12);
+    expect(mocks.fetch.mock.calls.slice(10).map(([url]) => new URL(url).searchParams.get('after'))).toEqual(['PRIVATE-10', 'PRIVATE-10']);
+  });
 });
