@@ -116,6 +116,55 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(`Pași pregătiți pentru ${row.title}:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\n${disclaimer}\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.`);
     } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
   }
+  const { messageDraftCommand, draftPreparationRequest, latestDraftContext, createMessageDraft, getMessageDraft } = await import('./message-draft');
+  const draftCommand = messageDraftCommand(prompt), preparation = draftPreparationRequest(prompt);
+  const pendingDraft = latestDraftContext(history, 'outboundDraftInput');
+  if (draftCommand || preparation || pendingDraft && !/^(anuleaza|renunta|stop)[.!?\s]*$/.test(prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim())) {
+    try {
+      const show = (sessionId: string, draftId: string, row: Record<string, any>) => {
+        cards.push({ type: 'data', source: 'messageDrafts', title: 'Ciornă de mesaj', rows: [{ id: draftId, sessionId, conversationId: row.conversationId, text: row.body.sendApproval.renderedText, status: row.status, amountMicros: row.body.sendApproval.amountMicros, currency: row.body.sendApproval.currency }], complete: true });
+        accessRefs.push({ resource: 'conversations', id: row.conversationId });
+      };
+      if (draftCommand) {
+        const selected = latestDraftContext(history, 'messageDrafts');
+        if (!selected || typeof selected.id !== 'string' || typeof selected.sessionId !== 'string') return finish('Selectează o ciornă pregătită pentru această comandă. Nu am trimis mesaje.', 'clarification');
+        const { row } = await getMessageDraft(ctx, selected.sessionId, selected.id);
+        show(selected.sessionId, selected.id, row);
+        if (draftCommand === 'send') {
+          actions.push({ kind: 'existing_operation', operation: 'message_send', params: { conversationId: row.conversationId }, query: {}, body: { assistantDraftId: selected.id, assistantSessionId: selected.sessionId } });
+          return finish('Trimiterea ciornei selectate este pregătită.');
+        }
+        if (draftCommand === 'hold') return finish(row.status === 'prepared' ? 'Ciorna rămâne pregătită. Nu am trimis mesajul.' : 'Această ciornă a fost deja pusă în coadă. Nu am trimis-o din nou; verifică starea în Inbox.');
+        return finish(`Mesajul exact pentru conversația ${row.conversationId}:\n\n${row.body.sendApproval.renderedText}\n\nCost maxim estimat: ${row.body.sendApproval.amountMicros / 1000000} ${row.body.sendApproval.currency}. Stare: ${row.status}. Trimiterea va reverifica destinatarul, fereastra de răspuns, acordul și costul. Nu am trimis un mesaj prin această cerere.`);
+      }
+      const { getResource, collectionFor } = await import('./access');
+      let conversationId = '', content = preparation?.text || '';
+      if (preparation) {
+        const { canReadConversation } = await import('@/lib/communications/model');
+        const { inboxPhraseMatches } = await import('./inbox-read');
+        const docs = await collectionFor(ctx, 'conversations').get();
+        const matches = docs.docs.map(doc => ({ ...doc.data(), id: doc.id } as Record<string, any>)).filter(row => canReadConversation(ctx, { ...row, collaboratorIds: row.collaboratorIds || [] } as any) && (row.id === preparation.name || inboxPhraseMatches(String(row.name || ''), preparation.name)));
+        if (matches.length !== 1) {
+          for (const row of matches) { await getResource(ctx, 'conversations', row.id); accessRefs.push({ resource: 'conversations', id: row.id }); }
+          if (matches.length) cards.push({ type: 'data', source: 'conversations', title: 'Alege destinatarul', rows: matches.map(row => ({ id: row.id, name: row.name })), complete: true });
+          cards.push({ type: 'data', source: 'outboundDraftInput', title: 'Destinatar necesar', rows: [{ stage: 'recipient', text: content }], complete: true });
+          return finish('Indică ID-ul conversației destinatarului. Nu aleg automat între persoane cu același nume.', 'clarification');
+        }
+        conversationId = matches[0].id;
+      } else if (pendingDraft?.stage === 'recipient') { conversationId = prompt.trim(); content = typeof pendingDraft.text === 'string' ? pendingDraft.text : ''; }
+      else if (pendingDraft?.stage === 'text') { conversationId = String(pendingDraft.conversationId || ''); content = prompt.trim(); }
+      if (!conversationId || conversationId.includes('/') || conversationId.length > 180) return finish('Identifică întâi conversația destinatarului.', 'clarification');
+      const conversation = await getResource(ctx, 'conversations', conversationId);
+      accessRefs.push({ resource: 'conversations', id: conversationId });
+      if (!content || content.length > 4000) {
+        cards.push({ type: 'data', source: 'outboundDraftInput', title: 'Text necesar', rows: [{ stage: 'text', conversationId }], complete: true });
+        return finish(`Ce text dorești să pregătesc pentru ${conversation.name || conversationId}? Trimite textul exact, de cel mult 4000 de caractere. Îl păstrez ca ciornă până ceri trimiterea.`, 'clarification');
+      }
+      const draft = await createMessageDraft(ctx, conversationId, content);
+      show(draft.sessionId, draft.draftId, draft.row);
+      return finish(`Ciornă pregătită pentru ${conversation.name || conversationId}:\n\n${draft.row.body.sendApproval.renderedText}\n\nNu am trimis mesajul. Poți cere previzualizarea sau trimiterea mesajului aprobat.`);
+    } catch { return finish('Ciorna sau eligibilitatea mesajului nu poate fi verificată. Verifică destinatarul, conexiunea și fereastra de răspuns în Inbox, apoi pregătește din nou mesajul. Nu am inițiat trimiterea.', 'unavailable'); }
+  }
   const { inboxTriageRequest, readInboxTriage } = await import('./inbox-triage');
   const triage = inboxTriageRequest(prompt);
   if (triage) {

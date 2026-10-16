@@ -497,6 +497,78 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await f.rate.delete(); mocks.actor = null;
     }
   }, 240000);
+  for (const scenarioId of ['master-0311', 'master-0312', 'master-0313', 'master-0338']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')(`live prospecting ${scenarioId}: persists a draft and sends only the requested exact message once`, async () => {
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { executeAction } = await import('../actions');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const f = await personalFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    await f.ref.update({ name: 'Andrei Șerban', lastInboundAt: new Date().toISOString() });
+    const sessionId = randomUUID(), request = (text: string) => ({ sessionId, requestId: randomUUID(), prompt: text, currentRecord: null });
+    const content = 'Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.';
+    const runs: unknown[] = []; let verified = false;
+    try {
+      if (scenarioId === 'master-0311') await agency.collection('conversations').doc('same-name').set({ ...(await f.ref.get()).data(), id: 'same-name', name: 'Andrei Popescu' });
+      const preparedRequest = request(scenarioId === 'master-0311' ? prompt : 'Pregătește mesajul pentru Andrei.');
+      let clarification = await chatTurn(mocks.actor, preparedRequest); runs.push({ phase: 'clarification', final: clarification.message });
+      if (scenarioId === 'master-0311') {
+        expect(clarification.message.text).toContain('ID-ul conversației'); expect((await f.ref.collection('messages').get()).empty).toBe(true);
+        clarification = await chatTurn(mocks.actor, request(f.ref.id)); runs.push({ phase: 'recipient-selected', final: clarification.message });
+      }
+      expect(clarification.message.text).toContain('Ce text'); expect((await f.ref.collection('messages').get()).empty).toBe(true);
+      const preparationRequest = request(content), prepared = await chatTurn(mocks.actor, preparationRequest); runs.push({ phase: 'prepared', final: prepared.message });
+      expect(prepared.message.text).toContain(content); expect(prepared.message.planId).toBeUndefined(); expect(prepared.message.actions).toBeUndefined();
+      const draft = prepared.message.cards?.find(card => card.source === 'messageDrafts')?.rows[0]; expect(draft?.id).toBeTruthy();
+      const draftRef = agency.collection('assistantSessions').doc(sessionId).collection('outboundDrafts').doc(String(draft!.id));
+      expect((await draftRef.get()).data()).toMatchObject({ ownerId: f.actor.uid, conversationId: f.ref.id, status: 'prepared', body: { text: content } });
+      expect(await chatTurn(mocks.actor, preparationRequest)).toEqual(prepared);
+      expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(templateSends()).toHaveLength(0);
+      if (scenarioId !== 'master-0311') {
+        const command = request(prompt), result = await chatTurn(mocks.actor, command); runs.push({ phase: 'original-command', final: result.message });
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined(); expect(await chatTurn(mocks.actor, command)).toEqual(result);
+        if (scenarioId === 'master-0313') {
+          const messages = await f.ref.collection('messages').get(); expect(messages.size).toBe(1); expect(messages.docs[0].data()).toMatchObject({ text: content, status: 'queued' }); expect(result.message.text).toContain('coada');
+          await chatTurn(mocks.actor, request(prompt)); expect((await f.ref.collection('messages').get()).size).toBe(1);
+          await drainOutbound(db as any); expect(templateSends()).toHaveLength(1); expect(templateSends()[0][2]).toMatchObject({ type: 'text', text: { body: content } });
+          expect((await messages.docs[0].ref.get()).data()?.status).toBe('accepted');
+          await chatTurn(mocks.actor, request(prompt)); await drainOutbound(db as any); expect(templateSends()).toHaveLength(1);
+          runs.push({ phase: 'provider-accepted-once', message: (await messages.docs[0].ref.get()).data() });
+        } else {
+          if (scenarioId === 'master-0312') expect(result.message.text).toContain(content);
+          if (scenarioId === 'master-0338') expect(result.message.text).toContain('Nu am trimis');
+          expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(templateSends()).toHaveLength(0);
+        }
+      }
+      const sendAction: any = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { assistantDraftId: draft!.id, assistantSessionId: sessionId } };
+      await agency.collection('assistantSessions').doc(sessionId).update({ ownerId: 'other' });
+      await expect(executeAction(mocks.actor, sendAction, randomUUID())).rejects.toThrow('aparține');
+      await agency.collection('assistantSessions').doc(sessionId).update({ ownerId: f.actor.uid });
+      await f.ref.update({ assigneeId: 'other' }); await expect(executeAction(mocks.actor, sendAction, randomUUID())).rejects.toThrow();
+      verified = true;
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${scenarioId}-latest.json`, JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Deterministic persisted application chat, local Firestore, native draft execution, actual queue/worker and simulated Meta. No external sends or model calls.', runs }, null, 2));
+      await f.rate.delete(); mocks.actor = null;
+    }
+  }, 120000);
+  it.each(['recipient', 'expired', 'revoked', 'window', 'foreign-session'])('rejects saved draft %s change before queueing', async change => {
+    const { createMessageDraft, executeDraftSend } = await import('../message-draft');
+    const f = await personalFixture(), agency = db.collection('agencies').doc(f.actor.agencyId), sessionId = randomUUID();
+    const ctx = { ...f.actor, adminDb: db, prospectingRequest: { sessionId, requestId: randomUUID(), prompt: 'Pregătește mesajul pentru Andrei.' } } as any;
+    const session = agency.collection('assistantSessions').doc(sessionId); await session.set({ ownerId: f.actor.uid });
+    try {
+      const draft = await createMessageDraft(ctx, f.ref.id, 'Mesaj exact.');
+      if (change === 'recipient') await f.ref.update({ externalParticipantId: '40733123456' });
+      if (change === 'expired') await draft.ref.update({ 'body.sendApproval.expiresAt': 1 });
+      if (change === 'revoked') await agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722123456', 'all')).set({ status: 'revoked' });
+      if (change === 'window') await f.ref.update({ lastInboundAt: '2000-01-01T00:00:00Z' });
+      if (change === 'foreign-session') await session.update({ ownerId: 'other' });
+      await expect(executeDraftSend(ctx, { kind: 'existing_operation', operation: 'message_send', params: { conversationId: f.ref.id }, query: {}, body: { assistantDraftId: draft.draftId, assistantSessionId: sessionId } })).rejects.toThrow();
+      expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(templateSends()).toHaveLength(0);
+    } finally { await f.rate.delete(); }
+  });
   async function prospectingFixture() {
     const f = await marketingFixture();
     await f.consent.delete();

@@ -165,3 +165,10 @@ it('authorizes requested follow-up closure but not a request merely to explain i
   expect((await runSafePrefix(ctx(), 'close', [action], 'Dacă refuză, închide corect secvența de follow-up.')).results).toHaveLength(1);
   expect((await runSafePrefix(ctx(), 'explain', [action], 'Doar explică cum închide Jarvis secvența de follow-up.')).results).toHaveLength(0);
 });
+
+it.each([['Trimite mesajul aprobat.', 1], ['Arată-mi preview-ul mesajului înainte.', 0], ['Nu trimite răspunsurile încă.', 0], ['Nu trimite mesajul aprobat.', 0]])('saved drafts execute only on explicit send: %s', async (prompt, count) => {
+  const action: AssistantAction = { kind: 'existing_operation', operation: 'message_send', params: { conversationId: 'c' }, query: {}, body: { assistantDraftId: 'd', assistantSessionId: 's' } };
+  const context = ctx(); (context as any).policy.enabled = false;
+  const result = await runSafePrefix(context, 'draft-request', [action], String(prompt));
+  expect(result.results).toHaveLength(Number(count)); expect(executeAction).toHaveBeenCalledTimes(Number(count));
+});

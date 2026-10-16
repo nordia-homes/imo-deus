@@ -55,6 +55,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   if (action.kind === 'existing_operation') {
     const { requireTool } = await import('./registry'); requireTool(action.operation, ctx.role || '');
+    const { draftSendAction, executeDraftSend } = await import('./message-draft');
+    if (draftSendAction(action)) return executeDraftSend(ctx, action);
     const { simpleConversationUpdate, executeConversationState } = await import('./conversation-state');
     if (simpleConversationUpdate(action)) return executeConversationState(ctx, action, key);
     const { simpleConversationEdit, executeConversationEdit } = await import('./conversation-edit');

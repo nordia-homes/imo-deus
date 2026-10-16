@@ -1,0 +1,545 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0311",
+      "prompt": "Pregătește mesajul pentru Andrei.",
+      "versions": {
+        "prompt": "jarvis-114",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "144",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, local Firestore, native draft execution, actual queue/worker and simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "clarification",
+          "final": {
+            "id": "36cff36a-032e-4271-a734-512ec8784c09-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Indică ID-ul conversației destinatarului. Nu aleg automat între persoane cu același nume.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Alege destinatarul",
+                "rows": [
+                  {
+                    "id": "f187fb3b-710d-43ba-b48a-92cf7efeede5",
+                    "name": "Andrei Șerban"
+                  },
+                  {
+                    "id": "same-name",
+                    "name": "Andrei Popescu"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "outboundDraftInput",
+                "title": "Destinatar necesar",
+                "rows": [
+                  {
+                    "stage": "recipient",
+                    "text": ""
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "f187fb3b-710d-43ba-b48a-92cf7efeede5"
+              },
+              {
+                "resource": "conversations",
+                "id": "same-name"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:33.026Z"
+          }
+        },
+        {
+          "phase": "recipient-selected",
+          "final": {
+            "id": "abccbdd4-f3de-45c7-807c-6e6d98aa3feb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ce text dorești să pregătesc pentru Andrei Șerban? Trimite textul exact, de cel mult 4000 de caractere. Îl păstrez ca ciornă până ceri trimiterea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "outboundDraftInput",
+                "title": "Text necesar",
+                "rows": [
+                  {
+                    "stage": "text",
+                    "conversationId": "f187fb3b-710d-43ba-b48a-92cf7efeede5"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "f187fb3b-710d-43ba-b48a-92cf7efeede5"
+              },
+              {
+                "resource": "conversations",
+                "id": "same-name"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:33.308Z"
+          }
+        },
+        {
+          "phase": "prepared",
+          "final": {
+            "id": "3927d042-e1eb-4ebc-a5ca-378b46039cee-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ciornă pregătită pentru Andrei Șerban:\n\nBună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.\n\nNu am trimis mesajul. Poți cere previzualizarea sau trimiterea mesajului aprobat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "2a5c77b1650726625a4010841aca3d50b3a692c2c2ea8808b2048e9e6af16a90",
+                    "sessionId": "5fc2d5dd-a446-4f18-8bf4-93a45967d96f",
+                    "conversationId": "f187fb3b-710d-43ba-b48a-92cf7efeede5",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "f187fb3b-710d-43ba-b48a-92cf7efeede5"
+              },
+              {
+                "resource": "conversations",
+                "id": "same-name"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:33.78Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0312",
+      "prompt": "Arată-mi preview-ul mesajului înainte.",
+      "versions": {
+        "prompt": "jarvis-114",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "144",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, local Firestore, native draft execution, actual queue/worker and simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "clarification",
+          "final": {
+            "id": "356706ee-5ff4-4695-a5f8-dfb8b958d647-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ce text dorești să pregătesc pentru Andrei Șerban? Trimite textul exact, de cel mult 4000 de caractere. Îl păstrez ca ciornă până ceri trimiterea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "outboundDraftInput",
+                "title": "Text necesar",
+                "rows": [
+                  {
+                    "stage": "text",
+                    "conversationId": "b1fcb522-23e1-4e52-acda-8a3e44c590fd"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "b1fcb522-23e1-4e52-acda-8a3e44c590fd"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:34.241Z"
+          }
+        },
+        {
+          "phase": "prepared",
+          "final": {
+            "id": "562dd076-45e4-440f-b4c8-e86e552cd5fe-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ciornă pregătită pentru Andrei Șerban:\n\nBună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.\n\nNu am trimis mesajul. Poți cere previzualizarea sau trimiterea mesajului aprobat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "44c70928c782947ae444b170175ee3945243a208792a3790b50344f2bc84379e",
+                    "sessionId": "44ab4ec1-0cfe-4b3d-af3f-5e2aac11b3c2",
+                    "conversationId": "b1fcb522-23e1-4e52-acda-8a3e44c590fd",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "b1fcb522-23e1-4e52-acda-8a3e44c590fd"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:34.67Z"
+          }
+        },
+        {
+          "phase": "original-command",
+          "final": {
+            "id": "11988bb7-33f1-4cef-af10-a0e4d28f07de-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesajul exact pentru conversația b1fcb522-23e1-4e52-acda-8a3e44c590fd:\n\nBună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.\n\nCost maxim estimat: 0 EUR. Stare: prepared. Trimiterea va reverifica destinatarul, fereastra de răspuns, acordul și costul. Nu am trimis un mesaj prin această cerere.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "44c70928c782947ae444b170175ee3945243a208792a3790b50344f2bc84379e",
+                    "sessionId": "44ab4ec1-0cfe-4b3d-af3f-5e2aac11b3c2",
+                    "conversationId": "b1fcb522-23e1-4e52-acda-8a3e44c590fd",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "b1fcb522-23e1-4e52-acda-8a3e44c590fd"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:35.002Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0313",
+      "prompt": "Trimite mesajul aprobat.",
+      "versions": {
+        "prompt": "jarvis-114",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "144",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, local Firestore, native draft execution, actual queue/worker and simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "clarification",
+          "final": {
+            "id": "57202f56-f0fb-4267-8fef-8a7a3990028c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ce text dorești să pregătesc pentru Andrei Șerban? Trimite textul exact, de cel mult 4000 de caractere. Îl păstrez ca ciornă până ceri trimiterea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "outboundDraftInput",
+                "title": "Text necesar",
+                "rows": [
+                  {
+                    "stage": "text",
+                    "conversationId": "42009e63-cb2c-440d-a1e9-014da0108f2a"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "42009e63-cb2c-440d-a1e9-014da0108f2a"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:35.474Z"
+          }
+        },
+        {
+          "phase": "prepared",
+          "final": {
+            "id": "c25b9395-3229-4430-93a3-4b7bfabfeff9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ciornă pregătită pentru Andrei Șerban:\n\nBună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.\n\nNu am trimis mesajul. Poți cere previzualizarea sau trimiterea mesajului aprobat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "6a5f3330532613a08881950dcf43b39dd84232d63e434eb4a31477ab2b29ab5b",
+                    "sessionId": "77391575-4c4e-4780-9550-0366b157901d",
+                    "conversationId": "42009e63-cb2c-440d-a1e9-014da0108f2a",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "42009e63-cb2c-440d-a1e9-014da0108f2a"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:35.924Z"
+          }
+        },
+        {
+          "phase": "original-command",
+          "final": {
+            "id": "ad93256e-2710-4dcd-917d-9a37b6c300fa-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: d7979e98924bdb40be21820145cee43e3ce740cb2d21df802560aa512f54c69d.\nAcțiuni executate: 1. Starea mesajelor este disponibilă în Inbox.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "6a5f3330532613a08881950dcf43b39dd84232d63e434eb4a31477ab2b29ab5b",
+                    "sessionId": "77391575-4c4e-4780-9550-0366b157901d",
+                    "conversationId": "42009e63-cb2c-440d-a1e9-014da0108f2a",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "d7979e98924bdb40be21820145cee43e3ce740cb2d21df802560aa512f54c69d",
+                      "status": "queued",
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T09:44:36.497Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "conversationId": "42009e63-cb2c-440d-a1e9-014da0108f2a"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "42009e63-cb2c-440d-a1e9-014da0108f2a"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:36.498Z"
+          }
+        },
+        {
+          "phase": "provider-accepted-once",
+          "message": {
+            "id": "d7979e98924bdb40be21820145cee43e3ce740cb2d21df802560aa512f54c69d",
+            "agencyId": "3296a05c-42e8-4076-9d23-e5fa722c2fef",
+            "conversationId": "42009e63-cb2c-440d-a1e9-014da0108f2a",
+            "direction": "sent",
+            "origin": "imodeus",
+            "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+            "createdAt": "2026-10-16T09:44:36.48Z",
+            "authorId": "010ebab4-845c-4d92-8ae4-b69f1a8ce226",
+            "attachments": [],
+            "externalId": "a6e32922-c2ca-4b8f-be25-1f2c307ecb84",
+            "status": "accepted"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0338",
+      "prompt": "Nu trimite răspunsurile încă.",
+      "versions": {
+        "prompt": "jarvis-114",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "144",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted application chat, local Firestore, native draft execution, actual queue/worker and simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "clarification",
+          "final": {
+            "id": "393f43ac-3f44-4561-aade-f5bb6357d671-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ce text dorești să pregătesc pentru Andrei Șerban? Trimite textul exact, de cel mult 4000 de caractere. Îl păstrez ca ciornă până ceri trimiterea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "outboundDraftInput",
+                "title": "Text necesar",
+                "rows": [
+                  {
+                    "stage": "text",
+                    "conversationId": "7ff72ae6-1936-4db6-beb3-6d9de95474c9"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "7ff72ae6-1936-4db6-beb3-6d9de95474c9"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:37.979Z"
+          }
+        },
+        {
+          "phase": "prepared",
+          "final": {
+            "id": "11843f92-582a-4ddb-99c3-68efef8e1837-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ciornă pregătită pentru Andrei Șerban:\n\nBună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.\n\nNu am trimis mesajul. Poți cere previzualizarea sau trimiterea mesajului aprobat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "af6ed189d429e971a32a0ee74d25603b4a9eaf7d567d2031888c296c1dc26886",
+                    "sessionId": "7c6319a6-e6ae-4680-80ac-54faa70e3ede",
+                    "conversationId": "7ff72ae6-1936-4db6-beb3-6d9de95474c9",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "7ff72ae6-1936-4db6-beb3-6d9de95474c9"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:38.443Z"
+          }
+        },
+        {
+          "phase": "original-command",
+          "final": {
+            "id": "255953aa-3b92-4067-b5d7-f1ba3851e181-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ciorna rămâne pregătită. Nu am trimis mesajul.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "messageDrafts",
+                "title": "Ciornă de mesaj",
+                "rows": [
+                  {
+                    "id": "af6ed189d429e971a32a0ee74d25603b4a9eaf7d567d2031888c296c1dc26886",
+                    "sessionId": "7c6319a6-e6ae-4680-80ac-54faa70e3ede",
+                    "conversationId": "7ff72ae6-1936-4db6-beb3-6d9de95474c9",
+                    "text": "Bună ziua, Andrei! Vă rog să îmi spuneți dacă doriți detalii despre apartament.",
+                    "status": "prepared",
+                    "amountMicros": 0,
+                    "currency": "EUR"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "7ff72ae6-1936-4db6-beb3-6d9de95474c9"
+              }
+            ],
+            "createdAt": "2026-10-16T09:44:38.709Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic",
+  "scope": "Original prepare, preview, send-approved and hold commands through persisted chat, server-owned drafts, real domain queue/worker and simulated Meta. Recipient ambiguity and missing text resolved through follow-up turns. No model calls or external sends; not production certification."
+}

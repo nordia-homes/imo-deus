@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot ciorne și trimitere explicită — 16 octombrie 2026
+
+Patru scenarii verificate: **0311, 0312, 0313, 0338**. Pregătirea mesajului caută destinatarul numai în conversațiile accesibile, cere ID-ul la nume ambiguu și textul exact dacă lipsește. Următorul răspuns completează informația lipsă și produce o ciornă persistentă în subcolecția server-managed a sesiunii. Acest lot pregătește textul indicat de agent; nu certifică generarea liberă de texte, șabloanele sau aprobarea unui lot de mesaje.
+
+Ciorna păstrează destinatarul, conținutul și oferta de cost verificate de serviciul existent. Previzualizarea afișează textul exact salvat. „Nu trimite răspunsurile încă” păstrează ciorna fără mesaj în coadă; nu anulează un mesaj deja pus în coadă. „Trimite mesajul aprobat” autorizează ciorna unică selectată, fără încă un plan de aprobare. Coada și workerul reverifică identitatea, accesul, fereastra, acordul și costul. Cheia de trimitere derivă din ciornă, astfel încât cereri distincte/repetate nu dublează mesajul; confirmarea queued nu este prezentată drept delivered.
+
+Verificări: **111 teste unitare/planner/autorizare, 95 teste de coadă/worker și 4/4 scenarii prin chat persistent**, inclusiv reluarea după alegerea destinatarului ambiguu. Expirarea ciornei, schimbarea destinatarului, refuzul ulterior, fereastra expirată și sesiunea altui utilizator sunt respinse înainte de coadă. Pentru trimiterea validă, Meta simulat primește exact textul salvat o singură dată, iar mesajul ajunge accepted. ESLint și build complet trecute după corecția tipului reviziei destinatarului. Fără mesaje externe. Dovadă: [lot 33](evals/PROSPECTING_EXECUTION_BATCH_33.json). Inventar: **158/1000 dovezi locale** (133 cu model real, 25 deterministe), fără certificare integrală în producție. Lot nepublicat în producție.
+
 ## Lot editări Inbox și opt-out — 16 octombrie 2026
 
 Cinci scenarii verificate: **0326, 0330, 0331, 0344, 0345**. Pentru conversația selectată, nota internă, atribuirea și asocierea proprietății cer informația lipsă, apoi reiau solicitarea fără aprobare generică. Nota este salvată literal în subcolecția internă, fără mesaj către client. Agentul poate prelua pentru sine o conversație neatribuită; administratorul poate atribui unui membru agent/admin al aceleiași agenții. Asocierea caută titlul/adresa normalizate (Cișmigiu/Cismigiu), cere ID la ambiguitate și păstrează proprietățile deja asociate.
