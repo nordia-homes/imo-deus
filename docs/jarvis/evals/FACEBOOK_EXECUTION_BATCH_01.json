@@ -1,0 +1,355 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0351",
+      "prompt": "Arată-mi conturile Facebook conectate.",
+      "versions": {
+        "prompt": "jarvis-120",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "151",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore configuration. No external requests or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "bfc0be11-86f1-49e7-ad73-c1d357a73021-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Conturi proprii marcate conectate: 1.\nconnected (connected): Conexiune marcată conectată în aplicație\nStare salvată în aplicație. Nu am testat sesiunea, disponibilitatea laptopului/runnerului sau publicarea în grupuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookConnections",
+                "title": "Configurare Facebook",
+                "rows": [
+                  {
+                    "id": "connected",
+                    "label": "connected",
+                    "status": "connected",
+                    "reason": "Conexiune marcată conectată în aplicație",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": false,
+                    "runnerState": "not_checked"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:38:07.78Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0352",
+      "prompt": "Care cont Facebook este setat pentru proprietatea aceasta?",
+      "versions": {
+        "prompt": "jarvis-120",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "151",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore configuration. No external requests or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "d28fd321-49a4-407c-ae8f-878cbb90919b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Cont setat pe proprietate: reauth (reauth). Necesită reconectare Facebook. Stare salvată în aplicație; nu am verificat o sesiune Facebook în timp real și nu am publicat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPropertyAccount",
+                "title": "Configurare Facebook",
+                "rows": [
+                  {
+                    "id": "reauth",
+                    "label": "reauth",
+                    "status": "needs_reauthentication",
+                    "reason": "Necesită reconectare Facebook",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "not_checked",
+                    "propertyId": "property",
+                    "selectionSource": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:38:08.346Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0354",
+      "prompt": "Arată-mi grupurile Facebook configurate în agenție.",
+      "versions": {
+        "prompt": "jarvis-120",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "151",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore configuration. No external requests or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "6e3d7786-8ed3-46e3-bb7f-7c0b3331decf-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Grupuri din configurația agenției: 3. Eligibilitatea este conform configurației, nu o confirmare a accesului sau aprobării administratorilor Facebook. Nu am creat joburi sau postări.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Configurare Facebook",
+                "rows": [
+                  {
+                    "id": "a1827c21ce8a0a5e08b9ae11",
+                    "name": "Vânzări",
+                    "url": "https://www.facebook.com/groups/sale",
+                    "purpose": "sale",
+                    "source": "agency"
+                  },
+                  {
+                    "id": "1dafa7b870ab50a28e923ca0",
+                    "name": "Chirii",
+                    "url": "https://www.facebook.com/groups/rent",
+                    "purpose": "rent",
+                    "source": "agency"
+                  },
+                  {
+                    "id": "d783473fcbd6a92b278998fc",
+                    "name": "Mixte",
+                    "url": "https://www.facebook.com/groups/both",
+                    "purpose": "both",
+                    "source": "agency"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:38:08.887Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0355",
+      "prompt": "Găsește grupurile eligibile pentru vânzare.",
+      "versions": {
+        "prompt": "jarvis-120",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "151",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore configuration. No external requests or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "907bf24d-b808-4cdb-bb00-9615315a1e90-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Grupuri din configurația agenției: 2. Filtrare pentru vânzare, inclusiv grupurile pentru ambele tipuri. Eligibilitatea este conform configurației, nu o confirmare a accesului sau aprobării administratorilor Facebook. Nu am creat joburi sau postări.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Configurare Facebook",
+                "rows": [
+                  {
+                    "id": "a1827c21ce8a0a5e08b9ae11",
+                    "name": "Vânzări",
+                    "url": "https://www.facebook.com/groups/sale",
+                    "purpose": "sale",
+                    "source": "agency"
+                  },
+                  {
+                    "id": "d783473fcbd6a92b278998fc",
+                    "name": "Mixte",
+                    "url": "https://www.facebook.com/groups/both",
+                    "purpose": "both",
+                    "source": "agency"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:38:09.377Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0356",
+      "prompt": "Găsește grupurile eligibile pentru închiriere.",
+      "versions": {
+        "prompt": "jarvis-120",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "151",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore configuration. No external requests or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "c2713eee-0c79-4893-9e73-ad13b81db5e1-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Grupuri din configurația agenției: 2. Filtrare pentru închiriere, inclusiv grupurile pentru ambele tipuri. Eligibilitatea este conform configurației, nu o confirmare a accesului sau aprobării administratorilor Facebook. Nu am creat joburi sau postări.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Configurare Facebook",
+                "rows": [
+                  {
+                    "id": "1dafa7b870ab50a28e923ca0",
+                    "name": "Chirii",
+                    "url": "https://www.facebook.com/groups/rent",
+                    "purpose": "rent",
+                    "source": "agency"
+                  },
+                  {
+                    "id": "d783473fcbd6a92b278998fc",
+                    "name": "Mixte",
+                    "url": "https://www.facebook.com/groups/both",
+                    "purpose": "both",
+                    "source": "agency"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:38:09.879Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0361",
+      "prompt": "Spune-mi exact ce conexiune Facebook este blocată.",
+      "versions": {
+        "prompt": "jarvis-120",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "151",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore configuration. No external requests or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "7ffb8979-027e-439c-b69c-6631df41a030-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Conexiuni proprii blocate conform configurației: 5.\nconnecting (connecting): Autentificare încă în curs\nerror (error): Eroare de conexiune înregistrată; cauza exactă nu este verificată\noffline (offline): Cont deconectat\nreauth (reauth): Necesită reconectare Facebook\nunknown (unknown): Starea conexiunii nu poate fi confirmată\nStare salvată în aplicație. Nu am testat sesiunea, disponibilitatea laptopului/runnerului sau publicarea în grupuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookConnections",
+                "title": "Configurare Facebook",
+                "rows": [
+                  {
+                    "id": "connecting",
+                    "label": "connecting",
+                    "status": "connecting",
+                    "reason": "Autentificare încă în curs",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "not_checked"
+                  },
+                  {
+                    "id": "error",
+                    "label": "error",
+                    "status": "error",
+                    "reason": "Eroare de conexiune înregistrată; cauza exactă nu este verificată",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "not_checked"
+                  },
+                  {
+                    "id": "offline",
+                    "label": "offline",
+                    "status": "disconnected",
+                    "reason": "Cont deconectat",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "not_checked"
+                  },
+                  {
+                    "id": "reauth",
+                    "label": "reauth",
+                    "status": "needs_reauthentication",
+                    "reason": "Necesită reconectare Facebook",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "not_checked"
+                  },
+                  {
+                    "id": "unknown",
+                    "label": "unknown",
+                    "status": "unknown",
+                    "reason": "Starea conexiunii nu poate fi confirmată",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "not_checked"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:38:10.368Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic",
+  "scope": "Six original Facebook setup/readiness requests through persisted application chat and real local Firestore configuration. Own connections only; property default distinguished from profile fallback; agency groups distinguished from application defaults; sale/rent filtering matches the domain; blocked connection and local-device configuration evidence. No external Facebook requests or publication certification."
+}

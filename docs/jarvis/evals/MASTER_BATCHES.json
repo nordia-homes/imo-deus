@@ -3222,14 +3222,22 @@
           "sourceNumber": 351,
           "request": "Arată-mi conturile Facebook conectate.",
           "requestSha256": "7a635cd7f3586ff9912b84cebe56af58dab72ca88bac89b80f6b7135ec91ac47",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0352",
           "sourceNumber": 352,
           "request": "Care cont Facebook este setat pentru proprietatea aceasta?",
           "requestSha256": "d705e137343c861f60e10cc1b0b93802e916929b544a167884f11905365a2607",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0353",
@@ -3243,21 +3251,33 @@
           "sourceNumber": 354,
           "request": "Arată-mi grupurile Facebook configurate în agenție.",
           "requestSha256": "f3f44859053d947efb5277bda5f1c34252e0a68dece813cf4b3ce5c3dfc08ee9",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0355",
           "sourceNumber": 355,
           "request": "Găsește grupurile eligibile pentru vânzare.",
           "requestSha256": "d43687febd179f2622b749c960f6c9923bc6bfb49ba5ec1fab09f66c30d1e60b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0356",
           "sourceNumber": 356,
           "request": "Găsește grupurile eligibile pentru închiriere.",
           "requestSha256": "23d1d4d8264789d87e4b949f2795e55602b1dfddf2ec10551aebb674f1d7a858",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0357",
@@ -3292,7 +3312,11 @@
           "sourceNumber": 361,
           "request": "Spune-mi exact ce conexiune Facebook este blocată.",
           "requestSha256": "cb8f0e4377ae706c84296452d2f24629d22a1c1480852b22a6f26181b7df81d9",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0362",

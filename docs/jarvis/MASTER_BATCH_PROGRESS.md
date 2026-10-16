@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot configurare Facebook — 16 octombrie 2026
+
+Șase scenarii executate împreună: **0351, 0352, 0354, 0355, 0356, 0361**. Jarvis citește conturile proprii marcate conectate, setarea Facebook a proprietății, grupurile agenției, grupurile pentru vânzare/închiriere și conexiunile blocate. Citirile verifică apartenența și rolul într-o tranzacție; conturile altor utilizatori, șterse sau cu agenție necorespunzătoare sunt excluse. Câmpurile returnate sunt selectate explicit, fără tokenuri, date de sesiune, URL-ul curent al browserului sau erori brute.
+
+Pentru proprietate, setarea explicită este distinsă de contul implicit al profilului. Un cont configurat dar inaccesibil nu este înlocuit tacit. Contextul paginii curente prevalează; lipsa proprietății sau o selecție multiplă cere alegerea proprietății. Configurația grupurilor folosește regulile domeniului sale/rent/both. Când agenția nu are grupuri, lista implicită a aplicației este etichetată ca atare. Linkurile invalide sunt excluse, iar URL-urile identice sunt deduplicate.
+
+Diagnosticul identifică conexiunile care necesită reconectare, sunt deconectate, în curs, cu eroare sau cu stare necunoscută. Pentru conturile locale verifică și existența, proprietarul și revocarea laptopului asociat. Un laptop doar offline este raportat separat, fără a fi confundat cu o înregistrare revocată. Sunt stări/configurații salvate, nu probe în timp real ale sesiunii Facebook sau permisiunilor de publicare în fiecare grup.
+
+Validare: **104 teste unitare/planner/outcome, 19 teste de integrare, incluzând 6/6 scenarii originale prin chat**, repetare cu rezultate actuale, acces revocat, selecții lipsă/inaccesibile și patru variante de dispozitiv local. ESLint, paritatea operațiilor și buildul final complet trecute. Dovadă: [Facebook lot 01](evals/FACEBOOK_EXECUTION_BATCH_01.json). **175/1000 dovezi locale** (133 cu model real, 42 deterministe). Fără cereri externe, joburi noi sau postări de test; fără certificare integrală în producție. Lot nepublicat.
+
 ## Lot reluări safe-to-retry — 16 octombrie 2026
 
 Scenariul **0347** selectează mesajele eșuate înainte de apelul de trimitere, pe baza unei dovezi server-side și a identității unice a eșecului. Comanda explicită autorizează reluarea fără aprobare suplimentară. Unknown, mesaje ajunse la furnizor și eșecuri istorice fără dovadă sunt excluse. Agenții operează numai conversațiile proprii și neatribuite.
