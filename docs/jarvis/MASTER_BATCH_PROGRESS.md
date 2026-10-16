@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot alegerea contului Facebook pe proprietate — 16 octombrie 2026
+
+Scenariul **0353** listează conturile proprii disponibile și continuă la „Cont Facebook: ID”. Nu deduce care cont este corect și nu schimbă tacit contul. După alegerea explicită, folosește update_property prin executorul CRM, fără aprobare suplimentară, cu revizia proprietății și istoricul modificării. Replay-ul nu dublează salvarea; selectarea altor proprietăți sau a unui cont neofertat nu produce modificări.
+
+Conturile sunt recitite la selecție, iar executorul verifică în tranzacția de salvare agenția, proprietarul, ștergerea, starea conectată și, pentru automatizarea locală, dispozitivul nerevocat. Un cont care devine indisponibil între planificare și execuție este refuzat. Setarea contului nu creează joburi și nu publică nimic. Descrierea și pozele CRM rămân neschimbate; runnerul manual nu este extins.
+
+Validare: 30 teste de integrare, 119 teste unitare/regresie, ESLint, TypeScript, paritate și build complet trecute. Dovadă: [Facebook lot 08](evals/FACEBOOK_EXECUTION_BATCH_08.json). **193/1000 dovezi locale** (133 cu model real, 60 deterministe). Fără publicări externe și fără certificarea corpusului integral în producție. Lot nepublicat.
+
 ## Validarea disponibilității proprietății la publicarea automată — 16 octombrie 2026
 
 Crearea și reprogramarea joburilor automate verifică acum și disponibilitatea proprietății: documentele șterse logic, cu agencyId incompatibil, inactive, vândute sau închiriate sunt refuzate. Verificarea este în handlerul comun folosit de aplicație și Jarvis, nu doar în planificator. La creare se execută în tranzacția de rezervare, înainte de salvarea jobului și înainte de apelul cloud. La reprogramare se execută înainte de apelul cloud și din nou în tranzacția de commit.

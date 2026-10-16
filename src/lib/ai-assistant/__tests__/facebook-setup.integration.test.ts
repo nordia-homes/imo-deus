@@ -6,6 +6,7 @@ vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken:
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 import { readFacebookSetup } from '../facebook-setup';
 import { chatTurn } from '../workspace';
+import { executeAction } from '../actions';
 import { VERSIONS } from '../models';
 import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -43,6 +44,46 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook configuration th
     const history: any[] = [{ id: 'current-page-context', role: 'assistant', cards: [{ source: 'properties', rows: [{ id: 'property' }] }] }];
     return { ctx, agency, profile, connections, property, history };
   }
+  it('executes master-0353 after explicit account selection without extra approval', async () => {
+    const f = await fixture(); mocks.actor = f.ctx; const sessionId = randomUUID();
+    const scenarioId = 'master-0353', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt, currentRecord: { resource: 'properties', id: 'property' } });
+    expect(first.message.cards?.find(card => card.source === 'facebookConnections')?.rows.map(row => row.id)).toEqual(['connected']);
+    expect((await f.property.get()).data()?.defaultFacebookConnectionId).toBe('reauth');
+    const input = { sessionId, requestId: randomUUID(), prompt: 'Cont Facebook: connected', currentRecord: null };
+    const final = await chatTurn(f.ctx, input);
+    expect(final.message.planId).toBeUndefined();
+    expect((await f.property.get()).data()).toMatchObject({ defaultFacebookConnectionId: 'connected', title: 'Apartament Cișmigiu', status: 'Activ' });
+    expect((await f.property.collection('assistantChanges').get()).size).toBe(1);
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(final.message.id);
+    expect((await f.property.collection('assistantChanges').get()).size).toBe(1);
+    expect((await f.agency.collection('facebookCloudPublishingJobs').get()).empty).toBe(true);
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-facebook-account', { recursive: true });
+    await writeFile('.tmp/jarvis-facebook-account/master-0353.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Original chat, explicit account selection, autonomous update_property executor and local Firestore. No external publication.', runs: [{ phase: 'original', final: first.message }, { phase: 'selection', final: final.message }] }, null, 2));
+  });
+  it.each(['deleted', 'disconnected', 'foreign-agency', 'revoked-device'])('executor rejects a connection invalidated after planning: %s', async variant => {
+    const f = await fixture();
+    const patch = variant === 'deleted' ? { deletedAt: 'now' } : variant === 'disconnected' ? { status: 'disconnected' } : variant === 'foreign-agency' ? { agencyId: 'foreign' } : { runnerMode: 'local', deviceId: 'revoked' };
+    await f.connections.doc('connected').update(patch);
+    if (variant === 'revoked-device') await f.agency.collection('facebookLocalRunnerDevices').doc('revoked').set({ ownerUid: f.ctx.uid, revokedAt: 'now' });
+    await expect(executeAction(f.ctx, { kind: 'update_property', propertyId: 'property', patch: { defaultFacebookConnectionId: 'connected' } }, randomUUID())).rejects.toThrow();
+    expect((await f.property.get()).data()?.defaultFacebookConnectionId).toBe('reauth');
+    expect((await f.property.collection('assistantChanges').get()).empty).toBe(true);
+  });
+  it.each(['deleted', 'disconnected', 'foreign', 'other-property', 'revoked-profile', 'not-offered'])('rechecks account selection: %s', async variant => {
+    const f = await fixture(); mocks.actor = f.ctx; const sessionId = randomUUID();
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Setează contul corect dacă am permisiune.', currentRecord: { resource: 'properties', id: 'property' } });
+    if (variant === 'deleted') await f.connections.doc('connected').update({ deletedAt: 'now' });
+    if (variant === 'disconnected') await f.connections.doc('connected').update({ status: 'disconnected' });
+    if (variant === 'foreign') await f.connections.doc('connected').update({ ownerUid: 'other' });
+    if (variant === 'revoked-profile') await f.profile.update({ role: 'disabled' });
+    if (variant === 'other-property') await f.agency.collection('properties').doc('other').set({ title: 'Altă proprietate' });
+    const continuation = chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Cont Facebook: ' + (variant === 'not-offered' ? 'other-agent' : 'connected'), currentRecord: variant === 'other-property' ? { resource: 'properties', id: 'other' } : null });
+    if (variant === 'revoked-profile') await expect(continuation).rejects.toThrow(); else await continuation;
+    expect((await f.property.get()).data()?.defaultFacebookConnectionId).toBe('reauth');
+    expect((await f.property.collection('assistantChanges').get()).empty).toBe(true); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
   for (const scenarioId of ['master-0351', 'master-0352', 'master-0354', 'master-0355', 'master-0356', 'master-0361']) it('executes original ' + scenarioId + ' from persisted configuration without external effects', async () => {
     const f = await fixture(); mocks.actor = f.ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;

@@ -1,0 +1,115 @@
+{
+  "scope": "Account selection through original persisted chat, explicit choice and autonomous update_property executor on local Firestore. No external publication.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0353",
+      "prompt": "Setează contul corect dacă am permisiune.",
+      "versions": {
+        "prompt": "jarvis-127",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "158",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original chat, explicit account selection, autonomous update_property executor and local Firestore. No external publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "1b654964-37e7-4c52-8bca-f97637d8c63c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege contul dorit: răspunde „Cont Facebook: ID” din listă. Îl voi salva pe proprietate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookConnections",
+                "title": "Conturi Facebook disponibile",
+                "rows": [
+                  {
+                    "id": "connected",
+                    "label": "connected",
+                    "status": "connected",
+                    "reason": "Conexiune marcată conectată în aplicație",
+                    "runnerMode": "cloud",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": false,
+                    "runnerState": "not_checked"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "facebookAccountRequest",
+                "title": "Alegerea contului",
+                "rows": [
+                  {
+                    "id": "pending",
+                    "prompt": "Setează contul corect dacă am permisiune.",
+                    "propertyId": "property",
+                    "connectionIds": [
+                      "connected"
+                    ]
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:56:33.846Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "98bca2d9-abd5-4626-be5d-dead9516cb34-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Acțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookConnections",
+                "title": "Conturi Facebook disponibile",
+                "rows": [],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "update_property",
+                    "result": {
+                      "propertyId": "property",
+                      "link": "/properties/property",
+                      "note": "Modificarea este salvată în CRM. Sincronizarea portalurilor este o acțiune separată.",
+                      "mutationRevision": {
+                        "resource": "properties",
+                        "id": "property",
+                        "before": null,
+                        "after": "2026-10-16T14:56:34.23Z"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:56:34.32Z"
+          }
+        }
+      ]
+    }
+  ]
+}

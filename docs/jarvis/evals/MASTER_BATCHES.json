@@ -3244,7 +3244,11 @@
           "sourceNumber": 353,
           "request": "Setează contul corect dacă am permisiune.",
           "requestSha256": "950ea8d3b6eb9c10c25664ecc734f78109558f13bc307c00ad726e07e538ca4e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0354",

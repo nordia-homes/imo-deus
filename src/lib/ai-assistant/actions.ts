@@ -142,6 +142,13 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const connection = await tx.get(collectionFor(ctx, 'facebookCloudConnections').doc(connectionId));
       if (!connection.exists) throw new CommunicationError('Contul Facebook nu există în agenție.', 404);
       if (connection.data()?.ownerUid !== ctx.uid) throw new CommunicationError('Nu ai dreptul să folosești acest cont Facebook.', 403);
+      const row = connection.data()!;
+      if (row.agencyId !== ctx.agencyId || row.deletedAt || row.status !== 'connected') throw new CommunicationError('Contul Facebook nu mai este disponibil. Reconectează sau selectează alt cont.', 409);
+      if (row.runnerMode === 'local') {
+        if (typeof row.deviceId !== 'string' || !/^[A-Za-z0-9_-]{1,180}$/.test(row.deviceId)) throw new CommunicationError('Dispozitivul asociat lipsește.', 409);
+        const device = (await tx.get(ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection('facebookLocalRunnerDevices').doc(row.deviceId))).data();
+        if (!device || device.ownerUid !== ctx.uid || device.revokedAt) throw new CommunicationError('Dispozitivul asociat nu mai este accesibil.', 409);
+      }
     };
     const propertyAssignment = async (agentId: string | null | undefined, row?: Record<string, any>) => {
       if (agentId === undefined || (row && row.agentId === agentId)) return {};

@@ -1,3 +1,4 @@
+import { facebookAccountExecutionPrompt } from './facebook-account';
 import { facebookImmediateExecutionPrompt } from './facebook-immediate';
 import { facebookScheduleExecutionPrompt } from './facebook-schedule';
 import { facebookControlExecutionPrompt } from './facebook-control';
@@ -95,7 +96,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const result = await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;
     const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(input.prompt, result.metrics.status, result.actions, result.goalCoverage);
-    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
+    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
     for (const step of autonomous.results) {
       const receipt = step.result as Record<string, unknown> | undefined;
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
