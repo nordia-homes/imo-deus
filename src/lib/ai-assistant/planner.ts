@@ -137,6 +137,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(prepared.mode === 'duplicates' ? 'Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.' : prepared.actions.length ? 'Trimiterea proprietăților selectate este pregătită.' : 'Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.');
     } catch { return finish('Selectează o singură listă de matching pentru client și conversația lui. Pentru o singură proprietate, selectează acea proprietate din listă. Datele trebuie să fie actuale; nu am înlocuit proprietățile sau destinatarul.', 'clarification'); }
   }
+  const { facebookMonitorRequest, readFacebookMonitor } = await import('./facebook-monitor');
+  const facebookMonitor = facebookMonitorRequest(prompt);
+  if (facebookMonitor) {
+    try {
+      const result = await readFacebookMonitor(ctx, facebookMonitor, history, new Date(), prompt);
+      cards.push({ type: 'data', source: 'facebookJobs', title: 'Joburi Facebook', rows: result.rows, complete: true });
+      return finish(result.text, result.needsSelection ? 'clarification' : undefined);
+    } catch { return finish('Nu am putut verifica joburile Facebook sau accesul actual. Reia solicitarea.', 'unavailable'); }
+  }
   const { facebookSetupRequest, readFacebookSetup } = await import('./facebook-setup');
   const facebookSetup = facebookSetupRequest(prompt);
   if (facebookSetup) {

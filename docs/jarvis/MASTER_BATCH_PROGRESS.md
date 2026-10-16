@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot monitorizare Facebook — 16 octombrie 2026
+
+Șase scenarii: **0359, 0363, 0364, 0369, 0370, 0371**. Jarvis citește joburile proprii salvate, grupurile jobului, progresul, erorile și programările pentru mâine în Europe/Bucharest. Sunt verificate agenția și rolul actual; datele altor utilizatori și câmpurile sensibile ale runnerului sunt excluse. Dacă există mai multe joburi, utilizatorul poate continua cu „Job Facebook: ID”; selecția este verificată din nou pe server. Datele sunt recitite la fiecare comandă.
+
+Statusul completed al jobului și statusurile submitted/pending_approval ale grupurilor nu sunt prezentate drept dovadă a publicării. Răspunsul precizează că este starea salvată în aplicație, fără interogare live Facebook. Calculul zilei de mâine folosește data calendaristică București și este verificat la schimbările DST și de an. Joburile anulate/finalizate nu apar ca programări active pentru mâine.
+
+Validare: **98 teste unitare/planner/outcome, 8 teste de integrare incluzând 6/6 scenarii originale prin chat**, selecție explicită, schimbarea proprietarului, rol revocat și rezultate actualizate. TypeScript, ESLint, paritatea operațiilor și buildul complet au trecut. Verificarea TypeScript a identificat și corectat în testele WhatsApp existente folosirea unui ID opțional fără verificare: acum lipsa ID-ului produce explicit eșecul fixture-ului. Regresia WhatsApp finală: 144 teste trecute, 33 excluse prin configurația suitei. Prima rulare a avut 143 trecute și o eroare INVALID_ARGUMENT / transaction closed în emulator la reconcilierea concurentă; repetarea completă a trecut.
+
+Dovadă: [Facebook lot 02](evals/FACEBOOK_EXECUTION_BATCH_02.json). **181/1000 dovezi locale** (133 cu model real, 48 deterministe). Testele folosesc Firestore local și stări sintetice ale runnerului; nu certifică publicarea reală pe Facebook și nici întregul corpus în producție. Lot nepublicat.
+
 ## Lot configurare Facebook — 16 octombrie 2026
 
 Șase scenarii executate împreună: **0351, 0352, 0354, 0355, 0356, 0361**. Jarvis citește conturile proprii marcate conectate, setarea Facebook a proprietății, grupurile agenției, grupurile pentru vânzare/închiriere și conexiunile blocate. Citirile verifică apartenența și rolul într-o tranzacție; conturile altor utilizatori, șterse sau cu agenție necorespunzătoare sunt excluse. Câmpurile returnate sunt selectate explicit, fără tokenuri, date de sesiune, URL-ul curent al browserului sau erori brute.

@@ -1,0 +1,504 @@
+{
+  "scope": "Persisted application job monitoring only. Local Firestore synthetic runner results; no live Facebook refresh or publication confirmation.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0359",
+      "prompt": "Arată-mi exact în ce grupuri va fi publicată.",
+      "versions": {
+        "prompt": "jarvis-121",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "152",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore job snapshots; no live Facebook refresh or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "643b43fa-48c3-40f3-bc00-97fc93198373-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job job: scheduled. Grupuri: 3, trimise: 1, în așteptarea aprobării: 1, erori: 1, necesită reconectare: 0. Trimis: submitted; Aprobare: pending_approval; Eșuat: error Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:48:11.643Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0363",
+      "prompt": "Verifică statusul jobului Facebook.",
+      "versions": {
+        "prompt": "jarvis-121",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "152",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore job snapshots; no live Facebook refresh or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "9e9dd8d2-1af0-4bf2-a401-546970f0e32b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job job: scheduled. Grupuri: 3, trimise: 1, în așteptarea aprobării: 1, erori: 1, necesită reconectare: 0. Trimis: submitted; Aprobare: pending_approval; Eșuat: error Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:48:12.232Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0364",
+      "prompt": "Arată-mi joburile Facebook programate pentru mâine.",
+      "versions": {
+        "prompt": "jarvis-121",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "152",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore job snapshots; no live Facebook refresh or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "8d13e7fa-0991-4897-957b-fe3af0cf8768-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Joburi proprii programate pentru 2026-10-17 (Europe/Bucharest): 1. Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:48:12.794Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0369",
+      "prompt": "Arată-mi progresul jobului de publicare.",
+      "versions": {
+        "prompt": "jarvis-121",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "152",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore job snapshots; no live Facebook refresh or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "42bb58bd-4c17-4741-9185-e27cf21543f4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job job: scheduled. Grupuri: 3, trimise: 1, în așteptarea aprobării: 1, erori: 1, necesită reconectare: 0. Trimis: submitted; Aprobare: pending_approval; Eșuat: error Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:48:13.055Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0370",
+      "prompt": "Ce grup a eșuat la publicare?",
+      "versions": {
+        "prompt": "jarvis-121",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "152",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore job snapshots; no live Facebook refresh or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "6cbfbb97-2f2e-4258-a328-5f69b73f3e46-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job job: scheduled. Grupuri: 3, trimise: 1, în așteptarea aprobării: 1, erori: 1, necesită reconectare: 0. Eșuat: error Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:48:13.52Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0371",
+      "prompt": "Nu spune „publicat peste tot” dacă un grup a eșuat.",
+      "versions": {
+        "prompt": "jarvis-121",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "152",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original prompt through persisted chat and local Firestore job snapshots; no live Facebook refresh or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "2e243f30-7989-4aac-b0ce-1e053bc2609a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job job: scheduled. Grupuri: 3, trimise: 1, în așteptarea aprobării: 1, erori: 1, necesită reconectare: 0. Trimis: submitted; Aprobare: pending_approval; Eșuat: error Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T11:48:13.974Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic"
+}

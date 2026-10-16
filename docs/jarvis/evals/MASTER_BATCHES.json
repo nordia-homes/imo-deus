@@ -3298,7 +3298,11 @@
           "sourceNumber": 359,
           "request": "Arată-mi exact în ce grupuri va fi publicată.",
           "requestSha256": "0934590bc8632d5cc87f78c2b5828a9f604938cdbb5794729a476d8397ac2864",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0360",
@@ -3330,14 +3334,22 @@
           "sourceNumber": 363,
           "request": "Verifică statusul jobului Facebook.",
           "requestSha256": "83c1bbab54b511847ea97e84b6fedb1d0e8e7bb5de2552e972cba4b0ae9b09f0",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0364",
           "sourceNumber": 364,
           "request": "Arată-mi joburile Facebook programate pentru mâine.",
           "requestSha256": "30c3caaaac6f03b4d8276559fba2cce8581621e3f477d1bea01375d469b92ecb",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0365",
@@ -3372,21 +3384,33 @@
           "sourceNumber": 369,
           "request": "Arată-mi progresul jobului de publicare.",
           "requestSha256": "524987b3472a977f0fbf54c1b76a465e5fa6ca2bd0a21990dc5b0161d8b3df63",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0370",
           "sourceNumber": 370,
           "request": "Ce grup a eșuat la publicare?",
           "requestSha256": "444c0a0882106079148bd841865277b3b9c0edbc43dae04c779f50cab6617b25",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0371",
           "sourceNumber": 371,
           "request": "Nu spune „publicat peste tot” dacă un grup a eșuat.",
           "requestSha256": "53db3cfd7cc8e47a22e685446c4220a856e6c97717754c9d1c9403ac7791e30e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0372",

@@ -770,7 +770,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const f = await matchingFixture(), original = await queueMessage(db as any, f.actor, f.ref.id, f.input);
     const ledger = db.collection('agencies').doc(f.actor.agencyId).collection('communicationPropertyShares').doc(stableId('contact', 'selected'));
     await ledger.delete();
-    await db.collection('communicationOutboundJobs').doc(original.messageId).update({ status });
+    await db.collection('communicationOutboundJobs').doc(requiredMessageId(original.messageId)).update({ status });
     expect(await previousPropertyShare(db as any, f.actor.agencyId, 'contact', 'selected')).toMatchObject({ messageId: original.messageId, historical: true });
     const results = await Promise.all([1, 2].map(() => queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID() })));
     for (const result of results) expect(result).toMatchObject({ messageId: original.messageId, status, duplicate: true });
@@ -817,31 +817,31 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       return { message_id: 'accepted-before-db-failure' };
     });
     try { await drainOutbound(db as any); } finally { restoreTransaction?.(); }
-    const job = db.collection('communicationOutboundJobs').doc(result.messageId);
+    const job = db.collection('communicationOutboundJobs').doc(requiredMessageId(result.messageId));
     expect((await job.get()).data()).toMatchObject({ status: 'unknown', externalId: 'accepted-before-db-failure' });
     expect((await job.get()).data()?.providerAcceptedAt).toBeTruthy();
-    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, result.messageId)).toMatchObject({ status: 'accepted', reconciled: true });
+    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(result.messageId))).toMatchObject({ status: 'accepted', reconciled: true });
     await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
   });
   async function retryFixture() {
     const f = await fixture(), queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
     mocks.token.mockRejectedValueOnce(new Error('Synthetic connection outage before POST'));
     await drainOutbound(db as any);
-    const jobRef = db.collection('communicationOutboundJobs').doc(queued.messageId), job = (await jobRef.get()).data()!;
+    const jobRef = db.collection('communicationOutboundJobs').doc(requiredMessageId(queued.messageId)), job = (await jobRef.get()).data()!;
     expect(job).toMatchObject({ status: 'failed', failureStage: 'before_provider' });
     expect(mocks.graph).not.toHaveBeenCalled();
     return { ...f, jobRef, messageId: queued.messageId, failureId: job.failureId };
   }
   it('retries the same message once under concurrent requests and preserves original request idempotency', async () => {
     const f = await retryFixture();
-    const results = await Promise.all([1, 2].map(() => retryOutboundMessage(db as any, f.actor, f.ref.id, f.messageId, f.failureId)));
+    const results = await Promise.all([1, 2].map(() => retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId), f.failureId)));
     expect(results.filter(row => row.requeued)).toHaveLength(1);
     expect((await f.ref.collection('messages').get()).size).toBe(1);
     expect((await f.jobRef.collection('retryHistory').get()).size).toBe(1);
     expect(await queueMessage(db as any, f.actor, f.ref.id, f.input)).toMatchObject({ messageId: f.messageId, status: 'queued' });
     await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
     expect((await f.jobRef.get()).data()?.status).toBe('accepted');
-    expect(await retryOutboundMessage(db as any, f.actor, f.ref.id, f.messageId, f.failureId)).toMatchObject({ requeued: false, status: 'accepted' });
+    expect(await retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId), f.failureId)).toMatchObject({ requeued: false, status: 'accepted' });
   });
   it.each(['unknown', 'external-id', 'missing-proof', 'post-attempt', 'recipient', 'assignment', 'role', 'reply', 'window', 'content', 'receipt'])('does not retry after %s', async change => {
     const f = await retryFixture();
@@ -854,19 +854,19 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     if (change === 'role') await db.collection('users').doc(f.actor.uid).update({ role: 'disabled' });
     if (change === 'reply') { await f.jobRef.update({ 'input.stopOnReplySince': '2020-01-01T00:00:00Z' }); }
     if (change === 'window') await f.ref.update({ lastInboundAt: '2020-01-01T00:00:00Z' });
-    if (change === 'content') await f.ref.collection('messages').doc(f.messageId).update({ text: 'Different content' });
-    if (change === 'receipt') await f.ref.collection('messages').doc(f.messageId).update({ status: 'delivered', externalId: 'receipt-id' });
-    await expect(retryOutboundMessage(db as any, f.actor, f.ref.id, f.messageId, f.failureId)).rejects.toThrow();
+    if (change === 'content') await f.ref.collection('messages').doc(requiredMessageId(f.messageId)).update({ text: 'Different content' });
+    if (change === 'receipt') await f.ref.collection('messages').doc(requiredMessageId(f.messageId)).update({ status: 'delivered', externalId: 'receipt-id' });
+    await expect(retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId), f.failureId)).rejects.toThrow();
     expect((await f.jobRef.get()).data()?.status).not.toBe('queued'); expect(mocks.graph).not.toHaveBeenCalled();
   });
   it('requires a new failure identity after a second pre-provider failure', async () => {
     const f = await retryFixture();
-    await retryOutboundMessage(db as any, f.actor, f.ref.id, f.messageId, f.failureId);
+    await retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId), f.failureId);
     mocks.token.mockRejectedValueOnce(new Error('Second outage')); await drainOutbound(db as any);
     const next = (await f.jobRef.get()).data()!;
     expect(next.failureId).not.toBe(f.failureId);
-    expect(await retryOutboundMessage(db as any, f.actor, f.ref.id, f.messageId, f.failureId)).toMatchObject({ requeued: false, status: 'failed' });
-    expect(await retryOutboundMessage(db as any, f.actor, f.ref.id, f.messageId, next.failureId)).toMatchObject({ requeued: true });
+    expect(await retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId), f.failureId)).toMatchObject({ requeued: false, status: 'failed' });
+    expect(await retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId), next.failureId)).toMatchObject({ requeued: true });
     await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
   });
   it.each(['eligible', 'consent', 'cost', 'template'])('rechecks WhatsApp eligibility and reserves retry cost once: %s', async change => {
@@ -874,16 +874,16 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     try {
       const queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
       mocks.token.mockRejectedValueOnce(new Error('Synthetic outage')); await drainOutbound(db as any);
-      const jobRef = db.collection('communicationOutboundJobs').doc(queued.messageId), failureId = (await jobRef.get()).data()!.failureId;
+      const jobRef = db.collection('communicationOutboundJobs').doc(requiredMessageId(queued.messageId)), failureId = (await jobRef.get()).data()!.failureId;
       expect((await f.budget.get()).data()?.reservedMicros).toBe(0);
       if (change === 'consent') await f.consent.update({ status: 'revoked' });
       if (change === 'cost') await f.rate.update({ amountMicros: 600000 });
       if (change === 'template') f.templates.data[0].components[0].text = 'Different {{1}}';
       if (change !== 'eligible') {
-        await expect(retryOutboundMessage(db as any, f.actor, f.ref.id, queued.messageId, failureId)).rejects.toThrow();
+        await expect(retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(queued.messageId), failureId)).rejects.toThrow();
         expect((await f.budget.get()).data()?.reservedMicros).toBe(0); expect(templateSends()).toHaveLength(0); return;
       }
-      await Promise.all([1, 2].map(() => retryOutboundMessage(db as any, f.actor, f.ref.id, queued.messageId, failureId)));
+      await Promise.all([1, 2].map(() => retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(queued.messageId), failureId)));
       expect((await f.budget.get()).data()?.reservedMicros).toBe(500000);
       await drainOutbound(db as any); expect(templateSends()).toHaveLength(1);
       expect((await jobRef.get()).data()?.status).toBe('accepted');
@@ -892,13 +892,13 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
   it.each(['unchanged', 'changed-property'])('retries matching without bypassing property checks or deduplication: %s', async change => {
     const f = await matchingFixture(), queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
     mocks.token.mockRejectedValueOnce(new Error('Synthetic outage')); await drainOutbound(db as any);
-    const jobRef = db.collection('communicationOutboundJobs').doc(queued.messageId), failureId = (await jobRef.get()).data()!.failureId;
+    const jobRef = db.collection('communicationOutboundJobs').doc(requiredMessageId(queued.messageId)), failureId = (await jobRef.get()).data()!.failureId;
     if (change === 'changed-property') {
       await f.propertyRef.update({ price: 125000 });
-      await expect(retryOutboundMessage(db as any, f.actor, f.ref.id, queued.messageId, failureId)).rejects.toThrow();
+      await expect(retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(queued.messageId), failureId)).rejects.toThrow();
       expect(mocks.graph).not.toHaveBeenCalled(); return;
     }
-    await retryOutboundMessage(db as any, f.actor, f.ref.id, queued.messageId, failureId);
+    await retryOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(queued.messageId), failureId);
     expect((await f.ref.collection('messages').get()).size).toBe(1);
     expect((await db.collection('agencies').doc(f.actor.agencyId).collection('communicationPropertyShares').get()).size).toBe(1);
     await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
@@ -910,7 +910,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const f = await retryFixture(), ctx = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' } as any; mocks.actor = ctx;
     const unknownId = randomUUID(); await db.collection('communicationOutboundJobs').doc(unknownId).set({ ...(await f.jobRef.get()).data(), status: 'unknown' });
     const blockedId = randomUUID(); await db.collection('communicationOutboundJobs').doc(blockedId).set({ ...(await f.jobRef.get()).data(), input: { ...f.input, stopOnReplySince: '2020-01-01T00:00:00Z' } });
-    await f.ref.collection('messages').doc(blockedId).set({ ...(await f.ref.collection('messages').doc(f.messageId).get()).data(), id: blockedId });
+    await f.ref.collection('messages').doc(blockedId).set({ ...(await f.ref.collection('messages').doc(requiredMessageId(f.messageId)).get()).data(), id: blockedId });
     const otherConversationId = randomUUID(); await db.collection('agencies').doc(f.actor.agencyId).collection('conversations').doc(otherConversationId).set({ ...f.conversation, id: otherConversationId, assigneeId: 'other' });
     const hiddenId = randomUUID(); await db.collection('communicationOutboundJobs').doc(hiddenId).set({ ...(await f.jobRef.get()).data(), conversationId: otherConversationId });
     const scenarioId = 'master-0347', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text, request = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };
@@ -926,7 +926,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
   });
   async function unknownFixture() {
     const f = await fixture(), queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
-    const jobRef = db.collection('communicationOutboundJobs').doc(queued.messageId), messageRef = f.ref.collection('messages').doc(queued.messageId);
+    const jobRef = db.collection('communicationOutboundJobs').doc(requiredMessageId(queued.messageId)), messageRef = f.ref.collection('messages').doc(requiredMessageId(queued.messageId));
     await jobRef.update({ status: 'unknown', error: 'Transient failure' }); await messageRef.update({ status: 'unknown', error: 'Transient failure' });
     return { ...f, jobRef, messageRef, messageId: queued.messageId, externalId: randomUUID() };
   }
@@ -934,12 +934,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const f = await unknownFixture();
     await f.jobRef.update({ externalId: f.externalId, providerAcceptedAt: new Date().toISOString() });
     if (status !== 'accepted') await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: f.ref.id, messageId: f.messageId, pendingStatus: status, pendingFailedAt: '2026-10-16T08:00:00Z' });
-    const result = await reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId);
+    const result = await reconcileOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId));
     expect(result).toMatchObject({ reconciled: true, status });
     expect((await f.messageRef.get()).data()).toMatchObject({ status, externalId: f.externalId });
     expect((await f.messageRef.get()).data()?.error).toBeUndefined();
     if (status === 'failed') expect((await f.messageRef.get()).data()?.failedAt).toBe('2026-10-16T08:00:00Z');
-    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)).toMatchObject({ reconciled: false, status });
+    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId))).toMatchObject({ reconciled: false, status });
     await drainOutbound(db as any); expect(mocks.graph).not.toHaveBeenCalled();
   });
   it.each(['missing', 'conflicting-id', 'foreign-mapping', 'other-job'])('keeps ambiguous evidence unresolved: %s', async variant => {
@@ -949,7 +949,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       if (variant === 'conflicting-id') await f.messageRef.update({ externalId: 'different' });
       else await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: variant === 'foreign-mapping' ? 'other' : f.ref.id, messageId: 'other-job', pendingStatus: 'delivered' });
     }
-    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)).toMatchObject({ status: 'unknown', unresolved: true });
+    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId))).toMatchObject({ status: 'unknown', unresolved: true });
     expect((await f.jobRef.get()).data()?.status).toBe('unknown'); expect(mocks.graph).not.toHaveBeenCalled();
   });
   it.each(['assignment', 'membership', 'role', 'agency'])('rechecks access before reconciliation: %s', async variant => {
@@ -959,7 +959,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     if (variant === 'membership') await db.collection('users').doc(f.actor.uid).update({ agencyId: 'other' });
     if (variant === 'role') await db.collection('users').doc(f.actor.uid).update({ role: 'disabled' });
     if (variant === 'agency') await f.jobRef.update({ agencyId: 'other' });
-    await expect(reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)).rejects.toThrow();
+    await expect(reconcileOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId))).rejects.toThrow();
     expect((await f.jobRef.get()).data()?.status).toBe('unknown'); expect(mocks.graph).not.toHaveBeenCalled();
   });
   it('merges a matching native echo and settles delivery cost once under concurrent reconciliation', async () => {
@@ -969,7 +969,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     await budget.set({ reservedMicros: 100, spentMicros: 0, limitMicros: 1000 });
     await f.ref.collection('messages').doc(echoId).set({ agencyId: f.actor.agencyId, conversationId: f.ref.id, origin: 'native', direction: 'sent', externalId: f.externalId, status: 'delivered' });
     await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: f.ref.id, messageId: echoId });
-    const results = await Promise.all([1, 2].map(() => reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)));
+    const results = await Promise.all([1, 2].map(() => reconcileOutboundMessage(db as any, f.actor, f.ref.id, requiredMessageId(f.messageId))));
     expect(results.filter(row => row.reconciled)).toHaveLength(1);
     expect((await f.ref.collection('messages').get()).size).toBe(1);
     expect((await budget.get()).data()).toMatchObject({ reservedMicros: 0, spentMicros: 100 });
@@ -1466,3 +1466,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     } finally { await f.rate.delete(); }
   });
 });
+function requiredMessageId(value: string | undefined): string {
+  if (!value) throw new Error('Fixture expected a queued message with an ID');
+  return value;
+}
