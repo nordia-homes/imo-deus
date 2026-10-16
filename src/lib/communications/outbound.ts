@@ -213,7 +213,7 @@ export async function drainOutbound(db: Firestore) {
         const echo = echoId && echoId !== row.id ? await tx.get(conversationRef.collection('messages').doc(echoId)) : null;
         tx.set(mapping, { connectionId: job.connectionId, conversationId: job.conversationId, messageId: row.id });
         const confirmedStatus = advanceStatus(currentMessage.data()?.status || 'accepted', echo?.data()?.status || existing.data()?.pendingStatus || 'accepted');
-        tx.update(messageRef, { externalId, status: confirmedStatus, ...(confirmedStatus === 'failed' && existing.data()?.pendingError ? { error: existing.data()?.pendingError } : {}) });
+        tx.update(messageRef, { externalId, status: confirmedStatus, ...(confirmedStatus === 'failed' ? { failedAt: currentMessage.data()?.failedAt || echo?.data()?.failedAt || existing.data()?.pendingFailedAt || nowIso() } : {}), ...(confirmedStatus === 'failed' && existing.data()?.pendingError ? { error: existing.data()?.pendingError } : {}) });
         if (echo?.exists) tx.delete(echo.ref);
         const sentAt = nowIso();
         tx.update(conversationRef, { lastOutboundAt: sentAt, lastMessageAt: sentAt, latestMessage: job.input.text || `[${job.input.template?.name}]`, needsReply: Boolean(current.lastInboundAt && current.lastInboundAt > sentAt), status: current.status === 'spam' ? 'spam' : 'waiting', version: current.version + 1 });
@@ -234,8 +234,8 @@ export async function drainOutbound(db: Firestore) {
       await db.runTransaction(async tx => {
         const [freshJob, freshMessage] = await Promise.all([tx.get(row.ref), tx.get(messageRef)]);
         if (['delivered', 'read', 'failed'].includes(freshJob.data()?.status) || (freshJob.data()?.status === 'accepted' && freshJob.data()?.externalId)) return;
-        tx.update(row.ref, { status, error: message });
-        if (freshMessage.exists) tx.update(messageRef, { status, error: message });
+        tx.update(row.ref, { status, error: message, ...(status === 'failed' ? { failedAt: nowIso() } : {}) });
+        if (freshMessage.exists) tx.update(messageRef, { status, error: message, ...(status === 'failed' ? { failedAt: nowIso() } : {}) });
       });
       if (status === 'failed') await settleBudget(db, row.id);
     }

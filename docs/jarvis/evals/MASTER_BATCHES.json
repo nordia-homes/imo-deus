@@ -3022,14 +3022,22 @@
           "sourceNumber": 332,
           "request": "Sincronizează conversația cu providerul.",
           "requestSha256": "7abfef965b76aa5c597a002589547e97bcc7b2d55d543fdc97e5068373165caa",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_35.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0333",
           "sourceNumber": 333,
           "request": "Verifică de ce sincronizarea conversației a eșuat.",
           "requestSha256": "5f04841368bf744a33cc021f9ecebe4ffa17bdd099ccf3d0547d620f4876bc27",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_35.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0334",
@@ -3140,7 +3148,11 @@
           "sourceNumber": 346,
           "request": "Spune-mi ce comunicări au eșuat azi.",
           "requestSha256": "9e42c4b2cd3586f12e43be0f6b46c48c30242d306203153e116b4f2057c922e0",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_35.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0347",

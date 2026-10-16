@@ -91,7 +91,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         if (result.active !== true || favorite?.data()?.isFavoriteActive !== true) throw new OperationFailure('Adăugarea în prospectare nu este confirmată în lista agenției.', 409, result);
         result = { ...result, operation: 'owner_prospect', listingId, businessStatus: 'added_to_prospecting', executionState: 'succeeded', evidenceSource: 'current_domain_state', note: 'Anunț adăugat în prospectare. Preluarea telefonului și contactarea proprietarului nu sunt confirmate.' };
       }
-      if (unconfirmedOperationResult(result)) throw new OperationFailure('Handlerul raportează un rezultat parțial, eșuat sau incert. Verifică starea în modulul corespunzător; nu retrimite automat.', 409, result);
+      if (unconfirmedOperationResult(result) && !(action.operation === 'conversation_sync' && ['partial', 'throttled'].includes(String(result.status)))) throw new OperationFailure('Handlerul raportează un rezultat parțial, eșuat sau incert. Verifică starea în modulul corespunzător; nu retrimite automat.', 409, result);
       await ledger.update({ status: 'completed', result: safeData(result), completedAt: new Date().toISOString() });
       return result;
     } catch (error) {

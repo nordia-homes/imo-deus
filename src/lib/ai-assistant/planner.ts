@@ -116,6 +116,32 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(`Pași pregătiți pentru ${row.title}:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\n${disclaimer}\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.`);
     } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
   }
+  const { communicationRecoveryRequest, syncDiagnosis, failedCommunicationsToday } = await import('./communication-recovery');
+  const recovery = communicationRecoveryRequest(prompt);
+  if (recovery) {
+    try {
+      if (recovery === 'failed') {
+        const data = await failedCommunicationsToday(ctx);
+        cards.push({ type: 'data', source: 'conversation_messages', title: 'Comunicări eșuate astăzi', rows: data.rows, complete: true });
+        for (const id of new Set(data.rows.map(row => row.conversationId))) accessRefs.push({ resource: 'conversations', id });
+        return finish('Mesaje eșuate astăzi, după ora Bucureștiului: ' + data.rows.length + '. Nu am retrimis mesaje.' + (data.undated ? ' Există și ' + data.undated + ' mesaje eșuate fără data eșecului; nu le atribui zilei de astăzi.' : ''));
+      }
+      const { selectedInboxConversation } = await import('./inbox-read');
+      const id = selectedInboxConversation(history);
+      if (!id) return finish('Selectează conversația pentru sincronizare sau diagnostic.', 'clarification');
+      const { getResource } = await import('./access');
+      const row = await getResource(ctx, 'conversations', id);
+      accessRefs.push({ resource: 'conversations', id });
+      cards.push({ type: 'data', source: 'conversations', title: 'Conversație selectată', rows: [{ id, name: row.name || '' }], complete: true });
+      const diagnosis = syncDiagnosis({ ...row, id });
+      if (recovery === 'diagnose' || diagnosis.status === 'webhook_only') {
+        cards.push({ type: 'data', source: 'conversationSync', title: 'Stare sincronizare', rows: [diagnosis], complete: true });
+        return finish(diagnosis.reason);
+      }
+      actions.push({ kind: 'existing_operation', operation: 'conversation_sync', params: { conversationId: id }, query: {}, body: {} });
+      return finish('Sincronizarea conversației selectate este pregătită.');
+    } catch { return finish('Nu am putut verifica datele actuale ale conversațiilor. Reia solicitarea.', 'unavailable'); }
+  }
   const { planTemplateRequest } = await import('./template-draft');
   const templatePlan = await planTemplateRequest(ctx, prompt, history);
   if (templatePlan) {

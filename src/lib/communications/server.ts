@@ -100,7 +100,7 @@ export async function linkContact(db: Firestore, actor: Actor, id: string, body:
   return { contactId: contactRef.id };
 }
 
-export async function ingestMessage(db: Firestore, connection: Connection, event: IncomingEvent) {
+export async function ingestMessage(db: Firestore, connection: Connection, event: IncomingEvent, importGuard?: { actor: Actor; conversationId: string }) {
   const id = stableId(connection.id, event.participantId);
   const ref = agencyCollection(db, connection.agencyId, 'conversations').doc(id);
   const mapping = db.collection('communicationMessageMappings').doc(stableId(connection.id, event.externalId));
@@ -114,13 +114,17 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
     const messageRef = ref.collection('messages').doc(messageId);
     const [conversationDoc, existing] = await Promise.all([tx.get(ref), tx.get(messageRef)]);
     const current = conversationDoc.data() as Conversation | undefined;
+    if (importGuard) {
+      const member = await tx.get(db.collection('users').doc(importGuard.actor.uid));
+      if (!event.imported || !['agent', 'admin'].includes(importGuard.actor.role || '') || id !== importGuard.conversationId || member.data()?.agencyId !== connection.agencyId || member.data()?.role !== importGuard.actor.role || !current || !canReadConversation(importGuard.actor, current) || current.connectionId !== connection.id || current.externalParticipantId !== event.participantId || current.channel !== event.channel) throw new CommunicationError('Accesul la import a fost revocat.', 403);
+    }
     if (event.status) {
       if (existing.exists) {
         const status = advanceStatus(existing.data()!.status, event.status);
         const jobRef = db.collection('communicationOutboundJobs').doc(messageId);
         const job = existing.data()?.origin === 'imodeus' ? await tx.get(jobRef) : null;
         tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId }, { merge: true });
-        tx.update(messageRef, { status, externalId: event.externalId, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
+        tx.update(messageRef, { status, externalId: event.externalId, ...(status === 'failed' && event.status === 'failed' ? { failedAt: existing.data()?.failedAt || event.createdAt } : {}), ...(status === 'failed' && event.error ? { error: event.error } : {}) });
         if (job?.exists && ['accepted', 'delivered', 'read', 'failed'].includes(status)) {
           const previous = job.data()!;
           const reservationReleased = previous.reservationReleased ?? previous.budgetSettled ?? false;
@@ -129,7 +133,7 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
             budgetSettled: previous.status === status ? Boolean(previous.budgetSettled) : false, ...(status === 'failed' && event.error ? { error: event.error } : {}) });
         }
       }
-      else tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId, pendingStatus: advanceStatus(map.data()?.pendingStatus || 'queued', event.status), ...(event.error ? { pendingError: event.error } : {}) }, { merge: true });
+      else tx.set(mapping, { connectionId: connection.id, conversationId: id, messageId, pendingStatus: advanceStatus(map.data()?.pendingStatus || 'queued', event.status), ...(event.status === 'failed' ? { pendingFailedAt: map.data()?.pendingFailedAt || event.createdAt } : {}), ...(event.error ? { pendingError: event.error } : {}) }, { merge: true });
       return;
     }
     if (existing.exists) {
@@ -152,6 +156,7 @@ export async function ingestMessage(db: Firestore, connection: Connection, event
       direction: event.direction, origin: event.direction === 'sent' ? 'native' : 'unknown', text: event.text,
       createdAt: event.createdAt, authorId: null, attachments: event.attachments, imported: Boolean(event.imported),
       status: event.direction === 'sent' ? advanceStatus('accepted', map.data()?.pendingStatus || 'accepted') : 'received',
+      ...(event.direction === 'sent' && map.data()?.pendingStatus === 'failed' && map.data()?.pendingFailedAt ? { failedAt: map.data()!.pendingFailedAt } : {}),
       ...(event.direction === 'sent' && map.data()?.pendingStatus === 'failed' && map.data()?.pendingError ? { error: map.data()!.pendingError } : {}) };
     tx.set(ref, { ...row, accessUids: [...new Set([row.assigneeId, ...row.collaboratorIds].filter(Boolean))] }, { merge: true });
     tx.create(messageRef, message);

@@ -1,3 +1,4 @@
+import { conversationSyncAction, communicationRecoveryRequest } from './communication-recovery';
 import { templateCommand } from './template-draft';
 import { draftSendAction, messageDraftCommand } from './message-draft';
 import { simpleConversationEdit, requestedConversationEdit } from './conversation-edit';
@@ -40,7 +41,7 @@ const CRM_VERBS: Record<string, string> = {
   preferences_link_action: 'creeaza|genereaza|regenereaza|dezactiveaza|create',
 };
 export function requestAuthorizedCrmAction(action: AssistantAction) {
-  if (draftSendAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action)) return true;
+  if (conversationSyncAction(action) || draftSendAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action)) return true;
   if (action.kind === 'existing_operation' && action.operation === 'message_send' && typeof action.body.prospectingConsentReceiptId === 'string' && Boolean(action.body.template) && Boolean(action.body.sendApproval)) return true;
   const contextualTask = action.kind === 'create_task' && (Boolean(action.ownerListingId) || Boolean(action.viewingId) || action.participantSource === 'property_owner' && Boolean(action.propertyId) && !action.contactId || action.participantSource === 'contact' && Boolean(action.contactId));
   const taskPropertyLink = action.kind === 'update_task' && Boolean(action.propertyId) && Object.keys(action).every(key => ['kind', 'taskId', 'expectedUpdatedAt', 'propertyId'].includes(key));
@@ -50,6 +51,7 @@ export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
 }
 export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: string) {
+  if (conversationSyncAction(action)) return communicationRecoveryRequest(prompt) === 'sync';
   if (draftSendAction(action)) return messageDraftCommand(prompt) === 'send' || templateCommand(prompt) === 'send';
   if (simpleConversationEdit(action)) return requestedConversationEdit(action, prompt);
   if (action.kind === 'existing_operation' && action.operation === 'conversation_update') return requestedConversationUpdate(action, prompt);
@@ -106,6 +108,7 @@ export async function executeSafePrefix(ctx: AssistantContext, requestId: string
         result = { operation: 'message_send', executionState: 'failed', queueOutcome: 'not_queued', reason: error.message, conversationId: action.kind === 'existing_operation' ? action.params.conversationId : null };
       }
       results.push({ step: results.length + 1, kind: action.kind, result });
+      if (conversationSyncAction(action) && result.complete === false) return { actions: [] as AssistantAction[], results, blocked: true };
     }
     return { actions: actions.slice(results.length).map(action => continuePlanRevision(actionSchema.parse(remapReferences(action, results)), results)), results, blocked: false };
   } catch {

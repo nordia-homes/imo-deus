@@ -609,6 +609,109 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await f.rate.delete(); mocks.actor = null;
     }
   }, 120000);
+  for (const scenarioId of ['master-0332', 'master-0333', 'master-0346']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting ' + scenarioId + ': sync recovery and failure reporting through persisted chat', async () => {
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { syncConversation } = await import('@/lib/communications/sync');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const f = await fixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    const id = stableId(f.conversation.connectionId, f.conversation.externalParticipantId), ref = agency.collection('conversations').doc(id);
+    await f.ref.delete();
+    await ref.set({ ...f.conversation, id, createdAt: new Date().toISOString(), lastMessageAt: new Date().toISOString(), lastOutboundAt: null, name: 'Alin', propertyIds: [], readBy: {} });
+    const connection = { id: f.conversation.connectionId, agencyId: f.actor.agencyId, channel: 'messenger', externalId: 'fixture-page' };
+    mocks.token.mockResolvedValue({ connection, token: 'fixture-token' });
+    const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId); await session.set({ ownerId: f.actor.uid });
+    await session.collection('messages').doc('selection').set({ role: 'assistant', createdAt: new Date().toISOString(), text: 'Selectat', cards: [{ type: 'data', source: 'conversations', title: 'Inbox', rows: [{ id }] }] });
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const request = (text: string) => ({ sessionId, requestId: randomUUID(), prompt: text, currentRecord: null });
+    const runs: unknown[] = []; let verified = false;
+    let failSecond = scenarioId === 'master-0333', revokeSecond = false, lastPage = 5;
+    mocks.graph.mockImplementation(async (path: string) => {
+      if (path.includes('/conversations?')) return { data: [{ id: 'thread' }] };
+      const page = Number(new URL('https://fixture.test' + path).searchParams.get('after') || 0);
+      if (page === 1 && failSecond) throw new Error('provider secret must not reach chat');
+      if (page === 1 && revokeSecond) await ref.update({ assigneeId: 'another-agent' });
+      return { data: [{ id: 'remote-' + page, message: 'Mesaj ' + page, from: { id: f.conversation.externalParticipantId, name: 'Alin' }, created_time: new Date(Date.now() - page * 1000).toISOString() }], ...(page < lastPage ? { paging: { next: 'present', cursors: { after: String(page + 1) } } } : {}) };
+    });
+    try {
+      if (scenarioId === 'master-0333') {
+        await expect(syncConversation(db as any, f.actor, id)).rejects.toThrow('Progresul salvat');
+        expect((await ref.get()).data()).toMatchObject({ syncStatus: 'failed', syncCursor: '1', syncErrorCode: 'provider_or_data_error' });
+      }
+      if (scenarioId === 'master-0346') {
+        const input = { ...f.input, expectedRecipientRevision: recipientRevision({ ...(await ref.get()).data(), id }) };
+        // Use the actual queue and worker to record a pre-provider failure.
+        await queueMessage(db as any, f.actor, id, input);
+        mocks.token.mockRejectedValueOnce(new Error('provider secret must not reach chat'));
+        await drainOutbound(db as any);
+        const failures = await ref.collection('messages').where('status', '==', 'failed').get(); expect(failures.size).toBe(1);
+        expect(failures.docs[0].data().failedAt).toBeTruthy();
+        await ref.collection('messages').doc('old').set({ direction: 'sent', status: 'failed', failedAt: new Date(Date.now() - 86400000).toISOString(), createdAt: new Date().toISOString() });
+        await ref.collection('messages').doc('undated').set({ direction: 'sent', status: 'failed', createdAt: new Date().toISOString() });
+        await ref.collection('messages').doc('unknown').set({ direction: 'sent', status: 'unknown', failedAt: new Date().toISOString() });
+        await agency.collection('conversations').doc('private').set({ ...f.conversation, assigneeId: 'another-agent' });
+        await agency.collection('conversations').doc('private').collection('messages').doc('failed').set({ direction: 'sent', status: 'failed', failedAt: new Date().toISOString() });
+      }
+      const input = request(prompt), response = await chatTurn(mocks.actor, input); runs.push({ phase: 'original', final: response.message });
+      expect(await chatTurn(mocks.actor, input)).toEqual(response);
+      expect(response.message.planId).toBeUndefined(); expect(response.message.text).not.toContain('provider secret');
+      if (scenarioId === 'master-0346') {
+        expect(response.message.cards?.find(card => card.source === 'conversation_messages')?.rows).toHaveLength(1);
+        expect(response.message.text).toContain('fără data eșecului');
+        expect(mocks.graph.mock.calls.filter(call => /\/messages$/.test(String(call[0])))).toHaveLength(0);
+      } else {
+        if (scenarioId === 'master-0333') {
+          expect(response.message.cards?.find(card => card.source === 'conversationSync')?.rows[0]).toMatchObject({ status: 'failed', resumable: true });
+          failSecond = false;
+          const resumed = await chatTurn(mocks.actor, request('Sincronizează conversația cu providerul.')); runs.push({ phase: 'resumed', final: resumed.message }); expect(resumed.message.text).toContain('Sincronizarea s-a încheiat');
+        } else expect(response.message.text).toContain('Sincronizarea s-a încheiat');
+        expect((await ref.collection('messages').get()).size).toBe(6);
+        expect((await ref.get()).data()).toMatchObject({ syncStatus: 'completed', syncCursor: '' });
+        expect(mocks.graph.mock.calls.filter(call => /\/messages$/.test(String(call[0])))).toHaveLength(0);
+        const recent = await chatTurn(mocks.actor, request('Sincronizează conversația cu providerul.'));
+        expect(recent.message.text).toContain('prea recent');
+        expect(recent.message.text).not.toContain('s-a încheiat');
+        const calls = mocks.graph.mock.calls.length;
+        const throttled = await syncConversation(db as any, f.actor, id); expect(throttled.status).toBe('throttled'); expect(mocks.graph.mock.calls).toHaveLength(calls);
+        await ref.update({ nextSyncAt: 0 }); await syncConversation(db as any, f.actor, id); expect((await ref.collection('messages').get()).size).toBe(6);
+        if (scenarioId === 'master-0332') {
+          lastPage = 22; await ref.update({ nextSyncAt: 0 });
+          const partial = await chatTurn(mocks.actor, request('Sincronizează conversația cu providerul.'));
+          expect(partial.message.text).toContain('Sincronizare parțială');
+          expect((await ref.get()).data()).toMatchObject({ syncStatus: 'partial', syncCursor: '20' });
+          const resumed = await chatTurn(mocks.actor, request('Sincronizează conversația cu providerul.'));
+          expect(resumed.message.text).toContain('Sincronizarea s-a încheiat');
+          expect((await ref.collection('messages').get()).size).toBe(23);
+          runs.push({ phase: 'page-limit', final: partial.message }, { phase: 'page-limit-resumed', final: resumed.message });
+        }
+        await ref.update({ nextSyncAt: 0 }); revokeSecond = true;
+        await expect(syncConversation(db as any, f.actor, id)).rejects.toThrow('Progresul salvat');
+        expect((await ref.get()).data()?.syncErrorCode).toBe('access_changed');
+        expect((await ref.collection('messages').get()).size).toBe(lastPage + 1);
+      }
+      verified = true;
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile('.tmp/jarvis-whatsapp-prospecting/' + scenarioId + '-latest.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Persisted deterministic chat, real Firestore emulator/import/queue/worker, simulated Meta. No external sends or model calls.', runs }, null, 2));
+      mocks.actor = null;
+    }
+  }, 120000);
+  it('preserves the provider failure timestamp when a receipt precedes its message and is repeated', async () => {
+    const { ingestMessage } = await import('@/lib/communications/server');
+    const f = await fixture();
+    const connection: any = { id: f.conversation.connectionId, agencyId: f.actor.agencyId, channel: 'messenger', externalId: 'fixture-page' };
+    const failedAt = '2026-10-15T21:05:00Z';
+    const event: any = { channel: 'messenger', accountId: connection.externalId, participantId: f.conversation.externalParticipantId, externalId: 'delayed-echo', direction: 'sent', text: 'Salut', attachments: [], createdAt: failedAt, status: 'failed' };
+    const id = await ingestMessage(db as any, connection, event);
+    await ingestMessage(db as any, connection, { ...event, status: undefined, createdAt: '2026-10-14T12:00:00Z' });
+    const ref = db.collection('agencies').doc(f.actor.agencyId).collection('conversations').doc(id).collection('messages').doc(stableId(connection.id, event.externalId));
+    expect((await ref.get()).data()).toMatchObject({ status: 'failed', failedAt });
+    await ingestMessage(db as any, connection, { ...event, createdAt: new Date().toISOString() });
+    expect((await ref.get()).data()?.failedAt).toBe(failedAt);
+    await ingestMessage(db as any, connection, { ...event, status: 'delivered', createdAt: new Date().toISOString() });
+    expect((await ref.get()).data()?.status).toBe('delivered');
+  });
   async function prospectingFixture() {
     const f = await marketingFixture();
     await f.consent.delete();

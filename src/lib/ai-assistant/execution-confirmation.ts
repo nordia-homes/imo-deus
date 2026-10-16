@@ -4,6 +4,12 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'conversation_sync') {
+      if (receipt.status === 'completed' && receipt.complete === true) return 'Sincronizarea s-a încheiat. Mesaje procesate în această rulare: ' + receipt.processed + '. Mesajele deja existente nu au fost duplicate.';
+      if (receipt.status === 'partial') return 'Sincronizare parțială. Progresul este salvat; reia sincronizarea pentru paginile rămase.';
+      if (receipt.status === 'throttled') return 'Sincronizarea este deja în curs sau a fost cerută prea recent. Nu confirm un import nou.';
+      if (receipt.status === 'webhook_only') return 'Canalul primește istoricul prin webhook; nu s-a executat un import manual.';
+    }
     if (['conversation_note', 'conversation_update'].includes(String(receipt?.operation)) && receipt?.executionState === 'succeeded' && typeof receipt.conversationId === 'string') {
       if (receipt.state === 'note' && typeof receipt.noteId === 'string') return `Nota internă a fost salvată în conversația ${receipt.conversationId}.`;
       if (receipt.state === 'assigned' && typeof receipt.assigneeId === 'string') return `Conversația ${receipt.conversationId} a fost atribuită agentului ${receipt.assigneeId}.`;
@@ -58,6 +64,7 @@ export function viewingConfirmation(results: Record<string, unknown>[]): string 
   const confirmations: string[] = [];
   for (const step of results) {
     const receipt = step.result as Record<string, unknown> | undefined;
+
     if (!['schedule_viewing', 'update_viewing'].includes(String(step.kind)) || !receipt || typeof receipt.viewingId !== 'string' || !receipt.viewingId || typeof receipt.viewingDate !== 'string' || !Number.isFinite(Date.parse(receipt.viewingDate))) continue;
     if (typeof receipt.appendedNote === 'string' && receipt.appendedNote.trim()) confirmations.push(`Notă adăugată la vizionare: „${receipt.appendedNote}”.`);
     const when = new Intl.DateTimeFormat('ro-RO', { timeZone: 'Europe/Bucharest', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(receipt.viewingDate));

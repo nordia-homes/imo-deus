@@ -1,0 +1,354 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0332",
+      "prompt": "Sincronizează conversația cu providerul.",
+      "versions": {
+        "prompt": "jarvis-116",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "146",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted deterministic chat, real Firestore emulator/import/queue/worker, simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "360360b5-8833-40ae-9315-ee5000312e8f-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Sincronizarea s-a încheiat. Mesaje procesate în această rulare: 6. Mesajele deja existente nu au fost duplicate.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Conversație selectată",
+                "rows": [
+                  {
+                    "id": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb",
+                    "name": "Alin"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "status": "completed",
+                      "complete": true,
+                      "processed": 6,
+                      "conversationId": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb",
+                      "operation": "conversation_sync",
+                      "businessStatus": "completed",
+                      "executionState": "succeeded",
+                      "verifiedAt": "2026-10-16T10:16:56.35Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb"
+              }
+            ],
+            "createdAt": "2026-10-16T10:16:56.359Z"
+          }
+        },
+        {
+          "phase": "page-limit",
+          "final": {
+            "id": "1b160bd8-c38e-430a-9fec-f9a13e9c6079-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Sincronizare parțială. Progresul este salvat; reia sincronizarea pentru paginile rămase.\nAcțiuni executate: 1. Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Conversație selectată",
+                "rows": [
+                  {
+                    "id": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb",
+                    "name": "Alin"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "status": "partial",
+                      "complete": false,
+                      "processed": 20,
+                      "conversationId": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb",
+                      "operation": "conversation_sync",
+                      "businessStatus": "partial",
+                      "executionState": "unknown",
+                      "verifiedAt": "2026-10-16T10:17:00.274Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb"
+              }
+            ],
+            "createdAt": "2026-10-16T10:17:00.28Z"
+          }
+        },
+        {
+          "phase": "page-limit-resumed",
+          "final": {
+            "id": "f28609ab-9698-4eb1-85f6-c222041f50c9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Sincronizarea s-a încheiat. Mesaje procesate în această rulare: 3. Mesajele deja existente nu au fost duplicate.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Conversație selectată",
+                "rows": [
+                  {
+                    "id": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb",
+                    "name": "Alin"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "status": "completed",
+                      "complete": true,
+                      "processed": 3,
+                      "conversationId": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb",
+                      "operation": "conversation_sync",
+                      "businessStatus": "completed",
+                      "executionState": "succeeded",
+                      "verifiedAt": "2026-10-16T10:17:00.992Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "378d1792889a0ad936238e9895746f716c8d2b121bf10a951801d5a90989adfb"
+              }
+            ],
+            "createdAt": "2026-10-16T10:17:00.999Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0333",
+      "prompt": "Verifică de ce sincronizarea conversației a eșuat.",
+      "versions": {
+        "prompt": "jarvis-116",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "146",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted deterministic chat, real Firestore emulator/import/queue/worker, simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "d7a18afe-b9be-4d1c-b2a9-3d2490f8148f-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Furnizorul sau datele primite au împiedicat finalizarea. Reluarea folosește progresul salvat.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Conversație selectată",
+                "rows": [
+                  {
+                    "id": "638575ecc55e832379c532d2db5cfab001085ba4ddd4f3d13bbc76e2e4233c11",
+                    "name": "Alin"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "conversationSync",
+                "title": "Stare sincronizare",
+                "rows": [
+                  {
+                    "id": "638575ecc55e832379c532d2db5cfab001085ba4ddd4f3d13bbc76e2e4233c11",
+                    "channel": "messenger",
+                    "status": "failed",
+                    "reason": "Furnizorul sau datele primite au împiedicat finalizarea. Reluarea folosește progresul salvat.",
+                    "lastSyncAt": null,
+                    "lastSyncAttemptAt": "2026-10-16T10:17:01.486Z",
+                    "resumable": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "638575ecc55e832379c532d2db5cfab001085ba4ddd4f3d13bbc76e2e4233c11"
+              }
+            ],
+            "createdAt": "2026-10-16T10:17:01.721Z"
+          }
+        },
+        {
+          "phase": "resumed",
+          "final": {
+            "id": "0aa5493a-690c-4004-a541-7f4f928b9185-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Sincronizarea s-a încheiat. Mesaje procesate în această rulare: 5. Mesajele deja existente nu au fost duplicate.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Conversație selectată",
+                "rows": [
+                  {
+                    "id": "638575ecc55e832379c532d2db5cfab001085ba4ddd4f3d13bbc76e2e4233c11",
+                    "name": "Alin"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "status": "completed",
+                      "complete": true,
+                      "processed": 5,
+                      "conversationId": "638575ecc55e832379c532d2db5cfab001085ba4ddd4f3d13bbc76e2e4233c11",
+                      "operation": "conversation_sync",
+                      "businessStatus": "completed",
+                      "executionState": "succeeded",
+                      "verifiedAt": "2026-10-16T10:17:02.668Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "638575ecc55e832379c532d2db5cfab001085ba4ddd4f3d13bbc76e2e4233c11"
+              }
+            ],
+            "createdAt": "2026-10-16T10:17:02.673Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0346",
+      "prompt": "Spune-mi ce comunicări au eșuat azi.",
+      "versions": {
+        "prompt": "jarvis-116",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "146",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted deterministic chat, real Firestore emulator/import/queue/worker, simulated Meta. No external sends or model calls.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "b7521374-4097-4690-a97e-4c5a074c1e00-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesaje eșuate astăzi, după ora Bucureștiului: 1. Nu am retrimis mesaje. Există și 1 mesaje eșuate fără data eșecului; nu le atribui zilei de astăzi.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "conversation_messages",
+                "title": "Comunicări eșuate astăzi",
+                "rows": [
+                  {
+                    "id": "a0dd3458aeb71a108ebba343c0b454a84d9f6e2d547c1b5be4be1fae6e6a646f",
+                    "conversationId": "141eee1dab678eb7dd9ec39471b808137007c60a74fb98195cac16d491091eb8",
+                    "channel": "messenger",
+                    "failedAt": "2026-10-16T10:17:04.468Z",
+                    "status": "failed",
+                    "retryAuthorized": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "141eee1dab678eb7dd9ec39471b808137007c60a74fb98195cac16d491091eb8"
+              }
+            ],
+            "createdAt": "2026-10-16T10:17:04.717Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic",
+  "scope": "Original conversation synchronization, failure diagnosis and today-failed communications through persisted chat and local Firestore. Real import/queue/worker with simulated Meta, six-page import, interruption/resume, twenty-page bound/resume, duplicate prevention and access revocation. No external messages or model calls; not production certification."
+}

@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot sincronizare și eșecuri Communications — 16 octombrie 2026
+
+Trei scenarii verificate împreună: **0332, 0333, 0346**. Comanda explicită sincronizează conversația selectată fără plan de aprobare suplimentar. Importul textual Messenger/Instagram parcurge paginile, verifică identitatea și participantul, salvează cursorul după fiecare pagină și reia progresul după întrerupere. Mesajele existente sunt deduplicate după identificatorul furnizorului. Apartenența, rolul și accesul sunt reverificate în tranzacția fiecărui mesaj importat, inclusiv dacă atribuirea se schimbă în timpul apelului către furnizor.
+
+O execuție are maximum 20 de pagini a câte 50 de mesaje. Limita produce explicit rezultat parțial, cu reluare la următoarea comandă; nu este declarată sincronizare completă. O cerere prea recentă/deja în curs este raportată fără a confirma un import nou. Atașamentele media nu sunt restaurate de acest import textual. Pentru WhatsApp/Storia, Jarvis explică primirea prin webhook fără a pretinde import manual. Diagnosticul citește starea salvată, progresul reluabil și categoria eșecului; nu inventează cauza exactă atunci când datele furnizorului nu o stabilesc și nu expune erori brute sau tokenuri.
+
+Raportul zilnic include numai mesaje trimise cu status failed și data eșecului în ziua Bucureștiului. Data este înregistrată de worker sau din recepția furnizorului, inclusiv când recepția precedă mesajul. Mesajele istorice fără data eșecului sunt numărate separat; unknown și conversațiile altui agent sunt excluse. Raportul nu autorizează retrimitere.
+
+Verificări: **133 teste unitare/planner/autorizare, 96 teste coadă/worker, 3/3 scenarii prin chat și emulator**, ESLint, paritatea operațiilor și build final complet. Probe pentru șase pagini, întrerupere și reluare, limită de 20 de pagini și continuare, lipsa duplicatelor, atribuire revocată, delimitarea zilei Bucureștiului și rezultate parțiale. Dovadă: [lot 35](evals/PROSPECTING_EXECUTION_BATCH_35.json). Inventar: **164/1000 dovezi locale** (133 cu model real, 31 deterministe). Furnizor simulat; fără mesaje externe sau certificare integrală în producție. Lot nepublicat în producție.
+
 ## Lot șabloane WhatsApp complete — 16 octombrie 2026
 
 Trei scenarii verificate împreună: **0316, 0318, 0320**. Catalogul actual furnizează șabloanele aprobate și suportate, textul și numărul parametrilor. Pentru cererea generică fără șablon sau valori, Jarvis cere informațiile lipsă și reia fluxul din chatul persistent. „Trimite un template aprobat” păstrează autorizația inițială până la completarea parametrilor, fără încă un plan de aprobare; completarea simplă și verificarea politicii produc o ciornă fără trimitere. Acest flux generic nu schimbă trimiterea directă a șablonului dedicat de prospectare.
