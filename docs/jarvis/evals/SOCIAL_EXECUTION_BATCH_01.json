@@ -1,0 +1,169 @@
+{
+  "scope": "Persisted social connection configuration and administrator post history, read through application chat on local Firestore. No live Meta diagnostics or publication certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0385",
+      "prompt": "Spune-mi ce conexiune are probleme.",
+      "versions": {
+        "prompt": "jarvis-130",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "161",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original persisted chat and local Firestore social configuration/history. No live Meta diagnostic or external publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "c7e4a65e-4fc0-41c0-8379-1a69ec08e545-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Conexiuni sociale cu limitări sau stare neconfirmată: 1.\nInstagram (blocked): connected; publish=reconnect_required, comments=unknown, insights=unknown\nStare salvată în aplicație pentru paginile Facebook și Instagram. Nu am verificat live accesul Meta, performanța sau publicarea și nu am reconectat conturi.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialConnections",
+                "title": "Conexiuni sociale",
+                "rows": [
+                  {
+                    "id": "blocked",
+                    "name": "Instagram",
+                    "channel": "instagram",
+                    "status": "connected",
+                    "capabilities": [
+                      {
+                        "capability": "publish",
+                        "status": "reconnect_required"
+                      },
+                      {
+                        "capability": "comments",
+                        "status": "unknown"
+                      },
+                      {
+                        "capability": "insights",
+                        "status": "unknown"
+                      }
+                    ],
+                    "needsAttention": true,
+                    "updatedAt": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:57:06.638Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0387",
+      "prompt": "Arată-mi dashboardul social.",
+      "versions": {
+        "prompt": "jarvis-130",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "161",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Original persisted chat and local Firestore social configuration/history. No live Meta diagnostic or external publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "ed0e3b11-49b7-4c43-8e3d-8ec96d155f49-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Conexiuni sociale configurate: 2.\nInstagram (blocked): connected; publish=reconnect_required, comments=unknown, insights=unknown\nPagina agenției (healthy): connected; publish=active, comments=active, insights=active\nIstoric: 1 postări din ultimele 50 de înregistrări. Nu reprezintă totalul istoric.\nStare salvată în aplicație pentru paginile Facebook și Instagram. Nu am verificat live accesul Meta, performanța sau publicarea și nu am reconectat conturi.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialConnections",
+                "title": "Conexiuni sociale",
+                "rows": [
+                  {
+                    "id": "blocked",
+                    "name": "Instagram",
+                    "channel": "instagram",
+                    "status": "connected",
+                    "capabilities": [
+                      {
+                        "capability": "publish",
+                        "status": "reconnect_required"
+                      },
+                      {
+                        "capability": "comments",
+                        "status": "unknown"
+                      },
+                      {
+                        "capability": "insights",
+                        "status": "unknown"
+                      }
+                    ],
+                    "needsAttention": true,
+                    "updatedAt": null
+                  },
+                  {
+                    "id": "healthy",
+                    "name": "Pagina agenției",
+                    "channel": "messenger",
+                    "status": "connected",
+                    "capabilities": [
+                      {
+                        "capability": "publish",
+                        "status": "active"
+                      },
+                      {
+                        "capability": "comments",
+                        "status": "active"
+                      },
+                      {
+                        "capability": "insights",
+                        "status": "active"
+                      }
+                    ],
+                    "needsAttention": false,
+                    "updatedAt": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "socialPosts",
+                "title": "Postări recente (maximum 50)",
+                "rows": [
+                  {
+                    "id": "post",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "needs_review",
+                    "destinations": [
+                      {
+                        "connectionId": "blocked",
+                        "status": "failed"
+                      }
+                    ]
+                  }
+                ],
+                "complete": false,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:57:06.994Z"
+          }
+        }
+      ]
+    }
+  ]
+}

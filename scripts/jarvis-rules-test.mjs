@@ -26,6 +26,7 @@ if (process.argv.includes('--property-post-review')) command = command.slice(0, 
 if (process.argv.includes('--facebook-create-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/facebook-create.integration.test.ts --testTimeout=30000';
 if (process.argv.includes('--facebook-control-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/facebook-control.integration.test.ts --testTimeout=30000';
 if (process.argv.includes('--facebook-monitor-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/facebook-monitor.integration.test.ts --testTimeout=30000';
+if (process.argv.includes('--social-dashboard-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/social-dashboard.integration.test.ts --testTimeout=30000';
 if (process.argv.includes('--facebook-setup-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/facebook-setup.integration.test.ts --testTimeout=30000';
 if (process.argv.includes('--calendar-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/calendar-concurrency.integration.test.ts';
 if (process.argv.includes('--outbound-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/outbound-recipient.integration.test.ts --testTimeout=20000';

@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot dashboard social și conexiuni cu probleme — 16 octombrie 2026
+
+Scenariile **0385** și **0387** citesc configurația persistentă a paginilor Facebook și conturilor Instagram. Jarvis arată starea conexiunii și disponibilitatea publicării, comentariilor și statisticilor; capabilitățile lipsă rămân neconfirmate. Raportul nu pretinde verificarea live a tokenurilor Meta sau a publicării.
+
+Administratorul primește și istoricul din ultimele 50 de înregistrări de postări, cu starea fiecărei destinații. Agenții păstrează accesul existent la conexiuni, fără extinderea accesului la istoricul administrativ. Profilul și agenția sunt recitite în tranzacție; înregistrările șterse sau ale altei agenții sunt excluse. Răspunsurile omit tokenurile, textele postărilor și erorile brute de la furnizor. Nu se modifică datele și nu se fac apeluri externe.
+
+Validare: 113 teste unitare/regresie, 4 teste de integrare, ESLint, paritate și build complet (inclusiv TypeScript) trecute. Dovadă: [Social lot 01](evals/SOCIAL_EXECUTION_BATCH_01.json). **197/1000 dovezi locale** (133 cu model real, 64 deterministe), fără certificare integrală în producție. Descrierea și fotografiile pentru grupurile Facebook rămân cele din CRM; runnerul manual nu este modificat. Lot nepublicat.
+
 ## Confirmări stricte pentru controlul joburilor Facebook — 16 octombrie 2026
 
 Executorul confirmă acum reprogramarea numai dacă rezultatul handlerului corespunde jobului, agentului, agenției, contului, orei și setului exact de grupuri cerute. Grupurile duplicate, lipsă, străine sau care nu mai sunt queued invalidează confirmarea. Datele echivalente cu offset diferit sunt comparate ca momente absolute. Anularea verifică identitatea și starea cancelled.
