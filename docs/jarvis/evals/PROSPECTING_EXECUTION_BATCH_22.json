@@ -1,0 +1,657 @@
+{
+  "scope": "Original scenario 0290 following actual-model ranking in persisted chat; historical order explained with fresh access checks, not a new ranking or production certification.",
+  "finalRuns": [{
+  "scenarioId": "master-0290",
+  "prompt": "Explică de ce le prioritizezi în ordinea aceasta.",
+  "versions": {
+    "prompt": "jarvis-107",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "137",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T07:34:26.173Z",
+  "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+  "executionVerified": true,
+  "initial": {
+    "id": "78943ac4-b838-426d-b537-1e55e887f672-ranking-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Iată cele mai promițătoare prospecte din rezultatul disponibil. Este o prioritate operațională, nu o probabilitate de vânzare. Au fost găsite patru, deci nu inventez alte rezultate.\n\n| # | Prospect | ID | Scor | Motive |\n|---|---|---|---:|---|\n| 1 | Alfa Prioritar | `z-a` | 60 | Follow-up înregistrat (+40); telefon românesc valid (+20) |\n| 2 | Prospect B | `z-b` | 20 | Telefon românesc valid (+20) |\n| 3 | Prospect C | `z-c` | 20 | Telefon românesc valid (+20) |\n| 4 | Prospect D | `z-d` | 20 | Telefon românesc valid (+20) |\n\nClasamentul a fost calculat după citirea completă a paginilor. Nu am contactat, preluat sau modificat niciun prospect.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [],
+        "complete": false,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [
+          {
+            "title": "Alfa Prioritar",
+            "isFavoriteActive": true,
+            "contactOutcome": "follow_up",
+            "ownerPhone": "0722123456",
+            "id": "z-a",
+            "priorityScore": 60,
+            "priorityReasons": [
+              "Follow-up înregistrat: +40",
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect B",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-b",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect C",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-c",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect D",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-d",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:34:39.196Z"
+  },
+  "final": {
+    "id": "78943ac4-b838-426d-b537-1e55e887f672-explain-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Prioritizarea este operațională, nu o estimare a probabilității de vânzare. Clasamentul anterior a fost:\n\n1. **Alfa Prioritar** — poziția 1, punctajul istoric 60: follow-up înregistrat (+40) și telefon românesc valid (+20). În prezent, punctajul este 40; acesta este separat de punctajul istoric și nu schimbă poziția explicată.\n2. **Poziția 2** — indisponibilă acum; nu pot furniza nume sau detalii anterioare.\n3. **Poziția 3** — indisponibilă acum; nu pot furniza nume sau detalii anterioare.\n4. **Prospect D** — poziția 4, punctajul istoric 20: telefon românesc valid (+20).\n\nPunctajele egale sunt departajate după ID. Sunt excluse prospectele inactive, refuzurile și cele atribuite altor agenți. Am păstrat ordinea afișată, fără să reclasific prospectele.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Explicația prioritizării",
+        "rows": [],
+        "complete": false,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Explicația prioritizării",
+        "rows": [
+          {
+            "id": "z-a",
+            "title": "Alfa Prioritar",
+            "position": 1,
+            "priorityScore": 60,
+            "priorityReasons": [
+              "Follow-up înregistrat: +40",
+              "Telefon românesc valid: +20"
+            ],
+            "currentPriorityScore": 40,
+            "state": "changed",
+            "explanation": "Punctajul și poziția explicate sunt cele afișate anterior; punctajul curent este raportat separat."
+          },
+          {
+            "id": "z-b",
+            "position": 2,
+            "state": "unavailable",
+            "explanation": "Prospectul nu mai este eligibil sau accesibil în lista proprie/neatribuită. Nu reluăm detaliile vechi."
+          },
+          {
+            "id": "z-c",
+            "position": 3,
+            "state": "unavailable",
+            "explanation": "Prospectul nu mai este eligibil sau accesibil în lista proprie/neatribuită. Nu reluăm detaliile vechi."
+          },
+          {
+            "id": "z-d",
+            "title": "Prospect D",
+            "position": 4,
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ],
+            "currentPriorityScore": 20,
+            "state": "unchanged",
+            "explanation": "Punctajul și poziția explicate sunt cele afișate anterior; punctajul curent este raportat separat."
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:34:51.808Z"
+  },
+  "telemetry": {
+    "requestId": "78943ac4-b838-426d-b537-1e55e887f672-explain",
+    "sessionId": "78943ac4-b838-426d-b537-1e55e887f672",
+    "userId": "78943ac4-b838-426d-b537-1e55e887f672",
+    "agencyId": "78943ac4-b838-426d-b537-1e55e887f672",
+    "models": [
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2186,
+          "outputTokens": 35,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 1939,
+          "estimated": false
+        },
+        "costUsd": 0.00028457499999999996,
+        "latencyMs": 1141,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2346,
+          "outputTokens": 37,
+          "cachedTokens": 1939,
+          "cacheWriteTokens": 404,
+          "estimated": false
+        },
+        "costUsd": 0.00008868999999999999,
+        "latencyMs": 1045,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2955,
+          "outputTokens": 101,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 2952,
+          "estimated": false
+        },
+        "costUsd": 0.0004198,
+        "latencyMs": 2099,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3213,
+          "outputTokens": 110,
+          "cachedTokens": 2952,
+          "cacheWriteTokens": 258,
+          "estimated": false
+        },
+        "costUsd": 0.00011706999999999999,
+        "latencyMs": 2506,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3348,
+          "outputTokens": 265,
+          "cachedTokens": 3210,
+          "cacheWriteTokens": 135,
+          "estimated": false
+        },
+        "costUsd": 0.00018177500000000001,
+        "latencyMs": 4351,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      }
+    ],
+    "tools": [
+      {
+        "name": "read",
+        "status": "success",
+        "latencyMs": 730,
+        "version": "137",
+        "argumentsHash": "b4508c69622dcc6da59d1964f75e33d8d252a4cd67d6a594ccb3f277c4e15346"
+      },
+      {
+        "name": "read",
+        "status": "success",
+        "latencyMs": 85,
+        "version": "137",
+        "argumentsHash": "33c2ce9139c77c68d4a09a3e31508956c9024a3d63afedde6e727585c65871c5"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "failed",
+        "latencyMs": 7,
+        "version": "137",
+        "argumentsHash": "1027dcca53086a0947480908a6709609ff1bdc4bcac8bc976b9907232bdfbfd3"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "success",
+        "latencyMs": 10,
+        "version": "137",
+        "argumentsHash": "78dc57f2681c3f67f77e693582ae2b161678a40e80753287103ddab2663f09ad"
+      }
+    ],
+    "status": "success",
+    "elapsedMs": 12235,
+    "jev": {
+      "mode": "shadow",
+      "model": "jev-1.13.0",
+      "route": "CLARIFY",
+      "confidence": 0.67,
+      "inputTokens": 439,
+      "outputTokens": 48,
+      "costUsd": 0.000018438000000000002,
+      "estimated": false,
+      "actualRoute": "JARVIS_PLANNER",
+      "latencyMs": 247,
+      "status": "ok",
+      "reasonCode": "shadow_only"
+    },
+    "requiresApproval": false,
+    "costUsd": 0.0011103479999999997,
+    "tokens": 15083,
+    "versions": {
+      "prompt": "jarvis-107",
+      "routing": "luna-first-2",
+      "policy": "request-crm-14",
+      "tools": "137",
+      "memory": "2",
+      "skills": "3"
+    },
+    "configuration": {
+      "flags": {
+        "memory": true,
+        "subagents": true,
+        "autonomousWorkflows": true,
+        "proactiveInsights": true,
+        "automations": true,
+        "mcp": false,
+        "solEscalation": true
+      },
+      "regionalProcessing": false,
+      "defaultLimits": {
+        "maxSteps": 12,
+        "maxToolCalls": 24,
+        "maxTokens": 70000,
+        "maxCost": 0.12,
+        "maxExecutionMs": 120000,
+        "maxParallel": 3,
+        "maxOutputTokens": 2200
+      }
+    },
+    "timestamp": "2026-10-16T07:34:51.846Z"
+  },
+  "missing": {
+    "id": "78943ac4-b838-426d-b537-1e55e887f672-no-context-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Afișează mai întâi clasamentul prospectelor pe care vrei să îl explic. Nu am un clasament complet selectat în conversație.",
+    "cards": [],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:34:52.041Z"
+  },
+  "verification": "Original 0290 follow-up after actual-model 0289 ranking in persisted chat: original ordering and scores retained, fresh two-page CRM read reports changed score separately, reassigned/deleted rows hide stale details, unchanged prospect explained, missing ranking clarified, idempotent replay and zero CRM mutations or external calls."
+}],
+  "initialFailures": [{
+  "scenarioId": "master-0290",
+  "prompt": "Explică de ce le prioritizezi în ordinea aceasta.",
+  "versions": {
+    "prompt": "jarvis-107",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "137",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T07:32:59.909Z",
+  "environment": "Actual model and application planner/executor with local Firestore. No external phone calls or production certification.",
+  "executionVerified": false,
+  "initial": {
+    "id": "5a0d6545-45b3-4d8f-b032-eef6dfbf6522-ranking-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Am găsit 4 prospecte, nu zece. Clasamentul reflectă **prioritate operațională, nu probabilitatea de vânzare**. Au fost excluse prospectele inactive, refuzurile și cele atribuite altor agenți.\n\n1. **Alfa Prioritar** — scor 60: follow-up înregistrat (+40); telefon românesc valid (+20). ID: `z-a`\n2. **Prospect B** — scor 20: telefon românesc valid (+20). ID: `z-b`\n3. **Prospect C** — scor 20: telefon românesc valid (+20). ID: `z-c`\n4. **Prospect D** — scor 20: telefon românesc valid (+20). ID: `z-d`\n\nNu am contactat, preluat sau modificat prospecte.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [],
+        "complete": false,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Prospecte prioritare",
+        "rows": [
+          {
+            "title": "Alfa Prioritar",
+            "isFavoriteActive": true,
+            "contactOutcome": "follow_up",
+            "ownerPhone": "0722123456",
+            "id": "z-a",
+            "priorityScore": 60,
+            "priorityReasons": [
+              "Follow-up înregistrat: +40",
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect B",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-b",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect C",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-c",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          },
+          {
+            "title": "Prospect D",
+            "isFavoriteActive": true,
+            "ownerPhone": "0722123456",
+            "id": "z-d",
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ]
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:33:13.033Z"
+  },
+  "final": {
+    "id": "5a0d6545-45b3-4d8f-b032-eef6dfbf6522-explain-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Clasamentul era de **prioritate operațională**, nu o estimare a probabilității de vânzare. Criteriile au fost +40 pentru follow-up înregistrat și +20 pentru telefon românesc valid; la egalitate, ordinea se stabilește după ID. Prospectele inactive, refuzurile și cele atribuite altor agenți sunt excluse.\n\n1. **Alfa Prioritar** — poziția 1, punctajul afișat inițial **60**: follow-up înregistrat (+40) și telefon românesc valid (+20). Punctajul curent este **40**; acesta este separat de punctajul folosit în clasamentul afișat.\n2. **Prospect B** — poziția 2: nu mai este eligibil sau accesibil în lista proprie/neatribuită. Nu pot confirma motivul vechii poziții din datele disponibile acum.\n3. **Prospect C** — poziția 3: nu mai este eligibil sau accesibil în lista proprie/neatribuită. Nu pot confirma motivul vechii poziții din datele disponibile acum.\n4. **Prospect D** — poziția 4, punctajul afișat inițial **20**: telefon românesc valid (+20); punctajul curent este tot **20**.\n\nNu am modificat, rezervat sau contactat nimic.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Explicația prioritizării",
+        "rows": [],
+        "complete": false,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Explicația prioritizării",
+        "rows": [
+          {
+            "id": "z-a",
+            "title": "Alfa Prioritar",
+            "position": 1,
+            "priorityScore": 60,
+            "priorityReasons": [
+              "Follow-up înregistrat: +40",
+              "Telefon românesc valid: +20"
+            ],
+            "currentPriorityScore": 40,
+            "state": "changed",
+            "explanation": "Punctajul și poziția explicate sunt cele afișate anterior; punctajul curent este raportat separat."
+          },
+          {
+            "id": "z-b",
+            "position": 2,
+            "state": "unavailable",
+            "explanation": "Prospectul nu mai este eligibil sau accesibil în lista proprie/neatribuită. Nu reluăm detaliile vechi."
+          },
+          {
+            "id": "z-c",
+            "position": 3,
+            "state": "unavailable",
+            "explanation": "Prospectul nu mai este eligibil sau accesibil în lista proprie/neatribuită. Nu reluăm detaliile vechi."
+          },
+          {
+            "id": "z-d",
+            "title": "Prospect D",
+            "position": 4,
+            "priorityScore": 20,
+            "priorityReasons": [
+              "Telefon românesc valid: +20"
+            ],
+            "currentPriorityScore": 20,
+            "state": "unchanged",
+            "explanation": "Punctajul și poziția explicate sunt cele afișate anterior; punctajul curent este raportat separat."
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T07:33:22.284Z"
+  },
+  "telemetry": {
+    "requestId": "5a0d6545-45b3-4d8f-b032-eef6dfbf6522-explain",
+    "sessionId": "5a0d6545-45b3-4d8f-b032-eef6dfbf6522",
+    "userId": "5a0d6545-45b3-4d8f-b032-eef6dfbf6522",
+    "agencyId": "5a0d6545-45b3-4d8f-b032-eef6dfbf6522",
+    "models": [
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2734,
+          "outputTokens": 35,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 2487,
+          "estimated": false
+        },
+        "costUsd": 0.000353075,
+        "latencyMs": 945,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 2894,
+          "outputTokens": 37,
+          "cachedTokens": 2487,
+          "cacheWriteTokens": 404,
+          "estimated": false
+        },
+        "costUsd": 0.00009417,
+        "latencyMs": 967,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3503,
+          "outputTokens": 118,
+          "cachedTokens": 0,
+          "cacheWriteTokens": 3500,
+          "estimated": false
+        },
+        "costUsd": 0.0004968,
+        "latencyMs": 2074,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      },
+      {
+        "decision": {
+          "logical": "LUNA",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "reason": "luna_first",
+          "version": "luna-first-2"
+        },
+        "usage": {
+          "inputTokens": 3646,
+          "outputTokens": 326,
+          "cachedTokens": 3500,
+          "cacheWriteTokens": 143,
+          "estimated": false
+        },
+        "costUsd": 0.000216175,
+        "latencyMs": 3855,
+        "pricingVersion": "openai-standard-2026-10-04",
+        "outcome": "success"
+      }
+    ],
+    "tools": [
+      {
+        "name": "read",
+        "status": "success",
+        "latencyMs": 731,
+        "version": "137",
+        "argumentsHash": "b4508c69622dcc6da59d1964f75e33d8d252a4cd67d6a594ccb3f277c4e15346"
+      },
+      {
+        "name": "read",
+        "status": "success",
+        "latencyMs": 80,
+        "version": "137",
+        "argumentsHash": "33c2ce9139c77c68d4a09a3e31508956c9024a3d63afedde6e727585c65871c5"
+      },
+      {
+        "name": "goal_coverage",
+        "status": "success",
+        "latencyMs": 18,
+        "version": "137",
+        "argumentsHash": "28494472a2cd5809a4fcfa28f72612d73ddda034870bceff79b87c794ef6ef94"
+      }
+    ],
+    "status": "success",
+    "elapsedMs": 9005,
+    "jev": {
+      "mode": "shadow",
+      "model": "jev-1.13.0",
+      "route": "CLARIFY",
+      "confidence": 0.7,
+      "inputTokens": 439,
+      "outputTokens": 48,
+      "costUsd": 0.000018438000000000002,
+      "estimated": false,
+      "actualRoute": "JARVIS_PLANNER",
+      "latencyMs": 295,
+      "status": "ok",
+      "reasonCode": "shadow_only"
+    },
+    "requiresApproval": false,
+    "costUsd": 0.001178658,
+    "tokens": 13780,
+    "versions": {
+      "prompt": "jarvis-107",
+      "routing": "luna-first-2",
+      "policy": "request-crm-14",
+      "tools": "137",
+      "memory": "2",
+      "skills": "3"
+    },
+    "configuration": {
+      "flags": {
+        "memory": true,
+        "subagents": true,
+        "autonomousWorkflows": true,
+        "proactiveInsights": true,
+        "automations": true,
+        "mcp": false,
+        "solEscalation": true
+      },
+      "regionalProcessing": false,
+      "defaultLimits": {
+        "maxSteps": 12,
+        "maxToolCalls": 24,
+        "maxTokens": 70000,
+        "maxCost": 0.12,
+        "maxExecutionMs": 120000,
+        "maxParallel": 3,
+        "maxOutputTokens": 2200
+      }
+    },
+    "timestamp": "2026-10-16T07:33:22.324Z"
+  },
+  "failure": "expected 'Clasamentul era de **prioritate opera…' not to match /Prospect B|Prospect C/"
+}]
+}

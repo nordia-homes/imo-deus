@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,45 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 290) {
+        await db.recursiveDelete(favorites);
+        const rows = [
+          { id: 'z-a', title: 'Alfa Prioritar', isFavoriteActive: true, contactOutcome: 'follow_up', ownerPhone: '0722123456' },
+          ...['b', 'c', 'd'].map(key => ({ id: `z-${key}`, title: `Prospect ${key.toUpperCase()}`, isFavoriteActive: true, ownerPhone: '0722123456' })),
+        ];
+        for (let index = 0; index < 51; index++) await favorites.doc(`a-${String(index).padStart(3, '0')}`).set({ isFavoriteActive: true, takenByAgentId: 'other', title: 'Alt agent' });
+        for (const row of rows) { const { id: key, ...data } = row; await favorites.doc(key).set(data); }
+        await agency.collection('assistantSessions').doc(id).set({ ownerId: id, createdAt: new Date().toISOString() });
+        const request = { sessionId: id, requestId: `${id}-ranking`, prompt: corpus.scenarios.find(row => row.id === 'master-0289')!.text, currentRecord: null };
+        const initial = await chatTurn(ctx, request);
+        expect(initial.message.cards?.flatMap(card => card.rows).map(row => row.id)).toEqual(rows.map(row => row.id));
+        await favorites.doc('z-a').update({ ownerPhone: '' });
+        await favorites.doc('z-b').update({ takenByAgentId: 'other' });
+        await favorites.doc('z-c').delete();
+        const before = (await favorites.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }));
+        const explanationRequest = { ...request, requestId: `${id}-explain`, prompt };
+        const result = await chatTurn(ctx, explanationRequest);
+        report = { ...report, initial: initial.message, final: result.message, telemetry: (await agency.collection('assistantTelemetry').doc(explanationRequest.requestId).get()).data() };
+        const explained = result.message.cards?.flatMap(card => card.rows) || [];
+        expect(explained.map(row => row.id)).toEqual(rows.map(row => row.id));
+        expect(explained[0]).toMatchObject({ priorityScore: 60, currentPriorityScore: 40, state: 'changed', position: 1 });
+        expect(explained.slice(1, 3).every(row => row.state === 'unavailable' && !row.title)).toBe(true);
+        expect(explained[3]).toMatchObject({ priorityScore: 20, currentPriorityScore: 20, state: 'unchanged', position: 4 });
+        expect(result.message.text).toMatch(/60/); expect(result.message.text).toMatch(/40/);
+        expect(result.message.text).toMatch(/ID/); expect(result.message.text).toMatch(/operațional/i);
+        expect(result.message.text).not.toMatch(/Prospect B|Prospect C/);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect((report.telemetry as any).status).toBe('success');
+        expect(await chatTurn(ctx, explanationRequest)).toEqual(result);
+        expect((await favorites.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }))).toEqual(before);
+        const emptySession = `${id}-missing`;
+        await agency.collection('assistantSessions').doc(emptySession).set({ ownerId: id, createdAt: new Date().toISOString() });
+        const missing = await chatTurn(ctx, { ...explanationRequest, sessionId: emptySession, requestId: `${id}-no-context` });
+        expect(missing.message.text).toMatch(/clasament/i); expect(missing.message.planId).toBeUndefined();
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, missing: missing.message, executionVerified: true, verification: 'Original 0290 follow-up after actual-model 0289 ranking in persisted chat: original ordering and scores retained, fresh two-page CRM read reports changed score separately, reassigned/deleted rows hide stale details, unchanged prospect explained, missing ranking clarified, idempotent replay and zero CRM mutations or external calls.' };
+        return;
+      }
       if (number === 289) {
         await db.recursiveDelete(favorites);
         const hidden = Array.from({ length: 51 }, (_, index) => ({ id: `a-${String(index).padStart(3, '0')}`, isFavoriteActive: true, takenByAgentId: 'other', title: 'Alt agent', contactOutcome: 'follow_up', ownerPhone: '0722123456' }));

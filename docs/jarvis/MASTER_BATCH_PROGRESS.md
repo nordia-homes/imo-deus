@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Explicația clasamentului — scenariul 0290 — 16 octombrie 2026
+
+„Explică de ce le prioritizezi în ordinea aceasta.” folosește clasamentul complet din ultimul răspuns relevant, păstrează pozițiile și punctajele afișate și recitește toate paginile CRM înaintea explicației. Punctajul curent este raportat separat dacă datele s-au schimbat. Prospectele șterse, inactive, refuzate ori atribuite altor agenți sunt indicate doar prin poziția indisponibilă, fără detalii istorice. Fără un clasament selectat, Jarvis cere afișarea lui înainte să inventeze o justificare.
+
+Prima probă cu model real a identificat o scurgere de context: modelul repeta numele vechi din istoric, deși citirea nouă nu le mai furniza. Pentru acest flux, istoricul conversației, memoria și rezumatul nu mai intră în contextul modelului; serverul transmite numai explicațiile și starea reverificate. O regresie verifică exact absența detaliilor istorice din toate cererile către model.
+
+Au trecut 71 de teste unitare și proba originală cu model real, după un clasament 0289 creat în aceeași conversație: paginare, punctaj istoric 60 versus punctaj actual 40, reatribuire, ștergere, păstrarea ordinii, departajarea după ID, context lipsă, reluare idempotentă și nicio modificare a prospectelor sau contactare externă. ESLint și paritatea au trecut. Dovadă: [PROSPECTING_EXECUTION_BATCH_22.json](evals/PROSPECTING_EXECUTION_BATCH_22.json), inclusiv prima probă nereușită.
+
+Versiuni jarvis-107 / tools 137. Inventarul crește la 122/1000 dovezi locale cu model real, cu 0 certificări complete în producție. Acest lot nu este publicat în producție.
+
 ## Zece prospecte prioritare — scenariul 0289 — 16 octombrie 2026
 
 „Arată-mi cele mai promițătoare zece prospecte.” parcurge toate paginile CRM și calculează pe server un top global de maximum zece prospecte active, proprii sau neatribuite. Sunt excluse atribuirile altor agenți, rezultatele negative și refuzul de apel înregistrat. Clasamentul nu este prezentat până la încheierea citirii tuturor paginilor, inclusiv când prima pagină nu conține rezultate eligibile.

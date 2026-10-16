@@ -85,6 +85,19 @@ describe('Responses tool planning', () => {
     expect(result.actions).toEqual([]); expect(result.metrics.status).toBe('success');
     expect(model.respond.mock.calls[0][0].tools.map((tool: any) => tool.name)).toEqual(['read']);
   });
+  it('explains saved ranking only from fresh authorized evidence, without stale history or summary in model context', async () => {
+    const prompt = 'Explică de ce le prioritizezi în ordinea aceasta.';
+    const history = [{ id: 'rank', role: 'assistant' as const, text: 'hidden-detail', createdAt: new Date().toISOString(), cards: [{ type: 'data' as const, source: 'ownerListingFavorites', title: 'Prospecte prioritare', complete: true, rows: [{ id: 'p', title: 'hidden-detail', priorityScore: 20, priorityReasons: ['Telefon românesc valid: +20'] }] }] }];
+    vi.mocked(readResource).mockResolvedValueOnce({ rows: [{ id: 'p', title: 'hidden-detail', isFavoriteActive: true, takenByAgentId: 'other' }], complete: true, nextCursor: null });
+    const read = call('read', { resource: 'contacts', id: 'wrong', limit: 1 });
+    const model = scripted(read, call('goal_coverage', { requirements: [{ id: 'explain', sourceQuote: prompt, description: 'Explicație', resolution: 'answered', steps: [], evidenceCallIds: [read.calls[0].id] }] }), final);
+    const result = await planTurn(ctx, prompt, history, { provider: model, summary: { note: 'hidden-detail' } });
+    expect(result.metrics.status).toBe('success'); expect(result.actions).toEqual([]);
+    expect(result.cards.flatMap(card => card.rows)).toEqual([expect.objectContaining({ id: 'p', position: 1, state: 'unavailable' })]);
+    expect(JSON.stringify(model.respond.mock.calls)).not.toContain('hidden-detail');
+    expect(model.respond.mock.calls.every(args => args[0].tools.every((tool: any) => ['read', 'goal_coverage'].includes(tool.name)))).toBe(true);
+    expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('clarification');
+  });
   it('reads every active-prospect page with server-bound scope even when the model repeats a wrong selection', async () => {
     const prompt = 'Găsește prospectele mele active.';
     expect((await planTurn(ctx, prompt, [], { provider: scripted(final) })).metrics.status).toBe('partial');

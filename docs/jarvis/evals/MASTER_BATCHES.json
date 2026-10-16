@@ -2589,7 +2589,11 @@
           "sourceNumber": 290,
           "request": "Explică de ce le prioritizezi în ordinea aceasta.",
           "requestSha256": "72c6c1669598753cf2a6e06a4138d7fb3cc5770b3b6a151b8960dcbfb184766d",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_22.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0291",
