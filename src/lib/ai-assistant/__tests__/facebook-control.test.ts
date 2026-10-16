@@ -3,6 +3,14 @@ import { assertFacebookControlState, verifiedFacebookRunnerControl } from '@/lib
 import { facebookControlRequest, requestedFacebookControl, facebookControlReceipt, facebookControlExecutionPrompt } from '../facebook-control';
 const job = { id: 'job', agencyId: 'a', ownerUid: 'u', propertyId: 'p', connectionId: 'c', status: 'scheduled', groups: [{ url: 'https://facebook.com/groups/a', status: 'queued' }], scheduledAt: '2030-01-01T06:00:00.000Z' };
 describe('Facebook job control contracts', () => {
+  it('resolves a multiple-job selection only for the pending bulk command', () => {
+    const input = 'Joburi Facebook: job, second';
+    const history: any[] = [{ role: 'assistant', cards: [{ source: 'facebookControlRequest', rows: [{ prompt: 'Mută toate joburile selectate cu o oră mai târziu.' }] }] }];
+    expect(facebookControlExecutionPrompt(input, history)).toContain('Mută toate');
+    history[0].cards[0].rows[0].prompt = 'Anulează jobul dacă fluxul suportă anularea.';
+    expect(facebookControlExecutionPrompt(input, history)).toBe(input);
+    expect(facebookControlRequest('Nu muta toate joburile selectate cu o oră mai târziu.')).toBeNull();
+  });
   it.each(['running', 'completed', 'queued', 'cooldown', 'error'])('does not reschedule %s', status => expect(() => assertFacebookControlState({ ...job, status }, false)).toThrow());
   it.each([{ actualStartedAt: 'now' }, { leaseToken: 'leased' }, { groups: [{ status: 'submitted' }] }])('does not reset started work %j', extra => expect(() => assertFacebookControlState({ ...job, ...extra }, false)).toThrow());
   it('does not overwrite a completed job as cancelled', () => expect(() => assertFacebookControlState({ ...job, status: 'completed' }, true)).toThrow());

@@ -1,0 +1,270 @@
+{
+  "scope": "Explicit multiple-job selection followed by sequential actual executor/PATCH operations. Local Firestore, automatic local runner and simulated cloud transport. Not external Facebook publication certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0397",
+      "prompt": "Mută toate joburile selectate cu o oră mai târziu.",
+      "versions": {
+        "prompt": "jarvis-129",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "160",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, explicit multi-job selection, executor and PATCH on local Firestore. Automatic local runner; cloud transport simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "8e02fa4e-f9d0-4a0c-8021-f8a47b1452a7-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează joburile de mutat: răspunde „Joburi Facebook: ID1, ID2”. Fiecare programare va fi mutată cu 60 de minute mai târziu; joburile deja pornite sau terminate nu sunt eligibile.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T04:00:00Z"
+                  },
+                  {
+                    "id": "second",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T06:30:00Z"
+                  },
+                  {
+                    "id": "untouched",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T04:00:00Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "facebookControlRequest",
+                "title": "Comandă în așteptarea selecției",
+                "rows": [
+                  {
+                    "id": "pending",
+                    "prompt": "Mută toate joburile selectate cu o oră mai târziu."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:41:55Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "123b39f0-d2c6-479f-9933-596807c4fdde-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook job a fost reprogramat pentru 2026-10-17 la 08:00, ora Bucureștiului. Publicarea nu este încă confirmată.\nJobul Facebook second a fost reprogramat pentru 2026-10-17 la 10:30, ora Bucureștiului. Publicarea nu este încă confirmată.\nAcțiuni executate: 2. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T04:00:00Z"
+                  },
+                  {
+                    "id": "second",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T06:30:00Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_update",
+                      "jobId": "job",
+                      "executionState": "succeeded",
+                      "businessStatus": "scheduled",
+                      "scheduledAt": "2026-10-17T05:00:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  },
+                  {
+                    "step": 2,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_update",
+                      "jobId": "second",
+                      "executionState": "succeeded",
+                      "businessStatus": "scheduled",
+                      "scheduledAt": "2026-10-17T07:30:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:41:55.736Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0397",
+      "prompt": "Mută toate joburile selectate cu o oră mai târziu.",
+      "versions": {
+        "prompt": "jarvis-129",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "160",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, explicit multi-job selection, executor and PATCH on local Firestore. Automatic cloud runner; cloud transport simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "3715854f-d62e-48b5-a72b-15a268d072d1-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează joburile de mutat: răspunde „Joburi Facebook: ID1, ID2”. Fiecare programare va fi mutată cu 60 de minute mai târziu; joburile deja pornite sau terminate nu sunt eligibile.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T04:00:00Z"
+                  },
+                  {
+                    "id": "second",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T06:30:00Z"
+                  },
+                  {
+                    "id": "untouched",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T04:00:00Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "facebookControlRequest",
+                "title": "Comandă în așteptarea selecției",
+                "rows": [
+                  {
+                    "id": "pending",
+                    "prompt": "Mută toate joburile selectate cu o oră mai târziu."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:41:56.061Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "ad1d479a-24bc-4535-b87e-774e4454f113-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook job a fost reprogramat pentru 2026-10-17 la 08:00, ora Bucureștiului. Publicarea nu este încă confirmată.\nJobul Facebook second a fost reprogramat pentru 2026-10-17 la 10:30, ora Bucureștiului. Publicarea nu este încă confirmată.\nAcțiuni executate: 2. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T04:00:00Z"
+                  },
+                  {
+                    "id": "second",
+                    "propertyTitle": "Cișmigiu",
+                    "scheduledAt": "2026-10-17T06:30:00Z"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_update",
+                      "jobId": "job",
+                      "executionState": "succeeded",
+                      "businessStatus": "scheduled",
+                      "scheduledAt": "2026-10-17T05:00:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  },
+                  {
+                    "step": 2,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_update",
+                      "jobId": "second",
+                      "executionState": "succeeded",
+                      "businessStatus": "scheduled",
+                      "scheduledAt": "2026-10-17T07:30:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:41:56.747Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot reprogramare Facebook în selecție multiplă — 16 octombrie 2026
+
+Scenariul **0397** cere selecția explicită „Joburi Facebook: ID1, ID2”, apoi mută fiecare programare cu 60 de minute după momentul salvat. Sunt păstrate contul, grupurile și proprietatea; confirmările folosesc Europe/Bucharest. Operația reprezintă 60 de minute efective, inclusiv peste miezul nopții sau schimbarea orei. Nu interpretează automat întreaga listă afișată drept selecție.
+
+Înaintea execuției verifică toate ID-urile selectate, oferta anterioară, apartenența, starea joburilor, revizia și datele. Selecția invalidă, un job preluat de runner sau terminat împiedică pregătirea lotului. Duplicatele sunt eliminate; selecțiile peste limita de 100 sunt refuzate. Fiecare mutare trece secvențial prin executor și handlerul PATCH existent, care revalidează datele la commit. Nu există tranzacție atomică peste mai multe apeluri externe: la eroare, modificările deja confirmate rămân salvate, următorii pași sunt opriți și rezultatul este parțial. Replay-ul aceleiași cereri nu repetă mutările.
+
+Validare: 145 teste unitare/regresie, 40 teste de integrare, TypeScript, ESLint, paritate și build complet trecute. Sunt verificate două joburi mutate pe local/cloud simulat, joburi neselectate sau terminate nemodificate, selecții devenite invalide și eșecul cloud la al doilea pas fără repetarea primului ori executarea celui de-al treilea.
+
+Dovadă: [Facebook lot 10](evals/FACEBOOK_EXECUTION_BATCH_10.json). **195/1000 dovezi locale** (133 cu model real, 62 deterministe). Fără publicări externe și fără certificarea corpusului integral în producție. Runnerul manual nu este extins; lot nepublicat.
+
 ## Lot verificarea orei persistate Facebook — 16 octombrie 2026
 
 Scenariul **0395** recitește jobul din baza de date și compară ora cu ultima confirmare reușită a executorului pentru același job, păstrată în conversație. După creare sau reprogramare identifică jobul din rezultatul execuției chiar dacă există alte joburi. Comparația se face între momentele absolute, iar afișarea folosește exclusiv Europe/Bucharest, inclusiv ora de vară/iarnă.

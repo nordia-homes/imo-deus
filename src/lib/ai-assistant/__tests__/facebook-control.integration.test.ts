@@ -41,6 +41,48 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook controls through
   }
   function request(method: string, body: any) { return new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs/job', { method, headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) }); }
   function moveBody(f: any) { return { connectionId: 'connection', groupUrls: f.raw.groups.map((g: any) => g.url), scheduledAt: tomorrowBucharest(new Date()) + 'T05:00:00.000Z', expectedUpdatedAt: f.raw.updatedAt }; }
+  for (const mode of ['local', 'cloud']) it('executes master-0397 for all explicitly selected jobs: ' + mode, async () => {
+    const f = await fixture(mode), jobs = f.agency.collection('facebookCloudPublishingJobs');
+    await jobs.doc('second').set({ ...f.raw, id: 'second', scheduledAt: tomorrowBucharest(new Date()) + 'T06:30:00.000Z' });
+    await jobs.doc('untouched').set({ ...f.raw, id: 'untouched' });
+    await jobs.doc('done').set({ ...f.raw, id: 'done', status: 'completed' });
+    mocks.runner.mockImplementation(async (path, options) => { const id = path.split('/').at(-1); const data = JSON.parse(options.body); return { job: { ...(await jobs.doc(id).get()).data(), ...data, groups: data.groups.map((g: any) => ({ ...g, status: 'queued' })) } }; });
+    const scenarioId = 'master-0397', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text, sessionId = randomUUID();
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt, currentRecord: null });
+    expect(first.message.cards?.[0].rows.map(row => row.id)).not.toContain('done');
+    const input = { sessionId, requestId: randomUUID(), prompt: 'Joburi Facebook: job, second, job', currentRecord: null };
+    const result = await chatTurn(f.ctx, input); expect(result.message.planId).toBeUndefined();
+    expect((await f.job.get()).data()?.scheduledAt).toBe(tomorrowBucharest(new Date()) + 'T05:00:00.000Z');
+    expect((await jobs.doc('second').get()).data()?.scheduledAt).toBe(tomorrowBucharest(new Date()) + 'T07:30:00.000Z');
+    expect((await jobs.doc('untouched').get()).data()?.scheduledAt).toBe(f.raw.scheduledAt);
+    expect((await jobs.doc('done').get()).data()?.status).toBe('completed');
+    await chatTurn(f.ctx, input); expect(mocks.runner).toHaveBeenCalledTimes(mode === 'cloud' ? 2 : 0); expect(mocks.fetch).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-facebook-shift', { recursive: true });
+    await writeFile('.tmp/jarvis-facebook-shift/master-0397-' + mode + '.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual chat, explicit multi-job selection, executor and PATCH on local Firestore. Automatic ' + mode + ' runner; cloud transport simulated.', runs: [{ phase: 'original', final: first.message }, { phase: 'selection', final: result.message }] }, null, 2));
+  });
+  it.each(['completed', 'running', 'foreign', 'not-offered'])('does not partially start a batch containing an invalid selection: %s', async variant => {
+    const f = await fixture('cloud'), jobs = f.agency.collection('facebookCloudPublishingJobs'), sessionId = randomUUID();
+    await jobs.doc('second').set({ ...f.raw, id: 'second' });
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Mută toate joburile selectate cu o oră mai târziu.', currentRecord: null });
+    if (variant !== 'not-offered') await jobs.doc('second').update(variant === 'foreign' ? { ownerUid: 'other' } : { status: variant });
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Joburi Facebook: job, ' + (variant === 'not-offered' ? 'unknown' : 'second'), currentRecord: null });
+    expect((await f.job.get()).data()).toEqual(f.raw); expect(mocks.runner).not.toHaveBeenCalled();
+  });
+  it('stops after a cloud failure without shifting earlier jobs twice or touching later jobs', async () => {
+    const f = await fixture('cloud'), jobs = f.agency.collection('facebookCloudPublishingJobs'), sessionId = randomUUID();
+    for (const id of ['second', 'third']) await jobs.doc(id).set({ ...f.raw, id });
+    mocks.runner.mockImplementation(async (path, options) => {
+      const id = path.split('/').at(-1); if (id === 'second') throw new Error('Simulated timeout');
+      const data = JSON.parse(options.body); return { job: { ...(await jobs.doc(id).get()).data(), ...data, groups: data.groups.map((g: any) => ({ ...g, status: 'queued' })) } };
+    });
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Mută toate joburile selectate cu o oră mai târziu.', currentRecord: null });
+    const input = { sessionId, requestId: randomUUID(), prompt: 'Joburi Facebook: job, second, third', currentRecord: null };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).toContain('oprită');
+    expect((await f.job.get()).data()?.scheduledAt).toBe(tomorrowBucharest(new Date()) + 'T05:00:00.000Z');
+    for (const id of ['second', 'third']) expect((await jobs.doc(id).get()).data()?.scheduledAt).toBe(f.raw.scheduledAt);
+    await chatTurn(f.ctx, input); expect(mocks.runner).toHaveBeenCalledTimes(2);
+  });
   it.each(['deleted', 'foreign-agency', 'Vândut', 'Închiriat', 'Inactiv'])('refuses unavailable property before cloud reschedule: %s', async variant => {
     const f = await fixture('cloud');
     await f.agency.collection('properties').doc('property').update(variant === 'deleted' ? { deletedAt: 'now' } : variant === 'foreign-agency' ? { agencyId: 'other' } : { status: variant });

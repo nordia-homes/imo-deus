@@ -4,17 +4,19 @@ import { normalized, type AssistantAction, type AssistantMessage } from './contr
 import { bucharestInputFromIso, bucharestLocalToIso } from '@/lib/bucharest-time';
 import { readFacebookMonitor } from './facebook-monitor';
 import { assertFacebookControlState } from '@/lib/facebook-job-control';
-export function facebookControlRequest(prompt: string): { mode: 'move' | 'cancel'; time?: string } | null {
+export function facebookControlRequest(prompt: string): { mode: 'move' | 'cancel' | 'shift'; time?: string } | null {
   const text = normalized(prompt).trim().replace(/[.!?]+$/, '');
   if (text === 'anuleaza jobul daca fluxul suporta anularea') return { mode: 'cancel' };
+  if (text === 'muta toate joburile selectate cu o ora mai tarziu') return { mode: 'shift' };
   const move = /^muta jobul selectat la ora ([0-2]\d:[0-5]\d)$/.exec(text);
   if (move && Number(move[1].slice(0, 2)) < 24) return { mode: 'move', time: move[1] };
   return null;
 }
 export function facebookControlExecutionPrompt(prompt: string, history: AssistantMessage[]) {
-  if (!/^job facebook:\s*[A-Za-z0-9_-]{1,180}\s*$/i.test(prompt.trim())) return prompt;
+  if (!/^(?:job facebook:\s*[A-Za-z0-9_-]{1,180}|joburi facebook:\s*[A-Za-z0-9_,\s-]+)\s*$/i.test(prompt.trim())) return prompt;
   const last = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1);
   const pending = last?.cards?.find(card => card.source === 'facebookControlRequest')?.rows;
+  if (/^joburi facebook:/i.test(prompt.trim()) && facebookControlRequest(String(pending?.[0]?.prompt || ''))?.mode !== 'shift') return prompt;
   return pending?.length === 1 && typeof pending[0].prompt === 'string' && facebookControlRequest(pending[0].prompt) ? pending[0].prompt : prompt;
 }
 const revision = z.string().datetime();
@@ -26,11 +28,36 @@ export function facebookControlAction(action: AssistantAction) {
 export function requestedFacebookControl(action: AssistantAction, prompt: string) {
   if (!facebookControlAction(action) || action.kind !== 'existing_operation') return false;
   const request = facebookControlRequest(prompt);
-  return action.operation === 'facebook_job_remove' ? request?.mode === 'cancel' : request?.mode === 'move' && bucharestInputFromIso(String(action.body.scheduledAt)).time === request.time;
+  return action.operation === 'facebook_job_remove' ? request?.mode === 'cancel' : request?.mode === 'shift' || request?.mode === 'move' && bucharestInputFromIso(String(action.body.scheduledAt)).time === request.time;
+}
+export async function prepareFacebookShift(ctx: AssistantContext, prompt: string, effectivePrompt: string, history: AssistantMessage[]) {
+  const selectedIds = effectivePrompt !== prompt && /^joburi facebook:/i.test(prompt.trim()) ? [...new Set(prompt.replace(/^joburi facebook:\s*/i, '').trim().split(/[\s,]+/).filter(Boolean))] : [];
+  const last = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1);
+  const offered = last?.cards?.find(card => card.source === 'facebookJobs')?.rows.map(row => row.id) || [];
+  return ctx.adminDb.runTransaction(async tx => {
+    const profile = (await tx.get(ctx.adminDb.collection('users').doc(ctx.uid))).data();
+    if (!profile || profile.agencyId !== ctx.agencyId || profile.role !== ctx.role || !['agent', 'admin'].includes(ctx.role || '')) throw new Error('Acces revocat');
+    const snapshot = await tx.get(ctx.adminDb.collection('agencies').doc(ctx.agencyId).collection('facebookCloudPublishingJobs').where('ownerUid', '==', ctx.uid));
+    const available = snapshot.docs.filter(doc => doc.data().agencyId === ctx.agencyId && !doc.data().deletedAt);
+    const rows = available.flatMap(doc => { try { assertFacebookControlState(doc.data(), false); return [{ id: doc.id, propertyTitle: String(doc.data().propertyTitle || 'Proprietate'), scheduledAt: doc.data().scheduledAt || null }]; } catch { return []; } });
+    const actions: AssistantAction[] = [];
+    if (!selectedIds.length) return { rows, actions, needsSelection: rows.length > 0, pendingPrompt: rows.length ? effectivePrompt : null, text: rows.length ? 'Selectează joburile de mutat: răspunde „Joburi Facebook: ID1, ID2”. Fiecare programare va fi mutată cu 60 de minute mai târziu; joburile deja pornite sau terminate nu sunt eligibile.' : 'Nu există joburi proprii eligibile pentru reprogramare.' };
+    if (selectedIds.length > 100 || selectedIds.some(id => !offered.includes(id) || !rows.some(row => row.id === id))) throw new Error('Selecție modificată sau job pornit');
+    for (const id of selectedIds) {
+      const row = available.find(doc => doc.id === id)!.data();
+      const timestamp = typeof row.scheduledAt === 'string' ? Date.parse(row.scheduledAt) : NaN;
+      if (!Number.isFinite(timestamp) || timestamp + 3600000 < Date.now() + 60000 || timestamp + 3600000 > Date.now() + 366 * 86400000) throw new Error('Dată invalidă');
+      const action: AssistantAction = { kind: 'existing_operation', operation: 'facebook_job_update', params: { jobId: id }, query: {}, body: { expectedUpdatedAt: row.updatedAt, connectionId: row.connectionId, groupUrls: row.groups.map((group: any) => group.url), scheduledAt: new Date(timestamp + 3600000).toISOString() } };
+      if (!facebookControlAction(action)) throw new Error('Job incomplet');
+      actions.push(action);
+    }
+    return { rows: rows.filter(row => selectedIds.includes(row.id)), actions, needsSelection: false, pendingPrompt: null, text: 'Mut cele ' + actions.length + ' programări selectate cu 60 de minute mai târziu.' };
+  });
 }
 export async function prepareFacebookControl(ctx: AssistantContext, prompt: string, history: AssistantMessage[]) {
   const effectivePrompt = facebookControlExecutionPrompt(prompt, history), request = facebookControlRequest(effectivePrompt);
   if (!request) return null;
+  if (request.mode === 'shift') return prepareFacebookShift(ctx, prompt, effectivePrompt, history);
   const selected = await readFacebookMonitor(ctx, 'status', history, new Date(), prompt);
   const actions: AssistantAction[] = [];
   if (selected.rows.length !== 1) return { ...selected, actions, pendingPrompt: selected.rows.length ? effectivePrompt : null };
