@@ -65,7 +65,7 @@ if (process.argv.includes('--prospecting-whatsapp-live')) {
 }
 if (process.argv.includes('--corpus-prospecting-live')) {
   process.env.JARVIS_PROSPECTING_LIVE = 'true';
-  const selected = process.argv.find(arg => /^--case=master-\d{4}$/.test(arg));
+  const selected = process.argv.find(arg => /^--case=master-\d{4}(?:,master-\d{4})*$/.test(arg));
   if (selected) process.env.JARVIS_PROSPECTING_CASE = selected.slice(7);
   command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/corpus-prospecting.live.integration.test.ts';
 }

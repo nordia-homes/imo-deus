@@ -35,9 +35,9 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
-  if (process.env.JARVIS_PROSPECTING_CASE && process.env.JARVIS_PROSPECTING_CASE !== scenarioId) continue;
+  if (process.env.JARVIS_PROSPECTING_CASE && !process.env.JARVIS_PROSPECTING_CASE.split(',').includes(scenarioId)) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
     if (!/^(localhost|127\.0\.0\.1):\d+$/.test(process.env.FIRESTORE_EMULATOR_HOST || '')) throw new Error('Local emulator required');
     dotenv.config({ path: '.env.local', quiet: true });
@@ -60,12 +60,72 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       epsilon: { ...base, title: 'Prospect Epsilon', isFavoriteActive: false },
     };
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
-    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271, 272, 273, 274, 275, 276].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
+    const history: AssistantMessage[] = (number >= 253 && number <= 261 || [266, 270, 271, 272, 273, 274, 275, 276, 295, 296, 297, 298].includes(number)) ? [{ id: 'selection', role: 'assistant', text: 'Prospectul selectat este Prospect Alfa.', createdAt: new Date().toISOString(), cards: [{ type: 'data', title: 'Prospect selectat', source: 'ownerListingFavorites', rows: [{ id: source.id, ...fixture[source.id] }] }] }] : [];
     let report: Record<string, unknown> = { scenarioId, prompt, versions: VERSIONS, runAt: new Date().toISOString(), environment: 'Actual model and application planner/executor with local Firestore. No external phone calls or production certification.', executionVerified: false };
     try {
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number === 296 || number === 297) {
+        await favorites.doc(source.id).update({ collaborationStatus: 'collaborates' });
+        const session = agency.collection('assistantSessions').doc(id);
+        await session.set({ ownerId: id }); await session.collection('messages').doc('selection').set(history[0]);
+        const request = { sessionId: id, requestId: `${id}-postcall`, prompt, currentRecord: null };
+        const before = (await favorites.doc(source.id).get()).data();
+        const result = await chatTurn(ctx, request);
+        expect(result.message.text).toContain('Acceptarea verbală nu este contract semnat');
+        if (number === 296) expect(result.message.text).toContain('4.');
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect((await favorites.doc(source.id).get()).data()).toEqual(before);
+        expect((await agency.collection('generatedContracts').get()).empty).toBe(true);
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        await favorites.doc(source.id).update({ collaborationStatus: null });
+        const pending = await planTurn(ctx, prompt, history);
+        expect(pending.actions).toEqual([]);
+        if (number === 296) expect(pending.text).toContain('Nu există o acceptare');
+        await favorites.doc(source.id).update({ collaborationStatus: 'collaborates', contactOutcome: 'negative' });
+        const refusal = await planTurn(ctx, prompt, history);
+        expect(refusal.actions).toEqual([]);
+        if (number === 296) expect(refusal.text).toContain('există un refuz');
+        await favorites.doc(source.id).update({ takenByAgentId: 'other' });
+        const blocked = await planTurn(ctx, prompt, history);
+        expect(blocked.metrics.status).toBe('clarification'); expect(blocked.cards).toEqual([]);
+        expect((await planTurn(ctx, prompt, [])).metrics.status).toBe('clarification');
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, environment: 'Deterministic application chat with local Firestore; no model or external calls.', final: result.message, pending, refusal, blocked, executionVerified: true, verification: 'Persisted chat with original command, real current collaboration status, conditional next steps, no signed-contract inference, no writes, refusal/no-acceptance/access-revocation/missing-selection variants and replay.' }; return;
+      }
+      if (number === 299 || number === 300) {
+        const now = new Date().toISOString();
+        for (let n = 0; n < 52; n++) await favorites.doc(`hidden-${n}`).set({ takenByAgentId: 'other', title: 'SECRET' });
+        await favorites.doc(source.id).update({ contactOutcome: 'follow_up', contactOutcomeByAgentId: id, contactOutcomeAt: '2000-01-01T00:00:00Z' });
+        await favorites.doc('manual').set({ title: 'Manual', contactOutcome: 'negative', contactOutcomeByAgentId: id, contactOutcomeAt: now });
+        const callRows = [
+          { id: 'missing', ownerListingId: source.id, status: 'completed', startedAt: now, endedAt: now },
+          { id: 'recorded', ownerListingId: source.id, status: 'completed', outcome: 'no_answer', startedAt: now, endedAt: now },
+          { id: 'queued', ownerListingId: source.id, status: 'queued', createdAt: now },
+          { id: 'foreign', ownerListingId: 'hidden-0', status: 'completed', startedAt: now, endedAt: now },
+          { id: 'old', ownerListingId: source.id, status: 'completed', outcome: 'busy', startedAt: '2000-01-01T00:00:00Z' },
+        ];
+        for (const { id: key, ...data } of callRows) await agency.collection('aiOutreachCalls').doc(key).set(data);
+        await agency.collection('tasks').doc('human-call').set({ ownerListingId: source.id, agentId: id, description: 'Apel uman proprietar', status: 'completed', completedAt: now });
+        const before = (await agency.collection('aiOutreachCalls').get()).docs.map(doc => doc.data());
+        await agency.collection('assistantSessions').doc(id).set({ ownerId: id });
+        const request = { sessionId: id, requestId: `${id}-report`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        const rows = result.message.cards?.flatMap(card => card.rows) || [];
+        if (number === 299) expect(rows.map(row => row.id)).toEqual(['missing', 'human-call']);
+        else expect(rows[0]).toMatchObject({ aiCallsToday: 2, aiCompletedToday: 2, aiMissingResultToday: 1, humanTasksMissingResult: 1, manualResultsRecordedToday: 1, manualRefusalsToday: 1 });
+        expect(JSON.stringify(result)).not.toContain('SECRET');
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        expect((await agency.collection('aiOutreachCalls').get()).docs.map(doc => doc.data())).toEqual(before);
+        await favorites.doc(source.id).update({ takenByAgentId: 'other' });
+        const refreshed = await chatTurn(ctx, { ...request, requestId: `${id}-refresh` });
+        const freshRows = refreshed.message.cards?.flatMap(card => card.rows) || [];
+        if (number === 299) expect(freshRows).toEqual([]); else expect(freshRows[0].aiCallsToday).toBe(0);
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, environment: 'Deterministic application chat with local Firestore; no model or external calls.', final: result.message, refreshed: refreshed.message, executionVerified: true, verification: 'Original command through persisted chat, multiple prospect pages, missing versus valid outcomes, old manual result does not hide new missing call outcome, current Bucharest day, queued calls not counted as performed, access filtering, replay and no call mutations.' }; return;
+      }
       if (number === 291) {
         await db.recursiveDelete(favorites);
         for (let index = 0; index < 51; index++) await favorites.doc(`a-${index}`).set({ isFavoriteActive: true, takenByAgentId: 'other', title: 'Inaccesibil', ownerPhone: '0733000000' });
@@ -365,7 +425,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
         report = { ...report, executionVerified: true, verification: 'Actual model and persisted chatTurn clarification/reply; saved human callback task with prospect, participant, phone and Bucharest date/time; persisted confirmation; idempotent replay; no AI call. Local Firestore only, no production or browser certification.' };
         return;
       }
-      if (number === 271) {
+      if (number === 271 || number === 298) {
         const tasks = agency.collection('tasks'), calls = agency.collection('aiOutreachCalls'), owner = agency.collection('aiOutreachOwnerListingStatuses').doc(source.id);
         await favorites.doc(source.id).update({ contactOutcome: 'negative', contactOutcomeAt: new Date().toISOString() });
         await owner.set({ latestAiCallId: 'scheduled', aiNextFollowUpAt: '2099-01-01T10:00:00Z' });
@@ -629,7 +689,7 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
         await agency.collection('tasks').doc('planned-followup').set({ ownerListingId: source.id, description: 'Revenire la proprietar', status: 'open', dueDate: '2026-10-24', createdAt: '2026-10-10T08:00:00.000Z' });
         await agency.collection('aiOutreachCalls').doc('unrelated-call').set({ ownerListingId: 'beta', summary: 'CANARY_UNRELATED_OWNER' });
       }
-      if ([254, 255, 259].includes(number)) {
+      if ([254, 255, 259, 295].includes(number)) {
         const session = agency.collection('assistantSessions').doc(id);
         await session.set({ ownerId: id, createdAt: new Date().toISOString() });
         await session.collection('messages').doc('selection').set(history[0]);

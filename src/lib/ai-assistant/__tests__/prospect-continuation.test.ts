@@ -73,3 +73,8 @@ it('freezes the contacted phone with a new outcome and clears it with an explici
   expect(prospectPatch(saved, { contactOutcome: null }, 'u', 'Agent', 'now').contactOutcomePhone).toBeNull();
   expect(prospectPatch({}, { contactOutcome: 'negative' }, 'u', 'Agent', 'now').contactOutcomePhone).toBeNull();
 });
+it('keeps the original post-call result request pending until the agent supplies the outcome', () => {
+  const request = 'Înregistrează rezultatul după apel.';
+  expect(prospectClarification(request, [selection])).toContain('Care a fost rezultatul');
+  expect(pendingProspectRequest(request, 'clarification', [selection])).toEqual({ listingId: 'p', request });
+});

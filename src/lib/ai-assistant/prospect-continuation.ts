@@ -8,10 +8,10 @@ export function prospectClarification(prompt: string, history: AssistantMessage[
   const text = normalized(prompt).replace(/[.!?]+$/, '').trim();
   if (/^(adauga|noteaza|inregistreaza)( in prospectare)? conditiile discutate cu proprietarul$/.test(text)) return 'Ce condiții ai discutat cu proprietarul? Le voi adăuga la notele prospectului selectat.';
   if (/^(actualizeaza|schimba|modifica|seteaza) (statusul|starea) prospectului(?: (selectat|acesta|curent))?$/.test(text)) return 'Ce status dorești pentru prospectul selectat: preluat, rezervat, colaborează, nu colaborează sau un rezultat de contact?';
-  if (/^(adauga|noteaza|inregistreaza) rezultatul apelului(?: de (azi|astazi|ieri))?$/.test(text)) return 'Care a fost rezultatul apelului și ce detalii dorești să păstrez la prospectul selectat?';
+  if (/^(adauga|noteaza|inregistreaza) rezultatul (?:apelului(?: de (azi|astazi|ieri))?|dupa apel)$/.test(text)) return 'Care a fost rezultatul apelului și ce detalii dorești să păstrez la prospectul selectat?';
 }
 export function pendingProspectRequest(prompt: string, status: string, history: AssistantMessage[]): ProspectContinuation | undefined {
-  if (status !== 'clarification' || (!humanCallTaskRequest(prompt) && (!/\b(actualizeaza|schimba|modifica|seteaza|adauga|noteaza|inregistreaza|marcheaza)\b/.test(normalized(prompt)) || !/\b(prospect|prospectul|prospectului|prospectare|proprietarul|apelului)\b/.test(normalized(prompt))))) return;
+  if (status !== 'clarification' || (!humanCallTaskRequest(prompt) && (!/\b(actualizeaza|schimba|modifica|seteaza|adauga|noteaza|inregistreaza|marcheaza)\b/.test(normalized(prompt)) || !/\b(prospect|prospectul|prospectului|prospectare|proprietarul|apelului|apel)\b/.test(normalized(prompt))))) return;
   for (const message of [...history].reverse()) {
     const cards = message.cards?.filter(card => card.source === 'ownerListingFavorites');
     if (!cards?.length) continue;

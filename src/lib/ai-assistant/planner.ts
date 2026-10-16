@@ -88,6 +88,34 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Nu am putut verifica integral prospectele și termenele de apel. Reîncearcă solicitarea; nu am inițiat apeluri.', 'unavailable');
     }
   }
+  const postCallPrompt = prompt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[.!?]+$/, '');
+  if (['arata-mi prospectele fara rezultat inregistrat dupa apel', 'da-mi raportul de prospectare pentru ziua de azi'].includes(postCallPrompt)) {
+    try {
+      const { readProspectingReport } = await import('./post-call-report');
+      const report = await readProspectingReport(ctx);
+      if (postCallPrompt.startsWith('arata-mi')) {
+        cards.push({ type: 'data', source: 'prospectingReport', title: 'Apeluri fără rezultat înregistrat', rows: report.missing, complete: true });
+        return finish(report.missing.length ? `Apeluri finalizate fără rezultat înregistrat: ${report.missing.length}.\n` + report.missing.map(row => `${row.title} — apel ${row.id}`).join('\n') + '\nSunt incluse apelurile AI și taskurile de apel marcate finalizate. Un apel uman fără evidență în CRM nu poate fi identificat.' : 'Nu există apeluri AI sau taskuri de apel finalizate fără rezultat în datele accesibile. Apelurile umane fără evidență în CRM nu pot fi verificate.');
+      }
+      cards.push({ type: 'data', source: 'prospectingReport', title: `Raport prospectare — ${report.day}`, rows: [{ id: report.day, ...report.summary }], complete: true });
+      const r = report.summary;
+      return finish(`Raport pentru ${report.day}, ora Bucureștiului, prospecte proprii și neatribuite:\nApeluri AI efectuate/începute azi: ${r.aiCallsToday}; finalizate: ${r.aiCompletedToday}; eșuate: ${r.aiFailedToday}; finalizate fără rezultat: ${r.aiMissingResultToday}.\nRezultate manuale înregistrate azi: ${r.manualResultsRecordedToday}; refuzuri: ${r.manualRefusalsToday}; follow-up: ${r.manualFollowupsToday}.\nTaskuri de apel finalizate fără rezultat, indiferent de zi: ${r.humanTasksMissingResult}. Rezultatele manuale sunt înregistrări CRM, nu un număr verificat de apeluri umane. Nu adun aceste categorii: se pot suprapune. Datele lipsă și activitatea altor agenți nu sunt incluse.`);
+    } catch { return finish('Nu am putut citi integral datele raportului de prospectare. Reîncearcă solicitarea.', 'unavailable'); }
+  }
+  if (['daca accepta colaborarea, pregateste urmatorii pasi', 'nu considera acceptarea verbala contract semnat'].includes(postCallPrompt)) {
+    const { selectedPostCallProspect, collaborationNextSteps } = await import('./post-call-report');
+    const listingId = selectedPostCallProspect(history);
+    if (!listingId) return finish('Selectează prospectul pentru a verifica situația colaborării.', 'clarification');
+    try {
+      const row = await collaborationNextSteps(ctx, listingId);
+      if (!row) return finish('Prospectul selectat nu este disponibil în lista proprie/neatribuită.', 'clarification');
+      cards.push({ type: 'data', source: 'ownerListingFavorites', title: 'Pași după apel', rows: [row], complete: true });
+      const disclaimer = 'Acceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.';
+      if (postCallPrompt.startsWith('nu considera')) return finish(disclaimer);
+      if (!row.accepted) return finish(`Nu există o acceptare eligibilă înregistrată pentru prospectul selectat${row.refused ? '; există un refuz' : ''}. Nu inițiez pași de colaborare. ${disclaimer}`);
+      return finish(`Pași pregătiți pentru ${row.title}:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\n${disclaimer}\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.`);
+    } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
+  }
   if (!process.env.OPENAI_API_KEY && !options.provider) return finish('Serviciul AI nu este configurat. Căutarea structurată rămâne disponibilă.', 'unavailable');
   const readiness = await automationReadiness(ctx);
   const contextHint = (prompt + ' ' + history.slice(-2).map(m=>m.text).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -141,7 +169,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     selectedHistoryListingId = selection?.rows.length === 1 && typeof selection.rows[0].id === 'string' ? selection.rows[0].id : undefined;
   }
   if (outreachScheduleRequest) return finish(selectedHistoryListingId ? scheduleQuestion : 'Selectează prospectul și indică data și ora pentru apelul AI, ora Bucureștiului.', 'clarification');
-  const followupStop = /^opreste follow[ -]?up-ul daca proprietarul a refuzat[.!?\s]*$/.test(historyPrompt);
+  const followupStop = /^(?:opreste follow[ -]?up-ul daca proprietarul a refuzat|daca refuza, inchide corect secventa de follow[ -]?up)[.!?\s]*$/.test(historyPrompt);
   const outreachReadTool = followupStop ? 'prospect_followup_stop' : 'outreach_preflight';
   const outreachLaunch = followupStop || outreachScheduleReply || /^(porneste|lanseaza) apelul ai(?: acum)?(?: daca este eligibil si este aprobat)?[.!?\s]*$/.test(historyPrompt);
   if (outreachLaunch && !selectedHistoryListingId) return finish('Pentru ce prospect dorești apelul AI? Selectează anunțul din prospectare.', 'clarification');

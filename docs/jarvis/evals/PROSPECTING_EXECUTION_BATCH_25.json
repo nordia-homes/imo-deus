@@ -1,0 +1,360 @@
+{"executionMode":"deterministic","scope":"Original scenarios 0296, 0297, 0299 and 0300 through deterministic application chat and local Firestore. Conditional collaboration steps, AI and human task result checks, current-day reporting. No external calls or production certification.","finalRuns":[{
+  "scenarioId": "master-0296",
+  "prompt": "Dacă acceptă colaborarea, pregătește următorii pași.",
+  "versions": {
+    "prompt": "jarvis-109",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "139",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:28:25.171Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external calls.",
+  "executionVerified": true,
+  "final": {
+    "id": "92d20a8a-ab18-46a3-b578-1ddd2068c961-postcall-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Pași pregătiți pentru Prospect Alfa:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\nAcceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Pași după apel",
+        "rows": [
+          {
+            "id": "92d20a8a-ab18-46a3-b578-1ddd2068c961-alfa",
+            "title": "Prospect Alfa",
+            "accepted": true,
+            "refused": false
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:28:25.486Z"
+  },
+  "pending": {
+    "text": "Nu există o acceptare eligibilă înregistrată pentru prospectul selectat. Nu inițiez pași de colaborare. Acceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Pași după apel",
+        "rows": [
+          {
+            "id": "92d20a8a-ab18-46a3-b578-1ddd2068c961-alfa",
+            "title": "Prospect Alfa",
+            "accepted": false,
+            "refused": false
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 39
+    }
+  },
+  "refusal": {
+    "text": "Nu există o acceptare eligibilă înregistrată pentru prospectul selectat; există un refuz. Nu inițiez pași de colaborare. Acceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Pași după apel",
+        "rows": [
+          {
+            "id": "92d20a8a-ab18-46a3-b578-1ddd2068c961-alfa",
+            "title": "Prospect Alfa",
+            "accepted": false,
+            "refused": true
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 44
+    }
+  },
+  "blocked": {
+    "text": "Prospectul selectat nu este disponibil în lista proprie/neatribuită.",
+    "cards": [],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "clarification",
+      "elapsedMs": 23
+    }
+  },
+  "verification": "Persisted chat with original command, real current collaboration status, conditional next steps, no signed-contract inference, no writes, refusal/no-acceptance/access-revocation/missing-selection variants and replay."
+},{
+  "scenarioId": "master-0297",
+  "prompt": "Nu considera acceptarea verbală contract semnat.",
+  "versions": {
+    "prompt": "jarvis-109",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "139",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:28:25.779Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external calls.",
+  "executionVerified": true,
+  "final": {
+    "id": "2caff02b-3ebd-4578-b891-bcb298ba2c3d-postcall-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Acceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Pași după apel",
+        "rows": [
+          {
+            "id": "2caff02b-3ebd-4578-b891-bcb298ba2c3d-alfa",
+            "title": "Prospect Alfa",
+            "accepted": true,
+            "refused": false
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:28:26.018Z"
+  },
+  "pending": {
+    "text": "Acceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Pași după apel",
+        "rows": [
+          {
+            "id": "2caff02b-3ebd-4578-b891-bcb298ba2c3d-alfa",
+            "title": "Prospect Alfa",
+            "accepted": false,
+            "refused": false
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 40
+    }
+  },
+  "refusal": {
+    "text": "Acceptarea verbală nu este contract semnat. Nu am modificat starea vreunui contract și nu confirm existența unui document semnat.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "ownerListingFavorites",
+        "title": "Pași după apel",
+        "rows": [
+          {
+            "id": "2caff02b-3ebd-4578-b891-bcb298ba2c3d-alfa",
+            "title": "Prospect Alfa",
+            "accepted": false,
+            "refused": true
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 41
+    }
+  },
+  "blocked": {
+    "text": "Prospectul selectat nu este disponibil în lista proprie/neatribuită.",
+    "cards": [],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "clarification",
+      "elapsedMs": 26
+    }
+  },
+  "verification": "Persisted chat with original command, real current collaboration status, conditional next steps, no signed-contract inference, no writes, refusal/no-acceptance/access-revocation/missing-selection variants and replay."
+},{
+  "scenarioId": "master-0299",
+  "prompt": "Arată-mi prospectele fără rezultat înregistrat după apel.",
+  "versions": {
+    "prompt": "jarvis-109",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "139",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:28:42.443Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external calls.",
+  "executionVerified": true,
+  "final": {
+    "id": "736a4932-40fe-4ef1-b823-ec190d24c44b-report-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Apeluri finalizate fără rezultat înregistrat: 2.\nProspect Alfa — apel missing\nProspect Alfa — apel human-call\nSunt incluse apelurile AI și taskurile de apel marcate finalizate. Un apel uman fără evidență în CRM nu poate fi identificat.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "prospectingReport",
+        "title": "Apeluri fără rezultat înregistrat",
+        "rows": [
+          {
+            "id": "missing",
+            "ownerListingId": "736a4932-40fe-4ef1-b823-ec190d24c44b-alfa",
+            "title": "Prospect Alfa",
+            "endedAt": "2026-10-16T08:28:42.502Z",
+            "status": "missing_result",
+            "channel": "ai"
+          },
+          {
+            "id": "human-call",
+            "ownerListingId": "736a4932-40fe-4ef1-b823-ec190d24c44b-alfa",
+            "title": "Prospect Alfa",
+            "endedAt": "2026-10-16T08:28:42.502Z",
+            "status": "missing_result",
+            "channel": "human_task"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:28:44.459Z"
+  },
+  "refreshed": {
+    "id": "736a4932-40fe-4ef1-b823-ec190d24c44b-refresh-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Nu există apeluri AI sau taskuri de apel finalizate fără rezultat în datele accesibile. Apelurile umane fără evidență în CRM nu pot fi verificate.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "prospectingReport",
+        "title": "Apeluri fără rezultat înregistrat",
+        "rows": [],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:28:45.526Z"
+  },
+  "verification": "Original command through persisted chat, multiple prospect pages, missing versus valid outcomes, old manual result does not hide new missing call outcome, current Bucharest day, queued calls not counted as performed, access filtering, replay and no call mutations."
+},{
+  "scenarioId": "master-0300",
+  "prompt": "Dă-mi raportul de prospectare pentru ziua de azi.",
+  "versions": {
+    "prompt": "jarvis-109",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "139",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:28:45.655Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external calls.",
+  "executionVerified": true,
+  "final": {
+    "id": "1e3d7b08-5479-4375-a3ad-ca9e496ecb6e-report-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Raport pentru 2026-10-16, ora Bucureștiului, prospecte proprii și neatribuite:\nApeluri AI efectuate/începute azi: 2; finalizate: 2; eșuate: 0; finalizate fără rezultat: 1.\nRezultate manuale înregistrate azi: 1; refuzuri: 1; follow-up: 0.\nTaskuri de apel finalizate fără rezultat, indiferent de zi: 1. Rezultatele manuale sunt înregistrări CRM, nu un număr verificat de apeluri umane. Nu adun aceste categorii: se pot suprapune. Datele lipsă și activitatea altor agenți nu sunt incluse.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "prospectingReport",
+        "title": "Raport prospectare — 2026-10-16",
+        "rows": [
+          {
+            "id": "2026-10-16",
+            "aiCallsToday": 2,
+            "aiCompletedToday": 2,
+            "aiFailedToday": 0,
+            "aiMissingResultToday": 1,
+            "humanTasksMissingResult": 1,
+            "manualResultsRecordedToday": 1,
+            "manualRefusalsToday": 1,
+            "manualFollowupsToday": 0
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:28:46.997Z"
+  },
+  "refreshed": {
+    "id": "1e3d7b08-5479-4375-a3ad-ca9e496ecb6e-refresh-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Raport pentru 2026-10-16, ora Bucureștiului, prospecte proprii și neatribuite:\nApeluri AI efectuate/începute azi: 0; finalizate: 0; eșuate: 0; finalizate fără rezultat: 0.\nRezultate manuale înregistrate azi: 1; refuzuri: 1; follow-up: 0.\nTaskuri de apel finalizate fără rezultat, indiferent de zi: 0. Rezultatele manuale sunt înregistrări CRM, nu un număr verificat de apeluri umane. Nu adun aceste categorii: se pot suprapune. Datele lipsă și activitatea altor agenți nu sunt incluse.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "prospectingReport",
+        "title": "Raport prospectare — 2026-10-16",
+        "rows": [
+          {
+            "id": "2026-10-16",
+            "aiCallsToday": 0,
+            "aiCompletedToday": 0,
+            "aiFailedToday": 0,
+            "aiMissingResultToday": 0,
+            "humanTasksMissingResult": 0,
+            "manualResultsRecordedToday": 1,
+            "manualRefusalsToday": 1,
+            "manualFollowupsToday": 0
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [],
+    "createdAt": "2026-10-16T08:28:48.117Z"
+  },
+  "verification": "Original command through persisted chat, multiple prospect pages, missing versus valid outcomes, old manual result does not hide new missing call outcome, current Bucharest day, queued calls not counted as performed, access filtering, replay and no call mutations."
+}]}

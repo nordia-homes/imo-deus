@@ -160,3 +160,8 @@ describe('explicit scoped autonomy', () => {
     expect(executeAction).not.toHaveBeenCalled();
   });
 });
+it('authorizes requested follow-up closure but not a request merely to explain it', async () => {
+  const action: AssistantAction = { kind: 'stop_prospect_followups', listingId: 'p' };
+  expect((await runSafePrefix(ctx(), 'close', [action], 'Dacă refuză, închide corect secvența de follow-up.')).results).toHaveLength(1);
+  expect((await runSafePrefix(ctx(), 'explain', [action], 'Doar explică cum închide Jarvis secvența de follow-up.')).results).toHaveLength(0);
+});

@@ -12,6 +12,22 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot comun după apel — scenariile 0295–0300 — 16 octombrie 2026
+
+Șase scenarii implementate/verificate împreună, cu o singură pornire a emulatorului pentru lot. Comanda `--corpus-prospecting-live --case=master-0295,master-0296,master-0297,master-0298,master-0299,master-0300` selectează explicit toate cazurile. Rulările viitoare se organizează în loturi de fluxuri înrudite, conform cererii utilizatorului.
+
+- **0295:** solicită rezultatul efectiv când lipsește, păstrează prospectul selectat, reia cererea și salvează rezultatul/nota fără confirmare suplimentară; test prin chat persistent, model real și verificarea scrierii/replay.
+- **0296–0297:** recitește colaborarea și refuzurile, pregătește pașii numai când acceptarea există și păstrează distincția dintre acord verbal și contract semnat. Nu creează un contract sau taskuri dintr-o cerere de pregătire a pașilor. Variante fără acceptare, cu refuz, fără selecție și cu atribuire revocată.
+- **0298:** refolosește închiderea tranzacțională a follow-up-ului după verificarea refuzului. Anulează apelurile nelansate și arhivează taskurile proprii de apel; păstrează taskurile altor agenți, documentele și apelurile deja în curs. O cerere de explicație nu autorizează închiderea. Model real, executor și replay verificate.
+- **0299:** listează apelurile AI și taskurile de apel uman finalizate fără rezultat; un rezultat manual mai vechi decât apelul nu îl ascunde. Sunt excluse apelurile/taskurile altor agenți. Apelurile umane fără nicio evidență CRM nu pot fi identificate.
+- **0300:** raport pe ziua Bucureștiului, cu apelurile AI separate de rezultatele manuale înregistrate. Apelurile doar în coadă nu sunt declarate efectuate; categoriile posibil suprapuse nu sunt însumate. Raportează separat taskurile de apel finalizate fără rezultat, indiferent de zi.
+
+Validare: **118 teste unitare/planner/autorizare și 6/6 scenarii originale în emulator**. Dovezi: [lot 24, model real](evals/PROSPECTING_EXECUTION_BATCH_24.json) și [lot 25, execuție deterministă](evals/PROSPECTING_EXECUTION_BATCH_25.json). Inventar: **129/1000 dovezi locale** (124 cu model real, 5 deterministe), fără certificare integrală în producție. Nu s-au efectuat apeluri sau trimis mesaje externe. Lotul nu este publicat în producție.
+
+## Cerință actualizată — master script de prospectare — 16 octombrie 2026
+
+Utilizatorul configurează un singur master script, comun tuturor apelurilor de prospectare. Jarvis nu trebuie să genereze, să scurteze sau să adapteze individual scriptul pentru proprietari. Scenariile originale 0292–0294 se reevaluează conform acestei cerințe; nu se implementează ca generare liberă și nu sunt marcate ca executate. Modificările începute pentru generarea/scurtarea scriptului au fost retrase înainte de commit sau publicare. Continuarea planului trebuie să respecte master scriptul configurat de utilizator.
+
 ## Proprietari de sunat astăzi — scenariul 0291 — 16 octombrie 2026
 
 Comanda „Spune-mi ce proprietari merită sunați azi.” citește toate paginile prospectelor și taskurile/stările de apel ale agenției. Returnează numai prospecte active proprii ori neatribuite, cu telefon valid; exclude refuzurile și apelurile deja în coadă/programate/în curs, inclusiv la alte anunțuri cu același telefon. Prioritatea este operațională: task restant/scadent în ziua Bucureștiului, follow-up fără termen, apoi prospect activ. Termenele viitoare sau invalide nu sunt transformate în recomandări pentru astăzi. Telefoanele sunt deduplicate; răspunsul nu inițiază apeluri și nu depinde de activarea Vapi.

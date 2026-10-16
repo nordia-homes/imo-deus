@@ -10,7 +10,7 @@ import { confirmedQueueRejection } from './operation-error';
 const SAFE_KINDS = new Set(['delete_task', 'create_task', 'update_task', 'add_interaction', 'import_owner_listing', 'recommend_properties']);
 // These CRM commands are authorized by the agent's request, without a saved opt-in.
 const CRM_VERBS: Record<string, string> = {
-  stop_prospect_followups: 'opreste|anuleaza',
+  stop_prospect_followups: 'opreste|anuleaza|inchide',
   update_prospect: 'marcheaza|preia|actualizeaza|modifica|schimba|seteaza|corecteaza|adauga|noteaza|inregistreaza|update',
   create_contact: 'creeaza|creaza|adauga|inregistreaza|programeaza|create|add|schedule',
   schedule_viewing: 'programeaza|reprogrameaza|adauga|creeaza|creaza|schedule|create|add',
@@ -47,6 +47,7 @@ export function safeAutonomousAction(action: AssistantAction) {
 export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: string) {
   if (action.kind === 'existing_operation' && action.operation === 'message_send') return requestAuthorizedCrmAction(action) && requestsWhatsappProspecting(prompt);
   const text = normalized(prompt);
+  if (action.kind === 'stop_prospect_followups' && /\b(explica|descrie)\b|\bnu\s+(?:mai\s+)?(?:inchide|opri)\b/.test(text)) return false;
   if (action.kind === 'schedule_viewing' && action.firstAvailable && !/\bprim(?:ul|a)\b.*\b(?:interval|ora)\b|\bfirst\b.*\b(?:slot|available)\b/.test(text)) return false;
   if (/\b(pregateste|preview|propune|arata|verifica|analizeaza)\b/.test(text)) return false;
   if (['create_contact', 'schedule_viewing'].includes(action.kind) && /\bnu\s+(?:mai\s+)?(?:crea|creati|programa|programati|adauga|adaugati)\b/.test(text)) return false;
