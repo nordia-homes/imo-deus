@@ -1,0 +1,408 @@
+{
+  "executionMode": "deterministic",
+  "scope": "Original Inbox edit requests through persisted chat, missing-information clarification/resume, native atomic executor and local Firestore. Includes direct executor replay and admin assignment variant. No external sends or production certification.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0326",
+      "prompt": "Adaugă o notă internă conversației.",
+      "versions": {
+        "prompt": "jarvis-113",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "143",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:25:32.434Z",
+      "environment": "Deterministic persisted chat, clarification/resume and transactional native executor in local Firestore. No external messages.",
+      "executionVerified": true,
+      "clarification": {
+        "id": "52beb922-6105-46f3-a2cd-9347235bc183-edit-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Ce text dorești să salvez ca notă internă? Nota nu va fi trimisă clientului.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "source": "conversationEditRequest",
+            "title": "Informație necesară",
+            "rows": [
+              {
+                "mode": "note"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:39.268Z"
+      },
+      "final": {
+        "id": "52beb922-6105-46f3-a2cd-9347235bc183-reply-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Nota internă a fost salvată în conversația selected.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "outputType": "ACTION_RESULT",
+            "title": "Rezultatele cererii",
+            "source": "autonomy",
+            "rows": [
+              {
+                "step": 1,
+                "kind": "existing_operation",
+                "result": {
+                  "operation": "conversation_note",
+                  "conversationId": "selected",
+                  "executionState": "succeeded",
+                  "state": "note",
+                  "version": 2,
+                  "verifiedAt": "2026-10-16T09:25:39.582Z",
+                  "noteId": "52beb922-6105-46f3-a2cd-9347235bc183-reply-safe-0"
+                }
+              }
+            ]
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:39.594Z"
+      },
+      "saved": {
+        "agencyId": "52beb922-6105-46f3-a2cd-9347235bc183",
+        "assigneeId": "52beb922-6105-46f3-a2cd-9347235bc183",
+        "collaboratorIds": [],
+        "propertyIds": [
+          "existing"
+        ],
+        "name": "Andrei",
+        "status": "open",
+        "version": 2
+      },
+      "verification": "Original request clarified then completed without approval; literal internal note, own claim of unassigned conversation or normalized property search with ambiguity resolved by ID. Saved effect, confirmation, replay, version conflict, revoked access and target existence/assignment policy checked."
+    },
+    {
+      "scenarioId": "master-0330",
+      "prompt": "Atribuie conversația unui agent dacă am permisiune.",
+      "versions": {
+        "prompt": "jarvis-113",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "143",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:25:40.07Z",
+      "environment": "Deterministic persisted chat, clarification/resume and transactional native executor in local Firestore. No external messages.",
+      "executionVerified": true,
+      "clarification": {
+        "id": "18edb569-d595-4462-879b-a478e0c4e8d9-edit-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Cărui agent îi atribui conversația? Indică numele sau ID-ul; poți spune „mie” pentru preluarea unei conversații neatribuite.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "source": "conversationEditRequest",
+            "title": "Informație necesară",
+            "rows": [
+              {
+                "mode": "assign"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:40.314Z"
+      },
+      "final": {
+        "id": "18edb569-d595-4462-879b-a478e0c4e8d9-reply-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Conversația selected a fost atribuită agentului 18edb569-d595-4462-879b-a478e0c4e8d9.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "outputType": "ACTION_RESULT",
+            "title": "Rezultatele cererii",
+            "source": "autonomy",
+            "rows": [
+              {
+                "step": 1,
+                "kind": "existing_operation",
+                "result": {
+                  "operation": "conversation_update",
+                  "conversationId": "selected",
+                  "executionState": "succeeded",
+                  "state": "assigned",
+                  "version": 2,
+                  "verifiedAt": "2026-10-16T09:25:40.627Z",
+                  "assigneeId": "18edb569-d595-4462-879b-a478e0c4e8d9"
+                }
+              }
+            ]
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:40.637Z"
+      },
+      "saved": {
+        "agencyId": "18edb569-d595-4462-879b-a478e0c4e8d9",
+        "collaboratorIds": [],
+        "propertyIds": [
+          "existing"
+        ],
+        "name": "Andrei",
+        "status": "open",
+        "accessUids": [
+          "18edb569-d595-4462-879b-a478e0c4e8d9"
+        ],
+        "assigneeId": "18edb569-d595-4462-879b-a478e0c4e8d9",
+        "version": 2
+      },
+      "verification": "Original request clarified then completed without approval; literal internal note, own claim of unassigned conversation or normalized property search with ambiguity resolved by ID. Saved effect, confirmation, replay, version conflict, revoked access and target existence/assignment policy checked."
+    },
+    {
+      "scenarioId": "master-0331",
+      "prompt": "Leagă conversația de proprietatea corectă.",
+      "versions": {
+        "prompt": "jarvis-113",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "143",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:25:41.227Z",
+      "environment": "Deterministic persisted chat, clarification/resume and transactional native executor in local Firestore. No external messages.",
+      "executionVerified": true,
+      "clarification": {
+        "id": "6fdfb75a-566b-4ac3-b8de-7180a245f79f-edit-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Ce proprietate dorești să asociez? Indică titlul sau ID-ul din CRM.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "source": "conversationEditRequest",
+            "title": "Informație necesară",
+            "rows": [
+              {
+                "mode": "property"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:41.419Z"
+      },
+      "ambiguous": {
+        "id": "6fdfb75a-566b-4ac3-b8de-7180a245f79f-ambiguous-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Există mai multe potriviri. Indică ID-ul înregistrării dorite.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "source": "properties",
+            "title": "Alege înregistrarea exactă",
+            "rows": [
+              {
+                "id": "flat",
+                "name": "Apartament Cișmigiu"
+              },
+              {
+                "id": "flat2",
+                "name": "Apartament Cișmigiu"
+              }
+            ],
+            "complete": true,
+            "outputType": "PROPERTY_LIST"
+          },
+          {
+            "type": "data",
+            "source": "conversationEditRequest",
+            "title": "Informație necesară",
+            "rows": [
+              {
+                "mode": "property"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:41.641Z"
+      },
+      "final": {
+        "id": "6fdfb75a-566b-4ac3-b8de-7180a245f79f-reply-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Conversația selected a fost asociată proprietății flat.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversație selectată",
+            "rows": [
+              {
+                "id": "selected"
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          },
+          {
+            "type": "data",
+            "outputType": "ACTION_RESULT",
+            "title": "Rezultatele cererii",
+            "source": "autonomy",
+            "rows": [
+              {
+                "step": 1,
+                "kind": "existing_operation",
+                "result": {
+                  "operation": "conversation_update",
+                  "conversationId": "selected",
+                  "executionState": "succeeded",
+                  "state": "property_linked",
+                  "version": 2,
+                  "verifiedAt": "2026-10-16T09:25:41.949Z",
+                  "propertyId": "flat"
+                }
+              }
+            ]
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "selected"
+          }
+        ],
+        "createdAt": "2026-10-16T09:25:41.956Z"
+      },
+      "saved": {
+        "agencyId": "6fdfb75a-566b-4ac3-b8de-7180a245f79f",
+        "assigneeId": "6fdfb75a-566b-4ac3-b8de-7180a245f79f",
+        "collaboratorIds": [],
+        "name": "Andrei",
+        "status": "open",
+        "propertyIds": [
+          "existing",
+          "flat"
+        ],
+        "version": 2
+      },
+      "verification": "Original request clarified then completed without approval; literal internal note, own claim of unassigned conversation or normalized property search with ambiguity resolved by ID. Saved effect, confirmation, replay, version conflict, revoked access and target existence/assignment policy checked."
+    }
+  ]
+}

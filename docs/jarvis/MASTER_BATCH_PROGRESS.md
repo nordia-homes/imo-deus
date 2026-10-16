@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot editări Inbox și opt-out — 16 octombrie 2026
+
+Cinci scenarii verificate: **0326, 0330, 0331, 0344, 0345**. Pentru conversația selectată, nota internă, atribuirea și asocierea proprietății cer informația lipsă, apoi reiau solicitarea fără aprobare generică. Nota este salvată literal în subcolecția internă, fără mesaj către client. Agentul poate prelua pentru sine o conversație neatribuită; administratorul poate atribui unui membru agent/admin al aceleiași agenții. Asocierea caută titlul/adresa normalizate (Cișmigiu/Cismigiu), cere ID la ambiguitate și păstrează proprietățile deja asociate.
+
+Executorul nativ verifică apartenența, accesul, versiunea și existența țintei în tranzacția care salvează modificarea și dovada execuției. Confirmarea finală provine din această dovadă. Verificate reluarea chatului și a executorului fără duplicate, versiune depășită, proprietate ștearsă, agent străin, atribuire interzisă, atribuire permisă administratorului și acces revocat. Reluarea după clarificare se aplică ultimei editări în așteptare; comenzile de anulare nu sunt transformate în valori ale editării.
+
+Comenzile de verificare opt-out citesc explicit refuzul global și acordurile service/marketing, fără trimitere ori modificarea acordului. Numărul public și starea unknown nu devin acord. Identitatea și accesul la conversație sunt reverificate după citirea acordurilor. Probe cu model real pentru refuz global, refuz marketing, unknown și granted; coada respinge cazurile neeligibile, iar workerul nu expediază dacă refuzul apare după punerea în coadă.
+
+**119 teste unitare/planner/autorizare și 5/5 scenarii prin chat/emulator trecute**, plus repetarea celor trei editări cu verificările suplimentare de executor/admin. ESLint și build complet trecute după corectarea referinței TypeScript pentru proprietate. Dovezi: [lot 31, editări deterministe](evals/PROSPECTING_EXECUTION_BATCH_31.json), [lot 32, model real și Meta simulat](evals/PROSPECTING_EXECUTION_BATCH_32.json). Inventar: **154/1000 dovezi locale** (133 cu model real, 21 deterministe). Fără mesaje externe sau certificare în producție; lot nepublicat în producție.
+
 ## Lot prioritizare Inbox — 16 octombrie 2026
 
 Patru scenarii verificate împreună: **0334, 0335, 0349, 0350**. Starea conexiunilor afișează separat starea fiecărei capacități, fără credențiale sau erori brute de provider. O conexiune connected nu este declarată automat aptă de trimitere; lipsa unei capacități rămâne unknown. Este starea înregistrată în aplicație, nu un test live al furnizorului.

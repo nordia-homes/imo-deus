@@ -457,6 +457,46 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await f.rate.delete(); mocks.actor = null;
     }
   }, 240000);
+  for (const scenarioId of ['master-0344', 'master-0345']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')(`live prospecting ${scenarioId}: verifies opt-out without sending and enforces it at queue and dispatch`, async () => {
+    const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const f = await marketingFixture(), agency = db.collection('agencies').doc(f.actor.agencyId);
+    mocks.actor = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' };
+    const global = agency.collection('communicationConsents').doc(stableId(f.conversation.connectionId, '40722123456', 'all'));
+    const runs: unknown[] = []; let verified = false;
+    try {
+      for (const state of ['global_revoked', 'marketing_revoked', 'unknown', 'granted']) {
+        await global.delete();
+        if (state === 'unknown') await f.consent.delete();
+        else await f.consent.set({ status: state === 'marketing_revoked' ? 'revoked' : 'granted' });
+        if (state === 'global_revoked') await global.set({ status: 'revoked' });
+        const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId); await session.set({ ownerId: f.actor.uid });
+        await session.collection('messages').doc('selection').set({ role: 'assistant', createdAt: new Date().toISOString(), text: 'WhatsApp selectat', cards: [{ type: 'data', source: 'conversations', title: 'Selectat', rows: [{ id: f.ref.id }] }] });
+        const request = { sessionId, requestId: randomUUID(), prompt, currentRecord: null };
+        const before = (await f.consent.get()).data();
+        const result = await chatTurn(mocks.actor, request);
+        const rows = result.message.cards?.flatMap(card => card.rows) || [];
+        expect(rows).toEqual(expect.arrayContaining([expect.objectContaining({ consent: expect.objectContaining({ all: state === 'global_revoked' ? 'revoked' : 'unknown', marketing: state === 'unknown' ? 'unknown' : state === 'marketing_revoked' ? 'revoked' : 'granted' }) })]));
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect(await chatTurn(mocks.actor, request)).toEqual(result); expect((await f.consent.get()).data()).toEqual(before);
+        expect((await f.ref.collection('messages').get()).empty).toBe(true); expect(templateSends()).toHaveLength(0);
+        if (state !== 'granted') await expect(queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID() })).rejects.toThrow();
+        runs.push({ state, final: result.message });
+      }
+      const queued = await queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID() });
+      await global.set({ status: 'revoked' });
+      await drainOutbound(db as any);
+      expect(templateSends()).toHaveLength(0); expect((await db.collection('communicationOutboundJobs').doc(queued.messageId!).get()).data()?.status).toBe('failed');
+      verified = true;
+    } finally {
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile(`.tmp/jarvis-whatsapp-prospecting/${scenarioId}-latest.json`, JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Real model and persisted chat, local Firestore, real queue and worker with simulated Meta; no external sends.', runs }, null, 2));
+      await f.rate.delete(); mocks.actor = null;
+    }
+  }, 240000);
   async function prospectingFixture() {
     const f = await marketingFixture();
     await f.consent.delete();

@@ -2932,7 +2932,11 @@
           "sourceNumber": 326,
           "request": "Adaugă o notă internă conversației.",
           "requestSha256": "8d2e06cbd3524717e5697fb7133d91855141c2f7eeff8e2a6de1ce6673fb9422",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_31.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0327",
@@ -2972,14 +2976,22 @@
           "sourceNumber": 330,
           "request": "Atribuie conversația unui agent dacă am permisiune.",
           "requestSha256": "f155fc6c9ff94e3bd26538e20000ad0585760fa111f4dfe640d1475f65262405",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_31.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0331",
           "sourceNumber": 331,
           "request": "Leagă conversația de proprietatea corectă.",
           "requestSha256": "0b3d19513b96abd85332b42c69ad9d8da294d09500a5da3122b3e0e17bb0cdc1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_31.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0332",
@@ -3078,14 +3090,22 @@
           "sourceNumber": 344,
           "request": "Verifică opt-out înainte de mesaj.",
           "requestSha256": "3dda979a8b7e6574990b74403bcdc7b6b7fb74fd067e89e5780e231b8b3e98ba",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_32.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0345",
           "sourceNumber": 345,
           "request": "Nu trimite dacă destinatarul s-a dezabonat.",
           "requestSha256": "a015cb434c5774935cd28b9d5136fb61f3a441919d3ab2e41ff555eb71c51e87",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_32.json",
+            "scope": "Original prompt, actual model and application handlers against local Firestore fixtures; scenario-specific outputs and database effects checked. Not production, voice or full variant certification."
+          }
         },
         {
           "id": "master-0346",

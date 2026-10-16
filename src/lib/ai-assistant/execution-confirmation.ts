@@ -4,6 +4,11 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (['conversation_note', 'conversation_update'].includes(String(receipt?.operation)) && receipt?.executionState === 'succeeded' && typeof receipt.conversationId === 'string') {
+      if (receipt.state === 'note' && typeof receipt.noteId === 'string') return `Nota internă a fost salvată în conversația ${receipt.conversationId}.`;
+      if (receipt.state === 'assigned' && typeof receipt.assigneeId === 'string') return `Conversația ${receipt.conversationId} a fost atribuită agentului ${receipt.assigneeId}.`;
+      if (receipt.state === 'property_linked' && typeof receipt.propertyId === 'string') return `Conversația ${receipt.conversationId} a fost asociată proprietății ${receipt.propertyId}.`;
+    }
     if (receipt?.operation === 'conversation_update' && receipt.executionState === 'succeeded' && typeof receipt.conversationId === 'string' && ['read', 'open', 'resolved'].includes(String(receipt.state))) return `Conversația ${receipt.conversationId} a fost ${receipt.state === 'read' ? 'marcată citită' : receipt.state === 'resolved' ? 'închisă' : 'redeschisă'}.`;
     if (receipt?.operation === 'message_send' && receipt.queueOutcome === 'not_queued') return `Mesaj nepus în coadă (${receipt.conversationId}): ${receipt.reason}`;
     if (step.kind === 'stop_prospect_followups' && receipt?.executionState === 'succeeded' && Array.isArray(receipt.canceledCallIds) && Array.isArray(receipt.removedTaskIds) && Array.isArray(receipt.activeCallIds)) return receipt.refusalVerified === true

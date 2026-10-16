@@ -1,0 +1,446 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0344",
+      "prompt": "Verifică opt-out înainte de mesaj.",
+      "versions": {
+        "prompt": "jarvis-113",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "143",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Real model and persisted chat, local Firestore, real queue and worker with simulated Meta; no external sends.",
+      "runs": [
+        {
+          "state": "global_revoked",
+          "final": {
+            "id": "52dd28fa-0b8d-4b7b-a9f3-685ead7477a9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verificarea curentă a acordurilor WhatsApp arată: **refuz global (all): revoked**; **service: unknown**; **marketing: granted**. Refuzul global blochează mesajele WhatsApp, deci nu trimite. `unknown` nu reprezintă acord. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "ba5d12c6-af40-4183-8332-044173429ffb",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "revoked",
+                      "service": "unknown",
+                      "marketing": "granted"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=ba5d12c6-af40-4183-8332-044173429ffb",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "blocked"
+                  }
+                ],
+                "complete": true,
+                "blocked": true,
+                "sendAuthorized": false,
+                "reason": "Destinatarul a cerut oprirea mesajelor WhatsApp. Nu trimite.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "ba5d12c6-af40-4183-8332-044173429ffb"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:09.289Z"
+          }
+        },
+        {
+          "state": "marketing_revoked",
+          "final": {
+            "id": "8e39a525-727e-4b78-bad9-9bb688b3fda6-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verificarea curentă arată: refuz global (all): unknown; acord pentru service: unknown; marketing: revoked. Așadar, nu este înregistrat un refuz global, însă marketingul este refuzat, iar unknown nu înseamnă acord. Nu s-a stabilit eligibilitatea pentru niciun mesaj concret; aceasta depinde de scop și de previzualizarea mesajului, iar verificarea indică și că nu suntem în fereastra de mesaje. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "ba5d12c6-af40-4183-8332-044173429ffb",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "unknown",
+                      "service": "unknown",
+                      "marketing": "revoked"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=ba5d12c6-af40-4183-8332-044173429ffb",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "needs_message_preview"
+                  }
+                ],
+                "complete": true,
+                "blocked": false,
+                "sendAuthorized": false,
+                "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "ba5d12c6-af40-4183-8332-044173429ffb"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:16.486Z"
+          }
+        },
+        {
+          "state": "unknown",
+          "final": {
+            "id": "02a576e4-f194-474c-af6e-805706188698-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verificarea curentă arată: refuz global (all) — unknown; acord pentru service — unknown; acord pentru marketing — unknown. „Unknown” nu înseamnă acord. Nu este înregistrat un refuz global, dar eligibilitatea nu este autorizată: depinde de scopul mesajului și de acordul corespunzător, precum și de previzualizarea mesajului concret. Starea indică și că nu se află în fereastra de mesaje. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "ba5d12c6-af40-4183-8332-044173429ffb",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "unknown",
+                      "service": "unknown",
+                      "marketing": "unknown"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=ba5d12c6-af40-4183-8332-044173429ffb",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "needs_message_preview"
+                  }
+                ],
+                "complete": true,
+                "blocked": false,
+                "sendAuthorized": false,
+                "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "ba5d12c6-af40-4183-8332-044173429ffb"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:23.905Z"
+          }
+        },
+        {
+          "state": "granted",
+          "final": {
+            "id": "35867805-a94d-4f53-838f-75fa302434c9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verificat în starea curentă:\n- Refuz global (`all`): `unknown` — nu este înregistrat un refuz global, dar nici nu înseamnă acord.\n- Service: `unknown` — acordul nu este confirmat; mesajele de service nu sunt autorizate pe baza acestei stări.\n- Marketing: `granted` — acordul pentru marketing este înregistrat.\n\nNu există un refuz global înregistrat (`blocked=false`), însă nu este autorizată trimiterea: conversația necesită previzualizarea mesajului concret, iar permisiunea depinde și de categoria mesajului și verificările aferente. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "ba5d12c6-af40-4183-8332-044173429ffb",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "unknown",
+                      "service": "unknown",
+                      "marketing": "granted"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=ba5d12c6-af40-4183-8332-044173429ffb",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "needs_message_preview"
+                  }
+                ],
+                "complete": true,
+                "blocked": false,
+                "sendAuthorized": false,
+                "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "ba5d12c6-af40-4183-8332-044173429ffb"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:31.072Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0345",
+      "prompt": "Nu trimite dacă destinatarul s-a dezabonat.",
+      "versions": {
+        "prompt": "jarvis-113",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "143",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Real model and persisted chat, local Firestore, real queue and worker with simulated Meta; no external sends.",
+      "runs": [
+        {
+          "state": "global_revoked",
+          "final": {
+            "id": "d273b03c-fb40-48d0-8793-8f9c3b8964d2-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verificarea curentă arată că refuzul global (all) este revocat, deci mesajele WhatsApp sunt blocate. Acordul pentru service este unknown — nu reprezintă acord. Acordul pentru marketing este granted, dar nu înlătură blocarea globală. Nu am trimis niciun mesaj.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "715ae86e-cf9d-47d0-9950-9d835b537de0",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "revoked",
+                      "service": "unknown",
+                      "marketing": "granted"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=715ae86e-cf9d-47d0-9950-9d835b537de0",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "blocked"
+                  }
+                ],
+                "complete": true,
+                "blocked": true,
+                "sendAuthorized": false,
+                "reason": "Destinatarul a cerut oprirea mesajelor WhatsApp. Nu trimite.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "715ae86e-cf9d-47d0-9950-9d835b537de0"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:37.613Z"
+          }
+        },
+        {
+          "state": "marketing_revoked",
+          "final": {
+            "id": "51e69487-7f12-4991-ad39-a5b563eda52e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am verificat starea curentă a conversației. Refuz global (all): unknown — nu este înregistrat un refuz global, dar unknown nu înseamnă acord. Service: unknown — nu este înregistrat acord. Marketing: revoked — destinatarul a revocat acordul, deci mesajele de marketing sunt blocate. Nu am trimis niciun mesaj și nu am modificat acordurile. Pentru orice eventual mesaj de alt scop ar fi necesară evaluarea acordului corespunzător și previzualizarea mesajului concret; această verificare nu autorizează trimiterea.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "715ae86e-cf9d-47d0-9950-9d835b537de0",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "unknown",
+                      "service": "unknown",
+                      "marketing": "revoked"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=715ae86e-cf9d-47d0-9950-9d835b537de0",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "needs_message_preview"
+                  }
+                ],
+                "complete": true,
+                "blocked": false,
+                "sendAuthorized": false,
+                "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "715ae86e-cf9d-47d0-9950-9d835b537de0"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:50.398Z"
+          }
+        },
+        {
+          "state": "unknown",
+          "final": {
+            "id": "37e8eedc-36f3-4b6d-bf90-82dff0d23bed-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am verificat starea curentă. Refuz global (all): unknown. Acord service: unknown. Acord marketing: unknown. „unknown” nu înseamnă acord, iar eligibilitatea depinde de scopul mesajului și de previzualizarea mesajului concret. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "715ae86e-cf9d-47d0-9950-9d835b537de0",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "unknown",
+                      "service": "unknown",
+                      "marketing": "unknown"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=715ae86e-cf9d-47d0-9950-9d835b537de0",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "needs_message_preview"
+                  }
+                ],
+                "complete": true,
+                "blocked": false,
+                "sendAuthorized": false,
+                "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "715ae86e-cf9d-47d0-9950-9d835b537de0"
+              }
+            ],
+            "createdAt": "2026-10-16T09:21:55.74Z"
+          }
+        },
+        {
+          "state": "granted",
+          "final": {
+            "id": "6cfb07a6-7795-4284-89b9-89c7da92380e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verificarea curentă arată: refuz global — unknown; acord pentru mesaje de serviciu — unknown; acord pentru marketing — granted. Nu există un refuz global înregistrat, dar unknown nu înseamnă acord, iar rezultatul nu autorizează trimiterea. Pentru a evalua eligibilitatea ar fi necesară previzualizarea mesajului concret și verificarea acordului aferent scopului; fereastra de mesagerie este închisă. Nu am trimis niciun mesaj și nu am modificat acordurile.",
+            "cards": [
+              {
+                "type": "data",
+                "title": "Eligibilitate WhatsApp",
+                "source": "conversations",
+                "rows": [
+                  {
+                    "id": "715ae86e-cf9d-47d0-9950-9d835b537de0",
+                    "name": null,
+                    "channel": "whatsapp",
+                    "consent": {
+                      "all": "unknown",
+                      "service": "unknown",
+                      "marketing": "granted"
+                    },
+                    "humanConsent": {
+                      "url": "/inbox?conversationId=715ae86e-cf9d-47d0-9950-9d835b537de0",
+                      "panel": "Consimțământ WhatsApp",
+                      "requiredRole": "agent_or_admin",
+                      "canRecord": true,
+                      "evidenceRequired": true,
+                      "recordedByJarvis": false
+                    },
+                    "withinWindow": false,
+                    "status": "needs_message_preview"
+                  }
+                ],
+                "complete": true,
+                "blocked": false,
+                "sendAuthorized": false,
+                "reason": "Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.",
+                "note": "Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.",
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "715ae86e-cf9d-47d0-9950-9d835b537de0"
+              }
+            ],
+            "createdAt": "2026-10-16T09:22:01.979Z"
+          }
+        }
+      ]
+    }
+  ],
+  "scope": "Original opt-out requests with actual model and persisted chat, local Firestore, real queue/worker and simulated Meta. Four consent states and revocation after queueing. No external sends or production certification.",
+  "executionMode": "model"
+}

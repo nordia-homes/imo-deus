@@ -12,10 +12,12 @@ export async function checkWhatsAppRecipient(ctx: AssistantContext, conversation
     const status = row.data()?.status;
     return [scope, status === 'granted' || status === 'revoked' ? status : 'unknown'] as const;
   }));
+  const current = await getResource(ctx, 'conversations', conversationId);
+  if (current.connectionId !== conversation.connectionId || current.externalParticipantId !== conversation.externalParticipantId || current.channel !== conversation.channel) throw new Error('Destinatarul s-a schimbat. Reia verificarea.');
   const consent = Object.fromEntries(states);
   const blocked = consent.all === 'revoked';
   const humanConsent = { url: '/inbox?conversationId=' + encodeURIComponent(conversationId), panel: 'Consimțământ WhatsApp', requiredRole: 'agent_or_admin', canRecord: ['agent', 'admin'].includes(ctx.role || ''), evidenceRequired: true, recordedByJarvis: false };
-  return { rows: [{ id: conversationId, name: conversation.name || null, channel: 'whatsapp', consent, humanConsent, withinWindow: withinResponseWindow(conversation.lastInboundAt), status: blocked ? 'blocked' : 'needs_message_preview' }], complete: true, blocked, sendAuthorized: false,
+  return { rows: [{ id: conversationId, name: conversation.name || null, channel: 'whatsapp', consent, humanConsent, withinWindow: withinResponseWindow(current.lastInboundAt), status: blocked ? 'blocked' : 'needs_message_preview' }], complete: true, blocked, sendAuthorized: false,
     reason: blocked ? 'Destinatarul a cerut oprirea mesajelor WhatsApp. Nu trimite.' : 'Fără refuz global înregistrat. Eligibilitatea depinde de mesaj, categoria șablonului, acordul corespunzător, conexiune și cost; este necesară previzualizarea mesajului concret.',
     note: 'Verificare locală, fără trimitere sau înregistrare de acord. Numărul public nu dovedește acordul. unknown nu înseamnă granted. Chiar dacă există acord, această cerere nu autorizează trimiterea.' };
 }

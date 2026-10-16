@@ -164,6 +164,45 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(text || (data.messages.length ? data.messages.map(row => `[${row.id}] ${row.direction === 'received' ? 'Client' : 'Agent'} (${row.status}): ${row.text || '[Atașament fără text]'}`).join('\n') : data.analysis || inbox.mode === 'latest' ? 'Conversația nu conține mesaje de analizat.' : data.conversations.length ? data.conversations.map(row => `${row.name} — ${row.channel} (${row.id})`).join('\n') : 'Nu am găsit rezultate în conversațiile accesibile.'));
     } catch (error) { return finish(error instanceof BudgetExceeded ? 'Istoricul depășește bugetul acestei analize. Nu am emis un rezumat incomplet drept rezultat integral.' : 'Nu am putut verifica integral conversațiile sau accesul s-a schimbat. Reîncearcă solicitarea.', error instanceof BudgetExceeded ? 'partial' : 'unavailable'); }
   }
+  const { conversationEditRequest } = await import('./conversation-edit');
+  const edit = conversationEditRequest(prompt);
+  if (edit) {
+    const { selectedInboxConversation } = await import('./inbox-read');
+    const conversationId = selectedInboxConversation(history);
+    if (!conversationId) return finish('Selectează conversația pe care dorești să o actualizezi.', 'clarification');
+    try {
+      const { getResource, collectionFor } = await import('./access');
+      const conversation = await getResource(ctx, 'conversations', conversationId);
+      if (!Number.isSafeInteger(conversation.version) || conversation.version < 0) return finish('Versiunea conversației nu poate fi verificată.', 'unavailable');
+      accessRefs.push({ resource: 'conversations', id: conversationId });
+      cards.push({ type: 'data', source: 'conversations', title: 'Conversație selectată', rows: [{ id: conversationId }], complete: true });
+      const clarify = (message: string) => {
+        cards.push({ type: 'data', source: 'conversationEditRequest', title: 'Informație necesară', rows: [{ mode: edit.mode }], complete: true });
+        return finish(message, 'clarification');
+      };
+      if (!edit.value) return clarify(edit.mode === 'note' ? 'Ce text dorești să salvez ca notă internă? Nota nu va fi trimisă clientului.' : edit.mode === 'assign' ? 'Cărui agent îi atribui conversația? Indică numele sau ID-ul; poți spune „mie” pentru preluarea unei conversații neatribuite.' : 'Ce proprietate dorești să asociez? Indică titlul sau ID-ul din CRM.');
+      const body: Record<string, unknown> = { version: conversation.version };
+      if (edit.mode === 'note') { if (edit.value.length > 10000) return clarify('Nota poate avea cel mult 10000 de caractere. Trimite textul scurtat.'); body.text = edit.value; }
+      else {
+        const { matchesCrmSearch } = await import('@/lib/crm/search-text');
+        const snapshot = edit.mode === 'assign' ? await ctx.adminDb.collection('users').where('agencyId', '==', ctx.agencyId).get() : await collectionFor(ctx, 'properties').get();
+        const rows = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Record<string, any>)).filter(row => edit.mode !== 'assign' || ['agent', 'admin'].includes(row.role));
+        const self = edit.mode === 'assign' && /^(mie|eu|pentru mine)$/.test(edit.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim());
+        const exact = rows.filter(row => row.id === (self ? ctx.uid : edit.value));
+        const matches = exact.length ? exact : self ? [] : rows.filter(row => matchesCrmSearch(edit.mode === 'assign' ? { name: row.name || row.displayName } : { title: row.title, address: row.address, neighborhood: row.neighborhood }, edit.value));
+        if (matches.length !== 1) {
+          cards.push({ type: 'data', source: edit.mode === 'assign' ? 'agents' : 'properties', title: 'Alege înregistrarea exactă', rows: matches.map(row => ({ id: row.id, name: row.name || row.displayName || row.title || '' })), complete: true });
+          return clarify(matches.length ? 'Există mai multe potriviri. Indică ID-ul înregistrării dorite.' : 'Nu am găsit o potrivire unică. Indică numele/titlul exact sau ID-ul.');
+        }
+        if (edit.mode === 'assign') {
+          if (ctx.role !== 'admin' && !(conversation.assigneeId === null && matches[0].id === ctx.uid)) return finish('Poți prelua doar pentru tine o conversație neatribuită. Nu am schimbat atribuirea.', 'clarification');
+          body.assigneeId = matches[0].id;
+        } else { body.propertyId = matches[0].id; }
+      }
+      actions.push({ kind: 'existing_operation', operation: edit.mode === 'note' ? 'conversation_note' : 'conversation_update', params: { conversationId }, query: {}, body });
+      return finish('Actualizare pregătită pentru conversația selectată.');
+    } catch { return finish('Conversația sau înregistrarea asociată nu mai este accesibilă. Nu am modificat-o.', 'unavailable'); }
+  }
   const { conversationStateRequest } = await import('./conversation-state');
   const conversationState = conversationStateRequest(prompt);
   if (conversationState) {
@@ -215,7 +254,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const whatsappTemplates = /^arata-mi template-urile disponibile[.!?\s]*$/.test(historyPrompt) || /^(?:dupa acord,?\s+)?(?:verifica|arata|afiseaza|listeaza)\b.*\b(?:template[- ]?uri\w*|sabloan\w*)\b/.test(historyPrompt) && !/\b(trimite|creeaza|modifica|sterge)\b/.test(historyPrompt) && (/\bwhatsapp\b/.test(contextHint) || /^dupa acord/.test(historyPrompt));
   const whatsappReadTool = whatsappTemplates ? 'whatsapp_template_check' : 'whatsapp_recipient_check';
   const whatsappWindow = /^spune-mi daca mesajul este in afara ferestrei permise[.!?\s]*$/.test(historyPrompt);
-  const whatsappCheck = whatsappWindow || whatsappTemplates || whatsappHumanConsent || whatsappPublicNumber || /^nu trimite whatsapp daca destinatarul nu este eligibil[.!?\s]*$/.test(historyPrompt);
+  const whatsappOptOut = /^(verifica opt-out inainte de mesaj|nu trimite daca destinatarul s-a dezabonat)[.!?\s]*$/.test(historyPrompt);
+  const whatsappCheck = whatsappOptOut || whatsappWindow || whatsappTemplates || whatsappHumanConsent || whatsappPublicNumber || /^nu trimite whatsapp daca destinatarul nu este eligibil[.!?\s]*$/.test(historyPrompt);
   const selectedConversationIds = [...new Set(history.filter(message => message.id !== 'current-page-context' || message.cards?.length).at(-1)?.cards?.filter(card => card.source === 'conversations').flatMap(card => card.rows.map(row => row.id)).filter((id): id is string => typeof id === 'string') || [])];
   const selectedConversationId = selectedConversationIds.length === 1 ? selectedConversationIds[0] : undefined;
   if (whatsappCheck && !selectedConversationId) return finish('Selectează conversația WhatsApp pentru care dorești verificarea destinatarului. Nu am trimis niciun mesaj.', 'clarification');
@@ -280,6 +320,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   if (whatsappHumanConsent) input.push({ role: 'developer', content: 'Cererea privește fluxul uman de înregistrare a acordului. După citirea whatsapp_recipient_check, include linkul humanConsent.url pentru conversația exactă și pașii: Inbox → Consimțământ WhatsApp → scopul real (marketing ori service), dovada și data acordului real, apoi Înregistrează. Agentul și administratorul pot înregistra acordul real în conversațiile la care au acces; nu solicita intervenția administratorului dacă humanConsent.canRecord=true. Nu cere dovezi în chat, nu înregistra consimțământul prin AI și nu declara acordul salvat. Spune explicit că pasul uman rămâne de făcut. Înregistrarea acordului nu trimite mesajul.' });
   if (whatsappPublicNumber) input.push({ role: 'developer', content: 'Numărul public nu dovedește acordul WhatsApp. Citește starea reală; dacă este unknown, explică lipsa dovezii fără să schimbi acordul. Nu presupune că există refuz dacă statusul este unknown. Nu contacta destinatarul.' });
   if (whatsappCheck) input.push({ role: 'developer', content: 'Verifică ' + whatsappReadTool + ' conversationId=' + selectedConversationId + ', apoi goal_coverage resolution=answered steps=[] și evidenceCallIds citirea. blocked=true înseamnă refuz global și nu trimiți. Altfel explică exact acordurile și necesitatea previzualizării mesajului concret; nu declara destinatarul eligibil doar din lipsa refuzului sau existența unui telefon. Nu este o cerere de trimitere. Nu modifica acorduri. Spune că nu ai trimis niciun mesaj.' });
+  if (whatsappOptOut) input.push({ role: 'developer', content: 'Verifică opt-out în starea curentă. Raportează separat refuzul global (all), service și marketing; un refuz pe scop blochează mesajele din acel scop chiar fără refuz global. unknown nu este acord. Nu trimite, nu pregăti trimitere, nu schimba acordurile și nu cere agentului să înregistreze din nou un acord existent. Acest pas este numai o verificare; o cerere ulterioară de trimitere va reverifica acordul la coadă și expediere.' });
   if (whatsappWindow) input.push({ role: 'developer', content: 'Cererea verifică fereastra WhatsApp: explică explicit withinWindow din citirea actuală. true înseamnă în fereastra de răspuns de 24 de ore de la ultimul mesaj primit; false înseamnă în afara ferestrei sau lipsa unui mesaj primit valid, deci textul liber nu este eligibil și trebuie verificat un șablon aprobat. Nu deduce eligibilitatea completă din fereastră: acordul, conexiunea și politica mesajului sunt verificate separat. Nu trimite nimic.' });
   if (whatsappTemplates) input.push({ role: 'developer', content: 'Prezintă șabloanele citite: numele exact, limba, categoria, statusul Meta și numărul parametrilor. Numai approvedAndSupported=true este disponibil tehnic pentru pregătire; PENDING, REJECTED, PAUSED sau format incompatibil nu este disponibil. consent_missing ori blocked: explică motivul fără să inventezi șabloane. Nu confunda disponibilitatea tehnică cu eligibilitatea destinatarului sau costul. Lista goal_coverage trebuie să citeze citirea actuală.' });
   if (messageStatus) input.push({ role: 'developer', content: 'Citește starea actuală prin existing_read operation=conversation_messages, params=' + JSON.stringify({ conversationId: selectedMessage!.conversationId }) + ', query=' + JSON.stringify({ target: selectedMessage!.id }) + ', body={}. Serverul fixează mesajul selectat. Apoi goal_coverage resolution=answered, steps=[], evidenceCallIds citirea reușită. Spune statusul exact și semnificația lui: queued în coadă; accepted acceptat de furnizor, livrare încă neconfirmată; delivered livrare confirmată; read citire confirmată. failed/unknown nu confirmă livrarea. Nu retrimite și nu folosi statusul din istoricul conversației în locul citirii actuale.' });

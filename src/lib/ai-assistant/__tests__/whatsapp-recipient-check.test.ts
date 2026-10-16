@@ -36,3 +36,11 @@ it('checks conversation access before reading any consent', async () => {
   await expect(checkWhatsAppRecipient(ctx, 'private')).rejects.toThrow('Acces revocat');
   expect(collection).not.toHaveBeenCalled();
 });
+
+it('rejects a changed recipient or revoked conversation access after reading consent', async () => {
+  const original = { id: 'selected', channel: 'whatsapp', connectionId: 'c', externalParticipantId: '40722123456' };
+  vi.mocked(getResource).mockResolvedValueOnce(original).mockResolvedValueOnce({ ...original, externalParticipantId: '40722123457' });
+  await expect(checkWhatsAppRecipient(ctx, 'selected')).rejects.toThrow('Destinatarul s-a schimbat');
+  vi.mocked(getResource).mockResolvedValueOnce(original).mockRejectedValueOnce(new Error('Acces revocat'));
+  await expect(checkWhatsAppRecipient(ctx, 'selected')).rejects.toThrow('Acces revocat');
+});

@@ -10,7 +10,7 @@ vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken:
 vi.mock('@/lib/ai-outreach/vapi', () => ({ createVapiOutboundCall: settingsContext.provider, isVapiOutboundConfigured: () => true, VapiDispatchError: class extends Error {} }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/server', () => ({ CommunicationError: class extends Error { constructor(message: string, public status = 400) { super(message); } }, agencyCollection: (db: Firestore, agency: string, name: string) => db.collection('agencies').doc(agency).collection(name) }));
-vi.mock('../operations', () => ({ operations: { conversation_update: { method: 'PATCH', path: '/api/communications/conversations/{conversationId}', description: 'Actualizare stare conversație.' }, outreach_start: { method: 'POST', path: '/api/ai-outreach/calls', description: 'Pornește apelul AI.' }, outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
+vi.mock('../operations', () => ({ operations: { conversation_note: { method: 'POST', path: '/api/communications/conversations/{conversationId}/notes', description: 'Notă internă.' }, conversation_update: { method: 'PATCH', path: '/api/communications/conversations/{conversationId}', description: 'Actualizare stare conversație.' }, outreach_start: { method: 'POST', path: '/api/ai-outreach/calls', description: 'Pornește apelul AI.' }, outreach_settings_update: { method: 'POST', path: '/api/ai-outreach/settings', description: 'Actualizează setările outreach.' } }, isReadOperation: () => false, operationCatalog: () => [], operationContract: () => null, invokeOperation: async (_ctx: unknown, input: any) => {
   if (!['outreach_settings_update', 'outreach_start'].includes(input.operation)) throw new Error('External calls excluded');
   settingsContext.invokes++;
   const { POST } = input.operation === 'outreach_start' ? await import('@/app/api/ai-outreach/calls/route') : await import('@/app/api/ai-outreach/settings/route');
@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 327, 328, 329, 334, 335, 349, 350]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 327, 328, 329, 334, 335, 349, 350, 326, 330, 331]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && !process.env.JARVIS_PROSPECTING_CASE.split(',').includes(scenarioId)) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,53 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if ([326, 330, 331].includes(number)) {
+        const conversation = agency.collection('conversations').doc('selected');
+        await conversation.set({ agencyId: id, assigneeId: number === 330 ? null : id, collaboratorIds: [], propertyIds: ['existing'], name: 'Andrei', version: 1, status: 'open' });
+        for (const key of ['flat', 'flat2']) await agency.collection('properties').doc(key).set({ title: 'Apartament Cișmigiu' });
+        const session = agency.collection('assistantSessions').doc(id); await session.set({ ownerId: id });
+        await session.collection('messages').doc('selection').set({ role: 'assistant', createdAt: new Date().toISOString(), text: 'Selectat', cards: [{ type: 'data', source: 'conversations', title: 'Selectat', rows: [{ id: 'selected' }] }] });
+        const request = { sessionId: id, requestId: `${id}-edit`, prompt, currentRecord: null };
+        const clarification = await chatTurn(ctx, request);
+        expect(clarification.message.cards?.some(card => card.source === 'conversationEditRequest')).toBe(true);
+        expect((await conversation.get()).data()?.version).toBe(1); expect(clarification.message.planId).toBeUndefined();
+        let ambiguous;
+        if (number === 331) {
+          ambiguous = await chatTurn(ctx, { ...request, requestId: `${id}-ambiguous`, prompt: 'Cismigiu' });
+          expect(ambiguous.message.text).toContain('mai multe'); expect(ambiguous.message.cards?.find(card => card.source === 'properties')?.rows).toHaveLength(2); expect((await conversation.get()).data()?.version).toBe(1);
+        }
+        const reply = { ...request, requestId: `${id}-reply`, prompt: number === 326 ? 'Clientul preferă vizionarea dimineața. Nu suna după 18:00.' : number === 330 ? 'mie' : 'flat' };
+        const result = await chatTurn(ctx, reply);
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        const saved = (await conversation.get()).data()!; expect(saved.version).toBe(2);
+        const executionKey = `${id}-reply-safe-0`, execution = await agency.collection('assistantExecutions').doc(executionKey).get();
+        expect(execution.data()?.status).toBe('completed');
+        expect(await executeAction(ctx, execution.data()!.action, executionKey)).toEqual(execution.data()!.result);
+        expect((await conversation.get()).data()).toEqual(saved);
+        const notes = await conversation.collection('notes').get();
+        if (number === 326) { expect(notes.size).toBe(1); expect(notes.docs[0].data()).toMatchObject({ text: reply.prompt, authorId: id }); expect(result.message.text).toContain('Nota internă a fost salvată'); }
+        if (number === 330) { expect(saved.assigneeId).toBe(id); expect(saved.accessUids).toContain(id); expect(result.message.text).toContain('atribuită'); }
+        if (number === 331) { expect(saved.propertyIds).toEqual(['existing', 'flat']); expect(result.message.text).toContain('asociată proprietății flat'); }
+        expect(await chatTurn(ctx, reply)).toEqual(result); expect((await conversation.get()).data()).toEqual(saved); expect((await conversation.collection('notes').get()).size).toBe(notes.size);
+        expect((await conversation.collection('messages').get()).empty).toBe(true); expect(settingsContext.invokes).toBe(0);
+        const op: any = { kind: 'existing_operation', operation: number === 326 ? 'conversation_note' : 'conversation_update', params: { conversationId: 'selected' }, query: {}, body: { version: 1, ...(number === 326 ? { text: 'Other' } : number === 330 ? { assigneeId: id } : { propertyId: 'flat' }) } };
+        await expect(executeAction(ctx, op, `${id}-stale`)).rejects.toThrow(/schimbat/);
+        if (number === 330) {
+          await expect(executeAction(ctx, { ...op, body: { version: 2, assigneeId: 'foreign' } }, `${id}-foreign`)).rejects.toThrow();
+          const other = db.collection('users').doc(`${id}-other`); await other.set({ agencyId: id, role: 'agent', name: 'Alt agent' });
+          try {
+            await expect(executeAction(ctx, { ...op, body: { version: 2, assigneeId: other.id } }, `${id}-other`)).rejects.toThrow(/doar pentru tine/);
+            await profile.update({ role: 'admin' });
+            const assigned = await executeAction({ ...ctx, role: 'admin' }, { ...op, body: { version: 2, assigneeId: other.id } }, `${id}-admin`);
+            expect(assigned).toMatchObject({ executionState: 'succeeded', assigneeId: other.id }); expect((await conversation.get()).data()?.assigneeId).toBe(other.id);
+            await profile.update({ role: 'agent' });
+          } finally { await other.delete(); }
+        }
+        if (number === 331) { await agency.collection('properties').doc('flat').delete(); await expect(executeAction(ctx, { ...op, body: { version: 2, propertyId: 'flat' } }, `${id}-deleted`)).rejects.toThrow(/nu mai există/); }
+        await conversation.update({ assigneeId: 'other' });
+        await expect(executeAction(ctx, { ...op, body: { ...op.body, version: 2 } }, `${id}-revoked`)).rejects.toThrow(/revocat/);
+        report = { ...report, environment: 'Deterministic persisted chat, clarification/resume and transactional native executor in local Firestore. No external messages.', clarification: clarification.message, ...(ambiguous ? { ambiguous: ambiguous.message } : {}), final: result.message, saved, executionVerified: true, verification: 'Original request clarified then completed without approval; literal internal note, own claim of unassigned conversation or normalized property search with ambiguity resolved by ID. Saved effect, confirmation, replay, version conflict, revoked access and target existence/assignment policy checked.' }; return;
+      }
       if ([334, 335, 349, 350].includes(number)) {
         const convs = agency.collection('conversations'), now = Date.now();
         const ago = (hours: number) => new Date(now - hours * 3600000).toISOString();
