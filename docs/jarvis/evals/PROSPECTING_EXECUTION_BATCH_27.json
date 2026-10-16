@@ -1,0 +1,720 @@
+{"executionMode":"deterministic","scope":"Original inbox lookup and search scenarios through persisted application chat and local Firestore. Current access checks, no model or outbound operations. Not production certification.","finalRuns":[{
+  "scenarioId": "master-0301",
+  "prompt": "Arată-mi conversațiile necitite.",
+  "versions": {
+    "prompt": "jarvis-110",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "140",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:39:48.672Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external sends.",
+  "executionVerified": true,
+  "final": {
+    "id": "80931871-f7d9-4a4e-ac81-7df318ff0326-inbox-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Andrei Șerban — whatsapp (andrei)\nMaria — messenger (free)",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "andrei",
+            "name": "Andrei Șerban",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:39:50.462Z"
+          },
+          {
+            "id": "free",
+            "name": "Maria",
+            "channel": "messenger",
+            "lastMessageAt": "2026-10-16T08:39:50.462Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "andrei"
+      },
+      {
+        "resource": "conversations",
+        "id": "free"
+      }
+    ],
+    "createdAt": "2026-10-16T08:39:51.336Z"
+  },
+  "blocked": {
+    "text": "Maria — messenger (free)",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "free",
+            "name": "Maria",
+            "channel": "messenger",
+            "lastMessageAt": "2026-10-16T08:39:50.462Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "free"
+      }
+    ],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 38
+    }
+  },
+  "verification": "Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants."
+},{
+  "scenarioId": "master-0302",
+  "prompt": "Arată-mi conversațiile WhatsApp de azi.",
+  "versions": {
+    "prompt": "jarvis-110",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "140",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:39:51.656Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external sends.",
+  "executionVerified": true,
+  "final": {
+    "id": "40ef63f4-66ea-4dfd-9c5d-d5a76a6f7184-inbox-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Andrei Șerban — whatsapp (andrei)\nMihai — whatsapp (read)",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "andrei",
+            "name": "Andrei Șerban",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:39:51.710Z"
+          },
+          {
+            "id": "read",
+            "name": "Mihai",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:39:51.710Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "andrei"
+      },
+      {
+        "resource": "conversations",
+        "id": "read"
+      }
+    ],
+    "createdAt": "2026-10-16T08:39:52.351Z"
+  },
+  "blocked": {
+    "text": "Mihai — whatsapp (read)",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "read",
+            "name": "Mihai",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:39:51.710Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "read"
+      }
+    ],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 52
+    }
+  },
+  "verification": "Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants."
+},{
+  "scenarioId": "master-0303",
+  "prompt": "Găsește conversația cu Andrei.",
+  "versions": {
+    "prompt": "jarvis-110",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "140",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:39:52.634Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external sends.",
+  "executionVerified": true,
+  "final": {
+    "id": "a4739430-0441-454c-aca3-48a4df0d91b8-inbox-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "Andrei Șerban — whatsapp (andrei)",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "andrei",
+            "name": "Andrei Șerban",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:39:52.677Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "andrei"
+      }
+    ],
+    "createdAt": "2026-10-16T08:39:53.114Z"
+  },
+  "blocked": {
+    "text": "Nu am găsit rezultate în conversațiile accesibile.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 27
+    }
+  },
+  "verification": "Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants."
+},{
+  "scenarioId": "master-0304",
+  "prompt": "Arată-mi ultimele zece mesaje din conversație.",
+  "versions": {
+    "prompt": "jarvis-110",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "140",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:39:53.360Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external sends.",
+  "executionVerified": true,
+  "final": {
+    "id": "fbda4d3a-0940-4ee1-94c0-cd811ad423ac-inbox-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "[history-7] Client (received): Detaliu general din discuția inițială.\n[history-8] Client (received): Detaliu general din discuția inițială.\n[history-9] Client (received): Detaliu general din discuția inițială.\n[history-10] Client (received): Detaliu general din discuția inițială.\n[history-11] Client (received): Detaliu general din discuția inițială.\n[credit-question] Client (received): Se poate cumpăra prin credit?\n[credit-answer] Agent (delivered): Da, proprietarul acceptă achiziția prin credit.\n[parking-question] Client (received): Există un loc de parcare inclus?\n[floorplan-promise] Agent (delivered): Vă trimit releveul mâine până la ora 12:00.\n[failed-promise] Agent (failed): Vă garantez reducerea de 15000 euro.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "andrei",
+            "name": "Andrei Șerban",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:39:53.406Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "conversationMessages",
+        "title": "Mesaje verificate",
+        "rows": [
+          {
+            "id": "history-7",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:39:43.688Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-8",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:39:44.692Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-9",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:39:45.696Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-10",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:39:46.700Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-11",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:39:47.704Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "credit-question",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Se poate cumpăra prin credit?",
+            "createdAt": "2026-10-16T08:39:48.707Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "credit-answer",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Da, proprietarul acceptă achiziția prin credit.",
+            "createdAt": "2026-10-16T08:39:49.711Z",
+            "status": "delivered",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "parking-question",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Există un loc de parcare inclus?",
+            "createdAt": "2026-10-16T08:39:50.715Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "floorplan-promise",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Vă trimit releveul mâine până la ora 12:00.",
+            "createdAt": "2026-10-16T08:39:51.719Z",
+            "status": "delivered",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "failed-promise",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Vă garantez reducerea de 15000 euro.",
+            "createdAt": "2026-10-16T08:39:52.722Z",
+            "status": "failed",
+            "attachmentsCount": 0
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "andrei"
+      }
+    ],
+    "createdAt": "2026-10-16T08:39:53.938Z"
+  },
+  "blocked": {
+    "text": "Nu am o conversație unică accesibilă. Găsește sau selectează conversația dorită.",
+    "cards": [],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "clarification",
+      "elapsedMs": 25
+    }
+  },
+  "verification": "Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants."
+},{
+  "scenarioId": "master-0308",
+  "prompt": "Caută în conversații după cuvântul „credit”.",
+  "versions": {
+    "prompt": "jarvis-110",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "140",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:40:03.554Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external sends.",
+  "executionVerified": true,
+  "final": {
+    "id": "d258ebc0-de34-44d6-9617-5cf38aa6e035-inbox-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "[credit-question] Client (received): Se poate cumpăra prin credit?\n[credit-answer] Agent (delivered): Da, proprietarul acceptă achiziția prin credit.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "andrei",
+            "name": "Andrei Șerban",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:40:03.606Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "conversationMessages",
+        "title": "Mesaje verificate",
+        "rows": [
+          {
+            "id": "credit-question",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Se poate cumpăra prin credit?",
+            "createdAt": "2026-10-16T08:39:58.845Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "credit-answer",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Da, proprietarul acceptă achiziția prin credit.",
+            "createdAt": "2026-10-16T08:39:59.848Z",
+            "status": "delivered",
+            "attachmentsCount": 0
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "andrei"
+      }
+    ],
+    "createdAt": "2026-10-16T08:40:04.175Z"
+  },
+  "blocked": {
+    "text": "Nu am găsit rezultate în conversațiile accesibile.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 137
+    }
+  },
+  "verification": "Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants."
+},{
+  "scenarioId": "master-0309",
+  "prompt": "Caută mesajele despre proprietatea din Titan.",
+  "versions": {
+    "prompt": "jarvis-110",
+    "routing": "luna-first-2",
+    "policy": "request-crm-14",
+    "tools": "140",
+    "memory": "2",
+    "skills": "3"
+  },
+  "runAt": "2026-10-16T08:42:39.955Z",
+  "environment": "Deterministic application chat with local Firestore; no model or external sends.",
+  "executionVerified": true,
+  "final": {
+    "id": "22bfeaf0-b5f0-4233-934c-cfd2d0c55cd5-inbox-assistant",
+    "role": "assistant",
+    "outputType": "TEXT",
+    "text": "[history-0] Client (received): Detaliu general din discuția inițială.\n[history-1] Client (received): Detaliu general din discuția inițială.\n[history-2] Client (received): Detaliu general din discuția inițială.\n[history-3] Client (received): Detaliu general din discuția inițială.\n[history-4] Client (received): Detaliu general din discuția inițială.\n[history-5] Client (received): Detaliu general din discuția inițială.\n[history-6] Client (received): Detaliu general din discuția inițială.\n[history-7] Client (received): Detaliu general din discuția inițială.\n[history-8] Client (received): Detaliu general din discuția inițială.\n[history-9] Client (received): Detaliu general din discuția inițială.\n[history-10] Client (received): Detaliu general din discuția inițială.\n[history-11] Client (received): Detaliu general din discuția inițială.\n[credit-question] Client (received): Se poate cumpăra prin credit?\n[credit-answer] Agent (delivered): Da, proprietarul acceptă achiziția prin credit.\n[parking-question] Client (received): Există un loc de parcare inclus?\n[floorplan-promise] Agent (delivered): Vă trimit releveul mâine până la ora 12:00.\n[failed-promise] Agent (failed): Vă garantez reducerea de 15000 euro.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [
+          {
+            "id": "andrei",
+            "name": "Andrei Șerban",
+            "channel": "whatsapp",
+            "lastMessageAt": "2026-10-16T08:42:42.724Z"
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      },
+      {
+        "type": "data",
+        "source": "conversationMessages",
+        "title": "Mesaje verificate",
+        "rows": [
+          {
+            "id": "history-0",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:26.224Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-1",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:27.230Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-2",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:28.237Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-3",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:29.243Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-4",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:30.249Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-5",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:31.256Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-6",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:32.262Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-7",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:33.268Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-8",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:34.273Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-9",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:35.279Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-10",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:36.285Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "history-11",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Detaliu general din discuția inițială.",
+            "createdAt": "2026-10-16T08:42:37.295Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "credit-question",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Se poate cumpăra prin credit?",
+            "createdAt": "2026-10-16T08:42:38.301Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "credit-answer",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Da, proprietarul acceptă achiziția prin credit.",
+            "createdAt": "2026-10-16T08:42:39.307Z",
+            "status": "delivered",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "parking-question",
+            "conversationId": "andrei",
+            "direction": "received",
+            "text": "Există un loc de parcare inclus?",
+            "createdAt": "2026-10-16T08:42:40.313Z",
+            "status": "received",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "floorplan-promise",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Vă trimit releveul mâine până la ora 12:00.",
+            "createdAt": "2026-10-16T08:42:41.319Z",
+            "status": "delivered",
+            "attachmentsCount": 0
+          },
+          {
+            "id": "failed-promise",
+            "conversationId": "andrei",
+            "direction": "sent",
+            "text": "Vă garantez reducerea de 15000 euro.",
+            "createdAt": "2026-10-16T08:42:42.325Z",
+            "status": "failed",
+            "attachmentsCount": 0
+          }
+        ],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "accessRefs": [
+      {
+        "resource": "conversations",
+        "id": "andrei"
+      }
+    ],
+    "createdAt": "2026-10-16T08:42:44.129Z"
+  },
+  "blocked": {
+    "text": "Nu am găsit rezultate în conversațiile accesibile.",
+    "cards": [
+      {
+        "type": "data",
+        "source": "conversations",
+        "title": "Conversații verificate",
+        "rows": [],
+        "complete": true,
+        "outputType": "ANALYTICS_CARD"
+      }
+    ],
+    "actions": [],
+    "accessRefs": [],
+    "metrics": {
+      "models": [],
+      "tools": [],
+      "status": "success",
+      "elapsedMs": 179
+    }
+  },
+  "verification": "Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants."
+}]}

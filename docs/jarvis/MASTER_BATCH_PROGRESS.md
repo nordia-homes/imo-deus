@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot conversații — scenariile 0301–0309 — 16 octombrie 2026
+
+Nouă scenarii verificate împreună prin chat persistent și Firestore local. **0301–0304:** conversații necitite conform readBy, activitate WhatsApp în ziua Bucureștiului, căutare după nume normalizat și ultimele zece mesaje în ordine cronologică. **0305–0307:** rezumat, întrebări fără răspuns și promisiuni, cu model real care primește exclusiv mesajele proaspăt citite. Sunt păstrate direcția, starea livrării și ID-urile; mesajele eșuate nu dovedesc promisiuni transmise, iar datele relative se raportează la data mesajului. **0308–0309:** căutare după cuvânt și după proprietate/cartier, inclusiv asocierea explicită a conversației cu proprietatea. Potrivirea pentru Titan nu include Titanic.
+
+Accesul este reverificat înainte de afișare și după analiza cu model; istoricul vechi al chatului și rezumatul de memorie nu sunt transmise modelului. Numele ambigue cer selectarea conversației pentru analiză. Nu sunt marcate conversațiile drept citite și nu se trimit mesaje. În cazul depășirii bugetului pentru un istoric lung, rezultatul este explicit parțial, fără a prezenta un rezumat incomplet ca integral; acest lot nu certifică toate dimensiunile de istoric ori toate formulările.
+
+Validare: **70 teste unitare/planner**, **9/9 scenarii în emulator**, plus reverificarea 0309 după corecția căutării după cartier. Variante: peste 50 de conversații private excluse, acces propriu/neatribuit, revocare în timpul analizei, nume ambigue, replay fără efecte și o singură reluare după eroare temporară de furnizor. Dovezi: [lot 26, model real](evals/PROSPECTING_EXECUTION_BATCH_26.json), [lot 27, execuție deterministă](evals/PROSPECTING_EXECUTION_BATCH_27.json). Inventar: **138/1000 dovezi locale** (127 cu model real, 11 deterministe), fără certificare integrală în producție. Lot nepublicat în producție.
+
 ## Lot comun după apel — scenariile 0295–0300 — 16 octombrie 2026
 
 Șase scenarii implementate/verificate împreună, cu o singură pornire a emulatorului pentru lot. Comanda `--corpus-prospecting-live --case=master-0295,master-0296,master-0297,master-0298,master-0299,master-0300` selectează explicit toate cazurile. Rulările viitoare se organizează în loturi de fluxuri înrudite, conform cererii utilizatorului.

@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && !process.env.JARVIS_PROSPECTING_CASE.split(',').includes(scenarioId)) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,58 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if (number >= 301 && number <= 309) {
+        const convs = agency.collection('conversations');
+        const now = new Date().toISOString();
+        const conv = { agencyId: id, name: 'Andrei Șerban', channel: 'whatsapp', assigneeId: id, collaboratorIds: [], lastMessageAt: now, readBy: {}, propertyIds: ['titan-flat'] };
+        await convs.doc('andrei').set(conv);
+        await convs.doc('free').set({ ...conv, name: 'Maria', channel: 'messenger', assigneeId: null });
+        await convs.doc('read').set({ ...conv, name: 'Mihai', readBy: { [id]: now } });
+        await convs.doc('old').set({ ...conv, name: 'Ieri', lastMessageAt: '2000-01-01T00:00:00Z', readBy: { [id]: now } });
+        for (let n = 0; n < 52; n++) await convs.doc(`private-${n}`).set({ ...conv, name: 'SECRET_OTHER_AGENT', assigneeId: 'other', collaboratorIds: [id] });
+        await convs.doc('private-0').collection('messages').doc('secret').set({ text: 'SECRET_OTHER_AGENT credit Titan', direction: 'received', createdAt: now });
+        await agency.collection('properties').doc('titan-flat').set({ title: 'Apartament Titan' });
+        const messages = [
+          ...Array.from({ length: 12 }, (_, n) => ({ id: `history-${n}`, text: 'Detaliu general din discuția inițială.', direction: 'received', status: 'received' })),
+          { id: 'credit-question', text: 'Se poate cumpăra prin credit?', direction: 'received', status: 'received' },
+          { id: 'credit-answer', text: 'Da, proprietarul acceptă achiziția prin credit.', direction: 'sent', status: 'delivered' },
+          { id: 'parking-question', text: 'Există un loc de parcare inclus?', direction: 'received', status: 'received' },
+          { id: 'floorplan-promise', text: 'Vă trimit releveul mâine până la ora 12:00.', direction: 'sent', status: 'delivered' },
+          { id: 'failed-promise', text: 'Vă garantez reducerea de 15000 euro.', direction: 'sent', status: 'failed' },
+        ];
+        for (const [n, row] of messages.entries()) { const { id: key, ...data } = row; await convs.doc('andrei').collection('messages').doc(key).set({ ...data, createdAt: new Date(Date.now() - (messages.length - n) * 1000).toISOString() }); }
+        const session = agency.collection('assistantSessions').doc(id); await session.set({ ownerId: id });
+        if ([304, 306, 307].includes(number)) await session.collection('messages').doc('selected').set({ id: 'selected', role: 'assistant', createdAt: now, text: 'Conversație selectată', cards: [{ type: 'data', source: 'conversations', title: 'Selectat', rows: [{ id: 'andrei' }] }] });
+        const before = (await convs.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }));
+        const request = { sessionId: id, requestId: `${id}-inbox`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        const rows = result.message.cards?.filter(card => card.source === 'conversations').flatMap(card => card.rows) || [];
+        const messageRows = result.message.cards?.filter(card => card.source === 'conversationMessages').flatMap(card => card.rows) || [];
+        expect(JSON.stringify(result)).not.toContain('SECRET_OTHER_AGENT');
+        if (number === 301) expect(rows.map(row => row.id).sort()).toEqual(['andrei', 'free']);
+        if (number === 302) expect(rows.map(row => row.id).sort()).toEqual(['andrei', 'read']);
+        if (number === 303) expect(rows.map(row => row.id)).toEqual(['andrei']);
+        if (number === 304) { expect(messageRows).toHaveLength(10); expect(messageRows.map(row => row.id)).toEqual(messages.slice(-10).map(row => row.id)); }
+        if (number === 305) { expect(result.message.text).toMatch(/credit/i); expect(result.message.text).toMatch(/releveu/i); expect(result.message.text).toContain('floorplan-promise'); }
+        if (number === 306) { expect(result.message.text).toMatch(/parcare/i); expect(result.message.text).toContain('parking-question'); }
+        if (number === 307) { expect(result.message.text).toMatch(/releveu/i); expect(result.message.text).toContain('floorplan-promise'); }
+        if (number === 308) expect(messageRows.map(row => row.id)).toEqual(['credit-question', 'credit-answer']);
+        if (number === 309) expect(messageRows.map(row => row.id)).toEqual(messages.map(row => row.id));
+        expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        expect((await convs.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }))).toEqual(before);
+        await convs.doc('andrei').update({ assigneeId: 'other' });
+        const blocked = await planTurn(ctx, prompt, [{ id: 'selected', role: 'assistant', createdAt: now, text: 'OLD PRIVATE TEXT', cards: [{ type: 'data', source: 'conversations', title: 'Selectat', rows: [{ id: 'andrei' }] }] }]);
+        expect(JSON.stringify(blocked)).not.toMatch(/OLD PRIVATE TEXT|parking-question|floorplan-promise/);
+        if (number === 303 || number === 305) {
+          await convs.doc('andrei').update({ assigneeId: id }); await convs.doc('ambiguous').set({ ...conv, name: 'Andrei Popa' });
+          const ambiguous = await planTurn(ctx, prompt, []);
+          expect(ambiguous.cards.find(card => card.source === 'conversations')?.rows).toHaveLength(2);
+          if (number === 305) expect(ambiguous.metrics.status).toBe('clarification');
+        }
+        expect(settingsContext.invokes).toBe(0);
+        report = { ...report, environment: [305, 306, 307].includes(number) ? 'Real model analysis of freshly authorized CRM messages through persisted chat, local Firestore; no external sends.' : 'Deterministic application chat with local Firestore; no model or external sends.', final: result.message, blocked, executionVerified: true, verification: 'Original inbox command with scenario-specific rows/content assertions, own/unassigned access, more than 50 private conversations excluded despite collaborator membership, current data, idempotent replay, no read-state mutations, revoked access and ambiguous-name variants.' }; return;
+      }
       if (number === 296 || number === 297) {
         await favorites.doc(source.id).update({ collaborationStatus: 'collaborates' });
         const session = agency.collection('assistantSessions').doc(id);
