@@ -1,0 +1,191 @@
+{
+  "scope": "Daily activity and intervention reports through persisted chat and local Firestore automatic publishing jobs. Saved execution state only; no live Facebook verification or production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0399",
+      "prompt": "Rezumă publicările Facebook de azi.",
+      "versions": {
+        "prompt": "jarvis-125",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "156",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore automatic publishing jobs; no external publication or refresh.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "2e11105b-8b68-4bd4-b51e-c6441918c849-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Activitate Facebook proprie în 2026-10-16 (Europe/Bucharest): 1 joburi cu date de execuție în această zi; trimiteri înregistrate azi: 2, erori înregistrate azi: 1. Joburile fără date de execuție nu pot fi atribuite unei zile. Cardurile arată starea curentă a joburilor. Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "completed",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "actualStartedAt": "2026-10-16T14:27:08.019Z",
+                    "completedAt": null,
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "submittedAt": "2026-10-16T14:27:08.019Z",
+                        "failedAt": null,
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "submittedAt": "2026-10-16T14:27:08.019Z",
+                        "failedAt": null,
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "submittedAt": null,
+                        "failedAt": "2026-10-16T14:27:08.019Z",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:27:08.548Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0400",
+      "prompt": "Spune-mi ce publicări necesită intervenția mea.",
+      "versions": {
+        "prompt": "jarvis-125",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "156",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore automatic publishing jobs; no external publication or refresh.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "08fbb0ed-d814-4896-8708-79e6fc694416-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Publicări proprii care necesită intervenție: 1. Job job: Există erori de publicare; verifică grupurile afectate. Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "completed",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": null,
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "actualStartedAt": "2026-10-16T14:27:08.741Z",
+                    "completedAt": null,
+                    "totalGroups": 3,
+                    "counts": {
+                      "queued": 0,
+                      "publishing": 0,
+                      "submitted": 1,
+                      "pending_approval": 1,
+                      "needs_reauthentication": 0,
+                      "error": 1,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Trimis",
+                        "status": "submitted",
+                        "submittedAt": "2026-10-16T14:27:08.741Z",
+                        "failedAt": null,
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "1",
+                        "name": "Aprobare",
+                        "status": "pending_approval",
+                        "submittedAt": "2026-10-16T14:27:08.741Z",
+                        "failedAt": null,
+                        "publicationConfirmed": false
+                      },
+                      {
+                        "id": "2",
+                        "name": "Eșuat",
+                        "status": "error",
+                        "submittedAt": null,
+                        "failedAt": "2026-10-16T14:27:08.741Z",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false,
+                    "interventionReasons": [
+                      "Există erori de publicare; verifică grupurile afectate."
+                    ]
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:27:08.959Z"
+          }
+        }
+      ]
+    }
+  ]
+}

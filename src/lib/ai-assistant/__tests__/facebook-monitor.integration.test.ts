@@ -27,6 +27,41 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook persisted job mo
     await jobs.doc('job').set(raw); await jobs.doc('foreign').set({ ...raw, ownerUid: 'other', propertyTitle: 'HIDDEN' }); await jobs.doc('wrong-agency').set({ ...raw, agencyId: 'other', propertyTitle: 'HIDDEN' });
     return { ctx, agency, profile, jobs, raw };
   }
+  for (const scenarioId of ['master-0399', 'master-0400']) it('executes original daily/intervention report ' + scenarioId, async () => {
+    const f = await fixture(); mocks.actor = f.ctx;
+    const now = new Date().toISOString();
+    const groups = [{ name: 'Trimis', status: 'submitted', submittedAt: now }, { name: 'Aprobare', status: 'pending_approval', submittedAt: now }, { name: 'Eșuat', status: 'error', failedAt: now, errorMessage: 'SECRET' }];
+    await f.jobs.doc('job').update({ status: 'completed', actualStartedAt: now, groups });
+    await f.jobs.doc('healthy').set({ ...f.raw, status: 'queued', groups: [{ name: 'A', status: 'queued' }], updatedAt: now, scheduledAt: now });
+    await f.jobs.doc('deleted').set({ ...f.raw, deletedAt: now, actualStartedAt: now });
+    const before = (await f.jobs.get()).docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const input = { sessionId: randomUUID(), requestId: randomUUID(), prompt: corpus.scenarios.find(row => row.id === scenarioId)!.text, currentRecord: null };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.cards?.[0].rows.map(row => row.id)).toEqual(['job']);
+    expect(result.message.planId).toBeUndefined(); expect(JSON.stringify(result)).not.toMatch(/SECRET|HIDDEN/);
+    if (scenarioId === 'master-0399') expect(result.message.text).toContain('trimiteri înregistrate azi: 2, erori înregistrate azi: 1');
+    else expect(result.message.cards?.[0].rows[0].interventionReasons).toEqual(['Există erori de publicare; verifică grupurile afectate.']);
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id);
+    expect((await f.jobs.get()).docs.map(doc => ({ id: doc.id, ...doc.data() }))).toEqual(before);
+    expect((await f.agency.collection('assistantSessions').doc(input.sessionId).collection('messages').get()).size).toBeGreaterThan(0);
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-facebook-monitor', { recursive: true });
+    await writeFile('.tmp/jarvis-facebook-monitor/' + scenarioId + '-latest.json', JSON.stringify({ scenarioId, prompt: input.prompt, versions: VERSIONS, executionVerified: true, environment: 'Persisted application chat and local Firestore automatic publishing jobs; no external publication or refresh.', runs: [{ phase: 'original', final: result.message }] }, null, 2));
+  });
+  it('reports empty results and rejects revoked access for both aggregate modes', async () => {
+    const f = await fixture(); await f.jobs.doc('job').delete();
+    for (const mode of ['today', 'attention'] as const) expect((await readFacebookMonitor(f.ctx, mode, [])).rows).toEqual([]);
+    await f.profile.update({ role: 'disabled' });
+    for (const mode of ['today', 'attention'] as const) await expect(readFacebookMonitor(f.ctx, mode, [])).rejects.toThrow('Acces');
+  });
+  it('uses Bucharest execution dates, not schedule or last edit dates', async () => {
+    const f = await fixture(), now = new Date('2026-10-25T00:30:00Z');
+    await f.jobs.doc('job').update({ actualStartedAt: '2026-10-24T21:30:00Z', groups: [] });
+    await f.jobs.doc('yesterday').set({ ...f.raw, actualStartedAt: '2026-10-24T20:59:00Z', updatedAt: now.toISOString(), groups: [] });
+    await f.jobs.doc('scheduled').set({ ...f.raw, scheduledAt: now.toISOString(), updatedAt: now.toISOString(), groups: [] });
+    const result = await readFacebookMonitor(f.ctx, 'today', [], now);
+    expect(result.rows.map(row => row.id)).toEqual(['job']); expect(result.text).toContain('2026-10-25');
+  });
   for (const scenarioId of ['master-0359', 'master-0363', 'master-0364', 'master-0369', 'master-0370', 'master-0371']) it('executes original ' + scenarioId, async () => {
     const f = await fixture(); mocks.actor = f.ctx;
     const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;

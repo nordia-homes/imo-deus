@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { facebookJobSummary, facebookMonitorRequest, tomorrowBucharest } from '../facebook-monitor';
+import { facebookJobSummary, facebookMonitorRequest, tomorrowBucharest, facebookActivityOnDay, facebookInterventionReasons } from '../facebook-monitor';
 describe('Facebook persisted job reporting', () => {
+  it.each(['2026-03-28T22:30:00Z', '2026-10-24T21:30:00Z'])('attributes execution after Bucharest midnight: %s', timestamp => {
+    const day = timestamp.startsWith('2026-03') ? '2026-03-29' : '2026-10-25';
+    expect(facebookActivityOnDay(facebookJobSummary('j', { groups: [{ status: 'submitted', submittedAt: timestamp }] }), day)).toBe(true);
+    expect(facebookActivityOnDay(facebookJobSummary('j', { scheduledAt: timestamp, updatedAt: timestamp, createdAt: timestamp }), day)).toBe(false);
+  });
+  it.each(['scheduled', 'queued', 'running', 'cooldown', 'completed', 'cancelled'])('does not label healthy %s as requiring intervention', status => {
+    expect(facebookInterventionReasons(facebookJobSummary('j', { status, groups: [{ status: 'pending_approval' }, { status: 'skipped' }] }))).toEqual([]);
+  });
+  it.each(['error', 'needs_reauthentication', 'uncertain', 'invalid'])('reports unresolved group %s even in a completed job', status => {
+    expect(facebookInterventionReasons(facebookJobSummary('j', { status: 'completed', groups: [{ status }] }))).not.toEqual([]);
+  });
+  it.each(['pending', 'unknown'])('does not overlook %s cloud dispatch', dispatchState => {
+    expect(facebookInterventionReasons(facebookJobSummary('j', { status: 'scheduled', dispatchState, groups: [] })).join(' ')).toContain('neconfirmată');
+  });
   it.each([['2026-03-28T22:30:00Z', '2026-03-30'], ['2026-10-24T21:30:00Z', '2026-10-26'], ['2026-12-31T22:30:00Z', '2027-01-02']])('uses Bucharest calendar tomorrow at %s', (now, expected) => expect(tomorrowBucharest(new Date(now))).toBe(expected));
   it.each(['completed', 'running', 'error', 'cancelled', 'unexpected'])('never equates %s with publication', status => {
     const result = facebookJobSummary('job', { status, leaseToken: 'secret', errorMessage: 'secret', groups: [{ name: 'A', status: 'submitted', errorMessage: 'secret' }, { name: 'B', status: 'pending_approval' }, { name: 'C', status: 'error' }, null] });

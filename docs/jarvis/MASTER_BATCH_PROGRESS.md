@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot rapoarte Facebook zilnice și intervenții — 16 octombrie 2026
+
+Scenariile **0399 și 0400** citesc prin chat joburile proprii ale automatizării Facebook. Rezumatul zilei folosește datele de execuție (pornire, terminare, trimitere sau eroare), convertite în Europe/Bucharest; o simplă editare sau programare nu este prezentată ca publicare. Trimiterile cu aprobare în așteptare sunt numărate ca trimiteri, fără confirmare de publicare. Cardurile prezintă starea curentă; lipsa datelor de execuție nu permite atribuirea unei zile și nu se pretinde existența unui jurnal istoric complet.
+
+Raportul de intervenții include erori, reconectări, expediere neconfirmată și grupuri cu rezultat incert sau necunoscut, inclusiv la joburi marcate completed. Joburile sănătoase și simpla așteptare a aprobării nu sunt declarate erori. Sunt excluse joburile altor agenți, ale altor agenții și cele șterse. Fiecare citire verifică apartenența și rolul curent; raportarea nu modifică și nu retrimite joburi.
+
+Conform clarificării utilizatorului, runnerul manual desktop (agentul apasă Publică) este exclus din implementările viitoare. Nu a fost dezactivat în acest lot și nu a fost extins. Automatizarea continuă să folosească descrierea și pozele CRM.
+
+Validare: 148 teste unitare și de regresie, 12 teste de integrare, ESLint, paritate și build complet trecute. Comenzile originale au fost executate prin chat persistent, cu replay, comparația stării nemodificate a joburilor, acces revocat, rezultate goale și limita de zi București la schimbarea orei. Dovadă: [Facebook lot 06](evals/FACEBOOK_EXECUTION_BATCH_06.json). **191/1000 dovezi locale** (133 cu model real, 58 deterministe). Rapoarte din starea salvată; fără interogare live Facebook, fără publicări externe și fără certificare integrală în producție. Lot nepublicat.
+
 ## Regula publicării în grupurile Facebook — 16 octombrie 2026
 
 Clarificare explicită a utilizatorului: Jarvis folosește aceeași automatizare ca agentul, cu pozele și descrierea proprietății din CRM. Nu reformulează și nu înlocuiește descrierea cu draftul din conversație. Redactarea solicitată separat rămâne în conversație și nu modifică automat conținutul publicării în grupuri.

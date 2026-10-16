@@ -3638,14 +3638,22 @@
           "sourceNumber": 399,
           "request": "Rezumă publicările Facebook de azi.",
           "requestSha256": "8e14ea516095f0ead7258d73d2a7745ccbafcdcc6b77d9852949401b6d8c8f5a",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0400",
           "sourceNumber": 400,
           "request": "Spune-mi ce publicări necesită intervenția mea.",
           "requestSha256": "72841a63415b289376e0e1c4719c14424c4c7b77dd91df9d9e2f46e328564152",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         }
       ]
     },
