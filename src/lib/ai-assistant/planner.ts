@@ -137,6 +137,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(prepared.mode === 'duplicates' ? 'Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.' : prepared.actions.length ? 'Trimiterea proprietăților selectate este pregătită.' : 'Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.');
     } catch { return finish('Selectează o singură listă de matching pentru client și conversația lui. Pentru o singură proprietate, selectează acea proprietate din listă. Datele trebuie să fie actuale; nu am înlocuit proprietățile sau destinatarul.', 'clarification'); }
   }
+  const { propertyPostRequest, preparePropertyPost } = await import('./property-post-draft');
+  const propertyPost = propertyPostRequest(prompt);
+  if (propertyPost) {
+    try {
+      const result = await preparePropertyPost(ctx, propertyPost, history);
+      cards.push({ type: 'data', source: 'facebookPostDraft', title: 'Textul postării', rows: result.rows, complete: true });
+      return finish(result.text, result.clarification ? 'clarification' : undefined);
+    } catch { return finish('Nu pot verifica proprietatea sau accesul actual. Nu am generat o postare din date vechi.', 'unavailable'); }
+  }
   if (normalized(prompt).trim().replace(/[.!?]+$/, '') === 'nu programa daca facebook trebuie reconectat') {
     try {
       const { readFacebookSetup } = await import('./facebook-setup');

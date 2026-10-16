@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot texte Facebook din datele proprietății — 16 octombrie 2026
+
+Scenariile **0372–0375** pregătesc și reformulează textul în conversație din câmpurile publice actuale ale proprietății selectate. Fiecare cerere recitește CRM-ul: modificarea prețului sau eliminarea dotărilor ajunge în noul draft, inclusiv când stilul comercial se păstrează. Nu sunt inventate facilități din descriere, apropierea de metrou, randament, comision sau disponibilitate. Datele proprietarului și notele interne nu intră în text. Moneda costurilor de publicitate nu schimbă moneda prețului proprietății.
+
+Selecția explicită din pagina curentă are prioritate; conversația poate continua ultimul draft după părăsirea paginii. Lipsa selecției, datele insuficiente, tipul incompatibil cu vânzarea și proprietățile închise cer clarificarea relevantă. Un anunț rezervat păstrează acest statut în text. Apartenența și accesul la proprietate sunt recitite tranzacțional. Rezultatul este salvat în mesaj și card cu revizia datelor folosite; aceeași cerere nu dublează mesajul. Acest flux pregătește textul, fără publicare externă.
+
+Validare: **257 teste unitare și de regresie, 17 teste de integrare** prin emulator, inclusiv cele patru comenzi originale prin chat persistent, actualizări CRM, acces revocat, date private, schimbarea selecției, corectarea dotărilor inventate anterior și replay. TypeScript, ESLint, paritatea operațiilor și buildul complet trecute. Comenzile originale au rutare deterministă; variantele libere de exprimare și publicarea externă nu sunt certificate prin acest lot.
+
+Dovadă: [Facebook lot 05](evals/FACEBOOK_EXECUTION_BATCH_05.json). **189/1000 dovezi locale** (133 cu model real, 56 deterministe). Nu reprezintă certificarea celor 1000 de scenarii în producție. Lot nepublicat.
+
 ## Lot creare și programare Facebook — 16 octombrie 2026
 
 Scenariile **0357 și 0360**: comanda de programare pentru mâine la 07:00 găsește proprietatea în CRM după titlu/localizare/adresă cu normalizare românească, păstrează tipul apartament cerut, folosește contul configurat pe proprietate sau contul implicit al profilului și selectează grupurile eligibile pentru tranzacție. Jarvis creează jobul prin executor și handlerul POST, apoi confirmă data București din rezultatul salvat. Selecțiile multiple continuă cu „Proprietate: ID”, fără aprobare suplimentară; data calculată inițial rămâne în context. Un cont inaccesibil sau de reconectat nu este înlocuit tacit. Comanda de verificare a reconectării nu programează nimic.

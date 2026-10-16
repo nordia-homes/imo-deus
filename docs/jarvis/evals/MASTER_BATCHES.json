@@ -3433,28 +3433,44 @@
           "sourceNumber": 372,
           "request": "Pregătește textul postării pentru proprietate.",
           "requestSha256": "003f5204dc7f2f2b68938b1fab0286a72c053e3c8b6d48c6c9e8ba0675af33c1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0373",
           "sourceNumber": 373,
           "request": "Fă postarea mai orientată spre vânzare.",
           "requestSha256": "440a7156e564ed350c257a3078ccbaf7a67d34f833e0f06c64dc163ac4ed0ec5",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0374",
           "sourceNumber": 374,
           "request": "Folosește numai datele reale ale proprietății.",
           "requestSha256": "7d12414ba49c7b58b4e97c764e17e5a4e593ee610a8725ddee696e1cbe3d6575",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0375",
           "sourceNumber": 375,
           "request": "Nu inventa facilități în postare.",
           "requestSha256": "d6775ca39b6698bacb5d3305aa7232f132663d59edcada4d0d464ebc20e47d51",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0376",

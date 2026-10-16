@@ -1,0 +1,242 @@
+{
+  "scope": "Original commands through persisted application chat and current local Firestore data. Deterministic factual drafts; no model calls or Facebook publication certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0372",
+      "prompt": "Pregătește textul postării pentru proprietate.",
+      "versions": {
+        "prompt": "jarvis-124",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "155",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat reads fresh property fields on local Firestore. No model calls or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "fb74b874-a49d-463e-ab25-205254b1f70c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Text pregătit din datele actuale ale proprietății:\n\nApartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru mai multe detalii.\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPostDraft",
+                "title": "Textul postării",
+                "rows": [
+                  {
+                    "id": "property",
+                    "propertyId": "property",
+                    "text": "Apartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru mai multe detalii.",
+                    "style": "neutral",
+                    "transaction": "sale",
+                    "omittedAmenityCount": 0,
+                    "usedFields": [
+                      "title",
+                      "transactionType",
+                      "location",
+                      "rooms",
+                      "squareFootage"
+                    ],
+                    "omittedFields": [
+                      "bathrooms"
+                    ],
+                    "revision": "950344ac614d3a218cf12167e3cb6d8bb5a64d91e924e82f7e3f6968cae4f901",
+                    "source": "current_crm_fields",
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:05:04.191Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0373",
+      "prompt": "Fă postarea mai orientată spre vânzare.",
+      "versions": {
+        "prompt": "jarvis-124",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "155",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat reads fresh property fields on local Firestore. No model calls or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "a1851d06-8dff-417c-a724-3410817464cd-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Text pregătit din datele actuale ale proprietății:\n\nCauți o proprietate de cumpărat? Descoperă această ofertă.\nApartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru detalii și pentru a discuta o vizionare.\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPostDraft",
+                "title": "Textul postării",
+                "rows": [
+                  {
+                    "id": "property",
+                    "propertyId": "property",
+                    "text": "Cauți o proprietate de cumpărat? Descoperă această ofertă.\nApartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru detalii și pentru a discuta o vizionare.",
+                    "style": "commercial",
+                    "transaction": "sale",
+                    "omittedAmenityCount": 0,
+                    "usedFields": [
+                      "title",
+                      "transactionType",
+                      "location",
+                      "rooms",
+                      "squareFootage"
+                    ],
+                    "omittedFields": [
+                      "bathrooms"
+                    ],
+                    "revision": "b4096a634d3949cddbca7a04f327277fc0c614836bbfdfaac2d9a1c5bc19cec0",
+                    "source": "current_crm_fields",
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:05:04.832Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0374",
+      "prompt": "Folosește numai datele reale ale proprietății.",
+      "versions": {
+        "prompt": "jarvis-124",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "155",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat reads fresh property fields on local Firestore. No model calls or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "37026ea9-a58b-4c16-a7fc-dcccc346f4c4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Text pregătit din datele actuale ale proprietății:\n\nApartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru mai multe detalii.\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPostDraft",
+                "title": "Textul postării",
+                "rows": [
+                  {
+                    "id": "property",
+                    "propertyId": "property",
+                    "text": "Apartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru mai multe detalii.",
+                    "style": "neutral",
+                    "transaction": "sale",
+                    "omittedAmenityCount": 0,
+                    "usedFields": [
+                      "title",
+                      "transactionType",
+                      "location",
+                      "rooms",
+                      "squareFootage"
+                    ],
+                    "omittedFields": [
+                      "bathrooms"
+                    ],
+                    "revision": "950344ac614d3a218cf12167e3cb6d8bb5a64d91e924e82f7e3f6968cae4f901",
+                    "source": "current_crm_fields",
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:05:05.399Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0375",
+      "prompt": "Nu inventa facilități în postare.",
+      "versions": {
+        "prompt": "jarvis-124",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "155",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat reads fresh property fields on local Firestore. No model calls or publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "76f4fb1e-d0e6-4845-a179-12dc181d7a95-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Text pregătit din datele actuale ale proprietății:\n\nApartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru mai multe detalii.\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPostDraft",
+                "title": "Textul postării",
+                "rows": [
+                  {
+                    "id": "property",
+                    "propertyId": "property",
+                    "text": "Apartament Cișmigiu\nDe vânzare\nLocalizare: București\n2 camere · 54 m² utili\nPreț: 125.000 EUR\nDotări: Balcon\nScrie-ne pentru mai multe detalii.",
+                    "style": "neutral",
+                    "transaction": "sale",
+                    "omittedAmenityCount": 0,
+                    "usedFields": [
+                      "title",
+                      "transactionType",
+                      "location",
+                      "rooms",
+                      "squareFootage"
+                    ],
+                    "omittedFields": [
+                      "bathrooms"
+                    ],
+                    "revision": "950344ac614d3a218cf12167e3cb6d8bb5a64d91e924e82f7e3f6968cae4f901",
+                    "source": "current_crm_fields",
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:05:05.898Z"
+          }
+        }
+      ]
+    }
+  ]
+}
