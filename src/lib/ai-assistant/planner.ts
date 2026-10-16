@@ -154,6 +154,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { prepareSocialComments } = await import('./social-comments');
+  try {
+    const socialComments = await prepareSocialComments(ctx, prompt, history);
+    if (socialComments) {
+      if (socialComments.choices.length) cards.push({ type: 'data', source: 'socialCommentsRequest', title: 'Alege postarea și contul', rows: socialComments.choices, complete: true });
+      if (socialComments.comments) cards.push({ type: 'data', source: 'socialComments', title: 'Comentarii disponibile', rows: socialComments.comments.rows, complete: socialComments.comments.complete });
+      return finish(socialComments.text);
+    }
+  } catch { return finish('Nu am putut citi comentariile: verifică accesul, conexiunea și selecția postării. Nu am trimis răspunsuri sau aprecieri.', 'unavailable'); }
   const { socialPostSearchRequest, searchSocialPosts } = await import('./social-post-search');
   const socialPostQuery = socialPostSearchRequest(prompt);
   if (socialPostQuery) {

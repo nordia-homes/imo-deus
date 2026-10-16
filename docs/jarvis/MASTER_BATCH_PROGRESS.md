@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot citirea comentariilor sociale — 16 octombrie 2026
+
+Scenariul **0379** prezintă perechile postare/cont eligibile și continuă la selecția explicită „Postare socială: ID; Cont social: ID”. Recitește profilul, agenția, postarea publicată și capabilitatea de comentarii înainte de a folosi serviciul social existent. Conturile deconectate, selecțiile neofertate și postările șterse nu produc cereri către Meta. Permisiunea administrativă existentă se păstrează.
+
+Facebook și Instagram folosesc câmpurile specifice fiecărui canal. Rezultatul proiectează numai ID-ul, autorul, textul și data comentariului, afișată în Europe/Bucharest. Câmpurile brute și URL-ul de paginare al furnizorului nu sunt expuse. Comentariile sunt ordonate după data disponibilă în segmentul primit; când Meta indică pagini suplimentare, rezultatul este marcat incomplet. Integrarea existentă citește maximum 50 de comentarii; nu se pretinde acoperirea întregului istoric sau continuarea paginării. Un răspuns invalid ori un eșec Meta nu devine o listă goală prezentată drept succes. Replay-ul cererii nu repetă apelul furnizorului.
+
+Validare: 76 teste unitare/regresie și 7 teste de integrare, cu conversație persistentă, serviciul real, token sintetic criptat în emulator și numai transport HTTP simulat. ESLint, paritate și build complet (inclusiv TypeScript) trecute. Dovadă: [Social lot 03](evals/SOCIAL_EXECUTION_BATCH_03.json). **199/1000 dovezi locale** (133 cu model real, 66 deterministe). Fără comentarii, aprecieri sau publicări trimise; fără certificare în producție. Lot nepublicat.
+
 ## Lot căutare în istoricul social — 16 octombrie 2026
 
 Scenariul **0388** caută postările proprietății după titlul salvat la creare sau după titlul, zona și adresa actuală din CRM. Sunt acceptate diacriticele românești moderne și cu sedilă, majusculele și ghilimelele. Cuvintele sunt comparate integral, pentru a nu confunda Titan cu Titanic ori numărul 12 cu 123. Cererile de forma „Găsește/Arată-mi postările proprietății din/numite ...” folosesc același flux.

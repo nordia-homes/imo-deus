@@ -1,0 +1,80 @@
+{
+  "scope": "Explicit post/account selection and recent comments through the existing social service, with real local token lookup/decryption and simulated Meta HTTP. Not production certification; additional provider pages are explicitly incomplete.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0379",
+      "prompt": "Arată-mi comentariile recente.",
+      "versions": {
+        "prompt": "jarvis-132",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "163",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, explicit selection and existing social service on local Firestore; Meta HTTP response simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "3aeaf5f2-94fa-42ed-9226-13017483acfd-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege postarea și contul din listă: „Postare socială: ID; Cont social: ID”. Voi citi comentariile disponibile prin integrarea Meta.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialCommentsRequest",
+                "title": "Alege postarea și contul",
+                "rows": [
+                  {
+                    "id": "post:3c25d501-a76b-466f-9eda-d6fc13801f85",
+                    "postId": "post",
+                    "connectionId": "3c25d501-a76b-466f-9eda-d6fc13801f85",
+                    "propertyTitle": "Cișmigiu",
+                    "description": "Postare socială: post; Cont social: 3c25d501-a76b-466f-9eda-d6fc13801f85"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T16:15:13.728Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "00d3373b-6313-4bc1-839e-e32dee9e16b0-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am citit 1 comentarii pentru postarea post, contul 3c25d501-a76b-466f-9eda-d6fc13801f85. Sunt ordonate după data disponibilă, în ora Bucureștiului. Meta indică pagini suplimentare; lista reprezintă numai segmentul returnat de integrare (maximum 50).",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialComments",
+                "title": "Comentarii disponibile",
+                "rows": [
+                  {
+                    "id": "9",
+                    "name": "Alin",
+                    "text": "Mai este disponibil?",
+                    "description": "16.10.2026, 07:30:00 (ora Bucureștiului)\nMai este disponibil?",
+                    "createdAt": "2026-10-16T04:30:00Z"
+                  }
+                ],
+                "complete": false,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T16:15:14.147Z"
+          }
+        }
+      ]
+    }
+  ]
+}
