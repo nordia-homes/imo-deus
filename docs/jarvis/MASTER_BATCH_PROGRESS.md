@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Confirmări stricte pentru controlul joburilor Facebook — 16 octombrie 2026
+
+Executorul confirmă acum reprogramarea numai dacă rezultatul handlerului corespunde jobului, agentului, agenției, contului, orei și setului exact de grupuri cerute. Grupurile duplicate, lipsă, străine sau care nu mai sunt queued invalidează confirmarea. Datele echivalente cu offset diferit sunt comparate ca momente absolute. Anularea verifică identitatea și starea cancelled.
+
+Handlerul de reprogramare și pregătirea loturilor refuză joburile cu dispatchState pending sau unknown, înainte de un nou apel la runner. Anularea rămâne disponibilă; rezultatul său trebuie confirmat de handler. Aceste verificări nu anulează efecte externe deja produse și nu declanșează retransmitere automată.
+
+Validare: 188 teste unitare/regresie, 42 teste de integrare, ESLint, paritate și build complet trecute. Sunt verificate și controalele existente, mutarea în lot și anularea unui job cu expediere neconfirmată. Corecții pentru fluxuri existente, fără scenarii noi contabilizate: **195/1000 dovezi locale**. Fără publicări externe; runnerul manual nu este extins. Lot nepublicat.
+
 ## Lot reprogramare Facebook în selecție multiplă — 16 octombrie 2026
 
 Scenariul **0397** cere selecția explicită „Joburi Facebook: ID1, ID2”, apoi mută fiecare programare cu 60 de minute după momentul salvat. Sunt păstrate contul, grupurile și proprietatea; confirmările folosesc Europe/Bucharest. Operația reprezintă 60 de minute efective, inclusiv peste miezul nopții sau schimbarea orei. Nu interpretează automat întreaga listă afișată drept selecție.

@@ -41,6 +41,14 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook controls through
   }
   function request(method: string, body: any) { return new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs/job', { method, headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) }); }
   function moveBody(f: any) { return { connectionId: 'connection', groupUrls: f.raw.groups.map((g: any) => g.url), scheduledAt: tomorrowBucharest(new Date()) + 'T05:00:00.000Z', expectedUpdatedAt: f.raw.updatedAt }; }
+  it.each(['pending', 'unknown'])('refuses reschedule for %s cloud dispatch without contacting runner', async dispatchState => {
+    const f = await fixture('cloud'); await f.job.update({ dispatchState });
+    const before = (await f.job.get()).data();
+    const response = await PATCH(request('PATCH', moveBody(f)), { params: Promise.resolve({ jobId: 'job' }) });
+    expect(response.status).toBe(409); expect((await f.job.get()).data()).toEqual(before); expect(mocks.runner).not.toHaveBeenCalled();
+    const cancelled = await DELETE(request('DELETE', { expectedUpdatedAt: f.raw.updatedAt }), { params: Promise.resolve({ jobId: 'job' }) });
+    expect(cancelled.status).toBe(200); expect((await f.job.get()).data()?.status).toBe('cancelled');
+  });
   for (const mode of ['local', 'cloud']) it('executes master-0397 for all explicitly selected jobs: ' + mode, async () => {
     const f = await fixture(mode), jobs = f.agency.collection('facebookCloudPublishingJobs');
     await jobs.doc('second').set({ ...f.raw, id: 'second', scheduledAt: tomorrowBucharest(new Date()) + 'T06:30:00.000Z' });

@@ -11,6 +11,7 @@ export function assertFacebookJobOwner(row: Record<string, any>, agencyId: strin
   if (row.agencyId !== agencyId || row.ownerUid !== uid || row.deletedAt) facebookControlError('Jobul nu este accesibil.', 403);
 }
 export function assertFacebookControlState(row: Record<string, any>, cancel: boolean) {
+  if (!cancel && ['pending', 'unknown'].includes(row.dispatchState)) facebookControlError('Expedierea jobului nu este confirmată. Verifică runnerul înainte de reprogramare.');
   if (cancel ? !['scheduled', 'queued', 'running', 'cooldown', 'error', 'needs_reauthentication', 'cancelled'].includes(row.status) : row.status !== 'scheduled' || Boolean(row.actualStartedAt) || Boolean(row.leaseToken) || !Array.isArray(row.groups) || row.groups.some((g: any) => g.status !== 'queued')) facebookControlError('Starea jobului nu mai permite această modificare.');
 }
 // External runner payloads never replace ownership, lease or property fields.

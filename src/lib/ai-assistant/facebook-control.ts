@@ -77,9 +77,14 @@ export async function prepareFacebookControl(ctx: AssistantContext, prompt: stri
   actions.push(action);
   return { ...selected, actions, pendingPrompt: null, text: request.mode === 'move' ? 'Mut programarea la ' + request.time + ', ora Bucureștiului, în aceeași zi.' : 'Anulez jobul selectat; postările deja trimise nu vor fi retrase.' };
 }
-export function facebookControlReceipt(operation: string, raw: Record<string, any>, expected: Record<string, unknown>, jobId: string) {
+export function facebookControlReceipt(operation: string, raw: Record<string, any>, expected: Record<string, unknown>, jobId: string, actor: { uid: string; agencyId: string }) {
   const job = raw.job;
-  const confirmed = job?.id === jobId && (operation === 'facebook_job_remove' ? job.status === 'cancelled' : job.status === 'scheduled' && job.scheduledAt === expected.scheduledAt);
+  const identity = job?.id === jobId && job.ownerUid === actor.uid && job.agencyId === actor.agencyId && !job.deletedAt;
+  const urls = Array.isArray(expected.groupUrls) && expected.groupUrls.every(url => typeof url === 'string') ? [...new Set(expected.groupUrls as string[])].sort() : [];
+  const groups = Array.isArray(job?.groups) ? job.groups : [];
+  const sameGroups = urls.length > 0 && groups.length === urls.length && groups.every((group: any) => group && typeof group.url === 'string' && group.status === 'queued') && JSON.stringify(groups.map((group: any) => group.url).sort()) === JSON.stringify(urls);
+  const requestedTime = typeof expected.scheduledAt === 'string' ? Date.parse(expected.scheduledAt) : NaN;
+  const confirmed = identity && (operation === 'facebook_job_remove' ? job.status === 'cancelled' : operation === 'facebook_job_update' && job.status === 'scheduled' && !['pending', 'unknown'].includes(job.dispatchState) && job.connectionId === expected.connectionId && Number.isFinite(requestedTime) && Date.parse(job.scheduledAt) === requestedTime && sameGroups);
   if (!confirmed) throw new Error('Modificarea jobului Facebook nu este confirmată.');
   return { operation, jobId, executionState: 'succeeded', businessStatus: job.status, scheduledAt: job.scheduledAt || null, publicationConfirmed: false, evidenceSource: 'domain_handler' };
 }

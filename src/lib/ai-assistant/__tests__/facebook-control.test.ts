@@ -22,7 +22,22 @@ describe('Facebook job control contracts', () => {
     expect(requestedFacebookControl(action, 'Mută jobul selectat la ora 08:00.')).toBe(true);
     expect(requestedFacebookControl(action, 'Mută jobul selectat la ora 09:00.')).toBe(false);
   });
-  it('requires a matching committed receipt', () => expect(() => facebookControlReceipt('facebook_job_remove', { job }, {}, 'job')).toThrow());
+  it('requires a matching committed receipt', () => expect(() => facebookControlReceipt('facebook_job_remove', { job }, {}, 'job', { uid: 'u', agencyId: 'a' })).toThrow());
+  it.each(['pending', 'unknown'])('does not reschedule %s dispatch', dispatchState => {
+    expect(() => assertFacebookControlState({ ...job, dispatchState }, false)).toThrow();
+    expect(() => assertFacebookControlState({ ...job, dispatchState }, true)).not.toThrow();
+  });
+  it.each([
+    { connectionId: 'other' }, { ownerUid: 'other' }, { agencyId: 'other' }, { deletedAt: 'now' },
+    { groups: [] }, { groups: [job.groups[0], job.groups[0]] },
+    { groups: [{ ...job.groups[0], status: 'submitted' }] }, { groups: [{ ...job.groups[0], url: 'https://facebook.com/groups/other' }] },
+    { dispatchState: 'unknown' }, { scheduledAt: 'invalid' },
+  ])('does not confirm incompatible saved control result %j', changed => {
+    expect(() => facebookControlReceipt('facebook_job_update', { job: { ...job, ...changed } }, { connectionId: 'c', scheduledAt: job.scheduledAt, groupUrls: [job.groups[0].url] }, 'job', { uid: 'u', agencyId: 'a' })).toThrow();
+  });
+  it('confirms equivalent time representations with exactly the requested groups and account', () => {
+    expect(facebookControlReceipt('facebook_job_update', { job }, { connectionId: 'c', scheduledAt: '2030-01-01T08:00:00+02:00', groupUrls: [job.groups[0].url] }, 'job', { uid: 'u', agencyId: 'a' })).toMatchObject({ executionState: 'succeeded', publicationConfirmed: false });
+  });
   it('continues only the latest pending selection', () => {
     const history: any[] = [{ role: 'assistant', cards: [{ source: 'facebookControlRequest', rows: [{ prompt: 'Anulează jobul dacă fluxul suportă anularea.' }] }] }];
     expect(facebookControlExecutionPrompt('Job Facebook: job', history)).toContain('Anulează');

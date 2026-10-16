@@ -99,7 +99,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       }
       if (['facebook_job_update', 'facebook_job_remove'].includes(action.operation)) {
         const { facebookControlReceipt } = await import('./facebook-control');
-        result = facebookControlReceipt(action.operation, result, body, action.params.jobId);
+        result = facebookControlReceipt(action.operation, result, body, action.params.jobId, ctx);
       }
       if (action.operation === 'message_send' && typeof result.messageId === 'string') result = { ...result, conversationId: action.params.conversationId };
       if (action.operation === 'owner_prospect' && body.action === 'add') {
