@@ -1,0 +1,91 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0348",
+      "prompt": "Reconciliază mesajele cu rezultat necunoscut.",
+      "versions": {
+        "prompt": "jarvis-118",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "149",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and real Firestore reconciliation; synthetic provider receipts, no external calls.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "076537eb-99f6-4996-90ef-1edc9a465543-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Reconciliere: 1 mesaje actualizate din confirmările existente; 1 rămân cu rezultat necunoscut. Nu am retrimis mesaje.\nAcțiuni executate: 1. Starea mesajelor este disponibilă în Inbox.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "outboundReconciliation",
+                "title": "Reconciliere mesaje",
+                "rows": [
+                  {
+                    "id": "scope",
+                    "remaining": 0
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "status": "partial",
+                      "operation": "message_send",
+                      "businessStatus": "partial",
+                      "executionState": "unknown",
+                      "verifiedAt": "2026-10-16T11:07:21.431Z",
+                      "evidenceSource": "domain_handler",
+                      "reconciliation": true,
+                      "conversationId": "4c193969-c5bd-4bdf-9c6f-31e99928a560",
+                      "rows": [
+                        {
+                          "messageId": "5c17b9fce74eb6eb1c8abaaafe6cf0a3b686fae9a689b802e1d0b8569719446c",
+                          "status": "delivered",
+                          "reconciled": true,
+                          "unresolved": false
+                        },
+                        {
+                          "messageId": "b5cced66-cd91-4c43-a1ef-f41bc53663a3",
+                          "status": "unknown",
+                          "reconciled": false,
+                          "unresolved": true
+                        }
+                      ],
+                      "reconciled": 1,
+                      "unresolved": 1
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "4c193969-c5bd-4bdf-9c6f-31e99928a560"
+              }
+            ],
+            "createdAt": "2026-10-16T11:07:21.432Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic",
+  "scope": "Original reconciliation command through persisted chat and real Firestore transactions. Provider acceptance, receipts and native echoes are evidence; no new send. Unknown without correlated evidence remains explicitly unresolved. Own/unassigned access, concurrent settlement and idempotency covered by integration regressions. No external provider calls or production certification."
+}

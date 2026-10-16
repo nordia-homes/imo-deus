@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({ token: vi.fn(), graph: vi.fn(), actor: null as
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.actor }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
 vi.mock('@/lib/communications/meta', () => ({ connectionToken: mocks.token, graph: mocks.graph, onboardingConfig: () => ({ configured: true }), MetaGraphError: class extends Error { providerStatus = 500; } }));
-import { queueMessage, drainOutbound } from '@/lib/communications/outbound';
+import { queueMessage, drainOutbound, reconcileOutboundMessage } from '@/lib/communications/outbound';
 import { recipientRevision } from '@/lib/communications/recipient-revision';
 import { bindBusinessRevisions } from '../business-revisions';
 import { approvalEnvelope, validateApproval } from '../approval';
@@ -806,6 +806,99 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       await drainOutbound(db as any); expect(mocks.graph).not.toHaveBeenCalled();
       expect((await f.ref.collection('messages').get()).docs[0].data().status).toBe('failed');
     } finally { await db.recursiveDelete(portal); }
+  });
+  it('recovers provider acceptance after the receipt persistence transaction fails', async () => {
+    const f = await fixture(), result = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    let restoreTransaction: (() => void) | undefined;
+    mocks.graph.mockImplementationOnce(async () => {
+      const transactionSpy = vi.spyOn(db, 'runTransaction').mockRejectedValueOnce(new Error('Synthetic receipt persistence failure'));
+      restoreTransaction = () => { transactionSpy.mockRestore(); };
+      return { message_id: 'accepted-before-db-failure' };
+    });
+    try { await drainOutbound(db as any); } finally { restoreTransaction?.(); }
+    const job = db.collection('communicationOutboundJobs').doc(result.messageId);
+    expect((await job.get()).data()).toMatchObject({ status: 'unknown', externalId: 'accepted-before-db-failure' });
+    expect((await job.get()).data()?.providerAcceptedAt).toBeTruthy();
+    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, result.messageId)).toMatchObject({ status: 'accepted', reconciled: true });
+    await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
+  });
+  async function unknownFixture() {
+    const f = await fixture(), queued = await queueMessage(db as any, f.actor, f.ref.id, f.input);
+    const jobRef = db.collection('communicationOutboundJobs').doc(queued.messageId), messageRef = f.ref.collection('messages').doc(queued.messageId);
+    await jobRef.update({ status: 'unknown', error: 'Transient failure' }); await messageRef.update({ status: 'unknown', error: 'Transient failure' });
+    return { ...f, jobRef, messageRef, messageId: queued.messageId, externalId: randomUUID() };
+  }
+  it.each(['accepted', 'delivered', 'read', 'failed'])('reconciles provider evidence as %s without a second send', async status => {
+    const f = await unknownFixture();
+    await f.jobRef.update({ externalId: f.externalId, providerAcceptedAt: new Date().toISOString() });
+    if (status !== 'accepted') await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: f.ref.id, messageId: f.messageId, pendingStatus: status, pendingFailedAt: '2026-10-16T08:00:00Z' });
+    const result = await reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId);
+    expect(result).toMatchObject({ reconciled: true, status });
+    expect((await f.messageRef.get()).data()).toMatchObject({ status, externalId: f.externalId });
+    expect((await f.messageRef.get()).data()?.error).toBeUndefined();
+    if (status === 'failed') expect((await f.messageRef.get()).data()?.failedAt).toBe('2026-10-16T08:00:00Z');
+    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)).toMatchObject({ reconciled: false, status });
+    await drainOutbound(db as any); expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it.each(['missing', 'conflicting-id', 'foreign-mapping', 'other-job'])('keeps ambiguous evidence unresolved: %s', async variant => {
+    const f = await unknownFixture();
+    if (variant !== 'missing') {
+      await f.jobRef.update({ externalId: f.externalId, providerAcceptedAt: new Date().toISOString() });
+      if (variant === 'conflicting-id') await f.messageRef.update({ externalId: 'different' });
+      else await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: variant === 'foreign-mapping' ? 'other' : f.ref.id, messageId: 'other-job', pendingStatus: 'delivered' });
+    }
+    expect(await reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)).toMatchObject({ status: 'unknown', unresolved: true });
+    expect((await f.jobRef.get()).data()?.status).toBe('unknown'); expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it.each(['assignment', 'membership', 'role', 'agency'])('rechecks access before reconciliation: %s', async variant => {
+    const f = await unknownFixture();
+    await f.jobRef.update({ externalId: f.externalId, providerAcceptedAt: new Date().toISOString() });
+    if (variant === 'assignment') await f.ref.update({ assigneeId: 'other-agent' });
+    if (variant === 'membership') await db.collection('users').doc(f.actor.uid).update({ agencyId: 'other' });
+    if (variant === 'role') await db.collection('users').doc(f.actor.uid).update({ role: 'disabled' });
+    if (variant === 'agency') await f.jobRef.update({ agencyId: 'other' });
+    await expect(reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)).rejects.toThrow();
+    expect((await f.jobRef.get()).data()?.status).toBe('unknown'); expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it('merges a matching native echo and settles delivery cost once under concurrent reconciliation', async () => {
+    const f = await unknownFixture(), echoId = randomUUID();
+    await f.jobRef.update({ externalId: f.externalId, estimate: { amount: 100, currency: 'EUR' }, budgetId: 'recovery-budget' });
+    const budget = db.collection('agencies').doc(f.actor.agencyId).collection('communicationBudgets').doc('recovery-budget');
+    await budget.set({ reservedMicros: 100, spentMicros: 0, limitMicros: 1000 });
+    await f.ref.collection('messages').doc(echoId).set({ agencyId: f.actor.agencyId, conversationId: f.ref.id, origin: 'native', direction: 'sent', externalId: f.externalId, status: 'delivered' });
+    await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: f.ref.id, messageId: echoId });
+    const results = await Promise.all([1, 2].map(() => reconcileOutboundMessage(db as any, f.actor, f.ref.id, f.messageId)));
+    expect(results.filter(row => row.reconciled)).toHaveLength(1);
+    expect((await f.ref.collection('messages').get()).size).toBe(1);
+    expect((await budget.get()).data()).toMatchObject({ reservedMicros: 0, spentMicros: 100 });
+    expect(mocks.graph).not.toHaveBeenCalled();
+  });
+  it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting master-0348: reconciles unknown messages from provider evidence without sending', async () => {
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const f = await unknownFixture(), ctx = { ...f.actor, adminDb: db, authorization: 'Bearer fixture' } as any;
+    mocks.actor = ctx;
+    await f.jobRef.update({ externalId: f.externalId, providerAcceptedAt: new Date().toISOString() });
+    await db.collection('communicationMessageMappings').doc(stableId(f.conversation.connectionId, f.externalId)).set({ connectionId: f.conversation.connectionId, conversationId: f.ref.id, messageId: f.messageId, pendingStatus: 'delivered' });
+    const unknownId = randomUUID(); await db.collection('communicationOutboundJobs').doc(unknownId).set({ ...(await f.jobRef.get()).data(), status: 'unknown', externalId: null, providerAcceptedAt: null });
+    await f.ref.collection('messages').doc(unknownId).set({ ...(await f.messageRef.get()).data(), id: unknownId });
+    const otherId = randomUUID(); await db.collection('agencies').doc(f.actor.agencyId).collection('conversations').doc(otherId).set({ ...f.conversation, id: otherId, assigneeId: 'other-agent' });
+    const hiddenId = randomUUID(); await db.collection('communicationOutboundJobs').doc(hiddenId).set({ ...(await f.jobRef.get()).data(), conversationId: otherId });
+    const scenarioId = 'master-0348', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const request = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };
+    const response = await chatTurn(ctx, request);
+    expect(response.message.planId).toBeUndefined();
+    expect(response.message.text).toContain('1 mesaje actualizate'); expect(response.message.text).toContain('1 rămân cu rezultat necunoscut');
+    expect((await f.jobRef.get()).data()?.status).toBe('delivered');
+    expect((await db.collection('communicationOutboundJobs').doc(unknownId).get()).data()?.status).toBe('unknown');
+    expect((await db.collection('communicationOutboundJobs').doc(hiddenId).get()).data()?.status).toBe('unknown');
+    expect(JSON.stringify(response)).not.toContain(hiddenId);
+    await chatTurn(ctx, { ...request, requestId: randomUUID() });
+    expect(mocks.graph).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+    await writeFile('.tmp/jarvis-whatsapp-prospecting/master-0348-latest.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Persisted chat and real Firestore reconciliation; synthetic provider receipts, no external calls.', runs: [{ phase: 'original', final: response.message }] }, null, 2));
+    mocks.actor = null;
   });
   async function prospectingFixture() {
     const f = await marketingFixture();

@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { previousPropertyShare } from './property-share-history';
 import { assertProspectingRecipient } from './prospecting-recipient';
 import { bindViewingConfirmation, assertViewingTemplate } from './viewing-confirmation';
@@ -164,6 +165,44 @@ async function settleBudget(db: Firestore, jobId: string) {
     tx.update(ref, { budgetSettled: true, reservationReleased: true, settledAmountMicros: charge });
   });
 }
+export async function reconcileOutboundMessage(db: Firestore, actor: Actor, conversationId: string, messageId: string) {
+  const jobRef = db.collection('communicationOutboundJobs').doc(messageId);
+  const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(conversationId);
+  const messageRef = conversationRef.collection('messages').doc(messageId);
+  const result = await db.runTransaction(async tx => {
+    await assertAutomationFence(db, tx, actor);
+    const [profile, conversation, jobDoc, messageDoc] = await Promise.all([tx.get(db.collection('users').doc(actor.uid)), tx.get(conversationRef), tx.get(jobRef), tx.get(messageRef)]);
+    if (profile.data()?.agencyId !== actor.agencyId || profile.data()?.role !== actor.role || !['agent', 'admin'].includes(actor.role || '') || !conversation.exists || !canReadConversation(actor, conversation.data() as Conversation)) throw new CommunicationError('Acces revocat.', 403);
+    const job = jobDoc.data(), message = messageDoc.data();
+    if (!job || job.agencyId !== actor.agencyId || job.conversationId !== conversationId || !message || message.direction !== 'sent' || message.origin !== 'imodeus' || message.agencyId !== actor.agencyId || message.conversationId !== conversationId) throw new CommunicationError('Mesajul nu corespunde conversației.', 409);
+    if (job.status !== 'unknown') return { messageId, status: job.status, reconciled: false, unresolved: false };
+    const externalId = job.externalId || message.externalId;
+    if (!externalId || job.externalId && message.externalId && job.externalId !== message.externalId) return { messageId, status: 'unknown', reconciled: false, unresolved: true };
+    const mappingRef = db.collection('communicationMessageMappings').doc(stableId(job.connectionId, externalId));
+    const mapping = (await tx.get(mappingRef)).data();
+    if (mapping && (mapping.connectionId !== job.connectionId || mapping.conversationId !== conversationId)) return { messageId, status: 'unknown', reconciled: false, unresolved: true };
+    const echoRef = mapping?.messageId && mapping.messageId !== messageId ? conversationRef.collection('messages').doc(mapping.messageId) : null;
+    const echo = echoRef ? (await tx.get(echoRef)).data() : null;
+    if (echoRef && (!echo || echo.externalId !== externalId || echo.direction !== 'sent' || echo.agencyId !== actor.agencyId || echo.conversationId !== conversationId || echo.origin !== 'native')) return { messageId, status: 'unknown', reconciled: false, unresolved: true };
+    const known = ['accepted', 'delivered', 'read', 'failed'];
+    let status: Message['status'] = 'unknown';
+    if (job.externalId === externalId && Number.isFinite(Date.parse(job.providerAcceptedAt))) status = 'accepted';
+    if (message.externalId === externalId && known.includes(message.status)) status = advanceStatus(status, message.status);
+    if (mapping?.messageId === messageId && known.includes(mapping.pendingStatus)) status = advanceStatus(status, mapping.pendingStatus);
+    if (echo && known.includes(echo.status)) status = advanceStatus(status, echo.status);
+    if (status === 'unknown') return { messageId, status, reconciled: false, unresolved: true };
+    const failedAt = message.failedAt || echo?.failedAt || mapping?.pendingFailedAt || nowIso();
+    const patch = { status, externalId, error: FieldValue.delete(), reconciledAt: nowIso(), ...(status === 'failed' ? { failedAt } : {}) };
+    tx.update(jobRef, { ...patch, budgetSettled: false });
+    tx.update(messageRef, patch);
+    tx.set(mappingRef, { connectionId: job.connectionId, conversationId, messageId });
+    if (echoRef) tx.delete(echoRef);
+    tx.set(db.collection('communicationSearchJobs').doc(stableId(conversationId, messageId)), { agencyId: actor.agencyId, conversationId, messageId, status: 'queued', updatedAt: nowIso() });
+    return { messageId, status, reconciled: true, unresolved: false };
+  });
+  if (result.reconciled) await settleBudget(db, messageId);
+  return result;
+}
 export async function drainOutbound(db: Firestore) {
   const accounting = await db.collection('communicationOutboundJobs').where('budgetSettled', '==', false).where('status', 'in', ['delivered', 'read', 'failed']).limit(50).get();
   const failures: string[] = [];
@@ -216,6 +255,8 @@ export async function drainOutbound(db: Firestore) {
       const response = await graph(`/${connection.externalId}/messages`, token, { ...estimate.body, ...(connection.channel === 'whatsapp' ? { biz_opaque_callback_data: receiptCorrelation(row.id, connection.id) } : {}) });
       const externalId = response.messages?.[0]?.id || response.message_id;
       if (!externalId) throw new Error('Platforma nu a returnat identificatorul mesajului.');
+      // Persist provider acceptance before the larger receipt/echo transaction.
+      await row.ref.update({ externalId, providerAcceptedAt: nowIso() });
       const mapping = db.collection('communicationMessageMappings').doc(stableId(job.connectionId, externalId));
       await db.runTransaction(async tx => {
         const existing = await tx.get(mapping);

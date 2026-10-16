@@ -3178,7 +3178,11 @@
           "sourceNumber": 348,
           "request": "Reconciliază mesajele cu rezultat necunoscut.",
           "requestSha256": "ae5ae3ad2f3514895d58caf4e1e7eb4817ff47118a6d2c28279e6d6616d7ae61",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_37.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0349",

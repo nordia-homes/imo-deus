@@ -137,6 +137,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(prepared.mode === 'duplicates' ? 'Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.' : prepared.actions.length ? 'Trimiterea proprietăților selectate este pregătită.' : 'Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.');
     } catch { return finish('Selectează o singură listă de matching pentru client și conversația lui. Pentru o singură proprietate, selectează acea proprietate din listă. Datele trebuie să fie actuale; nu am înlocuit proprietățile sau destinatarul.', 'clarification'); }
   }
+  const { reconciliationRequest, prepareReconciliation } = await import('./outbound-reconciliation');
+  if (reconciliationRequest(prompt)) {
+    const prepared = await prepareReconciliation(ctx);
+    actions.push(...prepared.actions);
+    for (const action of prepared.actions) if (action.kind === 'existing_operation') accessRefs.push({ resource: 'conversations', id: action.params.conversationId });
+    cards.push({ type: 'data', source: 'outboundReconciliation', title: 'Reconciliere mesaje', rows: [{ id: 'scope', remaining: prepared.remaining }], complete: prepared.remaining === 0 });
+    return finish(prepared.actions.length ? 'Verific rezultatele necunoscute din conversațiile accesibile, fără retrimitere.' + (prepared.remaining ? ' Mai sunt ' + prepared.remaining + ' mesaje în afara lotului curent; reia comanda după acest lot.' : '') : 'Nu există mesaje cu rezultat necunoscut în conversațiile accesibile.');
+  }
   const { communicationRecoveryRequest, syncDiagnosis, failedCommunicationsToday } = await import('./communication-recovery');
   const recovery = communicationRecoveryRequest(prompt);
   if (recovery) {

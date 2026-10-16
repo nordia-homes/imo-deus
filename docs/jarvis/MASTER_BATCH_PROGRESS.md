@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot reconciliere rezultate necunoscute — 16 octombrie 2026
+
+Scenariul **0348** execută reconcilierea mesajelor cu rezultat necunoscut din conversațiile accesibile agentului, fără plan suplimentar de aprobare. Executorul recitește apartenența, rolul, atribuirea, jobul și mesajul în aceeași tranzacție. Identificatorul furnizorului, confirmarea salvată și/sau ecoul nativ trebuie să corespundă conexiunii și conversației; mesajele altui agent sau altei agenții nu sunt procesate.
+
+Workerul salvează separat identificatorul și momentul acceptării înaintea tranzacției complexe de confirmare. Reconcilierea poate astfel recupera acceptarea după o întrerupere a salvării, poate aplica o confirmare de livrare/citire/eșec și poate uni ecoul nativ cu mesajul inițial. Costul se decontează idempotent, numai pe dovezi de livrare/eșec; acceptarea nu înseamnă livrare. Nu se apelează furnizorul pentru o nouă expediere.
+
+Rezultatele fără dovezi corelate rămân explicit necunoscute. Acest lot nu implementează retrimiterea safe-to-retry (0347) și nu pretinde că orice rezultat extern necunoscut poate fi rezolvat fără o confirmare. Loturile au maximum 100 de mesaje per acțiune și limita generală de acțiuni; mesajele din afara lotului sunt raportate separat. Căutarea inițială citește joburile agenției; nu există certificare de performanță pentru istorice foarte mari.
+
+Validare: **138 teste unitare, 125 teste coadă/worker/reguli și scenariul 0348 prin chat persistent**. Incluse: eșecul tranzacției după acceptarea furnizorului, dovezi contradictorii/lipsă, acces revocat, ecou nativ și decontare concurentă. ESLint, paritatea operațiilor și buildul complet trecute. Dovadă prin chat persistent: [lot 37](evals/PROSPECTING_EXECUTION_BATCH_37.json). **168/1000 dovezi locale** (133 cu model real, 35 deterministe), fără certificare integrală în producție. Furnizor simulat; fără mesaje externe. Lot nepublicat.
+
 ## Consolidare trimiteri istorice — 16 octombrie 2026
 
 Scenariile **0321–0323** verifică acum și joburile istorice cu identificator explicit de client și proprietate, create înaintea evidenței `communicationPropertyShares`. Aceeași verificare este folosită la pregătirea acțiunilor, executarea lor și înscrierea în coadă. O cerere nouă nu retrimite automat un mesaj queued/accepted/delivered/read/failed/unknown. Coada recuperează atomic evidența lipsă, inclusiv la două cereri simultane. Lectura din chat nu modifică istoricul.
