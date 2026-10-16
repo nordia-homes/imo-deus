@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Validarea disponibilității proprietății la publicarea automată — 16 octombrie 2026
+
+Crearea și reprogramarea joburilor automate verifică acum și disponibilitatea proprietății: documentele șterse logic, cu agencyId incompatibil, inactive, vândute sau închiriate sunt refuzate. Verificarea este în handlerul comun folosit de aplicație și Jarvis, nu doar în planificator. La creare se execută în tranzacția de rezervare, înainte de salvarea jobului și înainte de apelul cloud. La reprogramare se execută înainte de apelul cloud și din nou în tranzacția de commit.
+
+Dacă proprietatea se schimbă în timpul apelului cloud, aplicația refuză confirmarea locală și nu repetă apelul. Această verificare nu poate retrage un efect extern deja produs; este necesară verificarea runnerului pentru reconciliere. Anularea rămâne disponibilă pentru a opri un job chiar dacă proprietatea a devenit indisponibilă.
+
+Descrierea și pozele CRM nu sunt modificate; runnerul manual nu este extins. Validare: 71 teste de integrare, 68 teste unitare/regresie, ESLint, paritate și build complet trecute. Acesta este un lot de corecții pentru fluxurile existente, fără scenarii noi contabilizate: **192/1000 dovezi locale**. Lot nepublicat și fără publicări externe de test.
+
 ## Lot creare imediată Facebook și continuarea selecției — 16 octombrie 2026
 
 Comenzile originale **0358 și 0362** pornesc crearea unui job automat pentru proprietatea deschisă. Dacă destinațiile nu sunt selectate, Jarvis prezintă grupurile eligibile și continuă la „Grupuri Facebook: ID1, ID2”. Comanda inițială autorizează crearea; nu este cerută o aprobare suplimentară. Nu sunt selectate tacit toate grupurile. Selecția este legată de proprietatea inițială și de ultimul mesaj de clarificare; grupurile sunt recitite și validate înainte de execuție.

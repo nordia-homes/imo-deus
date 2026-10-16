@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { defaultFacebookGroups, filterFacebookGroupsForProperty } from './facebook-groups';
-import { facebookControlError } from './facebook-job-control';
+import { facebookControlError, assertFacebookPropertyAvailable } from './facebook-job-control';
 import type { FacebookCloudPublishingJob, FacebookGroup, Property } from './types';
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,180}$/);
 export const facebookCreateSchema = z.object({ propertyId: id, connectionId: id, groupUrls: z.array(z.string().url()).min(1).max(200), scheduledAt: z.string().datetime({ offset: true }).nullable().optional(), requestId: z.string().uuid().optional() }).strict();
@@ -46,6 +46,7 @@ export async function createFacebookJob(db: Firestore, agencyId: string, uid: st
     const propertySnapshot = await tx.get(agency.collection('properties').doc(input.propertyId)), agencySnapshot = await tx.get(agency);
     if (!propertySnapshot.exists || !agencySnapshot.exists) facebookControlError('Proprietatea sau agenția nu există.', 404);
     const property = { ...propertySnapshot.data(), id: propertySnapshot.id } as Property;
+    assertFacebookPropertyAvailable(propertySnapshot.data(), agencyId);
     const stored = agencySnapshot.data()!.facebookGroups;
     const eligible = filterFacebookGroupsForProperty(Array.isArray(stored) && stored.length ? stored as FacebookGroup[] : defaultFacebookGroups, property.transactionType);
     const groups = groupUrls.map(url => eligible.find(group => group.url === url));

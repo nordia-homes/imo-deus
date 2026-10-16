@@ -40,6 +40,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
+  for (const mode of ['local', 'cloud']) it.each(['deleted', 'foreign-agency', 'Vândut', 'Închiriat', 'Inactiv'])('refuses unavailable property before reservation (' + mode + '): %s', async variant => {
+    const f = await fixture(mode);
+    await f.property.update(variant === 'deleted' ? { deletedAt: 'now' } : variant === 'foreign-agency' ? { agencyId: 'other' } : { status: variant });
+    const response = await call(f.body);
+    expect(response.status).toBeGreaterThanOrEqual(400); expect((await f.jobs.get()).empty).toBe(true); expect(mocks.runner).not.toHaveBeenCalled();
+  });
   for (const scenarioId of ['master-0358', 'master-0362']) it('continues original immediate creation after group selection: ' + scenarioId, async () => {
     const f = await fixture('cloud'), sessionId = randomUUID(), prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     await f.property.update({ description: 'Descriere CRM exactă\nCu paragrafe.', images: ['https://example.com/photo.jpg'] });

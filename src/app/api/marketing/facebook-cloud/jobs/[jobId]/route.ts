@@ -1,4 +1,4 @@
-import { assertFacebookJobOwner, assertFacebookControlState, verifiedFacebookRunnerControl, commitFacebookControl } from '@/lib/facebook-job-control';
+import { assertFacebookJobOwner, assertFacebookControlState, verifiedFacebookRunnerControl, commitFacebookControl, assertFacebookPropertyAvailable } from '@/lib/facebook-job-control';
 import { NextRequest, NextResponse } from 'next/server';
 import type { FacebookCloudPublishingJob, FacebookGroup, Property } from '@/lib/types';
 import { defaultFacebookGroups, filterFacebookGroupsForProperty } from '@/lib/facebook-groups';
@@ -70,6 +70,7 @@ export async function PATCH(request: NextRequest, context: Context) {
       return NextResponse.json({ message: 'Proprietatea nu a fost găsită.' }, { status: 404 });
     }
     const property = { id: propertySnapshot.id, ...propertySnapshot.data() } as Property;
+    assertFacebookPropertyAvailable(propertySnapshot.data(), agencyId);
     const storedAgencyGroups = (agencySnapshot.data()?.facebookGroups || []) as FacebookGroup[];
     const agencyGroups = filterFacebookGroupsForProperty(
       storedAgencyGroups.length ? storedAgencyGroups : defaultFacebookGroups,

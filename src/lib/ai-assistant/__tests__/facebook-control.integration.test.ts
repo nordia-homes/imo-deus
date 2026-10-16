@@ -41,6 +41,23 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook controls through
   }
   function request(method: string, body: any) { return new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs/job', { method, headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) }); }
   function moveBody(f: any) { return { connectionId: 'connection', groupUrls: f.raw.groups.map((g: any) => g.url), scheduledAt: tomorrowBucharest(new Date()) + 'T05:00:00.000Z', expectedUpdatedAt: f.raw.updatedAt }; }
+  it.each(['deleted', 'foreign-agency', 'Vândut', 'Închiriat', 'Inactiv'])('refuses unavailable property before cloud reschedule: %s', async variant => {
+    const f = await fixture('cloud');
+    await f.agency.collection('properties').doc('property').update(variant === 'deleted' ? { deletedAt: 'now' } : variant === 'foreign-agency' ? { agencyId: 'other' } : { status: variant });
+    const response = await PATCH(request('PATCH', moveBody(f)), { params: Promise.resolve({ jobId: 'job' }) });
+    expect(response.status).toBeGreaterThanOrEqual(400); expect((await f.job.get()).data()).toEqual(f.raw); expect(mocks.runner).not.toHaveBeenCalled();
+    const cancelled = await DELETE(request('DELETE', { expectedUpdatedAt: f.raw.updatedAt }), { params: Promise.resolve({ jobId: 'job' }) });
+    expect(cancelled.status).toBe(200); expect((await f.job.get()).data()?.status).toBe('cancelled');
+  });
+  it('rechecks property state changed during the cloud request before local commit', async () => {
+    const f = await fixture('cloud');
+    mocks.runner.mockImplementation(async (_path, options) => {
+      await f.agency.collection('properties').doc('property').update({ status: 'Vândut' });
+      const data = JSON.parse(options.body); return { job: { ...f.raw, ...data, groups: data.groups.map((g: any) => ({ ...g, status: 'queued' })) } };
+    });
+    const response = await PATCH(request('PATCH', moveBody(f)), { params: Promise.resolve({ jobId: 'job' }) });
+    expect(response.status).toBe(409); expect((await f.job.get()).data()).toEqual(f.raw); expect(mocks.runner).toHaveBeenCalledTimes(1);
+  });
   for (const mode of ['local', 'cloud']) for (const scenarioId of ['master-0365', 'master-0366']) it('executes ' + scenarioId + ' with ' + mode + ' runner', async () => {
     const f = await fixture(mode), prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
     const input = { sessionId: randomUUID(), requestId: randomUUID(), prompt, currentRecord: null };

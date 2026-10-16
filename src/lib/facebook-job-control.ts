@@ -2,6 +2,11 @@ import type { DocumentSnapshot, Firestore } from 'firebase-admin/firestore';
 import { defaultFacebookGroups, filterFacebookGroupsForProperty } from './facebook-groups';
 import type { FacebookGroup } from './types';
 export function facebookControlError(message: string, status = 409): never { throw Object.assign(new Error(message), { status }); }
+export function assertFacebookPropertyAvailable(row: Record<string, any> | undefined, agencyId: string) {
+  if (!row || row.deletedAt || row.agencyId && row.agencyId !== agencyId) facebookControlError('Proprietatea nu mai este accesibilă pentru publicare.', 404);
+  const status = String(row.status || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if (['inactiv', 'vandut', 'inchiriat'].includes(status)) facebookControlError('Proprietatea nu mai este activă pentru publicare. Verifică starea din CRM.');
+}
 export function assertFacebookJobOwner(row: Record<string, any>, agencyId: string, uid: string) {
   if (row.agencyId !== agencyId || row.ownerUid !== uid || row.deletedAt) facebookControlError('Jobul nu este accesibil.', 403);
 }
@@ -40,6 +45,7 @@ export async function commitFacebookControl(db: Firestore, agencyId: string, uid
       const property = (await tx.get(agency.collection('properties').doc(row.propertyId))).data();
       const agencyData = (await tx.get(agency)).data();
       if (!property || !agencyData) facebookControlError('Proprietatea sau agenția nu mai există.');
+      assertFacebookPropertyAvailable(property, agencyId);
       const stored = agencyData.facebookGroups;
       const groups = filterFacebookGroupsForProperty(Array.isArray(stored) && stored.length ? stored as FacebookGroup[] : defaultFacebookGroups, property.transactionType);
       if (!patch.groups.every((group: any) => groups.some(g => g.url === group.url))) facebookControlError('Grupurile eligibile s-au schimbat.');
