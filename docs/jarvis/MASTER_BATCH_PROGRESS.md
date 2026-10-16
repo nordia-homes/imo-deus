@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot verificarea orei persistate Facebook — 16 octombrie 2026
+
+Scenariul **0395** recitește jobul din baza de date și compară ora cu ultima confirmare reușită a executorului pentru același job, păstrată în conversație. După creare sau reprogramare identifică jobul din rezultatul execuției chiar dacă există alte joburi. Comparația se face între momentele absolute, iar afișarea folosește exclusiv Europe/Bucharest, inclusiv ora de vară/iarnă.
+
+O oră schimbată ulterior este raportată diferită. Lipsa unei confirmări anterioare produce explicit lipsa comparației, fără a presupune ora cerută. Un job anulat, terminat, eșuat sau cu expediere neconfirmată nu este declarat programare activă, chiar dacă ora coincide. Pentru mai multe joburi, alegerea „Job Facebook: ID” continuă verificarea orei. Nu se fac modificări sau retrimiteri.
+
+Validare: 145 teste unitare/regresie, 52 teste de integrare, ESLint, paritate și build complet trecute. Dovadă: [Facebook lot 09](evals/FACEBOOK_EXECUTION_BATCH_09.json). **194/1000 dovezi locale** (133 cu model real, 61 deterministe). Verificarea vizează starea salvată în aplicație, nu confirmarea publicării în Facebook. Runnerul manual nu este modificat; lot nepublicat.
+
 ## Lot alegerea contului Facebook pe proprietate — 16 octombrie 2026
 
 Scenariul **0353** listează conturile proprii disponibile și continuă la „Cont Facebook: ID”. Nu deduce care cont este corect și nu schimbă tacit contul. După alegerea explicită, folosește update_property prin executorul CRM, fără aprobare suplimentară, cu revizia proprietății și istoricul modificării. Replay-ul nu dublează salvarea; selectarea altor proprietăți sau a unui cont neofertat nu produce modificări.

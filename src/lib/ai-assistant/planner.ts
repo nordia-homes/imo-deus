@@ -200,6 +200,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     try {
       const result = await readFacebookMonitor(ctx, facebookMonitor, history, new Date(), prompt);
       cards.push({ type: 'data', source: 'facebookJobs', title: 'Joburi Facebook', rows: result.rows, complete: true });
+      if (result.needsSelection && facebookMonitor === 'schedule-check') cards.push({ type: 'data', source: 'facebookMonitorRequest', title: 'Verificarea programării', rows: [{ id: 'pending', mode: 'schedule-check' }], complete: true });
       return finish(result.text, result.needsSelection ? 'clarification' : undefined);
     } catch { return finish('Nu am putut verifica joburile Facebook sau accesul actual. Reia solicitarea.', 'unavailable'); }
   }

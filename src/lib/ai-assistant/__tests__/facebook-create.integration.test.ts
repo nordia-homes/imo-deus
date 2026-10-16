@@ -40,6 +40,26 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
+  it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {
+    const f = await fixture('cloud'), sessionId = randomUUID();
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: corpus.scenarios.find(row => row.id === 'master-0357')!.text, currentRecord: null });
+    const job = (await f.jobs.get()).docs[0], raw = job.data();
+    await f.jobs.doc('another').set({ ...raw, id: 'another', propertyId: 'other' });
+    const scenarioId = 'master-0395', prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const input = { sessionId, requestId: randomUUID(), prompt, currentRecord: null };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.cards?.[0].rows).toHaveLength(1);
+    expect(result.message.cards?.[0].rows[0]).toMatchObject({ id: job.id, scheduleMatches: true, activeScheduleConfirmed: true, publicationConfirmed: false });
+    expect(result.message.text).toContain('07:00');
+    expect((await job.ref.get()).data()).toEqual(raw);
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id);
+    await job.ref.update({ scheduledAt: new Date(Date.parse(raw.scheduledAt) + 3600000).toISOString() });
+    const changed = await chatTurn(f.ctx, { ...input, requestId: randomUUID() });
+    expect(changed.message.text).toContain('DIFERĂ'); expect(changed.message.cards?.[0].rows[0].scheduleMatches).toBe(false);
+    expect(mocks.runner).toHaveBeenCalledTimes(1); expect(mocks.fetch).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-facebook-schedule-check', { recursive: true });
+    await writeFile('.tmp/jarvis-facebook-schedule-check/master-0395.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual scheduling through chat/executor/POST, followed by persisted-time reread and comparison on local Firestore. Cloud transport simulated.', runs: [{ phase: 'original', final: result.message }, { phase: 'changed-time', final: changed.message }] }, null, 2));
+  });
   for (const mode of ['local', 'cloud']) it.each(['deleted', 'foreign-agency', 'Vândut', 'Închiriat', 'Inactiv'])('refuses unavailable property before reservation (' + mode + '): %s', async variant => {
     const f = await fixture(mode);
     await f.property.update(variant === 'deleted' ? { deletedAt: 'now' } : variant === 'foreign-agency' ? { agencyId: 'other' } : { status: variant });

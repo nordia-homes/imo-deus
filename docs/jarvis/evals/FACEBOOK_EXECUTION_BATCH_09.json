@@ -1,0 +1,148 @@
+{
+  "scope": "Schedule reread and comparison against prior successful executor receipt through application chat. Local Firestore and simulated cloud transport; not Facebook publication certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0395",
+      "prompt": "Verifică după programare că ora persistată este corectă.",
+      "versions": {
+        "prompt": "jarvis-128",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "159",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual scheduling through chat/executor/POST, followed by persisted-time reread and comparison on local Firestore. Cloud transport simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "bf541718-56a8-4e9a-974a-84b9cb752d69-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job 8cddb49649d1931ed477b636cc00d7305ac0f8afa2c9d44050e80fba982d1c5a: 2026-10-17 la 07:00, ora Bucureștiului. Ora salvată corespunde ultimei programări confirmate în conversație. Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "8cddb49649d1931ed477b636cc00d7305ac0f8afa2c9d44050e80fba982d1c5a",
+                    "propertyId": "property",
+                    "propertyTitle": "Apartament Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": "2026-10-16T15:03:04.823Z",
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "actualStartedAt": null,
+                    "completedAt": null,
+                    "totalGroups": 1,
+                    "counts": {
+                      "queued": 1,
+                      "publishing": 0,
+                      "submitted": 0,
+                      "pending_approval": 0,
+                      "needs_reauthentication": 0,
+                      "error": 0,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Vânzări",
+                        "status": "queued",
+                        "submittedAt": null,
+                        "failedAt": null,
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false,
+                    "expectedScheduledAt": "2026-10-17T04:00:00Z",
+                    "scheduleMatches": true,
+                    "activeScheduleConfirmed": true,
+                    "text": "Job 8cddb49649d1931ed477b636cc00d7305ac0f8afa2c9d44050e80fba982d1c5a: 2026-10-17 la 07:00, ora Bucureștiului. Ora salvată corespunde ultimei programări confirmate în conversație."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:03:05.107Z"
+          }
+        },
+        {
+          "phase": "changed-time",
+          "final": {
+            "id": "18311619-966b-4102-bfcf-9ad577f985eb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Job 8cddb49649d1931ed477b636cc00d7305ac0f8afa2c9d44050e80fba982d1c5a: 2026-10-17 la 08:00, ora Bucureștiului. Ora salvată DIFERĂ de ultima programare confirmată în conversație: 2026-10-17 la 07:00, ora Bucureștiului. Stare salvată în aplicație; nu am interogat Facebook. Trimiterea și aprobarea în așteptare nu confirmă publicarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "8cddb49649d1931ed477b636cc00d7305ac0f8afa2c9d44050e80fba982d1c5a",
+                    "propertyId": "property",
+                    "propertyTitle": "Apartament Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T05:00:00Z",
+                    "updatedAt": "2026-10-16T15:03:04.823Z",
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "08:00"
+                    },
+                    "actualStartedAt": null,
+                    "completedAt": null,
+                    "totalGroups": 1,
+                    "counts": {
+                      "queued": 1,
+                      "publishing": 0,
+                      "submitted": 0,
+                      "pending_approval": 0,
+                      "needs_reauthentication": 0,
+                      "error": 0,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Vânzări",
+                        "status": "queued",
+                        "submittedAt": null,
+                        "failedAt": null,
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false,
+                    "expectedScheduledAt": "2026-10-17T04:00:00Z",
+                    "scheduleMatches": false,
+                    "activeScheduleConfirmed": false,
+                    "text": "Job 8cddb49649d1931ed477b636cc00d7305ac0f8afa2c9d44050e80fba982d1c5a: 2026-10-17 la 08:00, ora Bucureștiului. Ora salvată DIFERĂ de ultima programare confirmată în conversație: 2026-10-17 la 07:00, ora Bucureștiului."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T15:03:05.37Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,16 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook persisted job mo
     await jobs.doc('job').set(raw); await jobs.doc('foreign').set({ ...raw, ownerUid: 'other', propertyTitle: 'HIDDEN' }); await jobs.doc('wrong-agency').set({ ...raw, agencyId: 'other', propertyTitle: 'HIDDEN' });
     return { ctx, agency, profile, jobs, raw };
   }
+  it('continues schedule verification after selecting a job and does not invent an expected time', async () => {
+    const f = await fixture(); mocks.actor = f.ctx;
+    await f.jobs.doc('second').set(f.raw); const sessionId = randomUUID();
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Verifică după programare că ora persistată este corectă.', currentRecord: null });
+    expect(first.message.text).toContain('Job Facebook: ID');
+    const result = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Job Facebook: second', currentRecord: null });
+    expect(result.message.cards?.[0].rows).toHaveLength(1);
+    expect(result.message.cards?.[0].rows[0]).toMatchObject({ id: 'second', scheduleMatches: null, activeScheduleConfirmed: false });
+    expect(result.message.text).toContain('Nu am o confirmare anterioară');
+  });
   for (const scenarioId of ['master-0399', 'master-0400']) it('executes original daily/intervention report ' + scenarioId, async () => {
     const f = await fixture(); mocks.actor = f.ctx;
     const now = new Date().toISOString();
