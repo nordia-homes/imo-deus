@@ -1,3 +1,4 @@
+import { assertFacebookJobOwner, assertFacebookControlState, verifiedFacebookRunnerControl, commitFacebookControl } from '@/lib/facebook-job-control';
 import { NextRequest, NextResponse } from 'next/server';
 import type { FacebookCloudPublishingJob, FacebookGroup, Property } from '@/lib/types';
 import { defaultFacebookGroups, filterFacebookGroupsForProperty } from '@/lib/facebook-groups';
@@ -26,6 +27,8 @@ export async function PATCH(request: NextRequest, context: Context) {
     const snapshot = await ref.get();
     if (!snapshot.exists) return NextResponse.json({ message: 'Programarea nu a fost găsită.' }, { status: 404 });
     const existing = { id: snapshot.id, ...snapshot.data() } as FacebookCloudPublishingJob;
+    assertFacebookJobOwner(existing, agencyId, uid);
+    assertFacebookControlState(existing, false);
     if (existing.ownerUid !== uid) {
       return NextResponse.json({ message: 'Nu poți modifica această programare.' }, { status: 403 });
     }
@@ -36,8 +39,9 @@ export async function PATCH(request: NextRequest, context: Context) {
     const body = await request.json().catch(() => ({})) as {
       connectionId?: string;
       groupUrls?: string[];
-      scheduledAt?: string;
+      scheduledAt?: string; expectedUpdatedAt?: string;
     };
+    if (body.expectedUpdatedAt && body.expectedUpdatedAt !== existing.updatedAt) return NextResponse.json({ message: 'Jobul s-a schimbat. Recitește starea.' }, { status: 409 });
     const connectionId = String(body.connectionId || '');
     const groupUrls = Array.from(new Set(Array.isArray(body.groupUrls) ? body.groupUrls.map(String) : []));
     const schedule = validateScheduledAt(body.scheduledAt);
@@ -49,6 +53,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     }
 
     const { connection } = await server.getOwnedConnection(adminDb, agencyId, uid, connectionId);
+    if (connection.agencyId !== agencyId || connection.deletedAt) return NextResponse.json({ message: 'Contul Facebook nu mai este accesibil.' }, { status: 403 });
     if (connection.status !== 'connected') {
       return NextResponse.json({ message: 'Contul Facebook trebuie reconectat înainte de programare.' }, { status: 409 });
     }
@@ -75,36 +80,20 @@ export async function PATCH(request: NextRequest, context: Context) {
       return NextResponse.json({ message: 'Unul dintre grupurile selectate nu mai este configurat în agenție.' }, { status: 400 });
     }
 
-    let runnerJob: Partial<FacebookCloudPublishingJob>;
-    if (existingMode === 'local') {
-      runnerJob = {
-        connectionId,
-        connectionLabel: connection.label || connection.displayName,
-        deviceId: connection.deviceId || null,
-        groups: groups.map((group) => ({ ...group, status: 'queued' as const })),
-        scheduledAt: schedule.scheduledAt,
-        nextRunAt: null,
-        currentGroupIndex: 0,
-        status: 'scheduled',
-        updatedAt: new Date().toISOString(),
-      };
-    } else {
-      const result = await server.facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          connectionId,
-          groups: groups.map(({ name, url }) => ({ name, url })),
-          scheduledAt: schedule.scheduledAt,
-        }),
-      });
-      runnerJob = result.job;
-    }
-    const job = {
-      ...existing,
-      ...runnerJob,
-      connectionLabel: connection.label || connection.displayName,
+    const patch = {
+      connectionId, connectionLabel: connection.label || connection.displayName || 'Cont Facebook',
+      deviceId: existingMode === 'local' ? connection.deviceId || null : null,
+      groups: groups.map(group => ({ ...group, status: 'queued' as const })),
+      scheduledAt: schedule.scheduledAt, nextRunAt: null, currentGroupIndex: 0,
+      status: 'scheduled', updatedAt: new Date().toISOString(),
     };
-    await ref.set(job, { merge: true });
+    if (existingMode !== 'local') {
+      const result = await server.facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}`, {
+        method: 'PATCH', body: JSON.stringify({ connectionId, groups: groups.map(({ name, url }) => ({ name, url })), scheduledAt: schedule.scheduledAt }),
+      });
+      verifiedFacebookRunnerControl(result.job, existing, jobId, patch, false);
+    }
+    const job = await commitFacebookControl(adminDb, agencyId, uid, snapshot, patch, false);
     return NextResponse.json({ job });
   } catch (error) {
     const { formatFacebookCloudError } = await import('@/lib/facebook-cloud-server');
@@ -125,25 +114,19 @@ export async function DELETE(request: NextRequest, context: Context) {
     const ref = adminDb.collection('agencies').doc(agencyId).collection('facebookCloudPublishingJobs').doc(jobId);
     const snapshot = await ref.get();
     if (!snapshot.exists) return NextResponse.json({ message: 'Jobul nu a fost găsit.' }, { status: 404 });
-    if (snapshot.data()?.ownerUid !== uid) return NextResponse.json({ message: 'Nu poți opri acest job.' }, { status: 403 });
-    if (snapshot.data()?.runnerMode === 'local') {
-      const timestamp = new Date().toISOString();
-      const job = {
-        ...snapshot.data(),
-        status: 'cancelled' as const,
-        nextRunAt: null,
-        leaseToken: null,
-        leaseExpiresAt: null,
-        updatedAt: timestamp,
-      };
-      await ref.set(job, { merge: true });
-      return NextResponse.json({ job: { id: snapshot.id, ...job } });
+    const existing = snapshot.data()!;
+    assertFacebookJobOwner(existing, agencyId, uid);
+    assertFacebookControlState(existing, true);
+    const body = await request.json().catch(() => ({}));
+    if (body.expectedUpdatedAt && body.expectedUpdatedAt !== existing.updatedAt) return NextResponse.json({ message: 'Jobul s-a schimbat. Recitește starea.' }, { status: 409 });
+    if (existing.status === 'cancelled') return NextResponse.json({ job: { ...existing, id: snapshot.id } });
+    let patch: Record<string, any> = { status: 'cancelled', nextRunAt: null, leaseToken: null, leaseExpiresAt: null, updatedAt: new Date().toISOString() };
+    if (existing.runnerMode !== 'local') {
+      const result = await facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}/cancel`, { method: 'POST' });
+      patch = verifiedFacebookRunnerControl(result.job, existing, jobId, {}, true);
     }
-    const result = await facebookRunnerRequest<{ job: FacebookCloudPublishingJob }>(`/v1/jobs/${jobId}/cancel`, {
-      method: 'POST',
-    });
-    await ref.set(result.job, { merge: true });
-    return NextResponse.json({ job: { ...snapshot.data(), ...result.job } });
+    const job = await commitFacebookControl(adminDb, agencyId, uid, snapshot, patch, true);
+    return NextResponse.json({ job });
   } catch (error) {
     const { formatFacebookCloudError } = await import('@/lib/facebook-cloud-server');
     const formatted = formatFacebookCloudError(error);

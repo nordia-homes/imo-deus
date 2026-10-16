@@ -137,6 +137,16 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(prepared.mode === 'duplicates' ? 'Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.' : prepared.actions.length ? 'Trimiterea proprietăților selectate este pregătită.' : 'Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.');
     } catch { return finish('Selectează o singură listă de matching pentru client și conversația lui. Pentru o singură proprietate, selectează acea proprietate din listă. Datele trebuie să fie actuale; nu am înlocuit proprietățile sau destinatarul.', 'clarification'); }
   }
+  const { prepareFacebookControl } = await import('./facebook-control');
+  try {
+    const control = await prepareFacebookControl(ctx, prompt, history);
+    if (control) {
+      actions.push(...control.actions);
+      cards.push({ type: 'data', source: 'facebookJobs', title: 'Joburi Facebook', rows: control.rows, complete: true });
+      if (control.pendingPrompt) cards.push({ type: 'data', source: 'facebookControlRequest', title: 'Comandă în așteptarea selecției', rows: [{ id: 'pending', prompt: control.pendingPrompt }], complete: true });
+      return finish(control.text, control.needsSelection ? 'clarification' : undefined);
+    }
+  } catch { return finish('Jobul selectat nu poate fi modificat în starea actuală sau ora cerută nu mai este validă. Recitește jobul și verifică programarea; nu am confirmat nicio modificare.', 'unavailable'); }
   const { facebookMonitorRequest, readFacebookMonitor } = await import('./facebook-monitor');
   const facebookMonitor = facebookMonitorRequest(prompt);
   if (facebookMonitor) {

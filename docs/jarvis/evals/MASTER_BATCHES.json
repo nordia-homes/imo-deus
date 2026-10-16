@@ -3356,14 +3356,22 @@
           "sourceNumber": 365,
           "request": "Mută jobul selectat la ora 08:00.",
           "requestSha256": "e2a49d6b5d749724895bee90d99aba34a9118a709cb276a46c492ef127db21b2",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0366",
           "sourceNumber": 366,
           "request": "Anulează jobul dacă fluxul suportă anularea.",
           "requestSha256": "37e026f9b83b412c5a5cad29736dd03e54076502db99bc0db2a9dbc3b540199d",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0367",

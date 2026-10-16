@@ -1,0 +1,342 @@
+{
+  "executionMode": "deterministic",
+  "scope": "Reprogramming and cancellation through actual application handlers; external cloud transport simulated. Does not certify publication or provider availability.",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0365",
+      "prompt": "Mută jobul selectat la ora 08:00.",
+      "versions": {
+        "prompt": "jarvis-122",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "153",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Chat, autonomy and actual API/Firestore handlers. Local runner queue plus simulated cloud transport; no external publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "7ede4cd7-6647-45a2-b3f7-506a858c877c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook job a fost reprogramat pentru 2026-10-17 la 08:00, ora Bucureștiului. Publicarea nu este încă confirmată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": "2026-10-16T12:15:05.631Z",
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 1,
+                    "counts": {
+                      "queued": 1,
+                      "publishing": 0,
+                      "submitted": 0,
+                      "pending_approval": 0,
+                      "needs_reauthentication": 0,
+                      "error": 0,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Vânzări",
+                        "status": "queued",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_update",
+                      "jobId": "job",
+                      "executionState": "succeeded",
+                      "businessStatus": "scheduled",
+                      "scheduledAt": "2026-10-17T05:00:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T12:15:06.348Z"
+          }
+        },
+        {
+          "final": {
+            "id": "25798cbb-e9e1-4208-9061-eff749834d9f-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook job a fost reprogramat pentru 2026-10-17 la 08:00, ora Bucureștiului. Publicarea nu este încă confirmată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": "2026-10-16T12:15:06.956Z",
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 1,
+                    "counts": {
+                      "queued": 1,
+                      "publishing": 0,
+                      "submitted": 0,
+                      "pending_approval": 0,
+                      "needs_reauthentication": 0,
+                      "error": 0,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Vânzări",
+                        "status": "queued",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_update",
+                      "jobId": "job",
+                      "executionState": "succeeded",
+                      "businessStatus": "scheduled",
+                      "scheduledAt": "2026-10-17T05:00:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T12:15:07.341Z"
+          },
+          "phase": "cloud_transport_simulated"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0366",
+      "prompt": "Anulează jobul dacă fluxul suportă anularea.",
+      "versions": {
+        "prompt": "jarvis-122",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "153",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Chat, autonomy and actual API/Firestore handlers. Local runner queue plus simulated cloud transport; no external publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "a4b0454e-3617-4d8e-85e0-f36279edc766-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook job a fost anulat. Postările deja trimise nu sunt retrase; un pas aflat în execuție la runner poate avea deja efect extern.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": "2026-10-16T12:15:06.484Z",
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 1,
+                    "counts": {
+                      "queued": 1,
+                      "publishing": 0,
+                      "submitted": 0,
+                      "pending_approval": 0,
+                      "needs_reauthentication": 0,
+                      "error": 0,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Vânzări",
+                        "status": "queued",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_remove",
+                      "jobId": "job",
+                      "executionState": "succeeded",
+                      "businessStatus": "cancelled",
+                      "scheduledAt": "2026-10-17T04:00:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T12:15:06.793Z"
+          }
+        },
+        {
+          "final": {
+            "id": "188aa37e-8a56-42bd-9cc2-62c4bdb426a9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook job a fost anulat. Postările deja trimise nu sunt retrase; un pas aflat în execuție la runner poate avea deja efect extern.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookJobs",
+                "title": "Joburi Facebook",
+                "rows": [
+                  {
+                    "id": "job",
+                    "propertyId": "property",
+                    "propertyTitle": "Cișmigiu",
+                    "status": "scheduled",
+                    "scheduledAt": "2026-10-17T04:00:00Z",
+                    "updatedAt": "2026-10-16T12:15:07.471Z",
+                    "scheduledBucharest": {
+                      "date": "2026-10-17",
+                      "time": "07:00"
+                    },
+                    "totalGroups": 1,
+                    "counts": {
+                      "queued": 1,
+                      "publishing": 0,
+                      "submitted": 0,
+                      "pending_approval": 0,
+                      "needs_reauthentication": 0,
+                      "error": 0,
+                      "skipped": 0,
+                      "uncertain": 0,
+                      "unknown": 0
+                    },
+                    "groups": [
+                      {
+                        "id": "0",
+                        "name": "Vânzări",
+                        "status": "queued",
+                        "publicationConfirmed": false
+                      }
+                    ],
+                    "publicationConfirmed": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_remove",
+                      "jobId": "job",
+                      "executionState": "succeeded",
+                      "businessStatus": "cancelled",
+                      "scheduledAt": "2026-10-17T04:00:00Z",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T12:15:07.827Z"
+          },
+          "phase": "cloud_transport_simulated"
+        }
+      ]
+    }
+  ]
+}

@@ -1630,6 +1630,7 @@
     "validation": "",
     "bodyFields": [
       "connectionId",
+      "expectedUpdatedAt",
       "groupUrls",
       "scheduledAt"
     ],
@@ -1641,6 +1642,7 @@
     "validation": "",
     "bodyFields": [
       "connectionId",
+      "expectedUpdatedAt",
       "groupUrls",
       "scheduledAt"
     ],

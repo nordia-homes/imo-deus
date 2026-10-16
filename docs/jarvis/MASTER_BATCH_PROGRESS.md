@@ -12,6 +12,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot control joburi Facebook — 16 octombrie 2026
+
+Scenariile **0365 și 0366** sunt executate prin chat, autorizare implicită, executor și handler-ele reale PATCH/DELETE. Reprogramarea schimbă ora în aceeași zi calendaristică București și păstrează contul/grupurile. Anularea oprește jobul în aplicație, fără să pretindă retragerea postărilor deja trimise sau lipsa unui efect extern al pasului deja pornit. Pentru selecție multiplă, comanda rămâne în contextul conversației și continuă la „Job Facebook: ID”, fără altă aprobare. Repetarea aceluiași requestId nu repetă operația externă.
+
+Handler-ele comune aplicației și Jarvis verifică proprietarul/agenția, starea jobului și revizia cerută. Commitul tranzacțional verifică din nou documentul, profilul, conexiunea, laptopul local, proprietatea și eligibilitatea grupurilor. Un job început nu este resetat; unul completed nu este rescris cancelled. Anularea locală păstrează dovezile grupurilor deja trimise și revocă lease-ul. O anulare locală simultană cu o reprogramare permite un singur commit. Pentru cloud, răspunsul trebuie să corespundă identității, orei, grupurilor și stării cerute; câmpurile de proprietar, proprietate și lease nu sunt copiate din răspuns. Conflictul după apelul cloud este raportat neconfirmat, fără reluare automată. Conturile șterse sunt refuzate înaintea apelului cloud.
+
+Validare: **223 teste unitare/planner/autonomie/paritate/confirmări și 27 teste de integrare**. Fiecare comandă originală este verificată prin chat atât pentru coada locală, cât și pentru un transport cloud simulat. Sunt acoperite continuarea selecției, replay, acces revocat, cont șters, dispozitiv revocat, revendicare concurentă de către runner, modificări simultane, timeout, răspunsuri cloud incompatibile și schimbarea grupurilor. Testul concurent a necesitat contextul intern de autentificare pentru a evita pierderea mock-ului la importuri dinamice simultane; verificarea finală a trecut. ESLint, TypeScript, paritatea operațiilor și buildul final complet trecute.
+
+Dovadă: [Facebook lot 03](evals/FACEBOOK_EXECUTION_BATCH_03.json). **183/1000 dovezi locale** (133 cu model real, 50 deterministe). Nu s-au făcut apeluri externe către Facebook și nu este certificată executarea corpusului integral în producție. Lot nepublicat.
+
 ## Lot monitorizare Facebook — 16 octombrie 2026
 
 Șase scenarii: **0359, 0363, 0364, 0369, 0370, 0371**. Jarvis citește joburile proprii salvate, grupurile jobului, progresul, erorile și programările pentru mâine în Europe/Bucharest. Sunt verificate agenția și rolul actual; datele altor utilizatori și câmpurile sensibile ale runnerului sunt excluse. Dacă există mai multe joburi, utilizatorul poate continua cu „Job Facebook: ID”; selecția este verificată din nou pe server. Datele sunt recitite la fiecare comandă.

@@ -90,6 +90,10 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const requestId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
       const body = action.operation === 'message_send' || action.operation === 'message_preview' ? { ...action.body, requestId } : action.body;
       let result = await invokeOperation(ctx, { ...action, body });
+      if (['facebook_job_update', 'facebook_job_remove'].includes(action.operation)) {
+        const { facebookControlReceipt } = await import('./facebook-control');
+        result = facebookControlReceipt(action.operation, result, body, action.params.jobId);
+      }
       if (action.operation === 'message_send' && typeof result.messageId === 'string') result = { ...result, conversationId: action.params.conversationId };
       if (action.operation === 'owner_prospect' && body.action === 'add') {
         const listingId = String(body.listingId || '');
