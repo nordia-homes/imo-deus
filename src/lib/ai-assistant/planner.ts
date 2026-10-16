@@ -116,6 +116,17 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(`Pași pregătiți pentru ${row.title}:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\n${disclaimer}\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.`);
     } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
   }
+  const { inboxTriageRequest, readInboxTriage } = await import('./inbox-triage');
+  const triage = inboxTriageRequest(prompt);
+  if (triage) {
+    try {
+      const rows = await readInboxTriage(ctx, triage);
+      cards.push({ type: 'data', source: triage === 'connections' ? 'channelConnections' : 'conversations', title: triage === 'connections' ? 'Starea conexiunilor' : 'Conversații care necesită intervenție', rows, complete: true });
+      if (triage === 'connections') return finish(rows.length ? rows.map((row: any) => `${row.name} — ${row.channel}: ${row.status}; capacități: ${Object.entries(row.capabilities).map(([key, value]) => `${key}=${value}`).join(', ')}.`).join('\n') + '\nStare înregistrată în aplicație; connected nu garantează că fiecare capacitate este activă. Nu am efectuat o sincronizare sau o trimitere.' : 'Nu există conexiuni de comunicare înregistrate pentru agenție.');
+      for (const row of rows) accessRefs.push({ resource: 'conversations', id: row.id });
+      return finish(rows.length ? rows.map((row: any, index) => `${index + 1}. ${row.name} (${row.id}) — ${row.reasons.join('; ')}${row.waitingSince ? `. Așteaptă din ${new Date(row.waitingSince).toLocaleString('ro-RO', { timeZone: 'Europe/Bucharest' })} (București)` : ''}.`).join('\n') + '\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.' : 'Nu am găsit conversații active care îndeplinesc criteriul în datele accesibile.');
+    } catch { return finish('Nu am putut verifica integral starea comunicărilor sau accesul s-a schimbat. Reîncearcă solicitarea.', 'unavailable'); }
+  }
   const { inboxRequest, readInboxRequest } = await import('./inbox-read');
   const inbox = inboxRequest(prompt);
   if (inbox) {

@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot prioritizare Inbox — 16 octombrie 2026
+
+Patru scenarii verificate împreună: **0334, 0335, 0349, 0350**. Starea conexiunilor afișează separat starea fiecărei capacități, fără credențiale sau erori brute de provider. O conexiune connected nu este declarată automat aptă de trimitere; lipsa unei capacități rămâne unknown. Este starea înregistrată în aplicație, nu un test live al furnizorului.
+
+Conversațiile fără răspuns sunt calculate din mesajele curente. Așteptarea începe la primul mesaj primit după ultimul răspuns accepted/delivered/read; o revenire a clientului și trimiterile queued/failed/unknown nu resetează termenul. Exact 24 de ore nu înseamnă peste 24. accepted este explicit separat de delivered. Prioritatea operațională: așteptare peste 24h, trimitere eșuată/necunoscută fără răspuns ulterior acceptat, apoi mesaje recente. Primele trei sunt selectate după această ordine, vechime și ID. Conversațiile resolved/spam/snoozed sunt excluse; un needsReply fără istoric verificabil este raportat fără durată inventată. Nu este analiză semantică a calității răspunsului.
+
+Acces numai propriu/neatribuit pentru agenți, recitire înainte de returnare, fără trimitere, retrimitere, marcare drept citit sau alte schimbări ale conversațiilor. Probe cu peste 50 de conversații private, atribuire revocată, capacitate modificată și replay fără efecte. **80 teste unitare/planner, 4/4 scenarii prin chat persistent și emulator, ESLint și build complet trecute.** Dovadă: [lot 30](evals/PROSPECTING_EXECUTION_BATCH_30.json). Inventar: **149/1000 dovezi locale** (131 cu model real, 18 deterministe), fără certificare în producție. Lot nepublicat în producție.
+
 ## Lot verificări WhatsApp și stări Inbox — 16 octombrie 2026
 
 Șapte scenarii finalizate în probele locale: **0314, 0315, 0317, 0319, 0327, 0328, 0329**. Pregătirea/trimiterea generală a mesajelor și celelalte scenarii intermediare rămân de verificat în loturile următoare; nu sunt incluse în această numărătoare.

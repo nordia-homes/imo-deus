@@ -35,7 +35,7 @@ import { stableId } from '@/lib/communications/crypto';
 import { zonedParts } from '../zoned-time';
 import { OWNER_RESERVATION_TTL_MS } from '@/lib/crm/prospect';
 
-for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 327, 328, 329]) {
+for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 286, 287, 288, 289, 290, 291, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 327, 328, 329, 334, 335, 349, 350]) {
   const scenarioId = `master-${String(number).padStart(4, '0')}`;
   if (process.env.JARVIS_PROSPECTING_CASE && !process.env.JARVIS_PROSPECTING_CASE.split(',').includes(scenarioId)) continue;
   it.skipIf(process.env.JARVIS_PROSPECTING_LIVE !== 'true')(`${scenarioId}: original command reaches its prospecting outcome`, async () => {
@@ -66,6 +66,50 @@ for (const number of [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 263
       await agency.set({ city: 'București' }); await profile.set({ agencyId: id, role: 'agent', name: 'Agent local' });
       await source.set({ title: 'Prospect Alfa', ownerName: 'Nume vechi', ownerPhone: '0722123456', phoneExtractionStatus: 'available', publicationStatus: 'ready', isCanonical: true });
       for (const [key, row] of Object.entries(fixture)) await favorites.doc(key).set(row);
+      if ([334, 335, 349, 350].includes(number)) {
+        const convs = agency.collection('conversations'), now = Date.now();
+        const ago = (hours: number) => new Date(now - hours * 3600000).toISOString();
+        const baseConv = { agencyId: id, name: 'Andrei', channel: 'whatsapp', assigneeId: id, collaboratorIds: [], status: 'open', needsReply: false, readBy: {}, version: 1 };
+        const seed = async (key: string, hours: number, extra: Record<string, unknown> = {}, sends: Array<{ status: string; hours: number }> = []) => {
+          await convs.doc(key).set({ ...baseConv, name: key, lastMessageAt: ago(hours), ...extra });
+          await convs.doc(key).collection('messages').doc('inbound').set({ direction: 'received', status: 'received', text: 'Aștept un răspuns', createdAt: ago(hours) });
+          for (const [n, send] of sends.entries()) await convs.doc(key).collection('messages').doc(`send-${n}`).set({ direction: 'sent', status: send.status, text: 'Răspuns', createdAt: ago(send.hours) });
+        };
+        await seed('oldest', 48, {}, [{ status: 'queued', hours: 1 }]);
+        await convs.doc('oldest').collection('messages').doc('reminder').set({ direction: 'received', status: 'received', text: 'Revin cu întrebarea', createdAt: ago(0.5) });
+        await seed('second', 30, { assigneeId: null }, [{ status: 'failed', hours: 1 }]);
+        await seed('third', 26);
+        await seed('recent', 1);
+        await seed('answered', 40, {}, [{ status: 'accepted', hours: 2 }]);
+        await seed('closed', 50, { status: 'resolved' }); await seed('spam', 50, { status: 'spam' }); await seed('snoozed', 50, { status: 'snoozed' });
+        await seed('unknown', 3, {}, [{ status: 'unknown', hours: 1 }]);
+        for (let n = 0; n < 52; n++) await seed(`private-${n}`, 72, { name: 'SECRET_OTHER_AGENT', assigneeId: 'other', collaboratorIds: [id] });
+        const connections = agency.collection('channelConnections');
+        await connections.doc('wa').set({ id: 'wa', agencyId: id, name: 'WhatsApp', channel: 'whatsapp', status: 'connected', capabilities: { send: { status: 'reconnect_required', reason: 'SECRET_TOKEN' }, receive: { status: 'active' } }, accessToken: 'SECRET_TOKEN' });
+        await connections.doc('ig').set({ id: 'ig', agencyId: id, name: 'Instagram', channel: 'instagram', status: 'disconnected', capabilities: {} });
+        await connections.doc('foreign').set({ agencyId: 'foreign', name: 'SECRET_FOREIGN', status: 'connected' });
+        const before = (await convs.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }));
+        const session = agency.collection('assistantSessions').doc(id); await session.set({ ownerId: id });
+        const request = { sessionId: id, requestId: `${id}-triage`, prompt, currentRecord: null };
+        const result = await chatTurn(ctx, request);
+        const rows = result.message.cards?.flatMap(card => card.rows) || [];
+        if (number === 334) { expect(rows.map(row => row.id)).toEqual(['ig', 'wa']); expect(rows[1]).toMatchObject({ status: 'connected', capabilities: { send: 'reconnect_required', receive: 'active', templates: 'unknown' } }); }
+        if (number === 335) expect(rows.map(row => row.id)).toEqual(['oldest', 'second', 'third']);
+        if (number === 349) expect(rows.map(row => row.id)).toEqual(['oldest', 'second', 'third', 'unknown', 'recent']);
+        if (number === 350) expect(rows.map(row => row.id)).toEqual(['oldest', 'second', 'third']);
+        expect(JSON.stringify(result)).not.toMatch(/SECRET_/); expect(result.message.planId).toBeUndefined(); expect(result.message.actions).toBeUndefined();
+        expect(await chatTurn(ctx, request)).toEqual(result);
+        expect((await convs.get()).docs.map(doc => ({ id: doc.id, data: doc.data() }))).toEqual(before);
+        expect(settingsContext.invokes).toBe(0);
+        await convs.doc('oldest').update({ assigneeId: 'other', name: 'SECRET_REVOKED' });
+        await connections.doc('wa').update({ 'capabilities.send.status': 'active' });
+        const refreshed = await chatTurn(ctx, { ...request, requestId: `${id}-fresh` });
+        expect(JSON.stringify(refreshed)).not.toMatch(/SECRET_/);
+        const freshRows = refreshed.message.cards?.flatMap(card => card.rows) || [];
+        if (number === 334) expect(freshRows.find(row => row.id === 'wa')).toMatchObject({ capabilities: { send: 'active' } });
+        else expect(freshRows.map(row => row.id)).not.toContain('oldest');
+        report = { ...report, environment: 'Deterministic persisted application chat and local Firestore; no provider calls or outbound messages.', final: result.message, refreshed: refreshed.message, executionVerified: true, verification: 'Original request, full own/unassigned scan beyond 50 private conversations, queued/failed do not reset waiting, first inbound survives reminders, accepted response and closed/spam/snoozed exclusions, ranking/top-three, current connection capabilities with secret-free projection, replay without mutations and fresh ownership/capability checks.' }; return;
+      }
       if ([327, 328, 329].includes(number)) {
         const convRef = agency.collection('conversations').doc('selected');
         const row = { agencyId: id, assigneeId: number === 328 ? null : id, collaboratorIds: [], channel: 'whatsapp', name: 'Andrei', version: 1, status: number === 329 ? 'resolved' : 'open', needsReply: true, readBy: { other: '2026-01-01T00:00:00Z' } };

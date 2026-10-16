@@ -1,0 +1,673 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0334",
+      "prompt": "Arată-mi starea conexiunilor de comunicare.",
+      "versions": {
+        "prompt": "jarvis-112",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "142",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:05:19.805Z",
+      "environment": "Deterministic persisted application chat and local Firestore; no provider calls or outbound messages.",
+      "executionVerified": true,
+      "final": {
+        "id": "0b22459d-e270-4b60-beb2-503a274e98e7-triage-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Instagram — instagram: disconnected; capacități: publish=unknown, receive=unknown, send=unknown, comments=unknown, insights=unknown, templates=unknown, nativeSync=unknown.\nWhatsApp — whatsapp: connected; capacități: publish=unknown, receive=active, send=reconnect_required, comments=unknown, insights=unknown, templates=unknown, nativeSync=unknown.\nStare înregistrată în aplicație; connected nu garantează că fiecare capacitate este activă. Nu am efectuat o sincronizare sau o trimitere.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "channelConnections",
+            "title": "Starea conexiunilor",
+            "rows": [
+              {
+                "id": "ig",
+                "name": "Instagram",
+                "channel": "instagram",
+                "status": "disconnected",
+                "capabilities": {
+                  "publish": "unknown",
+                  "receive": "unknown",
+                  "send": "unknown",
+                  "comments": "unknown",
+                  "insights": "unknown",
+                  "templates": "unknown",
+                  "nativeSync": "unknown"
+                },
+                "lastSyncAt": null
+              },
+              {
+                "id": "wa",
+                "name": "WhatsApp",
+                "channel": "whatsapp",
+                "status": "connected",
+                "capabilities": {
+                  "publish": "unknown",
+                  "receive": "active",
+                  "send": "reconnect_required",
+                  "comments": "unknown",
+                  "insights": "unknown",
+                  "templates": "unknown",
+                  "nativeSync": "unknown"
+                },
+                "lastSyncAt": null
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-16T09:05:23.037Z"
+      },
+      "refreshed": {
+        "id": "0b22459d-e270-4b60-beb2-503a274e98e7-fresh-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "Instagram — instagram: disconnected; capacități: publish=unknown, receive=unknown, send=unknown, comments=unknown, insights=unknown, templates=unknown, nativeSync=unknown.\nWhatsApp — whatsapp: connected; capacități: publish=unknown, receive=active, send=active, comments=unknown, insights=unknown, templates=unknown, nativeSync=unknown.\nStare înregistrată în aplicație; connected nu garantează că fiecare capacitate este activă. Nu am efectuat o sincronizare sau o trimitere.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "channelConnections",
+            "title": "Starea conexiunilor",
+            "rows": [
+              {
+                "id": "ig",
+                "name": "Instagram",
+                "channel": "instagram",
+                "status": "disconnected",
+                "capabilities": {
+                  "publish": "unknown",
+                  "receive": "unknown",
+                  "send": "unknown",
+                  "comments": "unknown",
+                  "insights": "unknown",
+                  "templates": "unknown",
+                  "nativeSync": "unknown"
+                },
+                "lastSyncAt": null
+              },
+              {
+                "id": "wa",
+                "name": "WhatsApp",
+                "channel": "whatsapp",
+                "status": "connected",
+                "capabilities": {
+                  "publish": "unknown",
+                  "receive": "active",
+                  "send": "active",
+                  "comments": "unknown",
+                  "insights": "unknown",
+                  "templates": "unknown",
+                  "nativeSync": "unknown"
+                },
+                "lastSyncAt": null
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [],
+        "createdAt": "2026-10-16T09:05:23.303Z"
+      },
+      "verification": "Original request, full own/unassigned scan beyond 50 private conversations, queued/failed do not reset waiting, first inbound survives reminders, accepted response and closed/spam/snoozed exclusions, ranking/top-three, current connection capabilities with secret-free projection, replay without mutations and fresh ownership/capability checks."
+    },
+    {
+      "scenarioId": "master-0335",
+      "prompt": "Care conversații nu au răspuns de peste 24 de ore?",
+      "versions": {
+        "prompt": "jarvis-112",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "142",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:05:23.466Z",
+      "environment": "Deterministic persisted application chat and local Firestore; no provider calls or outbound messages.",
+      "executionVerified": true,
+      "final": {
+        "id": "2b62005f-20f7-46d4-bfc7-154d76a7cbe4-triage-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "1. oldest (oldest) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 14.10.2026, 12:05:23 (București).\n2. second (second) — Clientul așteaptă un răspuns de peste 24 de ore; Trimitere eșuată fără răspuns ulterior acceptat. Așteaptă din 15.10.2026, 06:05:23 (București).\n3. third (third) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 15.10.2026, 10:05:23 (București).\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversații care necesită intervenție",
+            "rows": [
+              {
+                "id": "oldest",
+                "name": "oldest",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-14T09:05:23.519Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "reminder"
+                ]
+              },
+              {
+                "id": "second",
+                "name": "second",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T03:05:23.519Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore",
+                  "Trimitere eșuată fără răspuns ulterior acceptat"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "third",
+                "name": "third",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T07:05:23.519Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "oldest"
+          },
+          {
+            "resource": "conversations",
+            "id": "second"
+          },
+          {
+            "resource": "conversations",
+            "id": "third"
+          }
+        ],
+        "createdAt": "2026-10-16T09:05:24.491Z"
+      },
+      "refreshed": {
+        "id": "2b62005f-20f7-46d4-bfc7-154d76a7cbe4-fresh-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "1. second (second) — Clientul așteaptă un răspuns de peste 24 de ore; Trimitere eșuată fără răspuns ulterior acceptat. Așteaptă din 15.10.2026, 06:05:23 (București).\n2. third (third) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 15.10.2026, 10:05:23 (București).\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversații care necesită intervenție",
+            "rows": [
+              {
+                "id": "second",
+                "name": "second",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T03:05:23.519Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore",
+                  "Trimitere eșuată fără răspuns ulterior acceptat"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "third",
+                "name": "third",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T07:05:23.519Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "second"
+          },
+          {
+            "resource": "conversations",
+            "id": "third"
+          }
+        ],
+        "createdAt": "2026-10-16T09:05:24.971Z"
+      },
+      "verification": "Original request, full own/unassigned scan beyond 50 private conversations, queued/failed do not reset waiting, first inbound survives reminders, accepted response and closed/spam/snoozed exclusions, ranking/top-three, current connection capabilities with secret-free projection, replay without mutations and fresh ownership/capability checks."
+    },
+    {
+      "scenarioId": "master-0349",
+      "prompt": "Arată-mi conversațiile care necesită intervenția mea.",
+      "versions": {
+        "prompt": "jarvis-112",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "142",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:05:25.101Z",
+      "environment": "Deterministic persisted application chat and local Firestore; no provider calls or outbound messages.",
+      "executionVerified": true,
+      "final": {
+        "id": "97ecab38-18fd-4cef-8918-9cdadf468cbf-triage-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "1. oldest (oldest) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 14.10.2026, 12:05:25 (București).\n2. second (second) — Clientul așteaptă un răspuns de peste 24 de ore; Trimitere eșuată fără răspuns ulterior acceptat. Așteaptă din 15.10.2026, 06:05:25 (București).\n3. third (third) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 15.10.2026, 10:05:25 (București).\n4. unknown (unknown) — Mesaj primit fără răspuns acceptat de furnizor; Rezultat de trimitere necunoscut; verifică înainte de retrimitere. Așteaptă din 16.10.2026, 09:05:25 (București).\n5. recent (recent) — Mesaj primit fără răspuns acceptat de furnizor. Așteaptă din 16.10.2026, 11:05:25 (București).\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversații care necesită intervenție",
+            "rows": [
+              {
+                "id": "oldest",
+                "name": "oldest",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-14T09:05:25.15Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "reminder"
+                ]
+              },
+              {
+                "id": "second",
+                "name": "second",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T03:05:25.15Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore",
+                  "Trimitere eșuată fără răspuns ulterior acceptat"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "third",
+                "name": "third",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T07:05:25.15Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              },
+              {
+                "id": "unknown",
+                "name": "unknown",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-16T06:05:25.15Z",
+                "overdue": false,
+                "priority": 1,
+                "reasons": [
+                  "Mesaj primit fără răspuns acceptat de furnizor",
+                  "Rezultat de trimitere necunoscut; verifică înainte de retrimitere"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "recent",
+                "name": "recent",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-16T08:05:25.15Z",
+                "overdue": false,
+                "priority": 2,
+                "reasons": [
+                  "Mesaj primit fără răspuns acceptat de furnizor"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "oldest"
+          },
+          {
+            "resource": "conversations",
+            "id": "second"
+          },
+          {
+            "resource": "conversations",
+            "id": "third"
+          },
+          {
+            "resource": "conversations",
+            "id": "unknown"
+          },
+          {
+            "resource": "conversations",
+            "id": "recent"
+          }
+        ],
+        "createdAt": "2026-10-16T09:05:25.995Z"
+      },
+      "refreshed": {
+        "id": "97ecab38-18fd-4cef-8918-9cdadf468cbf-fresh-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "1. second (second) — Clientul așteaptă un răspuns de peste 24 de ore; Trimitere eșuată fără răspuns ulterior acceptat. Așteaptă din 15.10.2026, 06:05:25 (București).\n2. third (third) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 15.10.2026, 10:05:25 (București).\n3. unknown (unknown) — Mesaj primit fără răspuns acceptat de furnizor; Rezultat de trimitere necunoscut; verifică înainte de retrimitere. Așteaptă din 16.10.2026, 09:05:25 (București).\n4. recent (recent) — Mesaj primit fără răspuns acceptat de furnizor. Așteaptă din 16.10.2026, 11:05:25 (București).\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversații care necesită intervenție",
+            "rows": [
+              {
+                "id": "second",
+                "name": "second",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T03:05:25.15Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore",
+                  "Trimitere eșuată fără răspuns ulterior acceptat"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "third",
+                "name": "third",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T07:05:25.15Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              },
+              {
+                "id": "unknown",
+                "name": "unknown",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-16T06:05:25.15Z",
+                "overdue": false,
+                "priority": 1,
+                "reasons": [
+                  "Mesaj primit fără răspuns acceptat de furnizor",
+                  "Rezultat de trimitere necunoscut; verifică înainte de retrimitere"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "recent",
+                "name": "recent",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-16T08:05:25.15Z",
+                "overdue": false,
+                "priority": 2,
+                "reasons": [
+                  "Mesaj primit fără răspuns acceptat de furnizor"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "second"
+          },
+          {
+            "resource": "conversations",
+            "id": "third"
+          },
+          {
+            "resource": "conversations",
+            "id": "unknown"
+          },
+          {
+            "resource": "conversations",
+            "id": "recent"
+          }
+        ],
+        "createdAt": "2026-10-16T09:05:26.553Z"
+      },
+      "verification": "Original request, full own/unassigned scan beyond 50 private conversations, queued/failed do not reset waiting, first inbound survives reminders, accepted response and closed/spam/snoozed exclusions, ranking/top-three, current connection capabilities with secret-free projection, replay without mutations and fresh ownership/capability checks."
+    },
+    {
+      "scenarioId": "master-0350",
+      "prompt": "Spune-mi cele trei conversații unde trebuie să intervin acum.",
+      "versions": {
+        "prompt": "jarvis-112",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "142",
+        "memory": "2",
+        "skills": "3"
+      },
+      "runAt": "2026-10-16T09:05:26.674Z",
+      "environment": "Deterministic persisted application chat and local Firestore; no provider calls or outbound messages.",
+      "executionVerified": true,
+      "final": {
+        "id": "ed540613-d383-4a97-88dd-9e02d1565fe3-triage-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "1. oldest (oldest) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 14.10.2026, 12:05:26 (București).\n2. second (second) — Clientul așteaptă un răspuns de peste 24 de ore; Trimitere eșuată fără răspuns ulterior acceptat. Așteaptă din 15.10.2026, 06:05:26 (București).\n3. third (third) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 15.10.2026, 10:05:26 (București).\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversații care necesită intervenție",
+            "rows": [
+              {
+                "id": "oldest",
+                "name": "oldest",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-14T09:05:26.708Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "reminder"
+                ]
+              },
+              {
+                "id": "second",
+                "name": "second",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T03:05:26.708Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore",
+                  "Trimitere eșuată fără răspuns ulterior acceptat"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "third",
+                "name": "third",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T07:05:26.708Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "oldest"
+          },
+          {
+            "resource": "conversations",
+            "id": "second"
+          },
+          {
+            "resource": "conversations",
+            "id": "third"
+          }
+        ],
+        "createdAt": "2026-10-16T09:05:27.48Z"
+      },
+      "refreshed": {
+        "id": "ed540613-d383-4a97-88dd-9e02d1565fe3-fresh-assistant",
+        "role": "assistant",
+        "outputType": "TEXT",
+        "text": "1. second (second) — Clientul așteaptă un răspuns de peste 24 de ore; Trimitere eșuată fără răspuns ulterior acceptat. Așteaptă din 15.10.2026, 06:05:26 (București).\n2. third (third) — Clientul așteaptă un răspuns de peste 24 de ore. Așteaptă din 15.10.2026, 10:05:26 (București).\n3. unknown (unknown) — Mesaj primit fără răspuns acceptat de furnizor; Rezultat de trimitere necunoscut; verifică înainte de retrimitere. Așteaptă din 16.10.2026, 09:05:26 (București).\nPrioritate operațională: așteptare peste 24 de ore, probleme de trimitere, apoi mesaje recente. Intervalul începe la primul mesaj primit după ultimul răspuns acceptat; accepted nu înseamnă delivered. Conversațiile închise, spam sau amânate sunt excluse. Nu am trimis mesaje.",
+        "cards": [
+          {
+            "type": "data",
+            "source": "conversations",
+            "title": "Conversații care necesită intervenție",
+            "rows": [
+              {
+                "id": "second",
+                "name": "second",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T03:05:26.708Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore",
+                  "Trimitere eșuată fără răspuns ulterior acceptat"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              },
+              {
+                "id": "third",
+                "name": "third",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-15T07:05:26.708Z",
+                "overdue": true,
+                "priority": 0,
+                "reasons": [
+                  "Clientul așteaptă un răspuns de peste 24 de ore"
+                ],
+                "evidenceMessageIds": [
+                  "inbound"
+                ]
+              },
+              {
+                "id": "unknown",
+                "name": "unknown",
+                "channel": "whatsapp",
+                "waitingSince": "2026-10-16T06:05:26.708Z",
+                "overdue": false,
+                "priority": 1,
+                "reasons": [
+                  "Mesaj primit fără răspuns acceptat de furnizor",
+                  "Rezultat de trimitere necunoscut; verifică înainte de retrimitere"
+                ],
+                "evidenceMessageIds": [
+                  "inbound",
+                  "send-0"
+                ]
+              }
+            ],
+            "complete": true,
+            "outputType": "ANALYTICS_CARD"
+          }
+        ],
+        "accessRefs": [
+          {
+            "resource": "conversations",
+            "id": "second"
+          },
+          {
+            "resource": "conversations",
+            "id": "third"
+          },
+          {
+            "resource": "conversations",
+            "id": "unknown"
+          }
+        ],
+        "createdAt": "2026-10-16T09:05:27.949Z"
+      },
+      "verification": "Original request, full own/unassigned scan beyond 50 private conversations, queued/failed do not reset waiting, first inbound survives reminders, accepted response and closed/spam/snoozed exclusions, ranking/top-three, current connection capabilities with secret-free projection, replay without mutations and fresh ownership/capability checks."
+    }
+  ],
+  "scope": "Original Inbox triage and connection-state commands through persisted application chat and local Firestore. No provider calls, external sends or production certification.",
+  "executionMode": "deterministic"
+}

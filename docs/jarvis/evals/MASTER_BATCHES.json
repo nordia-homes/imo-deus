@@ -2603,7 +2603,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_23.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2646,7 +2646,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_25.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2657,7 +2657,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_25.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2679,7 +2679,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_25.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2690,7 +2690,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_25.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         }
       ]
@@ -2708,7 +2708,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_27.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2719,7 +2719,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_27.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2730,7 +2730,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_27.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2741,7 +2741,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_27.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2785,7 +2785,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_27.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2796,7 +2796,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_27.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2942,7 +2942,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_29.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2953,7 +2953,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_29.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -2964,7 +2964,7 @@
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
             "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_29.json",
-            "scope": "Original prompt through persisted application chat and local Firestore; deterministic read-only execution with scenario-specific assertions. No model calls or production certification."
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },
         {
@@ -3000,14 +3000,22 @@
           "sourceNumber": 334,
           "request": "Arată-mi starea conexiunilor de comunicare.",
           "requestSha256": "316865a503cc0d4a10ba0b5b316f5aec35a5173204aadcbec127447f0e5aa0fe",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_30.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0335",
           "sourceNumber": 335,
           "request": "Care conversații nu au răspuns de peste 24 de ore?",
           "requestSha256": "5dbfcf34a378e7f8d59de8c7615d64c6bac8e680725146371a7387db0e03a0ec",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_30.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0336",
@@ -3105,14 +3113,22 @@
           "sourceNumber": 349,
           "request": "Arată-mi conversațiile care necesită intervenția mea.",
           "requestSha256": "b9fee9bf8823f9586a27e8b0b99a09172d5fd0f9a09f7b0ff3e7b69a1d13d265",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_30.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0350",
           "sourceNumber": 350,
           "request": "Spune-mi cele trei conversații unde trebuie să intervin acum.",
           "requestSha256": "205127c46df91f511e2ef57c501f619380b825e0e00a796947dd0279f5941d1c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_30.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         }
       ]
     },
