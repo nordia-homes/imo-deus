@@ -55,6 +55,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   if (action.kind === 'existing_operation') {
     const { requireTool } = await import('./registry'); requireTool(action.operation, ctx.role || '');
+    const { outboundRetryAction, executeOutboundRetry } = await import('./outbound-retry');
+    if (outboundRetryAction(action)) return executeOutboundRetry(ctx, action);
     const { reconciliationAction, executeReconciliation } = await import('./outbound-reconciliation');
     if (reconciliationAction(action)) return executeReconciliation(ctx, action);
     const { propertyShareAction, executePropertyShare } = await import('./property-share');

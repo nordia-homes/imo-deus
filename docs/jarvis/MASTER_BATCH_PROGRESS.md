@@ -12,6 +12,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot reluări safe-to-retry — 16 octombrie 2026
+
+Scenariul **0347** selectează mesajele eșuate înainte de apelul de trimitere, pe baza unei dovezi server-side și a identității unice a eșecului. Comanda explicită autorizează reluarea fără aprobare suplimentară. Unknown, mesaje ajunse la furnizor și eșecuri istorice fără dovadă sunt excluse. Agenții operează numai conversațiile proprii și neatribuite.
+
+Reluarea reutilizează același mesaj și job, fără să schimbe cererea originală. În tranzacție sunt reverificate apartenența și rolul, atribuirea, destinatarul, conținutul, consimțământul, fereastra canalului, răspunsurile noi, matchingul și vizionarea asociată. Costul nu poate crește față de estimarea precedentă. Rezervarea veche este decontată, iar cea nouă este creată o singură dată. Istoricul reluării este păstrat per eșec; repetarea aceleiași acțiuni sau două cereri concurente nu produc alt mesaj. Workerul folosește datele recitite în tranzacția de preluare.
+
+Un mesaj devenit neeligibil este raportat individual; celelalte mesaje eligibile din lot continuă. Rezultatul confirmă repunerea în coadă, nu livrarea. O nouă eroare înainte de trimitere primește alt identificator și necesită o nouă solicitare pentru reluare. Nu sunt reactivate acorduri retrase și nu sunt ignorate modificările proprietății.
+
+Validare: **139 teste unitare, 144 teste coadă/worker/reguli și 2/2 scenarii prin chat (0347 și regresia 0348)**, ESLint, paritatea operațiilor și build final complet. Corectată izolarea unui tarif sintetic rămas dintr-un test anterior; regresia finală a trecut. Dovadă: [lot 38](evals/PROSPECTING_EXECUTION_BATCH_38.json). **169/1000 dovezi locale** (133 cu model real, 36 deterministe).
+
+Limite: un lot respectă limita generală de 100 de acțiuni; restul este raportat separat. Căutarea inițială citește istoricul joburilor agenției, fără certificare de performanță pentru istorice foarte mari. Nu se reiau automat eșecuri ulterioare apelului către furnizor, chiar dacă un răspuns de respingere ar permite o analiză suplimentară. Meta simulat, fără mesaje externe sau certificare integrală în producție. Lot nepublicat.
+
 ## Lot reconciliere rezultate necunoscute — 16 octombrie 2026
 
 Scenariul **0348** execută reconcilierea mesajelor cu rezultat necunoscut din conversațiile accesibile agentului, fără plan suplimentar de aprobare. Executorul recitește apartenența, rolul, atribuirea, jobul și mesajul în aceeași tranzacție. Identificatorul furnizorului, confirmarea salvată și/sau ecoul nativ trebuie să corespundă conexiunii și conversației; mesajele altui agent sau altei agenții nu sunt procesate.

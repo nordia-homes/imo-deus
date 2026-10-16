@@ -3171,7 +3171,11 @@
           "sourceNumber": 347,
           "request": "Reîncearcă doar cele safe-to-retry.",
           "requestSha256": "3c43c56480ab38d98b1a37c6f64173b4a9a708ca051fe2bc55005d2a954ab693",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_38.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0348",
@@ -3180,7 +3184,7 @@
           "requestSha256": "ae5ae3ad2f3514895d58caf4e1e7eb4817ff47118a6d2c28279e6d6616d7ae61",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_37.json",
+            "file": "docs/jarvis/evals/PROSPECTING_EXECUTION_BATCH_38.json",
             "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },

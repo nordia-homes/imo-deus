@@ -4,6 +4,11 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.retry === true) {
+      if (receipt.retryBlocked === true) return 'Mesajul ' + receipt.messageId + ' nu a fost repus în coadă: verificările actuale nu permit confirmarea reluării.';
+      if (receipt.requeued === true) return 'Mesajul ' + receipt.messageId + ' a fost repus în coadă o singură dată. Livrarea este încă în așteptare.';
+      return 'Reluarea mesajului ' + receipt.messageId + ' a fost deja procesată; nu am creat o trimitere suplimentară.';
+    }
     if (receipt?.reconciliation === true) return 'Reconciliere: ' + receipt.reconciled + ' mesaje actualizate din confirmările existente; ' + receipt.unresolved + ' rămân cu rezultat necunoscut. Nu am retrimis mesaje.';
     if (receipt?.operation === 'message_send' && receipt.duplicate === true) return 'Proprietatea era deja pusă în coadă pentru client. Nu am creat o nouă trimitere.';
     if (receipt?.operation === 'conversation_sync') {

@@ -1,0 +1,186 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0347",
+      "prompt": "Reîncearcă doar cele safe-to-retry.",
+      "versions": {
+        "prompt": "jarvis-119",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "150",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and real queue/worker on local Firestore; simulated Meta, no external sends.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "3e547abe-4e5e-4866-acb2-d40bc9f8fe9e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesajul 18c7988a-4af2-4396-a9e2-4d31b66406dc nu a fost repus în coadă: verificările actuale nu permit confirmarea reluării.\nMesajul f911880287fec619d09b31a70a414c30b0f21c505e30ffb2ce1aab994ded7846 a fost repus în coadă o singură dată. Livrarea este încă în așteptare.\nAcțiuni executate: 2. Starea mesajelor este disponibilă în Inbox.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "outboundRetry",
+                "title": "Reluare mesaje",
+                "rows": [
+                  {
+                    "id": "scope",
+                    "eligible": 2,
+                    "excluded": 1,
+                    "remaining": 0
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "status": "failed",
+                      "messageId": "18c7988a-4af2-4396-a9e2-4d31b66406dc",
+                      "operation": "message_send",
+                      "businessStatus": "failed",
+                      "executionState": "failed",
+                      "verifiedAt": "2026-10-16T11:26:05.152Z",
+                      "evidenceSource": "domain_handler",
+                      "retry": true,
+                      "requeued": false,
+                      "retryBlocked": true,
+                      "conversationId": "879612e2-45dd-480e-9767-d874487ff234"
+                    }
+                  },
+                  {
+                    "step": 2,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "f911880287fec619d09b31a70a414c30b0f21c505e30ffb2ce1aab994ded7846",
+                      "status": "queued",
+                      "requeued": true,
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T11:26:05.272Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "retry": true,
+                      "conversationId": "879612e2-45dd-480e-9767-d874487ff234"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "879612e2-45dd-480e-9767-d874487ff234"
+              }
+            ],
+            "createdAt": "2026-10-16T11:26:05.273Z"
+          }
+        }
+      ]
+    }
+  ],
+  "combinedRegression": {
+    "runs": [
+      {
+        "scenarioId": "master-0348",
+        "prompt": "Reconciliază mesajele cu rezultat necunoscut.",
+        "versions": {
+          "prompt": "jarvis-119",
+          "routing": "luna-first-2",
+          "policy": "request-crm-14",
+          "tools": "150",
+          "memory": "2",
+          "skills": "3"
+        },
+        "executionVerified": true,
+        "environment": "Persisted chat and real Firestore reconciliation; synthetic provider receipts, no external calls.",
+        "runs": [
+          {
+            "phase": "original",
+            "final": {
+              "id": "85885d9e-ac93-48a1-96d9-cd9ce787b5a5-assistant",
+              "role": "assistant",
+              "outputType": "TEXT",
+              "text": "Reconciliere: 1 mesaje actualizate din confirmările existente; 1 rămân cu rezultat necunoscut. Nu am retrimis mesaje.\nAcțiuni executate: 1. Starea mesajelor este disponibilă în Inbox.",
+              "cards": [
+                {
+                  "type": "data",
+                  "source": "outboundReconciliation",
+                  "title": "Reconciliere mesaje",
+                  "rows": [
+                    {
+                      "id": "scope",
+                      "remaining": 0
+                    }
+                  ],
+                  "complete": true,
+                  "outputType": "ANALYTICS_CARD"
+                },
+                {
+                  "type": "data",
+                  "outputType": "ACTION_RESULT",
+                  "title": "Rezultatele cererii",
+                  "source": "autonomy",
+                  "rows": [
+                    {
+                      "step": 1,
+                      "kind": "existing_operation",
+                      "result": {
+                        "status": "partial",
+                        "operation": "message_send",
+                        "businessStatus": "partial",
+                        "executionState": "unknown",
+                        "verifiedAt": "2026-10-16T11:26:06.595Z",
+                        "evidenceSource": "domain_handler",
+                        "reconciliation": true,
+                        "conversationId": "c04e2dae-8d53-4160-979c-a651419dae09",
+                        "rows": [
+                          {
+                            "messageId": "2bb031a7-65aa-4ca5-9ee1-713fbd00176e",
+                            "status": "unknown",
+                            "reconciled": false,
+                            "unresolved": true
+                          },
+                          {
+                            "messageId": "d859489c8fb5163ec2b3b03286d19b0ea8d73717058d6d29a87d9248ba450df7",
+                            "status": "delivered",
+                            "reconciled": true,
+                            "unresolved": false
+                          }
+                        ],
+                        "reconciled": 1,
+                        "unresolved": 1
+                      }
+                    }
+                  ]
+                }
+              ],
+              "accessRefs": [
+                {
+                  "resource": "conversations",
+                  "id": "c04e2dae-8d53-4160-979c-a651419dae09"
+                }
+              ],
+              "createdAt": "2026-10-16T11:26:06.595Z"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "executionMode": "deterministic",
+  "scope": "Original safe-to-retry command through persisted chat, real queue and worker on local Firestore. Only server-recorded pre-provider failures are eligible; each failure identity can be retried once. Mixed eligible, newly ineligible, unknown and other-agent messages are checked. Meta simulated; no external sends or production certification."
+}

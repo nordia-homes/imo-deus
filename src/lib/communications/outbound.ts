@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { previousPropertyShare } from './property-share-history';
 import { assertProspectingRecipient } from './prospecting-recipient';
@@ -165,6 +166,51 @@ async function settleBudget(db: Firestore, jobId: string) {
     tx.update(ref, { budgetSettled: true, reservationReleased: true, settledAmountMicros: charge });
   });
 }
+export function safeToRetryOutbound(job: Record<string, any>) {
+  return job.status === 'failed' && job.failureStage === 'before_provider' && typeof job.failureId === 'string' && Boolean(job.failureId) && !job.externalId && !job.providerAcceptedAt;
+}
+export async function retryOutboundMessage(db: Firestore, actor: Actor, conversationId: string, messageId: string, failureId: string) {
+  const conversation = await getConversation(db, actor, conversationId);
+  const jobRef = db.collection('communicationOutboundJobs').doc(messageId);
+  const job = (await jobRef.get()).data();
+  if (!job || job.agencyId !== actor.agencyId || job.conversationId !== conversationId) throw new CommunicationError('Mesajul nu corespunde conversației.', 409);
+  if (job.lastRetryFailureId === failureId) return { messageId, status: job.status, requeued: false };
+  if (!safeToRetryOutbound(job) || job.failureId !== failureId) throw new CommunicationError('Nu există dovada unei trimiteri sigur de reluat.', 409);
+  assertRecipientRevision(conversation, job.recipientRevision);
+  const input = inputSchema.parse(job.input);
+  if (input.expectedRecipientRevision) assertRecipientRevision(conversation, input.expectedRecipientRevision);
+  const estimate = await estimateSend(db, actor, conversation, input);
+  const sendApproval = sendApprovalSchema.parse({ amountMicros: estimate.amount, currency: estimate.currency, renderedText: estimate.renderedText, expiresAt: Date.now() + 3600000 });
+  if (estimate.currency !== job.estimate.currency || estimate.amount > job.estimate.amount) throw new CommunicationError('Costul a crescut; mesajul trebuie pregătit din nou.', 409);
+  await settleBudget(db, messageId);
+  const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(conversationId);
+  const messageRef = conversationRef.collection('messages').doc(messageId);
+  const budgetRef = agencyCollection(db, actor.agencyId, 'communicationBudgets').doc(nowIso().slice(0, 7) + '-' + estimate.currency);
+  return db.runTransaction(async tx => {
+    await assertAutomationFence(db, tx, actor);
+    const [profile, freshJob, freshMessage, freshConversation, budget] = await Promise.all([tx.get(db.collection('users').doc(actor.uid)), tx.get(jobRef), tx.get(messageRef), tx.get(conversationRef), tx.get(budgetRef)]);
+    const current = freshJob.data(), message = freshMessage.data();
+    if (profile.data()?.agencyId !== actor.agencyId || profile.data()?.role !== actor.role || !['agent', 'admin'].includes(actor.role || '') || !freshConversation.exists || !canReadConversation(actor, freshConversation.data() as Conversation)) throw new CommunicationError('Acces revocat.', 403);
+    if (!current || current.agencyId !== actor.agencyId || current.conversationId !== conversationId) throw new CommunicationError('Mesaj invalid.', 409);
+    if (current.lastRetryFailureId === failureId) return { messageId, status: current.status, requeued: false };
+    if (!safeToRetryOutbound(current) || current.failureId !== failureId || !current.budgetSettled || !isDeepStrictEqual(current.input, job.input)) throw new CommunicationError('Starea mesajului s-a schimbat.', 409);
+    if (!message || message.agencyId !== actor.agencyId || message.conversationId !== conversationId || message.origin !== 'imodeus' || message.direction !== 'sent' || message.status !== 'failed' || message.externalId || message.text !== estimate.renderedText) throw new CommunicationError('Conținutul sau confirmarea mesajului s-a schimbat.', 409);
+    const recipient = { ...freshConversation.data(), id: conversationId } as Conversation;
+    assertRecipientRevision(recipient, job.recipientRevision);
+    await assertPersonalRecipient(db, actor, recipient, input.personalRecipient, tx);
+    assertNoReplySince(recipient, input.stopOnReplySince);
+    await assertCurrentRecipientEligibility(db, actor, recipient, input, estimate.category, tx);
+    await assertMatchingSend(db, actor, recipient, input.matchingSelection, tx);
+    const binding = await bindViewingConfirmation(db, actor.agencyId, recipient, input.viewingConfirmation, tx);
+    if (JSON.stringify(binding) !== JSON.stringify(job.viewingConfirmation || null)) throw new CommunicationError('Programarea s-a schimbat.', 409);
+    assertViewingTemplate(binding, estimate.renderedText, Boolean(input.template));
+    if (estimate.amount > 0) tx.set(budgetRef, { currency: estimate.currency, limitMicros: budget.data()?.limitMicros || 0, spentMicros: budget.data()?.spentMicros || 0, reservedMicros: budgetReservation(budget.data()?.limitMicros || 0, budget.data()?.spentMicros || 0, budget.data()?.reservedMicros || 0, estimate.amount) }, { merge: true });
+    tx.create(jobRef.collection('retryHistory').doc(failureId), { actorId: actor.uid, failureId, failedAt: current.failedAt || null, retriedAt: nowIso() });
+    tx.update(jobRef, { status: 'queued', uid: actor.uid, retrySendApproval: sendApproval, estimate: { amount: estimate.amount, currency: estimate.currency, rateId: estimate.rateId }, budgetId: budgetRef.id, budgetSettled: false, reservationReleased: false, settledAmountMicros: 0, lastRetryFailureId: failureId, failureId: FieldValue.delete(), failureStage: FieldValue.delete(), failedAt: FieldValue.delete(), error: FieldValue.delete(), leaseUntil: FieldValue.delete(), retriedAt: nowIso() });
+    tx.update(messageRef, { status: 'queued', failedAt: FieldValue.delete(), error: FieldValue.delete(), retriedAt: nowIso() });
+    return { messageId, status: 'queued', requeued: true };
+  });
+}
 export async function reconcileOutboundMessage(db: Firestore, actor: Actor, conversationId: string, messageId: string) {
   const jobRef = db.collection('communicationOutboundJobs').doc(messageId);
   const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(conversationId);
@@ -225,9 +271,11 @@ export async function drainOutbound(db: Firestore) {
     try {
     const queuedConversation = await agencyCollection(db, row.data().agencyId, 'conversations').doc(row.data().conversationId).get();
     if (queuedConversation.data()?.channel === 'whatsapp' && !inboundBacklog.empty) continue;
-    const claimed = await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.status !== 'queued') return false; tx.update(row.ref, { status: 'sending', leaseUntil: Date.now() + 90000 }); return true; });
+    const claimed = await db.runTransaction(async tx => { const fresh = await tx.get(row.ref); if (fresh.data()?.status !== 'queued') return null; tx.update(row.ref, { status: 'sending', leaseUntil: Date.now() + 90000 }); return fresh.data()!; });
     if (!claimed) continue;
-    const job = row.data(); const messageRef = agencyCollection(db, job.agencyId, 'conversations').doc(job.conversationId).collection('messages').doc(row.id);
+    const job = claimed;
+    if (job.retrySendApproval) job.input = { ...job.input, sendApproval: job.retrySendApproval };
+    const messageRef = agencyCollection(db, job.agencyId, 'conversations').doc(job.conversationId).collection('messages').doc(row.id);
     let attempted = false;
     try {
       const user = await db.collection('users').doc(job.uid).get();
@@ -288,7 +336,7 @@ export async function drainOutbound(db: Firestore) {
       await db.runTransaction(async tx => {
         const [freshJob, freshMessage] = await Promise.all([tx.get(row.ref), tx.get(messageRef)]);
         if (['delivered', 'read', 'failed'].includes(freshJob.data()?.status) || (freshJob.data()?.status === 'accepted' && freshJob.data()?.externalId)) return;
-        tx.update(row.ref, { status, error: message, ...(status === 'failed' ? { failedAt: nowIso() } : {}) });
+        tx.update(row.ref, { status, error: message, failureStage: attempted ? 'after_provider' : 'before_provider', failureId: randomUUID(), ...(status === 'failed' ? { failedAt: nowIso() } : {}) });
         if (freshMessage.exists) tx.update(messageRef, { status, error: message, ...(status === 'failed' ? { failedAt: nowIso() } : {}) });
       });
       if (status === 'failed') await settleBudget(db, row.id);
