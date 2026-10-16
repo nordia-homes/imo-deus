@@ -35,6 +35,41 @@ export function socialCommentRows(value: unknown) {
   }).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id));
   return { rows, complete: !response.paging?.next };
 }
+export async function readSocialCommentPages(ctx: AssistantContext, postId: string, connectionId: string) {
+  const collected = new Map<string, ReturnType<typeof socialCommentRows>['rows'][number]>();
+  const seen = new Set<string>();
+  let after: string | undefined, expectedId: string | undefined;
+  let complete = false, stopReason = 'limita de 10 pagini';
+  for (let page = 0; page < 10; page++) {
+    // Revalidate between provider calls; a changed post must not mix two comment threads.
+    const externalId = await ctx.adminDb.runTransaction(async tx => {
+      const agency = ctx.adminDb.collection('agencies').doc(ctx.agencyId);
+      const profile = (await tx.get(ctx.adminDb.collection('users').doc(ctx.uid))).data();
+      const post = (await tx.get(agency.collection('socialPosts').doc(postId))).data();
+      const connection = (await tx.get(agency.collection('channelConnections').doc(connectionId))).data();
+      const destination = post?.destinations?.[connectionId];
+      if (ctx.role !== 'admin' || profile?.role !== 'admin' || profile.agencyId !== ctx.agencyId || post?.agencyId !== ctx.agencyId || post.deletedAt || destination?.status !== 'published' || typeof destination.externalId !== 'string' || !/^\d+(?:_\d+)?$/.test(destination.externalId) || connection?.agencyId !== ctx.agencyId || connection.deletedAt || connection.status !== 'connected' || !['messenger', 'instagram'].includes(connection.channel) || connection.capabilities?.comments?.status !== 'active') throw new Error('Accesul la comentarii s-a schimbat');
+      return destination.externalId as string;
+    });
+    if (expectedId && expectedId !== externalId) throw new Error('Destinația postării s-a schimbat');
+    expectedId = externalId;
+    let result: any, segment: ReturnType<typeof socialCommentRows>;
+    try {
+      result = await postInteraction(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, postId, connectionId, 'comments', undefined, after);
+      segment = socialCommentRows(result);
+    } catch (error) {
+      if (!page) throw error;
+      stopReason = 'următoarea pagină nu a putut fi citită'; break;
+    }
+    for (const row of segment.rows) if (!collected.has(row.id)) collected.set(row.id, row);
+    if (segment.complete) { complete = true; break; }
+    const cursor = result.paging?.cursors?.after;
+    if (typeof cursor !== 'string' || !cursor.length || cursor.length > 2048) { stopReason = 'cursorul paginii următoare lipsește sau este invalid'; break; }
+    if (seen.has(cursor)) { stopReason = 'Meta a repetat cursorul paginii'; break; }
+    seen.add(cursor); after = cursor;
+  }
+  return { rows: [...collected.values()].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id)), complete, stopReason };
+}
 export async function prepareSocialComments(ctx: AssistantContext, prompt: string, history: AssistantMessage[]) {
   const selection = socialCommentsSelection(prompt);
   const pendingCard = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1)?.cards?.find(card => ['socialCommentsRequest', 'socialDiagnosticsRequest'].includes(card.source));
@@ -65,7 +100,6 @@ export async function prepareSocialComments(ctx: AssistantContext, prompt: strin
     const rows = socialDiagnosticRows(result);
     return { diagnostic, choices: [], comments: { rows, complete: true }, text: 'Diagnosticul pentru postarea ' + selection[1] + ', contul ' + selection[2] + ':\n' + rows.map(row => row.name + ': ' + row.description).join('\n') + '\nDiagnosticul verifică autorizarea și accesul la postare. Nu verifică citirea comentariilor și nu reconectează contul. Absența din primele 100 de postări nu dovedește ștergerea.' };
   }
-  const result = await postInteraction(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, selection[1], selection[2], 'comments');
-  const comments = socialCommentRows(result);
-  return { diagnostic, choices: [], comments, text: 'Am citit ' + comments.rows.length + ' comentarii pentru postarea ' + selection[1] + ', contul ' + selection[2] + '. Sunt ordonate după data disponibilă, în ora Bucureștiului.' + (comments.complete ? '' : ' Meta indică pagini suplimentare; lista reprezintă numai segmentul returnat de integrare (maximum 50).') };
+  const comments = await readSocialCommentPages(ctx, selection[1], selection[2]);
+  return { diagnostic, choices: [], comments, text: 'Am citit ' + comments.rows.length + ' comentarii pentru postarea ' + selection[1] + ', contul ' + selection[2] + '. Sunt ordonate după data disponibilă, în ora Bucureștiului.' + (comments.complete ? '' : ' Lista este incompletă: ' + comments.stopReason + '.') };
 }

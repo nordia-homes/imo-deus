@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Continuarea citirii comentariilor între pagini — 16 octombrie 2026
+
+Fluxul scenariului **0379** nu se mai oprește automat după prima pagină. Folosește cursorul after din răspunsul Meta, validat și codificat ca parametru pe ruta fixă a postării. URL-ul next nu este urmat și nu este expus în conversație. Comentariile duplicate sunt eliminate după ID, iar rezultatul agregat este ordonat după data disponibilă, cu afișare în Europe/Bucharest.
+
+Înainte de fiecare pagină se recitesc profilul, agenția, postarea, conexiunea și permisiunea de comentarii. Schimbarea ID-ului extern al postării împiedică amestecarea a două fire de comentarii. Revocarea accesului oprește cererea. La eșecul unei pagini ulterioare se păstrează rezultatele deja citite și se anunță explicit lista incompletă. Cursorul lipsă/invalid sau repetat și limita de 10 pagini opresc continuarea fără a declara istoricul complet. Limita este pe cerere; nu există încă reluare de la pagina 11.
+
+Validare: 69 teste unitare/regresie, 17 teste de integrare, ESLint, paritate și build complet (inclusiv TypeScript) trecute. Extensie a unui scenariu existent, fără creșterea numărului contabilizat: **200/1000 dovezi locale**. Fără apeluri Meta reale sau publicare în producție. Runnerul manual și conținutul publicărilor în grupuri nu sunt modificate.
+
 ## Lot diagnostic social — 16 octombrie 2026
 
 Scenariul **0384** păstrează selecția explicită a postării și contului și folosește serviciul existent pentru cele patru verificări Meta: identitatea autorizării, validitatea tokenului și permisiunile, lista postărilor contului și accesul direct la postare. Continuarea distinge diagnosticul de citirea comentariilor. Profilul, agenția și selecția eligibilă sunt recitite înaintea serviciului; permisiunile administrative și condițiile serviciului existent rămân aplicabile.

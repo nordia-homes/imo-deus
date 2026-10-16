@@ -90,4 +90,43 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     expect(result.message.cards?.[0].rows.find(row => row.id === 'direct')?.description).toBe('neconfirmat');
     expect(JSON.stringify(result)).not.toContain('SECRET');
   });
+  for (const channel of ['messenger', 'instagram']) it('continues across comment pages on ' + channel + ' using only encoded cursors', async () => {
+    const f = await fixture(channel); const cursor = 'a&fields=secret/next?';
+    mocks.fetch.mockImplementation(async (url: string) => {
+      const parsed = new URL(url); expect(parsed.hostname).toBe('graph.facebook.com'); expect(parsed.pathname).toContain('/123_456/comments');
+      const next = parsed.searchParams.get('after');
+      if (next !== null) expect(next).toBe(cursor);
+      const row = (id: string, date: string) => channel === 'instagram' ? { id, text: id, timestamp: date } : { id, message: id, created_time: date };
+      return new Response(JSON.stringify(next === null ? { data: [row('1', '2026-10-16T04:00:00Z')], paging: { next: 'https://untrusted.invalid/token', cursors: { after: cursor } } } : { data: [row('1', '2026-10-16T04:00:00Z'), row('2', '2026-10-16T05:00:00Z')] }), { status: 200 });
+    });
+    const result = await chatTurn(f.ctx, f.input);
+    expect(result.message.cards?.[0].rows.map(row => row.id)).toEqual(['2', '1']);
+    expect(result.message.cards?.[0].complete).toBe(true); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(result)).not.toMatch(/untrusted|fields=secret/);
+    expect((await chatTurn(f.ctx, f.input)).message.id).toBe(result.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+  });
+  it.each(['repeat', 'failure', 'limit'])('retains verified comments and reports incomplete pagination on %s', async reason => {
+    const f = await fixture(); let page = 0;
+    mocks.fetch.mockImplementation(async () => {
+      page++;
+      if (reason === 'failure' && page === 2) return new Response(JSON.stringify({ error: { message: 'SECRET' } }), { status: 503 });
+      return new Response(JSON.stringify({ data: [{ id: String(page), message: 'Text' }], paging: { next: 'https://untrusted.invalid', cursors: { after: reason === 'repeat' ? 'same' : 'cursor-' + page } } }), { status: 200 });
+    });
+    const result = await chatTurn(f.ctx, f.input);
+    expect(result.message.cards?.[0].complete).toBe(false);
+    expect(result.message.cards?.[0].rows.length).toBe(reason === 'limit' ? 10 : reason === 'repeat' ? 2 : 1);
+    expect(mocks.fetch).toHaveBeenCalledTimes(reason === 'limit' ? 10 : 2);
+    expect(result.message.text).toContain('Lista este incompletă'); expect(JSON.stringify(result)).not.toContain('SECRET');
+  });
+  it.each(['revoked', 'changed'])('stops before next provider page when access or destination is %s', async reason => {
+    const f = await fixture();
+    mocks.fetch.mockImplementation(async () => {
+      if (reason === 'revoked') await f.profile.update({ role: 'agent' });
+      else await f.post.update({ ['destinations.' + f.connectionId + '.externalId']: '123_789' });
+      return new Response(JSON.stringify({ data: [{ id: '1', message: 'Text' }], paging: { next: 'https://untrusted.invalid', cursors: { after: 'next' } } }), { status: 200 });
+    });
+    if (reason === 'revoked') { await expect(chatTurn(f.ctx, f.input)).rejects.toThrow('Acces revocat'); expect(mocks.fetch).toHaveBeenCalledTimes(1); return; }
+    const result = await chatTurn(f.ctx, f.input);
+    expect(result.message.cards?.some(card => card.source === 'socialComments')).not.toBe(true); expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  });
 });

@@ -222,7 +222,7 @@ export async function diagnoseSocialPost(db: Firestore, actor: Actor, postId: st
     directPostError: object.error,
   };
 }
-export async function postInteraction(db: Firestore, actor: Actor, postId: string, connectionId: string, action: 'comments' | 'insights', text?: string) {
+export async function postInteraction(db: Firestore, actor: Actor, postId: string, connectionId: string, action: 'comments' | 'insights', text?: string, after?: string) {
   const snap = await agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId).get();
   const destination = snap.data()?.destinations?.[connectionId];
   if (!destination?.externalId || destination.status !== 'published') throw new CommunicationError('Postarea nu este publicată pe contul ales.');
@@ -234,7 +234,8 @@ export async function postInteraction(db: Firestore, actor: Actor, postId: strin
     const message = z.string().trim().min(1).max(2000).parse(text);
     return socialGraph(`/${id}/comments`, token, { message });
   }
-  return socialRead(db, actor, connection, token, `/${id}/comments?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50`);
+  const cursor = after === undefined ? '' : '&after=' + encodeURIComponent(z.string().min(1).max(2048).parse(after));
+  return socialRead(db, actor, connection, token, `/${id}/comments?fields=${instagram ? 'id,text,username,timestamp' : 'id,message,from,created_time'}&limit=50${cursor}`);
 }
 
 export async function commentInteraction(
