@@ -9,6 +9,7 @@ export function facebookOutcome(actor: { uid: string; agencyId: string }, jobId:
   if (!identity || !sameGroups) return evidence('unknown', false, false, 'Jobul sau grupurile curente nu corespund cererii aprobate. Publicarea nu a fost reluată.');
   const groupResults = groups.map(group => ({ url: group.url as string, status: String(group.status || 'unknown'), publicationConfirmed: false }));
   const result = (state: string, complete: boolean, watch: boolean, note: string) => ({ ...evidence(state, complete, watch, note), groupResults });
+  if (['pending', 'unknown'].includes(row.dispatchState)) return result('unknown', false, false, 'Expedierea către runner nu este confirmată. Nu retrimite automat.');
   if (['error', 'cancelled', 'needs_reauthentication'].includes(row.status)) return result(row.status === 'error' ? 'failed' : row.status === 'cancelled' ? 'cancelled' : 'accepted_unverified', false, false, 'Jobul este oprit sau necesită intervenție. Nu se confirmă o programare activă ori publicarea.');
   if (body.scheduledAt != null) {
     const requested = Date.parse(String(body.scheduledAt)), saved = Date.parse(String(row.scheduledAt));

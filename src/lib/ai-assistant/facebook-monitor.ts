@@ -31,7 +31,7 @@ export function facebookJobSummary(id: string, raw: Record<string, any>) {
   }));
   const counts = Object.fromEntries([...groupStates, 'unknown'].map(status => [status, groups.filter(group => group.status === status).length]));
   return { id, propertyId: typeof raw.propertyId === 'string' ? raw.propertyId : null, propertyTitle: typeof raw.propertyTitle === 'string' ? raw.propertyTitle : 'Proprietate',
-    status: jobStates.includes(raw.status) ? String(raw.status) : 'unknown', scheduledAt: iso(raw.scheduledAt), updatedAt: iso(raw.updatedAt),
+    status: ['pending', 'unknown'].includes(raw.dispatchState) ? 'unknown' : jobStates.includes(raw.status) ? String(raw.status) : 'unknown', scheduledAt: iso(raw.scheduledAt), updatedAt: iso(raw.updatedAt),
     scheduledBucharest: iso(raw.scheduledAt) ? bucharestInputFromIso(raw.scheduledAt) : null,
     totalGroups: groups.length, counts, groups, publicationConfirmed: false };
 }

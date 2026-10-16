@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { AssistantAction, AssistantCard, AssistantMessage, AccessReference } from './contracts';
 import type { AssistantContext } from './access';
-import { uniqueReferences } from './contracts';
+import { uniqueReferences, normalized } from './contracts';
 import { automationReadiness } from './readiness';
 import { OpenAIAdapter, ProviderError, type ModelProvider } from './provider';
 import { routeModel, usageCost, VERSIONS } from './models';
@@ -137,6 +137,24 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(prepared.mode === 'duplicates' ? 'Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.' : prepared.actions.length ? 'Trimiterea proprietăților selectate este pregătită.' : 'Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.');
     } catch { return finish('Selectează o singură listă de matching pentru client și conversația lui. Pentru o singură proprietate, selectează acea proprietate din listă. Datele trebuie să fie actuale; nu am înlocuit proprietățile sau destinatarul.', 'clarification'); }
   }
+  if (normalized(prompt).trim().replace(/[.!?]+$/, '') === 'nu programa daca facebook trebuie reconectat') {
+    try {
+      const { readFacebookSetup } = await import('./facebook-setup');
+      const state = await readFacebookSetup(ctx, 'blocked', history);
+      cards.push({ type: 'data', source: state.source, title: 'Conexiuni Facebook blocate', rows: state.rows, complete: true });
+      return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
+    } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
+  }
+  const { prepareFacebookSchedule } = await import('./facebook-schedule');
+  try {
+    const schedule = await prepareFacebookSchedule(ctx, prompt, history);
+    if (schedule) {
+      actions.push(...schedule.actions);
+      cards.push({ type: 'data', source: 'properties', title: 'Proprietate pentru Facebook', rows: schedule.rows, complete: true });
+      if (schedule.pendingPrompt) cards.push({ type: 'data', source: 'facebookScheduleRequest', title: 'Programare în așteptarea selecției', rows: [{ id: 'pending', prompt: schedule.pendingPrompt, scheduledAt: schedule.scheduledAt }], complete: true });
+      return finish(schedule.text, schedule.actions.length ? undefined : 'clarification');
+    }
+  } catch { return finish('Nu am putut verifica datele necesare programării Facebook. Nu am creat jobul.', 'unavailable'); }
   const { prepareFacebookControl } = await import('./facebook-control');
   try {
     const control = await prepareFacebookControl(ctx, prompt, history);

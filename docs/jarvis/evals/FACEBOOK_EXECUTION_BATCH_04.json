@@ -1,0 +1,164 @@
+{
+  "scope": "Actual chat, autonomous executor, POST and Firestore reservation. Cloud transport simulated. Scheduling and reconnection guard only; not live Facebook publication certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0357",
+      "prompt": "Programează apartamentul din Cișmigiu în toate grupurile Facebook eligibile mâine la 07:00.",
+      "versions": {
+        "prompt": "jarvis-123",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "154",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat/autonomy/POST and local Firestore; local runner, cloud transport simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "7cb1e63d-4141-403b-b786-3d1879abcfc4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook cd08ccde5aa06de6c09769f5efa0b3efc628a22b49c22a7f49e3922f1de8a30c a fost creat și programat pentru 2026-10-17 la 07:00, ora Bucureștiului. Publicarea nu este încă confirmată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "properties",
+                "title": "Proprietate pentru Facebook",
+                "rows": [
+                  {
+                    "id": "property",
+                    "title": "Apartament Cișmigiu"
+                  }
+                ],
+                "complete": true,
+                "outputType": "PROPERTY_LIST"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_create",
+                      "jobId": "cd08ccde5aa06de6c09769f5efa0b3efc628a22b49c22a7f49e3922f1de8a30c",
+                      "scheduledAt": "2026-10-17T04:00:00Z",
+                      "businessStatus": "scheduled",
+                      "executionState": "succeeded",
+                      "publicationConfirmed": false,
+                      "schedulingConfirmed": true
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T13:42:17.861Z"
+          }
+        },
+        {
+          "final": {
+            "id": "e109d572-6ea5-4719-ab13-81a2d47ebac7-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook 39f40dce4621aac16dcd5c05ed20b192b2181c9bdc937577e7189f0db26eb401 a fost creat și programat pentru 2026-10-17 la 07:00, ora Bucureștiului. Publicarea nu este încă confirmată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "properties",
+                "title": "Proprietate pentru Facebook",
+                "rows": [
+                  {
+                    "id": "property",
+                    "title": "Apartament Cișmigiu"
+                  }
+                ],
+                "complete": true,
+                "outputType": "PROPERTY_LIST"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_create",
+                      "jobId": "39f40dce4621aac16dcd5c05ed20b192b2181c9bdc937577e7189f0db26eb401",
+                      "scheduledAt": "2026-10-17T04:00:00Z",
+                      "businessStatus": "scheduled",
+                      "executionState": "succeeded",
+                      "publicationConfirmed": false,
+                      "schedulingConfirmed": true
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T13:42:18.478Z"
+          },
+          "phase": "cloud_transport_simulated"
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0360",
+      "prompt": "Nu programa dacă Facebook trebuie reconectat.",
+      "versions": {
+        "prompt": "jarvis-123",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "154",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Chat guard and actual POST refusal against disconnected account on local Firestore.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "1344bf95-bf19-401c-bc3c-c434a005e795-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: 1. Nu am creat joburi prin această verificare.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookConnections",
+                "title": "Conexiuni Facebook blocate",
+                "rows": [
+                  {
+                    "id": "connection",
+                    "label": "Cont",
+                    "status": "needs_reauthentication",
+                    "reason": "Necesită reconectare Facebook",
+                    "runnerMode": "local",
+                    "lastVerifiedAt": null,
+                    "publishingBlocked": true,
+                    "runnerState": "online"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T13:42:18.863Z"
+          }
+        }
+      ]
+    }
+  ]
+}

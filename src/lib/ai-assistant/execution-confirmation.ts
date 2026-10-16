@@ -4,6 +4,10 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'facebook_job_create' && receipt.schedulingConfirmed === true && typeof receipt.scheduledAt === 'string') {
+      const when = bucharestInputFromIso(receipt.scheduledAt);
+      return 'Jobul Facebook ' + receipt.jobId + ' a fost creat și programat pentru ' + when.date + ' la ' + when.time + ', ora Bucureștiului. Publicarea nu este încă confirmată.';
+    }
     if (receipt?.executionState === 'succeeded' && receipt.operation === 'facebook_job_remove') return 'Jobul Facebook ' + receipt.jobId + ' a fost anulat. Postările deja trimise nu sunt retrase; un pas aflat în execuție la runner poate avea deja efect extern.';
     if (receipt?.executionState === 'succeeded' && receipt.operation === 'facebook_job_update' && typeof receipt.scheduledAt === 'string') {
       const when = bucharestInputFromIso(receipt.scheduledAt);

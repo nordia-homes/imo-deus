@@ -34,3 +34,7 @@ it.each(['queued', 'running', 'cooldown'])('watches an immediate %s job without 
 it('rejects rescheduling of an immediate approved send', () => {
   expect(facebookOutcome(actor, 'j', { ...body, scheduledAt: null }, job)).toMatchObject({ executionState: 'unknown', completionSatisfied: false, watchable: false });
 });
+
+it.each(['pending', 'unknown'])('does not certify a %s runner dispatch as scheduled', dispatchState => {
+  expect(facebookOutcome(actor, 'j', body, { ...job, dispatchState }).completionSatisfied).toBe(false);
+});

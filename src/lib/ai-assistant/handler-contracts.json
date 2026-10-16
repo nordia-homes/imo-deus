@@ -1618,12 +1618,13 @@
       "connectionId",
       "groupUrls",
       "propertyId",
+      "requestId",
       "scheduledAt"
     ],
     "queryFields": [
       "propertyId"
     ],
-    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+    "note": "Creează atomic un job. requestId UUID opțional asigură idempotenta; un timeout cloud nu autorizează retrimiterea. Handlerul validează conexiunea, proprietatea, grupurile și data."
   },
   "facebook_job_update": {
     "method": "PATCH",
