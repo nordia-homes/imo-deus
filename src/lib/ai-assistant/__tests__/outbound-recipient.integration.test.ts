@@ -712,6 +712,73 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     await ingestMessage(db as any, connection, { ...event, status: 'delivered', createdAt: new Date().toISOString() });
     expect((await ref.get()).data()?.status).toBe('delivered');
   });
+  for (const scenarioId of ['master-0321', 'master-0322', 'master-0323']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')('live prospecting ' + scenarioId + ': sends selected matching properties through portal and queue without duplicates', async () => {
+    const { chatTurn } = await import('../workspace'); const { VERSIONS } = await import('../models');
+    const { default: corpus } = await import('../../../../docs/jarvis/evals/master-scenarios.json');
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    const f = await fixture(), agency = db.collection('agencies').doc(f.actor.agencyId), ctx = { ...f.actor, adminDb: db, authorization: 'Bearer fixture', appOrigin: 'https://imodeus.ro' } as any;
+    mocks.actor = ctx;
+    await f.ref.update({ lastMessageAt: new Date().toISOString() });
+    await agency.collection('contacts').doc('contact').set({ name: 'Andrei', contactType: 'Cumparator', budget: 150000 });
+    for (const id of ['p1', 'p2', 'p3']) await agency.collection('properties').doc(id).set({ title: 'Apartament Cișmigiu ' + id, status: 'Activ', price: 120000, rooms: 2, transactionType: 'Vanzare', propertyType: 'Apartament' });
+    mocks.graph.mockImplementation(async () => ({ message_id: randomUUID() }));
+    const rows = await matchContact(ctx, 'contact', 10), selected = scenarioId === 'master-0321' ? rows.slice(1, 2) : rows;
+    const resultSetId = await saveResultSet(ctx, rows, 'contact');
+    const sessionId = randomUUID(), session = agency.collection('assistantSessions').doc(sessionId); await session.set({ ownerId: f.actor.uid });
+    await session.collection('messages').doc('selection').set({ role: 'assistant', createdAt: new Date().toISOString(), text: 'Matching selectat', cards: [{ type: 'data', source: 'crm', title: 'Matching', resultSetId, rows: JSON.parse(JSON.stringify(selected)) }] });
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text, runs: unknown[] = []; let verified = false;
+    const request = (text: string) => ({ sessionId, requestId: randomUUID(), prompt: text, currentRecord: null });
+    try {
+      if (scenarioId === 'master-0322') await agency.collection('conversations').doc('alternative').set({ ...f.conversation, id: 'alternative', lastMessageAt: new Date().toISOString() });
+      if (scenarioId === 'master-0323') await chatTurn(ctx, request('Trimite primele trei potriviri clientului.'));
+      const input = request(prompt); let response = await chatTurn(ctx, input); runs.push({ phase: 'original', final: response.message });
+      expect(response.message.planId).toBeUndefined(); expect(await chatTurn(ctx, input)).toEqual(response);
+      if (scenarioId === 'master-0322') {
+        expect(response.message.cards?.some(card => card.source === 'propertyShareInput')).toBe(true);
+        expect((await f.ref.collection('messages').get()).size).toBe(0);
+        response = await chatTurn(ctx, request('Conversație: ' + f.ref.id)); runs.push({ phase: 'recipient-selected', final: response.message });
+        expect(response.message.planId).toBeUndefined();
+      }
+      const messages = await f.ref.collection('messages').get(); expect(messages.size).toBe(selected.length);
+      for (const doc of messages.docs) { expect(doc.data().status).toBe('queued'); expect(doc.data().text).toContain('https://imodeus.ro/portal/'); expect(doc.data().text).not.toContain('/properties/'); }
+      const contact = (await agency.collection('contacts').doc('contact').get()).data()!;
+      const recommendations = await db.collection('portals').doc(contact.portalId).collection('recommendations').get();
+      expect(recommendations.docs.map(doc => doc.id).sort()).toEqual(selected.map(row => row.id).sort());
+      const repeat = await chatTurn(ctx, request(prompt)); runs.push({ phase: 'repeat', final: repeat.message });
+      expect((await f.ref.collection('messages').get()).size).toBe(selected.length);
+      await drainOutbound(db as any);
+      expect((await f.ref.collection('messages').get()).docs.map(doc => ({ status: doc.data().status, error: doc.data().error || null }))).toEqual(selected.map(() => ({ status: 'accepted', error: null })));
+      expect(mocks.graph.mock.calls.filter(call => /\/messages$/.test(String(call[0])))).toHaveLength(selected.length);
+      expect((await f.ref.collection('messages').get()).docs.every(doc => doc.data().status === 'accepted')).toBe(true);
+      expect((await agency.collection('communicationPropertyShares').get()).size).toBe(selected.length);
+      verified = true;
+    } finally {
+      const contact = (await agency.collection('contacts').doc('contact').get()).data();
+      if (contact?.portalId) await db.recursiveDelete(db.collection('portals').doc(contact.portalId));
+      await mkdir('.tmp/jarvis-whatsapp-prospecting', { recursive: true });
+      await writeFile('.tmp/jarvis-whatsapp-prospecting/' + scenarioId + '-latest.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: verified, environment: 'Deterministic persisted chat, actual portal recommendation/queue/worker on Firestore emulator; Meta simulated, no external messages.', runs }, null, 2)); mocks.actor = null;
+    }
+  }, 120000);
+  it('atomically prevents two distinct requests from sharing the same matching property twice', async () => {
+    const f = await matchingFixture();
+    const results = await Promise.all([queueMessage(db as any, f.actor, f.ref.id, { ...f.input, preventPropertyResend: true }), queueMessage(db as any, f.actor, f.ref.id, { ...f.input, requestId: randomUUID(), preventPropertyResend: true })]);
+    expect(new Set(results.map(result => result.messageId)).size).toBe(1);
+    expect((await f.ref.collection('messages').get()).size).toBe(1);
+    await drainOutbound(db as any); expect(mocks.graph).toHaveBeenCalledTimes(1);
+  });
+  it.each(['removed-recommendation', 'replaced-portal'])('rechecks the public portal before dispatch: %s', async change => {
+    const f = await matchingFixture(), portalId = randomUUID(), portal = db.collection('portals').doc(portalId);
+    await portal.set({ agencyId: f.actor.agencyId, contactId: 'contact' }); await portal.collection('recommendations').doc('selected').set({ propertyId: 'selected' });
+    await f.contactRef.update({ portalId });
+    const input = { ...f.input, matchingSelection: { ...f.input.matchingSelection, portalId }, preventPropertyResend: true };
+    try {
+      await queueMessage(db as any, f.actor, f.ref.id, input);
+      if (change === 'removed-recommendation') await portal.collection('recommendations').doc('selected').delete();
+      else await f.contactRef.update({ portalId: 'other' });
+      await drainOutbound(db as any); expect(mocks.graph).not.toHaveBeenCalled();
+      expect((await f.ref.collection('messages').get()).docs[0].data().status).toBe('failed');
+    } finally { await db.recursiveDelete(portal); }
+  });
   async function prospectingFixture() {
     const f = await marketingFixture();
     await f.consent.delete();

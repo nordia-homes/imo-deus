@@ -17,10 +17,11 @@ export async function resolveMatchingRecipient(ctx: AssistantContext, summary: u
     if (conversation.contactId !== contactId || (input.channel && conversation.channel !== input.channel) || !['whatsapp', 'messenger', 'instagram'].includes(conversation.channel)) throw new Error('Conversația nu corespunde clientului și canalului selectate. Nu a fost înlocuit destinatarul.');
     candidates.set(input.conversationId, conversation);
   } else {
+    for (const scope of ctx.role === 'agent' ? ['own', 'unassigned'] : ['own']) {
     let cursor: string | undefined;
     const seen = new Set<string>();
     for (let page = 0; page < 5; page++) {
-      const params = new URLSearchParams({ contactId, ...(input.channel ? { channel: input.channel } : {}), ...(cursor ? { cursor } : {}) });
+      const params = new URLSearchParams({ contactId, ...(scope === 'unassigned' ? { status: 'unassigned' } : {}), ...(input.channel ? { channel: input.channel } : {}), ...(cursor ? { cursor } : {}) });
       const result = await listConversations(ctx.adminDb, ctx, params);
       for (const conversation of result.conversations) if (conversation.contactId === contactId && ['whatsapp', 'messenger', 'instagram'].includes(conversation.channel) && (!input.channel || conversation.channel === input.channel)) candidates.set(conversation.id, conversation);
       if (!result.cursor) { cursor = undefined; break; }
@@ -29,6 +30,7 @@ export async function resolveMatchingRecipient(ctx: AssistantContext, summary: u
       if (page === 4) complete = false;
     }
   }
+    }
   // Refresh permission and contact binding after pagination; never substitute.
   const conversations = [];
   for (const id of candidates.keys()) {

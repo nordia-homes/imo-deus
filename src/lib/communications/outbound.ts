@@ -19,7 +19,7 @@ import { matchingSendSchema, assertMatchingSend } from './matching-send';
 import { assertNoReplySince } from '@/lib/ai-assistant/reply-stop';
 import { personalRecipientSchema, assertPersonalRecipient } from './personal-recipient';
 
-const inputSchema = z.object({ prospectingListingId: z.string().regex(/^[a-zA-Z0-9_.:-]+$/).optional(), viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ prospectingListingId: z.string().regex(/^[a-zA-Z0-9_.:-]+$/).optional(), viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), preventPropertyResend: z.boolean().optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 // Re-read mutable eligibility after preparation, including inside the queue transaction.
 async function assertCurrentRecipientEligibility(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput, category: string, tx?: Transaction) {
@@ -83,6 +83,7 @@ export async function estimateSend(db: Firestore, actor: Actor, conversation: Co
 }
 export async function queueMessage(db: Firestore, actor: Actor, id: string, body: unknown, preview = false) {
   const input = inputSchema.parse(body);
+  if (input.preventPropertyResend && !input.matchingSelection) throw new CommunicationError('Selecția proprietății este necesară.', 400);
   const conversation = await getConversation(db, actor, id);
   const previousJobId = stableId(actor.agencyId, input.requestId);
   if (!preview) {
@@ -112,12 +113,12 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   const job = db.collection('communicationOutboundJobs').doc(jobId);
   const conversationRef = agencyCollection(db, actor.agencyId, 'conversations').doc(id);
   const budgetRef = agencyCollection(db, actor.agencyId, 'communicationBudgets').doc(`${nowIso().slice(0, 7)}-${estimate.currency}`);
-  await db.runTransaction(async tx => {
+  const queued = await db.runTransaction(async tx => {
     await assertAutomationFence(db, tx, actor);
     const [existing, fresh, budget] = await Promise.all([tx.get(job), tx.get(conversationRef), tx.get(budgetRef)]);
     if (existing.exists) {
       if (existing.data()?.conversationId !== id || !isDeepStrictEqual(existing.data()?.input, input)) throw new CommunicationError('Cheia de trimitere a fost deja utilizată pentru alt mesaj.', 409);
-      return;
+      return { messageId: jobId, status: existing.data()!.status };
     }
     if (!canReadConversation(actor, fresh.data() as Conversation)) throw new CommunicationError('Acces revocat.', 403);
     assertRecipientRevision({ ...fresh.data(), id }, recipient);
@@ -125,6 +126,12 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     assertNoReplySince(fresh.data()!, input.stopOnReplySince);
     await assertCurrentRecipientEligibility(db, actor, { ...fresh.data(), id } as Conversation, input, estimate.category, tx);
     await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
+    const shareRef = input.matchingSelection ? agencyCollection(db, actor.agencyId, 'communicationPropertyShares').doc(stableId(input.matchingSelection.contactId, input.matchingSelection.propertyId)) : null;
+    const previousShare = shareRef ? await tx.get(shareRef) : null;
+    if (previousShare?.exists) {
+      const priorJob = await tx.get(db.collection('communicationOutboundJobs').doc(previousShare.data()!.messageId));
+      return { messageId: previousShare.data()!.messageId as string, status: priorJob.data()?.status || 'unknown', duplicate: true };
+    }
     const currentBinding = await bindViewingConfirmation(db, actor.agencyId, { ...fresh.data(), id }, input.viewingConfirmation, tx);
     if (JSON.stringify(currentBinding) !== JSON.stringify(binding)) throw new CommunicationError('Programarea s-a schimbat înaintea trimiterii.', 409);
     if (estimate.amount > 0) tx.set(budgetRef, { currency: estimate.currency, limitMicros: budget.data()?.limitMicros || 0, spentMicros: budget.data()?.spentMicros || 0,
@@ -132,10 +139,11 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     const message: Message = { id: jobId, agencyId: actor.agencyId, conversationId: id, externalId: null, direction: 'sent', origin: 'imodeus', text: input.template ? estimate.renderedText || `[${input.template.name}] ${input.template.parameters.join(' · ')}` : input.text, createdAt: nowIso(), authorId: actor.uid, status: 'queued', attachments: [] };
     if (input.attachmentId && attachment) message.attachments = [{ localId: input.attachmentId, name: attachment.name, type: attachment.mime }];
     tx.create(conversationRef.collection('messages').doc(jobId), { ...message, ...(binding ? { viewingConfirmation: binding } : {}) });
+    if (shareRef) tx.create(shareRef, { contactId: input.matchingSelection!.contactId, propertyId: input.matchingSelection!.propertyId, messageId: jobId, conversationId: id, createdAt: nowIso() });
     tx.create(job, { agencyId: actor.agencyId, uid: actor.uid, conversationId: id, connectionId: conversation.connectionId, input, recipientRevision: recipient,
       ...(binding ? { viewingConfirmation: binding } : {}), estimate: { amount: estimate.amount, currency: estimate.currency, rateId: estimate.rateId }, budgetId: budgetRef.id, budgetSettled: false, status: 'queued', createdAt: nowIso() });
   });
-  return { messageId: jobId, status: 'queued' };
+  return queued || { messageId: jobId, status: 'queued' };
 }
 async function settleBudget(db: Firestore, jobId: string) {
   const ref = db.collection('communicationOutboundJobs').doc(jobId);

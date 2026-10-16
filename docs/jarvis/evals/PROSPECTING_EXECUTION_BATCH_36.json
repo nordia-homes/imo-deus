@@ -1,0 +1,807 @@
+{
+  "finalRuns": [
+    {
+      "scenarioId": "master-0321",
+      "prompt": "Trimite proprietatea aceasta clientului.",
+      "versions": {
+        "prompt": "jarvis-117",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "147",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted chat, actual portal recommendation/queue/worker on Firestore emulator; Meta simulated, no external messages.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "8e589d69-ace2-4510-b43e-7b90bd96fe36-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 44aa2d87e3c89d93b89608c30548230dee535d8e44f8f6c1e77975099254da6c.\nAcțiuni executate: 1. Starea mesajelor este disponibilă în Inbox.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "0f40f8b7-e70d-4fc7-bd8d-3dbccf39167a",
+                "rows": [
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "37151816-1d18-4b2e-bdd7-c94590c83fc9"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShares",
+                "title": "Trimiteri către client",
+                "rows": [
+                  {
+                    "id": "p2",
+                    "conversationId": "37151816-1d18-4b2e-bdd7-c94590c83fc9",
+                    "contactId": "contact",
+                    "alreadyQueued": false,
+                    "messageId": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "44aa2d87e3c89d93b89608c30548230dee535d8e44f8f6c1e77975099254da6c",
+                      "status": "queued",
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T10:38:37.929Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "conversationId": "37151816-1d18-4b2e-bdd7-c94590c83fc9",
+                      "propertyId": "p2",
+                      "portalId": "8e589d69-ace2-4510-b43e-7b90bd96fe36-safe-0-portal"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "37151816-1d18-4b2e-bdd7-c94590c83fc9"
+              },
+              {
+                "resource": "contacts",
+                "id": "contact"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:37.93Z"
+          }
+        },
+        {
+          "phase": "repeat",
+          "final": {
+            "id": "dbc2883b-a3ca-49a8-96f4-a0a376491727-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "0f40f8b7-e70d-4fc7-bd8d-3dbccf39167a",
+                "rows": [
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "37151816-1d18-4b2e-bdd7-c94590c83fc9"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShares",
+                "title": "Trimiteri către client",
+                "rows": [
+                  {
+                    "id": "p2",
+                    "conversationId": "37151816-1d18-4b2e-bdd7-c94590c83fc9",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "44aa2d87e3c89d93b89608c30548230dee535d8e44f8f6c1e77975099254da6c"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "37151816-1d18-4b2e-bdd7-c94590c83fc9"
+              },
+              {
+                "resource": "contacts",
+                "id": "contact"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:38.361Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0322",
+      "prompt": "Trimite primele trei potriviri clientului.",
+      "versions": {
+        "prompt": "jarvis-117",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "147",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted chat, actual portal recommendation/queue/worker on Firestore emulator; Meta simulated, no external messages.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "e3bdcf32-aa8b-4a19-8649-4ab69ce3dfd9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege conversația clientului: răspunde cu „Conversație: ID”. Nu am trimis mesaje.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "b3baeb4f-9974-4978-808f-7a4ca9f7ee2e",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "title": "Apartament Cișmigiu p1",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "fbeefb638c3b2ade81c01a113b8a9590d87340a5e8717ee5d402accbd9e779e6",
+                    "link": "/properties/p1"
+                  },
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  },
+                  {
+                    "id": "p3",
+                    "title": "Apartament Cișmigiu p3",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "f621c94c4a24376790bc4fd32a36a9a25104d14f068d3940b5dc9ba09c30a2e7",
+                    "link": "/properties/p3"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Alege conversația clientului",
+                "rows": [
+                  {
+                    "id": "alternative",
+                    "name": "",
+                    "channel": "messenger",
+                    "connectionId": "a41bec0c-b4fd-4dbf-871d-0f819d64483e"
+                  },
+                  {
+                    "id": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "name": "",
+                    "channel": "messenger",
+                    "connectionId": "a41bec0c-b4fd-4dbf-871d-0f819d64483e"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShareInput",
+                "title": "Destinatar necesar",
+                "rows": [
+                  {
+                    "mode": "three"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "alternative"
+              },
+              {
+                "resource": "conversations",
+                "id": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:39.165Z"
+          }
+        },
+        {
+          "phase": "recipient-selected",
+          "final": {
+            "id": "4d017ce1-d881-41d5-b543-c62d03b8342e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Mesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 63b49ddd21602bbaab7d6fd3ab2b5981e66cec71b72d4a1dd73f1129b26f968d.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 8d6f96e015caf0417de60672927694d8e7f71c2803b14cd8d56deef7bd51a0aa.\nMesaj pus în coada de trimitere. Livrarea este încă în așteptare. ID: 5f11e5589cd1e7b02edf8d840b3e6e963b49aab43e08494f9d4cd3c7ce71b576.\nAcțiuni executate: 3. Starea mesajelor este disponibilă în Inbox.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "b3baeb4f-9974-4978-808f-7a4ca9f7ee2e",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "title": "Apartament Cișmigiu p1",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "fbeefb638c3b2ade81c01a113b8a9590d87340a5e8717ee5d402accbd9e779e6",
+                    "link": "/properties/p1"
+                  },
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  },
+                  {
+                    "id": "p3",
+                    "title": "Apartament Cișmigiu p3",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "f621c94c4a24376790bc4fd32a36a9a25104d14f068d3940b5dc9ba09c30a2e7",
+                    "link": "/properties/p3"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShares",
+                "title": "Trimiteri către client",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "contactId": "contact",
+                    "alreadyQueued": false,
+                    "messageId": null
+                  },
+                  {
+                    "id": "p2",
+                    "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "contactId": "contact",
+                    "alreadyQueued": false,
+                    "messageId": null
+                  },
+                  {
+                    "id": "p3",
+                    "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "contactId": "contact",
+                    "alreadyQueued": false,
+                    "messageId": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "63b49ddd21602bbaab7d6fd3ab2b5981e66cec71b72d4a1dd73f1129b26f968d",
+                      "status": "queued",
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T10:38:40.246Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                      "propertyId": "p1",
+                      "portalId": "4d017ce1-d881-41d5-b543-c62d03b8342e-safe-0-portal"
+                    }
+                  },
+                  {
+                    "step": 2,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "8d6f96e015caf0417de60672927694d8e7f71c2803b14cd8d56deef7bd51a0aa",
+                      "status": "queued",
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T10:38:40.667Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                      "propertyId": "p2",
+                      "portalId": "4d017ce1-d881-41d5-b543-c62d03b8342e-safe-0-portal"
+                    }
+                  },
+                  {
+                    "step": 3,
+                    "kind": "existing_operation",
+                    "result": {
+                      "messageId": "5f11e5589cd1e7b02edf8d840b3e6e963b49aab43e08494f9d4cd3c7ce71b576",
+                      "status": "queued",
+                      "operation": "message_send",
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "verifiedAt": "2026-10-16T10:38:41.094Z",
+                      "evidenceSource": "domain_handler",
+                      "note": "Cererea a fost acceptată. Rezultatul final este încă în procesare; verifică starea înainte de a declara succes.",
+                      "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                      "propertyId": "p3",
+                      "portalId": "4d017ce1-d881-41d5-b543-c62d03b8342e-safe-0-portal"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "alternative"
+              },
+              {
+                "resource": "conversations",
+                "id": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b"
+              },
+              {
+                "resource": "contacts",
+                "id": "contact"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:41.094Z"
+          }
+        },
+        {
+          "phase": "repeat",
+          "final": {
+            "id": "bc6c2bd0-e199-4385-a975-5a187a463df3-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "b3baeb4f-9974-4978-808f-7a4ca9f7ee2e",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "title": "Apartament Cișmigiu p1",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "fbeefb638c3b2ade81c01a113b8a9590d87340a5e8717ee5d402accbd9e779e6",
+                    "link": "/properties/p1"
+                  },
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  },
+                  {
+                    "id": "p3",
+                    "title": "Apartament Cișmigiu p3",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "f621c94c4a24376790bc4fd32a36a9a25104d14f068d3940b5dc9ba09c30a2e7",
+                    "link": "/properties/p3"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShares",
+                "title": "Trimiteri către client",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "63b49ddd21602bbaab7d6fd3ab2b5981e66cec71b72d4a1dd73f1129b26f968d"
+                  },
+                  {
+                    "id": "p2",
+                    "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "8d6f96e015caf0417de60672927694d8e7f71c2803b14cd8d56deef7bd51a0aa"
+                  },
+                  {
+                    "id": "p3",
+                    "conversationId": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "5f11e5589cd1e7b02edf8d840b3e6e963b49aab43e08494f9d4cd3c7ce71b576"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "alternative"
+              },
+              {
+                "resource": "conversations",
+                "id": "4cd10ae1-586f-49be-b37d-f2ce1fa3fa6b"
+              },
+              {
+                "resource": "contacts",
+                "id": "contact"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:41.684Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0323",
+      "prompt": "Nu retrimite proprietăți deja trimise.",
+      "versions": {
+        "prompt": "jarvis-117",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "147",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Deterministic persisted chat, actual portal recommendation/queue/worker on Firestore emulator; Meta simulated, no external messages.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "562ce781-b243-47c1-8e8e-5616f7fb96ca-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "4b5f8837-ebfb-4078-98c9-09720ee852e3",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "title": "Apartament Cișmigiu p1",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "fbeefb638c3b2ade81c01a113b8a9590d87340a5e8717ee5d402accbd9e779e6",
+                    "link": "/properties/p1"
+                  },
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  },
+                  {
+                    "id": "p3",
+                    "title": "Apartament Cișmigiu p3",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "f621c94c4a24376790bc4fd32a36a9a25104d14f068d3940b5dc9ba09c30a2e7",
+                    "link": "/properties/p3"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShares",
+                "title": "Trimiteri către client",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "conversationId": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "8de98cabf2417962b5917dabf5e86beb69015dfe7421ccd7ef15c8adfea49000"
+                  },
+                  {
+                    "id": "p2",
+                    "conversationId": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "e19e1e463bf7ca0faa02415a9ac5c8e0e1c1d986e40c08164a95fc2efe06b83d"
+                  },
+                  {
+                    "id": "p3",
+                    "conversationId": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "36a3026c93f16dd2e88676a402ace700afde11a234c4d35156a532bc23693bc8"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe"
+              },
+              {
+                "resource": "contacts",
+                "id": "contact"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:44.847Z"
+          }
+        },
+        {
+          "phase": "repeat",
+          "final": {
+            "id": "8b44f4bd-f15c-4a03-8190-62b9ac8a656a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "crm",
+                "title": "Matching",
+                "resultSetId": "4b5f8837-ebfb-4078-98c9-09720ee852e3",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "title": "Apartament Cișmigiu p1",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "fbeefb638c3b2ade81c01a113b8a9590d87340a5e8717ee5d402accbd9e779e6",
+                    "link": "/properties/p1"
+                  },
+                  {
+                    "id": "p2",
+                    "title": "Apartament Cișmigiu p2",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "d579d337c5f39f81c412661a14cd45cb31de7e2a959f45a3528b8e146fd13296",
+                    "link": "/properties/p2"
+                  },
+                  {
+                    "id": "p3",
+                    "title": "Apartament Cișmigiu p3",
+                    "price": 120000,
+                    "imageUrl": null,
+                    "matchScore": 54,
+                    "reasoning": "in buget",
+                    "sourceContactRevision": "9fab30107b8a5f3b9c93f461d089e4cbbdf878164f6f3d1d22b39f0ba40a1000",
+                    "matchingRevision": "f621c94c4a24376790bc4fd32a36a9a25104d14f068d3940b5dc9ba09c30a2e7",
+                    "link": "/properties/p3"
+                  }
+                ],
+                "outputType": "PROPERTY_MATCH_LIST"
+              },
+              {
+                "type": "data",
+                "source": "conversations",
+                "title": "Destinatar verificat",
+                "rows": [
+                  {
+                    "id": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "propertyShares",
+                "title": "Trimiteri către client",
+                "rows": [
+                  {
+                    "id": "p1",
+                    "conversationId": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "8de98cabf2417962b5917dabf5e86beb69015dfe7421ccd7ef15c8adfea49000"
+                  },
+                  {
+                    "id": "p2",
+                    "conversationId": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "e19e1e463bf7ca0faa02415a9ac5c8e0e1c1d986e40c08164a95fc2efe06b83d"
+                  },
+                  {
+                    "id": "p3",
+                    "conversationId": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe",
+                    "contactId": "contact",
+                    "alreadyQueued": true,
+                    "messageId": "36a3026c93f16dd2e88676a402ace700afde11a234c4d35156a532bc23693bc8"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [
+              {
+                "resource": "conversations",
+                "id": "8bf09b9c-2150-4ad2-b893-b9a675dc44fe"
+              },
+              {
+                "resource": "contacts",
+                "id": "contact"
+              }
+            ],
+            "createdAt": "2026-10-16T10:38:45.515Z"
+          }
+        }
+      ]
+    }
+  ],
+  "executionMode": "deterministic",
+  "scope": "Original selected-property, first-three matching and no-resend commands with persisted chat, current saved matching results, real portal recommendations/queue/worker and simulated Meta. Recipient ambiguity resolved through follow-up. No external messages or model calls. Does not certify historical sends without matching metadata, arbitrary free-form selection or outside-window template selection."
+}

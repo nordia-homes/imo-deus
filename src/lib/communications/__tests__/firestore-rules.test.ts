@@ -42,5 +42,7 @@ describe.skipIf(!enabled)('communications Firestore rules', () => {
     await assertFails(getDoc(doc(foreign,'agencies','a','conversations','c','messages','m')));
     await assertFails(setDoc(doc(own,'agencies','a','communicationBudgets','2026-09-EUR'), {limitMicros:999999}));
     await assertFails(getDoc(doc(own,'communicationSecrets','any')));
+    await assertFails(setDoc(doc(own,'agencies','a','communicationPropertyShares','share'), {messageId:'fake'}));
+    await assertFails(getDoc(doc(own,'agencies','a','communicationPropertyShares','share')));
   });
 });

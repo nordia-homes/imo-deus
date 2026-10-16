@@ -116,6 +116,27 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(`Pași pregătiți pentru ${row.title}:\n1. Confirmă condițiile discutate cu proprietarul.\n2. Verifică datele proprietății și documentele necesare.\n3. Pregătește contractul folosind condițiile convenite.\n4. Solicită semnarea și verifică documentul semnat înainte de a marca acel contract drept semnat.\n${disclaimer}\nAceasta este o listă de pași; nu am creat taskuri, contracte sau trimis mesaje.`);
     } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
   }
+  const { propertyShareRequest, propertyShareExecutionPrompt, preparePropertyShares } = await import('./property-share');
+  if (propertyShareRequest(propertyShareExecutionPrompt(prompt, history))) {
+    try {
+      const prepared = await preparePropertyShares(ctx, prompt, history);
+      if (!prepared) throw new Error('Selecție indisponibilă.');
+      if (prepared.needsRecipient) {
+        cards.push({ ...prepared.list }, { type: 'data', source: 'conversations', title: 'Alege conversația clientului', rows: prepared.conversations, complete: true }, { type: 'data', source: 'propertyShareInput', title: 'Destinatar necesar', rows: [{ mode: prepared.mode }], complete: true });
+        for (const row of prepared.conversations) accessRefs.push({ resource: 'conversations', id: row.id });
+        return finish('Alege conversația clientului: răspunde cu „Conversație: ID”. Nu am trimis mesaje.', 'clarification');
+      }
+      actions.push(...prepared.actions);
+      cards.push({ ...prepared.list });
+      const recipients = [...new Set(prepared.rows.map(row => row.conversationId))];
+      if (recipients.length === 1) cards.push({ type: 'data', source: 'conversations', title: 'Destinatar verificat', rows: [{ id: recipients[0] }], complete: true });
+      cards.push({ type: 'data', source: 'propertyShares', title: 'Trimiteri către client', rows: prepared.rows, complete: true });
+      for (const row of prepared.rows) {
+        accessRefs.push({ resource: 'conversations', id: row.conversationId }, { resource: 'contacts', id: row.contactId });
+      }
+      return finish(prepared.mode === 'duplicates' ? 'Proprietățile deja puse în coadă pentru acest client sunt excluse din retrimitere. Nu am trimis mesaje.' : prepared.actions.length ? 'Trimiterea proprietăților selectate este pregătită.' : 'Proprietățile selectate au fost deja puse în coadă pentru acest client. Nu am creat mesaje duplicate.');
+    } catch { return finish('Selectează o singură listă de matching pentru client și conversația lui. Pentru o singură proprietate, selectează acea proprietate din listă. Datele trebuie să fie actuale; nu am înlocuit proprietățile sau destinatarul.', 'clarification'); }
+  }
   const { communicationRecoveryRequest, syncDiagnosis, failedCommunicationsToday } = await import('./communication-recovery');
   const recovery = communicationRecoveryRequest(prompt);
   if (recovery) {
