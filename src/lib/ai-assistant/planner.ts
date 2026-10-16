@@ -154,6 +154,16 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { socialPostSearchRequest, searchSocialPosts } = await import('./social-post-search');
+  const socialPostQuery = socialPostSearchRequest(prompt);
+  if (socialPostQuery) {
+    if (ctx.role !== 'admin') return finish('Istoricul postărilor sociale este disponibil administratorului în fluxul existent.', 'unavailable');
+    try {
+      const report = await searchSocialPosts(ctx, socialPostQuery);
+      cards.push({ type: 'data', source: 'socialPosts', title: 'Postări pentru ' + socialPostQuery, rows: report.rows, complete: true });
+      return finish(report.text);
+    } catch { return finish('Nu am putut căuta postările sociale sau verifica accesul actual.', 'unavailable'); }
+  }
   const { socialDashboardRequest, readSocialDashboard } = await import('./social-dashboard');
   const socialDashboard = socialDashboardRequest(prompt);
   if (socialDashboard) {

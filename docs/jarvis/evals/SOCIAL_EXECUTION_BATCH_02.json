@@ -1,0 +1,60 @@
+{
+  "scope": "Full persisted social-post history searched using saved titles and current CRM title/location/address. Local Firestore and application chat; no live Meta publication check.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0388",
+      "prompt": "Găsește postările proprietății din Cișmigiu.",
+      "versions": {
+        "prompt": "jarvis-131",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "162",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and full local Firestore social history, with current CRM lookup. No live Meta verification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "991f7f88-9ab8-4a15-b458-7c7ae30cea56-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am găsit 2 postări pentru „cismigiu” în istoricul social al agenției. Căutarea include titlul salvat al postării și titlul, zona și adresa actuală din CRM. Stările sunt cele salvate în aplicație; nu am verificat live publicarea în Meta.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialPosts",
+                "title": "Postări pentru cismigiu",
+                "rows": [
+                  {
+                    "id": "post",
+                    "propertyId": "property",
+                    "propertyTitle": "Apartament renovat",
+                    "status": "needs_review",
+                    "description": "Postare post: necesită verificare. Potrivire în datele CRM actuale.",
+                    "createdAt": "2020-01-01T00:00:00Z"
+                  },
+                  {
+                    "id": "archived-title",
+                    "propertyId": "removed",
+                    "propertyTitle": "CISMIGIU",
+                    "status": "cancelled",
+                    "description": "Postare archived-title: anulată. Potrivire în titlul salvat la creare.",
+                    "createdAt": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T16:07:04.964Z"
+          }
+        }
+      ]
+    }
+  ]
+}

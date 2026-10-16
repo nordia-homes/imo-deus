@@ -3577,7 +3577,11 @@
           "sourceNumber": 388,
           "request": "Găsește postările proprietății din Cișmigiu.",
           "requestSha256": "4b70b8c739140ce22f47024003dc0fc8e94029204b3b024d79a74e9385d8c9d3",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0389",
