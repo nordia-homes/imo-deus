@@ -1,3 +1,4 @@
+import { facebookImmediateAction, facebookImmediateRequest } from './facebook-immediate';
 import { facebookScheduleAction, facebookScheduleRequest } from './facebook-schedule';
 import { facebookControlAction, requestedFacebookControl } from './facebook-control';
 import { outboundRetryAction, outboundRetryRequest } from './outbound-retry';
@@ -46,7 +47,7 @@ const CRM_VERBS: Record<string, string> = {
   preferences_link_action: 'creeaza|genereaza|regenereaza|dezactiveaza|create',
 };
 export function requestAuthorizedCrmAction(action: AssistantAction) {
-  if (facebookScheduleAction(action) || facebookControlAction(action) || outboundRetryAction(action) || reconciliationAction(action) || propertyShareAction(action) || conversationSyncAction(action) || draftSendAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action)) return true;
+  if (facebookImmediateAction(action) || facebookScheduleAction(action) || facebookControlAction(action) || outboundRetryAction(action) || reconciliationAction(action) || propertyShareAction(action) || conversationSyncAction(action) || draftSendAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action)) return true;
   if (action.kind === 'existing_operation' && action.operation === 'message_send' && typeof action.body.prospectingConsentReceiptId === 'string' && Boolean(action.body.template) && Boolean(action.body.sendApproval)) return true;
   const contextualTask = action.kind === 'create_task' && (Boolean(action.ownerListingId) || Boolean(action.viewingId) || action.participantSource === 'property_owner' && Boolean(action.propertyId) && !action.contactId || action.participantSource === 'contact' && Boolean(action.contactId));
   const taskPropertyLink = action.kind === 'update_task' && Boolean(action.propertyId) && Object.keys(action).every(key => ['kind', 'taskId', 'expectedUpdatedAt', 'propertyId'].includes(key));
@@ -56,6 +57,7 @@ export function safeAutonomousAction(action: AssistantAction) {
   return SAFE_KINDS.has(action.kind) || action.kind === 'existing_operation' && action.operation === 'owner_prospect' && action.body.action === 'add';
 }
 export function explicitlyRequestedSafeAction(action: AssistantAction, prompt: string) {
+  if (facebookImmediateAction(action)) return facebookImmediateRequest(prompt);
   if (facebookScheduleAction(action)) return Boolean(facebookScheduleRequest(prompt));
   if (facebookControlAction(action)) return requestedFacebookControl(action, prompt);
   if (outboundRetryAction(action)) return outboundRetryRequest(prompt);

@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot creare imediată Facebook și continuarea selecției — 16 octombrie 2026
+
+Comenzile originale **0358 și 0362** pornesc crearea unui job automat pentru proprietatea deschisă. Dacă destinațiile nu sunt selectate, Jarvis prezintă grupurile eligibile și continuă la „Grupuri Facebook: ID1, ID2”. Comanda inițială autorizează crearea; nu este cerută o aprobare suplimentară. Nu sunt selectate tacit toate grupurile. Selecția este legată de proprietatea inițială și de ultimul mesaj de clarificare; grupurile sunt recitite și validate înainte de execuție.
+
+Jobul este creat prin executor și handlerul existent, cu scheduledAt null. Descrierea și pozele rămân cele din CRM, fără draft generat sau modificare a proprietății. Runnerul manual nu este extins. Replay-ul nu dublează expedierea; schimbarea proprietății, grupurile neofertate sau eliminate și contul revocat nu creează joburi. Confirmarea separă jobul creat de publicarea efectivă; nu mai afirmă lipsa publicărilor externe după pornirea automatizării.
+
+Validare: 136 teste unitare și de regresie, 28 teste de integrare, ESLint, paritate și build final complet trecute. Dovadă: [Facebook lot 07](evals/FACEBOOK_EXECUTION_BATCH_07.json). **0362** are dovadă locală de creare a jobului, iar **0358 rămâne incomplet** pentru publicarea efectivă, deoarece transportul cloud este simulat. Total: **192/1000 dovezi locale** (133 cu model real, 59 deterministe), fără certificare integrală în producție. Lot nepublicat.
+
 ## Lot rapoarte Facebook zilnice și intervenții — 16 octombrie 2026
 
 Scenariile **0399 și 0400** citesc prin chat joburile proprii ale automatizării Facebook. Rezumatul zilei folosește datele de execuție (pornire, terminare, trimitere sau eroare), convertite în Europe/Bucharest; o simplă editare sau programare nu este prezentată ca publicare. Trimiterile cu aprobare în așteptare sunt numărate ca trimiteri, fără confirmare de publicare. Cardurile prezintă starea curentă; lipsa datelor de execuție nu permite atribuirea unei zile și nu se pretinde existența unui jurnal istoric complet.

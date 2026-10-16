@@ -3335,7 +3335,11 @@
           "sourceNumber": 362,
           "request": "Creează jobul de publicare Facebook.",
           "requestSha256": "8fa41188459cb987317f4b3410677fff323bdea3b673b916e3a5e1826921f102",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/FACEBOOK_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0363",

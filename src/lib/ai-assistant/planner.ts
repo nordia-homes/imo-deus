@@ -154,6 +154,16 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { prepareFacebookImmediate } = await import('./facebook-immediate');
+  try {
+    const immediate = await prepareFacebookImmediate(ctx, prompt, history);
+    if (immediate) {
+      actions.push(...immediate.actions);
+      cards.push({ type: 'data', source: 'facebookGroups', title: 'Grupuri eligibile', rows: immediate.rows, complete: true });
+      if (immediate.pending) cards.push({ type: 'data', source: 'facebookImmediateRequest', title: 'Publicare în așteptarea selecției', rows: [immediate.pending], complete: true });
+      return finish(immediate.text, immediate.actions.length ? undefined : 'clarification');
+    }
+  } catch { return finish('Nu am putut verifica proprietatea sau selecția pentru publicare. Nu am creat jobul.', 'unavailable'); }
   const { prepareFacebookSchedule } = await import('./facebook-schedule');
   try {
     const schedule = await prepareFacebookSchedule(ctx, prompt, history);

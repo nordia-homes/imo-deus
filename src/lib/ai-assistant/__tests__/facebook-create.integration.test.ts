@@ -40,6 +40,43 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
+  for (const scenarioId of ['master-0358', 'master-0362']) it('continues original immediate creation after group selection: ' + scenarioId, async () => {
+    const f = await fixture('cloud'), sessionId = randomUUID(), prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    await f.property.update({ description: 'Descriere CRM exactă\nCu paragrafe.', images: ['https://example.com/photo.jpg'] });
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt, currentRecord: { resource: 'properties', id: 'property' } });
+    const groups = first.message.cards?.find(card => card.source === 'facebookGroups')?.rows || [];
+    expect(groups).toHaveLength(1); expect((await f.jobs.get()).empty).toBe(true);
+    const input = { sessionId, requestId: randomUUID(), prompt: 'Grupuri Facebook: ' + groups[0].id, currentRecord: null };
+    const final = await chatTurn(f.ctx, input);
+    expect(final.message.planId).toBeUndefined();
+    expect(final.message.text).toContain('a fost creat');
+    expect(final.message.text).not.toContain('Nu au fost trimise mesaje sau publicate anunțuri');
+    const jobs = await f.jobs.get(); expect(jobs.size).toBe(1);
+    expect(jobs.docs[0].data()).toMatchObject({ propertyId: 'property', scheduledAt: null, status: 'queued' });
+    const payload = JSON.parse(mocks.runner.mock.calls[0][1].body);
+    expect(payload.propertyDescription).toBe('Descriere CRM exactă\nCu paragrafe.'); expect(payload.propertyImages).toEqual(['https://example.com/photo.jpg']);
+    expect(payload.groups.map((g: any) => g.url)).toEqual(f.body.groupUrls);
+    await chatTurn(f.ctx, input); expect(mocks.runner).toHaveBeenCalledTimes(1); expect(mocks.fetch).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-facebook-create', { recursive: true });
+    await writeFile('.tmp/jarvis-facebook-create/' + scenarioId + '-cloud.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Chat, explicit group selection, autonomous executor and real POST on local Firestore; cloud transport simulated. Job creation only, not Facebook publication certification.', runs: [{ phase: 'original', final: first.message }, { phase: 'selection', final: final.message }] }, null, 2));
+  });
+  it('revalidates selected groups instead of publishing to removed destinations', async () => {
+    const f = await fixture('cloud'), sessionId = randomUUID();
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Creează jobul de publicare Facebook.', currentRecord: { resource: 'properties', id: 'property' } });
+    const id = first.message.cards!.find(card => card.source === 'facebookGroups')!.rows[0].id;
+    await f.agency.update({ facebookGroups: [{ name: 'Nou', url: 'https://www.facebook.com/groups/new', purpose: 'sale' }] });
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Grupuri Facebook: ' + id, currentRecord: null });
+    expect((await f.jobs.get()).empty).toBe(true); expect(mocks.runner).not.toHaveBeenCalled();
+  });
+  it.each(['foreign-group', 'revoked-account', 'different-property'])('does not execute invalid continuation: %s', async variant => {
+    const f = await fixture('cloud'), sessionId = randomUUID();
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Creează jobul de publicare Facebook.', currentRecord: { resource: 'properties', id: 'property' } });
+    const id = first.message.cards!.find(card => card.source === 'facebookGroups')!.rows[0].id;
+    if (variant === 'revoked-account') await f.connection.update({ status: 'needs_reauthentication' });
+    if (variant === 'different-property') await f.agency.collection('properties').doc('other').set({ ...(await f.property.get()).data(), title: 'Altă proprietate' });
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Grupuri Facebook: ' + (variant === 'foreign-group' ? 'abcdef' : id), currentRecord: variant === 'different-property' ? { resource: 'properties', id: 'other' } : null });
+    expect((await f.jobs.get()).empty).toBe(true); expect(mocks.runner).not.toHaveBeenCalled();
+  });
   for (const mode of ['local', 'cloud']) it('publishes CRM description and photos, never the conversation draft: ' + mode, async () => {
     const f = await fixture(mode), sessionId = randomUUID();
     const description = 'Descrierea agentului: Cișmigiu.\n\nText păstrat EXACT — fără reformulare.';

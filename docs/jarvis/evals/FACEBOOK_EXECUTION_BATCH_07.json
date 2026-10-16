@@ -1,0 +1,214 @@
+{
+  "scope": "Immediate automatic job creation after explicit group selection, through real chat/executor/POST and local Firestore. Cloud transport simulated. Scenario 0358 remains incomplete because actual Facebook publication is not verified.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0358",
+      "prompt": "Publică proprietatea acum în grupurile selectate.",
+      "versions": {
+        "prompt": "jarvis-126",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "157",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": false,
+      "environment": "Chat, explicit group selection, autonomous executor and real POST on local Firestore; cloud transport simulated. Job creation only, not Facebook publication certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "66036402-70a8-4677-ba96-b9069ab9b89e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege grupurile pentru această proprietate: răspunde „Grupuri Facebook: ID1, ID2” cu ID-urile din listă. Voi crea jobul folosind descrierea și pozele din CRM.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Grupuri eligibile",
+                "rows": [
+                  {
+                    "id": "a1827c21ce8a0a5e08b9ae11",
+                    "name": "Vânzări",
+                    "url": "https://www.facebook.com/groups/sale",
+                    "purpose": "sale",
+                    "source": "agency"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "facebookImmediateRequest",
+                "title": "Publicare în așteptarea selecției",
+                "rows": [
+                  {
+                    "id": "pending",
+                    "prompt": "Publică proprietatea acum în grupurile selectate.",
+                    "propertyId": "property",
+                    "groupIds": [
+                      "a1827c21ce8a0a5e08b9ae11"
+                    ]
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:40:29.189Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "8a4e433a-57df-43a9-a3fa-d5e3de3689cd-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook f4d46a60110f7bc0e1b694d2d570634c95b11e4ed0cebae9540f2bc3884048c0 a fost creat pentru publicare fără programare amânată. Automatizarea folosește descrierea și pozele din CRM. Publicarea efectivă nu este încă confirmată.\nAcțiuni executate: 1. Starea publicării este disponibilă în jobul Facebook.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Grupuri eligibile",
+                "rows": [],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_create",
+                      "jobId": "f4d46a60110f7bc0e1b694d2d570634c95b11e4ed0cebae9540f2bc3884048c0",
+                      "scheduledAt": null,
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "publicationConfirmed": false,
+                      "schedulingConfirmed": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:40:29.753Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0362",
+      "prompt": "Creează jobul de publicare Facebook.",
+      "versions": {
+        "prompt": "jarvis-126",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "157",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Chat, explicit group selection, autonomous executor and real POST on local Firestore; cloud transport simulated. Job creation only, not Facebook publication certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "f90cce87-7768-44f5-bde6-14afa9ece61b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege grupurile pentru această proprietate: răspunde „Grupuri Facebook: ID1, ID2” cu ID-urile din listă. Voi crea jobul folosind descrierea și pozele din CRM.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Grupuri eligibile",
+                "rows": [
+                  {
+                    "id": "a1827c21ce8a0a5e08b9ae11",
+                    "name": "Vânzări",
+                    "url": "https://www.facebook.com/groups/sale",
+                    "purpose": "sale",
+                    "source": "agency"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "source": "facebookImmediateRequest",
+                "title": "Publicare în așteptarea selecției",
+                "rows": [
+                  {
+                    "id": "pending",
+                    "prompt": "Creează jobul de publicare Facebook.",
+                    "propertyId": "property",
+                    "groupIds": [
+                      "a1827c21ce8a0a5e08b9ae11"
+                    ]
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:40:30.067Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "9a33b5bb-65f3-4449-98a9-924fd2d2f907-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Jobul Facebook 80ec2ec0624006e2f75156962c0a631d7e4ea0fc706d040f472895d5a8701113 a fost creat pentru publicare fără programare amânată. Automatizarea folosește descrierea și pozele din CRM. Publicarea efectivă nu este încă confirmată.\nAcțiuni executate: 1. Starea publicării este disponibilă în jobul Facebook.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookGroups",
+                "title": "Grupuri eligibile",
+                "rows": [],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              },
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "facebook_job_create",
+                      "jobId": "80ec2ec0624006e2f75156962c0a631d7e4ea0fc706d040f472895d5a8701113",
+                      "scheduledAt": null,
+                      "businessStatus": "queued",
+                      "executionState": "queued",
+                      "publicationConfirmed": false,
+                      "schedulingConfirmed": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-16T14:40:30.498Z"
+          }
+        }
+      ]
+    }
+  ]
+}
