@@ -248,9 +248,32 @@ export async function commentInteraction(
   if (!destination?.externalId || destination.status !== 'published') throw new CommunicationError('Postarea nu este publicată pe contul ales.');
   const { connection, token } = await connectionToken(db, actor, connectionId, 'comments');
   const instagram = connection.channel === 'instagram';
-  const parent = await socialRead<{ data?: Array<{ id: string }> }>(db, actor, connection, token, `/${destination.externalId}/comments?fields=id&limit=100`);
-  if (!parent.data?.some(comment => comment.id === commentId)) throw new CommunicationError('Comentariul nu aparține acestei postări sau nu este disponibil.', 404);
-  const activeToken = (await connectionToken(db, actor, connectionId, 'comments')).token;
+  // Follow opaque cursors on the same Graph edge, never provider-supplied URLs.
+  const currentAccess = async () => {
+    const current = (await snap.ref.get()).data();
+    const entry = current?.destinations?.[connectionId];
+    if (!current || current.deletedAt || entry?.status !== 'published' || entry.externalId !== destination.externalId) throw new CommunicationError('Starea postării s-a schimbat. Actualizează istoricul.', 409);
+    const active = await connectionToken(db, actor, connectionId, 'comments');
+    if (active.connection.channel !== connection.channel || active.connection.externalId !== connection.externalId) throw new CommunicationError('Contul social s-a schimbat. Actualizează istoricul.', 409);
+    return active;
+  };
+  let after: string | undefined;
+  let found = false;
+  const seen = new Set<string>();
+  for (let page = 0; page < 100; page++) {
+    const active = await currentAccess();
+    const cursor = after === undefined ? '' : '&after=' + encodeURIComponent(after);
+    const parent = await socialRead<{ data?: Array<{ id: string }>; paging?: { next?: unknown; cursors?: { after?: unknown } } }>(db, actor, active.connection, active.token, `/${destination.externalId}/comments?fields=id&limit=100${cursor}`);
+    if (!Array.isArray(parent?.data) || parent.data.some(comment => !comment || typeof comment.id !== 'string')) throw new CommunicationError('Meta nu a furnizat o pagină validă de comentarii.', 502);
+    if (parent.data.some(comment => comment.id === commentId)) { found = true; break; }
+    if (!parent.paging?.next) break;
+    const next = parent.paging.cursors?.after;
+    if (typeof next !== 'string' || !next.length || next.length > 2048 || seen.has(next)) throw new CommunicationError('Verificarea comentariului este incompletă: cursor Meta lipsă, invalid sau repetat.', 502);
+    seen.add(next); after = next;
+    if (page === 99) throw new CommunicationError('Verificarea comentariului este incompletă după 100 de pagini.', 409);
+  }
+  if (!found) throw new CommunicationError('Comentariul nu aparține acestei postări sau nu este disponibil.', 404);
+  const activeToken = (await currentAccess()).token;
   if (action === 'like') {
     if (instagram) throw new CommunicationError('Aprecierea comentariilor Instagram nu este disponibilă prin această integrare.', 400);
     return socialGraph(`/${commentId}/likes`, activeToken, {});

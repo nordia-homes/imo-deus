@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Verificarea comentariilor din paginile următoare — 17 octombrie 2026
+
+Serviciul comun de răspuns/apreciere caută acum comentariul și dincolo de primele 100 de rezultate, prin paginarea aceleiași muchii Graph. Folosește numai cursorul opac codificat, fără a urma URL-ul extern primit de la furnizor. Verifică din nou starea postării, ID-ul destinației, conexiunea și identitatea contului înaintea fiecărei pagini și imediat înaintea acțiunii. O schimbare observată oprește trimiterea.
+
+Cursorul lipsă/repetat/invalid, paginile invalide și erorile furnizorului nu devin confirmări de succes. Lista epuizată fără potrivire nu produce o trimitere. Există un plafon de 100 de pagini per verificare; atingerea lui este o verificare incompletă, nu dovadă că acel comentariu nu există. Nu există încă reluare persistentă a acestei verificări de apartenență. Registrul executorului păstrează protecția împotriva repetării efectelor.
+
+Validare: 123 teste unitare/regresie și 45 teste de integrare, inclusiv răspuns pe pagina următoare pentru Facebook și Instagram, cursor cu caractere speciale, replay, cont schimbat/deconectat, destinație schimbată inclusiv după găsirea comentariului și lipsa potrivirii. ESLint, paritate, inventar și build complet trecute. Extensie a scenariilor existente: **205/1000 dovezi locale**, fără creșterea numărului contabilizat. Meta simulat; nepublicat în producție.
+
 ## Lot răspunsuri și aprecieri pentru comentarii — 17 octombrie 2026
 
 Scenariile **0380** și **0381** folosesc comentariile citite în conversație și continuă la selecția comentariului. Pentru răspuns se cere textul exact atunci când acesta lipsește; după furnizarea lui, executorul apelează ruta și serviciul social existente fără o aprobare suplimentară. Facebook permite răspuns/apreciere; Instagram permite răspuns, iar aprecierea este raportată ca nesuportată de integrarea existentă. Permisiunea administrativă a API-ului social este păstrată.

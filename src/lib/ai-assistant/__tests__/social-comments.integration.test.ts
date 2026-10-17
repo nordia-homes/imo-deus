@@ -291,4 +291,47 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Comentariu social: 9' });
     expect(result.message.text).not.toContain('Meta a confirmat'); expect(posts).toBe(0);
   });
+  for (const channel of ['messenger', 'instagram']) it('executes a reply to a comment beyond the first membership page on ' + channel, async () => {
+    const f = await fixture(channel); let pages = 0, posts = 0;
+    const cursor = 'opaque+cursor&other=value';
+    mocks.fetch.mockImplementation(async (url: string, options: any) => {
+      const parsed = new URL(url);
+      expect(parsed.hostname).toBe('graph.facebook.com');
+      if (options.method === 'POST') { posts++; expect(JSON.parse(options.body)).toEqual({ message: 'Da.' }); return new Response(JSON.stringify({ id: 'reply_1' }), { status: 200 }); }
+      if (parsed.searchParams.get('fields') === 'id') {
+        pages++;
+        if (pages === 1) return new Response(JSON.stringify({ data: [{ id: 'other' }], paging: { next: 'https://untrusted.invalid/', cursors: { after: cursor } } }), { status: 200 });
+        expect(parsed.searchParams.get('after')).toBe(cursor); expect(parsed.searchParams.has('other')).toBe(false);
+      }
+      return new Response(JSON.stringify({ data: [{ id: '9', message: 'Salut', text: 'Salut' }] }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Răspunde comentariului selectat.' });
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Răspuns social: 9 | Da.' };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).toContain('Meta a confirmat'); expect(pages).toBe(2); expect(posts).toBe(1);
+    await chatTurn(f.ctx, input); expect(posts).toBe(1); expect(pages).toBe(2);
+  });
+  for (const reason of ['repeated', 'missing', 'invalid-page', 'provider-error', 'changed-post', 'disconnected', 'changed-after-match', 'changed-account', 'exhausted']) it('does not write when membership pagination encounters ' + reason, async () => {
+    const f = await fixture(); let pages = 0, posts = 0;
+    mocks.fetch.mockImplementation(async (url: string, options: any) => {
+      if (options.method === 'POST') posts++;
+      if (new URL(url).searchParams.get('fields') === 'id') {
+        pages++;
+        if (reason === 'invalid-page') return new Response('{}', { status: 200 });
+        if (reason === 'provider-error' && pages === 2) return new Response('{}', { status: 503 });
+        if (reason === 'changed-post' || reason === 'changed-after-match') await f.post.update({ ['destinations.' + f.connectionId + '.externalId']: '123_999' });
+        if (reason === 'disconnected') await f.connection.update({ status: 'disconnected' });
+        if (reason === 'changed-account') await f.connection.update({ externalId: '999' });
+        if (reason === 'exhausted') return new Response(JSON.stringify({ data: [] }), { status: 200 });
+        if (reason === 'changed-after-match') return new Response(JSON.stringify({ data: [{ id: '9' }] }), { status: 200 });
+        return new Response(JSON.stringify({ data: [], paging: { next: 'https://untrusted.invalid/', ...(reason === 'missing' ? {} : { cursors: { after: 'same' } }) } }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ data: [{ id: '9', message: 'Salut' }] }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Dă like comentariului dacă funcția este suportată.' });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Comentariu social: 9' });
+    expect(result.message.text).not.toContain('Meta a confirmat'); expect(posts).toBe(0); expect(pages).toBeLessThanOrEqual(2);
+  });
 });
