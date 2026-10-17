@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Publicarea ciornei sociale prin workerul existent — 17 octombrie 2026
+
+Scenariul **0378** oferă ciornele CRM disponibile și folosește alegerea explicită „Publică postarea socială: ID” drept selecție și confirmare, conform cererii originale „după approval”. Executorul verifică revizia, profilul administrativ, proprietatea și contul, salvează atomic jobul și invocă workerul doar pentru postarea selectată. Nu consumă alte joburi ajunse la termen. Repetarea cererii nu trimite din nou postarea.
+
+Pentru Facebook, confirmarea din conversație folosește identificatorul Meta valid, recitit din postarea publicată, împreună cu jobul completat. Descrierea CRM și fotografiile sunt păstrate. Pentru Instagram, containerul creat rămâne în procesare; workerul continuă prin mecanismul existent și marchează publicarea doar după răspunsul media_publish valid. Nu se pretinde că răspunsul inițial confirmă și finalizarea asincronă Instagram.
+
+Workerul validează identificatorii fotografiilor, containerelor și publicărilor înainte de salvarea succesului. Răspunsurile incomplete sau incerte nu generează o nouă trimitere automată. La preluarea tranzacțională se verifică din nou ora jobului, prevenind execuția prematură dacă acesta a fost mutat între citire și preluare. Nu este introdus un runner desktop manual.
+
+Validare: 139 teste unitare și 82 teste de integrare trecute; ESLint, paritate și build complet verificate. Dovadă: [Social lot 11](evals/SOCIAL_EXECUTION_BATCH_11.json). **211/1000 dovezi locale** (133 cu model real, 78 deterministe). Verificări cu Firestore local și Meta simulat; fără publicări externe reale. Lot nepublicat în producție; nu reprezintă certificarea integrală a corpusului.
+
 ## Programarea ciornelor sociale în ora Bucureștiului — 17 octombrie 2026
 
 Scenariile **0377 și 0394** programează ciorna CRM selectată, după precizarea datei și orei. Cererea autorizează programarea fără o aprobare suplimentară. Ora este interpretată exclusiv în București; datele invalide, momentele trecute și orele inexistente/ambigue la schimbarea orei cer clarificare. Se păstrează accesul administrativ al modulului social.

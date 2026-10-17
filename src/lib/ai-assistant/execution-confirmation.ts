@@ -4,6 +4,10 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'social_publish' && receipt.immediate === true) {
+      if (receipt.publicationConfirmed === true && receipt.executionState === 'succeeded') return 'Meta a confirmat publicarea postării sociale ' + receipt.postId + '. ID publicare: ' + (Array.isArray(receipt.externalIds) ? receipt.externalIds.join(', ') : '') + '.';
+      return receipt.executionState === 'processing' ? 'Postarea socială ' + receipt.postId + ' este în procesare; workerul continuă automat. Publicarea efectivă nu este încă confirmată.' : 'Publicarea postării sociale ' + receipt.postId + ' nu este confirmată. Rezultatul necesită verificare înainte de o nouă trimitere.';
+    }
     if (receipt?.operation === 'social_publish' && receipt.schedulingConfirmed === true && typeof receipt.scheduledAt === 'string') {
       const when = bucharestInputFromIso(receipt.scheduledAt);
       return 'Postarea socială ' + receipt.postId + ' este programată pentru ' + when.date + ' la ' + when.time + ', ora Bucureștiului. Aceeași oră este salvată în postare și în coada automată. Publicarea efectivă nu este încă confirmată.';

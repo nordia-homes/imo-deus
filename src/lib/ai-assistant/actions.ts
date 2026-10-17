@@ -92,14 +92,15 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const { socialCommentAction, validateSocialCommentAction, socialCommentReceipt } = await import('./social-comment-actions');
       if (socialCommentAction(action) && !await validateSocialCommentAction(ctx, action)) throw new Error('Funcție nesuportată pentru acest canal');
       const { socialDraftAction } = await import('./social-draft');
+      const { socialPublishAction } = await import('./social-publish');
       const { socialScheduleAction } = await import('./social-schedule');
       let result: Record<string, any>;
       if (socialDraftAction(action)) {
         const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
         result = await createPropertySocialDraft(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, { requestId, propertyId: body.propertyId, connectionId: body.connectionId });
-      } else if (socialScheduleAction(action)) {
+      } else if (socialScheduleAction(action) || socialPublishAction(action)) {
         const { schedulePropertySocialDraft } = await import('@/lib/communications/social-property-schedule');
-        result = await schedulePropertySocialDraft(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, { postId: action.params.postId, scheduledAt: body.scheduledAt, expectedRevision: body.expectedRevision });
+        result = await schedulePropertySocialDraft(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, { postId: action.params.postId, ...(socialPublishAction(action) ? { immediate: true } : { scheduledAt: body.scheduledAt }), expectedRevision: body.expectedRevision });
       } else result = await invokeOperation(ctx, { ...action, body });
       if (socialCommentAction(action)) result = socialCommentReceipt(action, result);
       if (action.operation === 'facebook_job_create') {

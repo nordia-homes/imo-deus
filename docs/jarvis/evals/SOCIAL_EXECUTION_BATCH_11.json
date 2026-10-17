@@ -1,0 +1,86 @@
+{
+  "scope": "Actual persisted chat, explicit draft selection/confirmation, executor ledger, atomic queue and targeted publication worker. Meta responses simulated. External publication ID and completed job verified in local Firestore; no real publication or production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0378",
+      "prompt": "Publică postarea după approval.",
+      "versions": {
+        "prompt": "jarvis-144",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "175",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, ledger, atomic queue and targeted worker on local Firestore; Meta photo/feed responses simulated. Persisted external publication ID verified, no real publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "05f75142-dc5e-47a6-bc63-19f024a44cf5-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează și confirmă ciorna de publicat: „Publică postarea socială: ID”. Public descrierea și fotografiile salvate din CRM, pe contul ciornei.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialPublishRequest",
+                "title": "Ciorna de publicat",
+                "rows": [
+                  {
+                    "id": "cb4465bc91c9cdd684c67fec94b3b5c9407a51b98a463f9d1f1a4825c2ca820c",
+                    "propertyTitle": "Cișmigiu",
+                    "prompt": "Publică postarea după approval.",
+                    "revision": "605c0dc186ee42fa75a016f6c9057d34ba7a70fdbba2d1e8f2737618c0c221a7"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:51:37.476Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "0cc9beb9-4c13-44ad-a990-3d019155bee2-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat publicarea postării sociale cb4465bc91c9cdd684c67fec94b3b5c9407a51b98a463f9d1f1a4825c2ca820c. ID publicare: 123_789.\nAcțiuni executate: 1. Starea acțiunii sociale este descrisă mai sus.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_publish",
+                      "postId": "cb4465bc91c9cdd684c67fec94b3b5c9407a51b98a463f9d1f1a4825c2ca820c",
+                      "immediate": true,
+                      "executionState": "succeeded",
+                      "publicationConfirmed": true,
+                      "externalIds": [
+                        "123_789"
+                      ],
+                      "evidenceSource": "persisted_worker_result"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:51:38.04Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -422,8 +422,8 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     await expect(createPropertySocialDraft(wrapped, f.ctx, { requestId: randomUUID(), propertyId: 'property', connectionId: f.connectionId })).rejects.toThrow();
     expect((await f.post.parent.where('contentSource', '==', 'crm').get()).empty).toBe(true); expect(mocks.fetch).not.toHaveBeenCalled();
   });
-  async function scheduleFixture() {
-    const f = await fixture(); await f.connection.update({ 'capabilities.publish.status': 'active' });
+  async function scheduleFixture(channel = 'messenger') {
+    const f = await fixture(channel); await f.connection.update({ 'capabilities.publish.status': 'active' });
     const property = db.collection('agencies').doc(f.ctx.agencyId).collection('properties').doc('property');
     await property.set({ status: 'Activ', title: 'Cișmigiu', description: 'Exact CRM', price: 120000, images: [{ url: 'https://example.test/a.jpg' }] });
     const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
@@ -486,5 +486,76 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const { drainSocial } = await import('@/lib/communications/social'); await drainSocial(db as any);
     expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('needs_review');
     expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('blocked'); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('executes master-0378 through targeted worker and persists confirmed publication without duplicate replay', async () => {
+    const f = await scheduleFixture();
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0378')!.text;
+    const original = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt });
+    expect(original.message.cards?.[0].source).toBe('socialPublishRequest'); expect(mocks.fetch).not.toHaveBeenCalled();
+    // An unrelated due job must not be consumed by this command.
+    const unrelated = db.collection('communicationSocialJobs').doc(randomUUID());
+    await unrelated.set({ agencyId: 'unrelated', status: 'queued', scheduledAt: '2020-01-01T00:00:00Z' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: '456' }), { status: 200 })).mockResolvedValueOnce(new Response(JSON.stringify({ id: '123_789' }), { status: 200 }));
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea socială: ' + f.draftId };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.planId).toBeUndefined(); expect(result.message.text).toContain('Meta a confirmat publicarea'); expect(result.message.text).toContain('123_789'); expect(result.message.text).not.toContain('Nu au fost trimise');
+    expect((await f.post.parent.doc(f.draftId).get()).data()).toMatchObject({ status: 'published', destinations: { [f.connectionId]: { status: 'published', externalId: '123_789' } } });
+    expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('completed');
+    expect((await unrelated.get()).data()?.status).toBe('queued'); await unrelated.delete();
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(mocks.fetch.mock.calls[1][1].body).message).toBe('Exact CRM');
+    await writeFile('.tmp/jarvis-social-comments/master-0378.json', JSON.stringify({ scenarioId: 'master-0378', prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual chat, ledger, atomic queue and targeted worker on local Firestore; Meta photo/feed responses simulated. Persisted external publication ID verified, no real publication.', runs: [{ phase: 'original', final: original.message }, { phase: 'selection', final: result.message }] }, null, 2));
+  });
+  for (const reason of ['photo-id', 'publication-id', 'provider-error']) it('does not confirm or retry uncertain publication: ' + reason, async () => {
+    const f = await scheduleFixture(); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea după approval.' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify(reason === 'photo-id' ? {} : { id: '456' }), { status: 200 }));
+    if (reason === 'publication-id') mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: 123 }), { status: 200 }));
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea socială: ' + f.draftId };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).toContain('Execuția a fost oprită'); expect(result.message.text).not.toContain('Meta a confirmat publicarea');
+    expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('needs_review'); expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('blocked');
+    const calls = mocks.fetch.mock.calls.length; await chatTurn(f.ctx, input); const { drainSocial } = await import('@/lib/communications/social'); await drainSocial(db as any, { postId: f.draftId, agencyId: f.ctx.agencyId }); expect(mocks.fetch).toHaveBeenCalledTimes(calls);
+  });
+  for (const reason of ['unoffered', 'draft-changed', 'property-changed', 'revoked']) it('does not publish after ' + reason, async () => {
+    const f = await scheduleFixture(); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea după approval.' });
+    if (reason === 'draft-changed') await f.post.parent.doc(f.draftId).update({ text: 'Changed' });
+    if (reason === 'property-changed') await f.property.update({ description: 'Changed' });
+    if (reason === 'revoked') await f.profile.update({ role: 'agent' });
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea socială: ' + (reason === 'unoffered' ? 'other' : f.draftId) };
+    if (reason === 'revoked') { await expect(chatTurn(f.ctx, input)).rejects.toThrow('Acces revocat'); expect(mocks.fetch).not.toHaveBeenCalled(); expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).exists).toBe(false); return; }
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).not.toContain('Meta a confirmat'); expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).exists).toBe(false); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('continues Instagram processing through the worker and only then saves the publication ID', async () => {
+    const f = await scheduleFixture('instagram'); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea după approval.' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: '456' }), { status: 200 }));
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea socială: ' + f.draftId });
+    expect(result.message.text).toContain('workerul continuă automat'); expect(result.message.text).not.toContain('Meta a confirmat');
+    expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('processing');
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ status_code: 'FINISHED' }), { status: 200 })).mockResolvedValueOnce(new Response(JSON.stringify({ id: '789' }), { status: 200 }));
+    const { drainSocial } = await import('@/lib/communications/social'); await drainSocial(db as any, { postId: f.draftId, agencyId: f.ctx.agencyId });
+    expect((await f.post.parent.doc(f.draftId).get()).data()).toMatchObject({ status: 'published', destinations: { [f.connectionId]: { externalId: '789', status: 'published' } } });
+    expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('completed');
+    await drainSocial(db as any, { postId: f.draftId, agencyId: f.ctx.agencyId }); expect(mocks.fetch).toHaveBeenCalledTimes(3);
+  });
+  for (const phase of ['container', 'publication']) it('rejects missing Instagram identifier at ' + phase, async () => {
+    const f = await scheduleFixture('instagram'); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea după approval.' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify(phase === 'container' ? {} : { id: '456' }), { status: 200 }));
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Publică postarea socială: ' + f.draftId });
+    const { drainSocial } = await import('@/lib/communications/social');
+    if (phase === 'publication') {
+      mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ status_code: 'FINISHED' }), { status: 200 })).mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
+      await drainSocial(db as any, { postId: f.draftId, agencyId: f.ctx.agencyId });
+    }
+    expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('needs_review'); expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('blocked');
+    const calls = mocks.fetch.mock.calls.length; await drainSocial(db as any, { postId: f.draftId, agencyId: f.ctx.agencyId }); expect(mocks.fetch).toHaveBeenCalledTimes(calls);
+  });
+  it('does not claim a selected job from another agency or one moved to the future after reading', async () => {
+    const f = await scheduleFixture(); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Programează postarea prin canalul suportat.' }); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: f.selection });
+    const job = db.collection('communicationSocialJobs').doc(f.draftId); await job.update({ scheduledAt: '2020-01-01T00:00:00.000Z' });
+    const { drainSocial } = await import('@/lib/communications/social');
+    await drainSocial(db as any, { postId: f.draftId, agencyId: 'other' }); expect((await job.get()).data()?.status).toBe('queued');
+    const wrapped = { collection: db.collection.bind(db), runTransaction: async (fn: any) => { await job.update({ scheduledAt: new Date(Date.now() + 86400000).toISOString() }); return db.runTransaction(fn); } } as any;
+    await drainSocial(wrapped, { postId: f.draftId, agencyId: f.ctx.agencyId }); expect((await job.get()).data()?.status).toBe('queued'); expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('queued'); expect(mocks.fetch).not.toHaveBeenCalled();
   });
 });

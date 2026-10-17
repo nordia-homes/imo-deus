@@ -45,15 +45,20 @@ export async function createSocialPost(db: Firestore, actor: Actor, body: unknow
   });
   return { id };
 }
-export async function drainSocial(db: Firestore) {
-  const jobs = await db.collection('communicationSocialJobs').where('status', '==', 'queued').where('scheduledAt', '<=', nowIso()).orderBy('scheduledAt').limit(3).get();
+function confirmedSocialId(result: Record<string, any>) {
+  if (typeof result?.id !== 'string' || !/^\d+(?:_\d+)?$/.test(result.id)) throw new CommunicationError('Meta nu a confirmat identificatorul rezultatului.', 502);
+  return result.id;
+}
+export async function drainSocial(db: Firestore, target?: { postId: string; agencyId: string }) {
+
+  const jobs = target ? await db.collection('communicationSocialJobs').where('__name__', '==', target.postId).get() : await db.collection('communicationSocialJobs').where('status', '==', 'queued').where('scheduledAt', '<=', nowIso()).orderBy('scheduledAt').limit(3).get();
   for (const job of jobs.docs) {
-    if (job.data().scheduledAt > nowIso()) continue;
+    if (job.data().scheduledAt > nowIso() || target && (job.data().agencyId !== target.agencyId || job.data().status !== 'queued')) continue;
     const ref = agencyCollection(db, job.data().agencyId, 'socialPosts').doc(job.id);
     const claim = await db.runTransaction(async tx => {
       const [fresh, post] = await Promise.all([tx.get(job.ref), tx.get(ref)]);
       if (post.data()?.status === 'cancelled' && fresh.data()?.status === 'queued') { tx.update(job.ref, { status: 'cancelled' }); return false; }
-      if (fresh.data()?.status !== 'queued' || !['queued', 'processing'].includes(post.data()?.status)) return false;
+      if (fresh.data()?.scheduledAt > nowIso() || fresh.data()?.agencyId !== job.data().agencyId || fresh.data()?.status !== 'queued' || !['queued', 'processing'].includes(post.data()?.status)) return false;
       tx.update(job.ref, { status: 'processing', startedAt: nowIso() });
       tx.update(ref, { status: 'processing' });
       return true;
@@ -74,22 +79,22 @@ export async function drainSocial(db: Firestore) {
         if (connection.channel === 'instagram') {
           if (!destination.containerId) {
             const children = [];
-            if (post.images.length > 1) for (const url of post.images) { const child = await graph(`/${connection.externalId}/media`, token, { image_url: url, is_carousel_item: true }); children.push(child.id); }
+            if (post.images.length > 1) for (const url of post.images) { const child = await graph(`/${connection.externalId}/media`, token, { image_url: url, is_carousel_item: true }); children.push(confirmedSocialId(child)); }
             const container = await graph(`/${connection.externalId}/media`, token, post.images.length > 1 ? { media_type: 'CAROUSEL', children, caption: post.text } : { image_url: post.images[0], caption: post.text });
-            await ref.update({ [`destinations.${id}.containerId`]: container.id, [`destinations.${id}.status`]: 'processing' }); pending = true; continue;
+            await ref.update({ [`destinations.${id}.containerId`]: confirmedSocialId(container), [`destinations.${id}.status`]: 'processing' }); pending = true; continue;
           }
           const container = await graph(`/${destination.containerId}?fields=status_code`, token);
           if (container.status_code === 'IN_PROGRESS') { pending = true; continue; }
           if (container.status_code !== 'FINISHED') throw new CommunicationError('Instagram nu a procesat materialul.');
           attempted = true;
           const published = await graph(`/${connection.externalId}/media_publish`, token, { creation_id: destination.containerId });
-          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: published.id, [`destinations.${id}.publishedAt`]: nowIso() });
+          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: confirmedSocialId(published), [`destinations.${id}.publishedAt`]: nowIso() });
         } else {
           const photoIds = [];
-          for (const url of post.images) { const photo = await graph(`/${connection.externalId}/photos`, token, { url, published: false }); photoIds.push({ media_fbid: photo.id }); }
+          for (const url of post.images) { const photo = await graph(`/${connection.externalId}/photos`, token, { url, published: false }); photoIds.push({ media_fbid: confirmedSocialId(photo) }); }
           attempted = true;
           const published = await graph(`/${connection.externalId}/feed`, token, { message: post.text, ...(photoIds.length ? { attached_media: photoIds } : {}) });
-          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: published.id, [`destinations.${id}.publishedAt`]: nowIso() });
+          await ref.update({ [`destinations.${id}.status`]: 'published', [`destinations.${id}.externalId`]: confirmedSocialId(published), [`destinations.${id}.publishedAt`]: nowIso() });
         }
       } catch (error) {
         failed = true;
