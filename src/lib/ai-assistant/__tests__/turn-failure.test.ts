@@ -28,7 +28,7 @@ describe('durable visible turn failures', () => {
     vi.mocked(getResource).mockResolvedValueOnce({ id: 'andrei', name: 'Andrei' });
     vi.mocked(planTurn).mockResolvedValueOnce({ text: 'Citire confirmată.', cards: [], actions: [], accessRefs: [{ resource: 'contacts', id: 'andrei' }], metrics: { status: 'success', elapsedMs: 0, tools: [], models: [] } });
     await chatTurn(ctx, { sessionId: 's', requestId: 'r', prompt: 'Clientul deschis acum.', currentRecord: { resource: 'contacts', id: 'andrei' } });
-    expect(planTurn).toHaveBeenCalledWith(ctx, 'Clientul deschis acum.', expect.arrayContaining([expect.objectContaining({ id: 'current-page-context', accessRefs: [{ resource: 'contacts', id: 'andrei' }] })]), expect.anything());
+    expect(planTurn).toHaveBeenCalledWith({ ...ctx, prospectingRequest: { prompt: 'Clientul deschis acum.', requestId: 'r', sessionId: 's' } }, 'Clientul deschis acum.', expect.arrayContaining([expect.objectContaining({ id: 'current-page-context', accessRefs: [{ resource: 'contacts', id: 'andrei' }] })]), expect.anything());
     expect(rows.get('agencies/a/assistantSessions/s/messages/r-user')).toMatchObject({ text: 'Clientul deschis acum.', cards: [{ source: 'contacts', rows: [{ id: 'andrei', name: 'Andrei' }] }], accessRefs: [{ resource: 'contacts', id: 'andrei' }] });
   });
   const workerInput = { sessionId: 's', requestId: 'r', prompt: 'Cerere' };

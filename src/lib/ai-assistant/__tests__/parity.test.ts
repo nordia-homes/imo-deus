@@ -59,7 +59,7 @@ describe('CRM parity and command execution', () => {
     await expect(executeAction(ctx, action, 'revoked-admin')).rejects.toMatchObject({ status: 403 });
   });
   it('assigns only an owned Facebook account from the same agency and audits through the common property action', async () => {
-    const { ctx, rows } = database({ 'agencies/a/properties/p': { title: 'Home' }, 'agencies/a/facebookCloudConnections/own': { ownerUid: 'u' }, 'agencies/a/facebookCloudConnections/other': { ownerUid: 'other' }, 'agencies/b/facebookCloudConnections/foreign': { ownerUid: 'u' } });
+    const { ctx, rows } = database({ 'agencies/a/properties/p': { title: 'Home' }, 'agencies/a/facebookCloudConnections/own': { ownerUid: 'u', agencyId: 'a', status: 'connected' }, 'agencies/a/facebookCloudConnections/other': { ownerUid: 'other' }, 'agencies/b/facebookCloudConnections/foreign': { ownerUid: 'u' } });
     for (const [id, status] of [['other', 403], ['foreign', 404]] as const) {
       await expect(executeAction(ctx, { kind: 'update_property', propertyId: 'p', patch: { defaultFacebookConnectionId: id } }, `facebook-${id}`)).rejects.toMatchObject({ status });
       expect(rows.has(`agencies/a/assistantExecutions/facebook-${id}`)).toBe(false);

@@ -14,7 +14,7 @@ function fixture(calls: Record<string, any>[] = []) {
     get: async () => ({ data: () => path.endsWith('/settings') ? stored : {} }), set,
     where: (_field: string, _op: string, since: string) => ({ get: async () => ({ docs: calls.filter(call => call.createdAt >= since).map(call => ({ id: call.id, data: () => call })) }) }),
   });
-  const adminDb = { collection: ref } as any;
+  const adminDb = { collection: ref, runTransaction: async (fn: any) => fn({ get: (target: any) => target.get(), set: (target: any, value: any, options: any) => target.set(value, options) }) } as any;
   mocks.auth.mockResolvedValue({ agencyId: 'a', uid: 'u', adminDb });
   return { adminDb, set };
 }
