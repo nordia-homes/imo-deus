@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Programarea ciornelor sociale în ora Bucureștiului — 17 octombrie 2026
+
+Scenariile **0377 și 0394** programează ciorna CRM selectată, după precizarea datei și orei. Cererea autorizează programarea fără o aprobare suplimentară. Ora este interpretată exclusiv în București; datele invalide, momentele trecute și orele inexistente/ambigue la schimbarea orei cer clarificare. Se păstrează accesul administrativ al modulului social.
+
+Serviciul recitește profilul, ciorna, proprietatea și conexiunea, verifică revizia ciornei și salvează atomic postarea și jobul communicationSocialJobs. Confirmarea se bazează pe recitirea ambelor înregistrări cu aceeași oră și distinge programarea de publicarea efectivă. Repetarea aceleiași cereri nu creează alt job. Workerul existent consumă programarea; nu este introdus un runner desktop manual.
+
+Descrierea, ordinea fotografiilor, titlul și prețul trebuie să corespundă CRM atât la programare, cât și când workerul preia postarea. O schimbare între timp împiedică publicarea conținutului învechit. Nicio descriere nu este rescrisă. Verificările folosesc Firestore local și răspunsuri Meta simulate, fără postări externe reale.
+
+Validare: 137 teste unitare distincte și 70 teste de integrare trecute; ESLint, paritate și build complet verificate. Dovadă: [Social lot 10](evals/SOCIAL_EXECUTION_BATCH_10.json). **210/1000 dovezi locale** (133 cu model real, 77 deterministe); acestea nu reprezintă certificarea completă în producție a corpusului. Lot nepublicat în producție.
+
 ## Ciornă socială salvată din proprietatea deschisă — 17 octombrie 2026
 
 Scenariul **0376** creează efectiv o înregistrare draft în modulul social, după selectarea explicită a unui cont Facebook/Instagram oferit. Cererea de creare autorizează salvarea; nu există o aprobare suplimentară pentru ciornă. Executorul folosește un identificator stabil și serviciul de domeniu tranzacțional. Profilul administrativ existent, proprietatea activă și contul eligibil sunt verificate înainte de scriere; descrierea și fotografiile sunt recitite în tranzacție.

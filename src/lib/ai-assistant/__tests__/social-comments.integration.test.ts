@@ -422,4 +422,69 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     await expect(createPropertySocialDraft(wrapped, f.ctx, { requestId: randomUUID(), propertyId: 'property', connectionId: f.connectionId })).rejects.toThrow();
     expect((await f.post.parent.where('contentSource', '==', 'crm').get()).empty).toBe(true); expect(mocks.fetch).not.toHaveBeenCalled();
   });
+  async function scheduleFixture() {
+    const f = await fixture(); await f.connection.update({ 'capabilities.publish.status': 'active' });
+    const property = db.collection('agencies').doc(f.ctx.agencyId).collection('properties').doc('property');
+    await property.set({ status: 'Activ', title: 'Cișmigiu', description: 'Exact CRM', price: 120000, images: [{ url: 'https://example.test/a.jpg' }] });
+    const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
+    const draft = await createPropertySocialDraft(db as any, f.ctx, { requestId: randomUUID(), propertyId: 'property', connectionId: f.connectionId });
+    const { tomorrowBucharest } = await import('../facebook-monitor');
+    const date = tomorrowBucharest(new Date());
+    return { ...f, property, draftId: draft.postId, date, selection: 'Programare sociala: ' + draft.postId + ' | ' + date + ' 07:30' };
+  }
+  for (const scenarioId of ['master-0377', 'master-0394']) it('executes ' + scenarioId + ' with the same persisted Bucharest time in post and queue', async () => {
+    const f = await scheduleFixture();
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const original = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt });
+    expect(original.message.cards?.[0].source).toBe('socialScheduleRequest');
+    const input = { ...f.input, requestId: randomUUID(), prompt: f.selection };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.planId).toBeUndefined(); expect(result.message.text).toContain('07:30, ora Bucureștiului'); expect(result.message.text).toContain('Publicarea efectivă nu este încă confirmată');
+    const { bucharestLocalToIso } = await import('@/lib/bucharest-time');
+    const scheduledAt = bucharestLocalToIso(f.date, '07:30');
+    const post = (await f.post.parent.doc(f.draftId).get()).data(), job = (await db.collection('communicationSocialJobs').doc(f.draftId).get()).data();
+    expect(post).toMatchObject({ status: 'queued', scheduledAt }); expect(job).toMatchObject({ status: 'queued', scheduledAt, postId: f.draftId });
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id);
+    const { drainSocial } = await import('@/lib/communications/social'); await drainSocial(db as any);
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    await writeFile('.tmp/jarvis-social-comments/' + scenarioId + '.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual chat, executor, atomic social post + worker queue on local Firestore. Future scheduling verified by readback; no provider publication.', runs: [{ phase: 'original', final: original.message }, { phase: 'selection', final: result.message }] }, null, 2));
+  });
+  for (const reason of ['description', 'images', 'price', 'disconnected', 'draft-edited', 'past']) it('does not queue stale or invalid social scheduling: ' + reason, async () => {
+    const f = await scheduleFixture();
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Programează postarea prin canalul suportat.' });
+    if (reason === 'description') await f.property.update({ description: 'Changed' });
+    if (reason === 'images') await f.property.update({ images: [{ url: 'https://example.test/new.jpg' }] });
+    if (reason === 'price') await f.property.update({ price: 119000 });
+    if (reason === 'disconnected') await f.connection.update({ status: 'disconnected' });
+    if (reason === 'draft-edited') await f.post.parent.doc(f.draftId).update({ text: 'Changed' });
+    const prompt = reason === 'past' ? 'Programare sociala: ' + f.draftId + ' | 2020-01-01 07:30' : f.selection;
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt });
+    expect(result.message.text).not.toContain('Aceeași oră este salvată'); expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).exists).toBe(false); expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('draft'); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('publishes a due scheduled CRM draft once through the existing worker with simulated Meta receipts', async () => {
+    const f = await scheduleFixture();
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Programează postarea prin canalul suportat.' });
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: f.selection });
+    const due = '2020-01-01T00:00:00.000Z';
+    await f.post.parent.doc(f.draftId).update({ scheduledAt: due });
+    await db.collection('communicationSocialJobs').doc(f.draftId).update({ scheduledAt: due });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ id: '456' }), { status: 200 })).mockResolvedValueOnce(new Response(JSON.stringify({ id: '123_789' }), { status: 200 }));
+    const { drainSocial } = await import('@/lib/communications/social');
+    await drainSocial(db as any);
+    expect((await f.post.parent.doc(f.draftId).get()).data()).toMatchObject({ status: 'published', destinations: { [f.connectionId]: { status: 'published', externalId: '123_789' } } });
+    expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('completed');
+    expect(mocks.fetch).toHaveBeenCalledTimes(2);
+    expect(String(mocks.fetch.mock.calls[1][1].body)).toContain('Exact CRM');
+    await drainSocial(db as any); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+  });
+  it('blocks a queued CRM post at worker time when the description changes', async () => {
+    const f = await scheduleFixture();
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Programează postarea prin canalul suportat.' });
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: f.selection });
+    await f.property.update({ description: 'Changed after scheduling' });
+    await db.collection('communicationSocialJobs').doc(f.draftId).update({ scheduledAt: '2020-01-01T00:00:00.000Z' });
+    const { drainSocial } = await import('@/lib/communications/social'); await drainSocial(db as any);
+    expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('needs_review');
+    expect((await db.collection('communicationSocialJobs').doc(f.draftId).get()).data()?.status).toBe('blocked'); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
 });

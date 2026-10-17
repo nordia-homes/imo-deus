@@ -1,0 +1,162 @@
+{
+  "scope": "Actual scheduling through persisted chat, executor and atomic post/job writes in local Firestore. Bucharest date and time, replay, stale CRM and existing worker verified. Meta responses simulated; not production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0377",
+      "prompt": "Programează postarea prin canalul suportat.",
+      "versions": {
+        "prompt": "jarvis-143",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "174",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, executor, atomic social post + worker queue on local Firestore. Future scheduling verified by readback; no provider publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "c3730591-0a45-4cdd-8468-a3b2b97d30bf-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Indică ciorna și ora: „Programare sociala: ID | AAAA-LL-ZZ HH:mm”. Folosesc exclusiv ora Bucureștiului. Cererea de programare va pune postarea în coada automată pentru acel moment.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialScheduleRequest",
+                "title": "Programarea ciornei sociale",
+                "rows": [
+                  {
+                    "id": "20eca85b53d65e891936cc168b32621364af5ff9dee1abf9842bf58542d9167f",
+                    "propertyTitle": "Cișmigiu",
+                    "prompt": "Programează postarea prin canalul suportat.",
+                    "revision": "ae1f2aa505ddd4e09bc14a62c2a2d66306f89f5a0057926e4ad50cb04391add4"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:25:46.11Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "5568991f-ba81-4a11-90ec-2a4652f09fa4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Postarea socială 20eca85b53d65e891936cc168b32621364af5ff9dee1abf9842bf58542d9167f este programată pentru 2026-10-18 la 07:30, ora Bucureștiului. Aceeași oră este salvată în postare și în coada automată. Publicarea efectivă nu este încă confirmată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_publish",
+                      "postId": "20eca85b53d65e891936cc168b32621364af5ff9dee1abf9842bf58542d9167f",
+                      "scheduledAt": "2026-10-18T04:30:00Z",
+                      "executionState": "queued",
+                      "schedulingConfirmed": true,
+                      "publicationConfirmed": false,
+                      "evidenceSource": "persisted_post_and_job"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:25:46.624Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0394",
+      "prompt": "Programează postarea organică la ora cerută.",
+      "versions": {
+        "prompt": "jarvis-143",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "174",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual chat, executor, atomic social post + worker queue on local Firestore. Future scheduling verified by readback; no provider publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "44dd6d26-a509-4b38-9242-e3febc42ab06-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Indică ciorna și ora: „Programare sociala: ID | AAAA-LL-ZZ HH:mm”. Folosesc exclusiv ora Bucureștiului. Cererea de programare va pune postarea în coada automată pentru acel moment.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialScheduleRequest",
+                "title": "Programarea ciornei sociale",
+                "rows": [
+                  {
+                    "id": "725d5b8466cfa7e0ef773ce54e0e8402c9fd031b3e1b4d81b3be20c6f53f86d2",
+                    "propertyTitle": "Cișmigiu",
+                    "prompt": "Programează postarea organică la ora cerută.",
+                    "revision": "299421c7bed1809883f2e202828eca78bcb8d772707defdb22a43d948659fcc3"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:25:47.279Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "68d0150f-1574-49ee-bd3a-9441035b24f8-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Postarea socială 725d5b8466cfa7e0ef773ce54e0e8402c9fd031b3e1b4d81b3be20c6f53f86d2 este programată pentru 2026-10-18 la 07:30, ora Bucureștiului. Aceeași oră este salvată în postare și în coada automată. Publicarea efectivă nu este încă confirmată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_publish",
+                      "postId": "725d5b8466cfa7e0ef773ce54e0e8402c9fd031b3e1b4d81b3be20c6f53f86d2",
+                      "scheduledAt": "2026-10-18T04:30:00Z",
+                      "executionState": "queued",
+                      "schedulingConfirmed": true,
+                      "publicationConfirmed": false,
+                      "evidenceSource": "persisted_post_and_job"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:25:47.699Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,10 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'social_publish' && receipt.schedulingConfirmed === true && typeof receipt.scheduledAt === 'string') {
+      const when = bucharestInputFromIso(receipt.scheduledAt);
+      return 'Postarea socială ' + receipt.postId + ' este programată pentru ' + when.date + ' la ' + when.time + ', ora Bucureștiului. Aceeași oră este salvată în postare și în coada automată. Publicarea efectivă nu este încă confirmată.';
+    }
     if (receipt?.operation === 'social_create' && receipt.executionState === 'succeeded' && receipt.businessStatus === 'draft') return 'Ciorna socială ' + receipt.postId + ' a fost salvată pentru proprietatea ' + receipt.propertyId + ', cu descrierea și fotografiile din CRM. Postarea nu este publicată.';
     if (receipt?.operation === 'social_like' && receipt.executionState === 'succeeded') return 'Meta a confirmat aprecierea comentariului ' + receipt.commentId + '.';
     if (receipt?.operation === 'social_reply' && receipt.executionState === 'succeeded') return 'Meta a confirmat răspunsul la comentariul ' + receipt.commentId + '. ID răspuns: ' + receipt.replyId + '.';

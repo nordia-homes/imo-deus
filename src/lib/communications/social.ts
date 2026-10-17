@@ -1,3 +1,4 @@
+import { propertyImageUrls, socialCrmContentMatches } from './social-content';
 import type { Firestore } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { stableId } from './crypto';
@@ -5,9 +6,7 @@ import { agencyCollection, CommunicationError, nowIso } from './server';
 import { connectionToken, graph, graphDelete, refreshPageToken } from './meta';
 import type { Actor } from './model';
 
-export function propertyImageUrls(images: Array<{ url?: string }> = []) {
-  return [...new Set(images.map(image => image?.url).filter((url): url is string => typeof url === 'string' && /^https:\/\//.test(url)))];
-}
+export { propertyImageUrls } from './social-content';
 export function selectPostImages(available: string[], selected?: string[]) {
   if (selected === undefined) return available;
   if (new Set(selected).size !== selected.length || selected.some(url => !available.includes(url))) {
@@ -63,7 +62,7 @@ export async function drainSocial(db: Firestore) {
     const post = (await ref.get()).data()!;
     const property = await agencyCollection(db, post.agencyId, 'properties').doc(post.propertyId).get();
     const author = await db.collection('users').doc(post.createdBy).get();
-    if (post.status === 'cancelled' || !property.exists || property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url)) || author.data()?.agencyId !== post.agencyId || author.data()?.role !== 'admin') {
+    if (!socialCrmContentMatches(post, property.data()) || post.status === 'cancelled' || !property.exists || property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url)) || author.data()?.agencyId !== post.agencyId || author.data()?.role !== 'admin') {
       await ref.update({ status: 'needs_review', error: 'Proprietatea, aprobarea sau accesul s-a schimbat.' }); await job.ref.update({ status: 'blocked' }); continue;
     }
     let pending = false; let failed = false;
@@ -109,7 +108,7 @@ export async function publishDraft(db: Firestore, actor: Actor, id: string) {
     const snap = await tx.get(ref); const post = snap.data();
     if (!post || post.status !== 'draft') throw new CommunicationError('Numai drafturile pot fi publicate prin această acțiune.');
     const property = await tx.get(agencyCollection(db, actor.agencyId, 'properties').doc(post.propertyId));
-    if (property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url))) throw new CommunicationError('Proprietatea s-a modificat; creează o postare actualizată.');
+    if (!socialCrmContentMatches(post, property.data()) || property.data()?.status !== 'Activ' || (property.data()?.price ?? null) !== post.propertyPrice || post.images.some((url: string) => !propertyImageUrls(property.data()?.images || []).includes(url))) throw new CommunicationError('Proprietatea s-a modificat; creează o postare actualizată.');
     if (Object.values(post.destinations).some((value: any) => value.channel === 'instagram')) validateInstagramPost(post.text, post.images);
     const scheduledAt = post.scheduledAt > nowIso() ? post.scheduledAt : nowIso();
     tx.update(ref, { status: 'queued', scheduledAt, createdBy: actor.uid, destinations: Object.fromEntries(Object.entries(post.destinations).map(([key, value]) => [key, { ...(value as object), status: 'queued' }])) });
