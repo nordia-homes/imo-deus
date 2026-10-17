@@ -3893,7 +3893,11 @@
           "sourceNumber": 415,
           "request": "Elimină draftul greșit dacă este permis.",
           "requestSha256": "a6b2a35c7e027bb5a671fdc3e2ddf670ebf821b238add134c8e528bf85d3238f",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0416",
@@ -4041,21 +4045,33 @@
           "sourceNumber": 431,
           "request": "Folosește materialul media pe care l-am selectat.",
           "requestSha256": "8bc3a06df0fffdd28dfacaddbb149bd489b348d549e78c9b5b66a3830d542c25",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0432",
           "sourceNumber": 432,
           "request": "Nu asocia materialul greșit campaniei.",
           "requestSha256": "a5e96d801170cc90c7338c2a398f3aa52939f41db4153500e2726121c4da3068",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0433",
           "sourceNumber": 433,
           "request": "Verifică dacă assetul selectat mai există.",
           "requestSha256": "216d26228b34836c466cc1a7e1e731dc43c1f6a6af0a5746c5522af40f5e14e3",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_03.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0434",

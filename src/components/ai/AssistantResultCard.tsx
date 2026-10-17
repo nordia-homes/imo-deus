@@ -240,7 +240,7 @@ export function AssistantResultCard({
                 key={String(row.id || index)}
                 className="group overflow-hidden rounded-2xl border border-slate-200/80 bg-white transition-shadow hover:shadow-lg hover:shadow-slate-200/40 dark:border-slate-800 dark:bg-slate-950"
               >
-                {property && (
+                {(property || card.source === "metaMediaSelection") && (
                   <div className="relative h-36 overflow-hidden bg-gradient-to-br from-slate-100 to-emerald-50 dark:from-slate-800 dark:to-emerald-950">
                     {image ? (
                       <Image
@@ -352,8 +352,8 @@ export function AssistantResultCard({
                       {String(row.reasoning)}
                     </p>
                   ) : null}
-                  {["metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && <MetaReviewDetails row={row} selection={["metaReviewSelection", "metaDraftSelection"].includes(card.source)} selectionPrefix={card.source === "metaDraftSelection" ? "Draft Meta" : "Campanie Meta"} busy={busy} onPrompt={onPrompt} />}
-                  {!["metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && !property && !calendar && !task && !client && !sale && (
+                  {["metaMediaSelection", "metaMediaCampaignSelection", "metaMediaReview", "metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && <MetaReviewDetails row={row} selection={["metaMediaSelection", "metaMediaCampaignSelection", "metaReviewSelection", "metaDraftSelection"].includes(card.source)} selectionLabel={card.source === "metaMediaSelection" ? "Selectează fotografia" : undefined} selectionPrefix={card.source === "metaMediaSelection" ? "Material Meta" : card.source === "metaMediaCampaignSelection" ? "Campanie material Meta" : card.source === "metaDraftSelection" ? "Draft Meta" : "Campanie Meta"} busy={busy} onPrompt={onPrompt} />}
+                  {!["metaMediaSelection", "metaMediaCampaignSelection", "metaMediaReview", "metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && !property && !calendar && !task && !client && !sale && (
                     <div className="mt-3 space-y-2">
                       {Object.entries(row)
                         .filter(

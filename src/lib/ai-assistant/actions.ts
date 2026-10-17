@@ -55,6 +55,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   if (action.kind === 'existing_operation') {
     const { requireTool } = await import('./registry'); requireTool(action.operation, ctx.role || '');
+    const { metaDraftRemovalAction, executeMetaDraftRemoval } = await import('./meta-media');
+    if (metaDraftRemovalAction(action)) return executeMetaDraftRemoval(ctx, action, key);
     const { metaDraftAction, executeMetaDraft } = await import('./meta-draft');
     if (metaDraftAction(action)) return executeMetaDraft(ctx, action, key);
     const { outboundRetryAction, executeOutboundRetry } = await import('./outbound-retry');

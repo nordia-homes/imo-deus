@@ -154,6 +154,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { prepareMetaMedia } = await import('./meta-media');
+  try {
+    const media = await prepareMetaMedia(ctx, prompt, history);
+    if (media) { actions.push(...media.actions); if (media.rows.length) cards.push({ type: 'data', source: media.source, title: 'Materiale și drafturi Meta', rows: media.rows, complete: true }); return finish(media.text); }
+  } catch { return finish('Selecția, draftul sau materialele s-au schimbat. Reia cererea pentru lista actuală; nu am modificat campania.', 'unavailable'); }
   const { prepareMetaDraft } = await import('./meta-draft');
   try {
     const draft = await prepareMetaDraft(ctx, prompt, history);

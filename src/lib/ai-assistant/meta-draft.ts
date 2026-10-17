@@ -8,11 +8,11 @@ import { buildMetaCampaignDraft } from '@/lib/meta-campaign-draft';
 import { buildAgencyPublicUrl } from '@/lib/domain-routing';
 import type { Agency, Property, MetaMarketingCampaignDraft, MetaMarketingIntegrationPublicStatus } from '@/lib/types';
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,180}$/);
-const patchSchema = z.object({ budgetAmount: z.number().finite().min(10).max(1000000).optional(), budgetType: z.enum(['daily','lifetime']).optional(), currency: z.enum(['EUR','RON','USD']).optional(), durationDays: z.number().int().min(1).max(365).optional(), mainPhoto: z.literal(true).optional() }).strict();
+const patchSchema = z.object({ budgetAmount: z.number().finite().min(10).max(1000000).optional(), budgetType: z.enum(['daily','lifetime']).optional(), currency: z.enum(['EUR','RON','USD']).optional(), durationDays: z.number().int().min(1).max(365).optional(), mainPhoto: z.literal(true).optional(), selectedImageUrl: z.string().url().startsWith('https://').max(8000).optional() }).strict();
 const actionSchema = z.object({ kind: z.literal('existing_operation'), operation: z.enum(['meta_campaign_draft','meta_campaign_update']), params: z.object({}).strict(), query: z.object({}).strict(), body: z.object({ jarvisDraft: z.literal(true), propertyId: id, propertyRevision: z.string().length(64), campaignId: id.optional(), campaignRevision: z.string().length(64).optional(), patch: patchSchema }).strict() }).strict();
 type DraftAction = z.infer<typeof actionSchema>;
 export const metaDraftRevision = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-export function metaDraftAction(action: AssistantAction) { const parsed=actionSchema.safeParse(action); return parsed.success && (parsed.data.operation === 'meta_campaign_draft' ? !parsed.data.body.campaignId && !parsed.data.body.campaignRevision : Boolean(parsed.data.body.campaignId && parsed.data.body.campaignRevision)); }
+export function metaDraftAction(action: AssistantAction) { const parsed=actionSchema.safeParse(action); return parsed.success && !(parsed.data.body.patch.mainPhoto && parsed.data.body.patch.selectedImageUrl) && (parsed.data.operation === 'meta_campaign_draft' ? !parsed.data.body.campaignId && !parsed.data.body.campaignRevision : Boolean(parsed.data.body.campaignId && parsed.data.body.campaignRevision)); }
 const requests: Record<string,string> = { 'creeaza draft de campanie meta pentru proprietate': 'create', 'pregateste o campanie de sapte zile': 'seven', 'pregateste campania cu buget total 300 €': 'total', 'pregateste campania pentru proprietatea aleasa': 'create', 'seteaza bugetul campaniei la suma ceruta': 'budget', 'actualizeaza campania draft': 'update', 'foloseste fotografia principala a proprietatii': 'photo', 'nu publica draftul inca': 'hold', 'nu modifica bugetul fara approval daca politica il cere': 'hold', 'cere-mi aprobarea inainte sa cheltui bani': 'hold' };
 export function metaDraftRequest(prompt: string) { return requests[normalized(prompt).trim().replace(/[.!?]+$/, '')] || null; }
 function last(history: AssistantMessage[]) { return history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1); }
@@ -30,12 +30,13 @@ export function metaDraftExecutionPrompt(prompt: string, history: AssistantMessa
 export function requestedMetaDraftAction(action: AssistantAction, prompt: string) {
  if (!metaDraftAction(action)) return false;
  const mode=metaDraftRequest(prompt), a=action as DraftAction;
+ if (normalized(prompt).trim().replace(/[.!?]+$/, '') === 'foloseste materialul media pe care l-am selectat') return a.operation === 'meta_campaign_update' && Object.keys(a.body.patch).join(',') === 'selectedImageUrl' && Boolean(a.body.patch.selectedImageUrl);
  const keys=Object.keys(a.body.patch).sort().join(',');
  if (mode === 'create') return a.operation === 'meta_campaign_draft' && keys === '';
  if (mode === 'seven') return a.operation === 'meta_campaign_draft' && keys === 'durationDays' && a.body.patch.durationDays === 7;
  if (mode === 'total') return a.operation === 'meta_campaign_draft' && keys === 'budgetAmount,budgetType,currency' && a.body.patch.budgetAmount === 300 && a.body.patch.currency === 'EUR' && a.body.patch.budgetType === 'lifetime';
  if (mode === 'photo') return a.operation === 'meta_campaign_update' && keys === 'mainPhoto' && a.body.patch.mainPhoto === true;
- return ['budget','update'].includes(mode || '') && a.operation === 'meta_campaign_update' && !a.body.patch.mainPhoto && Boolean(a.body.patch.budgetAmount && a.body.patch.currency && a.body.patch.budgetType);
+ return ['budget','update'].includes(mode || '') && a.operation === 'meta_campaign_update' && !a.body.patch.mainPhoto && !a.body.patch.selectedImageUrl && Boolean(a.body.patch.budgetAmount && a.body.patch.currency && a.body.patch.budgetType);
 }
 export async function prepareMetaDraft(ctx: AssistantContext, prompt: string, history: AssistantMessage[]) {
  const offered=pending(history), answer=reply(prompt), effective=metaDraftExecutionPrompt(prompt,history), mode=metaDraftRequest(effective);
@@ -94,14 +95,14 @@ export async function executeMetaDraft(ctx: AssistantContext, input: AssistantAc
   const now=new Date().toISOString();
   const publicUrl=buildAgencyPublicUrl({ ...agencyData, id: ctx.agencyId } as Agency, '/properties/'+body.propertyId);
   const destinationUrl=publicUrl.startsWith('https://') ? publicUrl : (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_BASE_URL || 'https://imodeus.ro').replace(/[/]+$/,'')+publicUrl;
-  const { mainPhoto, currency: _currency, ...patch }=body.patch;
+  const { mainPhoto, selectedImageUrl, currency: _currency, ...patch }=body.patch;
   let campaign: MetaMarketingCampaignDraft = existing ? { ...(existing as MetaMarketingCampaignDraft), ...patch, status: 'draft', updatedAt: now } : buildMetaCampaignDraft({ agencyId: ctx.agencyId, propertyId: body.propertyId, requestedByUid: ctx.uid, ...patch }, property as Property, integration as MetaMarketingIntegrationPublicStatus, destinationUrl,campaignId,now);
-  if (mainPhoto) {
-   const photo=Array.isArray(property.images) ? property.images.find((image: any) => image?.url) : null;
+  if (mainPhoto || selectedImageUrl) {
+   const photo=Array.isArray(property.images) ? property.images.find((image: any) => selectedImageUrl ? image?.url === selectedImageUrl : image?.url) : null;
    if (!photo || typeof photo.url !== 'string' || !photo.url.startsWith('https://')) throw new Error('Fotografie principală indisponibilă');
    campaign={ ...campaign, creativeFormat: 'single_image', imageUrl: photo.url, imageAlt: photo.alt || property.title || null, mediaItems: [{ type: 'image', url: photo.url, alt: photo.alt || property.title || null, source: 'property', name: null }], videoUrl: null, videoThumbnailUrl: null };
   }
-  const result={ operation: action.operation, campaignId, propertyId: body.propertyId, executionState: 'succeeded', businessStatus: 'draft', budgetAmount: campaign.budgetAmount, budgetType: campaign.budgetType, currency: campaign.currency, durationDays: campaign.durationDays, imageUrl: campaign.imageUrl || null, published: false };
+  const result={ operation: action.operation, campaignId, propertyId: body.propertyId, executionState: 'succeeded', businessStatus: 'draft', budgetAmount: campaign.budgetAmount, budgetType: campaign.budgetType, currency: campaign.currency, durationDays: campaign.durationDays, imageUrl: campaign.imageUrl || null, mediaChanged: Boolean(mainPhoto || selectedImageUrl), published: false };
   tx.set(ref,campaign);
   if (!body.campaignId || property.metaMarketing?.latestCampaignDraftId === campaignId) tx.set(propertyRef,{ metaMarketing: { latestCampaignDraftId: campaignId, status: 'draft', updatedAt: now } },{ merge: true });
   tx.create(ledger,{ actorId: ctx.uid, actionHash: metaDraftRevision(action), status: 'completed', result, completedAt: now });

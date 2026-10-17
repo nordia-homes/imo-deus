@@ -1,0 +1,416 @@
+{
+  "scope": "Four original scenarios through persisted chat on local Firestore. Exact current CRM image selection with revision checks, read-only CRM photo membership checks, atomic deletion of purely local drafts with retained audit and repaired property reference. Media scope is property images; external URL availability and remote Meta objects are not verified or modified. Not production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0415",
+      "prompt": "Elimină draftul greșit dacă este permis.",
+      "versions": {
+        "prompt": "jarvis-149",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "180",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore: selected CRM photo, CRM association/membership check and atomic local-only draft deletion. No remote file availability claim, Meta deletion or external publication.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "aab33e5c-a8c1-47b8-9907-8b60f058faf9-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta c4edccb21aa4cd5cb2cda74ba1e4dd58e78c76d368c39313a0ba0523a39c8514 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "c4edccb21aa4cd5cb2cda74ba1e4dd58e78c76d368c39313a0ba0523a39c8514",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "mediaChanged": false,
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:05.234Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "508d8ac6-99f4-4e3a-838f-b4d6b2088545-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul local Meta c4edccb21aa4cd5cb2cda74ba1e4dd58e78c76d368c39313a0ba0523a39c8514 a fost eliminat. Nu au fost șterse obiecte la Meta sau alte campanii.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_remove",
+                      "campaignId": "c4edccb21aa4cd5cb2cda74ba1e4dd58e78c76d368c39313a0ba0523a39c8514",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "deleted",
+                      "localOnly": true,
+                      "deletedAt": "2026-10-17T13:28:05.607Z"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:05.636Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0431",
+      "prompt": "Folosește materialul media pe care l-am selectat.",
+      "versions": {
+        "prompt": "jarvis-149",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "180",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore: selected CRM photo, CRM association/membership check and atomic local-only draft deletion. No remote file availability claim, Meta deletion or external publication.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "59647f9d-5aac-4156-8f8a-887c9b6f6f99-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 9db5ce0868c970f87627ff4a3532c237bcb14cb924f37d1e791d51734baa8bb6 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "9db5ce0868c970f87627ff4a3532c237bcb14cb924f37d1e791d51734baa8bb6",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "mediaChanged": false,
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:06.709Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "a409d6e3-36ec-46b1-82c7-a907f98ee0d1-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege fotografia din proprietate: „Material Meta: NUMĂR”. Nu aleg automat alt material.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaMediaSelection",
+                "title": "Materiale și drafturi Meta",
+                "rows": [
+                  {
+                    "id": "1",
+                    "url": "https://example.invalid/main.jpg",
+                    "imageUrl": "https://example.invalid/main.jpg",
+                    "description": "Principală",
+                    "campaignId": "9db5ce0868c970f87627ff4a3532c237bcb14cb924f37d1e791d51734baa8bb6",
+                    "propertyId": "property",
+                    "propertyRevision": "740e90b3a0343e64376dc5189da6172717ea887289a5e72fdb47f580287a6e62",
+                    "campaignRevision": "fe62ba7eee6a015126b571d388cc735a24e1122373cbe7ae63a9024b7289e686",
+                    "contextPropertyId": "property",
+                    "prompt": "Folosește materialul media pe care l-am selectat."
+                  },
+                  {
+                    "id": "2",
+                    "url": "https://example.invalid/second.jpg",
+                    "imageUrl": "https://example.invalid/second.jpg",
+                    "description": "Secundară",
+                    "campaignId": "9db5ce0868c970f87627ff4a3532c237bcb14cb924f37d1e791d51734baa8bb6",
+                    "propertyId": "property",
+                    "propertyRevision": "740e90b3a0343e64376dc5189da6172717ea887289a5e72fdb47f580287a6e62",
+                    "campaignRevision": "fe62ba7eee6a015126b571d388cc735a24e1122373cbe7ae63a9024b7289e686",
+                    "contextPropertyId": "property",
+                    "prompt": "Folosește materialul media pe care l-am selectat."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:06.956Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "8df094fe-726a-4661-b829-e0b03ca288cf-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Fotografia selectată a fost salvată în draftul Meta 9db5ce0868c970f87627ff4a3532c237bcb14cb924f37d1e791d51734baa8bb6 pentru proprietatea property. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_update",
+                      "campaignId": "9db5ce0868c970f87627ff4a3532c237bcb14cb924f37d1e791d51734baa8bb6",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/second.jpg",
+                      "mediaChanged": true,
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:07.357Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0432",
+      "prompt": "Nu asocia materialul greșit campaniei.",
+      "versions": {
+        "prompt": "jarvis-149",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "180",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore: selected CRM photo, CRM association/membership check and atomic local-only draft deletion. No remote file availability claim, Meta deletion or external publication.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "dadcc4e1-e44e-470b-b52a-025e5051a554-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 63d44851075699fc01b1ef7ad2160a3cd04caf0f88b54f7d69a702bcad2c32a5 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "63d44851075699fc01b1ef7ad2160a3cd04caf0f88b54f7d69a702bcad2c32a5",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "mediaChanged": false,
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:07.842Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "826db3d4-f363-453e-995a-74b9dd573c80-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am comparat materialele campaniei cu fotografiile actuale ale proprietății. Un material absent nu este înlocuit automat. Verificarea privește asocierea din CRM; disponibilitatea fișierului la adresa externă nu a fost verificată.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaMediaReview",
+                "title": "Materiale și drafturi Meta",
+                "rows": [
+                  {
+                    "id": "1",
+                    "campaignId": "63d44851075699fc01b1ef7ad2160a3cd04caf0f88b54f7d69a702bcad2c32a5",
+                    "propertyId": "property",
+                    "url": "https://other.invalid/foreign.jpg",
+                    "type": "image",
+                    "inCurrentProperty": false,
+                    "source": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:08.100Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0433",
+      "prompt": "Verifică dacă assetul selectat mai există.",
+      "versions": {
+        "prompt": "jarvis-149",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "180",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore: selected CRM photo, CRM association/membership check and atomic local-only draft deletion. No remote file availability claim, Meta deletion or external publication.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "2d1226b6-c64e-4b4c-9d38-4b0d92a54b5a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta ac209ed0c8c174fee9eeaa8a89941863a4c434c6325f7e78443e3fbe34418d64 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "ac209ed0c8c174fee9eeaa8a89941863a4c434c6325f7e78443e3fbe34418d64",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "mediaChanged": false,
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:08.551Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "30147ee4-e43f-4350-8dc7-697f82b6e502-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am comparat materialele campaniei cu fotografiile actuale ale proprietății. Un material absent nu este înlocuit automat. Verificarea privește asocierea din CRM; disponibilitatea fișierului la adresa externă nu a fost verificată.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaMediaReview",
+                "title": "Materiale și drafturi Meta",
+                "rows": [
+                  {
+                    "id": "1",
+                    "campaignId": "ac209ed0c8c174fee9eeaa8a89941863a4c434c6325f7e78443e3fbe34418d64",
+                    "propertyId": "property",
+                    "url": "https://example.invalid/main.jpg",
+                    "type": "image",
+                    "inCurrentProperty": true,
+                    "source": "property"
+                  },
+                  {
+                    "id": "2",
+                    "campaignId": "ac209ed0c8c174fee9eeaa8a89941863a4c434c6325f7e78443e3fbe34418d64",
+                    "propertyId": "property",
+                    "url": "https://example.invalid/second.jpg",
+                    "type": "image",
+                    "inCurrentProperty": false,
+                    "source": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:28:08.803Z"
+          }
+        }
+      ]
+    }
+  ]
+}

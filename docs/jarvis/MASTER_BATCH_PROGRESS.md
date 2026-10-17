@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — materiale selectate și eliminare locală — 17 octombrie 2026
+
+Scenariile **0415 și 0431–0433** au dovezi locale pentru eliminarea draftului selectat, alegerea exactă a fotografiei din proprietate și verificarea asocierii materialelor la fotografiile actuale din CRM. Domeniul materialelor din acest lot este fotografia proprietății; verificarea nu certifică accesibilitatea URL-ului extern și nu prezintă un material din afara fotografiilor CRM ca inexistent la furnizor.
+
+Selecția afișează fotografiile și este legată de campanie, proprietate și reviziile ambelor documente. Alegerea nu se aplică dacă au fost schimbate campania, proprietatea sau lista imaginilor. Executorul verifică din nou apartenența URL-ului, inclusiv când payloadul este furnizat direct. Fotografia aleasă este salvată ca single_image, cu materialul video anterior eliminat; bugetul și celelalte campanii nu sunt modificate. URL-urile semnate lungi se păstrează integral în contextul selecției, iar hashurile de revizie nu sunt afișate agentului.
+
+Eliminarea folosește o tranzacție pentru ștergerea draftului local, actualizarea referinței proprietății și dovada execuției. Copia draftului eliminat este păstrată în audit. Un draft cu orice identificator de campanie/ad set/reclamă/creative Meta nu este eligibil. Nu se apelează ștergerea la furnizor și nu este necesară reconectarea contului pentru curățarea unui draft pur local. Repetarea și concurența nu elimină alte campanii.
+
+Validare: **166 teste unitare/UI și 54 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Sunt incluse regresiile celor două loturi Meta anterioare. Dovadă: [Meta lot 03](evals/META_EXECUTION_BATCH_03.json). **241/1000 dovezi locale** (133 cu model real, 108 deterministe). Fără ștergeri sau publicări reale la Meta. Lot nepublicat în producție; verificările locale nu constituie certificare completă în producție.
+
 ## Meta Ads — creare și editare drafturi, 10 scenarii — 17 octombrie 2026
 
 Scenariile **0404–0407, 0423–0425, 0430, 0449 și 0450** continuă prin chat până la salvarea draftului sau păstrarea lui nepublicat, după caz. Crearea folosește același constructor de campanie ca modulul Meta existent. Proprietatea trebuie deschisă în CRM; când sunt mai multe drafturi, se selectează campania. Pentru cereri fără valoarea bugetului, Jarvis cere suma și tipul bugetului, apoi execută continuarea, fără să inventeze valori.
