@@ -1,3 +1,4 @@
+import { canonicalMetaValue, verifyMetaImageReplacement } from './meta-image-optimization';
 import { isEditableLocalMetaDraft } from './meta-draft-editability';
 import { metaComparisonPeriods, parseMetaPeriod } from './meta-insights-period';
 import { ensureMetaPublicationObject, publicationConfiguration, publicationPropertyContent, type PublicationEdge } from './meta-publication-journal';
@@ -1151,6 +1152,75 @@ export async function readMetaPublicationProviderStatus(agencyId: string, campai
     (id,fields)=>metaRequest('/'+id+'?fields='+encodeURIComponent(fields),accessToken,{signal:AbortSignal.timeout(15000)}));
   await assertCurrent();
   return { proof, grantRevision };
+}
+
+/** Internal primitive: callers must prepare and persist the approved image upload and creative first.
+ * Not exposed as a conversational action until that preparation workflow is implemented. */
+export async function applyMetaImageOptimization(agencyId: string, campaignId: string, actor: {
+    uid: string;
+    role?: string;
+}, approval: {
+    expectedRevision: string;
+    propertyRevision: string;
+    grantRevision: string;
+    newCreativeId: string;
+    imageHash: string;
+    imageUrl: string;
+}) {
+    const fingerprint = (v: unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
+    const ref = getCampaignDraftRef(agencyId, campaignId), memberRef = adminDb.collection('users').doc(actor.uid);
+    const snapshot = await ref.get(), original = snapshot.data();
+    if (!original || original.agencyId !== agencyId || original.deletedAt || !['published', 'paused'].includes(original.status) || original.creativeFormat !== 'single_image')
+        throw Error('Campania sau aprobarea nu mai este valabilă.');
+    const propertyRef = adminDb.collection('agencies').doc(agencyId).collection('properties').doc(original.propertyId);
+    const { accessToken, integration } = await getAccessTokenForAgency(agencyId), accountId = integration.selectedAdAccount?.id;
+    if (!integration.connected || integration.agencyId !== agencyId || !accountId || fingerprint(integration) !== approval.grantRevision)
+        throw Error('Conexiunea aprobată s-a schimbat.');
+    const key = fingerprint({ actorId: actor.uid, campaignId, approval }), intentRef = ref.collection('imageOptimizations').doc(key);
+    const stableFingerprint = (v: unknown) => createHash('sha256').update(canonicalMetaValue(v)).digest('hex');
+    const guard = async (tx: FirebaseFirestore.Transaction, committedRevision?: string) => {
+        const [current, member, grant, property] = await Promise.all([tx.get(ref), tx.get(memberRef), tx.get(getPrivateDocRef(agencyId)), tx.get(propertyRef)]);
+        if (member.data()?.agencyId !== agencyId || member.data()?.role !== actor.role || actor.role !== 'admin')
+            throw Error('Acces revocat.');
+        if (!current.exists || (committedRevision ? stableFingerprint(current.data()) !== committedRevision : fingerprint(current.data()) !== approval.expectedRevision) || !grant.exists || fingerprint(grant.data()) !== approval.grantRevision || !property.exists || property.data()?.deletedAt || property.data()?.agencyId && property.data()?.agencyId !== agencyId || fingerprint(property.data()) !== approval.propertyRevision)
+            throw Error('Campania, proprietatea sau conexiunea s-a schimbat.');
+        if (!approval.imageUrl.startsWith('https://') || !Array.isArray(property.data()?.images) || !property.data()!.images.some((image: {
+            url?: string;
+        }) => image.url === approval.imageUrl))
+            throw Error('Fotografia aprobată nu mai aparține proprietății.');
+    };
+    const intent = await intentRef.get();
+    if (intent.exists && intent.data()?.state === 'completed') {
+        if (typeof intent.data()?.committedRevision !== 'string')
+            throw Error('Dovadă incompletă.');
+        await adminDb.runTransaction(tx => guard(tx, intent.data()!.committedRevision));
+        return intent.data()!.proof;
+    }
+    const proof = await verifyMetaImageReplacement({ campaignId: String(original.metaCampaignId || ''), adSetId: String(original.metaAdSetId || ''), adId: String(original.metaAdId || ''), oldCreativeId: String(original.metaCreativeId || ''), newCreativeId: approval.newCreativeId, accountId, imageHash: approval.imageHash }, {
+        read: (id, fields) => metaRequest('/' + id + '?fields=' + encodeURIComponent(fields), accessToken, { signal: AbortSignal.timeout(15000) }),
+        assertCurrent: () => adminDb.runTransaction(tx => guard(tx)),
+        claim: () => adminDb.runTransaction(async (tx) => {
+            await guard(tx);
+            const previous = await tx.get(intentRef), all = await tx.get(ref.collection('imageOptimizations'));
+            if (previous.exists)
+                return false;
+            if (all.docs.some(doc => doc.data().state === 'pending'))
+                throw Error('O altă optimizare are rezultat incert.');
+            tx.create(intentRef, { state: 'pending', actorId: actor.uid, approval, createdAt: nowIso() });
+            return true;
+        }),
+        replace: () => metaRequest('/' + original.metaAdId, accessToken, { method: 'POST', body: new URLSearchParams({ creative: JSON.stringify({ creative_id: approval.newCreativeId }) }).toString(), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: AbortSignal.timeout(15000) }),
+    });
+    await adminDb.runTransaction(async (tx) => {
+        await guard(tx);
+        const previous = await tx.get(intentRef);
+        if (previous.exists && previous.data()?.actorId !== actor.uid)
+            throw Error('Aprobare incompatibilă.');
+        const patch = { metaCreativeId: approval.newCreativeId, metaImageHash: approval.imageHash, metaImageHashes: [approval.imageHash], imageUrl: approval.imageUrl, imageAlt: null, mediaItems: [{ type: 'image', url: approval.imageUrl, source: 'property', alt: null, name: null }], providerImageOptimizationVerification: proof, updatedAt: proof.checkedAt };
+        tx.set(intentRef, { state: 'completed', actorId: actor.uid, approval, proof, committedRevision: stableFingerprint({ ...original, ...patch }), completedAt: proof.checkedAt });
+        tx.update(ref, patch);
+    });
+    return proof;
 }
 
 export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string, options: { expectedRevision?: string; actor?: { uid: string; role?: string } } = {}) {
