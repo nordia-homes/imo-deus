@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Ciornă socială salvată din proprietatea deschisă — 17 octombrie 2026
+
+Scenariul **0376** creează efectiv o înregistrare draft în modulul social, după selectarea explicită a unui cont Facebook/Instagram oferit. Cererea de creare autorizează salvarea; nu există o aprobare suplimentară pentru ciornă. Executorul folosește un identificator stabil și serviciul de domeniu tranzacțional. Profilul administrativ existent, proprietatea activă și contul eligibil sunt verificate înainte de scriere; descrierea și fotografiile sunt recitite în tranzacție.
+
+Textul este păstrat exact din câmpul description din CRM, inclusiv spațiile și liniile noi; fotografiile folosesc selecția HTTPS distinctă a modulului social. Nu se utilizează ciornele generate în conversație și nu se rescrie descrierea. Limitele Instagram sunt verificate fără scurtarea textului sau alegerea arbitrară a primelor fotografii. Schimbarea proprietății deschise, conturile neofertate/deconectate, proprietățile inactive și descrierea lipsă nu produc o ciornă salvată.
+
+Confirmarea include ID-ul ciornei și distinge salvarea de publicare. Nu este creat un job communicationSocialJobs și nu este apelat Meta. Replay-ul și două cereri concurente cu același identificator produc o singură înregistrare. Acest lot nu implementează încă programarea/publicarea ciornei prin comenzile corpusului 0377/0378 și păstrează accesul administrativ al modulului social.
+
+Validare: 123 teste unitare/regresie, 60 teste de integrare, ESLint, paritate și build complet trecute. Dovadă: [Social lot 09](evals/SOCIAL_EXECUTION_BATCH_09.json). **208/1000 dovezi locale** (133 cu model real, 75 deterministe). Date și credențiale sintetice în emulator; fără publicare externă. Lot nepublicat în producție.
+
 ## Recomandări sociale și condiții distincte pe canal — 17 octombrie 2026
 
 Scenariul **0390** citește indicatorii disponibili prin serviciul existent și clasifică postările după fotografiile salvate: text, o fotografie sau mai multe fotografii. Datele lipsă/invalide nu devin postări text sau indicatori zero. Recomandarea compară media aprecierilor + comentariilor numai în cadrul aceluiași cont și canal, între formate cu minimum două postări fiecare. Egalitatea, lipsa unui format comparabil și erorile furnizorului produc o sugestie de experiment, fără format câștigător inventat. Pragul de două postări este doar o condiție de descriere a eșantionului, nu semnificație statistică.

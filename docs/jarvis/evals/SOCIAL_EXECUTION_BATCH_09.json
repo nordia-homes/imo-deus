@@ -1,0 +1,86 @@
+{
+  "scope": "Actual persisted social draft creation from current CRM description and photos, through chat and executor ledger. Local Firestore and synthetic credentials; no provider calls or publication jobs.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0376",
+      "prompt": "Creează o postare socială pentru proprietatea deschisă.",
+      "versions": {
+        "prompt": "jarvis-142",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "173",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat, actual executor ledger and atomic social draft service on local Firestore; synthetic connection credentials, no provider calls.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "0ace91e8-1883-4660-93a9-94e6a6cbfffc-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege contul pentru ciorna salvată: „Cont pentru ciorna sociala: ID”. Voi prelua descrierea și fotografiile actuale din CRM. Crearea ciornei nu publică postarea.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialDraftRequest",
+                "title": "Contul ciornei sociale",
+                "rows": [
+                  {
+                    "id": "21add518-a13d-4704-9bcb-002c58077e9b",
+                    "name": "messenger",
+                    "channel": "messenger",
+                    "propertyId": "property",
+                    "prompt": "Creează o postare socială pentru proprietatea deschisă."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:10:53.964Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "b7f0a09a-1c5c-47b0-9b45-f8d6b88b4743-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Ciorna socială 9a2ee63ab0e430a6bcd2e3ac141af6cb89bacbec92a6d540861cc3f11c393117 a fost salvată pentru proprietatea property, cu descrierea și fotografiile din CRM. Postarea nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_create",
+                      "postId": "9a2ee63ab0e430a6bcd2e3ac141af6cb89bacbec92a6d540861cc3f11c393117",
+                      "propertyId": "property",
+                      "connectionId": "21add518-a13d-4704-9bcb-002c58077e9b",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "publicationConfirmed": false,
+                      "evidenceSource": "persisted_social_post"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T09:10:54.434Z"
+          }
+        }
+      ]
+    }
+  ]
+}

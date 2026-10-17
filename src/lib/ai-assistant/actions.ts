@@ -91,7 +91,12 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const body = action.operation === 'message_send' || action.operation === 'message_preview' || action.operation === 'facebook_job_create' ? { ...action.body, requestId } : action.body;
       const { socialCommentAction, validateSocialCommentAction, socialCommentReceipt } = await import('./social-comment-actions');
       if (socialCommentAction(action) && !await validateSocialCommentAction(ctx, action)) throw new Error('Funcție nesuportată pentru acest canal');
-      let result = await invokeOperation(ctx, { ...action, body });
+      const { socialDraftAction } = await import('./social-draft');
+      let result: Record<string, any>;
+      if (socialDraftAction(action)) {
+        const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
+        result = await createPropertySocialDraft(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, { requestId, propertyId: body.propertyId, connectionId: body.connectionId });
+      } else result = await invokeOperation(ctx, { ...action, body });
       if (socialCommentAction(action)) result = socialCommentReceipt(action, result);
       if (action.operation === 'facebook_job_create') {
         const job = result.job;

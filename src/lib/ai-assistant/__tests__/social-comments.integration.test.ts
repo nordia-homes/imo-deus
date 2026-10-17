@@ -375,4 +375,51 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Recomandă ce tip de postare să fac data viitoare.' });
     expect(result.message.text).toContain('experiment inițial'); expect(result.message.cards?.[0].rows).toEqual([]); expect(mocks.fetch).not.toHaveBeenCalled();
   });
+  for (const channel of ['messenger', 'instagram']) it('creates master-0376 as an actual saved CRM draft on ' + channel, async () => {
+    const f = await fixture(channel); await f.connection.update({ 'capabilities.publish.status': 'active' });
+    const property = db.collection('agencies').doc(f.ctx.agencyId).collection('properties').doc('property');
+    await property.set({ status: 'Activ', title: 'Cișmigiu', description: 'Descriere veche', price: 125000, images: [{ url: 'https://example.test/old.jpg' }] });
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0376')!.text;
+    const original = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt, currentRecord: { resource: 'properties', id: 'property' } });
+    expect(original.message.cards?.[0].source).toBe('socialDraftRequest');
+    const description = '  Apartament în Cișmigiu.\nDescrierea exactă din CRM.  ';
+    await property.update({ description, images: [{ url: 'https://example.test/new.jpg' }], price: 119000 });
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Cont pentru ciorna sociala: ' + f.connectionId, currentRecord: null };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.planId).toBeUndefined(); expect(result.message.text).toContain('a fost salvată'); expect(result.message.text).toContain('nu este publicată');
+    const posts = await f.post.parent.where('contentSource', '==', 'crm').get(); expect(posts.size).toBe(1);
+    expect(posts.docs[0].data()).toMatchObject({ text: description, images: ['https://example.test/new.jpg'], status: 'draft', propertyPrice: 119000, destinations: { [f.connectionId]: { status: 'draft', channel } } });
+    expect((await db.collection('communicationSocialJobs').doc(posts.docs[0].id).get()).exists).toBe(false);
+    await chatTurn(f.ctx, input); expect((await f.post.parent.where('contentSource', '==', 'crm').get()).size).toBe(1); expect(mocks.fetch).not.toHaveBeenCalled();
+    if (channel === 'messenger') await writeFile('.tmp/jarvis-social-comments/master-0376.json', JSON.stringify({ scenarioId: 'master-0376', prompt, versions: VERSIONS, executionVerified: true, environment: 'Persisted chat, actual executor ledger and atomic social draft service on local Firestore; synthetic connection credentials, no provider calls.', runs: [{ phase: 'original', final: original.message }, { phase: 'selection', final: result.message }] }, null, 2));
+  });
+  for (const reason of ['disconnected', 'inactive', 'missing-description', 'instagram-too-long', 'unoffered', 'changed-page']) it('does not create a social draft after ' + reason, async () => {
+    const f = await fixture(reason === 'instagram-too-long' ? 'instagram' : 'messenger'); await f.connection.update({ 'capabilities.publish.status': 'active' });
+    const property = db.collection('agencies').doc(f.ctx.agencyId).collection('properties').doc('property');
+    await property.set({ status: 'Activ', description: 'Descriere', images: [{ url: 'https://example.test/a.jpg' }] });
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Creează o postare socială pentru proprietatea deschisă.', currentRecord: { resource: 'properties', id: 'property' } });
+    if (reason === 'disconnected') await f.connection.update({ status: 'disconnected' });
+    if (reason === 'inactive') await property.update({ status: 'Inactiv' });
+    if (reason === 'missing-description') await property.update({ description: '' });
+    if (reason === 'instagram-too-long') await property.update({ description: 'x'.repeat(2201) });
+    if (reason === 'changed-page') await property.parent.doc('other').set({ status: 'Activ', description: 'Other' });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Cont pentru ciorna sociala: ' + (reason === 'unoffered' ? 'other' : f.connectionId), currentRecord: reason === 'changed-page' ? { resource: 'properties', id: 'other' } : null });
+    expect(result.message.text).not.toContain('a fost salvată'); expect((await f.post.parent.where('contentSource', '==', 'crm').get()).empty).toBe(true); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('creates one domain draft under concurrent retries with the same request id', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.publish.status': 'active' });
+    await db.collection('agencies').doc(f.ctx.agencyId).collection('properties').doc('property').set({ status: 'Activ', description: 'Exact CRM', images: [] });
+    const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
+    const body = { requestId: randomUUID(), propertyId: 'property', connectionId: f.connectionId };
+    const results = await Promise.all([createPropertySocialDraft(db as any, f.ctx, body), createPropertySocialDraft(db as any, f.ctx, body)]);
+    expect(results[0].postId).toBe(results[1].postId); expect((await f.post.parent.where('contentSource', '==', 'crm').get()).size).toBe(1); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  for (const reason of ['profile', 'connection']) it('rechecks ' + reason + ' in the draft write transaction', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.publish.status': 'active' });
+    await db.collection('agencies').doc(f.ctx.agencyId).collection('properties').doc('property').set({ status: 'Activ', description: 'Exact CRM', images: [] });
+    const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
+    const wrapped = { collection: db.collection.bind(db), runTransaction: async (fn: any) => { if (reason === 'profile') await f.profile.update({ role: 'agent' }); else await f.connection.update({ externalId: '999' }); return db.runTransaction(fn); } } as any;
+    await expect(createPropertySocialDraft(wrapped, f.ctx, { requestId: randomUUID(), propertyId: 'property', connectionId: f.connectionId })).rejects.toThrow();
+    expect((await f.post.parent.where('contentSource', '==', 'crm').get()).empty).toBe(true); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
 });

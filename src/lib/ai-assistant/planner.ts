@@ -154,6 +154,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { prepareSocialDraft } = await import('./social-draft');
+  try {
+    const draft = await prepareSocialDraft(ctx, prompt, history);
+    if (draft) {
+      if (draft.rows.length) cards.push({ type: 'data', source: 'socialDraftRequest', title: 'Contul ciornei sociale', rows: draft.rows, complete: true });
+      actions.push(...draft.actions);
+      return finish(draft.text);
+    }
+  } catch { return finish('Nu pot crea ciorna socială: verifică proprietatea, contul selectat și accesul actual.', 'unavailable'); }
   const { socialAdviceRequest, prepareSocialAdvice } = await import('./social-advice');
   const adviceMode = socialAdviceRequest(prompt);
   if (adviceMode) {
