@@ -43,3 +43,5 @@ it('shows the two photos and binds the button to the exact optimization proposal
  const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Confirm optimizarea Meta: '+'a'.repeat(64));
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('src="https://example.invalid/new.jpg"');expect(html).toContain('src="https://example.invalid/old.jpg"');expect(html).not.toContain('HIDDEN_HASH');
 });
+
+it('resumes exactly the selected approved proposal',()=>{vi.stubGlobal('React',React);const onPrompt=vi.fn(),id='campaign/'+'a'.repeat(64);const element:any=MetaReviewDetails({row:{id},selection:true,busy:false,selectionPrefix:'Reia optimizarea Meta',selectionLabel:'Continuă optimizarea aprobată',onPrompt});element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Reia optimizarea Meta: '+id);});

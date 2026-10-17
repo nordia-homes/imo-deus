@@ -1165,7 +1165,7 @@ export async function applyMetaImageOptimization(agencyId: string, campaignId: s
     newCreativeId: string;
     imageHash: string;
     imageUrl: string;
-}) {
+}, executionGuard?: (tx:FirebaseFirestore.Transaction)=>Promise<void>) {
     const fingerprint = (v: unknown) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
     const ref = getCampaignDraftRef(agencyId, campaignId), memberRef = adminDb.collection('users').doc(actor.uid);
     const snapshot = await ref.get(), original = snapshot.data();
@@ -1178,6 +1178,7 @@ export async function applyMetaImageOptimization(agencyId: string, campaignId: s
     const key = fingerprint({ actorId: actor.uid, campaignId, approval }), intentRef = ref.collection('imageOptimizations').doc(key);
     const stableFingerprint = (v: unknown) => createHash('sha256').update(canonicalMetaValue(v)).digest('hex');
     const guard = async (tx: FirebaseFirestore.Transaction, committedRevision?: string) => {
+        if(executionGuard)await executionGuard(tx);
         const [current, member, grant, property] = await Promise.all([tx.get(ref), tx.get(memberRef), tx.get(getPrivateDocRef(agencyId)), tx.get(propertyRef)]);
         if (member.data()?.agencyId !== agencyId || member.data()?.role !== actor.role || actor.role !== 'admin')
             throw Error('Acces revocat.');

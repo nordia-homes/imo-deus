@@ -2028,9 +2028,10 @@
     "method": "POST",
     "validation": "Propunere persistentă a aceluiași actor, configurație actuală și aprobare explicită.",
     "bodyFields": [
-      "proposalId"
+      "proposalId",
+      "resume"
     ],
     "queryFields": [],
-    "note": "Aplică numai fotografia propunerii. Verifică citirea Meta și dovada persistentă înainte de confirmare."
+    "note": "Aplică numai fotografia propunerii. Verifică citirea Meta și dovada persistentă înainte de confirmare. Reluarea cere o execuție originală aprobată, a aceluiași actor, cu rezultat incert."
   }
 }

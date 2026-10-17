@@ -22,6 +22,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — reluarea optimizării aprobate din conversație — 17 octombrie 2026
+
+Extensia scenariului **0439** permite comanda „Reia optimizarea Meta” pentru o execuție aprobată rămasă cu rezultat incert. Dacă există mai multe propuneri eligibile, Jarvis oferă selecția exactă. Aprobarea inițială persistată este obligatorie; simpla existență a unei propuneri sau a unei încercări de reluare nu autorizează operația. Nu se repetă selecția fotografiei și aprobarea deja acordată.
+
+Reluarea folosește jurnalul pentru recuperarea încărcării, creării materialului și asocierii reclamei. După rezultatul verificat, execuția inițială și reluările intermediare incerte primesc rezultatul confirmat. Dacă actualizarea CRM era deja salvată, se recuperează dovada persistentă fără apeluri Meta. Schimbarea execuției inițiale, accesului sau reviziilor oprește continuarea neautorizată; contextul proprietății și actorul sunt verificate.
+
+Validare: **156 teste unitare/UI și 72 de integrare** trecute, cu Firestore local și Meta simulat. Build complet trecut (cod de ieșire 0), TypeScript, ESLint, paritate și inventar corpus verificate. Dovada [Meta lot 15](evals/META_EXECUTION_BATCH_15.json) extinde același ID: **258/1000 dovezi locale**, fără certificare integrală sau live. Sunt acoperite doar reclame cu o singură imagine și ierarhie PAUSED. Lot nepublicat în producție.
+
 ## Meta Ads — recuperarea răspunsului pierdut la încărcarea fotografiei — 17 octombrie 2026
 
 Extensia scenariului **0439** înlocuiește încărcarea URL-ului cu încărcarea unui fișier multipart cu nume unic. Numele, contul, URL-ul sursă și digestul SHA-256 al octeților sunt salvate înaintea POST-ului. Dacă răspunsul se pierde, serviciul caută numele în biblioteca de imagini a contului și salvează hashul Meta numai după identificarea fără ambiguitate a unei imagini ACTIVE. Paginarea folosește doar cursorul pe endpointul fix al contului; nu urmărește URL-ul next furnizat de răspuns.

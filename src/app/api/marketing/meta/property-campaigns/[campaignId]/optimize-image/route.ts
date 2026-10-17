@@ -14,10 +14,11 @@ export async function POST(request: NextRequest, context: {
             return NextResponse.json({ message: 'Acces neautorizat.' }, { status: 403 });
         if (isDemoAgencyId(actor.agencyId))
             return createDemoBlockedResponse('Optimizarea Meta este blocată în demo.');
-        const body = z.object({ proposalId: z.string().regex(/^[a-f0-9]{64}$/) }).strict().safeParse(await request.json());
+        const body = z.object({ proposalId: z.string().regex(/^[a-f0-9]{64}$/), resume:z.literal(true).optional() }).strict().safeParse(await request.json());
         const { campaignId } = await context.params;
         if (!body.success || !/^[A-Za-z0-9_-]{1,180}$/.test(campaignId))
             return NextResponse.json({ message: 'Propunere invalidă.' }, { status: 400 });
+        if(body.data.resume){const [{resumeMetaImageProposal},{adminDb}]=await Promise.all([import('@/lib/ai-assistant/meta-image-resume'),import('@/firebase/admin')]);return NextResponse.json(await resumeMetaImageProposal({...actor,adminDb},campaignId,body.data.proposalId));}
         const { executeMetaImageProposal } = await import('@/lib/meta-image-workflow');
         return NextResponse.json(await executeMetaImageProposal(actor.agencyId, campaignId, actor, body.data.proposalId));
     }

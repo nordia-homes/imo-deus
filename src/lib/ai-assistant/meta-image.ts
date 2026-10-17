@@ -3,12 +3,15 @@ import type { AssistantContext } from './access';
 import { normalized, type AssistantAction, type AssistantMessage } from './contracts';
 import { metaDraftRevision } from './meta-draft';
 const id = z.string().regex(/^[A-Za-z0-9_-]{1,180}$/), hash = z.string().regex(/^[a-f0-9]{64}$/);
-export const metaImageActionSchema = z.object({ kind: z.literal('existing_operation'), operation: z.literal('meta_campaign_optimize_image'), params: z.object({ campaignId: id }).strict(), query: z.object({}).strict(), body: z.object({ proposalId: hash }).strict() }).strict();
+export const metaImageActionSchema = z.object({ kind: z.literal('existing_operation'), operation: z.literal('meta_campaign_optimize_image'), params: z.object({ campaignId: id }).strict(), query: z.object({}).strict(), body: z.object({ proposalId: hash, resume:z.literal(true).optional() }).strict() }).strict();
 export const metaImageAction = (action: AssistantAction) => metaImageActionSchema.safeParse(action).success;
 const approval = (prompt: string) => /^Confirm optimizarea Meta: ([a-f0-9]{64})$/i.exec(prompt.trim());
-export const metaImageApproved = (action: AssistantAction, prompt: string) => { const parsed = metaImageActionSchema.safeParse(action); return parsed.success && approval(prompt)?.[1] === parsed.data.body.proposalId; };
+export const metaImageResumeSelection=(prompt:string)=>/^Reia optimizarea Meta: ([A-Za-z0-9_-]{1,180})\/([a-f0-9]{64})$/i.exec(prompt.trim());
+export const metaImageResumeRequest=(prompt:string)=>['reia optimizarea meta','continua optimizarea meta','reia optimizarea aprobata'].includes(normalized(prompt).trim().replace(/[.!?]+$/,''));
+export const metaImageApproved = (action: AssistantAction, prompt: string) => { const parsed = metaImageActionSchema.safeParse(action); if(!parsed.success)return false;if(parsed.data.body.resume){const selected=metaImageResumeSelection(prompt);return metaImageResumeRequest(prompt)||selected?.[1]===parsed.data.params.campaignId&&selected?.[2]===parsed.data.body.proposalId;}return approval(prompt)?.[1] === parsed.data.body.proposalId; };
 export const metaImageRequest = (prompt: string) => ['aplica doar optimizarea pe care am aprobat-o', 'schimba imaginea campaniei meta'].includes(normalized(prompt).trim().replace(/[.!?]+$/, ''));
 export async function prepareMetaImage(ctx: AssistantContext, prompt: string, history: AssistantMessage[]) {
+    if(metaImageResumeRequest(prompt)||metaImageResumeSelection(prompt))return (await import('./meta-image-resume')).prepareMetaImageResume(ctx,prompt,history);
     const selected = /^Imagine optimizare Meta: ([A-Za-z0-9_-]{1,180})\/([0-9]+)$/i.exec(prompt.trim()), approved = approval(prompt);
     if (!selected && !approved && !metaImageRequest(prompt))
         return null;

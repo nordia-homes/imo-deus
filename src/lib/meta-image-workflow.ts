@@ -51,16 +51,16 @@ export async function prepareMetaImageProposal(agencyId: string, actor: Actor, s
         tx.create(ref, { ...proposal, createdAt: new Date().toISOString() }); });
     return { proposalId, campaignId: selection.campaignId, campaignName: String(ctx.campaign.campaignName || selection.campaignId), imageUrl: selection.imageUrl, previousImageUrl: ctx.campaign.imageUrl ?? null, primaryText: (source.creative.object_story_spec as any).link_data.message ?? null, headline: (source.creative.object_story_spec as any).link_data.name ?? null, destinationUrl: (source.creative.object_story_spec as any).link_data.link, budgetAmount: ctx.campaign.budgetAmount ?? null, currency: ctx.campaign.currency ?? null, sourceRevision };
 }
-export async function executeMetaImageProposal(agencyId: string, campaignId: string, actor: Actor, proposalId: string) {
+export async function executeMetaImageProposal(agencyId: string, campaignId: string, actor: Actor, proposalId: string, executionGuard?: (tx:FirebaseFirestore.Transaction)=>Promise<void>) {
     const ctx = await context(agencyId, campaignId, actor), ref = ctx.ref.collection('imageProposals').doc(proposalId), snapshot = await ref.get(), proposal = snapshot.data();
     if (!proposal || proposal.actorId !== actor.uid || proposal.campaignId !== campaignId)
         throw Error('Propunere indisponibilă.');
     const selection = proposal as MetaImageSelection;
-    const apply = async (imageHash: string, newCreativeId: string) => applyMetaImageOptimization(agencyId, campaignId, actor, { expectedRevision: selection.expectedRevision, propertyRevision: selection.propertyRevision, grantRevision: selection.grantRevision, imageUrl: selection.imageUrl, imageHash, newCreativeId });
+    const apply = async (imageHash: string, newCreativeId: string) => applyMetaImageOptimization(agencyId, campaignId, actor, { expectedRevision: selection.expectedRevision, propertyRevision: selection.propertyRevision, grantRevision: selection.grantRevision, imageUrl: selection.imageUrl, imageHash, newCreativeId },executionGuard);
     // The replacement primitive verifies the saved committed revision on completed replays.
     if (proposal.newCreativeId && proposal.imageHash && ctx.campaign.metaCreativeId === proposal.newCreativeId)
         return { campaignId, proposalId, proof: await apply(proposal.imageHash, proposal.newCreativeId) };
-    const guard = async (tx: FirebaseFirestore.Transaction) => { await ctx.guard(tx, selection); const current = await tx.get(ref); if (!current.exists || current.data()?.sourceRevision !== proposal.sourceRevision || current.data()?.actorId !== actor.uid)
+    const guard = async (tx: FirebaseFirestore.Transaction) => { if(executionGuard)await executionGuard(tx);await ctx.guard(tx, selection); const current = await tx.get(ref); if (!current.exists || current.data()?.sourceRevision !== proposal.sourceRevision || current.data()?.actorId !== actor.uid)
         throw Error('Propunere schimbată.'); };
     await adminDb.runTransaction(guard);
     const provider = await metaImageWorkflowProvider(agencyId);
