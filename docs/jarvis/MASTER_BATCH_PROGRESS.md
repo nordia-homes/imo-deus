@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — inventar activ verificat — 17 octombrie 2026
+
+Scenariile **0402 și 0446** folosesc starea furnizorului pentru lista campaniilor active și proprietăților fără campanie activă asociată. ACTIVE necesită status și effective_status ACTIVE. Stările intermediare, răspunsurile eșuate, identificarea incompletă a agenției, lipsa identificatorului unei campanii publicate și drafturile cu obiecte Meta parțiale rămân necunoscute. Proprietățile pentru care absența unei campanii active nu poate fi confirmată sunt excluse din lista negativă și sunt raportate separat.
+
+Sunt luate în calcul toate campaniile asociate proprietății, nu doar indicatorul ultimei campanii. Nu există limita de 50 de înregistrări; sunt verificate 57 de campanii într-o probă de integrare. Citirile au concurență limitată și buget de timp; după epuizarea bugetului, campaniile rămase sunt marcate explicit ca neverificate, iar raportul este parțial. Accesul, conexiunea și inventarul sunt reverificate după citirile Meta. Nu se modifică stări în CRM sau la furnizor.
+
+Domeniul este registrul campaniilor asociate în CRM; raportul nu certifică absența unor campanii create separat în contul Meta și nici livrarea fiecărei reclame. Momentele verificării sunt afișate în București.
+
+Validare: **79 teste unitare/UI și 34 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Dovada [Meta lot 06](evals/META_EXECUTION_BATCH_06.json) folosește conversația persistată, Firestore local și răspunsuri Meta sintetice. **249/1000 dovezi locale** (133 cu model real, 116 deterministe), fără certificare integrală în producție. Lot nepublicat în producție; fără modificări ale campaniilor reale.
+
 ## Meta Ads — stare furnizor și reconciliere — 17 octombrie 2026
 
 Scenariile **0412 și 0444** au dovezi locale pentru citirea stării campaniei la furnizor și reconcilierea unei pauze incerte. Jarvis afișează distinct starea CRM, statusul Meta, starea efectivă și momentul verificării în București. Citirea este limitată la campania aleasă și contul autorizat, are timeout și nu lansează comenzi către Meta. Starea campaniei nu certifică livrarea reclamelor individuale sau rezultatele comerciale.

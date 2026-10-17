@@ -1,0 +1,100 @@
+{
+  "scope": "Active CRM-linked campaigns verified with synthetic provider statuses and properties without any active linked campaign. Uncertain, transient and unverified campaigns are reported separately and not treated as inactive. No assertion about campaigns created outside CRM.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0402",
+      "prompt": "Arată-mi campaniile Meta active.",
+      "versions": {
+        "prompt": "jarvis-153",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "184",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore, reading all CRM-linked campaign statuses from synthetic Meta responses. No remote writes or certification of campaigns created outside CRM.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "b9652d5d-6a20-4082-9f32-8b26234e2233-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "1 campanii confirmate ACTIVE la Meta. Domeniu: campaniile asociate în CRM, nu campaniile create separat în contul Meta. 0 campanii au stare necunoscută și sunt afișate separat. Verificarea nu modifică și nu publică nimic; ACTIVE la nivel de campanie nu certifică livrarea fiecărei reclame.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaActiveCampaigns",
+                "title": "Inventar Meta verificat",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "propertyId": "property",
+                    "campaignName": "Selectată",
+                    "localStatus": "published",
+                    "providerStatus": "ACTIVE",
+                    "effectiveStatus": "ACTIVE",
+                    "checkedAt": "2026-10-17 17:22, București",
+                    "activity": "active",
+                    "reason": "Stare verificată la Meta."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:22:13.278Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0446",
+      "prompt": "Arată-mi proprietățile fără campanie activă.",
+      "versions": {
+        "prompt": "jarvis-153",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "184",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore, reading all CRM-linked campaign statuses from synthetic Meta responses. No remote writes or certification of campaigns created outside CRM.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "da1e2664-50be-4461-a716-9113a481ef34-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "1 proprietăți fără campanie activă în registrul verificat; 0 proprietăți cu stare neclară sunt excluse din această listă. Domeniu: campaniile asociate în CRM, nu campaniile create separat în contul Meta. 0 campanii au stare necunoscută și sunt afișate separat. Verificarea nu modifică și nu publică nimic; ACTIVE la nivel de campanie nu certifică livrarea fiecărei reclame.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPropertiesWithoutActive",
+                "title": "Inventar Meta verificat",
+                "rows": [
+                  {
+                    "id": "outside",
+                    "title": "Titan",
+                    "propertyStatus": "Activ",
+                    "campaignCount": 1,
+                    "reason": "Campaniile asociate sunt inactive sau drafturi pur locale."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:22:13.730Z"
+          }
+        }
+      ]
+    }
+  ]
+}

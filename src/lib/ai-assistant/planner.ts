@@ -154,6 +154,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { readMetaInventory } = await import('./meta-inventory');
+  try {
+    const inventory = await readMetaInventory(ctx, prompt);
+    if (inventory) {
+      if (inventory.rows.length) cards.push({ type: 'data', source: inventory.source, title: 'Inventar Meta verificat', rows: inventory.rows, complete: inventory.complete });
+      if (inventory.unknownRows.length) cards.push({ type: 'data', source: 'metaUnknownCampaigns', title: 'Campanii cu stare neconfirmată', rows: inventory.unknownRows, complete: false });
+      return finish(inventory.text, inventory.complete ? 'success' : 'partial');
+    }
+  } catch { return finish('Nu pot confirma inventarul Meta: accesul, conexiunea sau datele s-au schimbat. Nu am modificat campanii.', 'unavailable'); }
   const { prepareMetaStatus } = await import('./meta-status');
   try {
     const status = await prepareMetaStatus(ctx, prompt, history);

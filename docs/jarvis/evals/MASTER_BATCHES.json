@@ -3770,7 +3770,11 @@
           "sourceNumber": 402,
           "request": "Arată-mi campaniile Meta active.",
           "requestSha256": "804df8a1e1e6f1121f13108c2969ba0da0d9bab866f61af41addde9ca4deed7a",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0403",
@@ -4198,7 +4202,11 @@
           "sourceNumber": 446,
           "request": "Arată-mi proprietățile fără campanie activă.",
           "requestSha256": "884565a63587b7722859caef255a3b1819bf7faad0b2ebabfcb3360ddc31a8a9",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0447",
