@@ -31,6 +31,11 @@ export async function prepareMetaStatus(ctx:AssistantContext,prompt:string,histo
  const target=prepared.target,{readMetaCampaignProviderStatus}=await import('@/lib/meta-marketing');
  const observation=await readMetaCampaignProviderStatus(ctx.agencyId,target.id,{expectedRevision:target.campaignRevision,actor:{uid:ctx.uid,role:ctx.role}});
  const {provider,checkedAt}=observation;let reconciled=0;
+ if(mode==='reconcile'){
+  const {reconcileMetaPublication}=await import('./meta-publication-reconcile');
+  const publication=await reconcileMetaPublication(ctx,target.id,target.campaignRevision);
+  if(publication){const when=bucharestInputFromIso(publication.checkedAt);return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:'published',providerStatus:'PAUSED',effectiveStatus:'PAUSED',checkedAt:when.date+' '+when.time+', București',providerValidated:true,reconciledExecutions:publication.count}],text:'Publicarea este confirmată: campania, setul, materialul și reclama au fost verificate la Meta. Am reconciliat execuția și starea CRM fără retrimitere. Obiectele sunt în pauză; aprobarea Meta și livrarea nu sunt confirmate.'};}
+ }
  if(mode==='reconcile'&&provider.status==='PAUSED'&&provider.effectiveStatus==='PAUSED'){
   reconciled=await ctx.adminDb.runTransaction(async tx=>{
    await assertAutomationFence(ctx.adminDb,tx,ctx);
@@ -51,5 +56,5 @@ export async function prepareMetaStatus(ctx:AssistantContext,prompt:string,histo
  }
  const time=bucharestInputFromIso(checkedAt);
  const text='Meta raportează pentru campania '+target.id+': '+provider.status+', stare efectivă '+provider.effectiveStatus+'. Verificat la '+time.date+' '+time.time+', ora Bucureștiului. ';
- return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:reconciled?'paused':target.status,providerStatus:provider.status,effectiveStatus:provider.effectiveStatus,checkedAt:time.date+' '+time.time+', București',providerValidated:true,reconciledExecutions:reconciled}],text:text+(mode==='reconcile'?(reconciled?'Pauza este confirmată; am reconciliat starea din CRM și execuția incertă, fără retrimiterea comenzii.':'Nu am găsit o pauză incertă eligibilă și confirmată pentru această revizie. Nu am repetat operația și nu am declarat-o finalizată.'):'Aceasta este starea campaniei; nu certifică livrarea fiecărei reclame sau rezultate comerciale.')};
+ return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:reconciled?'paused':target.status,providerStatus:provider.status,effectiveStatus:provider.effectiveStatus,checkedAt:time.date+' '+time.time+', București',providerValidated:true,reconciledExecutions:reconciled}],text:text+(mode==='reconcile'?(reconciled?'Pauza este confirmată; am reconciliat starea din CRM și execuția incertă, fără retrimiterea comenzii.':'Nu am găsit o execuție incertă eligibilă și confirmată pentru această configurație. Nu am repetat operația și nu am declarat-o finalizată.'):'Aceasta este starea campaniei; nu certifică livrarea fiecărei reclame sau rezultate comerciale.')};
 }

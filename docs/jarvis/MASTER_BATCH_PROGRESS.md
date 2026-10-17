@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — reconcilierea publicării în conversație — 17 octombrie 2026
+
+Scenariul **0444**, verificat anterior pentru pauză, acoperă acum și publicarea incertă. Execuția este identificată prin actor, aprobare, configurația campaniei, proprietate, conexiune și cele patru ID-uri rezolvate în jurnal. Sunt excluse execuțiile încă running, rezervările active, alte aprobări și obiectele care nu corespund jurnalului. Meta este citit prin GET pentru campanie, ad set, creative și ad; nu se retrimit creări, pauze sau activări.
+
+După verificare, campania și ledgerul execuției sunt actualizate atomic, iar repetarea cheii execuției returnează rezultatul reconciliat fără apeluri externe noi. Indicatorul proprietății se actualizează doar dacă indică aceeași campanie. Proprietățile șterse nu sunt recreate; schimbările concurente și alte campanii sunt păstrate. Confirmarea precizează crearea în pauză, fără a afirma aprobarea sau livrarea reclamei.
+
+Publicarea păstrează aprobarea originală pentru această reconciliere. Proprietatea este comparată fără indicatorul tehnic metaMarketing, pe care publicarea însăși îl actualizează; celelalte date rămân verificate. Reconcilierea nu finalizează creări fără toate ID-urile salvate și rezolvate: acestea necesită recuperarea prin jurnalul de publicare. Datele istorice fără această dovadă nu sunt declarate reușite automat.
+
+Validare: **152 teste unitare și 54 teste de integrare**, ESLint, paritate, inventarul corpusului și build complet trecute. Firestore local și Meta simulat, inclusiv răspuns pierdut după commit, aprobare diferită, obiecte greșite, schimbări concurente și regresii de pauză. Dovada [Meta lot 09](evals/META_EXECUTION_BATCH_09.json) extinde un scenariu deja numărat: **252/1000 dovezi locale** rămân documentate. Lot nepublicat în producție.
+
 ## Meta Ads — publicare aprobată în conversație — 17 octombrie 2026
 
 Scenariul **0411** afișează configurația campaniei și solicită aprobarea explicită cerută de scenariu. Confirmarea numește campania exactă și este legată de reviziile campaniei, proprietății și conexiunii Meta. Planificarea și handlerul verifică separat aceste revizii; modificările, schimbarea contextului sau lipsa selecției invalidează aprobarea. Rolul de administrator cerut de ruta existentă este păstrat.

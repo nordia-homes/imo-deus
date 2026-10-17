@@ -3,7 +3,7 @@ import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 type Params = Record<string, string | number | boolean | null | undefined>;
 export type PublicationEdge = 'campaigns' | 'adsets' | 'adcreatives' | 'ads';
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
-export const publicationConfiguration=(row:Record<string,unknown>)=>Object.fromEntries(Object.entries(row).filter(([key])=>!['id','status','updatedAt','publishLog','lastPublishAttemptAt','publishAttempts','lastPublishError','publicationRun','publicationConfigurationHash','providerPublicationVerification','providerPauseVerification','metaCampaignId','metaAdSetId','metaCreativeId','metaAdId','metaImageHash','metaImageHashes','metaVideoId'].includes(key)));
+export const publicationConfiguration=(row:Record<string,unknown>)=>Object.fromEntries(Object.entries(row).filter(([key])=>!['id','status','updatedAt','publishLog','lastPublishAttemptAt','publishAttempts','lastPublishError','publicationRun','publicationApproval','publicationConfigurationHash','providerPublicationVerification','providerPauseVerification','metaCampaignId','metaAdSetId','metaCreativeId','metaAdId','metaImageHash','metaImageHashes','metaVideoId'].includes(key)));
 /** A pending durable intent is never dispatched again, including after process death. */
 export async function ensureMetaPublicationObject(options:{
  ref:DocumentReference; field:string; edge:PublicationEdge; accountId:string; params:Params;
@@ -46,3 +46,5 @@ export async function ensureMetaPublicationObject(options:{
  });
  return {id};
 }
+
+export const publicationPropertyContent=(row:Record<string,unknown>)=>Object.fromEntries(Object.entries(row).filter(([key])=>key!=='metaMarketing'));

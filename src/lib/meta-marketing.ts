@@ -1,4 +1,4 @@
-import { ensureMetaPublicationObject, publicationConfiguration, type PublicationEdge } from './meta-publication-journal';
+import { ensureMetaPublicationObject, publicationConfiguration, publicationPropertyContent, type PublicationEdge } from './meta-publication-journal';
 import { verifyMetaPublication } from './meta-campaign-publication';
 import { metaCampaignObservation, verifyMetaCampaignPause } from './meta-campaign-pause';
 import { buildMetaCampaignDraft, buildDefaultCampaignContent } from './meta-campaign-draft';
@@ -1099,6 +1099,27 @@ export async function readMetaCampaignProviderStatus(agencyId: string, campaignI
   return { provider, checkedAt: nowIso(), grantRevision };
 }
 
+export async function readMetaPublicationProviderStatus(agencyId: string, campaignId: string, options: { expectedRevision: string; actor: { uid: string; role?: string } }) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get(), row = snapshot.data();
+  const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  if (!row || row.agencyId !== agencyId || row.deletedAt || fingerprint(row) !== options.expectedRevision || !/^\d+$/.test(String(row.metaCampaignId || ''))) throw new Error('Campania s-a schimbat sau nu are identificator Meta.');
+  const { accessToken, integration } = await getAccessTokenForAgency(agencyId);
+  const accountId = integration.selectedAdAccount?.id;
+  if (!integration.connected || integration.agencyId !== agencyId || !accountId || !/^(act_)?\d+$/.test(accountId)) throw new Error('Conexiune Meta indisponibilă.');
+  const grantRevision = fingerprint(integration);
+  const assertCurrent = async () => {
+    const [current, grant, member] = await Promise.all([ref.get(), getPrivateDocRef(agencyId).get(), adminDb.collection('users').doc(options.actor.uid).get()]);
+    if (!current.exists || fingerprint(current.data()) !== options.expectedRevision || !grant.exists || fingerprint(grant.data()) !== grantRevision) throw new Error('Campania sau conexiunea s-a schimbat.');
+    if (member.data()?.agencyId !== agencyId || member.data()?.role !== options.actor.role || member.data()?.role !== 'admin') throw new Error('Acces revocat.');
+  };
+  await assertCurrent();
+  const proof = await verifyMetaPublication({campaignId:String(row.metaCampaignId||''),adSetId:String(row.metaAdSetId||''),creativeId:String(row.metaCreativeId||''),adId:String(row.metaAdId||''),accountId},
+    (id,fields)=>metaRequest('/'+id+'?fields='+encodeURIComponent(fields),accessToken,{signal:AbortSignal.timeout(15000)}));
+  await assertCurrent();
+  return { proof, grantRevision };
+}
+
 export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string, options: { expectedRevision?: string; actor?: { uid: string; role?: string } } = {}) {
   const ref = getCampaignDraftRef(agencyId, campaignId);
   const snapshot = await ref.get();
@@ -1384,6 +1405,7 @@ export async function publishMetaCampaign(agencyId: string, campaignId: string, 
     if (!current.exists || revision(current.data()) !== revision(snapshot.data()) || Date.parse(current.data()?.publicationRun?.expiresAt || '') > Date.now() || (current.data()?.publicationConfigurationHash && current.data()?.publicationConfigurationHash !== configuration)) throw new Error('O publicare este deja în curs sau campania s-a schimbat.');
     tx.update(ref, {
     publicationConfigurationHash: configuration,
+    ...(approval && requestedByUid ? {publicationApproval:{...approval,actorId:requestedByUid,configuration,propertyContentRevision:revision(publicationPropertyContent(propertySnapshot.data() || {}))}} : {}),
     publicationRun: { id: runId, expiresAt: new Date(Date.now()+300000).toISOString() },
     status: 'publishing',
     lastPublishAttemptAt: startedAt,

@@ -1,0 +1,75 @@
+{
+  "scope": "Extension of master-0444 to unknown approved publications with four resolved journal IDs. GET-only Meta readback, atomic CRM and execution-ledger reconciliation, no claim of ad delivery.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0444",
+      "prompt": "Reconciliază statusul dacă rezultatul este neclar.",
+      "versions": {
+        "prompt": "jarvis-158",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "189",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application conversation, actual publication and reconciliation, local Firestore and synthetic Meta. GET-only recovery of a prior approved unknown publication with all four journaled IDs.",
+      "runs": [
+        {
+          "phase": "uncertain_publication",
+          "final": {
+            "id": "47d9d967-9bf6-4efb-b226-35f960481b73-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Acțiuni executate: 0. Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": []
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T16:46:19.616Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "989252aa-c3c7-48cc-a421-b9f47aa6d4da-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Publicarea este confirmată: campania, setul, materialul și reclama au fost verificate la Meta. Am reconciliat execuția și starea CRM fără retrimitere. Obiectele sunt în pauză; aprobarea Meta și livrarea nu sunt confirmate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaStatusReview",
+                "title": "Stare Meta verificată",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Campanie",
+                    "propertyId": "property",
+                    "localStatus": "published",
+                    "providerStatus": "PAUSED",
+                    "effectiveStatus": "PAUSED",
+                    "checkedAt": "2026-10-17 19:46, București",
+                    "providerValidated": true,
+                    "reconciledExecutions": 1
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T16:46:20.264Z"
+          }
+        }
+      ]
+    }
+  ]
+}
