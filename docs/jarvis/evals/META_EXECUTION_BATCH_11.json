@@ -1,0 +1,184 @@
+{
+  "scope": "Original master-0420 and master-0436: persisted conversational campaign and period comparisons with real application Meta Insights reads, synthetic provider and local Firestore. No real ad spend or external writes.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0420",
+      "prompt": "Compară două campanii Meta.",
+      "versions": {
+        "prompt": "jarvis-160",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "191",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, real local Firestore and synthetic Meta account/campaign/Insights GET responses. Explicit periods, attribution, identity checks and no campaign mutations.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "784d0a5b-80ff-4527-9b7c-d461843a0f36-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alta: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 4, CPL 30.00 EUR; Selectată: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 4, CPL 30.00 EUR. Comparația folosește aceeași perioadă și regulă de atribuire; nu stabilește singură rentabilitatea campaniilor. Sunt ultimele șapte zile calendaristice încheiate, în ora Bucureștiului; ziua curentă este exclusă. Leadurile folosesc doar indicatorul agregat «lead», fără însumarea categoriilor suprapuse. Valorile lipsă și procentele cu bază zero rămân indisponibile. Rezultatele sunt raportate de Meta la momentul citirii și se pot actualiza ulterior; nu sunt o prognoză sau o garanție comercială. Nu am modificat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 4,
+                      "costPerLead": 30,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:18, București",
+                    "providerValidated": true
+                  },
+                  {
+                    "id": "selected",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 4,
+                      "costPerLead": 30,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:18, București",
+                    "providerValidated": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:18:47.444Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0436",
+      "prompt": "Compară ultimele șapte zile cu precedentele șapte.",
+      "versions": {
+        "prompt": "jarvis-160",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "191",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, real local Firestore and synthetic Meta account/campaign/Insights GET responses. Explicit periods, attribution, identity checks and no campaign mutations.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "14d7b4f8-5f62-45d4-b920-c75a38a1b41b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectată: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 4, CPL 30.00 EUR. Comparația cu precedentele șapte zile și diferențele sunt afișate în raport. Sunt ultimele șapte zile calendaristice încheiate, în ora Bucureștiului; ziua curentă este exclusă. Leadurile folosesc doar indicatorul agregat «lead», fără însumarea categoriilor suprapuse. Valorile lipsă și procentele cu bază zero rămân indisponibile. Rezultatele sunt raportate de Meta la momentul citirii și se pot actualiza ulterior; nu sunt o prognoză sau o garanție comercială. Nu am modificat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 4,
+                      "costPerLead": 30,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "previous": {
+                      "period": {
+                        "since": "2026-10-03",
+                        "until": "2026-10-09"
+                      },
+                      "currency": "EUR",
+                      "spend": 100,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 50,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "changes": {
+                      "spend": {
+                        "difference": 20,
+                        "percent": 20
+                      },
+                      "impressions": {
+                        "difference": 0,
+                        "percent": 0
+                      },
+                      "clicks": {
+                        "difference": 0,
+                        "percent": 0
+                      },
+                      "leads": {
+                        "difference": 2,
+                        "percent": 100
+                      },
+                      "costPerLead": {
+                        "difference": -20,
+                        "percent": -40
+                      }
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:18, București",
+                    "providerValidated": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:18:47.965Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { metaComparisonPeriods, parseMetaPeriod } from './meta-insights-period';
 import { ensureMetaPublicationObject, publicationConfiguration, publicationPropertyContent, type PublicationEdge } from './meta-publication-journal';
 import { observeMetaPublication, verifyMetaPublication } from './meta-campaign-publication';
 import { metaCampaignObservation, verifyMetaCampaignPause } from './meta-campaign-pause';
@@ -1100,6 +1101,36 @@ export async function readMetaCampaignProviderStatus(agencyId: string, campaignI
       (id,fields)=>id===String(row.metaCampaignId)?Promise.resolve(raw):metaRequest('/'+id+'?fields='+encodeURIComponent(fields),accessToken,{signal:AbortSignal.timeout(15000)})) : null;
   await assertCurrent();
   return { provider, checkedAt: nowIso(), grantRevision, hierarchy };
+}
+
+export async function readMetaCampaignPeriodInsights(agencyId: string, campaignId: string, options: { periods?: ReturnType<typeof metaComparisonPeriods>; expectedRevision: string; actor: { uid: string; role?: string } }) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get(), row = snapshot.data();
+  const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  if (!row || row.agencyId !== agencyId || row.deletedAt || fingerprint(row) !== options.expectedRevision || !/^\d+$/.test(String(row.metaCampaignId || ''))) throw new Error('Campania s-a schimbat sau nu are identificator Meta.');
+  const { accessToken, integration } = await getAccessTokenForAgency(agencyId);
+  const accountId = integration.selectedAdAccount?.id;
+  if (!integration.connected || integration.agencyId !== agencyId || !accountId || !/^(act_)?\d+$/.test(accountId)) throw new Error('Conexiune Meta indisponibilă.');
+  const grantRevision = fingerprint(integration);
+  const assertCurrent = async () => {
+    const [current, grant, member] = await Promise.all([ref.get(), getPrivateDocRef(agencyId).get(), adminDb.collection('users').doc(options.actor.uid).get()]);
+    if (!current.exists || fingerprint(current.data()) !== options.expectedRevision || !grant.exists || fingerprint(grant.data()) !== grantRevision) throw new Error('Campania sau conexiunea s-a schimbat.');
+    if (member.data()?.agencyId !== agencyId || member.data()?.role !== options.actor.role || !['agent', 'admin'].includes(String(member.data()?.role))) throw new Error('Acces revocat.');
+  };
+  await assertCurrent();
+  const account = await metaRequest<Record<string,unknown>>('/'+normalizeAdAccountId(accountId)+'?fields=id,account_id,currency,timezone_name',accessToken,{signal:AbortSignal.timeout(15000)});
+  const normalizedAccount=accountId.replace(/^act_/,'');
+  if(account.id!=='act_'+normalizedAccount||account.account_id!==normalizedAccount||account.timezone_name!=='Europe/Bucharest'||typeof account.currency!=='string'||!(/^[A-Z]{3}$/).test(account.currency))throw new Error('Contul Meta trebuie să folosească ora Bucureștiului și o monedă validă.');
+  const remote=await metaRequest('/'+row.metaCampaignId+'?fields=id,account_id,status,effective_status',accessToken,{signal:AbortSignal.timeout(15000)});
+  metaCampaignObservation(remote,String(row.metaCampaignId),accountId);
+  const periods=options.periods||metaComparisonPeriods();
+  const results=await Promise.all([periods.current,periods.previous].map(async period=>{
+   const query=new URLSearchParams({fields:'campaign_id,account_id,account_currency,date_start,date_stop,spend,impressions,clicks,actions',level:'campaign',time_range:JSON.stringify(period),action_attribution_windows:JSON.stringify(['7d_click','1d_view']),action_report_time:'impression',limit:'2'});
+   const payload=await metaRequest('/'+row.metaCampaignId+'/insights?'+query,accessToken,{signal:AbortSignal.timeout(15000)});
+   return parseMetaPeriod(payload,{campaignId:String(row.metaCampaignId),accountId:normalizedAccount,currency:account.currency as string,period});
+  }));
+  await assertCurrent();
+  return {current:results[0],previous:results[1],checkedAt:nowIso(),attribution:'7 zile după clic / 1 zi după vizualizare; raportare la data impresiei',timezone:'Europe/Bucharest'};
 }
 
 export async function readMetaPublicationProviderStatus(agencyId: string, campaignId: string, options: { expectedRevision: string; actor: { uid: string; role?: string } }) {

@@ -163,6 +163,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(inventory.text, inventory.complete ? 'success' : 'partial');
     }
   } catch { return finish('Nu pot confirma inventarul Meta: accesul, conexiunea sau datele s-au schimbat. Nu am modificat campanii.', 'unavailable'); }
+  const { prepareMetaPerformance } = await import('./meta-performance');
+  try {
+    const report = await prepareMetaPerformance(ctx, prompt, history);
+    if (report) { if (report.rows.length) cards.push({type:'data',source:report.source,title:'Comparație Meta',rows:report.rows,complete:true}); return finish(report.text); }
+  } catch { return finish('Nu pot confirma comparația Meta: verifică selecția, conexiunea și fusul orar București al contului. Datele sau accesul se pot fi schimbat. Nu am modificat campanii.', 'unavailable'); }
   const { prepareMetaStatus } = await import('./meta-status');
   try {
     const status = await prepareMetaStatus(ctx, prompt, history);

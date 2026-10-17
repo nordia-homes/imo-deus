@@ -3968,7 +3968,11 @@
           "sourceNumber": 420,
           "request": "Compară două campanii Meta.",
           "requestSha256": "5232c43a635f25f9222f60efb92faf414a2090af791c168c0a540a21e1bb0719",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_11.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0421",
@@ -4116,7 +4120,11 @@
           "sourceNumber": 436,
           "request": "Compară ultimele șapte zile cu precedentele șapte.",
           "requestSha256": "172cd37225c36d5d9d0c39e07c07d36849e5aa5a29e31a4a62423c5fbfe1dd11",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_11.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0437",

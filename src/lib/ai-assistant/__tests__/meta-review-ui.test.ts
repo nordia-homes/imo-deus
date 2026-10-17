@@ -31,3 +31,8 @@ it('labels provider state separately from the saved CRM state', () => {
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,{row:{localStatus:'published',providerStatus:'PAUSED',effectiveStatus:'PAUSED',checkedAt:'17.10.2026 18:30, București'},selection:false,busy:false,onPrompt:()=>{}}));
  expect(html).toContain('Stare CRM'); expect(html).toContain('Stare Meta'); expect(html).toContain('Stare efectivă Meta'); expect(html).toContain('București');
 });
+it('renders full period comparisons and sends the statistics selection',()=>{
+ vi.stubGlobal('React',React);const onPrompt=vi.fn();
+ const props={row:{id:'selected',snapshotRevision:'PRIVATE_HASH',selectedIds:['PRIVATE_ID'],current:{period:{since:'2026-10-10',until:'2026-10-16'},spend:120,leads:4,costPerLead:30},previous:{spend:100},changes:{spend:{difference:20,percent:20}}},selection:true,busy:false,selectionPrefix:'Statistici Meta',onPrompt};
+ const element:any=MetaReviewDetails(props);element.props.children[1].props.onClick();expect(onPrompt).toHaveBeenCalledWith('Statistici Meta: selected');const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('2026-10-10');expect(html).toContain('Precedentele șapte zile');expect(html).toContain('Schimbare (%)');expect(html).not.toContain('PRIVATE_HASH');expect(html).not.toContain('PRIVATE_ID');
+});

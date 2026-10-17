@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — comparații de campanii și perioade — 17 octombrie 2026
+
+Scenariile **0420 și 0436** citesc direct Meta Insights: două campanii pe aceeași perioadă sau ultimele șapte zile calendaristice încheiate față de precedentele șapte. Se exclud ziua curentă și comparațiile pe intervale mobile de 168 de ore. Contul Meta trebuie să raporteze Europe/Bucharest; moneda provine din cont și este validată în fiecare rând. Sunt afișate cheltuieli, afișări, clicuri, leaduri și CPL, cu diferențe absolute și procentuale pentru comparația temporală.
+
+Selecția unei campanii sau a celor două campanii continuă în conversația persistată. Datele ofertate sunt legate de context și de revizia inventarului/conexiunii; accesul se reverifică înainte și după citire. Cele două rapoarte folosesc perioade fixate o singură dată, inclusiv dacă cererea traversează miezul nopții. Două înregistrări CRM ale aceluiași ID Meta nu sunt prezentate drept două campanii diferite.
+
+Atribuirea solicitată este explicită: 7 zile după clic / 1 zi după vizualizare, raportare la data impresiei. Leadurile folosesc exclusiv indicatorul agregat lead, fără însumarea lui cu subcategoriile suprapuse. Indicatorii lipsă, rândurile absente și procentele cu bază zero rămân indisponibile. Identitatea, contul, moneda și ambele capete ale perioadei sunt validate; răspunsurile duplicate sau paginate neașteptat nu sunt prezentate ca rapoarte complete. Datele Meta se pot actualiza ulterior și nu sunt tratate ca prognoze sau garanții de rentabilitate.
+
+Validare: **95 teste unitare/UI și 37 de integrare**, ESLint, paritate, inventar corpus și build complet trecute; Firestore local și Meta simulat, fără mesaje, publicări sau cheltuieli reale. Dovada [Meta lot 11](evals/META_EXECUTION_BATCH_11.json) crește inventarul la **254/1000 dovezi locale** (133 cu model real, 121 deterministe), fără certificare integrală în producție. Lot nepublicat în producție.
+
+Acest flux nou nu folosește snapshotul istoric fără perioadă. Vechiul refreshMetaCampaignInsights și rapoartele istorice rămân de migrat separat; comparațiile/optimizările comerciale suplimentare nu sunt declarate implementate prin acest lot. Câmpuri verificate în [SDK-ul oficial Meta Insights](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ads-insights.js).
+
 ## Meta Ads — starea tuturor obiectelor după publicare — 17 octombrie 2026
 
 Scenariul **0412** verifică acum campania, setul de reclame, materialul și reclama asociate în CRM, prin patru citiri GET. Identificatorii, contul și asocierile sunt validate înainte de raportare. Jarvis distinge verificarea în curs, respingerea, facturarea incompletă, procesarea și pauzele moștenite; ACTIVE nu este prezentat drept dovadă de livrare sau rezultate comerciale. Datele istorice fără toate ID-urile primesc explicit o verificare parțială, doar la nivel de campanie.
