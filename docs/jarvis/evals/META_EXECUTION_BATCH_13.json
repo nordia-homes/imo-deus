@@ -1,0 +1,140 @@
+{
+  "scope": "Original master-0439 through persisted chat selection and explicit approval, upload, journaled creative creation, ad binding and verified CRM receipt. Limited to one image in a PAUSED hierarchy; synthetic Meta only. Active campaigns, form edits and lost image-upload recovery are not certified.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0439",
+      "prompt": "Aplică doar optimizarea pe care am aprobat-o.",
+      "versions": {
+        "prompt": "jarvis-164",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "195",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat, actual route and domain services, local Firestore, synthetic Meta. Single image replacement in PAUSED hierarchy only; no live certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "b9ced04e-d963-4919-a8a4-1931f477a4b0-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege fotografia concretă. Voi verifica configurația la Meta și îți voi prezenta schimbarea pentru aprobare, fără a modifica reclama.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaImageSelection",
+                "title": "Optimizare imagine Meta",
+                "rows": [
+                  {
+                    "id": "campaign/0",
+                    "campaignId": "campaign",
+                    "campaignName": "campaign",
+                    "imageUrl": "https://example.invalid/new.jpg",
+                    "expectedRevision": "aaf1ab320e52ccd58c6e33bf35f697e551077998c529f53d6904539f95543c9e",
+                    "propertyRevision": "266ec38e026a311d1f644de3c3125a7737664f7ee1c06affa1f8ab2c0f32b5fa",
+                    "grantRevision": "7c29b51f5a4f143b57e2063e1d7d9bc0493cb208bd7428899fab7cafa38fa76d",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T18:11:22.101Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "faa74647-88c0-4397-9204-b255a02f7be8-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Confirmă schimbarea acestei fotografii. Textul, destinația, bugetul și audiența rămân cele verificate. Campania rămâne în pauză; nu confirm livrare sau rezultate comerciale.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaImageApproval",
+                "title": "Optimizare imagine Meta",
+                "rows": [
+                  {
+                    "id": "66e699155385d42fc2823c0d739b23507bf553eeb85d755e7ae92e931bf09014",
+                    "proposalId": "66e699155385d42fc2823c0d739b23507bf553eeb85d755e7ae92e931bf09014",
+                    "campaignId": "campaign",
+                    "campaignName": "campaign",
+                    "imageUrl": "https://example.invalid/new.jpg",
+                    "previousImageUrl": "https://example.invalid/old.jpg",
+                    "primaryText": "Identic",
+                    "headline": "Titlu",
+                    "destinationUrl": "https://example.invalid",
+                    "budgetAmount": 50,
+                    "currency": null,
+                    "sourceRevision": "6d62e6a02227c23936895d770148f9409a387ec5bcf279f05539b48e77f656f1",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T18:11:22.586Z"
+          }
+        },
+        {
+          "phase": "approval",
+          "final": {
+            "id": "a49ffaa1-c057-4b34-8fc8-c27af9cbb735-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat schimbarea fotografiei aprobate pentru campania campaign. Configurația verificată a fost păstrată, iar reclama rămâne în pauză. Livrarea și rezultatele comerciale nu sunt confirmate.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaignId": "campaign",
+                      "proposalId": "66e699155385d42fc2823c0d739b23507bf553eeb85d755e7ae92e931bf09014",
+                      "proof": {
+                        "campaignId": "1",
+                        "adSetId": "2",
+                        "adId": "3",
+                        "oldCreativeId": "4",
+                        "newCreativeId": "5",
+                        "accountId": "6",
+                        "imageHash": "new",
+                        "checkedAt": "2026-10-17T18:11:23.948Z",
+                        "adStatus": "PAUSED",
+                        "onlyImageChanged": true,
+                        "deliveryConfirmed": false
+                      },
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_optimize_image",
+                      "completionSatisfied": true,
+                      "imageChangeConfirmed": true,
+                      "deliveryConfirmed": false,
+                      "verifiedAt": "2026-10-17T18:11:23.999Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T18:11:24.006Z"
+          }
+        }
+      ]
+    }
+  ]
+}

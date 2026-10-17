@@ -15,13 +15,13 @@ export function canonicalMetaValue(value: unknown): string {
         return '{' + Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => JSON.stringify(k) + ':' + canonicalMetaValue(v)).join(',') + '}';
     return JSON.stringify(value) ?? 'null';
 }
-const campaignFields = 'id,account_id,status,objective,daily_budget,lifetime_budget';
-const adSetFields = 'id,account_id,campaign_id,status,daily_budget,lifetime_budget,targeting,optimization_goal,billing_event,start_time,end_time';
-const adFields = 'id,account_id,campaign_id,adset_id,status,creative{id}';
-const creativeFields = 'id,account_id,object_story_spec,asset_feed_spec,degrees_of_freedom_spec,url_tags';
+export const campaignFields = 'id,account_id,status,objective,daily_budget,lifetime_budget';
+export const adSetFields = 'id,account_id,campaign_id,status,daily_budget,lifetime_budget,targeting,optimization_goal,billing_event,start_time,end_time';
+export const adFields = 'id,account_id,campaign_id,adset_id,status,creative{id}';
+export const creativeFields = 'id,account_id,object_story_spec,asset_feed_spec,degrees_of_freedom_spec,url_tags';
 function identity(row: Record<string, unknown>, id: string, account: string) { if (row.id !== id || row.account_id !== account)
     throw Error('Identitatea obiectului Meta nu corespunde aprobării.'); }
-function storyWithoutImage(value: unknown) {
+export function storyWithoutImage(value: unknown) {
     const creative = record(value), story = record(creative.object_story_spec), link = record(story.link_data);
     if (!story.page_id || !link.image_hash || !link.link || story.video_data || link.child_attachments || link.picture || Object.keys(record(creative.asset_feed_spec)).length || Object.keys(record(creative.degrees_of_freedom_spec)).length)
         throw Error('Optimizarea necesită un material simplu cu o singură imagine.');
@@ -81,4 +81,14 @@ export async function verifyMetaImageReplacement(approval: MetaImageApproval, io
     if (after.creativeId !== a.newCreativeId || creative !== afterCreative || canonicalMetaValue({ ...before, creativeId: a.newCreativeId }) !== canonicalMetaValue(after))
         throw Error('Schimbarea imaginii nu este încă verificată integral la Meta.');
     return { ...a, checkedAt: new Date().toISOString(), adStatus: 'PAUSED' as const, onlyImageChanged: true as const, deliveryConfirmed: false as const };
+}
+
+export async function readMetaImageSource(ids: {campaignId:string;adSetId:string;adId:string;oldCreativeId:string;accountId:string}, read:(id:string,fields:string)=>Promise<unknown>) {
+ const account=ids.accountId.replace(/^act_/,'');
+ if(!Object.values(ids).every(id=>/^(act_)?[0-9]+$/.test(id)))throw Error('Identificatori Meta invalizi.');
+ const [campaign,adSet,ad,creative]=(await Promise.all([read(ids.campaignId,campaignFields),read(ids.adSetId,adSetFields),read(ids.adId,adFields),read(ids.oldCreativeId,creativeFields)])).map(record);
+ identity(campaign,ids.campaignId,account);identity(adSet,ids.adSetId,account);identity(ad,ids.adId,account);identity(creative,ids.oldCreativeId,account);
+ if([campaign,adSet,ad].some(row=>row.status!=='PAUSED')||adSet.campaign_id!==ids.campaignId||ad.campaign_id!==ids.campaignId||ad.adset_id!==ids.adSetId||record(ad.creative).id!==ids.oldCreativeId)throw Error('Campania nu mai corespunde configurației în pauză.');
+ storyWithoutImage(creative);
+ return {campaign,adSet,ad,creative};
 }

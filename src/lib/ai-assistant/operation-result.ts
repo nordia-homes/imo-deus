@@ -22,6 +22,11 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };
   result.executionState = Object.entries(groups).find(([, values]) => values.includes(key))?.[0] || (readOnly ? 'observed' : 'accepted_unverified');
   if (operation === 'file_apply' && key === 'attached' && result.mutationRevision?.resource === 'properties') result.executionState = 'succeeded';
+  if (operation === 'meta_campaign_optimize_image') {
+    const proof=result.proof;
+    const confirmed=typeof result.campaignId==='string'&&!!result.campaignId&&typeof result.proposalId==='string'&&/^[a-f0-9]{64}$/.test(result.proposalId)&&proof?.onlyImageChanged===true&&proof.adStatus==='PAUSED'&&proof.deliveryConfirmed===false&&typeof proof.checkedAt==='string'&&Number.isFinite(Date.parse(proof.checkedAt))&&['campaignId','adSetId','adId','oldCreativeId','newCreativeId','accountId'].every(key=>typeof proof[key]==='string'&&/^[0-9]+$/.test(proof[key]))&&proof.oldCreativeId!==proof.newCreativeId&&typeof proof.imageHash==='string'&&!!proof.imageHash;
+    result.operation=operation;result.executionState=confirmed?'succeeded':'unknown';result.completionSatisfied=confirmed;result.imageChangeConfirmed=confirmed;result.deliveryConfirmed=false;
+  }
   if (operation === 'meta_campaign_publish') {
     const confirmed = hasMetaPublicationProof(result.campaign);
     result.operation = operation;

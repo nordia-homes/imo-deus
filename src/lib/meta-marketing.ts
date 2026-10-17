@@ -1154,8 +1154,7 @@ export async function readMetaPublicationProviderStatus(agencyId: string, campai
   return { proof, grantRevision };
 }
 
-/** Internal primitive: callers must prepare and persist the approved image upload and creative first.
- * Not exposed as a conversational action until that preparation workflow is implemented. */
+/** Internal primitive: the image workflow prepares and persists the approved upload and creative first. */
 export async function applyMetaImageOptimization(agencyId: string, campaignId: string, actor: {
     uid: string;
     role?: string;
@@ -1789,4 +1788,17 @@ export async function disconnectMetaMarketingByMetaUser(metaUserId: string) {
   }
 
   return { disconnected };
+}
+
+/** Server-only adapter. Tokens remain inside the closure. */
+export async function metaImageWorkflowProvider(agencyId:string){
+ const {accessToken,integration}=await getAccessTokenForAgency(agencyId);
+ if(!integration.connected||integration.agencyId!==agencyId||!integration.selectedAdAccount?.id)throw Error('Conexiune Meta indisponibilă.');
+ const accountId=normalizeAdAccountId(integration.selectedAdAccount.id);
+ return {integration,accountId,
+ read:(id:string,fields:string)=>metaRequest<Record<string,any>>('/'+id+'?fields='+encodeURIComponent(fields),accessToken,{signal:AbortSignal.timeout(15000)}),
+ upload:(url:string)=>uploadMetaImage(accountId,accessToken,url),
+ create:(params:Record<string,string|number|boolean|null|undefined>)=>metaFormRequest<{id?:string}>('/'+accountId+'/adcreatives',accessToken,params),
+ list:(after?:string)=>metaRequest<{data?:Record<string,unknown>[];paging?:{next?:string;cursors?:{after?:string}}}>('/'+accountId+'/adcreatives?fields=id,name,account_id&limit=100'+(after?'&after='+encodeURIComponent(after):''),accessToken,{signal:AbortSignal.timeout(15000)})
+ };
 }

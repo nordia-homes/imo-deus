@@ -682,6 +682,16 @@
       "verification": "registered_handler_not_provider_certification"
     },
     {
+      "id": "meta_campaign_optimize_image",
+      "method": "POST",
+      "path": "/api/marketing/meta/property-campaigns/{campaignId}/optimize-image",
+      "handler": "src/app/api/marketing/meta/property-campaigns/[campaignId]/optimize-image/route.ts",
+      "description": "Aplică numai fotografia din propunerea Meta verificată și aprobată, păstrând reclama în pauză.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
       "id": "meta_campaign_publish",
       "method": "POST",
       "path": "/api/marketing/meta/property-campaigns/{campaignId}/publish",

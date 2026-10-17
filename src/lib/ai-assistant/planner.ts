@@ -173,6 +173,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const status = await prepareMetaStatus(ctx, prompt, history);
     if (status) { if (status.rows.length) cards.push({ type: 'data', source: status.source, title: 'Stare Meta verificată', rows: status.rows, complete: true }); return finish(status.text); }
   } catch { return finish('Nu pot confirma starea actuală la Meta: verifică selecția, conexiunea și accesul. Nu am retrimis operația.', 'unavailable'); }
+  const { prepareMetaImage } = await import('./meta-image');
+  try {
+    const image = await prepareMetaImage(ctx, prompt, history);
+    if (image) { actions.push(...image.actions); if (image.rows.length) cards.push({type:'data',source:image.source,title:'Optimizare imagine Meta',rows:image.rows,complete:true}); return finish(image.text); }
+  } catch { return finish('Propunerea, configurația sau accesul s-a schimbat. Reia selecția fotografiei pentru verificare. Nu am aplicat optimizarea.', 'unavailable'); }
   const { prepareMetaPublish } = await import('./meta-publish');
   try {
     const publication = await prepareMetaPublish(ctx, prompt, history);

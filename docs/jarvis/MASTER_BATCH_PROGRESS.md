@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — optimizarea imaginii prin conversație și aprobare concretă — 17 octombrie 2026
+
+Scenariul **0439** are acum un flux conversațional pentru înlocuirea unei fotografii într-o reclamă cu o singură imagine și ierarhie PAUSED. Jarvis oferă fotografiile alternative din proprietatea curentă, citește configurația Meta, salvează o propunere proprie actorului și prezintă fotografia actuală și cea propusă. Confirmarea este legată de identificatorul exact al propunerii și de contextul proprietății. Cererea inițială nu aprobă o fotografie încă nealeasă.
+
+După confirmare, ruta dedicată încarcă URL-ul selectat și salvează hashul întors de Meta, creează materialul păstrând object_story_spec și url_tags, apoi schimbă asocierea reclamei și verifică rezultatul. Identificatorii externi nu pot fi precompletați prin câmpuri suplimentare în selecție. Propunerea este legată de reviziile campaniei, proprietății, conexiunii și configurației Meta; accesul este verificat din nou înaintea scrierilor. Modificările de buget, audiență, text sau destinație nu fac parte din aprobarea fotografiei.
+
+Crearea materialului reutilizează jurnalul persistent și recuperarea prin listare după nume de corelare; asocierea reclamei reutilizează verificarea și reconcilierea lotului anterior. Răspunsurile pierdute la aceste două operații sunt testate fără POST duplicat. **Încărcarea imaginii cu răspuns pierdut rămâne o limită:** nu se reîncearcă automat, iar operația nu este declarată reușită. Nu sunt certificate campanii active, carusele, video sau schimbări de formular. O propunere anterioară schimbării configurației trebuie refăcută; niciun succes nu presupune livrare sau rezultate comerciale.
+
+Validare: **194 teste unitare/UI și 43 de integrare** trecute, TypeScript, ESLint, paritate, inventar corpus și build complet trecute (cod de ieșire 0). Dovada [Meta lot 13](evals/META_EXECUTION_BATCH_13.json) folosește conversația persistată, ruta și serviciile reale ale aplicației, Firestore local și Meta simulat. Inventarul devine **258/1000 dovezi locale** (133 cu model real, 125 deterministe), fără certificare integrală sau live. Lot nepublicat în producție; nicio reclamă sau cheltuială reală modificată.
+
+Câmpurile materialului au fost verificate în [SDK-ul oficial Meta AdCreative](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ad-creative.js).
+
 ## Meta Ads — mecanism intern pentru schimbarea imaginii aprobate — 17 octombrie 2026
 
 Pregătirea scenariului **0439** include acum un serviciu intern pentru asocierea unei reclame cu un material Meta deja pregătit, cu o singură fotografie. Campania, setul și reclama trebuie să rămână PAUSED. Identitatea, contul, asocierile, textul, destinația, parametrii URL și configurația citită sunt comparate înainte și după operație; răspunsul POST singur nu confirmă succesul. Nu se trimit actualizări de buget, audiență sau activare.

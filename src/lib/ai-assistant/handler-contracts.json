@@ -2023,5 +2023,14 @@
     ],
     "queryFields": [],
     "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
+  },
+  "meta_campaign_optimize_image": {
+    "method": "POST",
+    "validation": "Propunere persistentă a aceluiași actor, configurație actuală și aprobare explicită.",
+    "bodyFields": [
+      "proposalId"
+    ],
+    "queryFields": [],
+    "note": "Aplică numai fotografia propunerii. Verifică citirea Meta și dovada persistentă înainte de confirmare."
   }
 }

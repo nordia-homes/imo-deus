@@ -17,13 +17,13 @@ it('renders CRM text as text and provides a disabled selection during execution'
 it('selects the indicated photo and hides revision hashes from the rendered detail', () => {
  vi.stubGlobal('React', React); const onPrompt=vi.fn();
  const props={row:{id:'2',description:'Fotografia din bucătărie',propertyRevision:'INTERNAL_HASH',campaignRevision:'OTHER_HASH'},selection:true,busy:false,selectionPrefix:'Material Meta',selectionLabel:'Selectează fotografia',onPrompt};
- const element:any=MetaReviewDetails(props); element.props.children[1].props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Material Meta: 2');
+ const element:any=MetaReviewDetails(props); element.props.children.find((child:any)=>child?.type==='button').props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Material Meta: 2');
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Selectează fotografia'); expect(html).not.toContain('INTERNAL_HASH'); expect(html).not.toContain('OTHER_HASH');
 });
 it('sends the exact pause confirmation from the campaign button', () => {
  vi.stubGlobal('React', React); const onPrompt=vi.fn();
  const props={row:{id:'selected',campaignName:'Campania aleasă',campaignRevision:'INTERNAL_HASH'},selection:true,busy:false,selectionPrefix:'Confirm pauza Meta',selectionLabel:'Confirmă pauza',onPrompt};
- const element:any=MetaReviewDetails(props); element.props.children[1].props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Confirm pauza Meta: selected');
+ const element:any=MetaReviewDetails(props); element.props.children.find((child:any)=>child?.type==='button').props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Confirm pauza Meta: selected');
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Confirmă pauza'); expect(html).not.toContain('INTERNAL_HASH');
 });
 it('labels provider state separately from the saved CRM state', () => {
@@ -34,5 +34,12 @@ it('labels provider state separately from the saved CRM state', () => {
 it('renders full period comparisons and sends the statistics selection',()=>{
  vi.stubGlobal('React',React);const onPrompt=vi.fn();
  const props={row:{id:'selected',snapshotRevision:'PRIVATE_HASH',selectedIds:['PRIVATE_ID'],current:{period:{since:'2026-10-10',until:'2026-10-16'},spend:120,leads:4,costPerLead:30},previous:{spend:100},changes:{spend:{difference:20,percent:20}}},selection:true,busy:false,selectionPrefix:'Statistici Meta',onPrompt};
- const element:any=MetaReviewDetails(props);element.props.children[1].props.onClick();expect(onPrompt).toHaveBeenCalledWith('Statistici Meta: selected');const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('2026-10-10');expect(html).toContain('Precedentele șapte zile');expect(html).toContain('Schimbare (%)');expect(html).not.toContain('PRIVATE_HASH');expect(html).not.toContain('PRIVATE_ID');
+ const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Statistici Meta: selected');const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('2026-10-10');expect(html).toContain('Precedentele șapte zile');expect(html).toContain('Schimbare (%)');expect(html).not.toContain('PRIVATE_HASH');expect(html).not.toContain('PRIVATE_ID');
+});
+
+it('shows the two photos and binds the button to the exact optimization proposal',()=>{
+ vi.stubGlobal('React',React);const onPrompt=vi.fn();
+ const props={row:{id:'a'.repeat(64),imageUrl:'https://example.invalid/new.jpg',previousImageUrl:'https://example.invalid/old.jpg',sourceRevision:'HIDDEN_HASH'},selection:true,busy:false,selectionPrefix:'Confirm optimizarea Meta',selectionLabel:'Confirmă schimbarea fotografiei',onPrompt};
+ const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Confirm optimizarea Meta: '+'a'.repeat(64));
+ const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('src="https://example.invalid/new.jpg"');expect(html).toContain('src="https://example.invalid/old.jpg"');expect(html).not.toContain('HIDDEN_HASH');
 });
