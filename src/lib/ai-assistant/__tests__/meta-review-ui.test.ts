@@ -26,3 +26,8 @@ it('sends the exact pause confirmation from the campaign button', () => {
  const element:any=MetaReviewDetails(props); element.props.children[1].props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Confirm pauza Meta: selected');
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Confirmă pauza'); expect(html).not.toContain('INTERNAL_HASH');
 });
+it('labels provider state separately from the saved CRM state', () => {
+ vi.stubGlobal('React', React);
+ const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,{row:{localStatus:'published',providerStatus:'PAUSED',effectiveStatus:'PAUSED',checkedAt:'17.10.2026 18:30, București'},selection:false,busy:false,onPrompt:()=>{}}));
+ expect(html).toContain('Stare CRM'); expect(html).toContain('Stare Meta'); expect(html).toContain('Stare efectivă Meta'); expect(html).toContain('București');
+});

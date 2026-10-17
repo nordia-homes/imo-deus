@@ -1,4 +1,4 @@
-import { verifyMetaCampaignPause } from './meta-campaign-pause';
+import { metaCampaignObservation, verifyMetaCampaignPause } from './meta-campaign-pause';
 import { buildMetaCampaignDraft, buildDefaultCampaignContent } from './meta-campaign-draft';
 import { validateMetaCampaignForPublish } from './meta-campaign-validation';
 import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypto';
@@ -1073,6 +1073,28 @@ async function updatePublishedMetaCampaignStatus(
     body: new URLSearchParams({ status }).toString(),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
+}
+
+export async function readMetaCampaignProviderStatus(agencyId: string, campaignId: string, options: { expectedRevision: string; actor: { uid: string; role?: string } }) {
+  const ref = getCampaignDraftRef(agencyId, campaignId);
+  const snapshot = await ref.get(), row = snapshot.data();
+  const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  if (!row || row.agencyId !== agencyId || row.deletedAt || fingerprint(row) !== options.expectedRevision || !/^\d+$/.test(String(row.metaCampaignId || ''))) throw new Error('Campania s-a schimbat sau nu are identificator Meta.');
+  const { accessToken, integration } = await getAccessTokenForAgency(agencyId);
+  const accountId = integration.selectedAdAccount?.id;
+  if (!integration.connected || integration.agencyId !== agencyId || !accountId || !/^(act_)?\d+$/.test(accountId)) throw new Error('Conexiune Meta indisponibilă.');
+  const grantRevision = fingerprint(integration);
+  const assertCurrent = async () => {
+    const [current, grant, member] = await Promise.all([ref.get(), getPrivateDocRef(agencyId).get(), adminDb.collection('users').doc(options.actor.uid).get()]);
+    if (!current.exists || fingerprint(current.data()) !== options.expectedRevision || !grant.exists || fingerprint(grant.data()) !== grantRevision) throw new Error('Campania sau conexiunea s-a schimbat.');
+    if (member.data()?.agencyId !== agencyId || member.data()?.role !== options.actor.role || !['agent', 'admin'].includes(String(member.data()?.role))) throw new Error('Acces revocat.');
+  };
+  await assertCurrent();
+  const raw = await metaRequest('/' + row.metaCampaignId + '?fields=id,account_id,status,effective_status', accessToken, { signal: AbortSignal.timeout(15000) });
+  const provider = metaCampaignObservation(raw, String(row.metaCampaignId), accountId);
+  if (!['ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED'].includes(provider.status) || !['ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED', 'IN_PROCESS', 'WITH_ISSUES'].includes(provider.effectiveStatus)) throw new Error('Meta a returnat o stare necunoscută.');
+  await assertCurrent();
+  return { provider, checkedAt: nowIso(), grantRevision };
 }
 
 export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string, options: { expectedRevision?: string; actor?: { uid: string; role?: string } } = {}) {

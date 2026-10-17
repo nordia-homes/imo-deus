@@ -1,0 +1,57 @@
+import { createCipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
+import { Firestore } from '@google-cloud/firestore';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { mkdir, writeFile } from 'node:fs/promises';
+const mocks=vi.hoisted(()=>({actor:null as any,db:null as any,fetch:vi.fn()}));
+vi.mock('@/lib/firebase-app-hosting',()=>({requireAgencyUserFromBearerToken:async()=>mocks.actor}));
+vi.mock('@/firebase/admin',()=>({adminAuth:{},get adminDb(){return mocks.db;}}));
+import { chatTurn } from '../workspace';
+import { executeAction } from '../actions';
+import { VERSIONS } from '../models';
+import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
+describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('persisted Jarvis provider status',()=>{
+ let db:Firestore;const agencies:string[]=[],users:string[]=[];
+ beforeAll(()=>{if(!/^(localhost|127[.]0[.]0[.]1):[0-9]+$/.test(process.env.FIRESTORE_EMULATOR_HOST||''))throw new Error('Local emulator required');db=new Firestore({projectId:'demo-imodeus-meta-status'});mocks.db=db;vi.stubEnv('META_TOKEN_ENCRYPTION_KEY','synthetic-control-key');vi.stubGlobal('fetch',mocks.fetch);});
+ afterAll(async()=>{if(!db)return;for(const id of agencies){await db.recursiveDelete(db.collection('agencies').doc(id));await db.collection('agencyPrivateIntegrations').doc(id+'__meta').delete();}for(const id of users)await db.collection('users').doc(id).delete();await db.terminate();vi.unstubAllGlobals();vi.unstubAllEnvs();});
+ async function fixture(){
+  const agencyId=randomUUID(),uid=randomUUID();agencies.push(agencyId);users.push(uid);const ctx={agencyId,uid,role:'agent',adminDb:db} as any;mocks.actor=ctx;
+  const agency=db.collection('agencies').doc(agencyId),profile=db.collection('users').doc(uid),campaign=agency.collection('metaCampaignDrafts').doc('selected'),other=agency.collection('metaCampaignDrafts').doc('other'),property=agency.collection('properties').doc('property');
+  await agency.set({name:'Synthetic'});await profile.set({agencyId,role:'agent'});await property.set({agencyId,title:'Cișmigiu',status:'Activ',metaMarketing:{latestCampaignDraftId:'other',status:'published'}});
+  await campaign.set({agencyId,propertyId:'property',status:'published',metaCampaignId:'123',campaignName:'Selectată',updatedAt:'before'});await other.set({agencyId,propertyId:'outside',status:'published',metaCampaignId:'999',campaignName:'Alta',updatedAt:'before'});
+  const grant=db.collection('agencyPrivateIntegrations').doc(agencyId+'__meta'),iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',createHash('sha256').update('synthetic-control-key').digest(),iv),encrypted=Buffer.concat([cipher.update('synthetic-token'),cipher.final()]);
+  await grant.set({agencyId,connected:true,selectedAdAccount:{id:'act_456'},encryptedAccessToken:`v1:${iv.toString('base64')}:${cipher.getAuthTag().toString('base64')}:${encrypted.toString('base64')}`});
+  let paused=false;mocks.fetch.mockReset().mockImplementation(async(url:string,init?:RequestInit)=>{const u=new URL(url);expect(u.origin).toBe('https://graph.facebook.com');expect(u.pathname).toBe('/v23.0/123');if(init?.method==='POST'){expect(String(init.body)).toBe('status=PAUSED');paused=true;return Response.json({success:true});}return Response.json({id:'123',account_id:'456',status:paused?'PAUSED':'ACTIVE',effective_status:paused?'PAUSED':'ACTIVE'});});
+  const sessionId=randomUUID(),currentRecord={resource:'properties',id:'property'} as const;
+  const send=(prompt:string,requestId=randomUUID())=>chatTurn(ctx,{sessionId,requestId,prompt,currentRecord});
+  const history=[{id:'current-page-context',role:'assistant',cards:[{source:'properties',rows:[{id:'property'}]}]}] as any;
+  return {ctx,agency,profile,campaign,other,property,grant,send,history,sessionId};
+ }
+
+ async function uncertainPause(f:Awaited<ReturnType<typeof fixture>>) {
+  const original=mocks.fetch.getMockImplementation()!;let failRead=false;
+  mocks.fetch.mockImplementation(async(url,init)=>{const response=await original(url,init);if(init?.method==='POST'){failRead=true;throw new Error('Synthetic lost response');}if(failRead){failRead=false;throw new Error('Synthetic readback timeout');}return response;});
+  const requestId=randomUUID(),result=await f.send('Pune campania pe pauză.',requestId),ledger=f.agency.collection('assistantExecutions').doc(requestId+'-safe-0');
+  expect(result.message.text).not.toContain('Meta a confirmat pauza');expect((await ledger.get()).data()?.status).toBe('unknown');return {result,ledger,requestId};
+ }
+ for(const n of [412,444])it('executes original master-'+String(n).padStart(4,'0'),async()=>{
+  const f=await fixture(),scenarioId='master-'+String(n).padStart(4,'0'),prompt=corpus.scenarios.find(row=>row.id===scenarioId)!.text,runs:any[]=[];
+  const other=(await f.other.get()).data(),before=(await f.campaign.get()).data();let prior:Awaited<ReturnType<typeof uncertainPause>>|undefined;
+  if(n===444){prior=await uncertainPause(f);runs.push({phase:'ambiguous_pause',final:prior.result.message});}
+  const requestId=randomUUID(),result=await f.send(prompt,requestId);runs.push({phase:'original',final:result.message});
+  expect(result.message.cards?.[0].source).toBe('metaStatusReview');expect(result.message.cards?.[0].rows[0].providerValidated).toBe(true);expect(result.message.cards?.[0].rows[0].checkedAt).toContain('București');expect(result.message.planId).toBeUndefined();
+  if(n===412){expect(result.message.text).toContain('ACTIVE');expect((await f.campaign.get()).data()).toEqual(before);expect(mocks.fetch.mock.calls.every(([,init])=>init?.method!=='POST')).toBe(true);}
+  else {expect(result.message.text).toContain('Pauza este confirmată');expect((await f.campaign.get()).data()?.status).toBe('paused');const completed=(await prior!.ledger.get()).data()!;expect(completed.status).toBe('completed');expect(completed.result.pauseConfirmed).toBe(true);const calls=mocks.fetch.mock.calls.length;expect(await executeAction(f.ctx,completed.action,prior!.ledger.id)).toEqual(completed.result);expect(mocks.fetch).toHaveBeenCalledTimes(calls);expect(mocks.fetch.mock.calls.filter(([,init])=>init?.method==='POST')).toHaveLength(1);}
+  expect((await f.other.get()).data()).toEqual(other);const count=mocks.fetch.mock.calls.length;expect((await f.send(prompt,requestId)).message.id).toBe(result.message.id);expect(mocks.fetch).toHaveBeenCalledTimes(count);
+  await mkdir('.tmp/jarvis-meta-status',{recursive:true});await writeFile('.tmp/jarvis-meta-status/'+scenarioId+'.json',JSON.stringify({scenarioId,prompt,versions:VERSIONS,executionVerified:true,environment:'Persisted application chat and local Firestore with synthetic Meta campaign status. Reconciliation certifies only a prior ambiguous pause belonging to the actor and exact campaign revision; no real external changes.',runs},null,2));
+ });
+ it('does not turn an ACTIVE provider response into pause success',async()=>{const f=await fixture(),prior=await uncertainPause(f);mocks.fetch.mockImplementation(async()=>Response.json({id:'123',account_id:'456',status:'ACTIVE',effective_status:'ACTIVE'}));const result=await f.send('Reconciliază statusul dacă rezultatul este neclar.');expect(result.message.text).not.toContain('Pauza este confirmată');expect((await prior.ledger.get()).data()?.status).toBe('unknown');expect((await f.campaign.get()).data()?.status).toBe('published');});
+ it.each(['actor','revision','running','operation'])('does not complete an unrelated ledger: %s',async kind=>{const f=await fixture(),prior=await uncertainPause(f);const row=(await prior.ledger.get()).data()!;await prior.ledger.update(kind==='actor'?{actorId:'other'}:kind==='revision'?{'action.body.expectedRevision':'0'.repeat(64)}:kind==='running'?{status:'running'}:{'action.operation':'meta_campaign_publish'});const result=await f.send('Reconciliază statusul dacă rezultatul este neclar.');expect(result.message.cards?.[0].rows[0].reconciledExecutions).toBe(0);expect((await prior.ledger.get()).data()?.status).toBe(kind==='running'?'running':row.status);expect((await f.campaign.get()).data()?.status).toBe('published');});
+ it('does not change local status merely because Meta reports PAUSED',async()=>{const f=await fixture();mocks.fetch.mockImplementation(async()=>Response.json({id:'123',account_id:'456',status:'PAUSED',effective_status:'PAUSED'}));const result=await f.send('Verifică statusul providerului după publicare.');expect(result.message.text).toContain('PAUSED');expect((await f.campaign.get()).data()?.status).toBe('published');});
+ it.each([{account_id:'999'},{id:'999'},{effective_status:'UNRECOGNIZED'}])('rejects inconsistent provider evidence: %j',async patch=>{const f=await fixture();mocks.fetch.mockImplementation(async()=>Response.json({id:'123',account_id:'456',status:'ACTIVE',effective_status:'ACTIVE',...patch}));const before=(await f.campaign.get()).data(),result=await f.send('Verifică statusul providerului după publicare.');expect(result.message.text).toContain('Nu pot confirma');expect((await f.campaign.get()).data()).toEqual(before);});
+ it('rejects a stale selection before contacting Meta',async()=>{const f=await fixture();await f.other.update({propertyId:'property'});const offered=await f.send('Verifică statusul providerului după publicare.');expect(offered.message.cards?.[0].source).toBe('metaStatusSelection');await f.campaign.update({headline:'changed'});const result=await f.send('Stare Meta: selected');expect(result.message.text).toContain('Nu pot confirma');expect(mocks.fetch).not.toHaveBeenCalled();});
+ it('reads the selected campaign from an ambiguous list',async()=>{const f=await fixture();await f.other.update({propertyId:'property'});await f.send('Verifică statusul providerului după publicare.');const result=await f.send('Stare Meta: selected');expect(result.message.text).toContain('ACTIVE');expect(mocks.fetch).toHaveBeenCalledTimes(1);});
+ it('rejects a changed connection during the read',async()=>{const f=await fixture(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const result=await original(url,init);await f.grant.update({connected:false});return result;});const result=await f.send('Verifică statusul providerului după publicare.');expect(result.message.text).toContain('Nu pot confirma');});
+ it('rechecks membership after the provider responds',async()=>{const f=await fixture(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const result=await original(url,init);await f.profile.update({agencyId:'other'});return result;});await expect(f.send('Verifică statusul providerului după publicare.')).rejects.toThrow('Acces revocat');});
+ it('does not reveal provider errors or grant contents in chat',async()=>{const f=await fixture();mocks.fetch.mockRejectedValue(new Error('access_token=synthetic-secret'));const result=await f.send('Verifică statusul providerului după publicare.');expect(JSON.stringify(result.message)).not.toContain('synthetic-secret');expect(result.message.text).toContain('Nu pot confirma');});
+ it('does not accept an unoffered selection',async()=>{const f=await fixture();const result=await f.send('Stare Meta: selected');expect(result.message.text).toContain('Nu pot confirma');expect(mocks.fetch).not.toHaveBeenCalled();});
+});

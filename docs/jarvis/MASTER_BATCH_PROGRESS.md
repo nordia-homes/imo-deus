@@ -22,6 +22,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — stare furnizor și reconciliere — 17 octombrie 2026
+
+Scenariile **0412 și 0444** au dovezi locale pentru citirea stării campaniei la furnizor și reconcilierea unei pauze incerte. Jarvis afișează distinct starea CRM, statusul Meta, starea efectivă și momentul verificării în București. Citirea este limitată la campania aleasă și contul autorizat, are timeout și nu lansează comenzi către Meta. Starea campaniei nu certifică livrarea reclamelor individuale sau rezultatele comerciale.
+
+Reconcilierea confirmă o pauză numai dacă Meta raportează PAUSED atât ca status cât și ca stare efectivă. Actualizarea campaniei, a indicatorului proprietății și a dovezii execuției se face într-o tranzacție. Sunt eligibile numai execuțiile incerte ale agentului curent pentru aceeași campanie și aceeași revizie. Nu se închid execuții aflate în curs, ale altui agent, ale altor operații sau ale unor versiuni modificate. O publicare incertă nu este declarată finalizată pe baza acestei verificări. Repetarea aceleiași cereri și reluarea cheii reconciliate nu retrimit pauza.
+
+Validare: **170 teste unitare/UI și 50 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Sunt acoperite cazurile de pierderea răspunsului după aplicarea pauzei, răspuns ACTIVE, cont/ID necorespunzător, selecție expirată, acces revocat și protejarea erorilor furnizorului. Dovada [Meta lot 05](evals/META_EXECUTION_BATCH_05.json) folosește conversația persistată, Firestore local și răspunsuri Meta sintetice. **247/1000 dovezi locale** (133 cu model real, 114 deterministe), fără certificare integrală în producție. Lot nepublicat în producție; nu au fost modificate campanii reale.
+
 ## Meta Ads — control din conversație, 4 scenarii — 17 octombrie 2026
 
 Scenariile **0413, 0414, 0440 și 0441** sunt conectate la ruta reală de pauză: Jarvis identifică ținta din context sau oferă selecția campaniei, execută pauza, recitește starea la Meta, salvează dovada și confirmă finalizarea. O comandă directă pentru singura campanie eligibilă nu cere o aprobare suplimentară. Formularea condiționată de confirmarea explicită afișează butonul de confirmare chiar dacă există o singură țintă.

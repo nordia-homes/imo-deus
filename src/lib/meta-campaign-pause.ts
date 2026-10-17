@@ -1,6 +1,6 @@
 export type MetaPauseObservation = { id: string; accountId: string; status: string; effectiveStatus: string };
 
-function observation(value: unknown, campaignId: string, accountId: string): MetaPauseObservation {
+export function metaCampaignObservation(value: unknown, campaignId: string, accountId: string): MetaPauseObservation {
   const row = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   if (row.id !== campaignId || row.account_id !== accountId.replace(/^act_/, '') ||
       typeof row.status !== 'string' || typeof row.effective_status !== 'string') {
@@ -21,7 +21,7 @@ export async function verifyMetaCampaignPause(options: {
     throw new Error('Identificatorul campaniei sau contului Meta lipsește ori este invalid.');
   }
   await options.assertCurrent();
-  const before = observation(await options.read(), options.campaignId, options.accountId);
+  const before = metaCampaignObservation(await options.read(), options.campaignId, options.accountId);
   if (!['ACTIVE', 'PAUSED'].includes(before.status)) {
     throw new Error('Campania Meta nu poate fi pusă în pauză din starea curentă.');
   }
@@ -35,7 +35,7 @@ export async function verifyMetaCampaignPause(options: {
   try { await options.pause(); } catch { /* The readback below resolves ambiguous transport outcomes. */ }
   let after: MetaPauseObservation;
   try {
-    after = observation(await options.read(), options.campaignId, options.accountId);
+    after = metaCampaignObservation(await options.read(), options.campaignId, options.accountId);
   } catch {
     throw new Error('Rezultatul pauzei la Meta este neclar. Verifică starea înainte de o nouă comandă.');
   }

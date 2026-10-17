@@ -1,0 +1,124 @@
+{
+  "scope": "Live-provider campaign-state read path and reconciliation of a prior ambiguous pause for the same actor and exact campaign revision. Provider responses are synthetic; campaign status is not evidence of ad delivery or publication of every child object.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0412",
+      "prompt": "Verifică statusul providerului după publicare.",
+      "versions": {
+        "prompt": "jarvis-152",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "183",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore with synthetic Meta campaign status. Reconciliation certifies only a prior ambiguous pause belonging to the actor and exact campaign revision; no real external changes.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "dc0c4a27-d1ff-40d3-8c0a-0ab49bcab9cb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta raportează pentru campania selected: ACTIVE, stare efectivă ACTIVE. Verificat la 2026-10-17 17:07, ora Bucureștiului. Aceasta este starea campaniei; nu certifică livrarea fiecărei reclame sau rezultate comerciale.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaStatusReview",
+                "title": "Stare Meta verificată",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "localStatus": "published",
+                    "providerStatus": "ACTIVE",
+                    "effectiveStatus": "ACTIVE",
+                    "checkedAt": "2026-10-17 17:07, București",
+                    "providerValidated": true,
+                    "reconciledExecutions": 0
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:07:30.635Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0444",
+      "prompt": "Reconciliază statusul dacă rezultatul este neclar.",
+      "versions": {
+        "prompt": "jarvis-152",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "183",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore with synthetic Meta campaign status. Reconciliation certifies only a prior ambiguous pause belonging to the actor and exact campaign revision; no real external changes.",
+      "runs": [
+        {
+          "phase": "ambiguous_pause",
+          "final": {
+            "id": "10977fdd-2abb-4b02-a671-3a5b91d72f56-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Acțiuni executate: 0. Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": []
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:07:31.273Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "0fcc637e-49b8-4cf4-b7f4-879c0d2cbdaa-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta raportează pentru campania selected: PAUSED, stare efectivă PAUSED. Verificat la 2026-10-17 17:07, ora Bucureștiului. Pauza este confirmată; am reconciliat starea din CRM și execuția incertă, fără retrimiterea comenzii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaStatusReview",
+                "title": "Stare Meta verificată",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "localStatus": "paused",
+                    "providerStatus": "PAUSED",
+                    "effectiveStatus": "PAUSED",
+                    "checkedAt": "2026-10-17 17:07, București",
+                    "providerValidated": true,
+                    "reconciledExecutions": 1
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:07:31.670Z"
+          }
+        }
+      ]
+    }
+  ]
+}

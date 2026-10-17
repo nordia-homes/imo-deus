@@ -3872,7 +3872,11 @@
           "sourceNumber": 412,
           "request": "Verifică statusul providerului după publicare.",
           "requestSha256": "25df793d620cae342c64425e1bdefe65b824697374cb30b3749237036b0faef3",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0413",
@@ -4176,7 +4180,11 @@
           "sourceNumber": 444,
           "request": "Reconciliază statusul dacă rezultatul este neclar.",
           "requestSha256": "8746ba921a6da23c37328a23c990ae2a2aa27347704ec7f2eb7bab4012b27d75",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0445",

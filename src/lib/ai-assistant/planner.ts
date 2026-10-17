@@ -154,6 +154,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { prepareMetaStatus } = await import('./meta-status');
+  try {
+    const status = await prepareMetaStatus(ctx, prompt, history);
+    if (status) { if (status.rows.length) cards.push({ type: 'data', source: status.source, title: 'Stare Meta verificată', rows: status.rows, complete: true }); return finish(status.text); }
+  } catch { return finish('Nu pot confirma starea actuală la Meta: verifică selecția, conexiunea și accesul. Nu am retrimis operația.', 'unavailable'); }
   const { prepareMetaControl } = await import('./meta-control');
   try {
     const control = await prepareMetaControl(ctx, prompt, history);
