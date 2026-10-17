@@ -1,0 +1,754 @@
+{
+  "scope": "Ten original scenarios through persisted chat. Actual atomic CRM draft creation/update and same-transaction execution receipt on local Firestore. Shared application draft builder, explicit amount clarification, main CRM photo, no automatic currency conversion, no publication or spending. Not production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0404",
+      "prompt": "Creează draft de campanie Meta pentru proprietate.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "2e756629-b2ac-4015-9051-6675ad9c872e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta c43dfebe731f2356972df8b9e72409fc43cf78be2dbea6d1e887e60e188966fd a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "c43dfebe731f2356972df8b9e72409fc43cf78be2dbea6d1e887e60e188966fd",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:27.222Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0405",
+      "prompt": "Nu publica draftul încă.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "deec4f2b-81c6-42ec-bb29-85d170948f9e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 95b1b65e7e2221eee35a392f2f86bd7c9feb1ae54fab98a7d1f0de7a5d062764 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "95b1b65e7e2221eee35a392f2f86bd7c9feb1ae54fab98a7d1f0de7a5d062764",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:27.705Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "c47787fd-9666-4c5c-9176-51d3b5f3618b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Nu public și nu modific bugete prin această cerere. Drafturile rămân nepublicate; publicarea și cheltuielile necesită aprobarea explicită în fluxul de publicare. Nu am oprit campanii deja publicate.",
+            "cards": [],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:27.961Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0406",
+      "prompt": "Setează bugetul campaniei la suma cerută.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "e8d7347b-7452-454d-a404-3994e7f02241-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 10e1d56f00aedde735544bf7235c14048995ebcd76b1ae40515dc72986833741 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "10e1d56f00aedde735544bf7235c14048995ebcd76b1ae40515dc72986833741",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:28.461Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "be900917-0c96-4d61-ad80-ebaf4f62acce-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Indică valorile exacte: „Parametri draft Meta: buget 150 EUR zilnic; durata 7 zile”. Moneda trebuie să coincidă cu moneda contului și a draftului. Nu modific campanii publicate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaDraftSelection",
+                "title": "Draft Meta",
+                "rows": [
+                  {
+                    "id": "10e1d56f00aedde735544bf7235c14048995ebcd76b1ae40515dc72986833741",
+                    "campaignName": "Promovare Cișmigiu",
+                    "propertyId": "property",
+                    "contextPropertyId": "property",
+                    "prompt": "Setează bugetul campaniei la suma cerută."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:28.716Z"
+          }
+        },
+        {
+          "phase": "values",
+          "final": {
+            "id": "fc78b40a-747e-4ae4-8952-9f84b36013f0-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 10e1d56f00aedde735544bf7235c14048995ebcd76b1ae40515dc72986833741 a fost salvat pentru proprietatea property. Buget 125 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_update",
+                      "campaignId": "10e1d56f00aedde735544bf7235c14048995ebcd76b1ae40515dc72986833741",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 125,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:29.136Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0407",
+      "prompt": "Actualizează campania draft.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "318c9e3b-6df3-4ce1-b63b-8c6c20cb7849-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta bd9f9f04dfd1648cbf88232538f1ab8fe7dd9a50fd6a7c2173a3e5ad7b94b8a5 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "bd9f9f04dfd1648cbf88232538f1ab8fe7dd9a50fd6a7c2173a3e5ad7b94b8a5",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:29.561Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "5b886023-fefa-441f-bc02-b5ca3c5fb814-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Indică valorile exacte: „Parametri draft Meta: buget 150 EUR zilnic; durata 7 zile”. Moneda trebuie să coincidă cu moneda contului și a draftului. Nu modific campanii publicate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaDraftSelection",
+                "title": "Draft Meta",
+                "rows": [
+                  {
+                    "id": "bd9f9f04dfd1648cbf88232538f1ab8fe7dd9a50fd6a7c2173a3e5ad7b94b8a5",
+                    "campaignName": "Promovare Cișmigiu",
+                    "propertyId": "property",
+                    "contextPropertyId": "property",
+                    "prompt": "Actualizează campania draft."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:29.794Z"
+          }
+        },
+        {
+          "phase": "values",
+          "final": {
+            "id": "85bbff16-5115-4345-8da6-80998bc510b5-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta bd9f9f04dfd1648cbf88232538f1ab8fe7dd9a50fd6a7c2173a3e5ad7b94b8a5 a fost salvat pentru proprietatea property. Buget 300 EUR total, durată 10 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_update",
+                      "campaignId": "bd9f9f04dfd1648cbf88232538f1ab8fe7dd9a50fd6a7c2173a3e5ad7b94b8a5",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 300,
+                      "budgetType": "lifetime",
+                      "currency": "EUR",
+                      "durationDays": 10,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:30.236Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0423",
+      "prompt": "Nu modifica bugetul fără approval dacă politica îl cere.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "29456f34-bcf5-4429-a971-5c8e6161c9f5-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta a56bb6a85316f5f184b14abb21af747bf8cdb028bd977352a93edf28cb551194 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "a56bb6a85316f5f184b14abb21af747bf8cdb028bd977352a93edf28cb551194",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:30.728Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "53d49c89-bb4f-4849-a19e-a8a539d38a51-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Nu public și nu modific bugete prin această cerere. Drafturile rămân nepublicate; publicarea și cheltuielile necesită aprobarea explicită în fluxul de publicare. Nu am oprit campanii deja publicate.",
+            "cards": [],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:30.953Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0424",
+      "prompt": "Pregătește o campanie de șapte zile.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "0109fae0-fc09-4d3a-8f3c-ca765c032094-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta a90590f2ffcf4f71e077e1dd8ac8344403f8ef7d050b6712896275e110987419 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "a90590f2ffcf4f71e077e1dd8ac8344403f8ef7d050b6712896275e110987419",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:31.426Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0425",
+      "prompt": "Pregătește campania cu buget total 300 €.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "af689f1c-5044-4611-a941-c512f22eb905-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta c32acbf91d605e86ea9e9fe2afcfd0601f2a2cf1a23760bdcc4fcdf2a63c76cf a fost salvat pentru proprietatea property. Buget 300 EUR total, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "c32acbf91d605e86ea9e9fe2afcfd0601f2a2cf1a23760bdcc4fcdf2a63c76cf",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 300,
+                      "budgetType": "lifetime",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:31.916Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0430",
+      "prompt": "Folosește fotografia principală a proprietății.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "361a74e1-ed9a-451a-abb8-da0f811b18c4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta c32d6923d10f7c87c9535cce9e79150a8a196dddf1eaa750188f388ef9159ba4 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "c32d6923d10f7c87c9535cce9e79150a8a196dddf1eaa750188f388ef9159ba4",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:32.407Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "cae892b0-5fa7-4863-9e1a-ca6667d4d168-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta c32d6923d10f7c87c9535cce9e79150a8a196dddf1eaa750188f388ef9159ba4 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_update",
+                      "campaignId": "c32d6923d10f7c87c9535cce9e79150a8a196dddf1eaa750188f388ef9159ba4",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:32.736Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0449",
+      "prompt": "Pregătește campania pentru proprietatea aleasă.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "2725a4f2-f9b9-4858-91e2-eb489c42b32f-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 688c30448cfb0c68378539a66948052eb8cb734618c60f998253c9fc6fa340cc a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "688c30448cfb0c68378539a66948052eb8cb734618c60f998253c9fc6fa340cc",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:33.239Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0450",
+      "prompt": "Cere-mi aprobarea înainte să cheltui bani.",
+      "versions": {
+        "prompt": "jarvis-148",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "179",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, atomic actual Firestore draft writes and execution ledger on local emulator. No Meta publication or spending.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "7e41b0d1-da7b-46eb-90b5-b1e739cf9afb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Draftul Meta 7ee27d55cdb30460344a9559860edea2883c1555bbc35a8d0e1c55e5fbcebc53 a fost salvat pentru proprietatea property. Buget 50 EUR pe zi, durată 7 zile. Campania nu este publicată.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "meta_campaign_draft",
+                      "campaignId": "7ee27d55cdb30460344a9559860edea2883c1555bbc35a8d0e1c55e5fbcebc53",
+                      "propertyId": "property",
+                      "executionState": "succeeded",
+                      "businessStatus": "draft",
+                      "budgetAmount": 50,
+                      "budgetType": "daily",
+                      "currency": "EUR",
+                      "durationDays": 7,
+                      "imageUrl": "https://example.invalid/main.jpg",
+                      "published": false
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:33.729Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "b0b08c92-4b48-4a25-a4b1-0a44b066e688-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Nu public și nu modific bugete prin această cerere. Drafturile rămân nepublicate; publicarea și cheltuielile necesită aprobarea explicită în fluxul de publicare. Nu am oprit campanii deja publicate.",
+            "cards": [],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T11:01:33.938Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -3788,28 +3788,44 @@
           "sourceNumber": 404,
           "request": "Creează draft de campanie Meta pentru proprietate.",
           "requestSha256": "0b741cbe68c81b211b9e6b5d983137e94c7ae90a78803737733a18fa27dd046f",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0405",
           "sourceNumber": 405,
           "request": "Nu publica draftul încă.",
           "requestSha256": "16f5f95d1abb7ebfbb13bbbbfc5cc2f00d494a1fca54dc78c57b2faac3122cd8",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0406",
           "sourceNumber": 406,
           "request": "Setează bugetul campaniei la suma cerută.",
           "requestSha256": "e0e66e98ba2474e4091a63bb26b72069dea41910e50ef3f2d7d15ae834e3fc37",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0407",
           "sourceNumber": 407,
           "request": "Actualizează campania draft.",
           "requestSha256": "764f302839b60aa2d5f975baa3b741a62750eee9766c5151162b6f42d6f4a256",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0408",
@@ -3949,21 +3965,33 @@
           "sourceNumber": 423,
           "request": "Nu modifica bugetul fără approval dacă politica îl cere.",
           "requestSha256": "0257742bcf4859ad71e98fe76bcfd418f49d67a158e1dff44296af3d1fa5a80c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0424",
           "sourceNumber": 424,
           "request": "Pregătește o campanie de șapte zile.",
           "requestSha256": "84d551841bbc0c5cc4379909ecb089be69e373df00b2f7799587affaf0f09d2a",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0425",
           "sourceNumber": 425,
           "request": "Pregătește campania cu buget total 300 €.",
           "requestSha256": "5f9ea8929e1e8d07e72ab3e66afca51f961dcf0f3793800256147cde8f3c1be7",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0426",
@@ -4002,7 +4030,11 @@
           "sourceNumber": 430,
           "request": "Folosește fotografia principală a proprietății.",
           "requestSha256": "4c53ce1bb57c2951dfa81148167097db1ea3b8d439d263dccab30bfd4ec54831",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0431",
@@ -4147,14 +4179,22 @@
           "sourceNumber": 449,
           "request": "Pregătește campania pentru proprietatea aleasă.",
           "requestSha256": "e34d5bd987171a6aa08e6a21a9cd3661dfa7f635ba781b7cbfd56ee236056f56",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0450",
           "sourceNumber": 450,
           "request": "Cere-mi aprobarea înainte să cheltui bani.",
           "requestSha256": "3724d2a7e0b65e02ba0c5196fa65f67c4a90f9b7674ec362d88d378951101399",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_02.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         }
       ]
     },

@@ -352,8 +352,8 @@ export function AssistantResultCard({
                       {String(row.reasoning)}
                     </p>
                   ) : null}
-                  {["metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && <MetaReviewDetails row={row} selection={card.source === "metaReviewSelection"} busy={busy} onPrompt={onPrompt} />}
-                  {!["metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && !property && !calendar && !task && !client && !sale && (
+                  {["metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && <MetaReviewDetails row={row} selection={["metaReviewSelection", "metaDraftSelection"].includes(card.source)} selectionPrefix={card.source === "metaDraftSelection" ? "Draft Meta" : "Campanie Meta"} busy={busy} onPrompt={onPrompt} />}
+                  {!["metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && !property && !calendar && !task && !client && !sale && (
                     <div className="mt-3 space-y-2">
                       {Object.entries(row)
                         .filter(

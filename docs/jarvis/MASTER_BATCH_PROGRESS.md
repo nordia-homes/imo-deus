@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — creare și editare drafturi, 10 scenarii — 17 octombrie 2026
+
+Scenariile **0404–0407, 0423–0425, 0430, 0449 și 0450** continuă prin chat până la salvarea draftului sau păstrarea lui nepublicat, după caz. Crearea folosește același constructor de campanie ca modulul Meta existent. Proprietatea trebuie deschisă în CRM; când sunt mai multe drafturi, se selectează campania. Pentru cereri fără valoarea bugetului, Jarvis cere suma și tipul bugetului, apoi execută continuarea, fără să inventeze valori.
+
+Bugetul de **300 EUR total** se salvează ca lifetime, nu daily. Moneda cerută și cea a draftului trebuie să coincidă cu moneda contului Meta; nu se face conversie implicită. Durata de șapte zile este salvată explicit. Alegerea fotografiei principale recitește proprietatea și salvează numai fotografia principală ca single_image, eliminând selecția video anterioară. Drafturile marcate local ready, dar nepublicate, revin la draft după editare și necesită revalidare. Campaniile publicate, în curs de publicare sau cu identificatori Meta nu sunt editabile prin acest flux.
+
+Salvarea campaniei, actualizarea referinței proprietății și dovada execuției sunt în aceeași tranzacție Firestore. ID-ul de creare este stabil pentru aceeași execuție; cererile simultane nu dublează campania. Profilul, agenția, conexiunea, moneda și reviziile proprietății/draftului se verifică înainte de scriere. Rezultatul salvat este recitit înainte de confirmare. O editare nu mută referința proprietății de la un alt draft mai recent. Nicio operație din acest lot nu publică și nu cheltuie bani.
+
+Validare: **158 teste unitare/UI și 39 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Sunt incluse cele zece cereri originale, contextul și continuările necesare; selecție între mai multe drafturi, replay, concurență, acces revocat, monedă incompatibilă, proprietate modificată, fotografie absentă și campanie publicată între citire și scriere. Dovadă: [Meta lot 02](evals/META_EXECUTION_BATCH_02.json). **237/1000 dovezi locale** (133 cu model real, 104 deterministe). Firestore local, fără publicări sau cheltuieli reale. Lot nepublicat în producție; nu reprezintă certificarea integrală a corpusului.
+
 ## Meta Ads — lot comun de 13 scenarii — 17 octombrie 2026
 
 Scenariile **0401, 0403, 0408–0410, 0416–0419, 0426, 0434, 0442 și 0443** au acum fluxuri de citire prin conversația persistată: conexiune, campaniile proprietății deschise, configurație, lipsuri pentru publicare, dashboard, cheltuieli, leaduri, CPL, audiență, campanii cu cheltuieli și zero leaduri, istoric și erori salvate. Dacă există mai multe campanii, agentul selectează campania din rezultat; accesul și eligibilitatea se recitesc înaintea răspunsului. Agenții și administratorii folosesc accesul de citire Meta existent al agenției.

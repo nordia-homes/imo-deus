@@ -4,6 +4,7 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (['meta_campaign_draft', 'meta_campaign_update'].includes(String(receipt?.operation)) && receipt?.executionState === 'succeeded' && receipt.businessStatus === 'draft') return 'Draftul Meta ' + receipt.campaignId + ' a fost salvat pentru proprietatea ' + receipt.propertyId + '. Buget ' + receipt.budgetAmount + ' ' + receipt.currency + (receipt.budgetType === 'lifetime' ? ' total' : ' pe zi') + ', durată ' + receipt.durationDays + ' zile. Campania nu este publicată.';
     if (receipt?.operation === 'social_destination_remove' && receipt.deletionConfirmed === true && receipt.executionState === 'succeeded') return 'Meta a confirmat ștergerea publicării ' + receipt.externalId + ' din contul ' + receipt.connectionId + ' pentru postarea ' + receipt.postId + '. Destinația este marcată ca ștearsă în aplicație.';
     if (receipt?.operation === 'social_publish' && receipt.immediate === true) {
       if (receipt.publicationConfirmed === true && receipt.executionState === 'succeeded') return 'Meta a confirmat publicarea postării sociale ' + receipt.postId + '. ID publicare: ' + (Array.isArray(receipt.externalIds) ? receipt.externalIds.join(', ') : '') + '.';
