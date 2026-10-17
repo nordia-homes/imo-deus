@@ -1,0 +1,10 @@
+import { expect, it } from 'vitest';
+import { metaReviewMetrics, safeMetaError } from '../meta-review';
+import { validateMetaCampaignForPublish } from '@/lib/meta-campaign-validation';
+it.each([undefined, null, -1, NaN, Infinity, '0'])('does not invent spend from invalid %s', spend => { expect(metaReviewMetrics({ insights: { spend, leads: 0 } }).spend).toBeNull(); });
+it.each([undefined, null, -1, NaN, Infinity, 1.5, '0'])('does not invent leads from invalid %s', leads => { expect(metaReviewMetrics({ insights: { spend: 20, leads } }).leads).toBeNull(); });
+it('recomputes CPL and does not divide by zero', () => { expect(metaReviewMetrics({ currency: 'EUR', insights: { spend: 120, leads: 4, costPerLead: 999 } }).costPerLead).toBe(30); expect(metaReviewMetrics({ insights: { spend: 20, leads: 0 } }).costPerLead).toBeNull(); });
+it('redacts credentials from stored provider errors', () => { expect(safeMetaError('access_token=SECRET Bearer SECRET https://example.invalid/SECRET')).not.toContain('SECRET'); });
+it.each([NaN, Infinity, -10, 0])('blocks invalid budget %s in actual publication validator', budgetAmount => { const result = validateMetaCampaignForPublish({ budgetAmount } as any, {} as any, {} as any); expect(result.ok).toBe(false); expect(result.errors.join(' ')).toContain('Bugetul'); });
+it('redacts JSON-formatted credentials in provider messages', () => { expect(safeMetaError('{"access_token":"SECRET","authorization":"Bearer SECRET"}')).not.toContain('SECRET'); });
+it.each([null, undefined, '', ' ', NaN, Infinity, 91])('rejects missing or invalid latitude %s', latitude => { const result = validateMetaCampaignForPublish({} as any, {} as any, { latitude, longitude: 26 } as any); expect(result.errors.join(' ')).toContain('coordonate valide'); });

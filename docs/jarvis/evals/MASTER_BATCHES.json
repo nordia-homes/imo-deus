@@ -3759,7 +3759,11 @@
           "sourceNumber": 401,
           "request": "Verifică dacă Meta Ads este conectat.",
           "requestSha256": "a4593f51ed9b91adb68bf0313e8ae4a5978323732c34c8092f881484152f6acd",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0402",
@@ -3773,7 +3777,11 @@
           "sourceNumber": 403,
           "request": "Arată-mi campaniile proprietății acesteia.",
           "requestSha256": "9bee8761453d254d3d317f4f209b3a36a848b77adb5102bb193a59f2b149155c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0404",
@@ -3808,21 +3816,33 @@
           "sourceNumber": 408,
           "request": "Arată-mi configurația completă a campaniei.",
           "requestSha256": "8c044cd8500bc4908e0f79e06e3f2c1d6d0ea161ce6f8b687c7fdb857113c260",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0409",
           "sourceNumber": 409,
           "request": "Verifică dacă este ready pentru publicare.",
           "requestSha256": "ec700abdb8ee760090553c17350742a43c35144a51d432da532095a3e490a506",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0410",
           "sourceNumber": 410,
           "request": "Spune-mi ce lipsește pentru publicare.",
           "requestSha256": "74cde9d99f9ce56c754d05cfa93b1fb1e05ccf04f7789a503cba97aef975dd59",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0411",
@@ -3864,28 +3884,44 @@
           "sourceNumber": 416,
           "request": "Arată-mi dashboardul Meta.",
           "requestSha256": "188237dfe37b6b8a8327411ec31ca3c3d24f89463a8b65e8f04484e031170680",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0417",
           "sourceNumber": 417,
           "request": "Cât a cheltuit campania aceasta?",
           "requestSha256": "e431eff97c91e7fdce959c6667674d9348016ff70ba66f6595f0c8fa3bc86498",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0418",
           "sourceNumber": 418,
           "request": "Câte leaduri a produs campania?",
           "requestSha256": "b04977ffa0f8aea604b3e79ed34762b3fe3ef0f3c155c196753450a42a13a0c9",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0419",
           "sourceNumber": 419,
           "request": "Care este costul per lead?",
           "requestSha256": "ad44511c75be09906d379206abae5faf41e71f5788413fb94991989ae8d211ae",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0420",
@@ -3934,7 +3970,11 @@
           "sourceNumber": 426,
           "request": "Arată-mi audiența configurată.",
           "requestSha256": "a02d0c9803b6e60f3a0c2d45511f48bd786c7776485972c7d91b8643a181a3a4",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0427",
@@ -3990,7 +4030,11 @@
           "sourceNumber": 434,
           "request": "Spune-mi campaniile care au spend și zero leaduri.",
           "requestSha256": "f48d3b34a22028b4bb700a2c682f986855367b07c340b791b73c47d013711fcd",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0435",
@@ -4046,14 +4090,22 @@
           "sourceNumber": 442,
           "request": "Arată-mi istoricul operațiilor campaniei.",
           "requestSha256": "2a23a834207fd7508525ba6fec984544677388fe207dfec1f71e213bfaf57284",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0443",
           "sourceNumber": 443,
           "request": "Verifică eventualele erori provider.",
           "requestSha256": "b701e38d0354cb42949147825db607ef1152c1882963eb902f095f191c3be4fd",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_01.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0444",

@@ -1,0 +1,825 @@
+{
+  "scope": "Thirteen original requests through persisted application chat, local Firestore and shared actual publication validator. Read-only CRM configuration, saved insights and limited stored history. UI preserves full whitelisted configuration and history. No live Meta verification, ad spend or production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0401",
+      "prompt": "Verifică dacă Meta Ads este conectat.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "bc11becb-b301-4f1d-a922-70fcf0b5371b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta Ads apare conectat în configurația salvată. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaConnectionReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "meta",
+                    "connected": true,
+                    "updatedAt": null,
+                    "businessId": "business",
+                    "adAccountId": "account",
+                    "pageId": "page",
+                    "instagramId": null,
+                    "errorRecorded": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:13.008Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0403",
+      "prompt": "Arată-mi campaniile proprietății acesteia.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "a43eaab2-351f-4c49-92f7-767ca5387b98-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Campaniile proprietății property: 1. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPropertyCampaigns",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "status": "draft",
+                    "configurationUpdatedAt": null,
+                    "spend": 120,
+                    "leads": 4,
+                    "costPerLead": 30,
+                    "currency": "EUR",
+                    "updatedAt": "2026-10-17 10:00, București",
+                    "period": "Perioada de atribuire nu este stocată în acest snapshot.",
+                    "evidence": "saved_insights"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:13.444Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0408",
+      "prompt": "Arată-mi configurația completă a campaniei.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "0787ddcd-ba5a-4759-ab11-5e104b33cfec-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Configurația salvată a campaniei campaign, inclusiv buget, programare în București, audiență, materiale și tracking.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "configuration",
+                    "status": "draft",
+                    "adSetName": "Set",
+                    "adName": "Ad",
+                    "objective": "traffic",
+                    "budgetType": "daily",
+                    "budgetAmount": 50,
+                    "currency": "EUR",
+                    "durationDays": 7,
+                    "startMode": null,
+                    "locationLabel": "București",
+                    "radiusKm": 15,
+                    "headline": "Titlu",
+                    "primaryText": "Descriere",
+                    "creativeFormat": "single_image",
+                    "creativeAspectRatio": null,
+                    "previewDevice": null,
+                    "optimizationGoal": null,
+                    "billingEvent": null,
+                    "abTestEnabled": null,
+                    "imageUrl": null,
+                    "imageAlt": null,
+                    "videoUrl": null,
+                    "videoThumbnailUrl": null,
+                    "destinationUrl": "https://example.invalid/property",
+                    "destinationType": null,
+                    "phoneNumber": null,
+                    "utmEnabled": null,
+                    "utmSource": null,
+                    "utmMedium": null,
+                    "utmCampaign": null,
+                    "utmContent": null,
+                    "callToAction": null,
+                    "specialAdCategory": "HOUSING",
+                    "startsAt": null,
+                    "endsAt": null,
+                    "placements": [
+                      "facebook_feed"
+                    ],
+                    "mediaItems": [
+                      {
+                        "url": "https://example.invalid/photo0.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo1.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo2.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo3.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo4.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo5.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo6.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      },
+                      {
+                        "url": "https://example.invalid/photo7.jpg",
+                        "type": "image",
+                        "alt": null,
+                        "name": null,
+                        "thumbnailUrl": null,
+                        "source": null
+                      }
+                    ],
+                    "creativeVariants": []
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:13.815Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0409",
+      "prompt": "Verifică dacă este ready pentru publicare.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "92720ea1-5859-4e18-84ae-3766b2129c86-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Validatorul folosit la publicare acceptă configurația locală. Accesul live Meta și materialele externe vor fi verificate de fluxul de publicare; această citire nu publică și nu aprobă cheltuieli.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "readiness",
+                    "readyLocally": true,
+                    "errors": [],
+                    "providerValidated": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:14.145Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0410",
+      "prompt": "Spune-mi ce lipsește pentru publicare.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "64705f24-9fdc-4f95-bd78-997ef9674145-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Publicarea este blocată: Selecteaza cel putin o imagine pentru reclama.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "missing",
+                    "readyLocally": false,
+                    "errors": [
+                      "Selecteaza cel putin o imagine pentru reclama."
+                    ],
+                    "providerValidated": false
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:14.463Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0416",
+      "prompt": "Arată-mi dashboardul Meta.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "af28f3b9-a221-49f5-bbd4-d6ce1bedbad4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Dashboard Meta: 1 campanii din istoricul disponibil al agenției, fără limita de 50 de înregistrări. Valorile sunt afișate per campanie și monedă; nu adun cheltuieli din monede sau perioade diferite. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaDashboardReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "status": "draft",
+                    "configurationUpdatedAt": null,
+                    "spend": 120,
+                    "leads": 4,
+                    "costPerLead": 30,
+                    "currency": "EUR",
+                    "updatedAt": "2026-10-17 10:00, București",
+                    "period": "Perioada de atribuire nu este stocată în acest snapshot.",
+                    "evidence": "saved_insights"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:14.778Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0417",
+      "prompt": "Cât a cheltuit campania aceasta?",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "3c5f9a0c-a8c0-4099-8f80-05c368377308-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Cheltuieli: 120 EUR. Actualizare: 2026-10-17 10:00, București. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "spend",
+                    "spend": 120,
+                    "leads": 4,
+                    "costPerLead": 30,
+                    "currency": "EUR",
+                    "updatedAt": "2026-10-17 10:00, București",
+                    "period": "Perioada de atribuire nu este stocată în acest snapshot.",
+                    "evidence": "saved_insights"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:15.091Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0418",
+      "prompt": "Câte leaduri a produs campania?",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "66b5ac0c-7c4a-437e-8f7f-2dca4776a753-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Leaduri: 4. Actualizare: 2026-10-17 10:00, București. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "leads",
+                    "spend": 120,
+                    "leads": 4,
+                    "costPerLead": 30,
+                    "currency": "EUR",
+                    "updatedAt": "2026-10-17 10:00, București",
+                    "period": "Perioada de atribuire nu este stocată în acest snapshot.",
+                    "evidence": "saved_insights"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:15.404Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0419",
+      "prompt": "Care este costul per lead?",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "6bfe62da-11c6-4733-a3e3-e48da14cf03b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Cost per lead: 30 EUR. Actualizare: 2026-10-17 10:00, București. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "cpl",
+                    "spend": 120,
+                    "leads": 4,
+                    "costPerLead": 30,
+                    "currency": "EUR",
+                    "updatedAt": "2026-10-17 10:00, București",
+                    "period": "Perioada de atribuire nu este stocată în acest snapshot.",
+                    "evidence": "saved_insights"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:15.706Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0426",
+      "prompt": "Arată-mi audiența configurată.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "85f6ecff-b5ff-4ab7-a4ed-a208525999fc-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Audiența configurată pentru campaign. Nu deduc criterii de targetare care nu sunt salvate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "audience",
+                    "specialAdCategory": "HOUSING",
+                    "locationLabel": "București",
+                    "radiusKm": 15,
+                    "placements": [
+                      "facebook_feed"
+                    ]
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:16.021Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0434",
+      "prompt": "Spune-mi campaniile care au spend și zero leaduri.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "626e54dd-61c3-4d0a-a236-d35537cdc54c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "1 campanii au cheltuieli pozitive și exact zero leaduri în datele salvate. 0 campanii au indicatori lipsă sau invalizi și nu sunt tratate ca zero leaduri. Date salvate în CRM; starea live Meta și perioada de atribuire nu au fost reverificate prin această citire.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaZeroLeadCampaigns",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "status": "draft",
+                    "configurationUpdatedAt": null,
+                    "spend": 120,
+                    "leads": 0,
+                    "costPerLead": null,
+                    "currency": "EUR",
+                    "updatedAt": "2026-10-17 10:00, București",
+                    "period": "Perioada de atribuire nu este stocată în acest snapshot.",
+                    "evidence": "saved_insights"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:16.351Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0442",
+      "prompt": "Arată-mi istoricul operațiilor campaniei.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "c6fea7d5-d379-448e-99b9-da1173ac022d-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Istoricul păstrat al operațiilor campaniei campaign. Serviciul reține cel mult ultimele 25 de evenimente; nu reprezintă un audit istoric complet.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "history",
+                    "events": [
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      },
+                      {
+                        "at": "2026-10-17 10:00, București",
+                        "status": "error",
+                        "message": "access_token=[omis]",
+                        "metaObjectId": null
+                      }
+                    ],
+                    "attempts": 1,
+                    "lastAttemptAt": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:16.665Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0443",
+      "prompt": "Verifică eventualele erori provider.",
+      "versions": {
+        "prompt": "jarvis-147",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "178",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat with local Firestore. Saved CRM data and actual shared publication validator; no live Meta verification or spending.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "65b9dcc9-dcb8-4007-a65e-ff43627ab5a2-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Există o eroare de publicare salvată pentru campaign. Cauza live nu a fost reverificată.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaCampaignReview",
+                "title": "Meta Ads",
+                "rows": [
+                  {
+                    "id": "campaign",
+                    "propertyId": "property",
+                    "campaignName": "Cișmigiu",
+                    "mode": "errors",
+                    "status": "draft",
+                    "lastPublishError": "access_token=[omis]",
+                    "lastAttemptAt": null
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:44:16.976Z"
+          }
+        }
+      ]
+    }
+  ]
+}

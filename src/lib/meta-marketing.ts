@@ -1,3 +1,4 @@
+import { validateMetaCampaignForPublish } from './meta-campaign-validation';
 import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb } from '@/firebase/admin';
@@ -1225,20 +1226,6 @@ function appendPublishLog(
   return [...(draft.publishLog || []), entry].slice(-25);
 }
 
-function withDraftUtmParameters(draft: MetaMarketingCampaignDraft) {
-  if (!draft.destinationUrl || !draft.utmEnabled) return draft.destinationUrl || '';
-  try {
-    const url = new URL(draft.destinationUrl);
-    if (draft.utmSource) url.searchParams.set('utm_source', draft.utmSource);
-    if (draft.utmMedium) url.searchParams.set('utm_medium', draft.utmMedium);
-    if (draft.utmCampaign) url.searchParams.set('utm_campaign', draft.utmCampaign);
-    if (draft.utmContent) url.searchParams.set('utm_content', draft.utmContent);
-    return url.toString();
-  } catch {
-    return draft.destinationUrl;
-  }
-}
-
 function getPublishObjective(draft: MetaMarketingCampaignDraft) {
   if (draft.objective === 'traffic') return 'OUTCOME_TRAFFIC';
   if (draft.objective === 'messages') return 'OUTCOME_ENGAGEMENT';
@@ -1310,45 +1297,6 @@ async function validateRemoteMedia(url: string, expectedType: 'image' | 'video')
   } catch (error) {
     if (error instanceof Error && /Media|Fisierul|Video-ul|Imaginea/.test(error.message)) throw error;
   }
-}
-
-function validateMetaCampaignForPublish(
-  draft: MetaMarketingCampaignDraft,
-  integration: MetaMarketingIntegrationPublicStatus,
-  property: Property
-) {
-  const errors: string[] = [];
-  const mediaItems = draft.mediaItems || [];
-  const imageItems = mediaItems.filter((item) => item.type === 'image');
-  const hasVideo = Boolean(draft.videoUrl || mediaItems.some((item) => item.type === 'video'));
-  const destinationUrl = withDraftUtmParameters(draft);
-
-  if (!integration.connected) errors.push('Conecteaza Meta inainte de publicare.');
-  if (!integration.selectedBusiness) errors.push('Selecteaza Business Manager-ul folosit la reclame.');
-  if (!integration.selectedAdAccount) errors.push('Selecteaza Ad Account-ul folosit la reclame.');
-  if (!integration.selectedPage) errors.push('Selecteaza pagina Facebook folosita in reclama.');
-  if (!draft.campaignName || !draft.adSetName || !draft.adName) errors.push('Completeaza numele campaniei, ad setului si reclamei.');
-  if (Number(draft.budgetAmount) < 10) errors.push('Bugetul minim este 10 RON.');
-  if (Number(draft.durationDays) < 1) errors.push('Durata campaniei trebuie sa fie de cel putin o zi.');
-  if (!draft.headline?.trim() || !draft.primaryText?.trim()) errors.push('Completeaza titlul si textul reclamei.');
-  if (!draft.locationLabel?.trim()) errors.push('Completeaza orasul sau zona metropolitana promovata.');
-  if (Number(draft.radiusKm || 0) < 15) errors.push('Pentru Housing, raza audientei trebuie sa fie de minimum 15 km.');
-  if (!Number.isFinite(Number(property.latitude)) || !Number.isFinite(Number(property.longitude))) {
-    errors.push('Proprietatea trebuie sa aiba coordonate valide pentru targetarea Housing pe zona larga.');
-  }
-  if (!draft.placements?.length) errors.push('Selecteaza cel putin un placement.');
-  if (draft.creativeFormat === 'video' && !hasVideo) errors.push('Selecteaza un video pentru formatul video.');
-  if (draft.creativeFormat !== 'video' && !imageItems.length) errors.push('Selecteaza cel putin o imagine pentru reclama.');
-  if (draft.creativeFormat === 'carousel' && imageItems.length < 2) errors.push('Caruselul are nevoie de cel putin doua imagini.');
-  if (draft.objective === 'calls' && !draft.phoneNumber?.trim()) errors.push('Adauga numarul de telefon pentru obiectivul Apeluri.');
-  if (!destinationUrl || !/^https:\/\//.test(destinationUrl)) {
-    errors.push('Linkul de destinatie trebuie sa fie public si HTTPS.');
-  }
-  if (draft.utmEnabled && (!draft.utmSource || !draft.utmMedium || !draft.utmCampaign)) {
-    errors.push('Completeaza parametrii UTM sau dezactiveaza tracking-ul.');
-  }
-
-  return { ok: errors.length === 0, errors, destinationUrl };
 }
 
 async function uploadMetaImage(adAccountId: string, accessToken: string, imageUrl: string) {

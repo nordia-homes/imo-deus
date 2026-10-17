@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — lot comun de 13 scenarii — 17 octombrie 2026
+
+Scenariile **0401, 0403, 0408–0410, 0416–0419, 0426, 0434, 0442 și 0443** au acum fluxuri de citire prin conversația persistată: conexiune, campaniile proprietății deschise, configurație, lipsuri pentru publicare, dashboard, cheltuieli, leaduri, CPL, audiență, campanii cu cheltuieli și zero leaduri, istoric și erori salvate. Dacă există mai multe campanii, agentul selectează campania din rezultat; accesul și eligibilitatea se recitesc înaintea răspunsului. Agenții și administratorii folosesc accesul de citire Meta existent al agenției.
+
+Verificarea pregătirii folosește același validator ca publicarea efectivă. Validatorul respinge suplimentar bugete/durate/raze invalide, monede necunoscute, proprietăți inactive și coordonate absente sau în afara limitelor. Citirea nu schimbă starea draftului și nu publică reclame.
+
+Indicatorii provin din snapshotul CRM, cu momentul actualizării în București și perioada de atribuire explicit necunoscută. Lipsurile nu devin zero; CPL este calculat numai cu cheltuieli valide și leaduri pozitive. Nu sunt adunate monede sau perioade diferite. Dashboardul citește toate înregistrările eligibile, fără limita istorică de 50. Istoricul precizează că serviciul păstrează cel mult 25 de evenimente. Conexiunea și erorile salvate nu sunt prezentate drept diagnostic live Meta.
+
+Verificarea prin chat a identificat trunchierea configurației și a listelor de către previzualizarea generică. Proiecția explicită a campaniei se păstrează acum integral, iar interfața afișează configurația și evenimentele, inclusiv liste de peste cinci elemente. Nu se expun obiectele brute ale integrării; credențialele din erorile provider sunt mascate.
+
+Validare: **150 teste unitare/UI și 17 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Probele includ cele 13 cereri originale, selecție în conversație, replay, revocare acces, documente străine/șterse, date lipsă, peste 50 de campanii și absența mutațiilor/apelurilor externe. Dovadă: [Meta lot 01](evals/META_EXECUTION_BATCH_01.json). **227/1000 dovezi locale** (133 cu model real, 94 deterministe). Nu sunt 227 certificări în producție și nu sunt verificate aici datele live Meta. Lot nepublicat în producție.
+
 ## Reîmprospătarea listei Meta pentru publicarea socială — 17 octombrie 2026
 
 Scenariul **0386** citește din nou paginile autorizate și conturile Instagram asociate folosind grantul organic al agenției și serviciul de comunicare existent. Lista publică este salvată în conversație. Repetarea aceluiași requestId redă rezultatul salvat, fără alte apeluri Meta; o cerere nouă recitește furnizorul. Nu este schimbată selecția conturilor pentru reclame sau configurația conexiunilor sociale.

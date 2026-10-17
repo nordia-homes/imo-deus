@@ -1,4 +1,5 @@
 "use client";
+import { MetaReviewDetails } from './MetaReviewDetails';
 import { useState } from "react";
 import Image from "next/image";
 import {
@@ -351,7 +352,8 @@ export function AssistantResultCard({
                       {String(row.reasoning)}
                     </p>
                   ) : null}
-                  {!property && !calendar && !task && !client && !sale && (
+                  {["metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && <MetaReviewDetails row={row} selection={card.source === "metaReviewSelection"} busy={busy} onPrompt={onPrompt} />}
+                  {!["metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && !property && !calendar && !task && !client && !sale && (
                     <div className="mt-3 space-y-2">
                       {Object.entries(row)
                         .filter(
