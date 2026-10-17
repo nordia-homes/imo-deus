@@ -154,6 +154,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { prepareSocialRemove } = await import('./social-remove');
+  try {
+    const removal = await prepareSocialRemove(ctx, prompt, history);
+    if (removal) {
+      if (removal.rows.length) cards.push({ type: 'data', source: 'socialRemoveRequest', title: 'Destinații pentru ștergere', rows: removal.rows, complete: true });
+      actions.push(...removal.actions);
+      return finish(removal.text);
+    }
+  } catch { return finish('Nu pot șterge destinațiile: selecția, postarea, conexiunea sau accesul s-au schimbat. Cere din nou lista actuală.', 'unavailable'); }
   const { prepareSocialPublish } = await import('./social-publish');
   try {
     const publication = await prepareSocialPublish(ctx, prompt, history);

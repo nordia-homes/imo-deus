@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Ștergerea postărilor sociale și a destinației selectate — 17 octombrie 2026
+
+Scenariile **0382 și 0383** folosesc serviciul existent de ștergere Meta. Pentru postarea întreagă, Jarvis oferă selecția și cere confirmarea explicită prevăzută de scenariu. Pentru o singură destinație, cererea de eliminare cu ID-ul postării și contului autorizează doar acel cont. Acțiunile sunt executate prin registrul execuțiilor; replay-ul aceleiași cereri nu repetă DELETE.
+
+Înaintea apelului extern se recitesc tranzacțional profilul administrativ, postarea, identificatorul publicării și conexiunea. Schimbările dintre selecție și execuție opresc ștergerea. Succesul cere răspunsul Meta success=true și destinația persistată ca deleted/removal=meta, cu același identificator. Celelalte destinații rămân nemodificate la eliminarea uneia singure. La eșecul unei ștergeri ulterioare, se confirmă numai destinațiile efectiv șterse și se oprește secvența.
+
+Integrarea existentă suportă ștergerea la distanță doar pentru paginile Facebook. O postare care include Instagram nu este oferită pentru ștergere integrală; destinația Facebook poate fi eliminată separat. Nu se simulează ștergerea Instagram printr-o simplă schimbare locală de stare și nu se schimbă accesul administrativ existent.
+
+Validare: 142 teste unitare și 98 teste de integrare trecute; ESLint, paritate și build complet verificate. Dovadă: [Social lot 12](evals/SOCIAL_EXECUTION_BATCH_12.json). **213/1000 dovezi locale** (133 cu model real, 80 deterministe), fără certificare integrală în producție. Meta DELETE simulat și Firestore local; fără ștergeri externe reale. Lot nepublicat în producție.
+
 ## Publicarea ciornei sociale prin workerul existent — 17 octombrie 2026
 
 Scenariul **0378** oferă ciornele CRM disponibile și folosește alegerea explicită „Publică postarea socială: ID” drept selecție și confirmare, conform cererii originale „după approval”. Executorul verifică revizia, profilul administrativ, proprietatea și contul, salvează atomic jobul și invocă workerul doar pentru postarea selectată. Nu consumă alte joburi ajunse la termen. Repetarea cererii nu trimite din nou postarea.

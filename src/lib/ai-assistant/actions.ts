@@ -91,11 +91,14 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const body = action.operation === 'message_send' || action.operation === 'message_preview' || action.operation === 'facebook_job_create' ? { ...action.body, requestId } : action.body;
       const { socialCommentAction, validateSocialCommentAction, socialCommentReceipt } = await import('./social-comment-actions');
       if (socialCommentAction(action) && !await validateSocialCommentAction(ctx, action)) throw new Error('Funcție nesuportată pentru acest canal');
+      const { socialRemoveAction, executeSocialRemove } = await import('./social-remove');
       const { socialDraftAction } = await import('./social-draft');
       const { socialPublishAction } = await import('./social-publish');
       const { socialScheduleAction } = await import('./social-schedule');
       let result: Record<string, any>;
-      if (socialDraftAction(action)) {
+      if (socialRemoveAction(action)) {
+        result = await executeSocialRemove(ctx, action);
+      } else if (socialDraftAction(action)) {
         const { createPropertySocialDraft } = await import('@/lib/communications/social-property-draft');
         result = await createPropertySocialDraft(ctx.adminDb, { uid: ctx.uid, agencyId: ctx.agencyId, role: 'admin' }, { requestId, propertyId: body.propertyId, connectionId: body.connectionId });
       } else if (socialScheduleAction(action) || socialPublishAction(action)) {

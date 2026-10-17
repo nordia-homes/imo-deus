@@ -1,3 +1,4 @@
+import { socialRemoveExecutionPrompt } from './social-remove';
 import { socialPublishExecutionPrompt } from './social-publish';
 import { socialScheduleExecutionPrompt } from './social-schedule';
 import { socialDraftExecutionPrompt } from './social-draft';
@@ -100,7 +101,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const result = await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
     turnMetrics = result.metrics;
     const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(input.prompt, result.metrics.status, result.actions, result.goalCoverage);
-    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
+    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(socialRemoveExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
     for (const step of autonomous.results) {
       const receipt = step.result as Record<string, unknown> | undefined;
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
@@ -118,7 +119,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     }
     if (autonomous.results.length || autonomous.blocked) {
       const hasFacebookCreation = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'facebook_job_create');
-      const hasSocialAction = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'social_reply' || (step.result as Record<string, unknown> | undefined)?.operation === 'social_publish');
+      const hasSocialAction = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'social_reply' || (step.result as Record<string, unknown> | undefined)?.operation === 'social_publish' || (step.result as Record<string, unknown> | undefined)?.operation === 'social_destination_remove');
       const hasOutbound = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'message_send');
       result.text = `Acțiuni executate: ${autonomous.results.length - rejectedMessages.length}. ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : hasFacebookCreation ? 'Starea publicării este disponibilă în jobul Facebook.' : hasSocialAction ? 'Starea acțiunii sociale este descrisă mai sus.' : hasOutbound ? 'Starea mesajelor este disponibilă în Inbox.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       const confirmation = executionConfirmation(autonomous.results);

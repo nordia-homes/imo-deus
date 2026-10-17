@@ -121,7 +121,7 @@ export async function publishDraft(db: Firestore, actor: Actor, id: string) {
   });
   return { queued: true };
 }
-export async function removePublishedSocialPost(db: Firestore, actor: Actor, postId: string, connectionId: string, remote: boolean) {
+export async function removePublishedSocialPost(db: Firestore, actor: Actor, postId: string, connectionId: string, remote: boolean, expectedExternalId?: string) {
   const ref = agencyCollection(db, actor.agencyId, 'socialPosts').doc(postId);
   const snap = await ref.get();
   const post = snap.data();
@@ -132,6 +132,17 @@ export async function removePublishedSocialPost(db: Firestore, actor: Actor, pos
     const { connection, token } = await connectionToken(db, actor, connectionId, 'publish');
     if (connection.channel !== 'messenger' || !new RegExp('^' + connection.externalId + '_\\d+$').test(destination.externalId)) {
       throw new CommunicationError('ID-ul postării nu aparține paginii Facebook conectate.', 409);
+    }
+    if (expectedExternalId !== undefined) {
+      await db.runTransaction(async tx => {
+        const profile = (await tx.get(db.collection('users').doc(actor.uid))).data();
+        const fresh = (await tx.get(ref)).data();
+        const account = (await tx.get(agencyCollection(db, actor.agencyId, 'channelConnections').doc(connectionId))).data();
+        const entry = fresh?.destinations?.[connectionId];
+        if (actor.role !== 'admin' || profile?.role !== 'admin' || profile.agencyId !== actor.agencyId) throw new CommunicationError('Acces revocat.', 403);
+        if (!fresh || fresh.deletedAt || fresh.agencyId !== actor.agencyId || entry?.status !== 'published' || entry.channel !== 'messenger' || entry.externalId !== expectedExternalId || destination.externalId !== expectedExternalId) throw new CommunicationError('Publicarea selectată s-a schimbat.', 409);
+        if (!account || account.deletedAt || account.agencyId !== actor.agencyId || account.status !== 'connected' || account.channel !== 'messenger' || account.externalId !== connection.externalId || account.capabilities?.publish?.status !== 'active') throw new CommunicationError('Conexiunea s-a schimbat.', 409);
+      });
     }
     await graphDelete('/' + destination.externalId, token);
   }

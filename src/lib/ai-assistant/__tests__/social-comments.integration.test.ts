@@ -558,4 +558,67 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const wrapped = { collection: db.collection.bind(db), runTransaction: async (fn: any) => { await job.update({ scheduledAt: new Date(Date.now() + 86400000).toISOString() }); return db.runTransaction(fn); } } as any;
     await drainSocial(wrapped, { postId: f.draftId, agencyId: f.ctx.agencyId }); expect((await job.get()).data()?.status).toBe('queued'); expect((await f.post.parent.doc(f.draftId).get()).data()?.status).toBe('queued'); expect(mocks.fetch).not.toHaveBeenCalled();
   });
+  async function removalFixture(secondChannel = 'messenger') {
+    const f = await fixture(); await f.connection.update({ 'capabilities.publish.status': 'active' });
+    const secondId = 'z' + randomUUID(); secrets.push(secondId);
+    await f.connection.parent.doc(secondId).set({ agencyId: f.ctx.agencyId, channel: secondChannel, externalId: '999', status: 'connected', capabilities: { publish: { status: 'active' } } });
+    await db.collection('communicationSecrets').doc(secondId).set({ agencyId: f.ctx.agencyId, token: seal('SYNTHETIC_TOKEN') });
+    const second = { channel: secondChannel, status: 'published', externalId: secondChannel === 'messenger' ? '999_888' : '888', publishedAt: '2026-10-17T06:00:00Z' };
+    await f.post.update({ status: 'published', ['destinations.' + secondId]: second });
+    return { ...f, secondId, second };
+  }
+  for (const scenarioId of ['master-0382', 'master-0383']) it('executes ' + scenarioId + ' with confirmed remote deletion and exact destination scope', async () => {
+    const f = await removalFixture(); const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const original = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt });
+    expect(original.message.cards?.[0].source).toBe('socialRemoveRequest'); expect(mocks.fetch).not.toHaveBeenCalled();
+    mocks.fetch.mockImplementation(async () => new Response(JSON.stringify({ success: true }), { status: 200 }));
+    const input = { ...f.input, requestId: randomUUID(), prompt: scenarioId === 'master-0382' ? 'Confirmă ștergerea postării sociale: post' : 'Elimină destinația socială: post | ' + f.connectionId };
+    const result = await chatTurn(f.ctx, input); expect(result.message.planId).toBeUndefined(); expect(result.message.text).toContain('Meta a confirmat ștergerea publicării 123_456');
+    const post = (await f.post.get()).data(); expect(post?.destinations[f.connectionId]).toMatchObject({ status: 'deleted', externalId: '123_456', removal: 'meta' });
+    if (scenarioId === 'master-0382') { expect(post?.destinations[f.secondId].status).toBe('deleted'); expect(post?.status).toBe('deleted'); }
+    else { expect(post?.destinations[f.secondId]).toEqual(f.second); expect(post?.status).toBe('published'); }
+    const calls = scenarioId === 'master-0382' ? 2 : 1; expect(mocks.fetch).toHaveBeenCalledTimes(calls); for (const [, options] of mocks.fetch.mock.calls) expect(options.method).toBe('DELETE');
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(calls);
+    await writeFile('.tmp/jarvis-social-comments/' + scenarioId + '.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual persisted chat, executor and existing remote deletion domain service on local Firestore. Meta DELETE responses simulated; exact changed and unchanged destinations verified.', runs: [{ phase: 'original', final: original.message }, { phase: 'selection', final: result.message }] }, null, 2));
+  });
+  it('keeps the unselected Instagram destination unchanged when deleting Facebook', async () => {
+    const f = await removalFixture('instagram'); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Elimină doar destinația selectată.' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }));
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Elimină destinația socială: post | ' + f.connectionId });
+    expect((await f.post.get()).data()?.destinations[f.secondId]).toEqual(f.second); expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  });
+  it('does not delete any destination when full deletion includes unsupported Instagram', async () => {
+    const f = await removalFixture('instagram'); const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Șterge postarea numai după confirmare.' });
+    expect(result.message.text).toContain('nu confirm automat ștergerea Instagram'); expect(mocks.fetch).not.toHaveBeenCalled(); expect((await f.post.get()).data()?.status).toBe('published');
+  });
+  for (const reason of ['unoffered', 'external-id', 'connection', 'deleted', 'agency']) it('does not delete changed or unauthorized destination: ' + reason, async () => {
+    const f = await removalFixture(); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Elimină doar destinația selectată.' });
+    if (reason === 'external-id') await f.post.update({ ['destinations.' + f.connectionId + '.externalId']: '123_999' });
+    if (reason === 'connection') await f.connection.update({ status: 'disconnected' });
+    if (reason === 'deleted') await f.post.update({ deletedAt: 'now' });
+    if (reason === 'agency') await f.post.update({ agencyId: 'other' });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Elimină destinația socială: post | ' + (reason === 'unoffered' ? 'other' : f.connectionId) });
+    expect(result.message.text).not.toContain('Meta a confirmat'); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  for (const reason of ['false', 'missing', 'error']) it('does not mark destination deleted without Meta confirmation: ' + reason, async () => {
+    const f = await removalFixture(); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Elimină doar destinația selectată.' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify(reason === 'false' ? { success: false } : reason === 'missing' ? {} : { error: { message: 'Synthetic failure' } }), { status: reason === 'error' ? 500 : 200 }));
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Elimină destinația socială: post | ' + f.connectionId }; const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).not.toContain('Meta a confirmat'); expect((await f.post.get()).data()?.destinations[f.connectionId].status).toBe('published');
+    await chatTurn(f.ctx, input); expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  });
+  it('reports only the successful destination when a later deletion fails', async () => {
+    const f = await removalFixture(); await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Șterge postarea numai după confirmare.' });
+    mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 })).mockResolvedValueOnce(new Response(JSON.stringify({ success: false }), { status: 200 }));
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Confirmă ștergerea postării sociale: post' }; const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).toContain('Meta a confirmat ștergerea publicării 123_456'); expect(result.message.text).not.toContain('Meta a confirmat ștergerea publicării 999_888'); expect(result.message.text).toContain('Execuția a fost oprită');
+    expect((await f.post.get()).data()?.destinations[f.secondId]).toEqual(f.second); expect((await f.post.get()).data()?.status).toBe('published');
+    await chatTurn(f.ctx, input); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+  });
+  for (const reason of ['profile', 'connection', 'destination']) it('rechecks ' + reason + ' immediately before deletion', async () => {
+    const f = await removalFixture();
+    const wrapped = { collection: db.collection.bind(db), runTransaction: async (fn: any) => { if (reason === 'profile') await f.profile.update({ role: 'agent' }); else if (reason === 'connection') await f.connection.update({ externalId: '321' }); else await f.post.update({ ['destinations.' + f.connectionId + '.externalId']: '123_999' }); return db.runTransaction(fn); } } as any;
+    const { removePublishedSocialPost } = await import('@/lib/communications/social');
+    await expect(removePublishedSocialPost(wrapped, f.ctx, 'post', f.connectionId, true, '123_456')).rejects.toThrow(); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
 });

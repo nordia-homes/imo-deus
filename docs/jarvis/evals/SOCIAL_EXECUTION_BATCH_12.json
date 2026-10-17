@@ -1,0 +1,195 @@
+{
+  "scope": "Actual persisted chat, explicit full-post confirmation or exact destination selection, executor ledger and existing remote deletion domain service. Meta DELETE success and persisted destination state verified locally; other destinations and replay verified. No real deletion or production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0382",
+      "prompt": "Șterge postarea numai după confirmare.",
+      "versions": {
+        "prompt": "jarvis-145",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "176",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat, executor and existing remote deletion domain service on local Firestore. Meta DELETE responses simulated; exact changed and unchanged destinations verified.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "e19d34b8-2049-41a7-8f82-f5435be3e023-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează și confirmă postarea: „Confirmă ștergerea postării sociale: ID_POSTARE”. Voi șterge destinațiile Facebook publicate ale postării alese.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialRemoveRequest",
+                "title": "Destinații pentru ștergere",
+                "rows": [
+                  {
+                    "id": "post:d1518055-fe28-48f0-a836-e61e2e69323e",
+                    "postId": "post",
+                    "connectionId": "d1518055-fe28-48f0-a836-e61e2e69323e",
+                    "propertyTitle": "Cișmigiu",
+                    "externalId": "123_456",
+                    "prompt": "Șterge postarea numai după confirmare."
+                  },
+                  {
+                    "id": "post:z3348524d-4ce4-4ce9-9c9e-0755eb9df030",
+                    "postId": "post",
+                    "connectionId": "z3348524d-4ce4-4ce9-9c9e-0755eb9df030",
+                    "propertyTitle": "Cișmigiu",
+                    "externalId": "999_888",
+                    "prompt": "Șterge postarea numai după confirmare."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:06:19.174Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "913c6547-2fa9-4048-a64d-9c6884fabdd5-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat ștergerea publicării 123_456 din contul d1518055-fe28-48f0-a836-e61e2e69323e pentru postarea post. Destinația este marcată ca ștearsă în aplicație.\nMeta a confirmat ștergerea publicării 999_888 din contul z3348524d-4ce4-4ce9-9c9e-0755eb9df030 pentru postarea post. Destinația este marcată ca ștearsă în aplicație.\nAcțiuni executate: 2. Starea acțiunii sociale este descrisă mai sus.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_destination_remove",
+                      "postId": "post",
+                      "connectionId": "d1518055-fe28-48f0-a836-e61e2e69323e",
+                      "externalId": "123_456",
+                      "executionState": "succeeded",
+                      "deletionConfirmed": true,
+                      "evidenceSource": "meta_delete_and_persisted_destination"
+                    }
+                  },
+                  {
+                    "step": 2,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_destination_remove",
+                      "postId": "post",
+                      "connectionId": "z3348524d-4ce4-4ce9-9c9e-0755eb9df030",
+                      "externalId": "999_888",
+                      "executionState": "succeeded",
+                      "deletionConfirmed": true,
+                      "evidenceSource": "meta_delete_and_persisted_destination"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:06:19.797Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0383",
+      "prompt": "Elimină doar destinația selectată.",
+      "versions": {
+        "prompt": "jarvis-145",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "176",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat, executor and existing remote deletion domain service on local Firestore. Meta DELETE responses simulated; exact changed and unchanged destinations verified.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "87279b31-4301-459c-b49b-ca6de559e93a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează destinația: „Elimină destinația socială: ID_POSTARE | ID_CONT”. Cererea autorizează ștergerea acelei destinații Facebook; celelalte rămân nemodificate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialRemoveRequest",
+                "title": "Destinații pentru ștergere",
+                "rows": [
+                  {
+                    "id": "post:29ec60ae-eb3f-4836-a037-c2633178e197",
+                    "postId": "post",
+                    "connectionId": "29ec60ae-eb3f-4836-a037-c2633178e197",
+                    "propertyTitle": "Cișmigiu",
+                    "externalId": "123_456",
+                    "prompt": "Elimină doar destinația selectată."
+                  },
+                  {
+                    "id": "post:z517b0311-8356-46dc-8840-38f659c0a69c",
+                    "postId": "post",
+                    "connectionId": "z517b0311-8356-46dc-8840-38f659c0a69c",
+                    "propertyTitle": "Cișmigiu",
+                    "externalId": "999_888",
+                    "prompt": "Elimină doar destinația selectată."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:06:20.234Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "7db95ace-4126-49ff-8668-0e14e56c16c0-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat ștergerea publicării 123_456 din contul 29ec60ae-eb3f-4836-a037-c2633178e197 pentru postarea post. Destinația este marcată ca ștearsă în aplicație.\nAcțiuni executate: 1. Starea acțiunii sociale este descrisă mai sus.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_destination_remove",
+                      "postId": "post",
+                      "connectionId": "29ec60ae-eb3f-4836-a037-c2633178e197",
+                      "externalId": "123_456",
+                      "executionState": "succeeded",
+                      "deletionConfirmed": true,
+                      "evidenceSource": "meta_delete_and_persisted_destination"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:06:20.671Z"
+          }
+        }
+      ]
+    }
+  ]
+}
