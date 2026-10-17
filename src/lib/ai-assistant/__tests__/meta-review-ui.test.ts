@@ -45,3 +45,5 @@ it('shows the two photos and binds the button to the exact optimization proposal
 });
 
 it('resumes exactly the selected approved proposal',()=>{vi.stubGlobal('React',React);const onPrompt=vi.fn(),id='campaign/'+'a'.repeat(64);const element:any=MetaReviewDetails({row:{id},selection:true,busy:false,selectionPrefix:'Reia optimizarea Meta',selectionLabel:'Continuă optimizarea aprobată',onPrompt});element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Reia optimizarea Meta: '+id);});
+
+it('shows the CPL rule and incomplete evidence without hiding uncertainty',()=>{vi.stubGlobal('React',React);const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,{row:{anomaly:{flagged:null,currentCpl:null,previousCpl:20,ratio:null,rule:'Prag euristic',reason:'Zero leaduri'}},selection:false,busy:false,onPrompt:()=>{}}));expect(html).toContain('Monitorizare CPL');expect(html).toContain('Prag euristic');expect(html).toContain('Zero leaduri');expect(html).toContain('Indisponibil');});

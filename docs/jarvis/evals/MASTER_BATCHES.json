@@ -4121,7 +4121,11 @@
           "sourceNumber": 435,
           "request": "Spune-mi campaniile cu CPL neobișnuit de mare.",
           "requestSha256": "0aa85431fe15477cb53131ef4efa30944cfd15c94cd9cad8d654462dec657917",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_16.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0436",
@@ -4139,7 +4143,11 @@
           "sourceNumber": 437,
           "request": "Nu trata estimarea drept rezultat cert.",
           "requestSha256": "2213aa384288fceb18566c87e1b87552567903743bab4b3c4d9a68f9afce5e9e",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_16.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0438",

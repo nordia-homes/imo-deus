@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — monitorizare CPL și limitele estimărilor — 17 octombrie 2026
+
+Scenariile **0435 și 0437** folosesc rapoartele Meta citite pentru campaniile din contextul curent. Monitorizarea verifică toate campaniile eligibile cu identificator extern, cu maximum patru citiri de campanie concurente. Nu cere alegerea unei perechi. Fiecare raport păstrează valorile, perioadele și motivul clasificării; campaniile altor agenții, cele șterse și cele din afara proprietății curente sunt excluse.
+
+Regula explicită de monitorizare semnalează CPL actual strict peste dublul CPL din precedentele șapte zile, cu minimum cinci leaduri și cheltuieli pozitive în ambele perioade. Sunt două săptămâni calendaristice încheiate, în ora Bucureștiului, cu aceeași atribuire și monedă. Pragul este euristic, nu un standard Meta sau o anomalie statistică demonstrată. CPL este calculat din cheltuieli și leaduri; zero leaduri, date lipsă, obiective incompatibile și eșantioane insuficiente rămân neclasificate, cu explicație. Absența semnalului nu certifică rentabilitatea.
+
+Cererea de a nu trata estimarea drept rezultat cert reîmprospătează comparația și separă datele raportate de recomandarea ipotetică. Nu inventează procente de îmbunătățire și nu aplică schimbări de campanie sau buget. Schimbarea accesului, conexiunii ori datelor în timpul citirii împiedică emiterea unui raport confirmat.
+
+Validare: **191 teste unitare/UI și 58 de integrare** trecute. Build complet trecut (cod de ieșire 0), TypeScript, ESLint, paritate și inventar corpus verificate. Dovada [Meta lot 16](evals/META_EXECUTION_BATCH_16.json) adaugă două ID-uri originale: **260/1000 dovezi locale** (133 cu model real și 127 deterministe). Firestore local și Meta simulat; fără certificare live sau integrală. Lot nepublicat în producție.
+
 ## Meta Ads — reluarea optimizării aprobate din conversație — 17 octombrie 2026
 
 Extensia scenariului **0439** permite comanda „Reia optimizarea Meta” pentru o execuție aprobată rămasă cu rezultat incert. Dacă există mai multe propuneri eligibile, Jarvis oferă selecția exactă. Aprobarea inițială persistată este obligatorie; simpla existență a unei propuneri sau a unei încercări de reluare nu autorizează operația. Nu se repetă selecția fotografiei și aprobarea deja acordată.
