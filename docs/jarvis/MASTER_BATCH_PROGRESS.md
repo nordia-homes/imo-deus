@@ -22,6 +22,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — recomandări comerciale din inventar — 17 octombrie 2026
+
+Scenariile **0447 și 0448** recomandă pregătirea promovării și explică rațiunea comercială pentru lista discutată anterior. Lista nu este înlocuită implicit cu proprietăți noi. Inventarul Meta, proprietățile și accesul sunt reverificate; ofertele devenite active la Meta, indisponibile sau cu stare neconfirmată nu sunt recomandate.
+
+Criteriile explicite sunt disponibilitatea, prețul pozitiv, tipul tranzacției, localizarea, descrierea CRM și o fotografie HTTPS. Lipsurile sunt prezentate individual, împreună cu următorul pas. Recomandarea privește pregătirea ofertei, fără clasament de rentabilitate, afirmații de preț sub piață, cerere sau CPL inventate. Nu certifică disponibilitatea fișierelor foto, configurația de publicare sau aprobarea Meta. Nu creează campanii și nu alocă buget.
+
+Validare: **92 teste unitare/UI și 44 teste de integrare**, ESLint, manifest de paritate, inventarul corpusului și build complet trecute. Dovada [Meta lot 07](evals/META_EXECUTION_BATCH_07.json) folosește conversația persistată, Firestore local și răspunsuri Meta sintetice. **251/1000 dovezi locale** (133 cu model real, 118 deterministe); nu reprezintă certificarea integrală a corpusului în producție. Lot nepublicat în producție.
+
 ## Meta Ads — inventar activ verificat — 17 octombrie 2026
 
 Scenariile **0402 și 0446** folosesc starea furnizorului pentru lista campaniilor active și proprietăților fără campanie activă asociată. ACTIVE necesită status și effective_status ACTIVE. Stările intermediare, răspunsurile eșuate, identificarea incompletă a agenției, lipsa identificatorului unei campanii publicate și drafturile cu obiecte Meta parțiale rămân necunoscute. Proprietățile pentru care absența unei campanii active nu poate fi confirmată sunt excluse din lista negativă și sunt raportate separat.

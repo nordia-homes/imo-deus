@@ -4213,14 +4213,22 @@
           "sourceNumber": 447,
           "request": "Spune-mi care dintre ele merită promovate acum.",
           "requestSha256": "af340903f8c2c8a708259e0958c8cf8d0f6aa4b7542ddabb45937832da7b66e1",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0448",
           "sourceNumber": 448,
           "request": "Argumentează comercial recomandarea.",
           "requestSha256": "72513b1d0ead18c08e7f67e0afe9456aaeb01e7038e636e13a5a46baca83c365",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0449",

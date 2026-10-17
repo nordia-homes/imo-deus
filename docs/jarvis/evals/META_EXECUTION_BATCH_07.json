@@ -1,0 +1,102 @@
+{
+  "scope": "Context-bound commercial preparation recommendations from freshly verified CRM-linked campaign inventory and listing data. No performance forecast, live advertising, budget allocation or publish certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0447",
+      "prompt": "Spune-mi care dintre ele merită promovate acum.",
+      "versions": {
+        "prompt": "jarvis-154",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "185",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and local Firestore, synthetic Meta status reads. Conditional preparation advice, no live ads or forecast certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "9450de7f-b5b9-4e0e-9ec5-c29f7932b077-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "1 proprietăți recomandate pentru pregătirea promovării din lista anterioară, reverificată acum. 0 necesită completări sau sunt excluse. Prioritatea este pregătirea ofertei: disponibilitate, preț explicit, localizare și materiale CRM, fără clasament de rentabilitate între proprietăți. Justificarea comercială și pașii concreți sunt afișați pentru fiecare. Nu există date suficiente aici pentru a afirma un preț sub piață, cerere, CPL sau vânzări viitoare. Recomandarea nu certifică publicarea: configurația campaniei, bugetul, conexiunea și validarea Meta se verifică separat. Nu am creat sau publicat campanii. Domeniu: campaniile asociate în CRM.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPromotionRecommendations",
+                "title": "Recomandări de promovare",
+                "rows": [
+                  {
+                    "id": "outside",
+                    "title": "Titan",
+                    "recommended": true,
+                    "recommendation": "Recomandată pentru pregătirea promovării",
+                    "facts": "Stare: Activ; preț înregistrat: 130000; tranzacție: Vânzare; localizare: București, Titan; fotografii HTTPS distincte: 1.",
+                    "missing": "Nicio lipsă în criteriile de pregătire verificate.",
+                    "reason": "Oferta este activă, fără campanie activă asociată în inventarul verificat, și are preț, tip de tranzacție, localizare, descriere și fotografie. Aceste date permit prezentarea ofertei și filtrarea solicitărilor după buget și zonă; este o candidată pentru pregătirea promovării.",
+                    "nextStep": "Pregătește un draft folosind materialele CRM și validează configurația înainte de publicare. Disponibilitatea fișierelor foto și calitatea vizuală nu sunt confirmate prin această analiză."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:32:02.215Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0448",
+      "prompt": "Argumentează comercial recomandarea.",
+      "versions": {
+        "prompt": "jarvis-154",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "185",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and local Firestore, synthetic Meta status reads. Conditional preparation advice, no live ads or forecast certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "19236b1c-364d-49af-923a-427a2bd97833-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "1 proprietăți recomandate pentru pregătirea promovării din lista anterioară, reverificată acum. 0 necesită completări sau sunt excluse. Prioritatea este pregătirea ofertei: disponibilitate, preț explicit, localizare și materiale CRM, fără clasament de rentabilitate între proprietăți. Justificarea comercială și pașii concreți sunt afișați pentru fiecare. Nu există date suficiente aici pentru a afirma un preț sub piață, cerere, CPL sau vânzări viitoare. Recomandarea nu certifică publicarea: configurația campaniei, bugetul, conexiunea și validarea Meta se verifică separat. Nu am creat sau publicat campanii. Domeniu: campaniile asociate în CRM.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPromotionRecommendations",
+                "title": "Recomandări de promovare",
+                "rows": [
+                  {
+                    "id": "outside",
+                    "title": "Titan",
+                    "recommended": true,
+                    "recommendation": "Recomandată pentru pregătirea promovării",
+                    "facts": "Stare: Activ; preț înregistrat: 130000; tranzacție: Vânzare; localizare: București, Titan; fotografii HTTPS distincte: 1.",
+                    "missing": "Nicio lipsă în criteriile de pregătire verificate.",
+                    "reason": "Oferta este activă, fără campanie activă asociată în inventarul verificat, și are preț, tip de tranzacție, localizare, descriere și fotografie. Aceste date permit prezentarea ofertei și filtrarea solicitărilor după buget și zonă; este o candidată pentru pregătirea promovării.",
+                    "nextStep": "Pregătește un draft folosind materialele CRM și validează configurația înainte de publicare. Disponibilitatea fișierelor foto și calitatea vizuală nu sunt confirmate prin această analiză."
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T14:32:03.208Z"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -156,9 +156,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   }
   const { readMetaInventory } = await import('./meta-inventory');
   try {
-    const inventory = await readMetaInventory(ctx, prompt);
+    const inventory = await readMetaInventory(ctx, prompt, history);
     if (inventory) {
-      if (inventory.rows.length) cards.push({ type: 'data', source: inventory.source, title: 'Inventar Meta verificat', rows: inventory.rows, complete: inventory.complete });
+      if (inventory.rows.length) cards.push({ type: 'data', source: inventory.source, title: inventory.source === 'metaPromotionRecommendations' ? 'Recomandări de promovare' : 'Inventar Meta verificat', rows: inventory.rows, complete: inventory.complete });
       if (inventory.unknownRows.length) cards.push({ type: 'data', source: 'metaUnknownCampaigns', title: 'Campanii cu stare neconfirmată', rows: inventory.unknownRows, complete: false });
       return finish(inventory.text, inventory.complete ? 'success' : 'partial');
     }

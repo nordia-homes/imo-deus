@@ -1,16 +1,20 @@
 import type { AssistantContext } from './access';
-import { normalized } from './contracts';
+import { normalized, type AssistantMessage } from './contracts';
+import { assessMetaPromotion } from './meta-promotion-recommendation';
 import { metaDraftRevision } from './meta-draft';
 import { isDemoAgencyId } from '@/lib/demo/guards';
 import { bucharestInputFromIso } from '@/lib/bucharest-time';
-export function metaInventoryRequest(prompt:string){const text=normalized(prompt).trim().replace(/[.!?]+$/,'');return text==='arata-mi campaniile meta active'?'active':text==='arata-mi proprietatile fara campanie activa'?'without':null;}
+export function metaInventoryRequest(prompt:string){const text=normalized(prompt).trim().replace(/[.!?]+$/,'');return text==='arata-mi campaniile meta active'?'active':text==='arata-mi proprietatile fara campanie activa'?'without':text==='spune-mi care dintre ele merita promovate acum'?'recommend':text==='argumenteaza comercial recomandarea'?'explain':null;}
 export function metaCampaignActivity(status:string,effectiveStatus:string):'active'|'inactive'|'unknown'{
  if(status==='ACTIVE'&&effectiveStatus==='ACTIVE')return 'active';
  if(['PAUSED','ARCHIVED','DELETED'].includes(status)&&effectiveStatus===status)return 'inactive';
  return 'unknown';
 }
-export async function readMetaInventory(ctx:AssistantContext,prompt:string){
+export async function readMetaInventory(ctx:AssistantContext,prompt:string,history:AssistantMessage[]=[]){
  const mode=metaInventoryRequest(prompt);if(!mode)return null;
+ const recommendation=mode==='recommend'||mode==='explain';
+ const previous=recommendation?[...history].reverse().filter(message=>message.role==='assistant').flatMap(message=>(message.cards||[]).filter(card=>['metaPromotionRecommendations','metaPropertiesWithoutActive'].includes(card.source)))[0]:undefined;
+ if(recommendation&&!previous)return {source:'metaPromotionRecommendations',rows:[],unknownRows:[],complete:false,text:'Am nevoie de lista la care te referi. Cere «Arată-mi proprietățile fără campanie activă», apoi pot recomanda dintre acele proprietăți.'};
  if(isDemoAgencyId(ctx.agencyId)||ctx.runtimeMode==='demo')throw new Error('Citire externă indisponibilă în demo');
  const agency=ctx.adminDb.collection('agencies').doc(ctx.agencyId),memberRef=ctx.adminDb.collection('users').doc(ctx.uid),grantRef=ctx.adminDb.collection('agencyPrivateIntegrations').doc(ctx.agencyId+'__meta');
  const assertMember=(member:Record<string,unknown>|undefined)=>{if(member?.agencyId!==ctx.agencyId||member.role!==ctx.role||!['agent','admin'].includes(ctx.role||''))throw new Error('Acces revocat');};
@@ -43,6 +47,16 @@ export async function readMetaInventory(ctx:AssistantContext,prompt:string){
  const unknownRows=states.filter(row=>row.activity==='unknown'),active=states.filter(row=>row.activity==='active');
  const properties=snapshot.properties.filter(doc=>!doc.data.deletedAt&&(!doc.data.agencyId||doc.data.agencyId===ctx.agencyId));
  const without=properties.filter(doc=>{const linked=states.filter(row=>row.propertyId===doc.id);return linked.every(row=>row.activity==='inactive');}).map(doc=>({id:doc.id,title:String(doc.data.title||doc.id),propertyStatus:String(doc.data.status||'unknown'),campaignCount:states.filter(row=>row.propertyId===doc.id).length,reason:states.some(row=>row.propertyId===doc.id)?'Campaniile asociate sunt inactive sau drafturi pur locale.':'Nu există campanii asociate în registrul CRM.'}));
+ if(recommendation&&previous){
+  const candidateIds=[...new Set(previous.rows.map(row=>String(row.id)))],eligible=new Set(without.map(row=>row.id));
+  const rows=candidateIds.map(id=>{
+   const property=properties.find(doc=>doc.id===id);
+   if(!property||!eligible.has(id))return {id,title:property?String(property.data.title||id):id,recommended:false,recommendation:'Exclusă din recomandarea actuală',reason:!property?'Proprietatea nu mai este disponibilă în inventarul accesibil.':'Campania este activă sau starea ei nu poate fi confirmată.',nextStep:'Reverifică inventarul înainte de promovare.'};
+   return {id,...assessMetaPromotion(property.data)};
+  });
+  const count=rows.filter(row=>row.recommended).length;
+  return {source:'metaPromotionRecommendations',rows,unknownRows,complete:unknownRows.length===0,text:count+' proprietăți recomandate pentru pregătirea promovării din lista anterioară, reverificată acum. '+(candidateIds.length-count)+' necesită completări sau sunt excluse. Prioritatea este pregătirea ofertei: disponibilitate, preț explicit, localizare și materiale CRM, fără clasament de rentabilitate între proprietăți. Justificarea comercială și pașii concreți sunt afișați pentru fiecare. Nu există date suficiente aici pentru a afirma un preț sub piață, cerere, CPL sau vânzări viitoare. Recomandarea nu certifică publicarea: configurația campaniei, bugetul, conexiunea și validarea Meta se verifică separat. Nu am creat sau publicat campanii. Domeniu: campaniile asociate în CRM.'};
+ }
  const unknownProperties=properties.filter(doc=>{const linked=states.filter(row=>row.propertyId===doc.id);return !linked.some(row=>row.activity==='active')&&linked.some(row=>row.activity==='unknown');}).length;
  return {source:mode==='active'?'metaActiveCampaigns':'metaPropertiesWithoutActive',rows:mode==='active'?active:without,unknownRows,complete:unknownRows.length===0,text:(mode==='active'?active.length+' campanii confirmate ACTIVE la Meta.':without.length+' proprietăți fără campanie activă în registrul verificat; '+unknownProperties+' proprietăți cu stare neclară sunt excluse din această listă.')+' Domeniu: campaniile asociate în CRM, nu campaniile create separat în contul Meta. '+unknownRows.length+' campanii au stare necunoscută și sunt afișate separat. Verificarea nu modifică și nu publică nimic; ACTIVE la nivel de campanie nu certifică livrarea fiecărei reclame.'};
 }
