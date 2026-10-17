@@ -1121,7 +1121,7 @@ export async function readMetaCampaignPeriodInsights(agencyId: string, campaignI
   const account = await metaRequest<Record<string,unknown>>('/'+normalizeAdAccountId(accountId)+'?fields=id,account_id,currency,timezone_name',accessToken,{signal:AbortSignal.timeout(15000)});
   const normalizedAccount=accountId.replace(/^act_/,'');
   if(account.id!=='act_'+normalizedAccount||account.account_id!==normalizedAccount||account.timezone_name!=='Europe/Bucharest'||typeof account.currency!=='string'||!(/^[A-Z]{3}$/).test(account.currency))throw new Error('Contul Meta trebuie să folosească ora Bucureștiului și o monedă validă.');
-  const remote=await metaRequest('/'+row.metaCampaignId+'?fields=id,account_id,status,effective_status',accessToken,{signal:AbortSignal.timeout(15000)});
+  const remote=await metaRequest<Record<string,unknown>>('/'+row.metaCampaignId+'?fields=id,account_id,status,effective_status,objective',accessToken,{signal:AbortSignal.timeout(15000)});
   metaCampaignObservation(remote,String(row.metaCampaignId),accountId);
   const periods=options.periods||metaComparisonPeriods();
   const results=await Promise.all([periods.current,periods.previous].map(async period=>{
@@ -1130,7 +1130,7 @@ export async function readMetaCampaignPeriodInsights(agencyId: string, campaignI
    return parseMetaPeriod(payload,{campaignId:String(row.metaCampaignId),accountId:normalizedAccount,currency:account.currency as string,period});
   }));
   await assertCurrent();
-  return {current:results[0],previous:results[1],checkedAt:nowIso(),attribution:'7 zile după clic / 1 zi după vizualizare; raportare la data impresiei',timezone:'Europe/Bucharest'};
+  return {providerObjective:typeof remote.objective==='string'?remote.objective:null,current:results[0],previous:results[1],checkedAt:nowIso(),attribution:'7 zile după clic / 1 zi după vizualizare; raportare la data impresiei',timezone:'Europe/Bucharest'};
 }
 
 export async function readMetaPublicationProviderStatus(agencyId: string, campaignId: string, options: { expectedRevision: string; actor: { uid: string; role?: string } }) {

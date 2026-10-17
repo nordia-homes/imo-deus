@@ -1,10 +1,11 @@
+import { assessMetaPerformance } from './meta-performance-assessment';
 import type { AssistantContext } from './access';
 import { normalized, type AssistantMessage } from './contracts';
 import { metaDraftRevision } from './meta-draft';
 import { metaComparisonPeriods, metaMetricChanges } from '@/lib/meta-insights-period';
 import { bucharestInputFromIso } from '@/lib/bucharest-time';
 import { isDemoAgencyId } from '@/lib/demo/guards';
-export function metaPerformanceRequest(prompt:string){const text=normalized(prompt).trim().replace(/[.!?]+$/,'');return text==='compara ultimele sapte zile cu precedentele sapte'?'periods':text==='compara doua campanii meta'?'campaigns':null;}
+export function metaPerformanceRequest(prompt:string){const text=normalized(prompt).trim().replace(/[.!?]+$/,'');return text==='compara ultimele sapte zile cu precedentele sapte'?'periods':text==='compara doua campanii meta'?'campaigns':text==='care campanie performeaza mai slab'?'weaker':text==='recomanda-mi ce as schimba la campania slaba'||text==='pregateste recomandarea de optimizare'?'optimize':null;}
 export async function prepareMetaPerformance(ctx:AssistantContext,prompt:string,history:AssistantMessage[]){
  const answer=/^Statistici Meta:[ ]*([A-Za-z0-9_-]{1,180})$/i.exec(prompt.trim());
  const last=history.filter(row=>row.role==='assistant'&&row.id!=='current-page-context').at(-1);
@@ -22,13 +23,18 @@ export async function prepareMetaPerformance(ctx:AssistantContext,prompt:string,
  });
  const before=await snapshot(),revision=metaDraftRevision(before);
  const candidates=before.campaigns.filter(({data})=>data.agencyId===ctx.agencyId&&!data.deletedAt&&data.status!=='deleted'&&/^\d+$/.test(String(data.metaCampaignId||''))&&(!propertyId||data.propertyId===propertyId));
- const required=mode==='campaigns'?2:1;
+ const required=mode==='periods'?1:2;
+ const assessment=mode==='weaker'||mode==='optimize';
+ const previousPair=assessment?last?.cards?.find(card=>card.source==='metaPerformanceReview')?.rows:undefined;
  let ids:string[]=[];
  if(answer){
   const chosen=offered?.rows.find(row=>row.id===answer[1]);
   if(!chosen||chosen.contextPropertyId!==propertyId||chosen.snapshotRevision!==revision)throw new Error('Selecție schimbată');
   ids=[...(Array.isArray(chosen.selectedIds)?chosen.selectedIds.map(String):[]),answer[1]];
   if(new Set(ids).size!==ids.length||ids.some(id=>!candidates.some(row=>row.id===id)))throw new Error('Selecție invalidă');
+ }else if(previousPair?.length===2){
+  ids=previousPair.map(row=>String(row.id));
+  if(ids.some(id=>!candidates.some(row=>row.id===id)))throw new Error('Campaniile comparate anterior nu mai sunt accesibile în context');
  }else if(candidates.length===required)ids=candidates.map(row=>row.id);
  else if(mode==='periods'){
   const previous=last?.cards?.find(card=>['metaCampaignReview','metaStatusReview','metaPerformanceReview'].includes(card.source))?.rows;
@@ -45,9 +51,14 @@ export async function prepareMetaPerformance(ctx:AssistantContext,prompt:string,
   const campaign=candidates.find(row=>row.id===id)!;
   const report=await readMetaCampaignPeriodInsights(ctx.agencyId,id,{periods,expectedRevision:metaDraftRevision(campaign.data),actor:{uid:ctx.uid,role:ctx.role}});
   const time=bucharestInputFromIso(report.checkedAt);
-  return {id,campaignName:String(campaign.data.campaignName||id),propertyId:String(campaign.data.propertyId||''),current:report.current,...(mode==='periods'?{previous:report.previous,changes:metaMetricChanges(report.current,report.previous)}:{}),attribution:report.attribution,checkedAt:time.date+' '+time.time+', București',providerValidated:true};
+  return {id,objective:String(campaign.data.objective||''),providerObjective:report.providerObjective,campaignName:String(campaign.data.campaignName||id),propertyId:String(campaign.data.propertyId||''),current:report.current,...(mode==='periods'?{previous:report.previous,changes:metaMetricChanges(report.current,report.previous)}:{}),attribution:report.attribution,checkedAt:time.date+' '+time.time+', București',providerValidated:true};
  }));
  if(metaDraftRevision(await snapshot())!==revision)throw new Error('Datele sau conexiunea s-au schimbat în timpul comparației');
+ if(assessment){
+  const evaluation=assessMetaPerformance(rows);
+  const weak=rows.find(row=>row.id===evaluation.weakerId);
+  return {source:'metaPerformanceReview',rows:rows.map(row=>({...row,assessment:{metric:evaluation.metric,weaker:row.id===evaluation.weakerId,reason:evaluation.reason,values:evaluation.values,certainty:evaluation.certainty},...(mode==='optimize'&&row.id===evaluation.weakerId&&evaluation.recommendation?{optimization:evaluation.recommendation}:{})})),text:(weak?weak.campaignName+' este mai slabă după criteriul '+evaluation.metric+'. ':'Nu pot desemna o campanie mai slabă. ')+evaluation.reason+' '+(mode==='optimize'&&evaluation.recommendation?evaluation.recommendation.change+' '+evaluation.recommendation.constraints+' '+evaluation.recommendation.expectedOutcome:'Nu am modificat campanii sau bugete.')+' Comparația privește ultimele șapte zile încheiate în ora Bucureștiului. '+evaluation.certainty};
+ }
  const detail=rows.map(row=>row.campaignName+': '+row.current.period.since+'–'+row.current.period.until+', cheltuieli '+(row.current.spend===null?'indisponibile':row.current.spend+' '+row.current.currency)+', leaduri '+(row.current.leads??'indisponibile')+', CPL '+(row.current.costPerLead===null?'indisponibil':row.current.costPerLead.toFixed(2)+' '+row.current.currency)).join('; ');
  return {source:'metaPerformanceReview',rows,text:detail+'. '+(mode==='periods'?'Comparația cu precedentele șapte zile și diferențele sunt afișate în raport.':'Comparația folosește aceeași perioadă și regulă de atribuire; nu stabilește singură rentabilitatea campaniilor.')+' Sunt ultimele șapte zile calendaristice încheiate, în ora Bucureștiului; ziua curentă este exclusă. Leadurile folosesc doar indicatorul agregat «lead», fără însumarea categoriilor suprapuse. Valorile lipsă și procentele cu bază zero rămân indisponibile. Rezultatele sunt raportate de Meta la momentul citirii și se pot actualiza ulterior; nu sunt o prognoză sau o garanție comercială. Nu am modificat campanii.'};
 }

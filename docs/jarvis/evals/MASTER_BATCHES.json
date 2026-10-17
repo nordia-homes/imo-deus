@@ -3979,14 +3979,22 @@
           "sourceNumber": 421,
           "request": "Care campanie performează mai slab?",
           "requestSha256": "0a93464b9685a55db48059a258832d4c82c2ef3c800281247dae70120780660b",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_12.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0422",
           "sourceNumber": 422,
           "request": "Recomandă-mi ce aș schimba la campania slabă.",
           "requestSha256": "75afc2b20004f18279e647f6a8dd74bfc6ad79c1a0347844588293c297833879",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_12.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0423",
@@ -4138,7 +4146,11 @@
           "sourceNumber": 438,
           "request": "Pregătește recomandarea de optimizare.",
           "requestSha256": "c1732e7cd3ebc693a9d0a208b0f92c7cbe084795dff4edc487847ce0c0955484",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_12.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0439",

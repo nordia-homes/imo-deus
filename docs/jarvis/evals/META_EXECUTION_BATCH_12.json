@@ -1,0 +1,596 @@
+{
+  "scope": "Original master-0421, master-0422, master-0438: freshly re-read Meta objective and period Insights, descriptive CPL/CPC comparison, actionable optimization hypothesis without execution or guaranteed outcomes.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0421",
+      "prompt": "Care campanie performează mai slab?",
+      "versions": {
+        "prompt": "jarvis-161",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "192",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and local Firestore, synthetic Meta objective and Insights readbacks. Read-only descriptive evaluation and optimization recommendation; no campaign edits, spend or delivery certification.",
+      "runs": [
+        {
+          "phase": "comparison",
+          "final": {
+            "id": "346da529-9703-41d0-81de-855d9e18d877-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alta: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 8, CPL 15.00 EUR; Selectată: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 2, CPL 60.00 EUR. Comparația folosește aceeași perioadă și regulă de atribuire; nu stabilește singură rentabilitatea campaniilor. Sunt ultimele șapte zile calendaristice încheiate, în ora Bucureștiului; ziua curentă este exclusă. Leadurile folosesc doar indicatorul agregat «lead», fără însumarea categoriilor suprapuse. Valorile lipsă și procentele cu bază zero rămân indisponibile. Rezultatele sunt raportate de Meta la momentul citirii și se pot actualiza ulterior; nu sunt o prognoză sau o garanție comercială. Nu am modificat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 8,
+                      "costPerLead": 15,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true
+                  },
+                  {
+                    "id": "selected",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 60,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:29:56.892Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "3117a89a-63ea-4807-a05f-dc5979bf5cb4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectată este mai slabă după criteriul CPL. Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator. Nu am modificat campanii sau bugete. Comparația privește ultimele șapte zile încheiate în ora Bucureștiului. Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 8,
+                      "costPerLead": 15,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true,
+                    "assessment": {
+                      "metric": "CPL",
+                      "weaker": false,
+                      "reason": "Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator.",
+                      "values": [
+                        {
+                          "id": "other",
+                          "costPerResult": 15,
+                          "results": 8
+                        },
+                        {
+                          "id": "selected",
+                          "costPerResult": 60,
+                          "results": 2
+                        }
+                      ],
+                      "certainty": "Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate."
+                    }
+                  },
+                  {
+                    "id": "selected",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 60,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true,
+                    "assessment": {
+                      "metric": "CPL",
+                      "weaker": true,
+                      "reason": "Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator.",
+                      "values": [
+                        {
+                          "id": "other",
+                          "costPerResult": 15,
+                          "results": 8
+                        },
+                        {
+                          "id": "selected",
+                          "costPerResult": 60,
+                          "results": 2
+                        }
+                      ],
+                      "certainty": "Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate."
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:29:57.270Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0422",
+      "prompt": "Recomandă-mi ce aș schimba la campania slabă.",
+      "versions": {
+        "prompt": "jarvis-161",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "192",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and local Firestore, synthetic Meta objective and Insights readbacks. Read-only descriptive evaluation and optimization recommendation; no campaign edits, spend or delivery certification.",
+      "runs": [
+        {
+          "phase": "comparison",
+          "final": {
+            "id": "32ab26a9-43ed-4799-9251-40e62d8a01ef-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alta: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 8, CPL 15.00 EUR; Selectată: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 2, CPL 60.00 EUR. Comparația folosește aceeași perioadă și regulă de atribuire; nu stabilește singură rentabilitatea campaniilor. Sunt ultimele șapte zile calendaristice încheiate, în ora Bucureștiului; ziua curentă este exclusă. Leadurile folosesc doar indicatorul agregat «lead», fără însumarea categoriilor suprapuse. Valorile lipsă și procentele cu bază zero rămân indisponibile. Rezultatele sunt raportate de Meta la momentul citirii și se pot actualiza ulterior; nu sunt o prognoză sau o garanție comercială. Nu am modificat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 8,
+                      "costPerLead": 15,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true
+                  },
+                  {
+                    "id": "selected",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 60,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:29:57.673Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "df679c50-49ca-4447-be98-d336d00381f1-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectată este mai slabă după criteriul CPL. Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator. Pregătește o variantă a formularului sau paginii de destinație cu cerințe de contact simplificate și mesaj concordant cu oferta proprietății. Verifică mai întâi că evenimentul lead este măsurat corect. Păstrează bugetul, moneda, audiența și obiectivul. Pregătirea recomandării nu aplică modificări și nu aprobă cheltuieli. Ipoteză de îmbunătățire; nu există un procent de creștere sau un rezultat garantat. Comparația privește ultimele șapte zile încheiate în ora Bucureștiului. Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 8,
+                      "costPerLead": 15,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true,
+                    "assessment": {
+                      "metric": "CPL",
+                      "weaker": false,
+                      "reason": "Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator.",
+                      "values": [
+                        {
+                          "id": "other",
+                          "costPerResult": 15,
+                          "results": 8
+                        },
+                        {
+                          "id": "selected",
+                          "costPerResult": 60,
+                          "results": 2
+                        }
+                      ],
+                      "certainty": "Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate."
+                    }
+                  },
+                  {
+                    "id": "selected",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 60,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true,
+                    "assessment": {
+                      "metric": "CPL",
+                      "weaker": true,
+                      "reason": "Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator.",
+                      "values": [
+                        {
+                          "id": "other",
+                          "costPerResult": 15,
+                          "results": 8
+                        },
+                        {
+                          "id": "selected",
+                          "costPerResult": 60,
+                          "results": 2
+                        }
+                      ],
+                      "certainty": "Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate."
+                    },
+                    "optimization": {
+                      "change": "Pregătește o variantă a formularului sau paginii de destinație cu cerințe de contact simplificate și mesaj concordant cu oferta proprietății. Verifică mai întâi că evenimentul lead este măsurat corect.",
+                      "reason": "Există clicuri raportate; verificarea măsurării și testul conversiei după clic sunt ipoteze de lucru, nu cauze demonstrate.",
+                      "measurement": "Compară CPL și numărul de leaduri pe perioade complete egale, cu aceeași atribuire, înainte de a decide păstrarea variantei.",
+                      "constraints": "Păstrează bugetul, moneda, audiența și obiectivul. Pregătirea recomandării nu aplică modificări și nu aprobă cheltuieli.",
+                      "expectedOutcome": "Ipoteză de îmbunătățire; nu există un procent de creștere sau un rezultat garantat."
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:29:58.046Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0438",
+      "prompt": "Pregătește recomandarea de optimizare.",
+      "versions": {
+        "prompt": "jarvis-161",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "192",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and local Firestore, synthetic Meta objective and Insights readbacks. Read-only descriptive evaluation and optimization recommendation; no campaign edits, spend or delivery certification.",
+      "runs": [
+        {
+          "phase": "comparison",
+          "final": {
+            "id": "12127663-fe89-4d89-90c5-2e80c36ff0e7-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alta: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 8, CPL 15.00 EUR; Selectată: 2026-10-10–2026-10-16, cheltuieli 120 EUR, leaduri 2, CPL 60.00 EUR. Comparația folosește aceeași perioadă și regulă de atribuire; nu stabilește singură rentabilitatea campaniilor. Sunt ultimele șapte zile calendaristice încheiate, în ora Bucureștiului; ziua curentă este exclusă. Leadurile folosesc doar indicatorul agregat «lead», fără însumarea categoriilor suprapuse. Valorile lipsă și procentele cu bază zero rămân indisponibile. Rezultatele sunt raportate de Meta la momentul citirii și se pot actualiza ulterior; nu sunt o prognoză sau o garanție comercială. Nu am modificat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 8,
+                      "costPerLead": 15,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true
+                  },
+                  {
+                    "id": "selected",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 60,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:29:58.428Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "db273eee-af9b-4e01-ae40-628c366bb79c-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectată este mai slabă după criteriul CPL. Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator. Pregătește o variantă a formularului sau paginii de destinație cu cerințe de contact simplificate și mesaj concordant cu oferta proprietății. Verifică mai întâi că evenimentul lead este măsurat corect. Păstrează bugetul, moneda, audiența și obiectivul. Pregătirea recomandării nu aplică modificări și nu aprobă cheltuieli. Ipoteză de îmbunătățire; nu există un procent de creștere sau un rezultat garantat. Comparația privește ultimele șapte zile încheiate în ora Bucureștiului. Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPerformanceReview",
+                "title": "Comparație Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Alta",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 8,
+                      "costPerLead": 15,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true,
+                    "assessment": {
+                      "metric": "CPL",
+                      "weaker": false,
+                      "reason": "Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator.",
+                      "values": [
+                        {
+                          "id": "other",
+                          "costPerResult": 15,
+                          "results": 8
+                        },
+                        {
+                          "id": "selected",
+                          "costPerResult": 60,
+                          "results": 2
+                        }
+                      ],
+                      "certainty": "Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate."
+                    }
+                  },
+                  {
+                    "id": "selected",
+                    "objective": "leads",
+                    "providerObjective": "OUTCOME_LEADS",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "current": {
+                      "period": {
+                        "since": "2026-10-10",
+                        "until": "2026-10-16"
+                      },
+                      "currency": "EUR",
+                      "spend": 120,
+                      "impressions": 1000,
+                      "clicks": 30,
+                      "leads": 2,
+                      "costPerLead": 60,
+                      "leadMetric": "lead",
+                      "dataAvailable": true
+                    },
+                    "attribution": "7 zile după clic / 1 zi după vizualizare; raportare la data impresiei",
+                    "checkedAt": "2026-10-17 20:29, București",
+                    "providerValidated": true,
+                    "assessment": {
+                      "metric": "CPL",
+                      "weaker": true,
+                      "reason": "Are CPL mai mare în aceeași perioadă și monedă. Aceasta indică eficiență mai slabă numai după acest indicator.",
+                      "values": [
+                        {
+                          "id": "other",
+                          "costPerResult": 15,
+                          "results": 8
+                        },
+                        {
+                          "id": "selected",
+                          "costPerResult": 60,
+                          "results": 2
+                        }
+                      ],
+                      "certainty": "Comparație descriptivă a perioadei raportate; fără semnificație statistică sau rentabilitate demonstrate."
+                    },
+                    "optimization": {
+                      "change": "Pregătește o variantă a formularului sau paginii de destinație cu cerințe de contact simplificate și mesaj concordant cu oferta proprietății. Verifică mai întâi că evenimentul lead este măsurat corect.",
+                      "reason": "Există clicuri raportate; verificarea măsurării și testul conversiei după clic sunt ipoteze de lucru, nu cauze demonstrate.",
+                      "measurement": "Compară CPL și numărul de leaduri pe perioade complete egale, cu aceeași atribuire, înainte de a decide păstrarea variantei.",
+                      "constraints": "Păstrează bugetul, moneda, audiența și obiectivul. Pregătirea recomandării nu aplică modificări și nu aprobă cheltuieli.",
+                      "expectedOutcome": "Ipoteză de îmbunătățire; nu există un procent de creștere sau un rezultat garantat."
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:29:58.771Z"
+          }
+        }
+      ]
+    }
+  ]
+}

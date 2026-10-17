@@ -1,0 +1,17 @@
+import { describe,it,expect } from 'vitest';
+import { assessMetaPerformance, type PerformanceEvidence } from '../meta-performance-assessment';
+function row(id:string,spend=100,leads=4):PerformanceEvidence{return {id,objective:'leads',providerObjective:'OUTCOME_LEADS',attribution:'same',current:{period:{since:'2026-10-10',until:'2026-10-16'},currency:'EUR',spend,impressions:1000,clicks:20,leads,costPerLead:999,leadMetric:'lead',dataAvailable:true}};}
+describe('descriptive Meta assessment',()=>{
+ it('uses computed CPL rather than stored CPL or total leads',()=>{const a=row('a',100,4),b=row('b',400,8);expect(assessMetaPerformance([a,b])).toMatchObject({weakerId:'b',metric:'CPL',values:[{costPerResult:25},{costPerResult:50}]});});
+ it('uses CPC for traffic rather than CPL',()=>{const a=row('a'),b=row('b');a.objective=b.objective='traffic';a.providerObjective=b.providerObjective='OUTCOME_TRAFFIC';a.current.clicks=10;b.current.clicks=20;expect(assessMetaPerformance([a,b])).toMatchObject({weakerId:'a',metric:'CPC'});});
+ it.each(['calls','messages','unknown'])('does not rank %s by proxy metrics',objective=>{const a=row('a'),b=row('b');a.objective=b.objective=objective;expect(assessMetaPerformance([a,b]).weakerId).toBeNull();});
+ it.each(['objective','providerObjective','attribution','currency','period','missingReport','leadMetric'])('rejects noncomparable %s',kind=>{const a=row('a'),b=row('b');if(kind==='objective')b.objective='traffic';if(kind==='providerObjective')b.providerObjective='OUTCOME_TRAFFIC';if(kind==='attribution')b.attribution='different';if(kind==='currency')b.current.currency='RON';if(kind==='period')b.current.period.until='2026-10-15';if(kind==='missingReport')b.current.dataAvailable=false;if(kind==='leadMetric')b.current.leadMetric='other';expect(assessMetaPerformance([a,b]).weakerId).toBeNull();});
+ it.each([null,0,-1,NaN,Infinity])('does not rank unavailable or nonpositive spend %s',spend=>{const a=row('a'),b=row('b');a.current.spend=spend;expect(assessMetaPerformance([a,b]).recommendation).toBeNull();});
+ it.each([null,-1,1.5,Infinity])('does not rank invalid results %s',leads=>{const a=row('a'),b=row('b');a.current.leads=leads;expect(assessMetaPerformance([a,b]).weakerId).toBeNull();});
+ it('does not divide by zero but can distinguish a zero-result campaign',()=>expect(assessMetaPerformance([row('a',100,0),row('b')])).toMatchObject({weakerId:'a',values:[{costPerResult:null,results:0},{costPerResult:25}]}));
+ it.each([[0,0],[4,4]])('does not invent a loser for equal results %j', (a,b)=>expect(assessMetaPerformance([row('a',100,a),row('b',100,b)]).weakerId).toBeNull());
+ it('does not treat rounding noise as a meaningful ranking',()=>expect(assessMetaPerformance([row('a',100),row('b',100+1e-10)]).weakerId).toBeNull());
+ it('proposes a conversion test with measured clicks and preserves budget',()=>{const result=assessMetaPerformance([row('a',100,2),row('b')]);expect(result.recommendation?.change).toContain('formularului');expect(result.recommendation?.constraints).toContain('Păstrează bugetul');expect(result.recommendation?.expectedOutcome).toContain('nu există');expect(result.certainty).toContain('fără semnificație statistică');});
+ it('does not invent a post-click issue without clicks',()=>{const a=row('a',100,0);a.current.clicks=0;expect(assessMetaPerformance([a,row('b')]).recommendation?.change).toContain('imaginea principală');});
+ it('requires two distinct records',()=>expect(assessMetaPerformance([row('a'),row('a')]).weakerId).toBeNull());
+});

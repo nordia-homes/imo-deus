@@ -22,6 +22,20 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — evaluare și recomandări de optimizare — 17 octombrie 2026
+
+Scenariile **0421, 0422 și 0438** evaluează perechea de campanii pe baza unor citiri Meta proaspete, în aceeași perioadă, monedă și regulă de atribuire. Obiectivul Meta trebuie să corespundă configurației CRM. Criteriul este CPL pentru leads și CPC pentru traffic (clicurile totale raportate, nu vizitele pe site). Campaniile de apeluri/mesaje și obiectivele incompatibile nu sunt clasificate prin indicatori substitutivi. Clasamentul este descriptiv, nu dovadă de rentabilitate, calitate a leadurilor sau semnificație statistică.
+
+Costul per rezultat este recalculat din spend și rezultate; CPL-ul precomputat nu este folosit drept dovadă. Lipsa datelor, lipsa cheltuielilor pozitive, două campanii fără rezultate sau egalitatea nu produc un câștigător inventat. O campanie cu cheltuieli și zero rezultate explicite poate fi diferențiată de una cu rezultate, fără împărțire la zero.
+
+Recomandarea include schimbarea propusă, justificarea, metoda de evaluare, păstrarea bugetului/audienței/obiectivului și caracterul de ipoteză. Pentru leaduri cu clicuri propune verificarea măsurării și un test al formularului/destinației; în celelalte cazuri eligibile, un test al imaginii principale. Nu pretinde că a diagnosticat cauza și nu aplică modificări. Fotografia alternativă sau formularul concret trebuie pregătite și validate înainte de execuție; scenariul 0439 nu este declarat implementat prin acest lot.
+
+Continuarea păstrează perechea comparată, inclusiv dacă apar alte campanii; nu înlocuiește automat o campanie ștearsă. Indicatorii sunt recitiți, astfel încât recomandarea urmărește campania actualmente mai slabă după criteriu, nu o concluzie veche. Se păstrează accesul, selecția și verificările de concurență din comparații.
+
+Validare: **123 teste unitare/UI și 48 de integrare**, ESLint, paritate, inventar corpus și build complet trecute, Firestore local și Meta simulat. Dovada [Meta lot 12](evals/META_EXECUTION_BATCH_12.json) duce inventarul la **257/1000 dovezi locale** (133 cu model real, 124 deterministe). Nu au fost modificate campanii sau bugete reale. Lot nepublicat în producție; fără certificare integrală a corpusului.
+
+Obiectivele sunt verificate față de [SDK-ul oficial Meta Campaign](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/campaign.js).
+
 ## Meta Ads — comparații de campanii și perioade — 17 octombrie 2026
 
 Scenariile **0420 și 0436** citesc direct Meta Insights: două campanii pe aceeași perioadă sau ultimele șapte zile calendaristice încheiate față de precedentele șapte. Se exclud ziua curentă și comparațiile pe intervale mobile de 168 de ore. Contul Meta trebuie să raporteze Europe/Bucharest; moneda provine din cont și este validată în fiecare rând. Sunt afișate cheltuieli, afișări, clicuri, leaduri și CPL, cu diferențe absolute și procentuale pentru comparația temporală.
