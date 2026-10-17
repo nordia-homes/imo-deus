@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot comparația performanței sociale — 17 octombrie 2026
+
+Scenariul **0389** citește indicatorii destinațiilor publicate prin serviciul social existent și îi prezintă pe postare și canal. Facebook folosește aprecieri, comentarii și distribuiri; Instagram folosește aprecieri și comentarii. Valorile lipsă, invalide sau negative rămân necunoscute; zero este păstrat ca valoare reală. Erorile unui cont nu elimină destinația din raport și nu sunt transformate în zero. Datele brute și tokenurile nu sunt expuse.
+
+Raportul compară totaluri cumulative citite în momentul cererii, fără a pretinde un interval comun, conversii, impresii sau un clasament între platforme. Sunt verificate cele mai recente 20 de destinații din istoricul disponibil; dacă există mai multe, numărul total și limita sunt explicite, iar cardul este incomplet. Nu există încă paginare a acestei comparații. Profilul, agenția, postarea publicată, ID-ul extern și capabilitatea insights sunt recitite înaintea fiecărui apel. Accesul administrativ existent este păstrat.
+
+Validare: 71 teste unitare/regresie și 27 teste de integrare trecute, inclusiv ambele canale, valori zero/lipsă, erori Meta și plafonul de 20 de apeluri. ESLint, paritate și build complet (inclusiv TypeScript) trecute. Dovadă: [Social lot 05](evals/SOCIAL_EXECUTION_BATCH_05.json). **201/1000 dovezi locale** (133 cu model real, 68 deterministe). Meta este simulat; fără certificare în producție. Lot nepublicat.
+
 ## Păstrarea progresului la eroarea unei reluări — 16 octombrie 2026
 
 Când prima pagină a unei reluări de comentarii eșuează, Jarvis păstrează reperul și oferă din nou „Continuă comentariile”. Același cursor este folosit la noua solicitare; primele 10 pagini nu sunt recitite. Răspunsul eșuat rămâne explicit incomplet, fără comentarii inventate și fără detaliile brute ale furnizorului. Repetarea aceluiași requestId returnează răspunsul persistent; o nouă solicitare explicită reîncearcă pagina. Verificările de acces și de identitate a postării rămân înaintea apelului Meta și nu sunt transformate în reluări permise.

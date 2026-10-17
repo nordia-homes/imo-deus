@@ -186,4 +186,45 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     expect(mocks.fetch).toHaveBeenCalledTimes(12);
     expect(mocks.fetch.mock.calls.slice(10).map(([url]) => new URL(url).searchParams.get('after'))).toEqual(['PRIVATE-10', 'PRIVATE-10']);
   });
+  it('executes master-0389 using channel-specific counters and preserves missing values', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.insights.status': 'active' });
+    const instagramId = randomUUID(); secrets.push(instagramId);
+    const agency = db.collection('agencies').doc(f.ctx.agencyId);
+    await agency.collection('channelConnections').doc(instagramId).set({ agencyId: f.ctx.agencyId, channel: 'instagram', externalId: '789', status: 'connected', capabilities: { insights: { status: 'active' } } });
+    await db.collection('communicationSecrets').doc(instagramId).set({ agencyId: f.ctx.agencyId, token: seal('SYNTHETIC_TOKEN') });
+    await agency.collection('socialPosts').doc('instagram').set({ agencyId: f.ctx.agencyId, propertyTitle: 'Cișmigiu', destinations: { [instagramId]: { status: 'published', externalId: '789' } } });
+    await agency.collection('socialPosts').doc('foreign').set({ agencyId: 'other', propertyTitle: 'HIDDEN', destinations: { [instagramId]: { status: 'published', externalId: '789' } } });
+    mocks.fetch.mockImplementation(async (url: string) => {
+      const data = new URL(url).pathname.endsWith('/789') ? { like_count: 8, comments_count: 2, token: 'SECRET' } : { likes: { summary: { total_count: 0 } }, shares: { count: 4 }, private: 'SECRET' };
+      return new Response(JSON.stringify(data), { status: 200 });
+    });
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0389')!.text;
+    const input = { ...f.input, requestId: randomUUID(), prompt };
+    const result = await chatTurn(f.ctx, input);
+    const rows = result.message.cards?.[0].rows || [];
+    expect(rows).toHaveLength(2);
+    expect(rows.find(row => row.channel === 'messenger')).toMatchObject({ likes: 0, comments: null, shares: 4 });
+    expect(rows.find(row => row.channel === 'instagram')).toMatchObject({ likes: 8, comments: 2, shares: null });
+    expect(JSON.stringify(result)).not.toMatch(/SECRET|HIDDEN|SYNTHETIC_TOKEN/);
+    expect(result.message.text).toContain('totaluri cumulative'); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(2);
+    await writeFile('.tmp/jarvis-social-comments/master-0389.json', JSON.stringify({ scenarioId: 'master-0389', prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual persisted chat and social insights service on local Firestore; Facebook and Instagram HTTP counters simulated.', runs: [{ phase: 'original', final: result.message }] }, null, 2));
+  });
+  it('shows unavailable metrics without claiming zero or exposing provider errors', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.insights.status': 'active' });
+    mocks.fetch.mockImplementation(async () => new Response(JSON.stringify({ error: { message: 'SECRET error' } }), { status: 503 }));
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Compară performanța postărilor disponibile.' });
+    expect(result.message.cards?.[0].rows[0]).toMatchObject({ available: false, likes: null, comments: null, shares: null });
+    expect(JSON.stringify(result)).not.toContain('SECRET');
+  });
+  it('limits comparison calls to twenty destinations and reports the remaining scope', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.insights.status': 'active' });
+    const batch = db.batch();
+    for (let i = 0; i < 21; i++) batch.set(f.post.parent.doc('extra-' + i), { agencyId: f.ctx.agencyId, propertyTitle: 'Test', destinations: { [f.connectionId]: { status: 'published', externalId: '123_' + (1000 + i) } } });
+    await batch.commit();
+    mocks.fetch.mockImplementation(async () => new Response(JSON.stringify({ likes: { summary: { total_count: 1 } } }), { status: 200 }));
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Compară performanța postărilor disponibile.' });
+    expect(result.message.cards?.[0].rows).toHaveLength(20); expect(result.message.cards?.[0].complete).toBe(false);
+    expect(result.message.text).toContain('22'); expect(mocks.fetch).toHaveBeenCalledTimes(20);
+  });
 });

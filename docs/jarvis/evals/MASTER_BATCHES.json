@@ -3596,7 +3596,11 @@
           "sourceNumber": 389,
           "request": "Compară performanța postărilor disponibile.",
           "requestSha256": "91e3892cfa8dcfbc1bbec40cc574156dfbc9122b53b33c78d59f377af866b055",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_05.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0390",

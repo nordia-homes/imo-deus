@@ -1,0 +1,68 @@
+{
+  "scope": "Per-destination cumulative social counter comparison using actual service and local Firestore; Meta HTTP simulated. Missing counters remain unknown; capped at 20 destinations with explicit incomplete scope.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0389",
+      "prompt": "Compară performanța postărilor disponibile.",
+      "versions": {
+        "prompt": "jarvis-137",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "168",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat and social insights service on local Firestore; Facebook and Instagram HTTP counters simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "daf834ae-2020-4def-b3a1-596e102dd6fb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Comparație pentru 2 destinații publicate. Indicatorii sunt citiți acum, dar sunt totaluri cumulative, nu valori pentru un interval comun. Lipsa unei valori nu înseamnă zero. Integrarea nu furnizează aici acoperire, impresii sau conversii; nu calculez rate de conversie și nu deduc ce platformă este mai performantă din indicatori diferiți.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialPerformance",
+                "title": "Performanța postărilor",
+                "rows": [
+                  {
+                    "id": "instagram:a480ca8f-f698-453c-ac69-bf5f124557e2",
+                    "postId": "instagram",
+                    "connectionId": "a480ca8f-f698-453c-ac69-bf5f124557e2",
+                    "propertyTitle": "Cișmigiu",
+                    "channel": "instagram",
+                    "likes": 8,
+                    "comments": 2,
+                    "shares": null,
+                    "available": true,
+                    "description": "Instagram: aprecieri 8, comentarii 2. Distribuirile nu sunt furnizate de această integrare pentru Instagram."
+                  },
+                  {
+                    "id": "post:4a98b335-f37b-4a3f-bcff-93b46abfe4ad",
+                    "postId": "post",
+                    "connectionId": "4a98b335-f37b-4a3f-bcff-93b46abfe4ad",
+                    "propertyTitle": "Cișmigiu",
+                    "channel": "messenger",
+                    "likes": 0,
+                    "comments": null,
+                    "shares": 4,
+                    "available": true,
+                    "description": "Facebook: aprecieri 0, comentarii necunoscut, distribuiri 4."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T07:42:40.906Z"
+          }
+        }
+      ]
+    }
+  ]
+}

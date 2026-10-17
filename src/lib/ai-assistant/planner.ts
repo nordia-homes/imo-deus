@@ -154,6 +154,14 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish('Programarea verifică starea conexiunii înainte de crearea jobului și refuză conturile care necesită reconectare. Conexiuni proprii blocate acum: ' + state.rows.length + '. Nu am creat joburi prin această verificare.');
     } catch { return finish('Nu pot verifica starea conexiunii Facebook; nu am creat joburi.', 'unavailable'); }
   }
+  const { socialPerformanceRequest, compareSocialPerformance } = await import('./social-performance');
+  if (socialPerformanceRequest(prompt)) {
+    try {
+      const report = await compareSocialPerformance(ctx);
+      cards.push({ type: 'data', source: 'socialPerformance', title: 'Performanța postărilor', rows: report.rows, complete: report.complete });
+      return finish(report.text);
+    } catch { return finish('Nu am putut compara performanța postărilor sau verifica accesul actual.', 'unavailable'); }
+  }
   const { prepareSocialComments } = await import('./social-comments');
   try {
     const socialComments = await prepareSocialComments(ctx, prompt, history);
