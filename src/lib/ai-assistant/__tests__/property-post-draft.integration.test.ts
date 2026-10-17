@@ -79,4 +79,21 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('property post drafting th
     const result = await preparePropertyPost(f.ctx, 'amenities', history);
     expect(result.rows[0].text).toContain('Balcon'); expect(result.rows[0].text).not.toMatch(/Piscină|lift|randament/); expect(result.rows[0].style).toBe('commercial');
   });
+  for (const scenarioId of ['master-0391', 'master-0392']) it('executes platform draft original ' + scenarioId + ' without changing CRM publication content', async () => {
+    const f = await fixture(), sessionId = randomUUID();
+    await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: promptFor('master-0372'), currentRecord: { resource: 'properties', id: 'property' } });
+    await f.property.update({ price: 119000 });
+    const input = { sessionId, requestId: randomUUID(), prompt: promptFor(scenarioId), currentRecord: null };
+    const result = await chatTurn(f.ctx, input);
+    const draft = result.message.cards?.find(card => card.source === 'facebookPostDraft')?.rows[0];
+    expect(draft?.platform).toBe(scenarioId === 'master-0391' ? 'facebook' : 'instagram');
+    expect(String(draft?.text).length).toBeLessThanOrEqual(scenarioId === 'master-0391' ? 500 : 2200);
+    expect(draft?.text).toContain('119.000 EUR'); expect(String(draft?.text)).not.toMatch(/125.000|PRIVATE|PROMISIUNE/);
+    expect(draft?.publicationConfirmed).toBe(false); expect(result.message.planId).toBeUndefined();
+    expect((await f.property.get()).data()).toEqual({ ...f.raw, price: 119000 });
+    expect((await f.agency.collection('facebookCloudPublishingJobs').get()).empty).toBe(true);
+    expect((await f.agency.collection('socialPosts').get()).empty).toBe(true);
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(mocks.fetch).not.toHaveBeenCalled();
+    await mkdir('.tmp/jarvis-property-post', { recursive: true }); await writeFile('.tmp/jarvis-property-post/' + scenarioId + '.json', JSON.stringify({ scenarioId, prompt: input.prompt, versions: VERSIONS, executionVerified: true, environment: 'Persisted chat and fresh CRM fields on local Firestore; platform copy stays in conversation and does not affect publication.', runs: [{ phase: 'original', final: result.message }] }, null, 2));
+  });
 });

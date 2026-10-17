@@ -3614,14 +3614,22 @@
           "sourceNumber": 391,
           "request": "Pregătește o versiune scurtă pentru Facebook.",
           "requestSha256": "7524dcbcce71bda05859bf8eef65a88fdb652a2fde766b2ecaedbcf507aec907",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0392",
           "sourceNumber": 392,
           "request": "Pregătește o versiune adaptată pentru Instagram.",
           "requestSha256": "e18a767b16f185f4b14e64b03cf4aff3ae6cab7d93c2aa2dad72495707748dcc",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_06.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0393",

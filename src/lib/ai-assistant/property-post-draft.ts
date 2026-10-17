@@ -2,13 +2,15 @@ import { createHash } from 'node:crypto';
 import type { AssistantContext } from './access';
 import { normalized, type AssistantMessage } from './contracts';
 
-export type PropertyPostMode = 'prepare' | 'commercial' | 'facts' | 'amenities';
+export type PropertyPostMode = 'prepare' | 'commercial' | 'facts' | 'amenities' | 'facebook_short' | 'instagram';
 export function propertyPostRequest(prompt: string): PropertyPostMode | null {
   const commands: Record<string, PropertyPostMode> = {
     'pregateste textul postarii pentru proprietate': 'prepare',
     'fa postarea mai orientata spre vanzare': 'commercial',
     'foloseste numai datele reale ale proprietatii': 'facts',
     'nu inventa facilitati in postare': 'amenities',
+    'pregateste o versiune scurta pentru facebook': 'facebook_short',
+    'pregateste o versiune adaptata pentru instagram': 'instagram',
   };
   return commands[normalized(prompt).trim().replace(/[.!?]+$/, '')] || null;
 }
@@ -55,6 +57,31 @@ export function propertyPostDraft(row: Record<string, any>, style: 'neutral' | '
   const text = lines.join('\n');
   return { text, style, transaction, omittedAmenityCount: Math.max(0, amenities.length - 12), usedFields: fields, omittedFields: omitted, revision: createHash('sha256').update(JSON.stringify({ text, fields })).digest('hex'), source: 'current_crm_fields', publicationConfirmed: false };
 }
+export function platformPropertyPostDraft(row: Record<string, any>, platform: 'facebook_short' | 'instagram') {
+  const draft = propertyPostDraft(row, 'neutral');
+  if (!draft) return null;
+  const maxLength = platform === 'facebook_short' ? 500 : 2200;
+  const original = draft.text.split('\n'), cta = original.at(-1)!;
+  const lines = original.slice(0, -1);
+  // Keep complete facts: prefer the price before optional location/amenity lines.
+  const ordered = [...lines.filter(line => !line.startsWith('Localizare: ') && !line.startsWith('Dotări: ')), ...lines.filter(line => line.startsWith('Localizare: ')), ...(platform === 'instagram' ? lines.filter(line => line.startsWith('Dotări: ')) : [])];
+  const kept: string[] = []; let size = cta.length;
+  for (const line of ordered) if (size + line.length + 1 <= maxLength) { kept.push(line); size += line.length + 1; }
+  if (!kept.length) return null;
+  const retained = new Set(kept);
+  const fieldLine = (field: string) => {
+    if (field === 'title') return plain(row.title, 250);
+    if (field === 'transactionType') return draft.transaction === 'sale' ? 'De vânzare' : 'De închiriat';
+    if (field === 'status') return 'Status: rezervat';
+    if (field === 'location') return lines.find(line => line.startsWith('Localizare: '));
+    if (field === 'amenities') return lines.find(line => line.startsWith('Dotări: '));
+    if (['price', 'priceCurrency', 'currency'].includes(field)) return lines.find(line => line.startsWith('Preț: '));
+    return lines.find(line => /(?:cameră|camere|m² utili|baie|băi)/.test(line) && !line.startsWith('Dotări: ') && line !== plain(row.title, 250));
+  };
+  const usedFields = draft.usedFields.filter(field => { const line = fieldLine(field); return !!line && retained.has(line); });
+  const text = [...kept, cta].join('\n');
+  return { ...draft, text, platform: platform === 'facebook_short' ? 'facebook' : 'instagram', maxLength, usedFields, omittedFields: [...draft.omittedFields, ...draft.usedFields.filter(field => !usedFields.includes(field))], omittedLineCount: lines.length - kept.length, revision: createHash('sha256').update(JSON.stringify({ text, usedFields, platform })).digest('hex') };
+}
 export function selectedPropertyPost(history: AssistantMessage[]) {
   const page = history.find(row => row.id === 'current-page-context');
   const last = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1);
@@ -80,9 +107,9 @@ export async function preparePropertyPost(ctx: AssistantContext, mode: PropertyP
     const property = snapshot.data();
     if (!property || property.deletedAt || property.agencyId && property.agencyId !== ctx.agencyId) throw new Error('Proprietate inaccesibilă');
     if (['vandut', 'inchiriat', 'inactiv'].includes(normalized(String(property.status || '')))) return { rows: [], clarification: true, text: 'Proprietatea este marcată ' + property.status + ' în CRM. Nu am pregătit o ofertă activă; verifică starea înregistrării.' };
-    const draft = propertyPostDraft(property, mode === 'commercial' ? 'commercial' : selected.previousStyle);
+    const draft = mode === 'facebook_short' || mode === 'instagram' ? platformPropertyPostDraft(property, mode) : propertyPostDraft(property, mode === 'commercial' ? 'commercial' : selected.previousStyle);
     if (!draft) return { rows: [], clarification: true, text: 'Proprietatea nu are date suficiente pentru o postare. Completează câmpurile publice în CRM.' };
     if (mode === 'commercial' && draft.transaction !== 'sale') return { rows: [], clarification: true, text: 'Proprietatea nu este înregistrată pentru vânzare. Nu am schimbat tipul tranzacției în postare; verifică înregistrarea din CRM.' };
-    return { rows: [{ id: selected.id!, propertyId: selected.id!, ...draft }], clarification: false, text: 'Text pregătit din datele actuale ale proprietății:\n\n' + draft.text + '\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.' };
+    return { rows: [{ id: selected.id!, propertyId: selected.id!, ...draft }], clarification: false, text: (mode === 'facebook_short' ? 'Versiune scurtă pentru Facebook' : mode === 'instagram' ? 'Versiune pentru Instagram' : 'Text pregătit') + ' din datele actuale ale proprietății:\n\n' + draft.text + '\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.' };
   });
 }

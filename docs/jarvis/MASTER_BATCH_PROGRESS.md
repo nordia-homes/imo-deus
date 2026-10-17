@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot variante de ciornă pentru Facebook și Instagram — 17 octombrie 2026
+
+Scenariile **0391** și **0392** pregătesc în conversație variante factuale pentru proprietatea selectată sau ultima ciornă. Datele sunt recitite din CRM; prețurile schimbate înlocuiesc valorile vechi. Varianta scurtă Facebook are un obiectiv editorial de maximum 500 de caractere și omite dotările opționale. Varianta Instagram are maximum 2.200 de caractere, conform limitei integrării existente, și poate include dotările declarate în CRM. Nu se presupune că limita editorială Facebook reprezintă limita platformei.
+
+Se păstrează linii întregi, cu prioritate pentru informațiile de bază și preț înainte de localizare/dotări. Câmpurile eliminate sunt reflectate în metadatele ciornei, iar revizia este recalculată după textul rezultat. Nu se deduc facilități din descrieri private și nu se transformă închirierea în vânzare. Drepturile și starea proprietății folosesc verificările existente. Ciornele nu modifică descrierea CRM, nu creează postări sociale și nu înlocuiesc descrierea sau fotografiile folosite la publicarea în grupuri. Runnerul manual nu este modificat.
+
+Validare: 92 teste unitare/regresie și 19 teste de integrare trecute, cu cererile originale, date actualizate, limite de lungime, date exagerat de lungi, replay și lipsa efectelor externe. ESLint, paritate și build complet (inclusiv TypeScript) trecute. Dovadă: [Social lot 06](evals/SOCIAL_EXECUTION_BATCH_06.json). **203/1000 dovezi locale** (133 cu model real, 70 deterministe). Lot nepublicat; fără certificare integrală în producție.
+
 ## Lot comparația performanței sociale — 17 octombrie 2026
 
 Scenariul **0389** citește indicatorii destinațiilor publicate prin serviciul social existent și îi prezintă pe postare și canal. Facebook folosește aprecieri, comentarii și distribuiri; Instagram folosește aprecieri și comentarii. Valorile lipsă, invalide sau negative rămân necunoscute; zero este păstrat ca valoare reală. Erorile unui cont nu elimină destinația din raport și nu sunt transformate în zero. Datele brute și tokenurile nu sunt expuse.

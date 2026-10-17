@@ -1,0 +1,131 @@
+{
+  "scope": "Platform-specific factual drafts in persisted chat using fresh CRM fields. Facebook short draft capped at 500 characters, Instagram at 2200. No CRM description edits or publication.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0391",
+      "prompt": "Pregătește o versiune scurtă pentru Facebook.",
+      "versions": {
+        "prompt": "jarvis-138",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "169",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and fresh CRM fields on local Firestore; platform copy stays in conversation and does not affect publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "acf6c7f1-abd7-4f11-8015-64e70669cac5-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Versiune scurtă pentru Facebook din datele actuale ale proprietății:\n\nApartament Cișmigiu\nDe vânzare\n2 camere · 54 m² utili\nPreț: 119.000 EUR\nLocalizare: București\nScrie-ne pentru mai multe detalii.\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPostDraft",
+                "title": "Textul postării",
+                "rows": [
+                  {
+                    "id": "property",
+                    "propertyId": "property",
+                    "text": "Apartament Cișmigiu\nDe vânzare\n2 camere · 54 m² utili\nPreț: 119.000 EUR\nLocalizare: București\nScrie-ne pentru mai multe detalii.",
+                    "style": "neutral",
+                    "transaction": "sale",
+                    "omittedAmenityCount": 0,
+                    "usedFields": [
+                      "title",
+                      "transactionType",
+                      "location",
+                      "rooms",
+                      "squareFootage"
+                    ],
+                    "omittedFields": [
+                      "bathrooms",
+                      "amenities"
+                    ],
+                    "revision": "2f28c8fc90e4c936621808b075b6101f15e548fcdbf9030c471050650b6442cd",
+                    "source": "current_crm_fields",
+                    "publicationConfirmed": false,
+                    "platform": "facebook",
+                    "maxLength": 500,
+                    "omittedLineCount": 1
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T07:50:57.563Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0392",
+      "prompt": "Pregătește o versiune adaptată pentru Instagram.",
+      "versions": {
+        "prompt": "jarvis-138",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "169",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and fresh CRM fields on local Firestore; platform copy stays in conversation and does not affect publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "db735b41-ece1-4067-97f1-da4b15c5d0a2-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Versiune pentru Instagram din datele actuale ale proprietății:\n\nApartament Cișmigiu\nDe vânzare\n2 camere · 54 m² utili\nPreț: 119.000 EUR\nLocalizare: București\nDotări: Balcon\nScrie-ne pentru mai multe detalii.\n\nDraftul rămâne în conversație; nu am publicat și nu am modificat anunțul. Câmpurile lipsă sau invalide au fost omise.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "facebookPostDraft",
+                "title": "Textul postării",
+                "rows": [
+                  {
+                    "id": "property",
+                    "propertyId": "property",
+                    "text": "Apartament Cișmigiu\nDe vânzare\n2 camere · 54 m² utili\nPreț: 119.000 EUR\nLocalizare: București\nDotări: Balcon\nScrie-ne pentru mai multe detalii.",
+                    "style": "neutral",
+                    "transaction": "sale",
+                    "omittedAmenityCount": 0,
+                    "usedFields": [
+                      "title",
+                      "transactionType",
+                      "location",
+                      "rooms",
+                      "squareFootage"
+                    ],
+                    "omittedFields": [
+                      "bathrooms"
+                    ],
+                    "revision": "67de2a26750fc788a66c7964e4d6e839cf3ba8e465ba8573b3ed718be85ca4b7",
+                    "source": "current_crm_fields",
+                    "publicationConfirmed": false,
+                    "platform": "instagram",
+                    "maxLength": 2200,
+                    "omittedLineCount": 0
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T07:50:58.052Z"
+          }
+        }
+      ]
+    }
+  ]
+}
