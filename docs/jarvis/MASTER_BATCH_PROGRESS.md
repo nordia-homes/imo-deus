@@ -12,6 +12,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Lot răspunsuri și aprecieri pentru comentarii — 17 octombrie 2026
+
+Scenariile **0380** și **0381** folosesc comentariile citite în conversație și continuă la selecția comentariului. Pentru răspuns se cere textul exact atunci când acesta lipsește; după furnizarea lui, executorul apelează ruta și serviciul social existente fără o aprobare suplimentară. Facebook permite răspuns/apreciere; Instagram permite răspuns, iar aprecierea este raportată ca nesuportată de integrarea existentă. Permisiunea administrativă a API-ului social este păstrată.
+
+Profilul, agenția, postarea publicată și conexiunea sunt recitite înaintea executării. Serviciul verifică apartenența comentariului la postare. Confirmarea necesită răspunsul pozitiv Meta (success pentru apreciere, ID pentru răspuns); lipsa dovezii nu devine succes. Registrul executorului împiedică repetarea efectului la replay. Textul răspunsului este transmis exact, iar mesajul final nu mai afirmă greșit că nu s-a trimis nimic. Limita rămasă: verificarea apartenenței din serviciul existent examinează primele 100 de comentarii; nu este încă paginată.
+
+Validare: 123 teste unitare/regresie și 34 teste de integrare, inclusiv răspuns Instagram, text lipsă, cont deconectat, comentariu dispărut, răspuns Meta incert și replay. ESLint, paritate și build complet verificate. Dovadă: [Social lot 07](evals/SOCIAL_EXECUTION_BATCH_07.json). **205/1000 dovezi locale** (133 cu model real, 72 deterministe), cu Firestore local și transport Meta simulat. Nu reprezintă certificare în producție. Lot nepublicat; conținutul publicărilor în grupuri și runnerul manual nu sunt modificate.
+
 ## Lot variante de ciornă pentru Facebook și Instagram — 17 octombrie 2026
 
 Scenariile **0391** și **0392** pregătesc în conversație variante factuale pentru proprietatea selectată sau ultima ciornă. Datele sunt recitite din CRM; prețurile schimbate înlocuiesc valorile vechi. Varianta scurtă Facebook are un obiectiv editorial de maximum 500 de caractere și omite dotările opționale. Varianta Instagram are maximum 2.200 de caractere, conform limitei integrării existente, și poate include dotările declarate în CRM. Nu se presupune că limita editorială Facebook reprezintă limita platformei.

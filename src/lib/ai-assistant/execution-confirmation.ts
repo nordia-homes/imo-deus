@@ -4,6 +4,8 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'social_like' && receipt.executionState === 'succeeded') return 'Meta a confirmat aprecierea comentariului ' + receipt.commentId + '.';
+    if (receipt?.operation === 'social_reply' && receipt.executionState === 'succeeded') return 'Meta a confirmat răspunsul la comentariul ' + receipt.commentId + '. ID răspuns: ' + receipt.replyId + '.';
     if (receipt?.operation === 'facebook_job_create' && ['succeeded', 'queued', 'running'].includes(String(receipt.executionState)) && receipt.scheduledAt === null) return 'Jobul Facebook ' + receipt.jobId + ' a fost creat pentru publicare fără programare amânată. Automatizarea folosește descrierea și pozele din CRM. Publicarea efectivă nu este încă confirmată.';
     if (receipt?.operation === 'facebook_job_create' && receipt.schedulingConfirmed === true && typeof receipt.scheduledAt === 'string') {
       const when = bucharestInputFromIso(receipt.scheduledAt);

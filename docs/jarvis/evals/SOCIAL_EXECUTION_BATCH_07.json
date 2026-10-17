@@ -1,0 +1,163 @@
+{
+  "scope": "Exact comment replies and supported likes through persisted chat, executor ledger and real communications handler; local Firestore and simulated Meta HTTP. Existing first-100 comment membership limit remains.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0380",
+      "prompt": "Răspunde comentariului selectat.",
+      "versions": {
+        "prompt": "jarvis-139",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "170",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat, executor ledger and communications handler on local Firestore; Meta GET/POST simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "fb08d947-ce17-488f-904a-ebdb5bf0da85-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Indică comentariul și textul exact: „Răspuns social: ID | textul răspunsului”.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialCommentActionRequest",
+                "title": "Alege comentariul",
+                "rows": [
+                  {
+                    "id": "9",
+                    "postId": "post",
+                    "connectionId": "79a374ca-2c54-4798-992d-da859ff31147",
+                    "text": "Mai este disponibil?",
+                    "prompt": "Răspunde comentariului selectat."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T08:03:02.106Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "0f1b5f04-da12-4af8-b2a6-6c4073734787-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat răspunsul la comentariul 9. ID răspuns: 9_10.\nAcțiuni executate: 1. Rezultatul răspunsului social este confirmat mai sus.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_reply",
+                      "executionState": "succeeded",
+                      "postId": "post",
+                      "commentId": "9",
+                      "connectionId": "79a374ca-2c54-4798-992d-da859ff31147",
+                      "replyId": "9_10",
+                      "evidenceSource": "provider_response"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T08:03:02.617Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0381",
+      "prompt": "Dă like comentariului dacă funcția este suportată.",
+      "versions": {
+        "prompt": "jarvis-139",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "170",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat, executor ledger and communications handler on local Firestore; Meta GET/POST simulated.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "5d0bb9b9-d2d1-4b66-9613-3841d7478793-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege comentariul: „Comentariu social: ID”. Solicitarea autorizează aprecierea dacă integrarea o permite.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialCommentActionRequest",
+                "title": "Alege comentariul",
+                "rows": [
+                  {
+                    "id": "9",
+                    "postId": "post",
+                    "connectionId": "18a7d172-fab6-4b2e-b10b-f36caccf16c4",
+                    "text": "Mai este disponibil?",
+                    "prompt": "Dă like comentariului dacă funcția este suportată."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T08:03:03.293Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "a1c97add-3f8d-4a66-ba91-2245ed87a833-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat aprecierea comentariului 9.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "operation": "social_like",
+                      "executionState": "succeeded",
+                      "postId": "post",
+                      "commentId": "9",
+                      "connectionId": "18a7d172-fab6-4b2e-b10b-f36caccf16c4",
+                      "evidenceSource": "provider_response"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T08:03:03.724Z"
+          }
+        }
+      ]
+    }
+  ]
+}

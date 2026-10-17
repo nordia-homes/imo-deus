@@ -162,6 +162,15 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(report.text);
     } catch { return finish('Nu am putut compara performanța postărilor sau verifica accesul actual.', 'unavailable'); }
   }
+  const { prepareSocialCommentAction } = await import('./social-comment-actions');
+  try {
+    const socialAction = await prepareSocialCommentAction(ctx, prompt, history);
+    if (socialAction) {
+      if (socialAction.rows.length) cards.push({ type: 'data', source: 'socialCommentActionRequest', title: 'Alege comentariul', rows: socialAction.rows, complete: true });
+      actions.push(...socialAction.actions);
+      return finish(socialAction.text);
+    }
+  } catch { return finish('Nu am putut pregăti acțiunea asupra comentariului. Verifică selecția, textul și accesul actual.', 'unavailable'); }
   const { prepareSocialComments } = await import('./social-comments');
   try {
     const socialComments = await prepareSocialComments(ctx, prompt, history);

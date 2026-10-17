@@ -89,7 +89,10 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const hex = createHash('sha256').update(`${ctx.agencyId}:${key}`).digest('hex');
       const requestId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
       const body = action.operation === 'message_send' || action.operation === 'message_preview' || action.operation === 'facebook_job_create' ? { ...action.body, requestId } : action.body;
+      const { socialCommentAction, validateSocialCommentAction, socialCommentReceipt } = await import('./social-comment-actions');
+      if (socialCommentAction(action) && !await validateSocialCommentAction(ctx, action)) throw new Error('Funcție nesuportată pentru acest canal');
       let result = await invokeOperation(ctx, { ...action, body });
+      if (socialCommentAction(action)) result = socialCommentReceipt(action, result);
       if (action.operation === 'facebook_job_create') {
         const job = result.job;
         if (!job || job.agencyId !== ctx.agencyId || job.ownerUid !== ctx.uid || job.propertyId !== body.propertyId || job.connectionId !== body.connectionId || job.dispatchState === 'pending' || job.dispatchState === 'unknown') throw new OperationFailure('Crearea jobului Facebook nu este confirmată.', 409, {});

@@ -3517,14 +3517,22 @@
           "sourceNumber": 380,
           "request": "Răspunde comentariului selectat.",
           "requestSha256": "e5994373bb6fc90460ecf7a975e26d6ef84d9248ba5f24053f67a4f3880e40a2",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0381",
           "sourceNumber": 381,
           "request": "Dă like comentariului dacă funcția este suportată.",
           "requestSha256": "8a2d2d6116174ef53fbb23bce9d39670a49a37999effa73bf1080026901f7784",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/SOCIAL_EXECUTION_BATCH_07.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0382",

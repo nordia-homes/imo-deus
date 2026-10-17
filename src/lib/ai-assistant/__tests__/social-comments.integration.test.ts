@@ -227,4 +227,68 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     expect(result.message.cards?.[0].rows).toHaveLength(20); expect(result.message.cards?.[0].complete).toBe(false);
     expect(result.message.text).toContain('22'); expect(mocks.fetch).toHaveBeenCalledTimes(20);
   });
+  for (const scenarioId of ['master-0380', 'master-0381']) it('executes ' + scenarioId + ' through the real executor and handler without duplicate effects', async () => {
+    const f = await fixture(); let posts = 0;
+    mocks.fetch.mockImplementation(async (_url: string, options: any) => {
+      if (options.method === 'POST') { posts++; if (scenarioId === 'master-0380') expect(JSON.parse(options.body)).toEqual({ message: 'Bună ziua! Este disponibil.' }); return new Response(JSON.stringify(scenarioId === 'master-0380' ? { id: '9_10' } : { success: true }), { status: 200 }); }
+      return new Response(JSON.stringify({ data: [{ id: '9', message: 'Mai este disponibil?' }] }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    const prompt = corpus.scenarios.find(row => row.id === scenarioId)!.text;
+    const original = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt });
+    expect(original.message.cards?.[0].source).toBe('socialCommentActionRequest');
+    const input = { ...f.input, requestId: randomUUID(), prompt: scenarioId === 'master-0380' ? 'Răspuns social: 9 | Bună ziua! Este disponibil.' : 'Comentariu social: 9' };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.planId).toBeUndefined(); expect(result.message.text).toContain('Meta a confirmat'); expect(posts).toBe(1);
+    if (scenarioId === 'master-0380') expect(result.message.text).not.toContain('Nu au fost trimise mesaje');
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(posts).toBe(1);
+    await writeFile('.tmp/jarvis-social-comments/' + scenarioId + '.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual persisted chat, executor ledger and communications handler on local Firestore; Meta GET/POST simulated.', runs: [{ phase: 'original', final: original.message }, { phase: 'selection', final: result.message }] }, null, 2));
+  });
+  it('refuses Instagram likes before a write', async () => {
+    const f = await fixture('instagram');
+    mocks.fetch.mockImplementation(async () => new Response(JSON.stringify({ data: [{ id: '9', text: 'Salut' }] }), { status: 200 }));
+    await chatTurn(f.ctx, f.input);
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Dă like comentariului dacă funcția este suportată.' });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Comentariu social: 9' });
+    expect(result.message.text).toContain('nu permite'); expect(result.message.planId).toBeUndefined();
+    expect(mocks.fetch.mock.calls.every(([, options]) => options.method === 'GET')).toBe(true);
+  });
+  it('does not confirm or repeat an uncertain like response', async () => {
+    const f = await fixture(); let posts = 0;
+    mocks.fetch.mockImplementation(async (_url: string, options: any) => {
+      if (options.method === 'POST') { posts++; return new Response('{}', { status: 200 }); }
+      return new Response(JSON.stringify({ data: [{ id: '9', message: 'Salut' }] }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Dă like comentariului dacă funcția este suportată.' });
+    const input = { ...f.input, requestId: randomUUID(), prompt: 'Comentariu social: 9' };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.text).not.toContain('Meta a confirmat'); expect(posts).toBe(1);
+    await chatTurn(f.ctx, input); expect(posts).toBe(1);
+  });
+  it('replies on Instagram with the exact supplied text', async () => {
+    const f = await fixture('instagram'); let posts = 0;
+    mocks.fetch.mockImplementation(async (url: string, options: any) => {
+      if (options.method === 'POST') { posts++; expect(new URL(url).pathname).toMatch(/\/9\/replies$/); expect(JSON.parse(options.body)).toEqual({ message: 'Da, disponibil.' }); return new Response(JSON.stringify({ id: '10' }), { status: 200 }); }
+      return new Response(JSON.stringify({ data: [{ id: '9', text: 'Salut' }] }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Răspunde comentariului selectat.' });
+    const missing = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Răspuns social: 9' });
+    expect(missing.message.text).toContain('Lipsește textul'); expect(posts).toBe(0);
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Răspuns social: 9 | Da, disponibil.' });
+    expect(result.message.text).toContain('Meta a confirmat'); expect(posts).toBe(1);
+  });
+  for (const reason of ['disconnected', 'comment-removed']) it('prevents writes after ' + reason, async () => {
+    const f = await fixture(); let removed = false; let posts = 0;
+    mocks.fetch.mockImplementation(async (_url: string, options: any) => {
+      if (options.method === 'POST') posts++;
+      return new Response(JSON.stringify({ data: removed ? [] : [{ id: '9', message: 'Salut' }] }), { status: 200 });
+    });
+    await chatTurn(f.ctx, f.input);
+    await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Dă like comentariului dacă funcția este suportată.' });
+    if (reason === 'disconnected') await f.connection.update({ status: 'disconnected' }); else removed = true;
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Comentariu social: 9' });
+    expect(result.message.text).not.toContain('Meta a confirmat'); expect(posts).toBe(0);
+  });
 });

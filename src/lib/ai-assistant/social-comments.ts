@@ -70,7 +70,7 @@ export async function readSocialCommentPages(ctx: AssistantContext, postId: stri
     if (seen.has(createHash('sha256').update(cursor).digest('hex'))) { after = undefined; stopReason = 'Meta a repetat cursorul paginii'; break; }
     seen.add(createHash('sha256').update(cursor).digest('hex')); after = cursor;
   }
-  return { rows: [...collected.values()].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id)), complete, stopReason, checkpoint: !complete && after && expectedId && seen.size < 1000 ? { after, externalId: expectedId, seen: [...seen] } : null };
+  return { rows: [...collected.values()].map(row => ({ ...row, postId, connectionId })).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || a.id.localeCompare(b.id)), complete, stopReason, checkpoint: !complete && after && expectedId && seen.size < 1000 ? { after, externalId: expectedId, seen: [...seen] } : null };
 }
 export async function saveCommentContinuation(ctx: AssistantContext, postId: string, connectionId: string, checkpoint: CommentCheckpoint | null) {
   if (!checkpoint) return null;
