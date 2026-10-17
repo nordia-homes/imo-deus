@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — recuperare după răspuns pierdut — 17 octombrie 2026
+
+Crearea celor patru obiecte publicitare folosește acum un jurnal persistent pe pași. Intenția și amprenta parametrilor sunt salvate înainte de POST. Numele tehnic al obiectului primește un marcaj unic imo; acesta nu schimbă titlul sau textul reclamei. Dacă răspunsul se pierde, aplicația caută obiectul cu acel marcaj în contul selectat, verifică unicitatea și asocierile, salvează ID-ul și continuă publicarea în aceeași execuție. Un pas pending nu mai trimite POST la reluare.
+
+Paginarea folosește doar cursorul pe endpointul Meta fix, fără urmărirea URL-urilor next furnizate. Citirea este limitată în timp și număr de pagini; rezultat incomplet, zero potriviri, obiecte duplicate, cont sau asocieri greșite păstrează operația neconfirmată și nu provoacă retrimitere. Dacă obiectul devine vizibil ulterior, aceeași operație se poate relua cu ID-ul recuperat.
+
+O rezervare tranzacțională de cinci minute exclude publicările simultane. După expirare, o execuție nouă poate recupera pașii; verificarea identificatorului execuției împiedică procesul vechi să salveze peste noua execuție. Configurația este fixată pentru operație, iar modificările concurente sunt păstrate. Hashurile fotografiilor și ID-ul video salvat sunt refolosite la reluare.
+
+Validare: **84 teste unitare și 50 teste de integrare**, ESLint, paritate, inventarul corpusului și build complet trecute, inclusiv pierderea răspunsului la fiecare etapă, reluări repetate, vizibilitate întârziată, paginare, concurență, rezervare expirată și proces vechi. Meta este simulat, Firestore este local; nu au fost create reclame reale. Lotul consolidează handlerul comun, fără dovadă nouă pentru scenariul conversațional integral 0411; **251/1000 dovezi locale** rămân documentate. Recuperarea automată necesită un obiect unic vizibil la Meta; lipsa dovezii nu este tratată ca succes sau ca permisiune de a repeta POST. Autorizarea conversațională completă a publicării rămâne de implementat. Lot nepublicat în producție.
+
+Endpointurile de listare sunt confruntate cu [SDK-ul oficial Meta — AdAccount](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ad-account.js).
+
 ## Meta Ads — verificarea rezultatului publicării — 17 octombrie 2026
 
 Handlerul de publicare recitește acum campania, ad setul, creative-ul și reclama de la Meta înainte de succes. Verifică identificatorii, contul, legăturile dintre obiecte și configurarea în pauză. Stările efective PENDING_REVIEW/IN_PROCESS ale reclamei sunt păstrate în dovadă fără a pretinde aprobare sau livrare. Răspunsul Jarvis diferențiază explicit crearea în pauză de livrarea unei reclame. Un status local published fără dovadă actuală nu mai este suficient pentru o confirmare de succes.
