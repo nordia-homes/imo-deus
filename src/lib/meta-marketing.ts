@@ -1,3 +1,4 @@
+import { verifyMetaPublication } from './meta-campaign-publication';
 import { metaCampaignObservation, verifyMetaCampaignPause } from './meta-campaign-pause';
 import { buildMetaCampaignDraft, buildDefaultCampaignContent } from './meta-campaign-draft';
 import { validateMetaCampaignForPublish } from './meta-campaign-validation';
@@ -1326,6 +1327,9 @@ function buildCreativeObjectStorySpec(params: {
 }
 
 export async function publishMetaCampaign(agencyId: string, campaignId: string, requestedByUid?: string) {
+  const revision = (value: unknown) => createHash('sha256').update(JSON.stringify(value ?? null)).digest('hex');
+  let publicationSnapshotRevision: string | null = null;
+  if (requestedByUid) { const member = (await adminDb.collection('users').doc(requestedByUid).get()).data(); if (member?.agencyId !== agencyId || member.role !== 'admin') throw new Error('Acces revocat la publicarea Meta.'); }
   const ref = getCampaignDraftRef(agencyId, campaignId);
   const snapshot = await ref.get();
   if (!snapshot.exists) {
@@ -1350,6 +1354,7 @@ export async function publishMetaCampaign(agencyId: string, campaignId: string, 
     throw new Error(validation.errors.join(' '));
   }
 
+  if (integration.agencyId !== agencyId) throw new Error('Conexiunea Meta nu aparține agenției.');
   const adAccountId = integration.selectedAdAccount?.id;
   const pageId = integration.selectedPage?.id;
   if (!adAccountId || !pageId) {
@@ -1468,32 +1473,33 @@ export async function publishMetaCampaign(agencyId: string, campaignId: string, 
     const metaAdId = adResponse.id;
     if (!metaAdId) throw new Error('Meta nu a returnat Ad ID.');
 
-    const finishedAt = nowIso();
+    await ref.update({ metaAdId });
+    const beforeVerification = await ref.get();
+    publicationSnapshotRevision = revision(beforeVerification.data());
+    const providerPublicationVerification = await verifyMetaPublication({ campaignId: metaCampaignId, adSetId: metaAdSetId, creativeId: metaCreativeId, adId: metaAdId, accountId: adAccountId },
+      (id, fields) => metaRequest('/' + id + '?fields=' + encodeURIComponent(fields), accessToken, { signal: AbortSignal.timeout(15000) }));
+    const finishedAt = providerPublicationVerification.checkedAt;
     publishLog = appendPublishLog({ ...draft, metaAdId }, {
       at: finishedAt,
       status: 'published',
       message: 'Campania a fost publicata in Meta in status PAUSED pentru verificare finala.',
       metaObjectId: metaAdId,
     });
-    await ref.set({
-      status: 'published',
-      metaCampaignId,
-      metaAdSetId,
-      metaCreativeId,
-      metaAdId,
-      metaImageHash: cleanImageHashes[0] || null,
-      metaVideoId,
-      lastPublishError: null,
-      updatedAt: finishedAt,
-      publishLog,
-    }, { merge: true });
-    await propertySnapshot.ref.set({
-      metaMarketing: {
-        latestCampaignDraftId: campaignId,
-        status: 'published',
-        updatedAt: finishedAt,
-      },
-    }, { merge: true });
+    await adminDb.runTransaction(async tx => {
+      const [current, currentProperty, currentGrant, member] = await Promise.all([
+        tx.get(ref), tx.get(propertySnapshot.ref), tx.get(getPrivateDocRef(agencyId)),
+        requestedByUid ? tx.get(adminDb.collection('users').doc(requestedByUid)) : Promise.resolve(null),
+      ]);
+      if (!current.exists || revision(current.data()) !== revision(beforeVerification.data()) || !currentProperty.exists || revision(currentProperty.data()) !== revision(propertySnapshot.data()) || revision(currentGrant.data()) !== revision(integration) || (member && (member.data()?.agencyId !== agencyId || member.data()?.role !== 'admin'))) {
+        throw new Error('Campania, proprietatea, conexiunea sau accesul s-a schimbat în timpul verificării Meta.');
+      }
+      tx.update(ref, { status: 'published', metaCampaignId, metaAdSetId, metaCreativeId, metaAdId,
+        metaImageHash: cleanImageHashes[0] || null, metaVideoId, lastPublishError: null,
+        updatedAt: finishedAt, publishLog, providerPublicationVerification });
+      if (!currentProperty.data()?.metaMarketing?.latestCampaignDraftId || currentProperty.data()?.metaMarketing?.latestCampaignDraftId === campaignId) tx.update(propertySnapshot.ref, {
+        'metaMarketing.latestCampaignDraftId': campaignId, 'metaMarketing.status': 'published', 'metaMarketing.updatedAt': finishedAt,
+      });
+    });
 
     const updatedSnapshot = await ref.get();
     return {
@@ -1503,19 +1509,15 @@ export async function publishMetaCampaign(agencyId: string, campaignId: string, 
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Publicarea Meta a esuat.';
     const failedAt = nowIso();
-    await ref.set({
-      status: 'error',
-      lastPublishError: message,
-      updatedAt: failedAt,
-      publishLog: appendPublishLog(draft, { at: failedAt, status: 'error', message }),
-    }, { merge: true });
-    await propertySnapshot.ref.set({
-      metaMarketing: {
-        latestCampaignDraftId: campaignId,
-        status: 'error',
-        updatedAt: failedAt,
-      },
-    }, { merge: true });
+    await adminDb.runTransaction(async tx => {
+      const [current, currentProperty] = await Promise.all([tx.get(ref), tx.get(propertySnapshot.ref)]);
+      if (!current.exists || (publicationSnapshotRevision && revision(current.data()) !== publicationSnapshotRevision)) return;
+      tx.update(ref, {status: 'error', lastPublishError: message, updatedAt: failedAt,
+        publishLog: appendPublishLog(draft, { at: failedAt, status: 'error', message })});
+      if (currentProperty.exists && currentProperty.data()?.metaMarketing?.latestCampaignDraftId === campaignId) tx.update(propertySnapshot.ref, {
+        'metaMarketing.status': 'error', 'metaMarketing.updatedAt': failedAt,
+      });
+    });
     throw error;
   }
 }

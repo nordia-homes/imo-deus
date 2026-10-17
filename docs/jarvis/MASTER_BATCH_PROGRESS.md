@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — verificarea rezultatului publicării — 17 octombrie 2026
+
+Handlerul de publicare recitește acum campania, ad setul, creative-ul și reclama de la Meta înainte de succes. Verifică identificatorii, contul, legăturile dintre obiecte și configurarea în pauză. Stările efective PENDING_REVIEW/IN_PROCESS ale reclamei sunt păstrate în dovadă fără a pretinde aprobare sau livrare. Răspunsul Jarvis diferențiază explicit crearea în pauză de livrarea unei reclame. Un status local published fără dovadă actuală nu mai este suficient pentru o confirmare de succes.
+
+ID-ul reclamei este salvat înainte de citirea finală; dacă acea citire eșuează, reluarea cu ID-urile deja salvate nu recreează campania, setul, creative-ul sau reclama. Salvarea finală este atomică și revalidează campania, proprietatea, conexiunea și administratorul. Modificările concurente ale campaniei în timpul verificării nu sunt suprascrise în ramura de eroare; proprietățile și campaniile șterse nu sunt recreate de acea ramură. Indicatorul proprietății nu este mutat de pe altă campanie.
+
+Validare: **84 teste unitare și 33 teste de integrare**, ESLint, paritate, inventarul corpusului și build complet trecute. Firestore local și Meta sintetic, fără publicări externe. Acesta este un lot de consolidare a handlerului comun, nu o dovadă nouă pentru scenariul conversațional integral 0411. **251/1000 dovezi locale** rămân documentate. Reconcilierea completă a unei creații cu răspuns pierdut înainte de obținerea ID-ului și autorizarea conversațională a publicării rămân de implementat; testul de reluare acoperă pierderea citirii de verificare după salvarea ID-urilor. Lot nepublicat în producție.
+
+Câmpurile și stările au fost confruntate cu SDK-ul oficial Meta: [Ad](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ad.js), [AdSet](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ad-set.js).
+
 ## Meta Ads — recomandări comerciale din inventar — 17 octombrie 2026
 
 Scenariile **0447 și 0448** recomandă pregătirea promovării și explică rațiunea comercială pentru lista discutată anterior. Lista nu este înlocuită implicit cu proprietăți noi. Inventarul Meta, proprietățile și accesul sunt reverificate; ofertele devenite active la Meta, indisponibile sau cu stare neconfirmată nu sunt recomandate.

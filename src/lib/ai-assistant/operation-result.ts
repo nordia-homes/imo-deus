@@ -1,3 +1,4 @@
+import { hasMetaPublicationProof } from '@/lib/meta-campaign-publication';
 import { safeData } from './contracts';
 // Expose confirmed IDs in a stable shape without changing domain responses.
 const aliases: Record<string, [string, string]> = {
@@ -20,6 +21,16 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };
   result.executionState = Object.entries(groups).find(([, values]) => values.includes(key))?.[0] || (readOnly ? 'observed' : 'accepted_unverified');
   if (operation === 'file_apply' && key === 'attached' && result.mutationRevision?.resource === 'properties') result.executionState = 'succeeded';
+  if (operation === 'meta_campaign_publish') {
+    const confirmed = hasMetaPublicationProof(result.campaign);
+    result.operation = operation;
+    result.campaignId = result.campaign?.id;
+    result.executionState = confirmed ? 'succeeded' : 'unknown';
+    result.publicationConfirmed = confirmed;
+    result.completionSatisfied = confirmed;
+    result.deliveryConfirmed = false;
+    result.note = confirmed ? 'Obiectele au fost verificate la Meta în pauză. Livrarea și aprobarea reclamei nu sunt confirmate.' : 'Publicarea nu are o dovadă Meta valabilă pentru revizia curentă; nu retrimite automat.';
+  }
   if (operation === 'meta_campaign_pause') {
     const campaign = result.campaign, proof = campaign?.providerPauseVerification;
     const confirmed = campaign?.status === 'paused' && typeof campaign.id === 'string' && campaign.id.length > 0 &&
