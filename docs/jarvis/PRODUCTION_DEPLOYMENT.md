@@ -1,3 +1,11 @@
+# Jarvis — producție actualizată la 17 octombrie 2026
+
+Versiunea activă: **build-20261017-jarvis-140**, commit aplicație **c06958bc203423f29634de06743221374ce7c4d3**, READY cu **100% trafic** pe https://imodeus.ro. Raportul verificabil este [RELEASE_2026_10_17.json](RELEASE_2026_10_17.json), iar rezumatul validării este în [MASTER_BATCH_PROGRESS.md](MASTER_BATCH_PROGRESS.md).
+
+Regulile Firestore sunt sincronizate cu sursa și cele 80 de indexuri sunt READY. Funcțiile și installerul desktop 0.1.12 existente nu au necesitat republicare. Reper pentru rollbackul aplicației: **build-20261013-facebook-012**, commit **a720a76c015a31feaa3b94d497ef3f1cdb54be6b**. Rollbackul aplicației nu inversează date CRM sau mesaje trimise.
+
+Publicarea folosește commitul exact din ramura `codex/jarvis-production-2026-10-04`. Nu s-a făcut merge în `main`; politica de rollout automat rămâne neschimbată. Înainte de o publicare ulterioară din `main`, schimbările trebuie integrate în acea ramură. Secțiunea de mai jos păstrează raportul istoric din 4 octombrie.
+
 # Jarvis — publicare în producție, 2026-10-04
 
 Implementarea este activă pe [imodeus.ro/ai-assistant](https://imodeus.ro/ai-assistant), în proiectul Firebase `studio-652232171-42fb6`, backend `studio`, regiune `us-central1`.

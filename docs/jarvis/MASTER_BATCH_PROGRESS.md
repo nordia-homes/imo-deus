@@ -1,5 +1,15 @@
 # Corpus Jarvis — implementare pe loturi
 
+## Publicare în producție — 17 octombrie 2026
+
+Toate modificările aplicației până la **c06958bc203423f29634de06743221374ce7c4d3** sunt active pe **https://imodeus.ro**, build **build-20261017-jarvis-140**, READY cu **100% trafic**. Sunt incluse 99 de commituri față de versiunea activă anterior, **a720a76c015a31feaa3b94d497ef3f1cdb54be6b** (build-20261013-facebook-012). Mențiunile „nepublicat” de mai jos sunt istorice; acest release include schimbările respective.
+
+Regulile Firestore publicate corespund sursei locale. Toate cele 80 de indexuri necesare sunt READY, inclusiv cele opt adăugate. Funcțiile, serviciile auxiliare, configurația App Hosting, regulile Storage și codul desktop nu diferă față de versiunea anterioară. Manifestul installerului desktop 0.1.12 publicat corespunde celui local.
+
+Validare înainte de activare: build local și cloud reușite; 2.219 teste unitare trecute și 177 teste de integrare/reguli trecute în emulator. Cele 788 probe neexecutate în rularea fără emulator și cele 33 probe live neexecutate în rularea de integrare nu sunt contabilizate drept succese. Trei fixture-uri unitare vechi au fost actualizate în commitul **5e911ab4**, fără modificări de runtime după commitul publicat.
+
+Dovada publicării și a verificărilor live: [RELEASE_2026_10_17.json](RELEASE_2026_10_17.json). Acest release publică implementarea existentă; nu certifică execuția perfectă a tuturor celor 1.000 de scenarii. Inventarul rămâne la **205/1000 dovezi locale** (133 cu model real, 72 deterministe). Nu au fost trimise mesaje ori postări de test către clienți.
+
 ## Publicare în producție — 8 octombrie 2026
 
 Toate modificările de aplicație până la commitul **033d7d05ab74b83266ded71c55430da37a1716cb** au fost publicate pe **https://imodeus.ro**, prin buildul **build-2026-10-08-001**, READY cu **100% trafic**. Acest release include cele 41 de commituri de după versiunea activă anterior, 323893ca. Mențiunile „nepublicat” din loturile de mai jos descriu situația istorică la implementarea lor; ele sunt acum incluse în acest release.
