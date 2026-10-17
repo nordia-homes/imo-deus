@@ -20,6 +20,20 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };
   result.executionState = Object.entries(groups).find(([, values]) => values.includes(key))?.[0] || (readOnly ? 'observed' : 'accepted_unverified');
   if (operation === 'file_apply' && key === 'attached' && result.mutationRevision?.resource === 'properties') result.executionState = 'succeeded';
+  if (operation === 'meta_campaign_pause') {
+    const campaign = result.campaign, proof = campaign?.providerPauseVerification;
+    const confirmed = campaign?.status === 'paused' && typeof campaign.id === 'string' && campaign.id.length > 0 &&
+      typeof campaign.metaCampaignId === 'string' && /^\d+$/.test(campaign.metaCampaignId) &&
+      proof?.id === campaign.metaCampaignId && typeof proof.accountId === 'string' && /^\d+$/.test(proof.accountId) &&
+      proof.status === 'PAUSED' && proof.effectiveStatus === 'PAUSED' &&
+      typeof proof.checkedAt === 'string' && Number.isFinite(Date.parse(proof.checkedAt)) && proof.checkedAt === campaign.updatedAt;
+    result.operation = operation;
+    result.campaignId = campaign?.id;
+    result.executionState = confirmed ? 'succeeded' : 'unknown';
+    result.completionSatisfied = Boolean(confirmed);
+    result.pauseConfirmed = Boolean(confirmed);
+    result.note = confirmed ? 'Pauza a fost confirmată la Meta la ' + proof.checkedAt + '. Nu reprezintă o citire live ulterioară.' : 'Pauza nu are o confirmare Meta valabilă pentru revizia curentă.';
+  }
   if (result.call?.providerErrorCode === 'vapi_create_unknown') {
     result.executionState = 'unknown';
     result.note = 'Rezultatul lansării apelului este incert. Verifică furnizorul; apelul nu trebuie retrimis automat.';

@@ -22,6 +22,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — confirmarea efectivă a pauzei — 17 octombrie 2026
+
+Corecție în fluxul comun folosit de Jarvis și interfața campaniilor: pauza verifică identificatorul și contul la Meta, trimite exclusiv status=PAUSED și recitește status și effective_status. O confirmare HTTP sau starea locală paused nu sunt suficiente. Dacă răspunsul comenzii se pierde, se citește rezultatul fără retrimiterea comenzii. Campaniile locale fără ID Meta și cele în publicare nu sunt modificate.
+
+Salvarea dovezii furnizorului și actualizarea indicatorului proprietății sunt tranzacționale. Campania și conexiunea sunt recitite înainte și după apeluri, apoi în tranzacție; schimbările concurente împiedică suprascrierea. Indicatorul unei alte campanii și proprietățile inexistente sunt păstrate. Jarvis recunoaște pauza ca finalizată numai când dovada corespunde identificatorului și reviziei curente; dovada salvată nu este prezentată ca citire live ulterioară.
+
+Validare: **107 teste unitare și 17 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Verificarea folosește Firestore local și răspunsuri Meta sintetice, fără modificări de campanii reale. Acest lot repară executarea operației existente; nu adaugă scenarii originale certificate în inventar: rămân **241/1000 dovezi locale**. Selecția conversațională și reconcilierea ulterioară completă a scenariilor de control rămân de extins. Nepublicat în producție.
+
 ## Meta Ads — materiale selectate și eliminare locală — 17 octombrie 2026
 
 Scenariile **0415 și 0431–0433** au dovezi locale pentru eliminarea draftului selectat, alegerea exactă a fotografiei din proprietate și verificarea asocierii materialelor la fotografiile actuale din CRM. Domeniul materialelor din acest lot este fotografia proprietății; verificarea nu certifică accesibilitatea URL-ului extern și nu prezintă un material din afara fotografiilor CRM ca inexistent la furnizor.

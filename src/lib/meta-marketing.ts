@@ -1,3 +1,4 @@
+import { verifyMetaCampaignPause } from './meta-campaign-pause';
 import { buildMetaCampaignDraft, buildDefaultCampaignContent } from './meta-campaign-draft';
 import { validateMetaCampaignForPublish } from './meta-campaign-validation';
 import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypto';
@@ -1077,45 +1078,51 @@ async function updatePublishedMetaCampaignStatus(
 export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string) {
   const ref = getCampaignDraftRef(agencyId, campaignId);
   const snapshot = await ref.get();
-  if (!snapshot.exists) {
-    throw new Error('Campania Meta nu a fost gasita.');
+  if (!snapshot.exists) throw new Error('Campania Meta nu a fost gasita.');
+  const original = snapshot.data()!;
+  const draft = { ...original, id: snapshot.id } as MetaMarketingCampaignDraft;
+  if (draft.agencyId !== agencyId) throw new Error('Campania Meta nu apartine acestei agentii.');
+  if (!['published', 'paused', 'error'].includes(draft.status) || !draft.metaCampaignId) {
+    throw new Error('Pauza necesită o campanie publicată cu identificator Meta. Draftul nu a fost modificat.');
   }
-
-  const draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
-  if (draft.agencyId !== agencyId) {
-    throw new Error('Campania Meta nu apartine acestei agentii.');
+  const { accessToken, integration } = await getAccessTokenForAgency(agencyId);
+  const accountId = integration.selectedAdAccount?.id;
+  if (!integration.connected || integration.agencyId !== agencyId || !accountId) {
+    throw new Error('Reconectează contul Meta al agenției înainte de pauză.');
   }
-  if (draft.status === 'draft') {
-    throw new Error('Drafturile nu se pun in pauza. Le poti edita sau sterge.');
-  }
-  if (draft.status === 'paused') {
-    return draft;
-  }
-
-  await updatePublishedMetaCampaignStatus(agencyId, draft, 'PAUSED');
+  const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  const draftRevision = fingerprint(original);
+  const grantRevision = fingerprint(integration);
+  const assertSnapshots = (current: { exists: boolean; data(): unknown }, grant: { exists: boolean; data(): unknown }) => {
+    if (!current.exists || fingerprint(current.data()) !== draftRevision ||
+        !grant.exists || fingerprint(grant.data()) !== grantRevision) {
+      throw new Error('Campania sau conexiunea Meta s-a schimbat. Verifică starea curentă înainte de continuare.');
+    }
+  };
+  const provider = await verifyMetaCampaignPause({
+    campaignId: draft.metaCampaignId,
+    accountId,
+    assertCurrent: async () => {
+      const [current, grant] = await Promise.all([ref.get(), getPrivateDocRef(agencyId).get()]);
+      assertSnapshots(current, grant);
+    },
+    read: () => metaRequest('/' + draft.metaCampaignId + '?fields=id,account_id,status,effective_status', accessToken),
+    pause: () => metaFormRequest('/' + draft.metaCampaignId, accessToken, { status: 'PAUSED' }),
+  });
   const updatedAt = nowIso();
-  await ref.set({ status: 'paused', updatedAt, lastPublishError: null }, { merge: true });
-  await adminDb
-    .collection('agencies')
-    .doc(agencyId)
-    .collection('properties')
-    .doc(draft.propertyId)
-    .set(
-      {
-        metaMarketing: {
-          latestCampaignDraftId: campaignId,
-          status: 'paused',
-          updatedAt,
-        },
-      },
-      { merge: true }
-    );
-
-  const updatedSnapshot = await ref.get();
-  return {
-    id: updatedSnapshot.id,
-    ...(updatedSnapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>),
-  } as MetaMarketingCampaignDraft;
+  const propertyRef = adminDb.collection('agencies').doc(agencyId).collection('properties').doc(draft.propertyId);
+  const providerPauseVerification = { ...provider, checkedAt: updatedAt };
+  await adminDb.runTransaction(async transaction => {
+    const [current, grant, property] = await Promise.all([
+      transaction.get(ref), transaction.get(getPrivateDocRef(agencyId)), transaction.get(propertyRef),
+    ]);
+    assertSnapshots(current, grant);
+    transaction.update(ref, { status: 'paused', updatedAt, lastPublishError: null, providerPauseVerification });
+    if (property.exists && property.data()?.metaMarketing?.latestCampaignDraftId === campaignId) {
+      transaction.update(propertyRef, { 'metaMarketing.status': 'paused', 'metaMarketing.updatedAt': updatedAt });
+    }
+  });
+  return { ...draft, status: 'paused' as const, updatedAt, lastPublishError: null, providerPauseVerification };
 }
 
 export async function deleteMetaCampaignDraft(agencyId: string, campaignId: string) {
