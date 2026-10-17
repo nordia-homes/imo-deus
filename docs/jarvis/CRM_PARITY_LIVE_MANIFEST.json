@@ -1076,7 +1076,7 @@
       "method": "POST",
       "path": "/api/marketing/meta/assets",
       "handler": "src/app/api/marketing/meta/assets/route.ts",
-      "description": "Actualizează assets prin handlerul existent.",
+      "description": "Selectează Business, Ad Account, Page și Instagram pentru reclame prin handlerul existent; nu reîncarcă lista paginilor sociale.",
       "readOnly": false,
       "externallySensitive": true,
       "verification": "registered_handler_not_provider_certification"

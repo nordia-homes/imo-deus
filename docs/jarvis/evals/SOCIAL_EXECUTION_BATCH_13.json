@@ -1,0 +1,58 @@
+{
+  "scope": "Original request through persisted application chat and organic Meta asset discovery. Local Firestore with a synthetic encrypted grant and simulated paginated Meta GET responses; safe public projection and unchanged connections verified. No real Meta calls or production certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0386",
+      "prompt": "Reîmprospătează asseturile Meta pentru publicarea socială.",
+      "versions": {
+        "prompt": "jarvis-146",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "177",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Actual persisted chat and organic Meta asset discovery from a synthetic encrypted grant on local Firestore. Paginated Meta GET responses simulated. Public asset projection, replay and unchanged connections verified.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "7462323e-2c57-4455-b051-bc2c551a44d6-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am reîmprospătat lista paginilor Meta autorizate: 2 pagini, cu conturile Instagram asociate disponibile. Lista a fost citită acum din Meta.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialAssets",
+                "title": "Pagini Meta actualizate",
+                "rows": [
+                  {
+                    "id": "111",
+                    "name": "First",
+                    "channel": "messenger",
+                    "instagramId": null,
+                    "instagramUsername": null
+                  },
+                  {
+                    "id": "222",
+                    "name": "Second",
+                    "channel": "messenger",
+                    "instagramId": "333",
+                    "instagramUsername": "SecondIG"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T10:18:42.273Z"
+          }
+        }
+      ]
+    }
+  ]
+}

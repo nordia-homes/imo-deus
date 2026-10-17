@@ -79,21 +79,42 @@ export async function listAssets(db: Firestore, agencyId: string) {
 }
 type MetaPage = { id: string; name: string; access_token?: string; instagram_business_account?: { id: string; username?: string } };
 export async function listAuthorizedPages(userToken: string): Promise<MetaPage[]> {
-  const response = await graph<{ data: MetaPage[] }>('/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100', userToken);
-  const pages = new Map(response.data.map(page => [page.id, page]));
-  try {
-    const debug = await graph<{ data: { app_id?: string; is_valid?: boolean; granular_scopes?: Array<{ scope: string; target_ids?: string[] }>; user_id?: string } }>('/debug_token?input_token=' + encodeURIComponent(userToken), userToken);
-    if (debug.data.is_valid && debug.data.app_id === appId()) {
-      const ids = debug.data.granular_scopes?.filter(scope => scope.scope === 'pages_show_list').flatMap(scope => scope.target_ids || []) || [];
-      for (const id of [...new Set(ids)].filter(id => /^\d+$/.test(id) && !pages.has(id)).slice(0, 100)) {
-        try {
-          const page = await graph<MetaPage>('/' + id + '?fields=id,name,access_token,instagram_business_account{id,username}', userToken);
-          if (page.id === id && page.access_token) pages.set(id, page);
-        } catch { /* A granted target may no longer be accessible. */ }
-      }
+  return (await discoverAuthorizedPages(userToken)).pages;
+}
+export async function discoverAuthorizedPages(userToken: string, authorize: () => Promise<void> = async () => {}) {
+  const pages = new Map<string, MetaPage>(), cursors = new Set<string>();
+  const base = '/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&limit=100';
+  let after: string | null = null, complete = true;
+  for (let index = 0; index < 10; index++) {
+    await authorize();
+    const response: { data: MetaPage[]; paging?: { next?: string; cursors?: { after?: string } } } = await graph<{ data: MetaPage[]; paging?: { next?: string; cursors?: { after?: string } } }>(base + (after ? '&after=' + encodeURIComponent(after) : ''), userToken);
+    if (!Array.isArray(response.data) || response.data.some(page => !page || typeof page.id !== 'string' || !/^[0-9]+$/.test(page.id))) throw new CommunicationError('Lista paginilor Meta este invalidă.', 502);
+    for (const page of response.data) pages.set(page.id, page);
+    if (!response.paging?.next) break;
+    const cursor: string | undefined = response.paging.cursors?.after;
+    if (index === 9 || typeof cursor !== 'string' || !cursor || cursors.has(cursor)) { complete = false; break; }
+    cursors.add(cursor); after = cursor;
+  }
+  // Token inspection can discover granted Pages omitted by /me/accounts.
+  // Authorization errors must escape; only provider diagnostics may be unavailable.
+  await authorize();
+  let debug: { data?: { app_id?: string; is_valid?: boolean; granular_scopes?: Array<{ scope: string; target_ids?: string[] }> } } | null = null;
+  try { debug = await graph('/debug_token?input_token=' + encodeURIComponent(userToken), userToken); }
+  catch { complete = false; }
+  if (debug?.data?.is_valid && debug.data.app_id === appId()) {
+    const scopes = debug.data.granular_scopes;
+    const ids = Array.isArray(scopes) ? [...new Set(scopes.filter(scope => scope.scope === 'pages_show_list').flatMap(scope => Array.isArray(scope.target_ids) ? scope.target_ids : []))].filter(id => typeof id === 'string' && /^[0-9]+$/.test(id) && !pages.has(id)) : [];
+    if (ids.length > 100) complete = false;
+    for (const id of ids.slice(0, 100)) {
+      await authorize();
+      try {
+        const page = await graph<MetaPage>('/' + id + '?fields=id,name,access_token,instagram_business_account{id,username}', userToken);
+        if (page.id === id && page.access_token) pages.set(id, page); else complete = false;
+      } catch { complete = false; }
     }
-  } catch { /* Keep the pages returned by /me/accounts if token inspection is unavailable. */ }
-  return [...pages.values()];
+  } else complete = false;
+  await authorize();
+  return { pages: [...pages.values()], complete };
 }
 export function preserveVerifiedConnection(next: Connection, current?: Connection): Connection {
   if (!current || current.status !== 'connected' || current.agencyId !== next.agencyId || current.channel !== next.channel || current.externalId !== next.externalId || (current.appId || appId()) !== (next.appId || appId())) return next;

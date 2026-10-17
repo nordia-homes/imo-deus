@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Reîmprospătarea listei Meta pentru publicarea socială — 17 octombrie 2026
+
+Scenariul **0386** citește din nou paginile autorizate și conturile Instagram asociate folosind grantul organic al agenției și serviciul de comunicare existent. Lista publică este salvată în conversație. Repetarea aceluiași requestId redă rezultatul salvat, fără alte apeluri Meta; o cerere nouă recitește furnizorul. Nu este schimbată selecția conturilor pentru reclame sau configurația conexiunilor sociale.
+
+Descoperirea urmărește cursorul pe endpointul fix /me/accounts, cu deduplicare și maximum 10 pagini per citire. URL-ul next furnizat extern nu este urmat. Paginarea întreruptă, cursorul repetat, limita atinsă sau țintele autorizate suplimentare inaccesibile produc o listă explicit incompletă. Inspecția tokenului poate adăuga pagini autorizate care lipsesc din /me/accounts, numai pentru aplicația corectă.
+
+Profilul administrativ, agenția grantului, expirarea și identitatea tokenului sunt verificate înainte și între apeluri, precum și după descoperire. Revocarea accesului nu este ascunsă de tratarea erorilor diagnosticului. Rezultatul afișat include numai ID, nume și identificatori Instagram; tokenurile și obiectele brute Meta nu ajung în carduri. Descrierea operației istorice meta_assets_refresh a fost corectată: handlerul său selectează conturile de reclame, nu reîncarcă lista socială.
+
+Validare: 129 teste unitare și 109 teste de integrare trecute; ESLint, paritate și build complet verificate. Dovadă: [Social lot 13](evals/SOCIAL_EXECUTION_BATCH_13.json). **214/1000 dovezi locale** (133 cu model real, 81 deterministe), fără certificare integrală în producție. Grant criptat sintetic, Firestore local și răspunsuri GET Meta simulate. Lot nepublicat în producție.
+
 ## Ștergerea postărilor sociale și a destinației selectate — 17 octombrie 2026
 
 Scenariile **0382 și 0383** folosesc serviciul existent de ștergere Meta. Pentru postarea întreagă, Jarvis oferă selecția și cere confirmarea explicită prevăzută de scenariu. Pentru o singură destinație, cererea de eliminare cu ID-ul postării și contului autorizează doar acel cont. Acțiunile sunt executate prin registrul execuțiilor; replay-ul aceleiași cereri nu repetă DELETE.

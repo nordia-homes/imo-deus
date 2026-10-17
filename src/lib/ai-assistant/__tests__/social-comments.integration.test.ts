@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 const mocks = vi.hoisted(() => ({ actor: null as any, fetch: vi.fn() }));
 vi.mock('@/lib/firebase-app-hosting', () => ({ requireAgencyUserFromBearerToken: async () => mocks.actor }));
 vi.mock('@/firebase/admin', () => ({ adminAuth: {} }));
-import { seal } from '@/lib/communications/crypto';
+import { seal, stableId } from '@/lib/communications/crypto';
 import { chatTurn } from '../workspace';
 import { VERSIONS } from '../models';
 import corpus from '../../../../docs/jarvis/evals/master-scenarios.json';
@@ -620,5 +620,52 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const wrapped = { collection: db.collection.bind(db), runTransaction: async (fn: any) => { if (reason === 'profile') await f.profile.update({ role: 'agent' }); else if (reason === 'connection') await f.connection.update({ externalId: '321' }); else await f.post.update({ ['destinations.' + f.connectionId + '.externalId']: '123_999' }); return db.runTransaction(fn); } } as any;
     const { removePublishedSocialPost } = await import('@/lib/communications/social');
     await expect(removePublishedSocialPost(wrapped, f.ctx, 'post', f.connectionId, true, '123_456')).rejects.toThrow(); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  async function assetFixture() {
+    const f = await fixture(); vi.stubEnv('META_APP_ID', 'synthetic-app');
+    const grant = db.collection('communicationGrants').doc(stableId(f.ctx.agencyId, 'meta'));
+    await grant.set({ agencyId: f.ctx.agencyId, token: seal('SYNTHETIC_USER_TOKEN'), expiresAt: Date.now() + 86400000 });
+    return { ...f, grant };
+  }
+  it('executes master-0386 with all provider pages and a persisted secret-free asset card', async () => {
+    const f = await assetFixture(), prompt = corpus.scenarios.find(row => row.id === 'master-0386')!.text;
+    const before = (await f.connection.get()).data();
+    mocks.fetch.mockImplementation(async (url: string) => new Response(JSON.stringify(url.includes('/debug_token') ? { data: { is_valid: true, app_id: 'synthetic-app' } } : url.includes('&after=') ? { data: [{ id: '222', name: 'Second', access_token: 'SECRET_PAGE_TWO', instagram_business_account: { id: '333', username: 'SecondIG', secret: 'SECRET_IG' } }] } : { data: [{ id: '111', name: 'First', access_token: 'SECRET_PAGE_ONE' }], paging: { next: 'https://untrusted.invalid/SECRET', cursors: { after: 'page&two' } } }), { status: 200 }));
+    const input = { ...f.input, requestId: randomUUID(), prompt }; const result = await chatTurn(f.ctx, input);
+    expect(result.message.cards?.[0]).toMatchObject({ source: 'socialAssets', complete: true }); expect(result.message.cards?.[0].rows.map(row => row.id)).toEqual(['111', '222']); expect(result.message.cards?.[0].rows[1].instagramId).toBe('333'); expect(JSON.stringify(result)).not.toMatch(/SECRET|SYNTHETIC_USER_TOKEN|access_token/);
+    expect((await f.connection.get()).data()).toEqual(before); expect(mocks.fetch).toHaveBeenCalledTimes(3); expect(mocks.fetch.mock.calls.every(([, options]) => options.method === 'GET')).toBe(true); expect(mocks.fetch.mock.calls[1][0]).toContain('after=page%26two');
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id); expect(mocks.fetch).toHaveBeenCalledTimes(3);
+    await writeFile('.tmp/jarvis-social-comments/master-0386.json', JSON.stringify({ scenarioId: 'master-0386', prompt, versions: VERSIONS, executionVerified: true, environment: 'Actual persisted chat and organic Meta asset discovery from a synthetic encrypted grant on local Firestore. Paginated Meta GET responses simulated. Public asset projection, replay and unchanged connections verified.', runs: [{ phase: 'original', final: result.message }] }, null, 2));
+  });
+  for (const reason of ['missing', 'expired', 'agency']) it('requires a valid agency grant before asset discovery: ' + reason, async () => {
+    const f = await assetFixture(); if (reason === 'missing') await f.grant.delete(); else await f.grant.update(reason === 'expired' ? { expiresAt: 1 } : { agencyId: 'other' });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Reîmprospătează asseturile Meta pentru publicarea socială.' });
+    expect(result.message.text).toContain('Nu am putut'); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  for (const reason of ['profile', 'grant']) it('stops asset pagination when authorization changes: ' + reason, async () => {
+    const f = await assetFixture();
+    mocks.fetch.mockImplementationOnce(async () => { if (reason === 'profile') await f.profile.update({ role: 'agent' }); else await f.grant.update({ token: seal('CHANGED_TOKEN') }); return new Response(JSON.stringify({ data: [{ id: '111', name: 'First' }], paging: { next: 'more', cursors: { after: 'next' } } })); });
+    const call = chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Reîmprospătează asseturile Meta pentru publicarea socială.' });
+    if (reason === 'profile') await expect(call).rejects.toThrow('Acces revocat'); else expect((await call).message.text).toContain('Nu am putut'); expect(mocks.fetch).toHaveBeenCalledTimes(1);
+  });
+  for (const reason of ['missing-cursor', 'debug-failure', 'unreachable-target']) it('labels incomplete asset discovery: ' + reason, async () => {
+    const f = await assetFixture();
+    mocks.fetch.mockImplementation(async (url: string) => {
+      if (url.includes('/me/accounts')) return new Response(JSON.stringify({ data: [{ id: '111', name: 'First' }], ...(reason === 'missing-cursor' ? { paging: { next: 'more' } } : {}) }));
+      if (reason === 'debug-failure' || !url.includes('/debug_token')) throw new Error('SECRET_PROVIDER_FAILURE');
+      return new Response(JSON.stringify({ data: { is_valid: true, app_id: 'synthetic-app', ...(reason === 'unreachable-target' ? { granular_scopes: [{ scope: 'pages_show_list', target_ids: ['222'] }] } : {}) } }));
+    });
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Reîmprospătează asseturile Meta pentru publicarea socială.' });
+    expect(result.message.cards?.[0].complete).toBe(false); expect(result.message.text).toContain('incompletă'); expect(JSON.stringify(result)).not.toContain('SECRET');
+  });
+  it('discovers a granted page absent from the account listing without exposing its token', async () => {
+    const f = await assetFixture();
+    mocks.fetch.mockImplementation(async (url: string) => new Response(JSON.stringify(url.includes('/me/accounts') ? { data: [] } : url.includes('/debug_token') ? { data: { is_valid: true, app_id: 'synthetic-app', granular_scopes: [{ scope: 'pages_show_list', target_ids: ['222'] }] } } : { id: '222', name: 'Additional', access_token: 'SECRET_PAGE' })));
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Reîmprospătează asseturile Meta pentru publicarea socială.' });
+    expect(result.message.cards?.[0]).toMatchObject({ complete: true, rows: [{ id: '222', name: 'Additional' }] }); expect(JSON.stringify(result)).not.toContain('SECRET');
+  });
+  it('does not convert a malformed asset response into a successful empty listing', async () => {
+    const f = await assetFixture(); mocks.fetch.mockResolvedValueOnce(new Response(JSON.stringify({ data: null })));
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Reîmprospătează asseturile Meta pentru publicarea socială.' }); expect(result.message.text).toContain('Nu am putut'); expect(result.message.cards?.some(card => card.source === 'socialAssets')).not.toBe(true);
   });
 });
