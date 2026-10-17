@@ -3869,7 +3869,11 @@
           "sourceNumber": 411,
           "request": "Publică campania după aprobarea mea.",
           "requestSha256": "0945a6b101949cb45b6bb4172d393d9d2097dc7378c603ba5dae47d0dcb2310c",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_08.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0412",

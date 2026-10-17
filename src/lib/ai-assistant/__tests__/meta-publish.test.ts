@@ -1,0 +1,7 @@
+import { expect,it } from 'vitest';
+import { metaPublishAction,metaPublishApproved,metaPublishRequest } from '../meta-publish';
+const action:any={kind:'existing_operation',operation:'meta_campaign_publish',params:{campaignId:'selected'},query:{},body:{jarvisPublish:true,propertyId:'property',expectedRevision:'a'.repeat(64),propertyRevision:'b'.repeat(64),grantRevision:'c'.repeat(64)}};
+it('recognizes the original conditional request without treating it as approval',()=>{expect(metaPublishRequest('Publică campania după aprobarea mea.')).toBe(true);expect(metaPublishApproved(action,'Publică campania după aprobarea mea.')).toBe(false);});
+it('accepts explicit approval only for the exact campaign and strict action',()=>{expect(metaPublishAction(action)).toBe(true);expect(metaPublishApproved(action,'Confirm publicarea Meta: selected')).toBe(true);expect(metaPublishApproved(action,'Confirm publicarea Meta: other')).toBe(false);});
+it.each(['expectedRevision','propertyRevision','grantRevision','jarvisPublish'])('rejects missing %s proof',key=>{const changed=structuredClone(action);delete changed.body[key];expect(metaPublishAction(changed)).toBe(false);});
+it('does not allow activation or extra fields through this approval',()=>{expect(metaPublishAction({...action,body:{...action.body,status:'ACTIVE'}})).toBe(false);expect(metaPublishRequest('Nu publica campania după aprobarea mea.')).toBe(false);});

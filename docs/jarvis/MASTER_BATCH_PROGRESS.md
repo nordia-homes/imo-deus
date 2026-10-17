@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — publicare aprobată în conversație — 17 octombrie 2026
+
+Scenariul **0411** afișează configurația campaniei și solicită aprobarea explicită cerută de scenariu. Confirmarea numește campania exactă și este legată de reviziile campaniei, proprietății și conexiunii Meta. Planificarea și handlerul verifică separat aceste revizii; modificările, schimbarea contextului sau lipsa selecției invalidează aprobarea. Rolul de administrator cerut de ruta existentă este păstrat.
+
+După confirmare, conversația apelează ruta reală de publicare, continuă toate etapele și confirmă obiectele verificate la Meta. Răspunsul precizează crearea în PAUSED, fără a afirma aprobare Meta sau livrare. Răspunsul pierdut la creare este recuperat prin jurnalul persistent, fără duplicarea POST-ului. Repetarea aceluiași request de chat returnează răspunsul deja salvat. Nu apare un plan manual nou dacă rezultatul extern rămâne incert.
+
+Cardul de aprobare păstrează toate materialele, textul, bugetul, moneda, durata, destinația și datele în ora Bucureștiului. Drafturile incomplete afișează lipsurile, fără publicare. Testele verifică și izolarea campaniei selectate, aprobări falsificate sau învechite și revocarea accesului.
+
+Validare: **146 teste unitare/UI și 47 teste de integrare**, ESLint, paritate, inventarul corpusului și build complet trecute. Firestore local și Meta simulat. Dovada [Meta lot 08](evals/META_EXECUTION_BATCH_08.json) conține cererea originală și confirmarea executată prin conversația persistată. **252/1000 dovezi locale** (133 cu model real, 119 deterministe), fără certificare integrală în producție. Lot nepublicat în producție.
+
 ## Meta Ads — recuperare după răspuns pierdut — 17 octombrie 2026
 
 Crearea celor patru obiecte publicitare folosește acum un jurnal persistent pe pași. Intenția și amprenta parametrilor sunt salvate înainte de POST. Numele tehnic al obiectului primește un marcaj unic imo; acesta nu schimbă titlul sau textul reclamei. Dacă răspunsul se pierde, aplicația caută obiectul cu acel marcaj în contul selectat, verifică unicitatea și asocierile, salvează ID-ul și continuă publicarea în aceeași execuție. Un pas pending nu mai trimite POST la reluare.

@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
@@ -32,7 +33,11 @@ export async function POST(
       return createDemoBlockedResponse('Publicarea Meta este blocata in mediul demo.');
     }
 
-    const campaign = await publishMetaCampaign(agencyId, campaignId, uid);
+    const raw = await request.text();
+    const hash=z.string().regex(/^[a-f0-9]{64}$/);
+    const parsed=z.union([z.object({}).strict(),z.object({jarvisPublish:z.literal(true),propertyId:z.string().regex(/^[A-Za-z0-9_-]{1,180}$/),expectedRevision:hash,propertyRevision:hash,grantRevision:hash}).strict()]).safeParse(raw?JSON.parse(raw):{});
+    if(!parsed.success)return NextResponse.json({message:'Parametri de publicare invalizi.'},{status:400});
+    const campaign = await publishMetaCampaign(agencyId, campaignId, uid, 'jarvisPublish' in parsed.data ? parsed.data : undefined);
     return NextResponse.json({ campaign }, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);

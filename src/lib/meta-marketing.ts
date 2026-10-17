@@ -1327,7 +1327,7 @@ function buildCreativeObjectStorySpec(params: {
   };
 }
 
-export async function publishMetaCampaign(agencyId: string, campaignId: string, requestedByUid?: string) {
+export async function publishMetaCampaign(agencyId: string, campaignId: string, requestedByUid?: string, approval?: {propertyId:string;expectedRevision:string;propertyRevision:string;grantRevision:string}) {
   const revision = (value: unknown) => createHash('sha256').update(JSON.stringify(value ?? null)).digest('hex');
   let publicationSnapshotRevision: string | null = null;
   if (requestedByUid) { const member = (await adminDb.collection('users').doc(requestedByUid).get()).data(); if (member?.agencyId !== agencyId || member.role !== 'admin') throw new Error('Acces revocat la publicarea Meta.'); }
@@ -1349,6 +1349,7 @@ export async function publishMetaCampaign(agencyId: string, campaignId: string, 
   if (!propertySnapshot.exists) {
     throw new Error('Proprietatea campaniei nu a fost gasita.');
   }
+  if (approval && (approval.propertyId !== draft.propertyId || approval.expectedRevision !== revision(snapshot.data()) || approval.propertyRevision !== revision(propertySnapshot.data()) || approval.grantRevision !== revision(integration))) throw new Error('Configurația aprobată s-a schimbat.');
   const property = { id: propertySnapshot.id, ...(propertySnapshot.data() as Omit<Property, 'id'>) } as Property;
   const validation = validateMetaCampaignForPublish(draft, integration, property);
   if (!validation.ok) {

@@ -168,6 +168,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const status = await prepareMetaStatus(ctx, prompt, history);
     if (status) { if (status.rows.length) cards.push({ type: 'data', source: status.source, title: 'Stare Meta verificată', rows: status.rows, complete: true }); return finish(status.text); }
   } catch { return finish('Nu pot confirma starea actuală la Meta: verifică selecția, conexiunea și accesul. Nu am retrimis operația.', 'unavailable'); }
+  const { prepareMetaPublish } = await import('./meta-publish');
+  try {
+    const publication = await prepareMetaPublish(ctx, prompt, history);
+    if (publication) { actions.push(...publication.actions); if (publication.rows.length) cards.push({type:'data',source:publication.source,title:'Publicare Meta',rows:publication.rows,complete:true}); return finish(publication.text); }
+  } catch { return finish('Aprobarea, configurația sau accesul s-a schimbat. Reia cererea pentru configurația actuală; nu am publicat campania.', 'unavailable'); }
   const { prepareMetaControl } = await import('./meta-control');
   try {
     const control = await prepareMetaControl(ctx, prompt, history);

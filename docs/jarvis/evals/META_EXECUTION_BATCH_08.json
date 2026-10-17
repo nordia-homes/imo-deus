@@ -1,0 +1,206 @@
+{
+  "scope": "Explicit approval bound to the current campaign, property and Meta connection; full persisted conversation invokes the actual publication route and verifies PAUSED objects against synthetic Meta. No live ad delivery certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0411",
+      "prompt": "Publică campania după aprobarea mea.",
+      "versions": {
+        "prompt": "jarvis-157",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "188",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, real publication route, local Firestore and synthetic Meta creation/readback. Confirms created PAUSED objects, not delivery or Meta approval.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "1133a9d7-58af-4f82-a368-9f496222d135-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Verifică configurația și confirmă campania: „Confirm publicarea Meta: ID”. Creez obiectele la Meta în PAUSED; aprobarea Meta și livrarea nu sunt incluse.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPublishSelection",
+                "title": "Publicare Meta",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Campanie",
+                    "propertyId": "property",
+                    "budgetAmount": 50,
+                    "currency": "RON",
+                    "budgetType": "daily",
+                    "durationDays": 7,
+                    "objective": "traffic",
+                    "locationLabel": "București",
+                    "radiusKm": 25,
+                    "placements": [
+                      "facebook_feed"
+                    ],
+                    "startsAt": null,
+                    "endsAt": null,
+                    "adAccountId": "act_5",
+                    "pageId": "6",
+                    "headline": "Titlu",
+                    "primaryText": "Text CRM",
+                    "mediaItems": [
+                      {
+                        "type": "image",
+                        "url": "https://example.com/photo.jpg"
+                      }
+                    ],
+                    "destinationUrl": "https://example.com/property",
+                    "readyLocally": true,
+                    "errors": [],
+                    "campaignRevision": "488b5f3a603e0b6130c7ed498d1aa29423b9f176326da89f68e8c06cb4e60e66",
+                    "propertyRevision": "dfc9c6b516e26cd6c4275cb93cbfd82eb4586660fc50ae67cac18263319d475a",
+                    "grantRevision": "08c4c34f64f42a15925f173cfb78e40cbeec1c78bdac7989c3609ca1b6ef9e5a",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T15:19:38.522Z"
+          }
+        },
+        {
+          "phase": "approval",
+          "final": {
+            "id": "c9e7d793-c488-4747-8b8a-4ce6c534a43d-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat crearea campaniei selected, a setului de reclame, a reclamei și a materialului asociat. Obiectele sunt în pauză; livrarea și aprobarea reclamei nu sunt confirmate.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaign": {
+                        "id": "selected",
+                        "agencyId": "3d85317a-7949-4a6c-b6d4-0cd0a81cf5d7",
+                        "propertyId": "property",
+                        "campaignName": "Campanie",
+                        "adSetName": "Set",
+                        "adName": "Reclama",
+                        "budgetAmount": 50,
+                        "budgetType": "daily",
+                        "currency": "RON",
+                        "durationDays": 7,
+                        "headline": "Titlu",
+                        "primaryText": "Text CRM",
+                        "locationLabel": "București",
+                        "radiusKm": 25,
+                        "placements": [
+                          "facebook_feed"
+                        ],
+                        "creativeFormat": "single_image",
+                        "objective": "traffic",
+                        "imageUrl": "https://example.com/photo.jpg",
+                        "mediaItems": [
+                          {
+                            "type": "image",
+                            "url": "https://example.com/photo.jpg"
+                          }
+                        ],
+                        "destinationUrl": "https://example.com/property",
+                        "utmEnabled": false,
+                        "publicationConfigurationHash": "902c17052a5ee363f61cb9556d772aee6c9c317d6542f5ef47c79a8a95167809",
+                        "publishAttempts": 1,
+                        "lastPublishError": null,
+                        "lastPublishAttemptAt": "2026-10-17T15:19:39.069Z",
+                        "metaCampaignId": "1",
+                        "metaVideoId": null,
+                        "metaImageHashes": [
+                          "synthetic-image"
+                        ],
+                        "metaAdSetId": "2",
+                        "metaImageHash": "synthetic-image",
+                        "metaCreativeId": "3",
+                        "metaAdId": "4",
+                        "publicationRun": null,
+                        "publishLog": [
+                          {
+                            "at": "2026-10-17T15:19:39.069Z",
+                            "status": "publishing",
+                            "message": "Publicare pornita de fa0abb53-9e9d-49be-999d-ab2c5e857b02."
+                          },
+                          {
+                            "at": "2026-10-17T15:19:39.293Z",
+                            "status": "publishing",
+                            "message": "Campaign creat in Meta.",
+                            "metaObjectId": "1"
+                          },
+                          {
+                            "at": "2026-10-17T15:19:39.569Z",
+                            "status": "publishing",
+                            "message": "Ad Set creat in Meta.",
+                            "metaObjectId": "2"
+                          },
+                          {
+                            "at": "2026-10-17T15:19:39.811Z",
+                            "status": "publishing",
+                            "message": "Creative creat in Meta.",
+                            "metaObjectId": "3"
+                          },
+                          {
+                            "at": "2026-10-17T15:19:40.074Z",
+                            "status": "published",
+                            "message": "Campania a fost publicata in Meta in status PAUSED pentru verificare finala.",
+                            "metaObjectId": "4"
+                          }
+                        ],
+                        "providerPublicationVerification": {
+                          "campaignId": "1",
+                          "adSetId": "2",
+                          "creativeId": "3",
+                          "adId": "4",
+                          "accountId": "5",
+                          "campaignStatus": "PAUSED",
+                          "adSetStatus": "PAUSED",
+                          "adStatus": "PAUSED",
+                          "campaignEffectiveStatus": "PAUSED",
+                          "adSetEffectiveStatus": "CAMPAIGN_PAUSED",
+                          "adEffectiveStatus": "ADSET_PAUSED",
+                          "checkedAt": "2026-10-17T15:19:40.074Z"
+                        },
+                        "status": "published",
+                        "updatedAt": "2026-10-17T15:19:40.074Z"
+                      },
+                      "businessStatus": "published",
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_publish",
+                      "campaignId": "selected",
+                      "publicationConfirmed": true,
+                      "completionSatisfied": true,
+                      "deliveryConfirmed": false,
+                      "note": "Obiectele au fost verificate la Meta în pauză. Livrarea și aprobarea reclamei nu sunt confirmate.",
+                      "verifiedAt": "2026-10-17T15:19:40.152Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T15:19:40.165Z"
+          }
+        }
+      ]
+    }
+  ]
+}
