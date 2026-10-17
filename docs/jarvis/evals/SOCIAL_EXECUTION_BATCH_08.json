@@ -1,0 +1,112 @@
+{
+  "scope": "Account-specific observed format recommendations and channel-specific integration conditions; persisted chat and local Firestore, simulated Meta insights, no external publication.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0390",
+      "prompt": "Recomandă ce tip de postare să fac data viitoare.",
+      "versions": {
+        "prompt": "jarvis-141",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "172",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and current Firestore social history; actual insights service with simulated Meta counters, no publication.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "6b551649-f7c1-4788-9ccf-b807ff596f81-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Facebook: Testează încă o postare cu o fotografie pe același cont: în eșantion, acest format are media cea mai mare de aprecieri + comentarii dintre formatele cu minimum două postări.\nRecomandarea este un experiment, nu o promisiune de performanță. Mediile sunt totaluri cumulative; vechimea postărilor, audiența și promovarea plătită nu sunt controlate. Nu compar conturi sau platforme între ele și nu deduc vânzări ori conversii. Analiza folosește maximum 20 de destinații recente.\nNu am creat sau publicat o postare.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialRecommendation",
+                "title": "Recomandări sociale",
+                "rows": [
+                  {
+                    "id": "bd613c19-c758-491b-9f9e-b84af9d1427e",
+                    "connectionId": "bd613c19-c758-491b-9f9e-b84af9d1427e",
+                    "channel": "messenger",
+                    "samples": [
+                      {
+                        "format": "text",
+                        "count": 2,
+                        "meanInteractions": 2
+                      },
+                      {
+                        "format": "photo",
+                        "count": 2,
+                        "meanInteractions": 8
+                      }
+                    ],
+                    "excluded": 0,
+                    "recommendedFormat": "photo",
+                    "evidence": "observed_sample",
+                    "complete": true,
+                    "description": "Facebook: Testează încă o postare cu o fotografie pe același cont: în eșantion, acest format are media cea mai mare de aprecieri + comentarii dintre formatele cu minimum două postări."
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T08:46:54.340Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0393",
+      "prompt": "Nu presupune că regulile celor două platforme sunt identice.",
+      "versions": {
+        "prompt": "jarvis-141",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "172",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat and current local Firestore connection state; same Instagram limits as publishing validator. No external calls.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "a8c48eee-98d7-4ef5-b074-66e5d10c138a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Integrarea existentă tratează separat canalele:\nFacebook: permite text fără fotografie și fotografii atașate; în acest flux nu este definită o limită locală de text sau fotografii, ceea ce nu înseamnă lipsa limitelor Meta.\nInstagram: necesită cel puțin o fotografie, maximum 10 fotografii și 2200 de caractere. Materialul trebuie procesat înainte de publicare; simpla creare a containerului nu confirmă publicarea.\nAprecierea comentariilor este disponibilă aici pentru Facebook, nu pentru Instagram. Acestea sunt condițiile integrării aplicației, nu o listă exhaustivă a regulilor platformelor.\nConexiune socială: publicare indisponibilă sau neconfirmată\nStarea conturilor este citită din configurația curentă; accesul live Meta nu a fost verificat. Pentru grupurile Facebook se păstrează descrierea și fotografiile CRM. Nu am publicat nimic.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "socialPlatformRules",
+                "title": "Condiții pe canal",
+                "rows": [
+                  {
+                    "id": "42653e6f-9e6d-4eba-b94d-8b1b71e61cfe",
+                    "name": "Conexiune socială",
+                    "channel": "instagram",
+                    "status": "connected",
+                    "publishStatus": "reconnect_required",
+                    "description": "Conexiune socială: publicare indisponibilă sau neconfirmată"
+                  }
+                ],
+                "complete": true,
+                "outputType": "ANALYTICS_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T08:46:54.824Z"
+          }
+        }
+      ]
+    }
+  ]
+}

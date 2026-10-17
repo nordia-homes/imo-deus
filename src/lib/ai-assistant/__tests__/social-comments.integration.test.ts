@@ -334,4 +334,45 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('social comments through c
     const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Comentariu social: 9' });
     expect(result.message.text).not.toContain('Meta a confirmat'); expect(posts).toBe(0); expect(pages).toBeLessThanOrEqual(2);
   });
+  it('executes master-0390 with live-read simulated counters and persisted media formats', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.insights.status': 'active' });
+    await f.post.update({ images: [] });
+    for (const [id, images] of [['457', []], ['458', ['https://example.test/a']], ['459', ['https://example.test/b']]] as const) await f.post.parent.doc(id).set({ agencyId: f.ctx.agencyId, images, destinations: { [f.connectionId]: { status: 'published', externalId: '123_' + id } } });
+    mocks.fetch.mockImplementation(async (url: string, options: any) => {
+      expect(options.method).toBe('GET');
+      return new Response(JSON.stringify({ likes: { summary: { total_count: /458|459/.test(new URL(url).pathname) ? 8 : 2 } }, comments: { summary: { total_count: 0 } } }), { status: 200 });
+    });
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0390')!.text;
+    const input = { ...f.input, requestId: randomUUID(), prompt };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.cards?.[0].source).toBe('socialRecommendation');
+    expect(result.message.cards?.[0].rows[0]).toMatchObject({ recommendedFormat: 'photo', evidence: 'observed_sample', excluded: 0 });
+    expect(result.message.text).toContain('nu o promisiune'); expect(result.message.text).toContain('Nu am creat sau publicat');
+    expect(mocks.fetch).toHaveBeenCalledTimes(4); await chatTurn(f.ctx, input); expect(mocks.fetch).toHaveBeenCalledTimes(4);
+    expect((await db.collection('communicationSocialJobs').where('agencyId', '==', f.ctx.agencyId).get()).empty).toBe(true);
+    await writeFile('.tmp/jarvis-social-comments/master-0390.json', JSON.stringify({ scenarioId: 'master-0390', prompt, versions: VERSIONS, executionVerified: true, environment: 'Persisted chat and current Firestore social history; actual insights service with simulated Meta counters, no publication.', runs: [{ phase: 'original', final: result.message }] }, null, 2));
+  });
+  it('executes master-0393 with current connection state and no provider calls', async () => {
+    const f = await fixture('instagram'); await f.connection.update({ 'capabilities.publish.status': 'reconnect_required' });
+    const prompt = corpus.scenarios.find(row => row.id === 'master-0393')!.text;
+    const input = { ...f.input, requestId: randomUUID(), prompt };
+    const result = await chatTurn(f.ctx, input);
+    expect(result.message.cards?.[0].source).toBe('socialPlatformRules');
+    expect(result.message.cards?.[0].rows[0]).toMatchObject({ publishStatus: 'reconnect_required' });
+    expect(result.message.text).toContain('2200'); expect(result.message.text).toContain('maximum 10'); expect(result.message.text).toContain('nu confirmă publicarea');
+    expect(JSON.stringify(result)).not.toContain('SYNTHETIC_TOKEN'); expect(mocks.fetch).not.toHaveBeenCalled();
+    expect((await chatTurn(f.ctx, input)).message.id).toBe(result.message.id);
+    await writeFile('.tmp/jarvis-social-comments/master-0393.json', JSON.stringify({ scenarioId: 'master-0393', prompt, versions: VERSIONS, executionVerified: true, environment: 'Persisted chat and current local Firestore connection state; same Instagram limits as publishing validator. No external calls.', runs: [{ phase: 'original', final: result.message }] }, null, 2));
+  });
+  it('does not invent a winning format when provider counters are unavailable', async () => {
+    const f = await fixture(); await f.connection.update({ 'capabilities.insights.status': 'active' }); await f.post.update({ images: [] });
+    mocks.fetch.mockImplementation(async () => new Response('{}', { status: 503 }));
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Recomandă ce tip de postare să fac data viitoare.' });
+    expect(result.message.cards?.[0].rows[0]).toMatchObject({ evidence: 'insufficient_comparable_data', recommendedFormat: null, excluded: 1 });
+  });
+  it('describes an initial experiment when the published history is empty', async () => {
+    const f = await fixture(); await f.post.delete();
+    const result = await chatTurn(f.ctx, { ...f.input, requestId: randomUUID(), prompt: 'Recomandă ce tip de postare să fac data viitoare.' });
+    expect(result.message.text).toContain('experiment inițial'); expect(result.message.cards?.[0].rows).toEqual([]); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
 });

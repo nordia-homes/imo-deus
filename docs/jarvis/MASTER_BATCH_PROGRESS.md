@@ -2,7 +2,7 @@
 
 ## Publicare în producție — 17 octombrie 2026
 
-Toate modificările aplicației până la **c06958bc203423f29634de06743221374ce7c4d3** sunt active pe **https://imodeus.ro**, build **build-20261017-jarvis-140**, READY cu **100% trafic**. Sunt incluse 99 de commituri față de versiunea activă anterior, **a720a76c015a31feaa3b94d497ef3f1cdb54be6b** (build-20261013-facebook-012). Mențiunile „nepublicat” de mai jos sunt istorice; acest release include schimbările respective.
+Toate modificările aplicației până la **c06958bc203423f29634de06743221374ce7c4d3** sunt active pe **https://imodeus.ro**, build **build-20261017-jarvis-140**, READY cu **100% trafic**. Sunt incluse 99 de commituri față de versiunea activă anterior, **a720a76c015a31feaa3b94d497ef3f1cdb54be6b** (build-20261013-facebook-012). Mențiunile „nepublicat” din loturile incluse în acest commit sunt istorice; loturile implementate ulterior au propria stare de publicare.
 
 Regulile Firestore publicate corespund sursei locale. Toate cele 80 de indexuri necesare sunt READY, inclusiv cele opt adăugate. Funcțiile, serviciile auxiliare, configurația App Hosting, regulile Storage și codul desktop nu diferă față de versiunea anterioară. Manifestul installerului desktop 0.1.12 publicat corespunde celui local.
 
@@ -21,6 +21,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 Ținta solicitată: fiecare dintre cele 1.000 de scenarii originale îndeplinit până la rezultatul cerut, fără oprire nejustificată după primul pas. Aprobările, clarificările necesare și accesul autorizat fac parte din scenariul complet; nu se elimină pentru a declara succes.
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
+
+## Recomandări sociale și condiții distincte pe canal — 17 octombrie 2026
+
+Scenariul **0390** citește indicatorii disponibili prin serviciul existent și clasifică postările după fotografiile salvate: text, o fotografie sau mai multe fotografii. Datele lipsă/invalide nu devin postări text sau indicatori zero. Recomandarea compară media aprecierilor + comentariilor numai în cadrul aceluiași cont și canal, între formate cu minimum două postări fiecare. Egalitatea, lipsa unui format comparabil și erorile furnizorului produc o sugestie de experiment, fără format câștigător inventat. Pragul de două postări este doar o condiție de descriere a eșantionului, nu semnificație statistică.
+
+Se explică explicit că totalurile sunt cumulative, cu vechime, audiență și promovare plătită necontrolate. Nu sunt deduse conversii, vânzări sau superioritatea unei platforme. Se păstrează limita existentă de maximum 20 de destinații recente și semnalarea istoricului incomplet. Recomandarea nu creează postări sau joburi.
+
+Scenariul **0393** prezintă separat condițiile integrării Facebook/Instagram și starea actuală a capabilității publish pentru conturile accesibile. Limitele Instagram sunt partajate cu validatorul efectiv al publicării (cel puțin o fotografie, maximum 10 și 2.200 de caractere). Lipsa unei limite locale Facebook nu este prezentată drept absență a limitelor Meta; crearea containerului Instagram nu devine publicare confirmată. Nu se pretinde verificarea live a accesului. Publicarea în grupuri păstrează descrierea și fotografiile CRM.
+
+Validare: 69 teste unitare/regresie, 49 teste de integrare, ESLint, paritate și build complet. Dovadă: [Social lot 08](evals/SOCIAL_EXECUTION_BATCH_08.json). **207/1000 dovezi locale** (133 cu model real, 74 deterministe). Transport Meta simulat; fără certificare live sau publicare în producție a acestui lot.
 
 ## Verificarea comentariilor din paginile următoare — 17 octombrie 2026
 

@@ -15,9 +15,10 @@ export function selectPostImages(available: string[], selected?: string[]) {
   }
   return selected;
 }
+export const INSTAGRAM_POST_LIMITS = { text: 2200, images: 10 } as const;
 export function validateInstagramPost(text: string, images: string[]) {
   if (!images.length) throw new CommunicationError('Instagram necesită cel puțin o fotografie.');
-  if (text.length > 2200 || images.length > 10) throw new CommunicationError('Instagram acceptă prin API cel mult 2.200 de caractere și 10 fotografii. Editează postarea sau publică doar pe Facebook.');
+  if (text.length > INSTAGRAM_POST_LIMITS.text || images.length > INSTAGRAM_POST_LIMITS.images) throw new CommunicationError('Instagram acceptă prin API cel mult 2.200 de caractere și 10 fotografii. Editează postarea sau publică doar pe Facebook.');
 }
 export async function createSocialPost(db: Firestore, actor: Actor, body: unknown) {
   const input = z.object({ requestId: z.string().uuid(), connectionIds: z.array(z.string()).min(1).max(10), propertyId: z.string().min(1), text: z.string().trim().min(1), scheduledAt: z.string().datetime().optional(), draft: z.boolean().default(false), imageUrls: z.array(z.string().url()).optional() }).parse(body);
