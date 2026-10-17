@@ -22,6 +22,16 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — starea tuturor obiectelor după publicare — 17 octombrie 2026
+
+Scenariul **0412** verifică acum campania, setul de reclame, materialul și reclama asociate în CRM, prin patru citiri GET. Identificatorii, contul și asocierile sunt validate înainte de raportare. Jarvis distinge verificarea în curs, respingerea, facturarea incompletă, procesarea și pauzele moștenite; ACTIVE nu este prezentat drept dovadă de livrare sau rezultate comerciale. Datele istorice fără toate ID-urile primesc explicit o verificare parțială, doar la nivel de campanie.
+
+Citirea reverifică accesul agentului, revizia campaniei și conexiunea după răspunsurile Meta. Nu schimbă starea CRM sau ledgerul și nu activează ori recreează reclame. Publicarea și reconcilierea păstrează verificarea strictă a obiectelor create în pauză. Sunt inspectate obiectele legate în CRM, nu toate reclamele suplimentare create manual în Ads Manager.
+
+Validare: **91 teste unitare și 80 de integrare**, ESLint, paritate, inventar corpus și build complet trecute. Firestore local și Meta simulat; inclusiv 12 stări ale reclamei, asocieri greșite, schimbări concurente și regresii de publicare/reconciliere. Dovada [Meta lot 10](evals/META_EXECUTION_BATCH_10.json) extinde un scenariu deja numărat; totalul rămâne **252/1000 dovezi locale**, fără certificare integrală în producție. Lot nepublicat în producție.
+
+Câmpurile și stările sunt confruntate cu SDK-ul oficial Meta: [Ad](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ad.js), [AdSet](https://github.com/facebook/facebook-nodejs-business-sdk/blob/main/src/objects/ad-set.js).
+
 ## Meta Ads — reconcilierea publicării în conversație — 17 octombrie 2026
 
 Scenariul **0444**, verificat anterior pentru pauză, acoperă acum și publicarea incertă. Execuția este identificată prin actor, aprobare, configurația campaniei, proprietate, conexiune și cele patru ID-uri rezolvate în jurnal. Sunt excluse execuțiile încă running, rezervările active, alte aprobări și obiectele care nu corespund jurnalului. Meta este citit prin GET pentru campanie, ad set, creative și ad; nu se retrimit creări, pauze sau activări.

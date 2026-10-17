@@ -1,5 +1,5 @@
 import { ensureMetaPublicationObject, publicationConfiguration, publicationPropertyContent, type PublicationEdge } from './meta-publication-journal';
-import { verifyMetaPublication } from './meta-campaign-publication';
+import { observeMetaPublication, verifyMetaPublication } from './meta-campaign-publication';
 import { metaCampaignObservation, verifyMetaCampaignPause } from './meta-campaign-pause';
 import { buildMetaCampaignDraft, buildDefaultCampaignContent } from './meta-campaign-draft';
 import { validateMetaCampaignForPublish } from './meta-campaign-validation';
@@ -1077,7 +1077,7 @@ async function updatePublishedMetaCampaignStatus(
   });
 }
 
-export async function readMetaCampaignProviderStatus(agencyId: string, campaignId: string, options: { expectedRevision: string; actor: { uid: string; role?: string } }) {
+export async function readMetaCampaignProviderStatus(agencyId: string, campaignId: string, options: { hierarchy?: boolean; expectedRevision: string; actor: { uid: string; role?: string } }) {
   const ref = getCampaignDraftRef(agencyId, campaignId);
   const snapshot = await ref.get(), row = snapshot.data();
   const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -1095,8 +1095,11 @@ export async function readMetaCampaignProviderStatus(agencyId: string, campaignI
   const raw = await metaRequest('/' + row.metaCampaignId + '?fields=id,account_id,status,effective_status', accessToken, { signal: AbortSignal.timeout(15000) });
   const provider = metaCampaignObservation(raw, String(row.metaCampaignId), accountId);
   if (!['ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED'].includes(provider.status) || !['ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED', 'IN_PROCESS', 'WITH_ISSUES'].includes(provider.effectiveStatus)) throw new Error('Meta a returnat o stare necunoscută.');
+  const hierarchy = options.hierarchy && [row.metaAdSetId,row.metaCreativeId,row.metaAdId].every(id=>/^\d+$/.test(String(id||'')))
+    ? await observeMetaPublication({campaignId:String(row.metaCampaignId),adSetId:String(row.metaAdSetId),creativeId:String(row.metaCreativeId),adId:String(row.metaAdId),accountId},
+      (id,fields)=>id===String(row.metaCampaignId)?Promise.resolve(raw):metaRequest('/'+id+'?fields='+encodeURIComponent(fields),accessToken,{signal:AbortSignal.timeout(15000)})) : null;
   await assertCurrent();
-  return { provider, checkedAt: nowIso(), grantRevision };
+  return { provider, checkedAt: nowIso(), grantRevision, hierarchy };
 }
 
 export async function readMetaPublicationProviderStatus(agencyId: string, campaignId: string, options: { expectedRevision: string; actor: { uid: string; role?: string } }) {

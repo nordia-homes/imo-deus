@@ -29,7 +29,7 @@ export async function prepareMetaStatus(ctx:AssistantContext,prompt:string,histo
  });
  if(!prepared.target)return {source:'metaStatusSelection',rows:prepared.rows,text:prepared.rows.length?'Alege campania pentru verificare: „Stare Meta: ID”. Nu retrimit operații la Meta.':'Nu există o campanie cu identificator Meta în contextul curent.'};
  const target=prepared.target,{readMetaCampaignProviderStatus}=await import('@/lib/meta-marketing');
- const observation=await readMetaCampaignProviderStatus(ctx.agencyId,target.id,{expectedRevision:target.campaignRevision,actor:{uid:ctx.uid,role:ctx.role}});
+ const observation=await readMetaCampaignProviderStatus(ctx.agencyId,target.id,{hierarchy:mode==='status',expectedRevision:target.campaignRevision,actor:{uid:ctx.uid,role:ctx.role}});
  const {provider,checkedAt}=observation;let reconciled=0;
  if(mode==='reconcile'){
   const {reconcileMetaPublication}=await import('./meta-publication-reconcile');
@@ -54,7 +54,14 @@ export async function prepareMetaStatus(ctx:AssistantContext,prompt:string,histo
    return matching.length;
   });
  }
+ if(mode==='status'&&observation.hierarchy){
+  const time=bucharestInputFromIso(checkedAt),labels:Record<string,string>={campaign:'Campanie',adSet:'Set de reclame',ad:'Reclamă'};
+  const details=observation.hierarchy.states.map(state=>labels[state.kind]+': '+state.status+', stare efectivă '+state.effectiveStatus).join('; ');
+  const ad=observation.hierarchy.states.find(state=>state.kind==='ad')!;
+  const explanation:Record<string,string>={PENDING_REVIEW:'Reclama este în verificare la Meta.',DISAPPROVED:'Reclama a fost respinsă de Meta.',PENDING_BILLING_INFO:'Meta solicită informații de facturare.',IN_PROCESS:'Meta procesează reclama.',WITH_ISSUES:'Meta raportează probleme la reclamă.',CAMPAIGN_PAUSED:'Reclama este oprită prin pauza campaniei.',ADSET_PAUSED:'Reclama este oprită prin pauza setului.',PAUSED:'Reclama este în pauză.'};
+  return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:target.status,providerStatus:provider.status,effectiveStatus:provider.effectiveStatus,checkedAt:time.date+' '+time.time+', București',providerValidated:true,hierarchyValidated:true,deliveryConfirmed:false,providerObjects:observation.hierarchy.states,creativeId:observation.hierarchy.creativeId,reconciledExecutions:0}],text:details+'. '+(explanation[ad.effectiveStatus]||'Starea reclamei a fost verificată la Meta.')+' Materialul și asocierile celor patru obiecte au fost verificate. Aceste stări nu confirmă livrarea efectivă sau rezultate comerciale. Verificat la '+time.date+' '+time.time+', ora Bucureștiului.'};
+ }
  const time=bucharestInputFromIso(checkedAt);
  const text='Meta raportează pentru campania '+target.id+': '+provider.status+', stare efectivă '+provider.effectiveStatus+'. Verificat la '+time.date+' '+time.time+', ora Bucureștiului. ';
- return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:reconciled?'paused':target.status,providerStatus:provider.status,effectiveStatus:provider.effectiveStatus,checkedAt:time.date+' '+time.time+', București',providerValidated:true,reconciledExecutions:reconciled}],text:text+(mode==='reconcile'?(reconciled?'Pauza este confirmată; am reconciliat starea din CRM și execuția incertă, fără retrimiterea comenzii.':'Nu am găsit o execuție incertă eligibilă și confirmată pentru această configurație. Nu am repetat operația și nu am declarat-o finalizată.'):'Aceasta este starea campaniei; nu certifică livrarea fiecărei reclame sau rezultate comerciale.')};
+ return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:reconciled?'paused':target.status,providerStatus:provider.status,effectiveStatus:provider.effectiveStatus,checkedAt:time.date+' '+time.time+', București',providerValidated:true,reconciledExecutions:reconciled}],text:text+(mode==='reconcile'?(reconciled?'Pauza este confirmată; am reconciliat starea din CRM și execuția incertă, fără retrimiterea comenzii.':'Nu am găsit o execuție incertă eligibilă și confirmată pentru această configurație. Nu am repetat operația și nu am declarat-o finalizată.'):'Verificare parțială: CRM nu conține toți identificatorii setului, materialului și reclamei. Aceasta este doar starea campaniei; nu certifică livrarea fiecărei reclame sau rezultate comerciale.')};
 }

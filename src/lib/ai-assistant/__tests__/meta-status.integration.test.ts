@@ -54,4 +54,30 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('persisted Jarvis provider
  it('rechecks membership after the provider responds',async()=>{const f=await fixture(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const result=await original(url,init);await f.profile.update({agencyId:'other'});return result;});await expect(f.send('Verifică statusul providerului după publicare.')).rejects.toThrow('Acces revocat');});
  it('does not reveal provider errors or grant contents in chat',async()=>{const f=await fixture();mocks.fetch.mockRejectedValue(new Error('access_token=synthetic-secret'));const result=await f.send('Verifică statusul providerului după publicare.');expect(JSON.stringify(result.message)).not.toContain('synthetic-secret');expect(result.message.text).toContain('Nu pot confirma');});
  it('does not accept an unoffered selection',async()=>{const f=await fixture();const result=await f.send('Stare Meta: selected');expect(result.message.text).toContain('Nu pot confirma');expect(mocks.fetch).not.toHaveBeenCalled();});
+
+ async function hierarchyFixture(effectiveStatus='ACTIVE'){
+  const f=await fixture();await f.campaign.update({metaAdSetId:'124',metaCreativeId:'125',metaAdId:'126'});
+  const objects:Record<string,Record<string,unknown>>={
+   '123':{id:'123',account_id:'456',status:'ACTIVE',effective_status:'ACTIVE'},
+   '124':{id:'124',account_id:'456',campaign_id:'123',status:'ACTIVE',effective_status:'ACTIVE'},
+   '125':{id:'125',account_id:'456'},
+   '126':{id:'126',account_id:'456',campaign_id:'123',adset_id:'124',creative:{id:'125'},status:'ACTIVE',effective_status:effectiveStatus},
+  };
+  mocks.fetch.mockImplementation(async(url:string,init?:RequestInit)=>{expect(init?.method||'GET').toBe('GET');const u=new URL(url);expect(u.origin).toBe('https://graph.facebook.com');const id=u.pathname.split('/').at(-1)!;expect(objects[id]).toBeDefined();return Response.json(objects[id]);});
+  return {...f,objects};
+ }
+ it.each(['ACTIVE','PAUSED','PENDING_REVIEW','DISAPPROVED','PENDING_BILLING_INFO','IN_PROCESS','WITH_ISSUES','CAMPAIGN_PAUSED','ADSET_PAUSED','PREAPPROVED','ARCHIVED','DELETED'])('reads the complete hierarchy without mistaking %s for measured delivery',async state=>{
+  const f=await hierarchyFixture(state),before=(await f.campaign.get()).data(),property=(await f.property.get()).data();
+  const result=await f.send('Verifică statusul providerului după publicare.');
+  expect(result.message.cards?.[0].source).toBe('metaStatusReview');const row=result.message.cards![0].rows[0];
+  expect(row.hierarchyValidated).toBe(true);expect(row.deliveryConfirmed).toBe(false);expect(row.providerObjects).toHaveLength(3);expect(row.creativeId).toBe('125');expect(result.message.text).toContain(state);expect(result.message.text).toContain('nu confirmă livrarea');expect(result.message.text).toContain('București');
+  expect(mocks.fetch).toHaveBeenCalledTimes(4);expect((await f.campaign.get()).data()).toEqual(before);expect((await f.property.get()).data()).toEqual(property);
+  if(state==='PENDING_REVIEW'){await mkdir('.tmp/jarvis-meta-hierarchy',{recursive:true});await writeFile('.tmp/jarvis-meta-hierarchy/master-0412.json',JSON.stringify({scenarioId:'master-0412',prompt:corpus.scenarios.find(row=>row.id==='master-0412')!.text,versions:VERSIONS,executionVerified:true,environment:'Persisted application chat and local Firestore with synthetic Meta hierarchy. Four GET reads verify account, identities and associations; campaign ACTIVE with ad PENDING_REVIEW is reported without claiming delivery or mutating CRM.',runs:[{phase:'original',final:result.message}]},null,2));}
+ });
+ it.each([
+  ['124',{campaign_id:'999'}],['124',{account_id:'999'}],['125',{id:'999'}],['125',{account_id:'999'}],['126',{campaign_id:'999'}],['126',{adset_id:'999'}],['126',{creative:{id:'999'}}],['126',{effective_status:'NEW_UNKNOWN'}],['126',{status:'NEW_UNKNOWN'}],
+ ])('rejects mismatched child evidence %s %j',async(id,patch)=>{const f=await hierarchyFixture();Object.assign(f.objects[String(id)],patch);const result=await f.send('Verifică statusul providerului după publicare.');expect(result.message.text).toContain('Nu pot confirma');expect(result.message.cards?.some(card=>card.rows.some(row=>row.hierarchyValidated))).not.toBe(true);});
+ it.each(['campaign','grant','member'])('rechecks %s after child reads',async kind=>{const f=await hierarchyFixture(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const response=await original(url,init);if(new URL(url).pathname.endsWith('/126')){if(kind==='campaign')await f.campaign.update({metaAdId:'999'});else if(kind==='grant')await f.grant.update({connected:false});else await f.profile.update({role:'viewer'});}return response;});if(kind==='member')await expect(f.send('Verifică statusul providerului după publicare.')).rejects.toThrow();else expect((await f.send('Verifică statusul providerului după publicare.')).message.text).toContain('Nu pot confirma');});
+ it('labels missing child identifiers as partial without inventing an ad status',async()=>{const f=await fixture();await f.campaign.update({metaAdSetId:'124'});const result=await f.send('Verifică statusul providerului după publicare.');expect(result.message.text).toContain('Verificare parțială');expect(mocks.fetch).toHaveBeenCalledTimes(1);});
+ it('does not expose child request failures',async()=>{const f=await hierarchyFixture(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{if(new URL(url).pathname.endsWith('/126'))throw new Error('synthetic-private-token');return original(url,init);});const result=await f.send('Verifică statusul providerului după publicare.');expect(result.message.text).toContain('Nu pot confirma');expect(JSON.stringify(result.message)).not.toContain('synthetic-private-token');});
 });

@@ -1,0 +1,78 @@
+{
+  "scope": "Extension of master-0412: read the linked campaign, ad set, creative and ad, validate identities and relationships, distinguish review/rejection/pauses from measured delivery. Read-only, synthetic Meta.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0412",
+      "prompt": "Verifică statusul providerului după publicare.",
+      "versions": {
+        "prompt": "jarvis-159",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "190",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore with synthetic Meta hierarchy. Four GET reads verify account, identities and associations; campaign ACTIVE with ad PENDING_REVIEW is reported without claiming delivery or mutating CRM.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "fd21844c-644e-4b6f-ae26-c607fa6acf3a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Campanie: ACTIVE, stare efectivă ACTIVE; Set de reclame: ACTIVE, stare efectivă ACTIVE; Reclamă: ACTIVE, stare efectivă PENDING_REVIEW. Reclama este în verificare la Meta. Materialul și asocierile celor patru obiecte au fost verificate. Aceste stări nu confirmă livrarea efectivă sau rezultate comerciale. Verificat la 2026-10-17 20:10, ora Bucureștiului.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaStatusReview",
+                "title": "Stare Meta verificată",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "localStatus": "published",
+                    "providerStatus": "ACTIVE",
+                    "effectiveStatus": "ACTIVE",
+                    "checkedAt": "2026-10-17 20:10, București",
+                    "providerValidated": true,
+                    "hierarchyValidated": true,
+                    "deliveryConfirmed": false,
+                    "providerObjects": [
+                      {
+                        "kind": "campaign",
+                        "id": "123",
+                        "status": "ACTIVE",
+                        "effectiveStatus": "ACTIVE"
+                      },
+                      {
+                        "kind": "adSet",
+                        "id": "124",
+                        "status": "ACTIVE",
+                        "effectiveStatus": "ACTIVE"
+                      },
+                      {
+                        "kind": "ad",
+                        "id": "126",
+                        "status": "ACTIVE",
+                        "effectiveStatus": "PENDING_REVIEW"
+                      }
+                    ],
+                    "creativeId": "125",
+                    "reconciledExecutions": 0
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T17:10:01.790Z"
+          }
+        }
+      ]
+    }
+  ]
+}
