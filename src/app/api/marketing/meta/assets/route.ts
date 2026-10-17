@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
       import('@/lib/meta-marketing'),
     ]);
 
-    const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
-    const assets = await listMetaMarketingAssets(agencyId);
+    const actor = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    if(isDemoAgencyId(actor.agencyId))return createDemoBlockedResponse('Citirea asseturilor Meta este blocată în demo.');
+    const assets = await listMetaMarketingAssets(actor.agencyId,actor);
     return NextResponse.json(assets, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);

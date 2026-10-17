@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — inventar și reîmprospătare asseturi — 17 octombrie 2026
+
+Scenariile **0427 și 0428** citesc businessurile, conturile publicitare, paginile și conturile Instagram asociate prin serviciul existent al aplicației. Reîmprospătarea recitește Meta și afișează lista actuală în conversație. Nu modifică selecțiile salvate și nu publică o campanie. Dacă o selecție salvată nu mai apare în lista accesibilă conexiunii, Jarvis o semnalează fără înlocuire automată. Lista nu pretinde că include asseturi inaccesibile tokenului curent.
+
+Paginarea folosește numai cursorul after pe endpointurile fixe ale celor trei tipuri de asseturi, cu tokenul în antet. URL-urile next nu sunt urmate. Identificatorii, câmpurile, duplicatele și progresul cursorului sunt verificate. Există limite de timp și pagini; depășirea lor produce un rezultat neconfirmat, fără a declara lista parțială completă. Accesul actorului și revizia conexiunii sunt reverificate după citire. Aceeași verificare este folosită de ruta GET din Marketing.
+
+Conturile sunt eligibile pentru configurare numai cu fusul orar Europe/Bucharest. Selecția unui cont cu alt fus orar sau fără fus orar este respinsă, iar selecția validă București rămâne funcțională. Răspunsurile includ numai câmpurile publice necesare; tokenurile și câmpurile suplimentare ale selecțiilor private nu sunt copiate în conversație.
+
+Validare: **132 teste unitare/UI și 33 de integrare** trecute. Build complet trecut (cod de ieșire 0), TypeScript, ESLint, paritate și inventar corpus verificate. Dovada [Meta lot 17](evals/META_EXECUTION_BATCH_17.json) adaugă două ID-uri: **262/1000 dovezi locale** (133 cu model real și 129 deterministe). Firestore local și Meta simulat; fără certificare live sau integrală. Lot nepublicat în producție.
+
+Referință pentru cursor: [SDK oficial Facebook — GraphEdge](https://github.com/facebookarchive/php-graph-sdk/blob/5.x/docs/reference/GraphEdge.md).
+
 ## Meta Ads — monitorizare CPL și limitele estimărilor — 17 octombrie 2026
 
 Scenariile **0435 și 0437** folosesc rapoartele Meta citite pentru campaniile din contextul curent. Monitorizarea verifică toate campaniile eligibile cu identificator extern, cu maximum patru citiri de campanie concurente. Nu cere alegerea unei perechi. Fiecare raport păstrează valorile, perioadele și motivul clasificării; campaniile altor agenții, cele șterse și cele din afara proprietății curente sunt excluse.

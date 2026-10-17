@@ -1,3 +1,4 @@
+import { readMetaAssetPages } from './meta-asset-pages';
 import { canonicalMetaValue, verifyMetaImageReplacement } from './meta-image-optimization';
 import { isEditableLocalMetaDraft } from './meta-draft-editability';
 import { metaComparisonPeriods, parseMetaPeriod } from './meta-insights-period';
@@ -330,26 +331,6 @@ function toPublicIntegration(privateIntegration: MetaMarketingIntegrationPrivate
   return publicFields;
 }
 
-async function fetchAllPages<T>(path: string, accessToken: string): Promise<T[]> {
-  let nextPath: string | null = path;
-  const all: T[] = [];
-
-  while (nextPath) {
-    const payload: MetaGraphList<T> = nextPath.startsWith('http')
-      ? await fetch(nextPath, { cache: 'no-store' }).then(async (response) => {
-          const json = await safeJson(response);
-          if (!response.ok) {
-            throw new Error(extractMetaError(json, 'Meta API a refuzat paginarea.'));
-          }
-          return json as MetaGraphList<T>;
-        })
-      : await metaRequest<MetaGraphList<T>>(nextPath, accessToken);
-    all.push(...(payload.data || []));
-    nextPath = payload.paging?.next || null;
-  }
-
-  return all;
-}
 
 export async function createMetaAuthorization(params: { agencyId: string; requestedByUid: string }) {
   const { appId } = requireMetaConfig();
@@ -471,21 +452,30 @@ export async function getMetaMarketingStatus(agencyId: string) {
   } satisfies MetaMarketingIntegrationPublicStatus;
 }
 
-export async function listMetaMarketingAssets(agencyId: string) {
+export async function listMetaMarketingAssets(agencyId: string, actor?: {uid:string;role?:string|null}) {
+  const snapshot=()=>adminDb.runTransaction(async tx=>{
+    const grant=await tx.get(getPrivateDocRef(agencyId));
+    if(actor){const member=(await tx.get(adminDb.collection('users').doc(actor.uid))).data();if(member?.agencyId!==agencyId||member.role!==actor.role||!['admin','agent'].includes(actor.role||''))throw Error('Acces revocat.');}
+    const data=grant.data();if(!data||data.agencyId!==agencyId||data.connected!==true)throw Error('Conexiune Meta indisponibilă.');
+    return createHash('sha256').update(JSON.stringify(data)).digest('hex');
+  });
+  const revision=await snapshot();
   const { accessToken, integration } = await getAccessTokenForAgency(agencyId);
-  const businesses = await fetchAllPages<MetaBusiness>(
+  const businesses = await readMetaAssetPages<MetaBusiness>(
     '/me/businesses?fields=id,name&limit=100',
     accessToken
   );
-  const adAccounts = await fetchAllPages<MetaAdAccount>(
+  const adAccounts = await readMetaAssetPages<MetaAdAccount>(
     '/me/adaccounts?fields=id,account_id,name,currency,timezone_name&limit=100',
     accessToken
   );
-  const pages = await fetchAllPages<MetaPage>(
+  const pages = await readMetaAssetPages<MetaPage>(
     '/me/accounts?fields=id,name,instagram_business_account{id,username,name}&limit=100',
     accessToken
   );
 
+  if(await snapshot()!==revision)throw Error('Conexiunea Meta s-a schimbat.');
+  const selected=(row:any)=>row&&typeof row.id==='string'?{id:row.id,name:typeof row.name==='string'?row.name:null}:null;
   return {
     businesses: businesses.map((business) => ({ id: business.id, name: business.name || business.id })),
     adAccounts: adAccounts.map((account) => ({
@@ -507,10 +497,10 @@ export async function listMetaMarketingAssets(agencyId: string) {
         : null,
     })),
     selected: {
-      business: integration.selectedBusiness || null,
-      adAccount: integration.selectedAdAccount || null,
-      page: integration.selectedPage || null,
-      instagramAccount: integration.selectedInstagramAccount || null,
+      business: selected(integration.selectedBusiness),
+      adAccount: selected(integration.selectedAdAccount),
+      page: selected(integration.selectedPage),
+      instagramAccount: selected(integration.selectedInstagramAccount),
     },
   };
 }
@@ -525,6 +515,7 @@ export async function selectMetaMarketingAssets(agencyId: string, selection: Ass
     throw new Error('Selectia Meta nu este valida pentru contul conectat.');
   }
 
+  if(adAccount.timezoneName!=='Europe/Bucharest')throw Error('Contul publicitar trebuie să folosească fusul orar București.');
   const instagramAccount = page.instagramBusinessAccount && (!selection.instagramAccountId || page.instagramBusinessAccount.id === selection.instagramAccountId)
     ? page.instagramBusinessAccount
     : null;

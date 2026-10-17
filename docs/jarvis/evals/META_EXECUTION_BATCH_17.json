@@ -1,0 +1,239 @@
+{
+  "scope": "Original master-0427 and master-0428 through persisted chat and actual Meta asset service. Live-read semantics with synthetic provider responses, explicit current selection and Bucharest eligibility.",
+  "executionMode": "deterministic",
+  "validation": {
+    "unitTests": 132,
+    "integrationTests": 33,
+    "cases": [
+      "initial inventory and refreshed changed page name",
+      "pagination beyond preview without following next URLs",
+      "strict fields and identifiers",
+      "missing cursor, repeated cursor and page cap",
+      "missing or duplicate data rejected",
+      "selected asset missing from current connection",
+      "no selection changes on refresh",
+      "Bucharest selection accepted, other timezone rejected",
+      "member and grant changes during reads",
+      "foreign and disconnected integrations blocked",
+      "provider error redaction",
+      "route GET reuses verified service",
+      "request replay does not reread provider"
+    ]
+  },
+  "limitations": [
+    "The list covers assets exposed by the current Meta connection, not every asset at Meta.",
+    "Local Firestore and synthetic Meta; no live access certification or external writes.",
+    "Reaching pagination or time limits fails explicitly rather than declaring a partial list complete."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0427",
+      "prompt": "Arată-mi asseturile disponibile.",
+      "versions": {
+        "prompt": "jarvis-168",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "199",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat, actual asset service, local Firestore, synthetic Meta GET responses; no live certification or selection changes.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "3487c66a-8bf7-4f11-b1eb-f8fa2515532b-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am citit lista disponibilă prin conexiunea Meta a agenției: 1 businessuri, 1 conturi publicitare și 1 pagini. Lista descrie accesul conexiunii curente, nu toate asseturile existente la Meta. Conturile trebuie să folosească București pentru configurare. Nu am schimbat selecțiile și nu am publicat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaAssetsReview",
+                "title": "Asseturi Meta",
+                "rows": [
+                  {
+                    "id": "business/1",
+                    "assetId": "1",
+                    "assetType": "Business",
+                    "name": "Business",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "account/act_456",
+                    "assetId": "act_456",
+                    "assetType": "Cont publicitar",
+                    "name": "Cont",
+                    "currency": "EUR",
+                    "selected": true,
+                    "eligible": true,
+                    "reason": "Fus orar București confirmat.",
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "page/3",
+                    "assetId": "3",
+                    "assetType": "Pagină Facebook",
+                    "name": "Pagina",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "instagram/3/4",
+                    "assetId": "4",
+                    "assetType": "Instagram asociat paginii",
+                    "pageId": "3",
+                    "name": "Instagram",
+                    "username": "test",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T19:06:43.794Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0428",
+      "prompt": "Reîmprospătează asseturile Meta.",
+      "versions": {
+        "prompt": "jarvis-168",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "199",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat, actual asset service, local Firestore, synthetic Meta GET responses; no live certification or selection changes.",
+      "runs": [
+        {
+          "phase": "before",
+          "final": {
+            "id": "0b645aca-5efb-422c-bdda-0d09474b1ac3-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am citit lista disponibilă prin conexiunea Meta a agenției: 1 businessuri, 1 conturi publicitare și 1 pagini. Lista descrie accesul conexiunii curente, nu toate asseturile existente la Meta. Conturile trebuie să folosească București pentru configurare. Nu am schimbat selecțiile și nu am publicat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaAssetsReview",
+                "title": "Asseturi Meta",
+                "rows": [
+                  {
+                    "id": "business/1",
+                    "assetId": "1",
+                    "assetType": "Business",
+                    "name": "Business",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "account/act_456",
+                    "assetId": "act_456",
+                    "assetType": "Cont publicitar",
+                    "name": "Cont",
+                    "currency": "EUR",
+                    "selected": true,
+                    "eligible": true,
+                    "reason": "Fus orar București confirmat.",
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "page/3",
+                    "assetId": "3",
+                    "assetType": "Pagină Facebook",
+                    "name": "Pagina",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "instagram/3/4",
+                    "assetId": "4",
+                    "assetType": "Instagram asociat paginii",
+                    "pageId": "3",
+                    "name": "Instagram",
+                    "username": "test",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T19:06:44.173Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "5df627dc-5783-41d3-9f3e-71179c819361-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Am reîmprospătat lista disponibilă prin conexiunea Meta a agenției: 1 businessuri, 1 conturi publicitare și 1 pagini. Lista descrie accesul conexiunii curente, nu toate asseturile existente la Meta. Conturile trebuie să folosească București pentru configurare. Nu am schimbat selecțiile și nu am publicat campanii.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaAssetsReview",
+                "title": "Asseturi Meta",
+                "rows": [
+                  {
+                    "id": "business/1",
+                    "assetId": "1",
+                    "assetType": "Business",
+                    "name": "Business",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "account/act_456",
+                    "assetId": "act_456",
+                    "assetType": "Cont publicitar",
+                    "name": "Cont",
+                    "currency": "EUR",
+                    "selected": true,
+                    "eligible": true,
+                    "reason": "Fus orar București confirmat.",
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "page/3",
+                    "assetId": "3",
+                    "assetType": "Pagină Facebook",
+                    "name": "Pagina nouă",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  },
+                  {
+                    "id": "instagram/3/4",
+                    "assetId": "4",
+                    "assetType": "Instagram asociat paginii",
+                    "pageId": "3",
+                    "name": "Instagram",
+                    "username": "test",
+                    "selected": true,
+                    "checkedAt": "2026-10-17 22:06, București"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T19:06:44.536Z"
+          }
+        }
+      ]
+    }
+  ]
+}

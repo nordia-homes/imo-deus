@@ -163,6 +163,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       return finish(inventory.text, inventory.complete ? 'success' : 'partial');
     }
   } catch { return finish('Nu pot confirma inventarul Meta: accesul, conexiunea sau datele s-au schimbat. Nu am modificat campanii.', 'unavailable'); }
+  const {prepareMetaAssets}=await import('./meta-assets');
+  try {const report=await prepareMetaAssets(ctx,prompt);if(report){if(report.rows.length)cards.push({type:'data',source:report.source,title:'Asseturi Meta',rows:report.rows,complete:true});return finish(report.text);}}
+  catch {return finish('Nu pot confirma lista completă a asseturilor Meta: verifică accesul și conexiunea. Nu am schimbat selecțiile.','unavailable');}
   const { prepareMetaPerformance } = await import('./meta-performance');
   try {
     const report = await prepareMetaPerformance(ctx, prompt, history);
