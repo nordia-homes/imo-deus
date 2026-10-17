@@ -20,3 +20,9 @@ it('selects the indicated photo and hides revision hashes from the rendered deta
  const element:any=MetaReviewDetails(props); element.props.children[1].props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Material Meta: 2');
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Selectează fotografia'); expect(html).not.toContain('INTERNAL_HASH'); expect(html).not.toContain('OTHER_HASH');
 });
+it('sends the exact pause confirmation from the campaign button', () => {
+ vi.stubGlobal('React', React); const onPrompt=vi.fn();
+ const props={row:{id:'selected',campaignName:'Campania aleasă',campaignRevision:'INTERNAL_HASH'},selection:true,busy:false,selectionPrefix:'Confirm pauza Meta',selectionLabel:'Confirmă pauza',onPrompt};
+ const element:any=MetaReviewDetails(props); element.props.children[1].props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Confirm pauza Meta: selected');
+ const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Confirmă pauza'); expect(html).not.toContain('INTERNAL_HASH');
+});

@@ -1075,7 +1075,7 @@ async function updatePublishedMetaCampaignStatus(
   });
 }
 
-export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string) {
+export async function pauseMetaCampaignDraft(agencyId: string, campaignId: string, options: { expectedRevision?: string; actor?: { uid: string; role?: string } } = {}) {
   const ref = getCampaignDraftRef(agencyId, campaignId);
   const snapshot = await ref.get();
   if (!snapshot.exists) throw new Error('Campania Meta nu a fost gasita.');
@@ -1093,6 +1093,11 @@ export async function pauseMetaCampaignDraft(agencyId: string, campaignId: strin
   const fingerprint = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
   const draftRevision = fingerprint(original);
   const grantRevision = fingerprint(integration);
+  if (options.expectedRevision && options.expectedRevision !== draftRevision) throw new Error('Campania s-a schimbat după selecție.');
+  const memberRef = options.actor ? adminDb.collection('users').doc(options.actor.uid) : null;
+  const assertMember = (member: Record<string, unknown> | undefined) => {
+    if (options.actor && (!member || member.agencyId !== agencyId || member.role !== options.actor.role || !['agent', 'admin'].includes(String(member.role)))) throw new Error('Acces revocat.');
+  };
   const assertSnapshots = (current: { exists: boolean; data(): unknown }, grant: { exists: boolean; data(): unknown }) => {
     if (!current.exists || fingerprint(current.data()) !== draftRevision ||
         !grant.exists || fingerprint(grant.data()) !== grantRevision) {
@@ -1105,6 +1110,7 @@ export async function pauseMetaCampaignDraft(agencyId: string, campaignId: strin
     assertCurrent: async () => {
       const [current, grant] = await Promise.all([ref.get(), getPrivateDocRef(agencyId).get()]);
       assertSnapshots(current, grant);
+      if (memberRef) assertMember((await memberRef.get()).data());
     },
     read: () => metaRequest('/' + draft.metaCampaignId + '?fields=id,account_id,status,effective_status', accessToken),
     pause: () => metaFormRequest('/' + draft.metaCampaignId, accessToken, { status: 'PAUSED' }),
@@ -1117,6 +1123,7 @@ export async function pauseMetaCampaignDraft(agencyId: string, campaignId: strin
       transaction.get(ref), transaction.get(getPrivateDocRef(agencyId)), transaction.get(propertyRef),
     ]);
     assertSnapshots(current, grant);
+    if (memberRef) assertMember((await transaction.get(memberRef)).data());
     transaction.update(ref, { status: 'paused', updatedAt, lastPublishError: null, providerPauseVerification });
     if (property.exists && property.data()?.metaMarketing?.latestCampaignDraftId === campaignId) {
       transaction.update(propertyRef, { 'metaMarketing.status': 'paused', 'metaMarketing.updatedAt': updatedAt });

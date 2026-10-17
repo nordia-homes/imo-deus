@@ -1,0 +1,458 @@
+{
+  "scope": "Four original campaign-control scenarios through persisted application chat and actual Meta pause handler, with simulated external responses. Selection, requested explicit confirmation, pause without deletion and preservation of other campaigns. No production end-to-end certification.",
+  "executionMode": "deterministic",
+  "finalRuns": [
+    {
+      "scenarioId": "master-0413",
+      "prompt": "Pune campania pe pauză.",
+      "versions": {
+        "prompt": "jarvis-151",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "182",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, actual pause route and local Firestore; synthetic Meta preflight, write and readback. No real campaign changes.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "88711e0a-9978-4e0b-9e27-f8ecd5a90c93-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează campania și confirmă pauza: „Confirm pauza Meta: ID”. Verific rezultatul la Meta; celelalte campanii rămân nemodificate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPauseSelection",
+                "title": "Pauză campanie Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "propertyId": "property",
+                    "campaignName": "Alta",
+                    "status": "published",
+                    "campaignRevision": "1bc33c1038a96bbb8275a8378b2a7baaf5a22f9b17d81919905df442cc904216",
+                    "contextPropertyId": "property"
+                  },
+                  {
+                    "id": "selected",
+                    "propertyId": "property",
+                    "campaignName": "Selectată",
+                    "status": "published",
+                    "campaignRevision": "642608f2263ebe8959a2a1fb524472adc14d5943ea0103447dfbfa51ae72d382",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:17.775Z"
+          }
+        },
+        {
+          "phase": "confirmation",
+          "final": {
+            "id": "8ae37fff-21ce-49ab-b020-793661785e4f-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat pauza campaniei selected. Campania nu a fost ștearsă.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaign": {
+                        "agencyId": "404120c6-a57b-43fd-b0e8-52b38a313de1",
+                        "propertyId": "property",
+                        "status": "paused",
+                        "metaCampaignId": "123",
+                        "campaignName": "Selectată",
+                        "updatedAt": "2026-10-17T13:56:18.237Z",
+                        "id": "selected",
+                        "lastPublishError": null,
+                        "providerPauseVerification": {
+                          "id": "123",
+                          "accountId": "456",
+                          "status": "PAUSED",
+                          "effectiveStatus": "PAUSED",
+                          "checkedAt": "2026-10-17T13:56:18.237Z"
+                        }
+                      },
+                      "businessStatus": "paused",
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_pause",
+                      "campaignId": "selected",
+                      "completionSatisfied": true,
+                      "pauseConfirmed": true,
+                      "note": "Pauza a fost confirmată la Meta la 2026-10-17T13:56:18.237Z. Nu reprezintă o citire live ulterioară.",
+                      "verifiedAt": "2026-10-17T13:56:18.309Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:18.318Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0414",
+      "prompt": "Nu o șterge dacă am spus doar pauză.",
+      "versions": {
+        "prompt": "jarvis-151",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "182",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, actual pause route and local Firestore; synthetic Meta preflight, write and readback. No real campaign changes.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "2cdc1fc7-0825-422f-aa8a-27e7ed3981cb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează campania și confirmă pauza: „Confirm pauza Meta: ID”. Verific rezultatul la Meta; celelalte campanii rămân nemodificate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPauseSelection",
+                "title": "Pauză campanie Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "propertyId": "property",
+                    "campaignName": "Alta",
+                    "status": "published",
+                    "campaignRevision": "e082181938372ccadb2eb50040c7c90f265b1ce8c465812a4fcf62b3f5aaf996",
+                    "contextPropertyId": "property"
+                  },
+                  {
+                    "id": "selected",
+                    "propertyId": "property",
+                    "campaignName": "Selectată",
+                    "status": "published",
+                    "campaignRevision": "7469124a9cd6595a718bc402fa8056d6fc3530f6b1dc39fc5e5c6fb40c061753",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:18.636Z"
+          }
+        },
+        {
+          "phase": "pause",
+          "final": {
+            "id": "c3617739-7d9a-4f63-bd82-cb1c7c3b3140-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat pauza campaniei selected. Campania nu a fost ștearsă.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaign": {
+                        "agencyId": "a470ac06-1b5b-4b7d-8a18-4b9c5709128c",
+                        "propertyId": "property",
+                        "status": "paused",
+                        "metaCampaignId": "123",
+                        "campaignName": "Selectată",
+                        "updatedAt": "2026-10-17T13:56:19.072Z",
+                        "id": "selected",
+                        "lastPublishError": null,
+                        "providerPauseVerification": {
+                          "id": "123",
+                          "accountId": "456",
+                          "status": "PAUSED",
+                          "effectiveStatus": "PAUSED",
+                          "checkedAt": "2026-10-17T13:56:19.072Z"
+                        }
+                      },
+                      "businessStatus": "paused",
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_pause",
+                      "campaignId": "selected",
+                      "completionSatisfied": true,
+                      "pauseConfirmed": true,
+                      "note": "Pauza a fost confirmată la Meta la 2026-10-17T13:56:19.072Z. Nu reprezintă o citire live ulterioară.",
+                      "verifiedAt": "2026-10-17T13:56:19.132Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:19.151Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "aef3c006-a262-4f37-be1d-06150968e9cb-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Comanda de pauză nu șterge campania și se aplică exclusiv campaniei selectate. Prin această cerere nu am modificat nicio campanie.",
+            "cards": [],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:19.343Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0440",
+      "prompt": "Oprește campania dacă am confirmat explicit.",
+      "versions": {
+        "prompt": "jarvis-151",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "182",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, actual pause route and local Firestore; synthetic Meta preflight, write and readback. No real campaign changes.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "b905913b-0292-4ca7-ae52-bf8db4045a7e-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează campania și confirmă pauza: „Confirm pauza Meta: ID”. Verific rezultatul la Meta; celelalte campanii rămân nemodificate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPauseSelection",
+                "title": "Pauză campanie Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "propertyId": "property",
+                    "campaignName": "Alta",
+                    "status": "published",
+                    "campaignRevision": "41d90a1f73b71066603d8ad62a4138c059a5087291d4f70bb868e0fe0acaf425",
+                    "contextPropertyId": "property"
+                  },
+                  {
+                    "id": "selected",
+                    "propertyId": "property",
+                    "campaignName": "Selectată",
+                    "status": "published",
+                    "campaignRevision": "c7dd3552df051cbc5cac4b158d335328b52ba63e460dc84cc8380509c4f0cb8c",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:19.707Z"
+          }
+        },
+        {
+          "phase": "confirmation",
+          "final": {
+            "id": "8c0c357e-0e84-43c8-9563-26dad7a4e109-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat pauza campaniei selected. Campania nu a fost ștearsă.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaign": {
+                        "agencyId": "0f6ce9ad-1532-48ad-b557-60f47e9093b0",
+                        "propertyId": "property",
+                        "status": "paused",
+                        "metaCampaignId": "123",
+                        "campaignName": "Selectată",
+                        "updatedAt": "2026-10-17T13:56:20.142Z",
+                        "id": "selected",
+                        "lastPublishError": null,
+                        "providerPauseVerification": {
+                          "id": "123",
+                          "accountId": "456",
+                          "status": "PAUSED",
+                          "effectiveStatus": "PAUSED",
+                          "checkedAt": "2026-10-17T13:56:20.142Z"
+                        }
+                      },
+                      "businessStatus": "paused",
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_pause",
+                      "campaignId": "selected",
+                      "completionSatisfied": true,
+                      "pauseConfirmed": true,
+                      "note": "Pauza a fost confirmată la Meta la 2026-10-17T13:56:20.142Z. Nu reprezintă o citire live ulterioară.",
+                      "verifiedAt": "2026-10-17T13:56:20.211Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:20.218Z"
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "master-0441",
+      "prompt": "Nu opri celelalte campanii.",
+      "versions": {
+        "prompt": "jarvis-151",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "182",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat, actual pause route and local Firestore; synthetic Meta preflight, write and readback. No real campaign changes.",
+      "runs": [
+        {
+          "phase": "context",
+          "final": {
+            "id": "36ce58c7-cde9-4e59-a60e-48173df944c4-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Selectează campania și confirmă pauza: „Confirm pauza Meta: ID”. Verific rezultatul la Meta; celelalte campanii rămân nemodificate.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaPauseSelection",
+                "title": "Pauză campanie Meta",
+                "rows": [
+                  {
+                    "id": "other",
+                    "propertyId": "property",
+                    "campaignName": "Alta",
+                    "status": "published",
+                    "campaignRevision": "9facdf778a8d0e0e0c949ebfb1486f5a98258056a0f8575875244b5d38c93ea3",
+                    "contextPropertyId": "property"
+                  },
+                  {
+                    "id": "selected",
+                    "propertyId": "property",
+                    "campaignName": "Selectată",
+                    "status": "published",
+                    "campaignRevision": "6f24e08cc263624dc8d9042e5383e2ac6838936ca1bf7ebe3f283193ef0d4b8b",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:20.558Z"
+          }
+        },
+        {
+          "phase": "pause",
+          "final": {
+            "id": "cc7f9d2c-9c13-401f-8eb4-dbd3aea15d53-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat pauza campaniei selected. Campania nu a fost ștearsă.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaign": {
+                        "agencyId": "1e6d0852-ed5e-4b57-80de-859d18c303a5",
+                        "propertyId": "property",
+                        "status": "paused",
+                        "metaCampaignId": "123",
+                        "campaignName": "Selectată",
+                        "updatedAt": "2026-10-17T13:56:21.006Z",
+                        "id": "selected",
+                        "lastPublishError": null,
+                        "providerPauseVerification": {
+                          "id": "123",
+                          "accountId": "456",
+                          "status": "PAUSED",
+                          "effectiveStatus": "PAUSED",
+                          "checkedAt": "2026-10-17T13:56:21.006Z"
+                        }
+                      },
+                      "businessStatus": "paused",
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_pause",
+                      "campaignId": "selected",
+                      "completionSatisfied": true,
+                      "pauseConfirmed": true,
+                      "note": "Pauza a fost confirmată la Meta la 2026-10-17T13:56:21.006Z. Nu reprezintă o citire live ulterioară.",
+                      "verifiedAt": "2026-10-17T13:56:21.075Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:21.080Z"
+          }
+        },
+        {
+          "phase": "original",
+          "final": {
+            "id": "0cbc348c-ac5d-4384-acfb-43a66f6b4b4a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Comanda de pauză nu șterge campania și se aplică exclusiv campaniei selectate. Prin această cerere nu am modificat nicio campanie.",
+            "cards": [],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T13:56:21.276Z"
+          }
+        }
+      ]
+    }
+  ]
+}

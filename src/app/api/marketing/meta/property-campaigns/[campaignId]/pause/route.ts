@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 
@@ -24,12 +25,15 @@ export async function POST(
       import('@/lib/meta-marketing'),
     ]);
 
-    const { agencyId } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
+    const { agencyId, uid, role } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
     if (isDemoAgencyId(agencyId)) {
       return createDemoBlockedResponse('Campaniile Meta sunt doar preview in mediul demo.');
     }
 
-    const campaign = await pauseMetaCampaignDraft(agencyId, campaignId);
+    const raw = await request.text();
+    const parsed = z.object({ jarvisPause: z.literal(true).optional(), propertyId: z.string().optional(), expectedRevision: z.string().regex(/^[a-f0-9]{64}$/).optional() }).strict().safeParse(raw ? JSON.parse(raw) : {});
+    if (!parsed.success || parsed.data.jarvisPause && !parsed.data.expectedRevision) return NextResponse.json({ message: 'Parametri pauză invalizi.' }, { status: 400 });
+    const campaign = await pauseMetaCampaignDraft(agencyId, campaignId, { expectedRevision: parsed.data.expectedRevision, actor: { uid, role } });
     return NextResponse.json({ campaign }, { status: 200 });
   } catch (error) {
     const formatted = formatError(error);

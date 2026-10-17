@@ -22,6 +22,14 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — control din conversație, 4 scenarii — 17 octombrie 2026
+
+Scenariile **0413, 0414, 0440 și 0441** sunt conectate la ruta reală de pauză: Jarvis identifică ținta din context sau oferă selecția campaniei, execută pauza, recitește starea la Meta, salvează dovada și confirmă finalizarea. O comandă directă pentru singura campanie eligibilă nu cere o aprobare suplimentară. Formularea condiționată de confirmarea explicită afișează butonul de confirmare chiar dacă există o singură țintă.
+
+Selecția este legată de proprietatea curentă și revizia campaniei. Schimbarea paginii, a campaniei sau a accesului împiedică trimiterea către Meta. Ruta verifică din nou accesul înainte de apelul extern și în tranzacția de salvare. Comenzile care cer păstrarea celorlalte campanii sau interzic ștergerea nu lansează mutații; selecția în așteptare este păstrată pentru continuare. Repetarea aceleiași cereri și execuțiile concurente cu aceeași cheie nu retrimit pauza.
+
+Validare: **169 teste unitare/UI și 33 teste de integrare** trecute; ESLint, paritate, inventar și build complet verificate. Dovada [Meta lot 04](evals/META_EXECUTION_BATCH_04.json) folosește conversația persistată, handlerul aplicației și Firestore local, cu răspunsuri Meta sintetice. **245/1000 dovezi locale** (133 cu model real, 112 deterministe), fără certificare completă în producție. Nu au fost modificate campanii reale. Lot nepublicat în producție.
+
 ## Meta Ads — confirmarea efectivă a pauzei — 17 octombrie 2026
 
 Corecție în fluxul comun folosit de Jarvis și interfața campaniilor: pauza verifică identificatorul și contul la Meta, trimite exclusiv status=PAUSED și recitește status și effective_status. O confirmare HTTP sau starea locală paused nu sunt suficiente. Dacă răspunsul comenzii se pierde, se citește rezultatul fără retrimiterea comenzii. Campaniile locale fără ID Meta și cele în publicare nu sunt modificate.
