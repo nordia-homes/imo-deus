@@ -1,4 +1,5 @@
 'use client';
+import { isEditableLocalMetaDraft, canResumeMetaPublication } from '@/lib/meta-draft-editability';
 
 import { useEffect, useRef, useState } from 'react';
 import { signOut } from 'firebase/auth';
@@ -432,8 +433,11 @@ export function MetaCampaignEditorDialog({
     }
   }
 
+  const canEditLocal=isEditableLocalMetaDraft(campaign);
+  const canResume=canResumeMetaPublication(campaign);
   async function saveDraft() {
     if (!user || !campaign || !form) return null;
+    if (!canEditLocal) throw new Error('Configurația este blocată după începerea publicării.');
     setIsSaving(true);
     try {
       const response = await authorizedFetch(user, auth, `/api/marketing/meta/property-campaigns/${campaign.id}`, {
@@ -500,10 +504,10 @@ export function MetaCampaignEditorDialog({
   }
 
   async function handlePublish() {
-    if (!user || !campaign) return;
+    if (!user || !campaign || (!canEditLocal && !canResume)) return;
     setIsPublishing(true);
     try {
-      const saved = await saveDraft();
+      const saved = canEditLocal ? await saveDraft() : campaign;
       const campaignId = saved?.id || campaign.id;
       const response = await authorizedFetch(user, auth, `/api/marketing/meta/property-campaigns/${campaignId}/publish`, {
         method: 'POST',
@@ -592,8 +596,9 @@ export function MetaCampaignEditorDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {!canEditLocal && campaign && <p className="px-6 py-2 text-sm text-white/70">{canResume ? 'Configurația este blocată. Reluarea publicării folosește datele deja salvate.' : 'Configurația este disponibilă doar pentru consultare după începerea publicării.'}</p>}
         {form ? (
-          <div className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)]">
+          <fieldset disabled={!canEditLocal} className="grid min-w-0 min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)]">
             <div className="min-h-0 overflow-y-auto px-6 py-5 pr-4">
               <div className="space-y-5">
                 <section className="space-y-4 rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.10] via-white/[0.045] to-emerald-300/[0.04] p-5 shadow-2xl shadow-black/15">
@@ -1274,21 +1279,21 @@ export function MetaCampaignEditorDialog({
             </div>
               </div>
             </aside>
-          </div>
+          </fieldset>
         ) : null}
 
         <DialogFooter className="shrink-0 gap-2 border-t border-white/10 bg-[#0F1E33] px-6 py-4 sm:gap-0">
-          <Button type="button" variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void handleSaveDraft()} disabled={isSaving || isMarkingReady || isPublishing || !form}>
+          <Button type="button" variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => void handleSaveDraft()} disabled={!canEditLocal || isSaving || isMarkingReady || isPublishing || !form}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Salveaza draft
           </Button>
-          <Button type="button" variant="outline" className="border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/15 disabled:opacity-45" onClick={() => void handleMarkReady()} disabled={isSaving || isMarkingReady || isPublishing || !form || !canMarkReady}>
+          <Button type="button" variant="outline" className="border-emerald-300/25 bg-emerald-400/10 text-emerald-100 hover:bg-emerald-400/15 disabled:opacity-45" onClick={() => void handleMarkReady()} disabled={!canEditLocal || isSaving || isMarkingReady || isPublishing || !form || !canMarkReady}>
             {isMarkingReady ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
             Pregateste pentru publicare
           </Button>
-          <Button type="button" className="bg-emerald-400 text-black hover:bg-emerald-300 disabled:opacity-45" onClick={() => void handlePublish()} disabled={isSaving || isMarkingReady || isPublishing || !form || !canMarkReady}>
+          <Button type="button" className="bg-emerald-400 text-black hover:bg-emerald-300 disabled:opacity-45" onClick={() => void handlePublish()} disabled={(!canEditLocal && !canResume) || isSaving || isMarkingReady || isPublishing || !form || !canMarkReady}>
             {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-            Publica in Meta
+            {canResume ? 'Reia publicarea în Meta' : 'Publica in Meta'}
           </Button>
         </DialogFooter>
       </DialogContent>

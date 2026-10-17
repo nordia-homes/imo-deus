@@ -1,3 +1,4 @@
+import { isEditableLocalMetaDraft } from './meta-draft-editability';
 import { metaComparisonPeriods, parseMetaPeriod } from './meta-insights-period';
 import { ensureMetaPublicationObject, publicationConfiguration, publicationPropertyContent, type PublicationEdge } from './meta-publication-journal';
 import { observeMetaPublication, verifyMetaPublication } from './meta-campaign-publication';
@@ -1013,25 +1014,23 @@ function cleanCampaignDraftUpdate(input: CampaignDraftUpdateInput) {
   return patch;
 }
 
-export async function updateMetaCampaignDraft(agencyId: string, campaignId: string, input: CampaignDraftUpdateInput) {
-  const ref = getCampaignDraftRef(agencyId, campaignId);
-  const snapshot = await ref.get();
-  if (!snapshot.exists) {
-    throw new Error('Campania Meta nu a fost gasita.');
-  }
-
-  const draft = { id: snapshot.id, ...(snapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>) } as MetaMarketingCampaignDraft;
-  if (draft.agencyId !== agencyId) {
-    throw new Error('Campania Meta nu apartine acestei agentii.');
-  }
-
-  const patch = cleanCampaignDraftUpdate(input);
-  await ref.set(patch, { merge: true });
-  const updatedSnapshot = await ref.get();
-  return {
-    id: updatedSnapshot.id,
-    ...(updatedSnapshot.data() as Omit<MetaMarketingCampaignDraft, 'id'>),
-  } as MetaMarketingCampaignDraft;
+export async function updateMetaCampaignDraft(agencyId: string, campaignId: string, input: CampaignDraftUpdateInput, actor: {uid:string;role?:string}) {
+  const ref=getCampaignDraftRef(agencyId,campaignId),patch=cleanCampaignDraftUpdate(input);
+  const fail=(message:string,status:number):never=>{throw Object.assign(new Error(message),{status});};
+  return adminDb.runTransaction(async tx=>{
+    const snapshot=await tx.get(ref),member=await tx.get(adminDb.collection('users').doc(actor.uid));
+    if(member.data()?.agencyId!==agencyId||member.data()?.role!==actor.role||!['admin','agent'].includes(String(actor.role)))fail('Acces revocat.',403);
+    if(!snapshot.exists)fail('Campania Meta nu a fost găsită.',404);
+    const draft=snapshot.data()!;
+    if(draft.agencyId!==agencyId)fail('Campania Meta nu aparține agenției.',403);
+    const journal=await tx.get(ref.collection('publicationSteps').limit(1));
+    if(!isEditableLocalMetaDraft(draft)||!journal.empty)fail('Această rută modifică doar drafturi locale fără istoric de publicare. Pentru obiecte Meta este necesară o operație externă verificată.',409);
+    if(typeof draft.propertyId!=='string'||!draft.propertyId)fail('Proprietatea draftului nu este disponibilă.',409);
+    const property=await tx.get(adminDb.collection('agencies').doc(agencyId).collection('properties').doc(draft.propertyId));
+    if(!property.exists||property.data()?.deletedAt||property.data()?.agencyId&&property.data()?.agencyId!==agencyId)fail('Proprietatea draftului nu este disponibilă în agenție.',409);
+    tx.update(ref,patch);
+    return {...draft,...patch,id:snapshot.id} as MetaMarketingCampaignDraft;
+  });
 }
 
 async function syncPropertyMetaMarketingStatus(agencyId: string, propertyId: string) {

@@ -1,3 +1,4 @@
+import { isEditableLocalMetaDraft } from '@/lib/meta-draft-editability';
 import { hasMetaPublicationProof } from '@/lib/meta-campaign-publication';
 import { safeData } from './contracts';
 // Expose confirmed IDs in a stable shape without changing domain responses.
@@ -30,6 +31,13 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
     result.completionSatisfied = confirmed;
     result.deliveryConfirmed = false;
     result.note = confirmed ? 'Obiectele au fost verificate la Meta în pauză. Livrarea și aprobarea reclamei nu sunt confirmate.' : 'Publicarea nu are o dovadă Meta valabilă pentru revizia curentă; nu retrimite automat.';
+  }
+  if (operation === 'meta_campaign_update') {
+    const campaign=result.campaign;
+    const confirmed=result.localOnly===true&&result.externalUpdateConfirmed===false&&typeof campaign?.id==='string'&&!!campaign.id&&isEditableLocalMetaDraft(campaign);
+    result.operation=operation;result.campaignId=campaign?.id;
+    result.executionState=confirmed?'draft':'unknown';result.completionSatisfied=confirmed;result.externalUpdateConfirmed=false;
+    result.note=confirmed?'Configurația draftului a fost salvată local. Nu confirmă modificarea unei campanii la Meta.':'Rezultatul modificării nu confirmă un draft local eligibil sau o schimbare la Meta.';
   }
   if (operation === 'meta_campaign_pause') {
     const campaign = result.campaign, proof = campaign?.providerPauseVerification;

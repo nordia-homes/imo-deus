@@ -51,3 +51,11 @@ describe('confirmed domain result binding', () => {
     expect(() => resolveAction(action, [{ result: { script: 'Unreviewed text' } }])).toThrow('concreți');
   });
 });
+it.each(['published','paused','publishing','error','deleted'])('never confirms a Meta update from old status %s',status=>{
+ const receipt=operationResult('meta_campaign_update',{campaign:{id:'c',status,metaCampaignId:'123'},localOnly:true,externalUpdateConfirmed:false});
+ expect(receipt).toMatchObject({executionState:'unknown',completionSatisfied:false,externalUpdateConfirmed:false});
+});
+it('requires an explicit local draft receipt rather than an arbitrary success payload',()=>{
+ expect(operationResult('meta_campaign_update',{campaign:{id:'c',status:'draft'}})).toMatchObject({executionState:'unknown',completionSatisfied:false});
+ expect(operationResult('meta_campaign_update',{campaign:{id:'c',status:'draft'},localOnly:true,externalUpdateConfirmed:false})).toMatchObject({executionState:'draft',completionSatisfied:true,externalUpdateConfirmed:false});
+});

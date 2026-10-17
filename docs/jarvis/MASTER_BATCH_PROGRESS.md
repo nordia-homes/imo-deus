@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — separarea editării locale de efectele externe — 17 octombrie 2026
+
+Auditul pregătirii scenariului **0439** a identificat că ruta PATCH de campanie salvează exclusiv date CRM. Ruta generală nu este o aplicare de optimizare la Meta, iar o stare published din răspuns nu constituie dovadă de actualizare externă. Confirmarea Jarvis cere acum o chitanță explicită de editare locală și nu clasifică o stare publicată veche drept succes al modificării.
+
+Salvarea se face tranzacțional, după verificarea membrului actual, agenției, proprietății și stării draftului. Sunt acceptate doar draft/ready fără identificatori sau istoric de publicare; sunt excluse și jurnalele de creare rămase fără ID salvat. Actualizarea nu recreează o campanie ștearsă și nu rescrie proprietatea ori alte campanii. Datele locale nu pot șterge eroarea sau configurația necesară recuperării unei publicări parțiale.
+
+Editorul blochează modificarea configurației după începerea publicării. Reluarea unei publicări întrerupte folosește configurația persistentă, fără PATCH intermediar, și nu este oferită pentru o rezervare de publicare încă activă sau pentru campanii deja publicate. Backendul păstrează verificarea rezervării și recuperarea prin jurnal.
+
+Validare: **98 teste unitare și 100 de integrare** trecute, inclusiv ruta PATCH reală, acces revocat, jurnale incerte, ștergere concurentă, drafturi și materiale Jarvis și recuperarea publicării cu Meta simulat. Manifestul de paritate a fost regenerat și verificat; inventarul corpusului și buildul complet au trecut. ESLint pentru backend și fișierele noi trece; editorul păstrează cele șase constatări preexistente (o eroare și cinci avertismente, confirmate și pe HEAD), fără constatări noi după excluderea punctuală a regulilor respective în verificare.
+
+Aceasta este o corecție necesară înaintea aplicării optimizărilor, nu certificarea scenariului 0439. Inventarul rămâne **257/1000 dovezi locale**; nicio operație sau cheltuială Meta reală. Lot nepublicat în producție.
+
 ## Meta Ads — evaluare și recomandări de optimizare — 17 octombrie 2026
 
 Scenariile **0421, 0422 și 0438** evaluează perechea de campanii pe baza unor citiri Meta proaspete, în aceeași perioadă, monedă și regulă de atribuire. Obiectivul Meta trebuie să corespundă configurației CRM. Criteriul este CPL pentru leads și CPC pentru traffic (clicurile totale raportate, nu vizitele pe site). Campaniile de apeluri/mesaje și obiectivele incompatibile nu sunt clasificate prin indicatori substitutivi. Clasamentul este descriptiv, nu dovadă de rentabilitate, calitate a leadurilor sau semnificație statistică.

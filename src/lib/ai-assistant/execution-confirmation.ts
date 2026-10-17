@@ -4,6 +4,7 @@ export function executionConfirmation(results: Record<string, unknown>[]): strin
   return results.map(step => {
     if (['schedule_viewing', 'update_viewing'].includes(String(step.kind))) return viewingConfirmation([step]);
     const receipt = step.result as Record<string, unknown> | undefined;
+    if (receipt?.operation === 'meta_campaign_update' && receipt.localOnly === true && receipt.completionSatisfied === true && receipt.executionState === 'draft') return 'Configurația draftului Meta ' + receipt.campaignId + ' a fost salvată local. Nu au fost modificate reclame la Meta.';
     if (receipt?.operation === 'meta_campaign_publish') return receipt.executionState === 'succeeded' && receipt.publicationConfirmed === true ? 'Meta a confirmat crearea campaniei ' + receipt.campaignId + ', a setului de reclame, a reclamei și a materialului asociat. Obiectele sunt în pauză; livrarea și aprobarea reclamei nu sunt confirmate.' : 'Publicarea campaniei Meta nu este încă verificată. Este necesară verificarea stării înainte de o nouă trimitere.';
     if (receipt?.operation === 'meta_campaign_pause' && receipt.executionState === 'succeeded' && receipt.pauseConfirmed === true) return 'Meta a confirmat pauza campaniei ' + receipt.campaignId + '. Campania nu a fost ștearsă.';
     if (receipt?.operation === 'meta_campaign_remove' && receipt.executionState === 'succeeded' && receipt.localOnly === true && receipt.businessStatus === 'deleted') return 'Draftul local Meta ' + receipt.campaignId + ' a fost eliminat. Nu au fost șterse obiecte la Meta sau alte campanii.';
