@@ -1,0 +1,111 @@
+{
+  "scope": "Original master-0445: read-only CRM versus Meta diagnosis from verified campaign/ad set/creative/ad identities and associations; distinguishes observed location from unproven root cause.",
+  "executionMode": "deterministic",
+  "validation": {
+    "unitTests": 170,
+    "integrationTests": 95,
+    "cases": [
+      "disapproved ad with verified hierarchy",
+      "billing requirement and provider issues",
+      "review and processing are workflow states",
+      "paused/deleted/archived states are not automatically application faults",
+      "local paused state versus active provider",
+      "local draft/ready/publishing/error with existing provider hierarchy",
+      "multiple simultaneous observations preserved in chat",
+      "absent campaign identifier without provider calls",
+      "partial hierarchy marked insufficient",
+      "selected campaign and stale selection",
+      "access/grant/campaign changes reject diagnosis",
+      "unreadable child object does not establish blame",
+      "no mutation, no redispatch and replay without provider calls"
+    ]
+  },
+  "limitations": [
+    "Observed provider or CRM state does not prove root cause or delivery.",
+    "No live provider certification; local Firestore and synthetic Meta.",
+    "Unreadable or missing evidence remains explicitly unconfirmed."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0445",
+      "prompt": "Spune-mi dacă problema este în imoDeus sau la Meta.",
+      "versions": {
+        "prompt": "jarvis-169",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "200",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted application chat and local Firestore; synthetic Meta hierarchy with disapproved ad. Read-only evidence diagnosis without cause, delivery or live certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "60125634-eca3-4352-baa1-8c905023592a-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta: Meta raportează respingere pentru reclamă. Consultă detaliile obiectului în Meta Ads Manager. Starea nu dovedește cauza inițială sau o defecțiune generală Meta. Localizarea observației nu demonstrează cauza inițială. Nu atribui automat vina imoDeus sau Meta. Verificat la 2026-10-17 22:24, ora Bucureștiului. Nu am modificat campanii, bugete sau execuții.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaStatusReview",
+                "title": "Stare Meta verificată",
+                "rows": [
+                  {
+                    "id": "selected",
+                    "campaignName": "Selectată",
+                    "propertyId": "property",
+                    "localStatus": "published",
+                    "providerStatus": "ACTIVE",
+                    "effectiveStatus": "ACTIVE",
+                    "providerValidated": true,
+                    "hierarchyValidated": true,
+                    "providerObjects": [
+                      {
+                        "kind": "campaign",
+                        "id": "123",
+                        "status": "ACTIVE",
+                        "effectiveStatus": "ACTIVE"
+                      },
+                      {
+                        "kind": "adSet",
+                        "id": "124",
+                        "status": "ACTIVE",
+                        "effectiveStatus": "ACTIVE"
+                      },
+                      {
+                        "kind": "ad",
+                        "id": "126",
+                        "status": "ACTIVE",
+                        "effectiveStatus": "DISAPPROVED"
+                      }
+                    ],
+                    "checkedAt": "2026-10-17 22:24, București",
+                    "diagnosis": {
+                      "findings": [
+                        {
+                          "location": "Meta",
+                          "reason": "Meta raportează respingere pentru reclamă.",
+                          "nextStep": "Consultă detaliile obiectului în Meta Ads Manager. Starea nu dovedește cauza inițială sau o defecțiune generală Meta."
+                        }
+                      ],
+                      "causeConfirmed": false,
+                      "deliveryConfirmed": false,
+                      "certainty": "Localizarea observației nu demonstrează cauza inițială. Nu atribui automat vina imoDeus sau Meta."
+                    }
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T19:24:15.017Z"
+          }
+        }
+      ]
+    }
+  ]
+}

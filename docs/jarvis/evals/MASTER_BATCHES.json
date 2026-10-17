@@ -4239,7 +4239,11 @@
           "sourceNumber": 445,
           "request": "Spune-mi dacă problema este în imoDeus sau la Meta.",
           "requestSha256": "b0fa43fc6b69cc30554783d22573be5fd0282ff62dfb5c504a88719710d93640",
-          "endToEnd": "not_verified"
+          "endToEnd": "not_verified",
+          "liveExecutionEvidence": {
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_18.json",
+            "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
+          }
         },
         {
           "id": "master-0446",

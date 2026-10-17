@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — diagnostic între CRM și provider — 17 octombrie 2026
+
+Scenariul **0445** citește campania, setul, materialul și reclama prin verificarea existentă a identităților, contului și asocierilor. Raportează separat problemele observate explicit la Meta (respingere, facturare, WITH_ISSUES), diferențele față de starea CRM și datele insuficiente. Poate păstra simultan mai multe observații; cardul și conversația nu trunchiază detaliile diagnosticului.
+
+PENDING_REVIEW, IN_PROCESS și PREAPPROVED sunt etape ale fluxului, nu dovada unei erori imoDeus. Pauza, arhivarea și ștergerea sunt stări de configurare, fără atribuire automată a vinei. Publicarea în pauză este compatibilă cu statusul local published. O stare locală paused cu o campanie ACTIVE sau o stare locală de draft/eroare cu toate obiectele existente produce o observație de diferență CRM, nu o rescriere automată. Nicio stare ACTIVE nu certifică livrarea ori rezultatele comerciale.
+
+Campaniile fără ID Meta pot fi diagnosticate local: lipsa identificatorului este explicită și nu se pretinde o citire externă. Cu identificatori parțiali, concluzia rămâne limitată la obiectele citite. Un eșec de acces, conexiune sau citire nu este prezentat drept defecțiune a uneia dintre platforme. Cauza inițială rămâne nedemonstrată; nu se retrimit comenzi și nu se finalizează execuții incerte prin simpla diagnosticare.
+
+Validare: **170 teste unitare/UI și 95 de integrare** trecute. Build complet trecut (cod de ieșire 0), TypeScript, ESLint, paritate și inventar corpus verificate. Dovada [Meta lot 18](evals/META_EXECUTION_BATCH_18.json) adaugă un ID: **263/1000 dovezi locale** (133 cu model real și 130 deterministe). Firestore local și Meta simulat; fără certificare live sau integrală. Lot nepublicat în producție.
+
+Audit separat pentru **0429**: serviciul existent de postare a proprietății poate marca published pe baza răspunsului de creare, fără verificarea strictă a postării și fără recuperare durabilă completă a unui răspuns pierdut. Scenariul nu a fost conectat și nu este declarat executat în acest lot; necesită verificare și protecție împotriva duplicării înaintea finalizării.
+
 ## Meta Ads — inventar și reîmprospătare asseturi — 17 octombrie 2026
 
 Scenariile **0427 și 0428** citesc businessurile, conturile publicitare, paginile și conturile Instagram asociate prin serviciul existent al aplicației. Reîmprospătarea recitește Meta și afișează lista actuală în conversație. Nu modifică selecțiile salvate și nu publică o campanie. Dacă o selecție salvată nu mai apare în lista accesibilă conexiunii, Jarvis o semnalează fără înlocuire automată. Lista nu pretinde că include asseturi inaccesibile tokenului curent.
