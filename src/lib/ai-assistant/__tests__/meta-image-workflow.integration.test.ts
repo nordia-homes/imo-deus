@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ db: null as any, fetch: vi.fn(), actor: null as any }));
 vi.mock('@/firebase/admin', () => ({ get adminDb() { return mocks.db; } }));
 import { prepareMetaImageProposal, executeMetaImageProposal } from '@/lib/meta-image-workflow';
+vi.mock('@/lib/meta-image-download',()=>({downloadMetaImage:async()=>({bytes:Buffer.from([255,216,255,1]),mime:'image/jpeg',extension:'jpg'})}));
 import { chatTurn } from '../workspace';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { VERSIONS } from '../models';
@@ -44,6 +45,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('conversational Meta image
         const approval = { expectedRevision: hash((await campaign.get()).data()), propertyRevision: hash((await property.get()).data()), grantRevision: hash((await grant.get()).data()), newCreativeId: '5', imageHash: 'new', imageUrl: 'https://example.invalid/new.jpg' };
         const story = (image_hash: string) => ({ page_id: '7', link_data: { message: 'Identic', name: 'Titlu', link: 'https://example.invalid', image_hash } });
         const objects: Record<string, any> = { '1': { id: '1', account_id: '6', status: 'PAUSED', daily_budget: '5000' }, '2': { id: '2', account_id: '6', campaign_id: '1', status: 'PAUSED' }, '3': { id: '3', account_id: '6', campaign_id: '1', adset_id: '2', status: 'PAUSED', creative: { id: '4' } }, '4': { id: '4', account_id: '6', object_story_spec: story('old') }, '5': { id: '5', account_id: '6', object_story_spec: story('new') } };
+        const images:Record<string,unknown>[]=[];
         mocks.fetch.mockReset().mockImplementation(async (url: string, init?: RequestInit) => {
             const u = new URL(url);
             if (init?.method === 'HEAD') {
@@ -53,11 +55,13 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('conversational Meta image
             expect(u.origin).toBe('https://graph.facebook.com');
             const id = u.pathname.split('/').at(-1)!;
             if (init?.method === 'POST') {
-                const body = Object.fromEntries(new URLSearchParams(String(init.body)));
                 if (id === 'adimages') {
-                    expect(body.url).toBe(approval.imageUrl);
+                    expect(init.body).toBeInstanceOf(FormData);const file=(init.body as FormData).get('filename') as File;
+                    expect(file.name).toMatch(/^imo_[a-f0-9-]+[.]jpg$/);expect(Array.from(new Uint8Array(await file.arrayBuffer()))).toEqual([255,216,255,1]);
+                    images.push({name:file.name,account_id:'6',hash:'new',status:'ACTIVE'});
                     return Response.json({ hash: 'new' });
                 }
+                const body = Object.fromEntries(new URLSearchParams(String(init.body)));
                 if (id === 'adcreatives') {
                     expect(JSON.parse(body.object_story_spec)).toEqual(objects['5'].object_story_spec);
                     objects['5'].name = body.name;
@@ -68,6 +72,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('conversational Meta image
                 objects['3'].creative.id = '5';
                 return Response.json({ success: true });
             }
+            if (id === 'adimages')return Response.json({data:images});
             if (id === 'adcreatives')
                 return Response.json({ data: [objects['5']] });
             expect(objects[id]).toBeDefined();
@@ -78,7 +83,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('conversational Meta image
         const sessionId = randomUUID(), send = (prompt: string, requestId = randomUUID()) => chatTurn(ctx, { sessionId, requestId, prompt, currentRecord: { resource: 'properties', id: 'property' } });
         const prepare = () => prepareMetaImageProposal(agencyId, actor, { ...approval, campaignId: 'campaign' });
         const run = (proposalId: string) => executeMetaImageProposal(agencyId, 'campaign', actor, proposalId);
-        return { campaign, property, member, grant, objects, approval, ctx, actor, send, sessionId, prepare, run };
+        return { campaign, property, member, grant, objects, images, approval, ctx, actor, send, sessionId, prepare, run };
     }
     it('completes master-0439 through persisted selection, approval, real route and provider readback', async () => {
         const f = await fixture(), prompt = 'Aplică doar optimizarea pe care am aprobat-o.';
@@ -121,4 +126,15 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('conversational Meta image
     it('does not apply when membership changes during upload', async () => { const f = await fixture(), p = await f.prepare(), original = mocks.fetch.getMockImplementation()!; mocks.fetch.mockImplementation(async (url, init) => { const response = await original(url, init); if (init?.method === 'POST' && new URL(url).pathname.endsWith('/adimages'))
         await f.member.update({ role: 'agent' }); return response; }); await expect(f.run(p.proposalId)).rejects.toThrow(); expect(f.objects['3'].creative.id).toBe('4'); });
     it('rejects another actor using the proposal', async () => { const f = await fixture(), p = await f.prepare(); mocks.fetch.mockClear(); await expect(executeMetaImageProposal(f.ctx.agencyId, 'campaign', { uid: 'someone', role: 'admin' }, p.proposalId)).rejects.toThrow(); expect(mocks.fetch).not.toHaveBeenCalled(); });
+
+    it('continues the full chat after a lost image upload response with only one upload',async()=>{
+     const f=await fixture(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const result=await original(url,init);if(init?.method==='POST'&&new URL(url).pathname.endsWith('/adimages'))throw Error('lost');return result;});
+     await f.send('Aplică doar optimizarea pe care am aprobat-o.');const offer=await f.send('Imagine optimizare Meta: campaign/0');const result=await f.send('Confirm optimizarea Meta: '+offer.message.cards![0].rows[0].id);
+     expect(result.message.text).toContain('Meta a confirmat schimbarea fotografiei');expect((await f.campaign.get()).data().metaCreativeId).toBe('5');expect(mocks.fetch.mock.calls.filter(([url,init])=>init?.method==='POST'&&new URL(url).pathname.endsWith('/adimages'))).toHaveLength(1);
+    });
+    it('reconciles later visibility without another upload or download',async()=>{const f=await fixture(),p=await f.prepare(),original=mocks.fetch.getMockImplementation()!;let visible=false;mocks.fetch.mockImplementation(async(url,init)=>{const u=new URL(url);if(u.pathname.endsWith('/adimages')&&init?.method!=='POST')return Response.json({data:visible?f.images:[]});const result=await original(url,init);if(init?.method==='POST'&&u.pathname.endsWith('/adimages'))throw Error('lost');return result;});await expect(f.run(p.proposalId)).rejects.toThrow();visible=true;expect((await f.run(p.proposalId)).proof.onlyImageChanged).toBe(true);expect(mocks.fetch.mock.calls.filter(([url,init])=>init?.method==='POST'&&new URL(url).pathname.endsWith('/adimages'))).toHaveLength(1);});
+    it('recovers from the second page using only a cursor on the fixed account endpoint',async()=>{const f=await fixture(),p=await f.prepare(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const u=new URL(url);if(u.pathname.endsWith('/adimages')&&init?.method!=='POST'){expect(u.searchParams.get('name')).toBe(f.images[0].name);return Response.json(u.searchParams.has('after')?{data:f.images}:{data:[],paging:{next:'https://untrusted.invalid/ignored',cursors:{after:'second'}}});}const result=await original(url,init);if(init?.method==='POST'&&u.pathname.endsWith('/adimages'))throw Error('lost');return result;});expect((await f.run(p.proposalId)).proof.onlyImageChanged).toBe(true);});
+    it.each(['account','deleted','missing-hash','duplicate','paging-loop','missing-cursor','missing-data'])('does not adopt ambiguous image recovery: %s',async mode=>{const f=await fixture(),p=await f.prepare(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const u=new URL(url);if(u.pathname.endsWith('/adimages')&&init?.method!=='POST'){const row={...f.images[0]};if(mode==='account')row.account_id='999';if(mode==='deleted')row.status='DELETED';if(mode==='missing-hash')delete row.hash;return Response.json(mode==='missing-data'?{}:mode==='paging-loop'||mode==='missing-cursor'?{data:[row],paging:{next:'next',cursors:mode==='paging-loop'?{after:'same'}:{}}}:{data:mode==='duplicate'?[row,{...row,hash:'another'}]:[row]});}const result=await original(url,init);if(init?.method==='POST'&&u.pathname.endsWith('/adimages'))throw Error('lost');return result;});await expect(f.run(p.proposalId)).rejects.toThrow();expect(f.objects['3'].creative.id).toBe('4');expect((await f.campaign.get()).data().metaCreativeId).toBe('4');});
+    it('does not reinterpret legacy uncertain uploads as new uploads',async()=>{const f=await fixture(),p=await f.prepare();await f.campaign.collection('imageProposals').doc(p.proposalId).update({uploadStartedAt:new Date().toISOString()});await expect(f.run(p.proposalId)).rejects.toThrow('veche');expect(mocks.fetch.mock.calls.some(([,init])=>init?.method==='POST')).toBe(false);});
+    it('rechecks membership before saving a recovered image',async()=>{const f=await fixture(),p=await f.prepare(),original=mocks.fetch.getMockImplementation()!;mocks.fetch.mockImplementation(async(url,init)=>{const result=await original(url,init);if(new URL(url).pathname.endsWith('/adimages')){if(init?.method==='POST')throw Error('lost');await f.member.update({role:'agent'});}return result;});await expect(f.run(p.proposalId)).rejects.toThrow();expect(f.objects['3'].creative.id).toBe('4');expect((await f.campaign.collection('imageProposals').doc(p.proposalId).get()).data().imageHash).toBeUndefined();});
 });

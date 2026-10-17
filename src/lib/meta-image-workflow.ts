@@ -1,3 +1,4 @@
+import { ensureMetaImageUpload } from './meta-image-upload';
 import { createHash } from 'node:crypto';
 import { adminDb } from '@/firebase/admin';
 import { applyMetaImageOptimization, metaImageWorkflowProvider } from './meta-marketing';
@@ -74,15 +75,7 @@ export async function executeMetaImageProposal(agencyId: string, campaignId: str
         await adminDb.runTransaction(guard);
     };
     await checkSource();
-    let imageHash = proposal.imageHash as string | undefined;
-    if (!imageHash) {
-        await adminDb.runTransaction(async (tx) => { await guard(tx); const current = await tx.get(ref); if (current.data()?.uploadStartedAt)
-            throw Error('Încărcarea imaginii are rezultat incert; nu o repet automat.'); tx.update(ref, { uploadStartedAt: new Date().toISOString() }); });
-        imageHash = await provider.upload(selection.imageUrl) || undefined;
-        if (!imageHash)
-            throw Error('Meta nu a confirmat imaginea.');
-        await adminDb.runTransaction(async (tx) => { await guard(tx); tx.update(ref, { imageHash, uploadedImageUrl: selection.imageUrl }); });
-    }
+    const imageHash = await ensureMetaImageUpload({ref,accountId:provider.accountId,imageUrl:selection.imageUrl,guard,download:()=>provider.download(selection.imageUrl),upload:provider.upload,list:provider.listImages});
     await checkSource();
     const story = structuredClone(proposal.source.creative.object_story_spec);
     story.link_data.image_hash = imageHash;

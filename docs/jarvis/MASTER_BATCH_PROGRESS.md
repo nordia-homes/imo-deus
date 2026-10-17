@@ -22,6 +22,18 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — recuperarea răspunsului pierdut la încărcarea fotografiei — 17 octombrie 2026
+
+Extensia scenariului **0439** înlocuiește încărcarea URL-ului cu încărcarea unui fișier multipart cu nume unic. Numele, contul, URL-ul sursă și digestul SHA-256 al octeților sunt salvate înaintea POST-ului. Dacă răspunsul se pierde, serviciul caută numele în biblioteca de imagini a contului și salvează hashul Meta numai după identificarea fără ambiguitate a unei imagini ACTIVE. Paginarea folosește doar cursorul pe endpointul fix al contului; nu urmărește URL-ul next furnizat de răspuns.
+
+Recuperarea continuă în aceeași execuție când imaginea este deja vizibilă. Dacă apare ulterior, reluarea aceleiași propuneri verifică biblioteca fără alt POST. Contul greșit, imaginea ștearsă, hashul lipsă, rezultate ambigue, paginarea incompletă și accesul revocat nu produc o confirmare falsă. Încărcările istorice incerte fără nume de corelare rămân nerepetate; nu pot fi asociate retrospectiv prin presupuneri.
+
+Descărcarea acceptă URL-uri HTTPS directe și semnături JPEG/PNG/WebP, maximum 8 MB, cu limită de timp. Adresele DNS sunt validate și conexiunea este fixată pe o adresă publică validată; redirecturile nu sunt urmate. Nu se folosește doar MIME-ul declarat de server. Fișierul încărcat este cel al cărui digest a fost salvat în intenție; sursa externă nu este declarată imuabilă în timp.
+
+Validare: **71 teste unitare/UI și 55 de integrare** trecute, TypeScript, ESLint, paritate și inventar corpus verificate. Build complet trecut (cod de ieșire 0). Dovada [Meta lot 14](evals/META_EXECUTION_BATCH_14.json) extinde aceeași cerere originală, fără dublarea numărului de scenarii: **258/1000 dovezi locale**. Firestore local și Meta simulat, fără operații reale, fără certificare live. Lot nepublicat în producție.
+
+Contractele consultate: [Meta AdAccount — biblioteca de imagini](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/adaccount.py) și [Meta AdImage — fișierul încărcat](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/adimage.py).
+
 ## Meta Ads — optimizarea imaginii prin conversație și aprobare concretă — 17 octombrie 2026
 
 Scenariul **0439** are acum un flux conversațional pentru înlocuirea unei fotografii într-o reclamă cu o singură imagine și ierarhie PAUSED. Jarvis oferă fotografiile alternative din proprietatea curentă, citește configurația Meta, salvează o propunere proprie actorului și prezintă fotografia actuală și cea propusă. Confirmarea este legată de identificatorul exact al propunerii și de contextul proprietății. Cererea inițială nu aprobă o fotografie încă nealeasă.

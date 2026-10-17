@@ -1,0 +1,164 @@
+{
+  "scope": "Extension of master-0439: durable named multipart image upload, recovery after lost response and later visibility, strict paginated account-library matching. Local persisted chat and synthetic Meta only.",
+  "executionMode": "deterministic",
+  "recoveryValidation": {
+    "file": "src/lib/ai-assistant/__tests__/meta-image-workflow.integration.test.ts",
+    "integrationTests": 55,
+    "unitTests": 71,
+    "cases": [
+      "lost upload response through full chat",
+      "later visibility without another POST",
+      "second page through fixed account endpoint",
+      "wrong account",
+      "deleted image",
+      "missing hash",
+      "ambiguous hashes",
+      "pagination loop",
+      "missing cursor",
+      "missing data",
+      "legacy uncertain upload without correlation",
+      "revoked membership during reconciliation"
+    ]
+  },
+  "limitations": [
+    "Legacy uncertain uploads without a correlation name are not redispatched.",
+    "A missing or ambiguous provider record remains unconfirmed.",
+    "No live Meta certification or new corpus scenario count."
+  ],
+  "finalRuns": [
+    {
+      "scenarioId": "master-0439",
+      "prompt": "Aplică doar optimizarea pe care am aprobat-o.",
+      "versions": {
+        "prompt": "jarvis-165",
+        "routing": "luna-first-2",
+        "policy": "request-crm-14",
+        "tools": "196",
+        "memory": "2",
+        "skills": "3"
+      },
+      "executionVerified": true,
+      "environment": "Persisted chat, actual route and domain services, local Firestore, synthetic Meta. Single image replacement in PAUSED hierarchy only; no live certification.",
+      "runs": [
+        {
+          "phase": "original",
+          "final": {
+            "id": "752f7d29-9c5c-4652-ba9d-4ed2f0b8e0ec-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Alege fotografia concretă. Voi verifica configurația la Meta și îți voi prezenta schimbarea pentru aprobare, fără a modifica reclama.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaImageSelection",
+                "title": "Optimizare imagine Meta",
+                "rows": [
+                  {
+                    "id": "campaign/0",
+                    "campaignId": "campaign",
+                    "campaignName": "campaign",
+                    "imageUrl": "https://example.invalid/new.jpg",
+                    "expectedRevision": "9779f9e616613c2eda98f0d40291134a72a79a5c871d10de7f875fd483be4bf8",
+                    "propertyRevision": "1f6936eb0f81efbb1d8ef75be66c6cde5107f0fa909d269f44e7cedbdeab28b6",
+                    "grantRevision": "5f2f95e2a8078e02c29b5415e203ce8908d353eaa16fd0922cacd18b09991ba2",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T18:24:15.055Z"
+          }
+        },
+        {
+          "phase": "selection",
+          "final": {
+            "id": "cb8a68e5-f12c-4538-9e69-4804a30ecd17-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Confirmă schimbarea acestei fotografii. Textul, destinația, bugetul și audiența rămân cele verificate. Campania rămâne în pauză; nu confirm livrare sau rezultate comerciale.",
+            "cards": [
+              {
+                "type": "data",
+                "source": "metaImageApproval",
+                "title": "Optimizare imagine Meta",
+                "rows": [
+                  {
+                    "id": "3eaeedf1815d75b39847118780611fbd85b4512a4e3dd7ea8c96d7932d9d05b7",
+                    "proposalId": "3eaeedf1815d75b39847118780611fbd85b4512a4e3dd7ea8c96d7932d9d05b7",
+                    "campaignId": "campaign",
+                    "campaignName": "campaign",
+                    "imageUrl": "https://example.invalid/new.jpg",
+                    "previousImageUrl": "https://example.invalid/old.jpg",
+                    "primaryText": "Identic",
+                    "headline": "Titlu",
+                    "destinationUrl": "https://example.invalid",
+                    "budgetAmount": 50,
+                    "currency": null,
+                    "sourceRevision": "6d62e6a02227c23936895d770148f9409a387ec5bcf279f05539b48e77f656f1",
+                    "contextPropertyId": "property"
+                  }
+                ],
+                "complete": true,
+                "outputType": "CAMPAIGN_CARD"
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T18:24:15.518Z"
+          }
+        },
+        {
+          "phase": "approval",
+          "final": {
+            "id": "93b2cdfc-f89e-48cb-907f-7f4145123819-assistant",
+            "role": "assistant",
+            "outputType": "TEXT",
+            "text": "Meta a confirmat schimbarea fotografiei aprobate pentru campania campaign. Configurația verificată a fost păstrată, iar reclama rămâne în pauză. Livrarea și rezultatele comerciale nu sunt confirmate.\nAcțiuni executate: 1. Nu au fost trimise mesaje sau publicate anunțuri.",
+            "cards": [
+              {
+                "type": "data",
+                "outputType": "ACTION_RESULT",
+                "title": "Rezultatele cererii",
+                "source": "autonomy",
+                "rows": [
+                  {
+                    "step": 1,
+                    "kind": "existing_operation",
+                    "result": {
+                      "campaignId": "campaign",
+                      "proposalId": "3eaeedf1815d75b39847118780611fbd85b4512a4e3dd7ea8c96d7932d9d05b7",
+                      "proof": {
+                        "campaignId": "1",
+                        "adSetId": "2",
+                        "adId": "3",
+                        "oldCreativeId": "4",
+                        "newCreativeId": "5",
+                        "accountId": "6",
+                        "imageHash": "new",
+                        "checkedAt": "2026-10-17T18:24:17.047Z",
+                        "adStatus": "PAUSED",
+                        "onlyImageChanged": true,
+                        "deliveryConfirmed": false
+                      },
+                      "executionState": "succeeded",
+                      "operation": "meta_campaign_optimize_image",
+                      "completionSatisfied": true,
+                      "imageChangeConfirmed": true,
+                      "deliveryConfirmed": false,
+                      "verifiedAt": "2026-10-17T18:24:17.115Z",
+                      "evidenceSource": "domain_handler"
+                    }
+                  }
+                ]
+              }
+            ],
+            "accessRefs": [],
+            "createdAt": "2026-10-17T18:24:17.123Z"
+          }
+        }
+      ]
+    }
+  ]
+}

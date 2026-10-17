@@ -4159,7 +4159,7 @@
           "requestSha256": "3db4ea4f5721c584545d0c9bb223bbde19b3a32cca00020d546ff9e4b1ea4095",
           "endToEnd": "not_verified",
           "liveExecutionEvidence": {
-            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_13.json",
+            "file": "docs/jarvis/evals/META_EXECUTION_BATCH_14.json",
             "scope": "Original prompt through persisted application chat and local Firestore; deterministic execution with scenario-specific read or persisted-state assertions. No model calls or production certification."
           }
         },

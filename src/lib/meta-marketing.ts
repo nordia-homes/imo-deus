@@ -1797,7 +1797,14 @@ export async function metaImageWorkflowProvider(agencyId:string){
  const accountId=normalizeAdAccountId(integration.selectedAdAccount.id);
  return {integration,accountId,
  read:(id:string,fields:string)=>metaRequest<Record<string,any>>('/'+id+'?fields='+encodeURIComponent(fields),accessToken,{signal:AbortSignal.timeout(15000)}),
- upload:(url:string)=>uploadMetaImage(accountId,accessToken,url),
+ download:async(url:string)=>(await import('./meta-image-download')).downloadMetaImage(url),
+ upload:async(image:{bytes:Buffer;mime:string},name:string)=>{
+  const form=new FormData();form.set('filename',new Blob([new Uint8Array(image.bytes)],{type:image.mime}),name);
+  const response=await fetch(GRAPH_API_BASE_URL+'/'+accountId+'/adimages',{method:'POST',headers:{Authorization:'Bearer '+accessToken},body:form,signal:AbortSignal.timeout(20000)});
+  const result=await safeJson(response) as MetaCreateResponse;if(!response.ok)throw Error('Încărcarea Meta nu este confirmată.');
+  const values=Object.values(result.images||{});return result.hash||(values.length===1?values[0]?.hash:null)||null;
+ },
+ listImages:(name:string,after?:string)=>metaRequest<{data?:Record<string,unknown>[];paging?:{next?:string;cursors?:{after?:string}}}>('/'+accountId+'/adimages?fields=account_id,name,hash,status&limit=100&name='+encodeURIComponent(name)+(after?'&after='+encodeURIComponent(after):''),accessToken,{signal:AbortSignal.timeout(15000)}),
  create:(params:Record<string,string|number|boolean|null|undefined>)=>metaFormRequest<{id?:string}>('/'+accountId+'/adcreatives',accessToken,params),
  list:(after?:string)=>metaRequest<{data?:Record<string,unknown>[];paging?:{next?:string;cursors?:{after?:string}}}>('/'+accountId+'/adcreatives?fields=id,name,account_id&limit=100'+(after?'&after='+encodeURIComponent(after):''),accessToken,{signal:AbortSignal.timeout(15000)})
  };
