@@ -8,7 +8,7 @@ import { matchesCrmSearch } from '@/lib/crm/search-text';
 import { isStepReference } from './dependencies';
 import { FieldPath } from 'firebase-admin/firestore';
 
-export type AssistantContext = Awaited<ReturnType<typeof requireAgencyUserFromBearerToken>> & { authorization: string; prospectingRequest?: { sessionId: string; requestId: string; prompt: string }; agentJobFence?: import('@/lib/crm/automation-fence').AutomationFence; automationFence?: import('@/lib/crm/automation-fence').AutomationFence; appOrigin?: string; agentBudget?: import('./budget').AgentBudget };
+export type AssistantContext = Awaited<ReturnType<typeof requireAgencyUserFromBearerToken>> & { authorization: string; executionScope?: string; prospectingRequest?: { sessionId: string; requestId: string; prompt: string }; agentJobFence?: import('@/lib/crm/automation-fence').AutomationFence; automationFence?: import('@/lib/crm/automation-fence').AutomationFence; appOrigin?: string; agentBudget?: import('./budget').AgentBudget };
 export async function assistantContext(request: Request): Promise<AssistantContext> {
   const authorization = request.headers.get('authorization') || '';
   const context = await requireAgencyUserFromBearerToken(authorization);

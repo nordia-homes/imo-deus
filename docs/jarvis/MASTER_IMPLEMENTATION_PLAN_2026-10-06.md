@@ -1316,3 +1316,8 @@ Distinct offer metadata now binds semantic property/account choices to the corre
 ### Mixed prepared actions and clarification — 18 October 2026
 
 Unresolved semantic choices now retain candidate actions without exposing an executable partial plan. Candidates, conditions and resource references survive checkpoint persistence; selections return them to planning for fresh validation. Evidence: 41 unit/component checks and 53 emulator checks, including eight deferred actions and idempotent request replay through the real workspace with a controlled planner. Live completion after re-planning, earlier completed-effect reconciliation and planner-loop checkpoints remain open. No deployment or corpus certification increase. Details and rollback: JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
+
+
+### CRM creation receipts across named continuations — 18 October 2026
+
+Validated named choices now inherit an internal execution scope. Exact buyer/property/viewing creations reuse canonical scoped ledger keys across request IDs, with occurrence counters and current record-access checks. Emulator evidence covers creating one buyer, adding one dependent viewing on continuation and repeating both without duplicates. Results distinguish reused receipts from new effects. Evidence: 54 unit/autonomy plus 54 emulator checks. This is not semantic equivalence, free-text continuation, other mutation/provider reconciliation or planner-loop persistence. No deployment or corpus certification increase. Details and rollback: JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.

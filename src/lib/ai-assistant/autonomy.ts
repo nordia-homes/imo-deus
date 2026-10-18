@@ -1,3 +1,4 @@
+import { scopedCreationKey } from './execution-scope';
 import { semanticActionDecision, type SemanticAuthority } from './semantic-authority';
 import { metaImageAction, metaImageApproved } from './meta-image';
 import { metaPublishAction, metaPublishApproved } from './meta-publish';
@@ -20,7 +21,7 @@ import { templateCommand } from './template-draft';
 import { draftSendAction, messageDraftCommand } from './message-draft';
 import { simpleConversationEdit, requestedConversationEdit } from './conversation-edit';
 import { simpleConversationUpdate, requestedConversationUpdate } from './conversation-state';
-import { collectionFor, type AssistantContext } from './access';
+import { collectionFor, getResource, type AssistantContext } from './access';
 import { actionSchema, normalized, type AssistantAction } from './contracts';
 import { executeAction } from './actions';
 import { resolveAction } from './dependencies';
@@ -126,6 +127,7 @@ function remapReferences(value: unknown, completed: Record<string, unknown>[]): 
 // Optional non-CRM autonomy is set only by authenticated UI; CRM scope comes from the request.
 export async function executeSafePrefix(ctx: AssistantContext, requestId: string, actions: AssistantAction[], prompt: string, semanticAuthority?: SemanticAuthority) {
   const results: Record<string, unknown>[] = [];
+  const occurrences=new Map<string,number>();
   const policy = await autonomyPolicy(ctx);
   const independentProspecting = actions.length > 0 && actions.every(action => action.kind === 'existing_operation' && action.operation === 'message_send' && requestAuthorizedCrmAction(action) && explicitlyRequestedSafeAction(action, prompt)) && !JSON.stringify(actions).includes('@step:');
   try {
@@ -141,13 +143,24 @@ export async function executeSafePrefix(ctx: AssistantContext, requestId: string
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');
       const resolved = continuePlanRevision(resolveAction(action, results), results);
+      const scopedKey=scopedCreationKey(ctx.executionScope,resolved,occurrences);
+      const prior=scopedKey ? await collectionFor(ctx,'assistantExecutions').doc(scopedKey).get() : undefined;
+      const reused=Boolean(prior?.exists && prior.data()?.status==='completed');
+      if (reused) {
+        const receipt=prior!.data()!.result;
+        const resource=resolved.kind==='create_contact'?'contacts':resolved.kind==='create_property'?'properties':'viewings';
+        const id=receipt?.[resolved.kind==='create_contact'?'contactId':resolved.kind==='create_property'?'propertyId':'viewingId'];
+        if (typeof id !== 'string') throw new Error('Lipsește referința rezultatului anterior.');
+        const current=await getResource(ctx,resource,id);
+        if (current.deletedAt) throw new Error('Rezultatul anterior nu mai este disponibil.');
+      }
       let result;
-      try { result = await executeAction(ctx, resolved, `${requestId}-safe-${results.length}`); }
+      try { result = await executeAction(ctx, resolved, scopedKey || `${requestId}-safe-${results.length}`); }
       catch (error) {
         if (!independentProspecting || !confirmedQueueRejection(error)) throw error;
         result = { operation: 'message_send', executionState: 'failed', queueOutcome: 'not_queued', reason: error.message, conversationId: action.kind === 'existing_operation' ? action.params.conversationId : null };
       }
-      results.push({ step: results.length + 1, kind: action.kind, result });
+      results.push({ step: results.length + 1, kind: action.kind, result, ...(reused ? {reused:true} : {}) });
       if (conversationSyncAction(action) && result.complete === false) return { actions: [] as AssistantAction[], results, blocked: true };
     }
     return { actions: actions.slice(results.length).map(action => continuePlanRevision(actionSchema.parse(remapReferences(action, results)), results)), results, blocked: false };

@@ -1,3 +1,4 @@
+import { executionScope } from '../execution-scope';
 import * as plannerModule from '../planner';
 import { dispatchTool } from '../tool-dispatch';
 import { OpenAIAdapter } from '../provider';
@@ -86,10 +87,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     try {
       const input={sessionId,requestId:randomUUID(),prompt:namedChoiceText('facebookSemanticAccount',selected),choice:{messageId:'offer',source:'facebookSemanticAccount' as const,rowId:String(selected.id),offerId:card.choiceOfferId},currentRecord:null};
       const firstReply=await chatTurn(f.ctx,input);
+      expect(firstReply.message.executionScope).toMatch(/^[a-f0-9]{64}$/);
       const remaining=firstReply.message.cards!.filter(card=>card.choiceSource==='facebookSemanticAccount');
       expect(remaining).toHaveLength(1);expect(remaining[0].choiceOfferId).toBe(otherCard.choiceOfferId);
       const secondRow=remaining[0].rows[0];
-      await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:namedChoiceText('facebookSemanticAccount',secondRow),choice:{messageId:firstReply.message.id,source:'facebookSemanticAccount',rowId:String(secondRow.id),offerId:remaining[0].choiceOfferId},currentRecord:null});
+      const secondReply=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:namedChoiceText('facebookSemanticAccount',secondRow),choice:{messageId:firstReply.message.id,source:'facebookSemanticAccount',rowId:String(secondRow.id),offerId:remaining[0].choiceOfferId},currentRecord:null});
+      expect(secondReply.message.executionScope).toBe(firstReply.message.executionScope);
       expect(model).toHaveBeenCalledTimes(2);
       expect(JSON.stringify(model.mock.calls[1])).toContain('other');
       expect(model).toHaveBeenCalled();const supplied=JSON.stringify(model.mock.calls);
@@ -122,6 +125,31 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       expect(planner.mock.calls[1][1]).toContain('Cumpărător 7');expect(planner.mock.calls[1][1]).toContain('NEEXECUTAȚI');
       expect((await f.agency.collection('contacts').get()).empty).toBe(true);expect((await f.jobs.get()).empty).toBe(true);expect(mocks.fetch).not.toHaveBeenCalled();
     } finally {planner.mockRestore();}
+  });
+  it('reuses a completed buyer creation across continuation request IDs and separates a new goal',async()=>{
+    const f=await fixture(),scope=executionScope('session','original');
+    const ctx={...f.ctx,executionScope:scope};
+    const action={kind:'create_contact' as const,name:'Matei Alin',phone:'0712345678'};
+    const first=await executeSafePrefix(ctx,'first',[action],'Adaugă cumpărătorul Matei Alin.');
+    expect(first.results).toHaveLength(1);expect(first.blocked).toBe(false);
+    const again=await executeSafePrefix(ctx,'second',[action],'Adaugă cumpărătorul Matei Alin.');
+    expect(again.results[0]).toMatchObject({reused:true,result:first.results[0].result});
+    expect((await f.agency.collection('contacts').get()).size).toBe(1);
+    await f.property.update({status:'Activ'});
+    const viewing={kind:'schedule_viewing' as const,propertyId:'property',contactId:'@step:1:contactId',viewingDate:'2030-01-01T05:30:00.000Z',duration:60,notes:''};
+    const scheduled=await executeSafePrefix(ctx,'viewing',[action,viewing],'Adaugă cumpărătorul și programează vizionarea.');
+    expect(scheduled.blocked).toBe(false);expect(scheduled.results).toHaveLength(2);expect(scheduled.results[0].reused).toBe(true);
+    const repeated=await executeSafePrefix(ctx,'viewing-retry',[action,viewing],'Adaugă cumpărătorul și programează vizionarea.');
+    expect(repeated.results).toHaveLength(2);expect(repeated.results.every(row=>row.reused)).toBe(true);
+    expect((await f.agency.collection('viewings').get()).size).toBe(1);expect((await f.agency.collection('contacts').get()).size).toBe(1);
+    const independent=await executeSafePrefix({...ctx,executionScope:executionScope('session','new')},'third',[action],'Adaugă cumpărătorul Matei Alin.');
+    expect(independent.blocked).toBe(true);expect(independent.results).toEqual([]);
+    expect((await f.agency.collection('contacts').get()).size).toBe(1);
+    const id=(first.results[0].result as any).contactId;
+    await f.agency.collection('contacts').doc(id).delete();
+    const missing=await executeSafePrefix(ctx,'fourth',[action],'Adaugă cumpărătorul Matei Alin.');
+    expect(missing.blocked).toBe(true);expect(missing.results).toEqual([]);
+    expect((await f.agency.collection('contacts').get()).size).toBe(0);expect(mocks.fetch).not.toHaveBeenCalled();
   });
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
   it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {

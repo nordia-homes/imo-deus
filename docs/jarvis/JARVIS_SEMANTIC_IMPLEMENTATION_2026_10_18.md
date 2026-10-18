@@ -151,3 +151,19 @@ Limits: this defers the whole prepared batch until semantic choices are resolved
 Rollback: revert this lot's commit or inspect 840dad9890855f954968cbfb04b12fe5c1cfd344 in a separate worktree. Preserve CRM data, request checkpoints and execution ledgers. Deferred candidates must not be replayed as executable operations during rollback.
 
 Final deferred-plan verification: full npm run build passed, including TypeScript and page generation. The existing standalone playwright-core copy skip remains; production browser packaging is not certified. The 94 checks above passed; no deployment or live-model completion claim.
+
+
+## Continuation: exact CRM creation receipts across named continuations
+
+Local implementation after 87c6cb3cbac8873be19b3f313e5501761c893b2a. Policy request-crm-23 / tools 211. No deployment.
+
+- Workspace responses now retain an internal execution scope. A validated named choice inherits the scope from its authorized source response; an independent request gets a distinct scope. This metadata is not accepted as browser authority or displayed as a business name.
+- Exact create_contact, create_property and schedule_viewing commands use stable ledger keys derived from scope, canonical resolved payload and occurrence number. Reordering different commands does not change their keys. Repeated identical occurrences within one plan retain distinct keys. Other action kinds keep their existing keys and domain behavior.
+- Existing executor ledgers remain authoritative. A completed receipt is reused only after checking that its CRM record remains accessible and is not soft-deleted. Role/membership and payload bindings still run. Missing/deleted records stop continuation rather than being silently recreated. Reused steps are marked separately in results, and the workspace distinguishes newly executed actions from earlier confirmed steps.
+- Verification: 54 unit/autonomy checks and 54 Firestore emulator integration checks passed (108 distinct checks). The new integration creates a buyer, reuses that buyer under a new request ID, schedules a viewing using the reused contactId dependency, then repeats both commands: exactly one contact and one viewing remain. A separately scoped request is still subject to the existing duplicate-phone protection; the initial test expectation was corrected, not that protection. Deleting the original contact prevents automatic recreation on replay. Named-choice chat integration verifies scope inheritance across successive choices. No live-model or external provider call occurred.
+
+Limits: equivalence is exact canonical action payload plus occurrence, not arbitrary semantic equivalence. Changed notes, fields or wording inside action values are not automatically merged. Plain-text 'continue' without a validated named choice does not yet inherit this scope. Other mutations, provider sends, older pre-scope receipts, durable goal reconciliation and planner-loop checkpoints remain separate work. Real live-language success and all 1000 examples are not certified.
+
+Rollback: revert this lot's commit or inspect 87c6cb3cbac8873be19b3f313e5501761c893b2a in a separate worktree. Preserve the goal-scoped ledger records and CRM data. Do not replay in-progress scoped workflows using old key generation; inspect their saved effects before resuming under an older version. No destructive migration.
+
+Final scoped-execution verification: full npm run build passed, including TypeScript and page generation. ESLint passed with zero warnings; diff and parity checks passed. The existing standalone playwright-core copy skip remains, so production browser packaging is not certified. All 108 checks above passed; no deployment.
