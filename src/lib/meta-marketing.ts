@@ -232,13 +232,14 @@ async function metaRequest<T>(path: string, accessToken: string, init?: RequestI
   return payload as T;
 }
 
-async function metaFormRequest<T>(path: string, accessToken: string, params: Record<string, string | number | boolean | null | undefined>) {
+async function metaFormRequest<T>(path: string, accessToken: string, params: Record<string, string | number | boolean | null | undefined>, init?: RequestInit) {
   const body = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value === null || value === undefined) return;
     body.set(key, String(value));
   });
   return metaRequest<T>(path, accessToken, {
+    ...init,
     method: 'POST',
     body: body.toString(),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -678,6 +679,19 @@ export async function publishPropertyToFacebookPage(params: {
   const publishedImageCount = publishVideo ? 0 : images.length;
   const now = nowIso();
 
+  if(!publishVideo){
+    if(!params.requestedByUid)throw Error('Lipsește actorul publicării.');
+    const {publishVerifiedPropertyGallery}=await import('./meta-property-post');
+    const {pageAccessToken,pageName}=await getSelectedPageAccessToken(selectedPage.id,accessToken);
+    const fields='id,from,is_published,message,link,permalink_url,attachments{target{id},subattachments{target{id}}}';
+    const read=(path:string)=>metaRequest<any>(path,pageAccessToken,{signal:AbortSignal.timeout(15000)});
+    return publishVerifiedPropertyGallery({propertyRef:propertySnapshot.ref,grantRef:getPrivateDocRef(params.agencyId),memberRef:adminDb.collection('users').doc(params.requestedByUid),agencyId:params.agencyId,uid:params.requestedByUid,pageId:selectedPage.id,pageName,message,destinationUrl,images,property:propertySnapshot.data()!,grant:integration,provider:{
+      upload:(url,caption)=>metaFormRequest('/'+selectedPage.id+'/photos',pageAccessToken,{url,published:false,caption},{signal:AbortSignal.timeout(20000)}),
+      create:(text,ids)=>metaFormRequest('/'+selectedPage.id+'/feed',pageAccessToken,Object.fromEntries([['message',text],...(ids.length?ids.map((id,index)=>['attached_media['+index+']',JSON.stringify({media_fbid:id})]):[['link',destinationUrl]])]),{signal:AbortSignal.timeout(20000)}),
+      read:id=>read('/'+id+'?fields='+encodeURIComponent(fields)),
+      list:after=>read('/'+selectedPage.id+'/published_posts?fields='+encodeURIComponent(fields)+'&limit=100'+(after?'&after='+encodeURIComponent(after):''))
+    }});
+  }
   await propertySnapshot.ref.set(
     {
       metaFacebookPost: {

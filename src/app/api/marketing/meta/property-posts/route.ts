@@ -4,13 +4,9 @@ import { createDemoBlockedResponse, isDemoAgencyId } from '@/lib/demo/guards';
 export const runtime = 'nodejs';
 
 function formatError(error: unknown) {
-  if (error && typeof error === 'object' && 'status' in error) {
-    const status = typeof (error as { status?: unknown }).status === 'number' ? (error as { status: number }).status : 500;
-    const message = error instanceof Error ? error.message : 'A aparut o eroare la publicarea pe Facebook.';
-    return { status, message };
-  }
-  if (error instanceof Error) return { status: 500, message: error.message };
-  return { status: 500, message: 'A aparut o eroare la publicarea pe Facebook.' };
+  const raw=error&&typeof error==='object'&&'status' in error?(error as {status?:unknown}).status:null;
+  const status=typeof raw==='number'&&Number.isInteger(raw)&&raw>=400&&raw<=599?raw:500;
+  return {status,message:'Publicarea nu este confirmată. Verifică starea înainte de reluare; operațiile incerte nu sunt retrimise automat.'};
 }
 
 export async function POST(request: NextRequest) {

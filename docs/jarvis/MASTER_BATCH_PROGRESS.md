@@ -22,6 +22,20 @@ Publicarea nu certifică cele 1.000 de scenarii: rămân 42 cu dovezi locale fol
 
 Inventarul reproductibil este [MASTER_BATCHES.json](evals/MASTER_BATCHES.json): 20 de loturi a câte 50 de ID-uri, textul original și hash per cerere. Se verifică prin `node scripts/jarvis-corpus-batches.mjs --check`. Inventarul nu este un raport de acceptanță; regenerarea lui nu certifică scenariile. Ordinea de lucru începe cu loturile 17 și 18 (801–900), apoi loturile de domeniu 1–16 și 19–20.
 
+## Meta Ads — publicarea verificată a galeriei proprietății — 17 octombrie 2026
+
+Pregătirea scenariului **0429** modifică serviciul folosit deja de ruta de publicare a proprietății pe pagina Facebook. Pentru galerii, fiecare încărcare și crearea postării au o intenție persistentă înainte de POST. ID-urile confirmate sunt salvate separat. Un răspuns de creare nu mai este suficient pentru statusul published: citirea postării trebuie să confirme pagina, textul exact, publicarea, identificatorii fotografiilor în ordinea cerută și legătura Facebook.
+
+După un răspuns pierdut la crearea postării, serviciul caută o singură postare cu textul și fotografiile încărcate, pe endpointul fix al paginii. Paginarea folosește cursorul, fără urmărirea URL-ului next. O postare care apare mai târziu poate fi recuperată fără alte încărcări sau alt POST de publicare. Dacă ID-ul postării era salvat, se reia numai citirea. Duplicatele, rezultatele ambigue și paginarea incompletă nu produc confirmare.
+
+Accesul administratorului, proprietatea și conexiunea sunt reverificate înaintea scrierilor și înaintea salvării finale CRM. Ștergerea proprietății nu este anulată prin recreare. Cererile simultane și schimbarea conținutului în timp ce există o intenție incertă nu declanșează alte scrieri. Erorile brute ale providerului nu sunt returnate de ruta API.
+
+Limite rămase: o fotografie încărcată cu răspuns pierdut și fără ID nu poate fi recuperată automat în acest lot; nu este reîncărcată. Același lucru se aplică unei postări numai cu link, fără ID primit. Postările cu link sunt verificate când ID-ul este cunoscut. Video păstrează implementarea existentă și nu este certificat aici. Se păstrează selecția existentă de maximum zece fotografii HTTPS. **Comanda originală Jarvis nu este încă legată de acest serviciu; 0429 nu este declarat complet.**
+
+Validare: **177 teste unitare și 42 de integrare** trecute, inclusiv ruta reală a aplicației, cu Firestore local și Meta simulat. [Evidența backendului](evals/META_PROPERTY_POST_VALIDATION.json). Inventarul rămâne **263/1000 dovezi locale**, fără certificat live sau integral. Lot nepublicat în producție.
+
+Contracte consultate: [Meta Post — câmpuri și attachments](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/post.py), [Meta Page — published_posts](https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/page.py).
+
 ## Meta Ads — diagnostic între CRM și provider — 17 octombrie 2026
 
 Scenariul **0445** citește campania, setul, materialul și reclama prin verificarea existentă a identităților, contului și asocierilor. Raportează separat problemele observate explicit la Meta (respingere, facturare, WITH_ISSUES), diferențele față de starea CRM și datele insuficiente. Poate păstra simultan mai multe observații; cardul și conversația nu trunchiază detaliile diagnosticului.

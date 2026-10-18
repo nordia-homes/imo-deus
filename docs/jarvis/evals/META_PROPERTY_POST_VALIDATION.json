@@ -1,0 +1,31 @@
+{
+  "scope": "Backend preparation for master-0429; actual property-post API route and gallery service with local Firestore and synthetic Meta. Not an original-prompt completion certificate.",
+  "versions": {
+    "prompt": "jarvis-170",
+    "tools": "201"
+  },
+  "unitTests": 177,
+  "integrationTests": 42,
+  "tests": [
+    "src/lib/ai-assistant/__tests__/meta-property-post.test.ts",
+    "src/lib/ai-assistant/__tests__/meta-property-post.integration.test.ts"
+  ],
+  "implemented": [
+    "Durable intent before each photo and feed POST",
+    "Saved step IDs and exact readback verification",
+    "Lost feed response recovered by unique exact text and ordered uploaded photo IDs",
+    "Readback retry without redispatch",
+    "Fresh member/property/integration guards before writes and final CRM transaction",
+    "Concurrent requests and changed-content pending intent cannot duplicate writes",
+    "Verified link-only posts when the create response contains an ID",
+    "Raw provider errors are not exposed by the API route"
+  ],
+  "limitations": [
+    "No Jarvis original-prompt wiring or new corpus scenario count.",
+    "An uncertain photo upload without ID is not automatically recovered or repeated.",
+    "An uncertain link-only post without ID cannot be safely matched and remains pending.",
+    "Video publication retains its existing implementation and is not certified by this change.",
+    "Current gallery selection retains the existing maximum of ten HTTPS images.",
+    "No live Meta certification; no real posts or uploads were performed."
+  ]
+}
