@@ -1,0 +1,168 @@
+{
+  "previousBuild": "build-20261017-jarvis-140",
+  "previousCommit": "c06958bc203423f29634de06743221374ce7c4d3",
+  "applicationCommitsPublished": 34,
+  "unchangedComponents": [
+    "functions",
+    "services",
+    "desktop",
+    "storage.rules"
+  ],
+  "indexCoverage": {
+    "expected": 80,
+    "ready": 80
+  },
+  "desktop": {
+    "status": 200,
+    "matchesLocalManifest": true
+  },
+  "verifiedAt": "2026-10-18T06:59:11.460Z",
+  "project": "studio-652232171-42fb6",
+  "expectedCommit": "0182bc7eeed3dcb20f322584b6a966cde2b7c5e0",
+  "trafficReconciling": false,
+  "builds": [
+    {
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-171",
+      "state": "READY",
+      "commit": "0182bc7eeed3dcb20f322584b6a966cde2b7c5e0",
+      "percent": 100
+    }
+  ],
+  "firestoreRules": {
+    "rulesetName": "projects/studio-652232171-42fb6/rulesets/0a21547c-11d1-4486-9c40-b546558f872a",
+    "updateTime": "2026-10-17T08:29:59.800316Z",
+    "matchesLocalSource": true,
+    "sha256": "520a42d9cf9f74a4920e91f2790adb3ea5691678d24874996df3f9d0902e9e7a"
+  },
+  "functions": [
+    {
+      "name": "aiAssistantAutomationsDrain",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisCrmChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisAgencyChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisUserChangeProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisUploadRetention",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "jarvisAuthProfileSync",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "communicationsMinuteTick",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "communicationMessageSearchProjection",
+      "state": "ACTIVE"
+    },
+    {
+      "name": "communicationStoriaProjection",
+      "state": "ACTIVE"
+    }
+  ],
+  "schedulers": [
+    {
+      "name": "aiAssistantAutomationsDrain",
+      "state": "ENABLED",
+      "lastAttemptTime": "2026-10-18T06:58:07.438077Z",
+      "schedule": "every 5 minutes",
+      "statusCode": 0
+    },
+    {
+      "name": "jarvisAuthProfileSync",
+      "state": "ENABLED",
+      "lastAttemptTime": "2026-10-18T06:57:05.205990Z",
+      "schedule": "every 5 minutes",
+      "statusCode": 0
+    },
+    {
+      "name": "communicationsMinuteTick",
+      "state": "ENABLED",
+      "lastAttemptTime": "2026-10-18T06:59:04.645872Z",
+      "schedule": "every 1 minutes",
+      "statusCode": 0
+    }
+  ],
+  "heartbeat": {
+    "lastSuccessAt": "2026-10-18T06:58:07.735Z",
+    "hasError": false,
+    "observedAfterActivation": true
+  },
+  "indexStates": {
+    "READY": 80
+  },
+  "runConditions": [
+    {
+      "type": "RoutesReady",
+      "state": "CONDITION_SUCCEEDED"
+    },
+    {
+      "type": "ConfigurationsReady",
+      "state": "CONDITION_SUCCEEDED"
+    }
+  ],
+  "configuration": {
+    "jevMode": "off",
+    "secretsBound": [
+      {
+        "name": "OPENAI_API_KEY",
+        "bound": true
+      },
+      {
+        "name": "TYPESAFE_API_KEY",
+        "bound": true
+      },
+      {
+        "name": "COMMUNICATIONS_WORKER_SECRET",
+        "bound": true
+      }
+    ]
+  },
+  "outboundTestMessagesSent": 0,
+  "scope": "Deployment/infrastructure and unauthenticated HTTP probes only; does not certify all 1000 scenarios or actual WhatsApp delivery.",
+  "probes": [
+    {
+      "path": "/ai-assistant",
+      "method": "GET",
+      "status": 200
+    },
+    {
+      "path": "/api/ai-assistant/workspace",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/ai-assistant/metrics",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/ai-assistant/health",
+      "method": "GET",
+      "status": 401
+    },
+    {
+      "path": "/api/crm/actions",
+      "method": "POST",
+      "status": 401
+    },
+    {
+      "path": "/api/communications-worker",
+      "method": "POST",
+      "status": 403
+    }
+  ],
+  "verified": true
+}

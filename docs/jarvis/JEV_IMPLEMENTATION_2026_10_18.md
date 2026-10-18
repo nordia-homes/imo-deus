@@ -72,3 +72,7 @@ Regresii: 2543 teste unitare / 196 fișiere și 74 teste în emulator; verifică
 Comparație pe același fixture al plannerului, cu Jev off: cererea de vizionare cu istoric rezerva 69851 pentru intrare + 2200 pentru răspuns și era oprită înaintea modelului în checkpoint. Versiunea modulară rezervă 34545 + 2200 și ajunge la model. Aceste valori sunt estimările de rezervare, nu tokenuri facturate. Consultați JEV_PLANNER_COMPARISON.json.
 
 Detalii: [raport de validare](evals/JEV_IMPLEMENTATION_VALIDATION.json). Nu s-a publicat și nu s-a schimbat configurația producției.
+
+## Publicare autorizată — 18 octombrie 2026
+
+Implementarea a fost publicată ulterior la cererea explicită a utilizatorului, împreună cu toate modificările de aplicație din ramura de lucru: 34 de commituri după producția anterioară. Build build-20261018-jarvis-171, commit 0182bc7eeed3dcb20f322584b6a966cde2b7c5e0, trafic 100%, Jev off. Verificările infrastructurii, probelor HTTP și rulării automate după activare au trecut. Raport: RELEASE_2026_10_18.json. Checkpointurile de revenire de mai sus rămân păstrate. Validarea publicării nu certifică execuția tuturor celor 1000 de scenarii.
