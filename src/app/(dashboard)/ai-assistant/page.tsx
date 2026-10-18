@@ -6,7 +6,7 @@ import { AssistantUploadButton } from '@/components/ai/AssistantUploadButton';
 import {OwnerConsentDialog, type Consent, loadOwnerConsent, consentPayload} from '@/components/ai/OwnerConsentDialog';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {activeJarvisSession,storeJarvisSession} from '@/lib/jarvis-voice/session';
+import {newJarvisSession,storeJarvisSession} from '@/lib/jarvis-voice/session';
 import { useAgency } from '@/context/AgencyContext';
 import { Button } from '@/components/ui/button';
 import { ActionPreview } from '@/components/ai/ActionPreview';
@@ -71,15 +71,18 @@ function AiAssistantWorkspace() {
   }, [api]);
 
   useEffect(() => {
-    generation.current++;
+    const version = ++generation.current;
     queueMicrotask(() => {
-      if(user&&agencyId){const active=activeJarvisSession(user.uid,agencyId);setSessionId(active.id);if(active.hasHistory)void openSession(active.id);}
+      if (version !== generation.current) return;
+      if(user&&agencyId){const active=newJarvisSession(user.uid,agencyId);setSessionId(active.id);setMessages([]);setPlans({});setHistoryCursor(null);setError('');}
       if (user && agencyId) refreshSessions().catch(e => setError(e.message));
     });
+    const lifecycle = generation;
+    return () => { lifecycle.current++; };
   }, [user?.uid, agencyId, refreshSessions, user]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [messages, busy]);
 
-  useEffect(()=>{const refresh=()=>{if(user&&agencyId){const active=activeJarvisSession(user.uid,agencyId);if(active.hasHistory)void openSession(active.id);}};window.addEventListener('jarvis:voice-closed',refresh);return()=>window.removeEventListener('jarvis:voice-closed',refresh);});
+  useEffect(()=>{const refresh=()=>{if(user&&agencyId)newSession();};window.addEventListener('jarvis:voice-closed',refresh);return()=>window.removeEventListener('jarvis:voice-closed',refresh);});
   async function perform(work: () => Promise<void>) {
     if (inFlight.current) return;
     inFlight.current = true; setBusy(true); setError('');
@@ -101,8 +104,7 @@ function AiAssistantWorkspace() {
     });
   }
   function newSession() {
-    if (busy) return;
-    generation.current++; const id=crypto.randomUUID();setSessionId(id);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,id,false); setMessages([]); setPlans({}); setHistoryCursor(null); setError('');
+    generation.current++; const id=crypto.randomUUID();setSessionId(id);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,id,false); setMessages([]); setPlans({}); setHistoryCursor(null); setInput(''); setProgress(''); setError('');
   }
   async function send(text = input, currentRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord, choice?: import('@/lib/ai-assistant/named-choice-contract').NamedChoice) {
     if (!text.trim() || !sessionId || busy) return;

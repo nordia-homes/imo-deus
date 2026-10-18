@@ -10,10 +10,12 @@ it('only accepts a yes for one offered account, never an unrelated or older offe
  expect(facebookConversationChoice('Da',[offer,{id:'other',role:'assistant',text:'Altceva'}] as any)).toBeNull();
  expect(facebookConversationChoice('Da',[{...offer,cards:[{...offer.cards[0],rows}]}])?.choice).toBeUndefined();
 });
-it('preserves the full request and selected group constraints while proposing a pronunciation match',()=>{
+it('keeps an ambiguous pronunciation as a question with original constraints',()=>{
  const state={type:'data',source:'facebookSemanticRequest',rows:[{prompt:'Nu publica încă; doar pregătește.',input:{propertyId:'p',groupUrls:['https://facebook.com/groups/one']}}]};
- const result=facebookConversationChoice('Stefan Nodia',[{id:'offer',role:'assistant',text:'Cont?',cards:[{type:'data',source:'facebookConnections',choiceSource:'facebookSemanticAccount',rows:[rows[0]]},state]}] as any);
+ const result=facebookConversationChoice('Stefan Nordeia',[{id:'offer',role:'assistant',text:'Cont?',cards:[{type:'data',source:'facebookConnections',choiceSource:'facebookSemanticAccount',rows},state]}] as any);
  expect(result?.suggestion?.cards[1]).toEqual(state);expect(result?.choice).toBeUndefined();
 });
 
 it('proposes the reported transcription without silently selecting an account',()=>{const result=facebookNameMatches([{id:'c',label:'Cristian Avadanii'}],'Croatian Avadanii');expect(result.exact).toHaveLength(0);expect(result.suggestions.map(row=>row.id)).toEqual(['c']);});
+
+it('selects the unique close name directly from the current offer',()=>{const result=facebookConversationChoice('Croatian Avadanii',[{id:'offer',role:'assistant',text:'Cont?',cards:[{type:'data',source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows:[{id:'c',label:'Cristian Avadanii'},{id:'other',label:'Alt Cont'}]}]}] as any);expect(result?.choice?.rowId).toBe('c');expect(result?.suggestion).toBeUndefined();});

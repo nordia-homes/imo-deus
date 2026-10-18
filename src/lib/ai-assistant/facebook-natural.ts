@@ -66,7 +66,9 @@ export async function prepareFacebookNatural(ctx: AssistantContext, prompt: stri
   let namedConnection: string | undefined;
   if (semantic?.connectionQuery) {
     const available = (await readFacebookSetup(ctx, 'accounts', history)).rows.filter(row => 'publishingBlocked' in row && !row.publishingBlocked);
-    const {exact:matching,suggestions} = facebookNameMatches(available,semantic.connectionQuery);
+    const matches = facebookNameMatches(available,semantic.connectionQuery);
+    const suggestions = matches.suggestions;
+    const matching = matches.exact.length ? matches.exact : suggestions.length === 1 ? suggestions : [];
     if (!matching.length && suggestions.length) return {...empty,source:'facebookConnections',rows:suggestions,pending:{id:'pending',prompt:effective,propertyId:selectedId,propertyTitle:String(property.title||'Proprietate'),connectionIds:suggestions.map(row=>row.id)},text:suggestions.length===1?'Te referi la contul Facebook „'+suggestions[0].label+'”? Spune da pentru a continua cererea începută sau indică alt cont.':'Am găsit mai multe conturi cu nume apropiate. Pe care îl folosesc?'};
     if (matching.length !== 1 || (selectedConnection && selectedConnection !== matching[0].id)) return { ...empty, source: 'facebookConnections', rows: matching.length ? matching : available, pending: available.length ? {id:'pending',prompt:effective,propertyId:selectedId,propertyTitle:String(property.title || 'Proprietate'),connectionIds:available.map(row=>row.id)} : null, text: !available.length ? 'Nu există un cont propriu conectat și disponibil pentru publicare. Conectează contul Facebook și apoi reia cererea.' : matching.length > 1 ? 'Mai multe conturi corespund acestui nume. Pe care îl folosesc? Poți scrie denumirea completă sau alege din listă.' : 'Nu pot identifica sigur contul după numele indicat. Iată conturile tale disponibile; spune-mi denumirea dorită sau alege din listă.' };
     namedConnection = String(matching[0].id);

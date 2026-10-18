@@ -10,7 +10,7 @@ export function facebookConversationChoice(prompt:string, history:AssistantMessa
  const text=normalizeCrmSearch(prompt);
  const yes=['da','confirm','confirma','da confirm','da acesta','acesta','exact','corect','da corect'].includes(text);
  const matching=facebookNameMatches(card.rows,prompt);
- const chosen=yes&&card.rows.length===1?card.rows[0]:matching.exact.length===1?matching.exact[0]:null;
+ const chosen=yes&&card.rows.length===1?card.rows[0]:matching.exact.length===1?matching.exact[0]:matching.suggestions.length===1?matching.suggestions[0]:null;
  if(chosen){const choice:NamedChoice={messageId:latest.id,source,rowId:String(chosen.id),...(card.choiceOfferId?{offerId:card.choiceOfferId}:{})};return {choice,prompt:namedChoiceText(source,chosen)};}
  if(yes&&card.rows.length>1){const text='Sunt mai multe conturi disponibile. Spune numele contului dorit, ca să continui cu cel corect.';return {suggestion:{text,cards:latest.cards!.map(c=>c===card?{...c,note:text}:c)}};}
  if(matching.suggestions.length){

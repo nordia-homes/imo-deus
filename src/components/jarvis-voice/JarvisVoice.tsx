@@ -36,11 +36,12 @@ import {
 } from "./VoiceContext";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import {
-  activeJarvisSession,
+  newJarvisSession,
   storeJarvisSession,
   editableTarget,
   voiceTimestamp,
 } from "@/lib/jarvis-voice/session";
+import { startVoiceProgress } from '@/lib/jarvis-voice/progress';
 import { existingJarvisCommand } from "@/lib/jarvis-voice/command";
 import { currentRecordFromPath } from '@/lib/ai-assistant/current-record-contract';
 import { VoiceAudio } from "@/lib/jarvis-voice/audio";
@@ -94,6 +95,7 @@ export function JarvisVoice() {
     error: "",
   });
   const [activities, setActivities] = useState<VoiceActivity[]>([]);
+  const progressStop = useRef<(() => void) | null>(null);
   const audio = useRef<VoiceAudio | null>(null),
     pendingPlan = useRef<AssistantPlan | null>(null),
     opened = useRef(false),
@@ -174,6 +176,7 @@ export function JarvisVoice() {
           (voiceTimestamp() - voiceStarted.current) / 1000,
         ),
       }).catch(() => {});
+    progressStop.current?.();
     opened.current = false;
     audio.current?.close();
     audio.current = null;
@@ -188,6 +191,7 @@ export function JarvisVoice() {
   }, [api, user?.uid, agencyId]);
   useEffect(
     () => () => {
+      progressStop.current?.();
       opened.current = false;
       audio.current?.close();
       requestAbort.current?.abort();
@@ -302,6 +306,7 @@ export function JarvisVoice() {
       storeJarvisSession(user!.uid, agencyId!, session.current);
       lastMessage.current = r.message;
       const p = (await api('/api/ai-assistant/workspace?planId=' + r.message.planId)).plan;
+      if (!opened.current || active !== voiceSession.current) return;
       pendingPlan.current = p; setPlan(p);
       if (audio.current) await speak(r.message, p, audio.current.epoch);
     });
@@ -314,11 +319,13 @@ export function JarvisVoice() {
     pendingPlan.current = null;
     setState("WORKING");
     if (!cancel) setPlan({ ...p, status: "running" });
+    audio.current?.setMicMuted(true); setMicMuted(true);
+    const narration = beginProgress(audio.current?.epoch || 0);
     try {
       const response = await api("/api/ai-assistant/workspace", {
         kind: cancel ? "cancel" : "execute",
         planId: p.id,
-      });
+      }).finally(narration.stop);
       if (!opened.current || active !== voiceSession.current) return;
       setPlan(response.plan);
       if (response.plan.status === "pending")
@@ -351,6 +358,24 @@ export function JarvisVoice() {
     }
   }
 
+  function beginProgress(epoch: number) {
+    progressStop.current?.();
+    const active = voiceSession.current, engine = audio.current;
+    let controller: AbortController | undefined;
+    const progress = startVoiceProgress(async text => {
+      if (!engine || !opened.current || active !== voiceSession.current || engine.epoch !== epoch || engine.speakerMuted || !engine.muted || document.hidden) return;
+      controller = new AbortController();
+      engine.playbackAbort = controller;
+      const response = await fetch('/api/ai-assistant/voice', {
+        method: 'POST', headers: { Authorization: 'Bearer ' + await user!.getIdToken(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({text, voiceSessionId: active, platform: platform()}), signal: controller.signal,
+      });
+      if (controller.signal.aborted || !opened.current || active !== voiceSession.current || engine.epoch !== epoch) { await response.body?.cancel(); return; }
+      await engine.play(response, controller, () => {});
+    }, () => { controller?.abort(); if (controller && engine?.playbackAbort === controller) engine.interrupt(); });
+    progressStop.current = progress.stop;
+    return progress;
+  }
   function command(prompt: string, epoch = audio.current?.epoch || 0, selectedRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord, choice?: import('@/lib/ai-assistant/named-choice-contract').NamedChoice) {
     const currentRecord = selectedRecord || currentRecordFromPath(window.location.pathname);
     const active = voiceSession.current,
@@ -372,6 +397,8 @@ export function JarvisVoice() {
           // Without a pending executable plan, yes/no belongs to the conversation.
           setState("PROCESSING");
           setError("");
+          audio.current?.setMicMuted(true); setMicMuted(true);
+          const narration = beginProgress(epoch);
           const started = voiceTimestamp();
           const response = await existingJarvisCommand(
             api,
@@ -383,7 +410,8 @@ export function JarvisVoice() {
               prompt: prompt + (!choice && uploadedFiles.current.length ? '\nFișiere încărcate privat: ' + JSON.stringify(uploadedFiles.current) : ''),
             },
             background.current,
-          );
+            narration.update,
+          ).finally(narration.stop);
           if (!opened.current || active !== voiceSession.current) return;
           metric({ jarvisMs: voiceTimestamp() - started });
           storeJarvisSession(user!.uid, agencyId!, session.current);
@@ -395,6 +423,7 @@ export function JarvisVoice() {
                 "/api/ai-assistant/workspace?planId=" + response.message.planId,
               )
             ).plan;
+          if (!opened.current || active !== voiceSession.current) return;
           pendingPlan.current = p?.status === "pending" ? p : null;
           setPlan(p);
           await speak(response.message, p, epoch);
@@ -458,8 +487,11 @@ export function JarvisVoice() {
   }
   async function capture(blob: Blob, epoch: number) {
     if (!opened.current || consent) return;
+    audio.current?.setMicMuted(true);
+    setMicMuted(true);
     turnStarted.current = voiceTimestamp();
     const active = voiceSession.current;
+    const narration = beginProgress(epoch);
     setState("FINALIZING_SPEECH");
     const controller = new AbortController();
     requestAbort.current = controller;
@@ -485,16 +517,17 @@ export function JarvisVoice() {
         audio.current?.epoch === epoch
       )
         command(data.text, epoch);
-      else if (opened.current) setState("LISTENING");
+      else if (opened.current && active === voiceSession.current) setState("IDLE");
     } catch (e) {
       if (
         opened.current &&
         !(e instanceof DOMException && e.name === "AbortError")
       ) {
+        if (active !== voiceSession.current) return;
         setError("Nu te-am auzit bine. Mai spune o dată.");
         setState("ERROR");
       }
-    }
+    } finally { narration.stop(); }
   }
   async function connect() {
     audio.current?.close();
@@ -515,7 +548,7 @@ export function JarvisVoice() {
     audio.current = engine;
     try {
       await engine.start();
-      if (opened.current) {
+      if (opened.current && audio.current === engine) {
         engine.setMicMuted(micMuted);
         engine.speakerMuted = speakerMuted;
         setError("");
@@ -532,7 +565,10 @@ export function JarvisVoice() {
     previousFocus.current = document.activeElement as HTMLElement;
     voiceStarted.current = voiceTimestamp();
     actor.current = user.uid + ":" + agencyId;
-    const shared = activeJarvisSession(user.uid, agencyId);
+    const shared = newJarvisSession(user.uid, agencyId);
+    queue.current = Promise.resolve();
+    lastMessage.current = null;
+    uploadedFiles.current = [];
     session.current = shared.id;
     voiceSession.current = crypto.randomUUID();
     opened.current = true;
@@ -549,47 +585,6 @@ export function JarvisVoice() {
         background.current = r.backgroundConfigured === true;
       })
       .catch(() => {});
-    if (shared.hasHistory) {
-      const active = voiceSession.current,
-        initialEpoch = audio.current?.epoch || 0;
-      void api(
-        "/api/ai-assistant/workspace?sessionId=" +
-          encodeURIComponent(shared.id),
-      )
-        .then(async (r) => {
-          if (!opened.current || active !== voiceSession.current) return;
-          const recent = r.messages
-            ?.filter((m: AssistantMessage) => m.role === "assistant")
-            .at(-1);
-          if (!recent || (audio.current?.epoch || 0) !== initialEpoch) return;
-          lastMessage.current = recent;
-          setActivities(
-            (r.messages as AssistantMessage[])
-              .filter((item) => item.role === "assistant" && item.cards?.length)
-              .slice(-4)
-              .reverse()
-              .map((item) => ({
-                id: item.id,
-                title: item.cards![0].title,
-                at: item.createdAt,
-              })),
-          );
-          setCards(recent.cards || []);
-          if (recent.planId) {
-            const loaded = (
-              await api("/api/ai-assistant/workspace?planId=" + recent.planId)
-            ).plan;
-            if (!opened.current || active !== voiceSession.current) return;
-            setPlan(loaded);
-            pendingPlan.current = loaded.status === "pending" ? loaded : null;
-          }
-          setPanel(
-            window.innerWidth >= 1024 ||
-              Boolean(recent.cards?.length || recent.planId),
-          );
-        })
-        .catch(() => {});
-    }
     await connect();
   }
   useEffect(() => {

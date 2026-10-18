@@ -679,20 +679,22 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   if (messageStatus) available.splice(0, available.length, ...available.filter(name => ['existing_read', 'goal_coverage'].includes(name)));
   if (prospectAssignmentRead) available.splice(0, available.length, ...available.filter(name => ['read', 'goal_coverage'].includes(name)));
   const policyMemory = !rankingExplain && !whatsappCheck && !messageStatus && ctx.adminDb ? await relevantMemory(ctx) : [];
-  let modules = expandCapabilities(selectCapabilities(contextHint));
-  let displayed = focused ? available : visibleTools(available, modules, contextHint);
+  const currentModules = selectCapabilities(prompt);
+  // History resolves references, but an explicit new domain starts with its own tools.
+  let modules = expandCapabilities(currentModules.length ? currentModules : selectCapabilities(contextHint));
+  let displayed = focused ? available : visibleTools(available, modules, prompt);
   const policyDynamic = { readiness, memory: policyMemory, summary: rankingExplain || whatsappCheck || messageStatus ? undefined : options.summary, readOnly: options.child || prospectRead || outreachRead || outreachSettingsRead || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead };
-  const compose = (ids: CapabilityId[], names: string[]) => buildInstructions(ctx, { ...policyDynamic, allowedTools: names, ...(!focused ? { modules: ids } : {}) }) + (!focused ? '\nCAPABILITY_CATALOG ' + JSON.stringify(capabilityCatalog.map(({id,description})=>({id,description}))) + '\nFolosește load_capabilities pentru orice domeniu suplimentar înaintea operațiilor sale. Catalogul este prezentare, nu permisiune. Nu reduce cererea originală la domeniile deja încărcate. Păstrează pașii pregătiți; nu îi repeta.' : '') + '\n' + SEMANTIC_EXECUTION_POLICY;
+  const compose = (ids: CapabilityId[], names: string[]) => buildInstructions(ctx, { ...policyDynamic, allowedTools: names, ...(!focused ? { modules: ids } : {}) }) + (!focused ? '\nCAPABILITY_CATALOG ' + JSON.stringify(capabilityCatalog.map(({id,description})=>({id,description}))) + '\nFolosește load_capabilities pentru orice domeniu suplimentar înaintea operațiilor sale. Catalogul este prezentare, nu permisiune. Nu reduce cererea originală la domeniile deja încărcate. Păstrează pașii pregătiți; nu îi repeta.' : '') + '\n' + SEMANTIC_EXECUTION_POLICY + '\nCererea curentă stabilește ce trebuie făcut acum. O solicitare nouă poate schimba complet subiectul în aceeași conversație. Folosește istoricul pentru referințe explicite sau continuări, fără să impui noii cereri proprietatea, contul, filtrele sau scopul operației precedente. Nu relua acțiuni finalizate decât dacă utilizatorul cere explicit acest lucru.';
   let instructions = compose(modules, displayed);
   let tools = displayed.map(functionDefinition);
   const refreshCapabilities = (ids: string[], requested: string[] = []) => {
     if (requested.some(name=>!available.includes(name))) throw new Error('Unealtă neautorizată în acest flux.');
     let next = expandCapabilities([...modules, ...ids, ...requested.flatMap(toolCapabilities)]);
-    let names = visibleTools(available, next, contextHint, requested), candidate = compose(next, names), definitions = names.map(functionDefinition);
+    let names = visibleTools(available, next, prompt, requested), candidate = compose(next, names), definitions = names.map(functionDefinition);
     // Drop speculative schemas before evicting domain instructions. The requested
     // tools and base discovery remain available; prepared actions stay unchanged.
-    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { names=visibleTools(available,next,contextHint,requested,0);candidate=compose(next,names);definitions=names.map(functionDefinition); }
-    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { next=expandCapabilities([...ids,...requested.flatMap(toolCapabilities)]);names=visibleTools(available,next,contextHint,requested,0);candidate=compose(next,names);definitions=names.map(functionDefinition); }
+    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { names=visibleTools(available,next,prompt,requested,0);candidate=compose(next,names);definitions=names.map(functionDefinition); }
+    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { next=expandCapabilities([...ids,...requested.flatMap(toolCapabilities)]);names=visibleTools(available,next,prompt,requested,0);candidate=compose(next,names);definitions=names.map(functionDefinition); }
     if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) return { loaded: false, reason: 'Contextul modulelor este prea mare; folosește operation_contract și uneltele generice pentru pasul concret.', modules };
     const added = next.filter(id=>!modules.includes(id)); modules=next;displayed=names;instructions=candidate;tools=definitions;
     if(metrics.capabilityRouting){metrics.capabilityRouting.loaded=modules;metrics.capabilityRouting.expansions+=added.length?1:0;}

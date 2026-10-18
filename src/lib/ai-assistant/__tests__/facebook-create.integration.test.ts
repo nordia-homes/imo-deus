@@ -59,23 +59,18 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
       let input={sessionId,requestId:randomUUID(),prompt:spoken};
       let reply=await chatTurn(f.ctx,input);
-      if(spoken.includes('Nordea')||spoken.includes('Nodia')||spoken.includes('Norrdia')){
-        expect(reply.message.text).toContain('Te referi');expect((await f.jobs.get()).size).toBe(0);
-        input={sessionId,requestId:randomUUID(),prompt:'Da, confirm.'};reply=await chatTurn(f.ctx,input);
-      }
       expect((await f.jobs.get()).size).toBe(1);expect((await f.jobs.get()).docs[0].data().connectionId).toBe('connection');
       expect(reply.message.text).toContain('Ștefan Nordia');expect(reply.message.text).not.toContain('Verifică planul');
       await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);expect(model).not.toHaveBeenCalled();
       expect((await f.agency.collection('assistantSessions').doc(sessionId).get()).data()?.pendingRecoveryId).toBeNull();
     }finally{model.mockRestore();}
   });
-  it('revalidates the account after a pronunciation suggestion before executing yes',async()=>{
+  it('revalidates the account before executing a unique pronunciation match',async()=>{
     const f=await fixture(),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Ștefan Nordia'});
     await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont'});
     await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
-    await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Stefan Nodia'});
     await f.connection.update({status:'disconnected'});
-    const reply=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Da'});
+    const reply=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Stefan Nodia'});
     expect((await f.jobs.get()).size).toBe(0);expect(reply.message.text).toContain('nu este disponibil');
   });
   it('carries the original semantic scope and group restrictions through a plain account-name reply',async()=>{
@@ -90,15 +85,14 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       expect(planner.mock.calls[0][1]).toContain(original);expect(planner.mock.calls[0][1]).toContain(f.body.groupUrls[0]);expect(planner.mock.calls[0][1]).toContain('connection');expect((await f.jobs.get()).size).toBe(0);
     }finally{planner.mockRestore();}
   });
-  it('completes the reported Croatian Avadanii -> Cristian Avadanii -> da conversation',async()=>{
+  it('completes the reported Croatian Avadanii -> direct Cristian Avadanii publication',async()=>{
     const f=await fixture('cloud'),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Cristian Avadanii',displayName:'Cristian Avadanii'});
     await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont',displayName:'Alt Cont'});
     const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockRejectedValue(new Error('No model required'));
     try{
       await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
-      const proposed=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Croatian Avadanii'});
-      expect(proposed.message.text).toContain('Cristian Avadanii');expect(proposed.message.text).toContain('Te referi');expect((await f.jobs.get()).size).toBe(0);
-      const input={sessionId,requestId:randomUUID(),prompt:'Da'};const result=await chatTurn(f.ctx,input);
+      const input={sessionId,requestId:randomUUID(),prompt:'Croatian Avadanii'};const result=await chatTurn(f.ctx,input);
+      expect(result.message.text).not.toContain('Te referi');
       expect(result.message.text).toContain('Cristian Avadanii');expect(result.message.text).toContain('publicare');expect((await f.jobs.get()).size).toBe(1);expect((await f.jobs.get()).docs[0].data().connectionId).toBe('connection');
       await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(model).not.toHaveBeenCalled();expect(mocks.runner).toHaveBeenCalledTimes(1);
     }finally{model.mockRestore();}
@@ -717,6 +711,44 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);
       expect(select).toHaveBeenCalledTimes(mode==='off'?0:1);
       expect(respond).toHaveBeenCalledTimes(4);
+    }finally{vi.unstubAllEnvs();}
+  });
+
+  it.each(['Câte vizionări sunt mâine?','Spune-mi numărul programărilor de vizionare pentru mâine.','Acum vreau să știu câte vizionări avem mâine.'])('switches from completed Facebook publication to calendar: %s',async prompt=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();
+    await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
+    const {resolveDatetime}=await import('../datetime');const viewingDate=resolveDatetime({dayOffset:1,time:'10:00'}).iso;
+    for(const id of ['first','second'])await f.agency.collection('viewings').doc(id).set({viewingDate,status:'scheduled',agentId:f.ctx.uid,propertyTitle:id==='first'?'Cișmigiu':'Titan',contactName:'Client test'});
+    const usage={inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false};
+    const call=(id:string,name:string,payload:unknown)=>({calls:[{id,name,arguments:JSON.stringify({payload:JSON.stringify(payload)})}],items:[],text:'',usage,status:'completed' as const,latencyMs:1});
+    const queue=[call('calendar','query_records',{resource:'viewings',dayOffset:1,status:'scheduled',mode:'count',limit:10}),call('coverage','goal_coverage',{requirements:[{id:'count',sourceQuote:prompt,description:'Total vizionări mâine',resolution:'answered',steps:[],evidenceCallIds:['calendar']}]})];
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockImplementation(async request=>{
+      expect(request.tools.map(t=>t.name)).toContain('query_records');
+      return queue.shift()||{calls:[],items:[],text:'Mâine sunt 2 vizionări programate.',intentStatus:'answer',usage,status:'completed',latencyMs:1};
+    });
+    vi.stubEnv('JARVIS_JEV_MODE','off');vi.stubEnv('OPENAI_API_KEY','test-only');
+    try{
+      const result=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt});
+      expect(result.message.text).toContain('2 vizionări');
+      expect(result.message.cards?.some(c=>c.summary?.count===2)).toBe(true);
+      expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);expect(model).toHaveBeenCalledTimes(3);
+    }finally{model.mockRestore();vi.unstubAllEnvs();}
+  });
+
+  it('handles multiple independent CRM topics in one session after publishing without repeating it',async()=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();
+    await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
+    for(const resource of ['contacts','tasks'])for(const id of ['one','two'])await f.agency.collection(resource).doc(id).set({name:'Client '+id,description:'Sarcina '+id,status:'pending',agentId:f.ctx.uid});
+    vi.stubEnv('JARVIS_JEV_MODE','off');vi.stubEnv('OPENAI_API_KEY','test-only');
+    try{
+      for(const [resource,prompt] of [['contacts','Câți cumpărători sunt în CRM?'],['tasks','Acum spune-mi câte sarcini avem.'],['contacts','Revenind la cumpărători, câți sunt?']]){
+        const usage={inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false};
+        const call=(id:string,name:string,payload:unknown)=>({calls:[{id,name,arguments:JSON.stringify({payload:JSON.stringify(payload)})}],items:[],text:'',usage,status:'completed' as const,latencyMs:1});
+        const queue=[call('read-current','query_records',{resource,mode:'count',limit:10}),call('coverage','goal_coverage',{requirements:[{id:'current',sourceQuote:prompt,description:'Numărul actual',resolution:'answered',steps:[],evidenceCallIds:['read-current']}]})];
+        const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockImplementation(async request=>{expect(request.tools.map(t=>t.name)).toContain('query_records');return queue.shift()||{calls:[],items:[],text:'Sunt 2 rezultate.',intentStatus:'answer',usage,status:'completed',latencyMs:1};});
+        try{const result=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt});expect(result.message.cards?.some(c=>c.source===resource&&c.summary?.count===2)).toBe(true);expect(model).toHaveBeenCalledTimes(3);}finally{model.mockRestore();}
+      }
+      expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);
     }finally{vi.unstubAllEnvs();}
   });
 

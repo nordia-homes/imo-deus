@@ -6,7 +6,7 @@ export async function existingJarvisCommand(
   api: JarvisApi,
   input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null; choice?: NamedChoice },
   background: boolean,
-  progress?: (text: string) => void,
+  progress?: (text: string, stage?: string) => void,
 ) {
   if (!background)
     return api("/api/ai-assistant/workspace", { kind: "chat", ...input });
@@ -22,7 +22,8 @@ export async function existingJarvisCommand(
     if (state.status === "completed") return { message: state.message };
     if (state.status === "failed")
       throw new Error(state.error || "Comanda nu a fost finalizată.");
-    progress?.("Mă ocup…");
+    const event = state.events?.filter((event: any) => event.type === 'PROGRESS_EVENT').at(-1);
+    progress?.('Mă ocup de cererea ta.', event?.stage);
     await new Promise((r) => setTimeout(r, 700));
   }
   throw new Error(

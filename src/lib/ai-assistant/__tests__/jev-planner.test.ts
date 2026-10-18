@@ -135,3 +135,35 @@ it.each(['active','shadow','off'])('loads the complete Facebook preflight from a
  expect(result.actions).toEqual([]);
  if(mode==='active')expect(result.metrics.capabilityRouting?.workflows).toEqual(['facebook_publication']);
 });
+
+
+it('presents direct record queries after switching away from a completed Facebook request',async()=>{
+ vi.stubEnv('JARVIS_JEV_MODE','off');const respond=vi.fn(async (_request:import('../provider').ProviderRequest)=>final);
+ const history=[{id:'previous',role:'assistant' as const,text:'Cererea de publicare Facebook pentru Cișmigiu a fost creată.',createdAt:new Date().toISOString(),cards:[{type:'data' as const,source:'facebookJobs',title:'Publicare',rows:[{id:'job',propertyId:'old-property',connectionId:'account'}]}]}];
+ await planTurn(ctx,'Câte vizionări sunt mâine?',history,{provider:{id:'fixture',respond}});
+ expect(respond.mock.calls[0][0].tools.map(tool=>tool.name)).toContain('query_records');
+ expect(respond.mock.calls[0][0].instructions).toContain('Cererea curentă stabilește');
+ expect(respond.mock.calls[0][0].input).toContainEqual({role:'user',content:'Câte vizionări sunt mâine?'});
+});
+
+
+it.each([
+ ['Caut un cumpărător.', 'contacts'],
+ ['Câte sarcini sunt de făcut?', 'calendar'],
+ ['Verifică mesajele WhatsApp.', 'communications'],
+ ['Caută proprietăți în Titan.', 'properties'],
+ ['Verifică dosarele de vânzări.', 'sales'],
+ ['Consultă prospectele.', 'prospecting'],
+])('prioritizes a new domain after Facebook: %s',async(prompt,domain)=>{
+ vi.stubEnv('JARVIS_JEV_MODE','off');const respond=vi.fn(async (_request:import('../provider').ProviderRequest)=>final);
+ const result=await planTurn(ctx,prompt,[{id:'previous',role:'assistant',text:'Am terminat cererea de publicare Facebook pentru Cișmigiu.',createdAt:new Date().toISOString()}],{provider:{id:'fixture',respond}});
+ expect(result.metrics.capabilityRouting?.loaded).toContain(domain);
+ expect(result.metrics.capabilityRouting?.loaded).not.toContain('marketing');
+ expect(respond.mock.calls[0][0].tools.map(t=>t.name)).toContain('query_records');
+ expect(JSON.stringify(respond.mock.calls[0][0].input)).toContain('Cișmigiu');
+});
+it('keeps prior context available for a referential follow-up without rerunning old actions',async()=>{
+ vi.stubEnv('JARVIS_JEV_MODE','off');const respond=vi.fn(async (_request:import('../provider').ProviderRequest)=>final);
+ const result=await planTurn(ctx,'Și pentru aceeași proprietate?', [{id:'old',role:'assistant',text:'Proprietatea Cișmigiu',createdAt:new Date().toISOString(),cards:[{type:'data',source:'properties',title:'Proprietate',rows:[{id:'p',title:'Cișmigiu'}]}]}],{provider:{id:'fixture',respond}});
+ expect(JSON.stringify(respond.mock.calls[0][0].input)).toContain('Cișmigiu');expect(result.actions).toEqual([]);expect(respond.mock.calls[0][0].tools.map(t=>t.name)).toContain('conversation_history');
+});

@@ -1339,3 +1339,7 @@ Added validated free-text selection from the latest account offer, cautious clos
 ### Jev Facebook workflow routing — 18 October 2026
 
 Jev selects the full Facebook publication preflight in its existing selector call, while deterministic account choices bypass the model and explicit Facebook requests also preload preflight with Jev off. Current permissions, full goal coverage, cloud job execution and idempotency are retained. Verified: 38 unit checks and 86 emulator integration checks, including active/shadow/off/unavailable modes. Live speed and cost advantage remain unmeasured. Not deployed; see JEV_IMPLEMENTATION_2026_10_18.md.
+
+### General topic transitions and voice lifecycle — 18 October 2026
+
+Initial tools prioritize the current request across domains, retain historical references for continuations and expose query_records directly. Same-session tests change from Facebook to calendar, contacts and tasks without repeating publication. Text/voice re-entry starts a new conversation; microphone stops after the utterance; status narration starts after one second and repeats at five-second intervals without overlap. Unique approximate account names execute directly under current access checks. Evidence: 293 tests; live semantic/audio acceptance remains separate. Not deployed; see JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.

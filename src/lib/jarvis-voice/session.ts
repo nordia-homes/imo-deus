@@ -51,3 +51,9 @@ export function editableTarget(target: EventTarget | null) {
     )
   );
 }
+
+export function newJarvisSession(uid: string, agencyId: string) {
+  const row = { id: crypto.randomUUID(), hasHistory: false };
+  storeJarvisSession(uid, agencyId, row.id, false);
+  return row;
+}
