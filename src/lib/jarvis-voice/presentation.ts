@@ -133,3 +133,8 @@ export function confirmationIntent(text: string): "yes" | "no" | null {
       ? "no"
       : null;
 }
+
+// A conversational yes/no is not an executable-plan approval.
+export function planConfirmationIntent(text: string, capturedPlanId?: string, currentPlanId?: string) {
+  return capturedPlanId && capturedPlanId === currentPlanId ? confirmationIntent(text) : null;
+}

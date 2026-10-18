@@ -46,7 +46,7 @@ import { currentRecordFromPath } from '@/lib/ai-assistant/current-record-contrac
 import { VoiceAudio } from "@/lib/jarvis-voice/audio";
 import {
   presentVoice,
-  confirmationIntent,
+  planConfirmationIntent,
   type CharacterState,
   type Gesture,
   type Expression,
@@ -360,7 +360,7 @@ export function JarvisVoice() {
       .then(async () => {
         if (!opened.current || active !== voiceSession.current) return;
         try {
-          const intent = confirmationIntent(prompt);
+          const intent = planConfirmationIntent(prompt, approvalId, pendingPlan.current?.id);
           if (
             intent &&
             pendingPlan.current &&
@@ -369,19 +369,7 @@ export function JarvisVoice() {
             await approve(intent === "no");
             return;
           }
-          if (intent && !approvalId) {
-            await speak(
-              {
-                id: "approval",
-                role: "assistant",
-                text: "Verifică mai întâi un plan în panou înainte de confirmare.",
-                createdAt: new Date().toISOString(),
-              },
-              null,
-              epoch,
-            );
-            return;
-          }
+          // Without a pending executable plan, yes/no belongs to the conversation.
           setState("PROCESSING");
           setError("");
           const started = voiceTimestamp();

@@ -1,3 +1,4 @@
+import { facebookConversationChoice } from './facebook-conversation-choice';
 import { bindSemanticAuthority, SEMANTIC_EXECUTION_POLICY } from './semantic-authority';
 import { requestsWhatsappProspecting } from './prospecting-consent';
 import { uniqueProspectingProposals } from './prospecting-plan';
@@ -75,6 +76,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const semanticAuthority = bindSemanticAuthority(ctx.prospectingRequest?.prompt || prompt, actions, goalCoverage);
     return { text, cards, actions, ...(recoveryRequestId ? { recoveryRequestId } : {}), ...(semanticAuthority ? { semanticAuthority } : {}), ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
+  const accountSuggestion = facebookConversationChoice(prompt, history)?.suggestion;
+  if (accountSuggestion) {cards.push(...accountSuggestion.cards);return finish(accountSuggestion.text,'clarification');}
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
   if (historyReply && ((!historyReply.phone && !historyReply.associationAnswered) || historyReply.associationAnswered === false)) {
     ownerHistoryContinuation = historyReply.pending;

@@ -26,7 +26,7 @@ export function selectedFacebookProperty(history: AssistantMessage[]) {
 export function facebookConnectionSummary(id: string, row: Record<string, any>) {
   const status = ['connecting', 'connected', 'needs_reauthentication', 'error', 'disconnected'].includes(row.status) ? row.status : 'unknown';
   const reasons: Record<string, string> = { connected: 'Conexiune marcată conectată în aplicație', connecting: 'Autentificare încă în curs', needs_reauthentication: 'Necesită reconectare Facebook', error: 'Eroare de conexiune înregistrată; cauza exactă nu este verificată', disconnected: 'Cont deconectat', unknown: 'Starea conexiunii nu poate fi confirmată' };
-  return { id, label: String(row.label || row.displayName || 'Cont Facebook'), status, reason: reasons[status], runnerMode: row.runnerMode === 'local' ? 'local' : 'cloud', lastVerifiedAt: Number.isFinite(Date.parse(row.lastVerifiedAt)) ? row.lastVerifiedAt : null };
+  return { id, label: String(row.label || row.displayName || 'Cont Facebook'), ...(typeof row.displayName === 'string' && row.displayName.trim() ? {displayName:row.displayName} : {}), status, reason: reasons[status], runnerMode: row.runnerMode === 'local' ? 'local' : 'cloud', lastVerifiedAt: Number.isFinite(Date.parse(row.lastVerifiedAt)) ? row.lastVerifiedAt : null };
 }
 export function facebookGroupSelection(stored: unknown, mode: FacebookSetupMode) {
   const configured = Array.isArray(stored) && stored.length > 0;

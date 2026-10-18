@@ -49,6 +49,60 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const body = { propertyId: 'property', connectionId: 'connection', groupUrls: [groups[0].url], scheduledAt: tomorrowBucharest(new Date()) + 'T04:00:00.000Z', requestId: randomUUID() };
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
+  it.each(['Ștefan Nordia','stefan nordia','Nordia Stefan','Stefan Nordea','Stefan Nodia','Stefan Norrdia'])('completes account conversation without model calls for %s',async spoken=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();
+    await f.property.update({defaultFacebookConnectionId:null,description:'Text original',images:['https://example.com/photo.jpg']});
+    await f.connection.update({label:'Ștefan Nordia'});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont'});
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockRejectedValue(new Error('No model needed for offered account selection'));
+    try {
+      await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
+      let input={sessionId,requestId:randomUUID(),prompt:spoken};
+      let reply=await chatTurn(f.ctx,input);
+      if(spoken.includes('Nordea')||spoken.includes('Nodia')||spoken.includes('Norrdia')){
+        expect(reply.message.text).toContain('Te referi');expect((await f.jobs.get()).size).toBe(0);
+        input={sessionId,requestId:randomUUID(),prompt:'Da, confirm.'};reply=await chatTurn(f.ctx,input);
+      }
+      expect((await f.jobs.get()).size).toBe(1);expect((await f.jobs.get()).docs[0].data().connectionId).toBe('connection');
+      expect(reply.message.text).toContain('Ștefan Nordia');expect(reply.message.text).not.toContain('Verifică planul');
+      await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);expect(model).not.toHaveBeenCalled();
+      expect((await f.agency.collection('assistantSessions').doc(sessionId).get()).data()?.pendingRecoveryId).toBeNull();
+    }finally{model.mockRestore();}
+  });
+  it('revalidates the account after a pronunciation suggestion before executing yes',async()=>{
+    const f=await fixture(),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Ștefan Nordia'});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont'});
+    await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
+    await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Stefan Nodia'});
+    await f.connection.update({status:'disconnected'});
+    const reply=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Da'});
+    expect((await f.jobs.get()).size).toBe(0);expect(reply.message.text).toContain('nu este disponibil');
+  });
+  it('carries the original semantic scope and group restrictions through a plain account-name reply',async()=>{
+    const f=await fixture(),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Ștefan Nordia'});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont'});
+    const original='Pregătește Cișmigiu doar în grupul Vânzări, nu publica încă. Apoi verifică vizionările.';
+    const offer=await dispatchTool('facebook_publication_preflight',f.ctx,{query:'Cismigiu',groupUrls:f.body.groupUrls},original,{});
+    const session=f.agency.collection('assistantSessions').doc(sessionId);await session.set({ownerId:f.ctx.uid});
+    await session.collection('messages').doc('offer').set({role:'assistant',text:'Ce cont?',cards:offer.cards,accessRefs:offer.refs,createdAt:new Date().toISOString()});
+    const planner=vi.spyOn(plannerModule,'planTurn').mockResolvedValue({text:'Pregătit fără publicare.',cards:[],actions:[],accessRefs:offer.refs,metrics:{status:'success',models:[],tools:[],elapsedMs:1}} as any);
+    try{await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Nordia Stefan'});
+      expect(planner.mock.calls[0][1]).toContain(original);expect(planner.mock.calls[0][1]).toContain(f.body.groupUrls[0]);expect(planner.mock.calls[0][1]).toContain('connection');expect((await f.jobs.get()).size).toBe(0);
+    }finally{planner.mockRestore();}
+  });
+  it('completes the reported Croatian Avadanii -> Cristian Avadanii -> da conversation',async()=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Cristian Avadanii',displayName:'Cristian Avadanii'});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont',displayName:'Alt Cont'});
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockRejectedValue(new Error('No model required'));
+    try{
+      await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.'});
+      const proposed=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Croatian Avadanii'});
+      expect(proposed.message.text).toContain('Cristian Avadanii');expect(proposed.message.text).toContain('Te referi');expect((await f.jobs.get()).size).toBe(0);
+      const input={sessionId,requestId:randomUUID(),prompt:'Da'};const result=await chatTurn(f.ctx,input);
+      expect(result.message.text).toContain('Cristian Avadanii');expect(result.message.text).toContain('publicare');expect((await f.jobs.get()).size).toBe(1);expect((await f.jobs.get()).docs[0].data().connectionId).toBe('connection');
+      await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(model).not.toHaveBeenCalled();expect(mocks.runner).toHaveBeenCalledTimes(1);
+    }finally{model.mockRestore();}
+  });
   it('resolves a spoken account name using current owned accounts, never another owner or an ambiguous name',async()=>{
     const f=await fixture('cloud'); await f.connection.update({label:'Ștefan Nordia'});
     const selected=await prepareFacebookPublication(f.ctx,{query:'apartament de pe Cismigiu',connectionQuery:'nordia stefan'});

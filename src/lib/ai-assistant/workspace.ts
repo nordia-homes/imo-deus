@@ -1,6 +1,7 @@
 import { beginRequestRecovery, readRequestRecovery } from './request-recovery';
 import { executionScope } from './execution-scope';
 import { retainSemanticChoices, deferredSemanticCard } from './semantic-clarification';
+import { facebookConversationChoice } from './facebook-conversation-choice';
 import { resolveNamedChoice } from './named-choice';
 import type { NamedChoice } from './named-choice-contract';
 import { incompletePlanning, loadRequestCheckpoint, saveRequestCheckpoint, requestCheckpointHash } from './request-checkpoint';
@@ -109,10 +110,12 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const conversationHistory = [...history];
     if (pageContext) history.push(pageContext);
     const session = await ref.get();
-    const selectedPrompt = input.choice ? resolveNamedChoice(input.choice, input.prompt, conversationHistory) : input.prompt;
+    const conversational = !input.choice ? facebookConversationChoice(input.prompt, conversationHistory) : null;
+    const effectiveChoice = input.choice || conversational?.choice;
+    const selectedPrompt = effectiveChoice ? resolveNamedChoice(effectiveChoice, input.choice ? input.prompt : conversational!.prompt!, conversationHistory) : input.prompt;
     let editPrompt = conversationEditPrompt(selectedPrompt, conversationHistory);
     let planningPrompt = prospectPlanningPrompt(editPrompt, conversationHistory);
-    ctx = { ...ctx, executionScope: executionScope(input.sessionId,input.requestId,input.choice ? conversationHistory.find(message=>message.id===input.choice?.messageId)?.executionScope : undefined), prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.choice?.source === 'facebookSemanticProperty' || input.choice?.source === 'facebookSemanticAccount' ? selectedPrompt : input.prompt } };
+    ctx = { ...ctx, executionScope: executionScope(input.sessionId,input.requestId,effectiveChoice ? conversationHistory.find(message=>message.id===effectiveChoice.messageId)?.executionScope : undefined), prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: effectiveChoice?.source === 'facebookSemanticProperty' || effectiveChoice?.source === 'facebookSemanticAccount' ? selectedPrompt : input.prompt } };
     await beginRequestRecovery(ctx, { input, planningPrompt, executionPrompt: editPrompt, authorityPrompt: ctx.prospectingRequest!.prompt, executionScope: ctx.executionScope!, accessRefs: uniqueReferences(history.flatMap(message=>message.accessRefs || [])) });
     let executionRequestId = input.requestId;
     let executionEligibilityPrompt = input.prompt;
@@ -149,8 +152,8 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       }
     }
     if (!restored) {
-      const previousChoice = conversationHistory.find(message=>message.id===input.choice?.messageId);
-      result.cards = retainSemanticChoices(result.cards, previousChoice, input.choice, selectedPrompt);
+      const previousChoice = conversationHistory.find(message=>message.id===effectiveChoice?.messageId);
+      result.cards = retainSemanticChoices(result.cards, previousChoice, effectiveChoice, selectedPrompt);
       if (result.cards.some(card=>card.choiceSource==='facebookSemanticProperty' || card.choiceSource==='facebookSemanticAccount')) {
         const deferred = deferredSemanticCard(result.actions, previousChoice, result.goalCoverage);
         result.accessRefs.push(...actionReferences(result.actions));
@@ -212,7 +215,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       if (planId) tx.create(collectionFor(ctx, 'assistantPlans').doc(planId), { ownerId: ctx.uid, sessionId: input.sessionId, telemetryId: input.requestId, actions: result.actions, goal: planGoal(ctx.prospectingRequest?.prompt || input.prompt, result.actions, result.goalCoverage, true), outcome: summarizeOutcome('pending', result.actions.length, []), accessRefs: message.accessRefs, status: 'pending', createdAt: message.createdAt, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, planId, result.actions, Date.now() + 3600000), versions: VERSIONS });
       tx.update(ref.collection('recoveries').doc(recoveryRootId), { status: planId ? 'plan_pending' : result.metrics.status === 'success' && !autonomous.blocked ? 'complete' : 'pending', accessRefs: uniqueReferences(message.accessRefs || []) });
       if (recoveryRootId !== input.requestId) tx.update(ref.collection('recoveries').doc(input.requestId), { status: 'redirected' });
-      tx.update(ref, { pendingRecoveryId: planId || result.metrics.status !== 'success' || autonomous.blocked ? recoveryRootId : recoveryRootId === input.requestId && !input.choice ? session.data()?.pendingRecoveryId || null : null });
+      tx.update(ref, { pendingRecoveryId: planId || result.metrics.status !== 'success' || autonomous.blocked ? recoveryRootId : recoveryRootId === input.requestId && !effectiveChoice ? session.data()?.pendingRecoveryId || null : null });
       tx.set(reply, message);
       tx.set(collectionFor(ctx, 'assistantTelemetry').doc(input.requestId), telemetryDocument(ctx, input.requestId, input.sessionId, { ...result.metrics, requiresApproval: Boolean(planId) }));
       tx.update(ref, { busyUntil: 0, updatedAt: message.createdAt, summary: sessionSummary([...history, message]) });

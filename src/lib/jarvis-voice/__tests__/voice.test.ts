@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   presentVoice,
   confirmationIntent,
+  planConfirmationIntent,
   characterStates,
 } from "../presentation";
 import { LocalVad, wavAudio } from "../vad";
@@ -131,4 +132,12 @@ it.each([false,true])('transmits named choices separately from the spoken prompt
  const choice={messageId:'m',source:'metaReviewSelection' as const,rowId:'internal'};
  await existingJarvisCommand(api,{sessionId:'s',requestId:'r',prompt:'Selectează campania: Cișmigiu',choice},background);
  expect(api.mock.calls[0][1]).toMatchObject({prompt:'Selectează campania: Cișmigiu',choice});
+});
+
+it('routes conversational confirmations to Jarvis unless the exact executable plan is pending', () => {
+  expect(planConfirmationIntent('Da')).toBeNull();
+  expect(planConfirmationIntent('Confirm')).toBeNull();
+  expect(planConfirmationIntent('Da', 'old', 'new')).toBeNull();
+  expect(planConfirmationIntent('Da', 'same', 'same')).toBe('yes');
+  expect(planConfirmationIntent('Nu', 'same', 'same')).toBe('no');
 });
