@@ -203,3 +203,15 @@ Rollback: revert this lot or inspect 676016d6fc584739c7bf3da20a40201f7133ffea in
 
 Final effects-inspection verification: full npm run build passed, including TypeScript and page generation. ESLint, diff and parity checks passed. AccessReference now includes tasks and viewings so their recited result references remain subject to current-access checks. The existing standalone playwright-core copy skip remains; production browser packaging is not certified. All 198 checks above passed; no deployment.
 
+
+## Facebook name resolution and conversational guidance (prompt jarvis-175)
+
+User-reported production incidents: property not found under alternative phrasing; account-name reply not resolving; unclear or absent guidance.
+
+Identified defects: compressed history omitted account `label`/`displayName` and pending semantic request inputs; workspace replaced specific clarification questions with generic card instructions. Property preflight required every query word, including address prepositions.
+
+Changes: preserve account labels and pending original requests in bounded history (oversized messages still omitted explicitly, with conversation_history available); add `connectionQuery` to preflight to resolve normalized name tokens against current available owned accounts, with ambiguity/no-match returning choices and no action. Explicit named choices clear stale name queries. Address prepositions no longer defeat exact property matching. Partial property matches become clarification candidates only, including when only one candidate remains. Preserve ACL checks and revalidate connections before preparing publication. No descriptions or photos are rewritten.
+
+Communication policy allows natural explanatory paragraphs and requires clear next questions and human-readable names. Clarification responses now include domain question and option names instead of replacing them with generic card text. Post-execution text distinguishes a persisted Facebook job from actual group publication. No extra model call is added.
+
+Verification evidence lives in D:/imo-deus/.tmp/facebook-name-review-complete.log and facebook-name-build-final.log. Unit/planner/context/choice tests: 133 passed before final integration. Integration suite exercises real Firestore/application handlers with controlled provider/runner, no external posts. Live model interpretation of arbitrary wording remains unverified; this is not a claim of perfect semantic matching. Production remains build-20261018-jarvis-174 until a separate release.

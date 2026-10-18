@@ -70,3 +70,10 @@ it('marks history as partial historical context with original qualifications', (
 it.each([0, 255, NaN, Infinity, 1000.5])('rejects unusable byte budget %s', max => {
   expect(() => compressedResult({}, max)).toThrow('Invalid context byte budget');
 });
+
+it('preserves Facebook account names and complete pending input across free-text replies',()=>{
+ const history=[{id:'offer',role:'assistant',text:'De pe ce cont?',createdAt:'',cards:[{type:'data',source:'facebookConnections',choiceSource:'facebookSemanticAccount',choiceOfferId:'offer-1',title:'Conturi',rows:[{id:'opaque',label:'Ștefan Nordia'}]},{type:'data',source:'facebookSemanticRequest',choiceOfferId:'offer-1',title:'Cerere',rows:[{id:'pending',prompt:'Publică Rosetti doar în grupul Nordia',input:{propertyId:'property',groupUrls:['https://facebook.com/groups/nordia']}}]}]}] as AssistantMessage[];
+ const cards=JSON.parse(contextMessages(history)[0].content.split('\nRESULT_REFERENCES ')[1]);
+ expect(cards[0].entities[0]).toMatchObject({id:'opaque',label:'Ștefan Nordia',title:'Ștefan Nordia'});
+ expect(cards[1].pendingRequest[0].input.groupUrls).toEqual(['https://facebook.com/groups/nordia']);
+});

@@ -49,6 +49,25 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const body = { propertyId: 'property', connectionId: 'connection', groupUrls: [groups[0].url], scheduledAt: tomorrowBucharest(new Date()) + 'T04:00:00.000Z', requestId: randomUUID() };
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
+  it('resolves a spoken account name using current owned accounts, never another owner or an ambiguous name',async()=>{
+    const f=await fixture('cloud'); await f.connection.update({label:'Ștefan Nordia'});
+    const selected=await prepareFacebookPublication(f.ctx,{query:'apartament de pe Cismigiu',connectionQuery:'nordia stefan'});
+    expect(selected?.actions).toHaveLength(1);
+    expect((selected!.actions[0] as any).body.connectionId).toBe('connection');
+    await f.agency.collection('facebookCloudConnections').doc('other').set({...((await f.connection.get()).data()),label:'Ștefan Nordia'});
+    expect((await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',connectionQuery:'stefan'}))?.actions).toHaveLength(0);
+    await f.agency.collection('facebookCloudConnections').doc('other').update({ownerUid:'someone-else'});
+    expect((await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',connectionQuery:'stefan'}))?.actions).toHaveLength(1);
+    expect((await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',connectionQuery:'Inexistent'}))?.actions).toHaveLength(0);
+    expect((await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',connectionQuery:'...'}))?.actions).toHaveLength(0);
+    expect((await f.jobs.get()).size).toBe(0);
+  });
+  it('offers partial property matches without automatically publishing the only candidate',async()=>{
+    const f=await fixture();
+    const result=await prepareFacebookPublication(f.ctx,{query:'Cismigiu renovat ultracentral'});
+    expect(result?.rows.map(row=>row.id)).toEqual(['property']);
+    expect(result?.actions).toHaveLength(0);expect(result?.pending).toBeTruthy();
+  });
   it('persists all group choices, publishes only selected groups and rejects changed replay', async()=>{
     const f=await fixture('cloud'),sessionId=randomUUID();
     const configured=Array.from({length:8},(_,i)=>({name:'Grupul '+(i+1),url:'https://www.facebook.com/groups/group'+i,purpose:'sale'}));
@@ -115,6 +134,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     try {
       const input={sessionId,requestId:randomUUID(),prompt:original,currentRecord:null};
       const first=await chatTurn(f.ctx,input);expect(first.message.planId).toBeUndefined();expect(first.message.actions).toBeUndefined();
+      expect(first.message.text).toContain('De pe ce cont Facebook vrei să public?'); expect(first.message.text).toContain('Al doilea cont');
       const deferred=first.message.cards!.find(card=>card.source==='semanticDeferredActions')!;
       expect(deferred.rows[0].actions).toHaveLength(8);
       expect((await f.agency.collection('contacts').get()).empty).toBe(true);expect((await f.agency.collection('assistantPlans').get()).empty).toBe(true);
@@ -181,7 +201,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       const input={sessionId:f.input.sessionId,requestId:randomUUID(),prompt,currentRecord:null};
       const result=await chatTurn(f.ctx,input);
       expect(result.message.outputType).not.toBe('ERROR_EVENT');
-      expect(result.message.text).toContain('Pași confirmați din execuții anterioare: 1');
+      expect(result.message.text).toContain('Am verificat și pașii salvați anterior, fără să îi repet.');
       expect((await f.agency.collection('tasks').get()).size).toBe(1);
       expect((await f.agency.collection('contacts').get()).size).toBe(1);
       expect((await f.session.collection('recoveries').doc(f.input.requestId).get()).data()?.status).toBe('complete');
