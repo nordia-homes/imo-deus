@@ -63,3 +63,11 @@ Includes all 14 unpublished commits through `781fcda4`, plus a build-only `NODE_
 Read-only production probes: `/ai-assistant` 200; `/api/ai-assistant/workspace` and `/api/ai-assistant/metrics` 401 without authentication. No live outbound test messages/posts were sent. These probes do not certify arbitrary-phrase task completion; authenticated user acceptance remains pending. Latest application lot previously passed 198 local checks.
 
 Rollback: create a new App Hosting rollout for existing READY build `projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-171` (commit `0182bc7eeed3dcb20f322584b6a966cde2b7c5e0`), then verify every traffic split and Cloud Run allocation returns to that build at 100%. Use a fresh rollout ID. No database rollback, deletion or replay is required. Do not replay uncertain external effects. Historical request checkpoints may be version-incompatible; use a fresh conversation for initial acceptance testing.
+
+## 2026-10-18 — Facebook names and conversational clarification release
+
+Verified at 12:17 UTC: `build-20261018-jarvis-175`, commit `2ef242c1f30c4e43985e889261be1ec6453e99de`, READY and 100% traffic in App Hosting and Cloud Run. Evidence: `RELEASE_2026_10_18_FACEBOOK_NAMES.json`. Supersedes build 174. Includes account-name resolution, property clarification candidates, preserved pending context, and explicit conversational questions. Jev remains off.
+
+Cloud build and all publishing stages passed. Local checks: 206 tests, ESLint and full build passed. Read-only live probes: Jarvis page 200; unauthenticated workspace/metrics 401. No external test posts or messages; live arbitrary-language completion is not certified by these probes.
+
+Rollback: create a fresh App Hosting rollout for `projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-174` (commit `0a54c5b30bffd392371a0819d3b20f21d0964902`), then verify all traffic splits and Cloud Run allocations at 100%. No database migration or data rollback is required. No auto-rollout branch change.
