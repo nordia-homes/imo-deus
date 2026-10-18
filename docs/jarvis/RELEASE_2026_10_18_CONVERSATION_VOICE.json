@@ -1,0 +1,86 @@
+{
+  "before": {
+    "verifiedAt": "2026-10-18T16:06:47.477Z",
+    "project": "studio-652232171-42fb6",
+    "builds": [
+      {
+        "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-178",
+        "state": "READY",
+        "commit": "95561964da7735550da6f8d8caf6afdfb73f64db",
+        "percent": 100
+      }
+    ],
+    "reconciling": false,
+    "revision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261018-jarvis-178",
+    "runTraffic": [
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+        "revision": "studio-build-20261018-jarvis-178",
+        "percent": 100,
+        "tag": "t-3497659107",
+        "uri": "https://t-3497659107---studio-lz5qfusjya-uc.a.run.app"
+      }
+    ],
+    "jevMode": "active",
+    "jevSecretBound": true,
+    "probes": [
+      {
+        "path": "/ai-assistant",
+        "status": 200
+      },
+      {
+        "path": "/api/ai-assistant/workspace",
+        "status": 401
+      },
+      {
+        "path": "/api/ai-assistant/metrics",
+        "status": 401
+      }
+    ],
+    "outboundTestActions": 0
+  },
+  "after": {
+    "verifiedAt": "2026-10-18T16:20:43.437Z",
+    "project": "studio-652232171-42fb6",
+    "builds": [
+      {
+        "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-179",
+        "state": "READY",
+        "commit": "f46bc71c13a6231dca729f69e13663ffb0eb794c",
+        "percent": 100
+      }
+    ],
+    "reconciling": false,
+    "revision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261018-jarvis-179",
+    "runTraffic": [
+      {
+        "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+        "revision": "studio-build-20261018-jarvis-179",
+        "percent": 100,
+        "tag": "t-3497659106",
+        "uri": "https://t-3497659106---studio-lz5qfusjya-uc.a.run.app"
+      }
+    ],
+    "jevMode": "active",
+    "jevSecretBound": true,
+    "probes": [
+      {
+        "path": "/ai-assistant",
+        "status": 200
+      },
+      {
+        "path": "/api/ai-assistant/workspace",
+        "status": 401
+      },
+      {
+        "path": "/api/ai-assistant/metrics",
+        "status": 401
+      }
+    ],
+    "outboundTestActions": 0
+  },
+  "rollbackBuild": "build-20261018-jarvis-178",
+  "sourceCommit": "f46bc71c13a6231dca729f69e13663ffb0eb794c",
+  "liveMicrophoneAcceptance": false,
+  "externalFacebookPublicationTested": false
+}
