@@ -57,8 +57,8 @@ export async function prepareMetaDraft(ctx: AssistantContext, prompt: string, hi
    campaign=target ? eligible.find(doc => doc.id === target) : eligible.length === 1 ? eligible[0] : undefined;
    if (answer?.selected && (!offered.some(row => row.id === answer.selected) || !campaign)) throw new Error('Draft neofertat sau indisponibil');
    if (answer && offered.some(row => row.contextPropertyId !== pageId)) throw new Error('Contextul proprietății s-a schimbat');
-   const selectionRows=(campaign ? [campaign] : eligible).map(doc => ({ id: doc.id, campaignName: doc.data().campaignName || doc.id, propertyId: doc.data().propertyId, contextPropertyId: pageId, prompt: effective }));
-   if (!campaign) return { actions, rows: selectionRows, text: selectionRows.length ? 'Alege draftul: „Draft Meta: ID”.' : 'Nu există drafturi editabile în contextul curent.' };
+   const selectionRows=(campaign ? [campaign] : eligible).map(doc => ({ id: doc.id, campaignName: doc.data().campaignName || 'Campanie fără denumire', propertyId: doc.data().propertyId, contextPropertyId: pageId, prompt: effective }));
+   if (!campaign) return { actions, rows: selectionRows, text: selectionRows.length ? 'Alege ciorna din cardurile afișate.' : 'Nu există drafturi editabile în contextul curent.' };
    propertyId=campaign.data().propertyId;
    if (['budget','update'].includes(mode) && !answer?.patch) return { actions, rows: selectionRows, text: 'Indică valorile exacte: „Parametri draft Meta: buget 150 EUR zilnic; durata 7 zile”. Moneda trebuie să coincidă cu moneda contului și a draftului. Nu modific campanii publicate.' };
   }

@@ -20,7 +20,7 @@ export async function prepareMetaStatus(ctx:AssistantContext,prompt:string,histo
  const prepared=await ctx.adminDb.runTransaction(async tx=>{
   assertMember((await tx.get(ctx.adminDb.collection('users').doc(ctx.uid))).data());
   const snapshot=await tx.get(agency.collection('metaCampaignDrafts'));
-  const rows=snapshot.docs.filter(doc=>{const row=doc.data();return row.agencyId===ctx.agencyId&&!row.deletedAt&&row.status!=='deleted'&&(mode==='diagnose'||/^\d+$/.test(String(row.metaCampaignId||'')))&&(!propertyId||row.propertyId===propertyId);}).map(doc=>({id:doc.id,campaignName:String(doc.data().campaignName||doc.id),propertyId:String(doc.data().propertyId),status:String(doc.data().status),hasProviderId:/^\d+$/.test(String(doc.data().metaCampaignId||'')),campaignRevision:metaDraftRevision(doc.data()),contextPropertyId:propertyId,prompt:effective}));
+  const rows=snapshot.docs.filter(doc=>{const row=doc.data();return row.agencyId===ctx.agencyId&&!row.deletedAt&&row.status!=='deleted'&&(mode==='diagnose'||/^\d+$/.test(String(row.metaCampaignId||'')))&&(!propertyId||row.propertyId===propertyId);}).map(doc=>({id:doc.id,campaignName:String(doc.data().campaignName||'Campanie fără denumire'),propertyId:String(doc.data().propertyId),status:String(doc.data().status),hasProviderId:/^\d+$/.test(String(doc.data().metaCampaignId||'')),campaignRevision:metaDraftRevision(doc.data()),contextPropertyId:propertyId,prompt:effective}));
   const prior=last(history)?.cards?.find(card=>['metaCampaignReview','metaStatusReview'].includes(card.source))?.rows;
   const receipt=last(history)?.cards?.find(card=>card.source==='autonomy')?.rows?.[0]?.result as Record<string,unknown>|undefined;
   const inferred=prior?.length===1?prior[0].id:receipt?.campaignId;
@@ -28,7 +28,7 @@ export async function prepareMetaStatus(ctx:AssistantContext,prompt:string,histo
   if(answer){const selected=offered?.rows.find(row=>row.id===answer[1]);if(!selected||!target||selected.contextPropertyId!==propertyId||selected.campaignRevision!==target.campaignRevision)throw new Error('Selecție schimbată');}
   return {rows,target};
  });
- if(!prepared.target)return {source:'metaStatusSelection',rows:prepared.rows,text:prepared.rows.length?'Alege campania pentru verificare: „Stare Meta: ID”. Nu retrimit operații la Meta.':'Nu există o campanie cu identificator Meta în contextul curent.'};
+ if(!prepared.target)return {source:'metaStatusSelection',rows:prepared.rows,text:prepared.rows.length?'Alege campania pentru verificare folosind butonul din card. Nu retrimit operații la Meta.':'Nu există o campanie cu identificator Meta în contextul curent.'};
  const target=prepared.target;
  if(mode==='diagnose'&&!target.hasProviderId){const diagnosis=diagnoseMetaState(target.status,[],false);return {source:'metaStatusReview',rows:[{id:target.id,campaignName:target.campaignName,propertyId:target.propertyId,localStatus:target.status,providerValidated:false,hierarchyValidated:false,diagnosis}],text:diagnosis.findings.map(row=>row.location+': '+row.reason+' '+row.nextStep).join(' ')+' '+diagnosis.certainty};}
  const {readMetaCampaignProviderStatus}=await import('@/lib/meta-marketing');

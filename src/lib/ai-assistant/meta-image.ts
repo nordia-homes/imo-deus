@@ -39,7 +39,7 @@ export async function prepareMetaImage(ctx: AssistantContext, prompt: string, hi
                 return [];
             return (Array.isArray(property.images) ? property.images : []).flatMap((image: {
                 url?: string;
-            }, index: number) => typeof image.url === 'string' && image.url.startsWith('https://') && image.url !== c.imageUrl ? [{ id: doc.id + '/' + index, campaignId: doc.id, campaignName: String(c.campaignName || doc.id), imageUrl: image.url, expectedRevision: metaDraftRevision(c), propertyRevision: metaDraftRevision(property), grantRevision: metaDraftRevision(grant.data()), contextPropertyId }] : []);
+            }, index: number) => typeof image.url === 'string' && image.url.startsWith('https://') && image.url !== c.imageUrl ? [{ id: doc.id + '/' + index, campaignId: doc.id, campaignName: String(c.campaignName || 'Campanie fără denumire'), imageUrl: image.url, expectedRevision: metaDraftRevision(c), propertyRevision: metaDraftRevision(property), grantRevision: metaDraftRevision(grant.data()), contextPropertyId }] : []);
         });
     });
     if (!selected)

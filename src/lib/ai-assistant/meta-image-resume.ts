@@ -19,7 +19,7 @@ export async function prepareMetaImageResume(ctx:AssistantContext,prompt:string,
   for(const ledger of ledgers.docs){const action=original(ledger.data(),ctx.uid);if(!action)continue;const key=action.params.campaignId+'/'+action.body.proposalId;if(seen.has(key))continue;seen.add(key);
    const ref=agency.collection('metaCampaignDrafts').doc(action.params.campaignId),[campaign,proposal]=await Promise.all([tx.get(ref),tx.get(ref.collection('imageProposals').doc(action.body.proposalId))]);const c=campaign.data(),p=proposal.data();
    if(!c||c.agencyId!==ctx.agencyId||c.deletedAt||!p||p.actorId!==ctx.uid||p.campaignId!==campaign.id||p.propertyId!==c.propertyId||propertyId&&c.propertyId!==propertyId)continue;
-   result.push({id:key,campaignId:campaign.id,proposalId:proposal.id,campaignName:String(c.campaignName||campaign.id),imageUrl:String(p.imageUrl),contextPropertyId:propertyId});
+   result.push({id:key,campaignId:campaign.id,proposalId:proposal.id,campaignName:String(c.campaignName||'Campanie fără denumire'),imageUrl:String(p.imageUrl),contextPropertyId:propertyId});
   }return result;
  });
  const target=selected?rows.find(row=>row.id===selected[1]+'/'+selected[2]):rows.length===1?rows[0]:undefined;

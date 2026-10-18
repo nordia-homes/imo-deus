@@ -1,3 +1,4 @@
+import { namedChoiceText } from '../named-choice-contract';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -16,14 +17,14 @@ it('renders CRM text as text and provides a disabled selection during execution'
 });
 it('selects the indicated photo and hides revision hashes from the rendered detail', () => {
  vi.stubGlobal('React', React); const onPrompt=vi.fn();
- const props={row:{id:'2',description:'Fotografia din bucătărie',propertyRevision:'INTERNAL_HASH',campaignRevision:'OTHER_HASH'},selection:true,busy:false,selectionPrefix:'Material Meta',selectionLabel:'Selectează fotografia',onPrompt};
- const element:any=MetaReviewDetails(props); element.props.children.find((child:any)=>child?.type==='button').props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Material Meta: 2');
+ const props={row:{id:'2',description:'Fotografia din bucătărie',propertyRevision:'INTERNAL_HASH',campaignRevision:'OTHER_HASH'},selection:true,busy:false,selectionSource:'metaMediaSelection' as const,selectionPrefix:'Material Meta',selectionLabel:'Selectează fotografia',onPrompt};
+ const element:any=MetaReviewDetails(props); element.props.children.find((child:any)=>child?.type==='button').props.onClick(); expect(onPrompt).toHaveBeenCalledWith(namedChoiceText(props.selectionSource,props.row),undefined,{source:props.selectionSource,rowId:props.row.id});
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Selectează fotografia'); expect(html).not.toContain('INTERNAL_HASH'); expect(html).not.toContain('OTHER_HASH');
 });
 it('sends the exact pause confirmation from the campaign button', () => {
  vi.stubGlobal('React', React); const onPrompt=vi.fn();
- const props={row:{id:'selected',campaignName:'Campania aleasă',campaignRevision:'INTERNAL_HASH'},selection:true,busy:false,selectionPrefix:'Confirm pauza Meta',selectionLabel:'Confirmă pauza',onPrompt};
- const element:any=MetaReviewDetails(props); element.props.children.find((child:any)=>child?.type==='button').props.onClick(); expect(onPrompt).toHaveBeenCalledWith('Confirm pauza Meta: selected');
+ const props={row:{id:'selected',campaignName:'Campania aleasă',campaignRevision:'INTERNAL_HASH'},selection:true,busy:false,selectionSource:'metaPauseSelection' as const,selectionPrefix:'Confirm pauza Meta',selectionLabel:'Confirmă pauza',onPrompt};
+ const element:any=MetaReviewDetails(props); element.props.children.find((child:any)=>child?.type==='button').props.onClick(); expect(onPrompt).toHaveBeenCalledWith(namedChoiceText(props.selectionSource,props.row),undefined,{source:props.selectionSource,rowId:props.row.id});
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props)); expect(html).toContain('Confirmă pauza'); expect(html).not.toContain('INTERNAL_HASH');
 });
 it('labels provider state separately from the saved CRM state', () => {
@@ -33,18 +34,24 @@ it('labels provider state separately from the saved CRM state', () => {
 });
 it('renders full period comparisons and sends the statistics selection',()=>{
  vi.stubGlobal('React',React);const onPrompt=vi.fn();
- const props={row:{id:'selected',snapshotRevision:'PRIVATE_HASH',selectedIds:['PRIVATE_ID'],current:{period:{since:'2026-10-10',until:'2026-10-16'},spend:120,leads:4,costPerLead:30},previous:{spend:100},changes:{spend:{difference:20,percent:20}}},selection:true,busy:false,selectionPrefix:'Statistici Meta',onPrompt};
- const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Statistici Meta: selected');const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('2026-10-10');expect(html).toContain('Precedentele șapte zile');expect(html).toContain('Schimbare (%)');expect(html).not.toContain('PRIVATE_HASH');expect(html).not.toContain('PRIVATE_ID');
+ const props={row:{id:'selected',snapshotRevision:'PRIVATE_HASH',selectedIds:['PRIVATE_ID'],current:{period:{since:'2026-10-10',until:'2026-10-16'},spend:120,leads:4,costPerLead:30},previous:{spend:100},changes:{spend:{difference:20,percent:20}}},selection:true,busy:false,selectionSource:'metaPerformanceSelection' as const,selectionPrefix:'Statistici Meta',onPrompt};
+ const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith(namedChoiceText(props.selectionSource,props.row),undefined,{source:props.selectionSource,rowId:props.row.id});const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('2026-10-10');expect(html).toContain('Precedentele șapte zile');expect(html).toContain('Schimbare (%)');expect(html).not.toContain('PRIVATE_HASH');expect(html).not.toContain('PRIVATE_ID');
 });
 
 it('shows the two photos and binds the button to the exact optimization proposal',()=>{
  vi.stubGlobal('React',React);const onPrompt=vi.fn();
- const props={row:{id:'a'.repeat(64),imageUrl:'https://example.invalid/new.jpg',previousImageUrl:'https://example.invalid/old.jpg',sourceRevision:'HIDDEN_HASH'},selection:true,busy:false,selectionPrefix:'Confirm optimizarea Meta',selectionLabel:'Confirmă schimbarea fotografiei',onPrompt};
- const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Confirm optimizarea Meta: '+'a'.repeat(64));
+ const props={row:{id:'a'.repeat(64),imageUrl:'https://example.invalid/new.jpg',previousImageUrl:'https://example.invalid/old.jpg',sourceRevision:'HIDDEN_HASH'},selection:true,busy:false,selectionSource:'metaImageApproval' as const,selectionPrefix:'Confirm optimizarea Meta',selectionLabel:'Confirmă schimbarea fotografiei',onPrompt};
+ const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith(namedChoiceText(props.selectionSource,props.row),undefined,{source:props.selectionSource,rowId:props.row.id});
  const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,props));expect(html).toContain('src="https://example.invalid/new.jpg"');expect(html).toContain('src="https://example.invalid/old.jpg"');expect(html).not.toContain('HIDDEN_HASH');
 });
 
-it('resumes exactly the selected approved proposal',()=>{vi.stubGlobal('React',React);const onPrompt=vi.fn(),id='campaign/'+'a'.repeat(64);const element:any=MetaReviewDetails({row:{id},selection:true,busy:false,selectionPrefix:'Reia optimizarea Meta',selectionLabel:'Continuă optimizarea aprobată',onPrompt});element.props.children.find((child:any)=>child?.type==='button').props.onClick();expect(onPrompt).toHaveBeenCalledWith('Reia optimizarea Meta: '+id);});
+it('resumes the exact proposal through metadata without showing its identifier',()=>{
+ vi.stubGlobal('React',React);const onPrompt=vi.fn(),id='campaign/'+'a'.repeat(64);
+ const props={row:{id,campaignName:'Campania Cișmigiu'},selection:true,busy:false,selectionSource:'metaImageResumeSelection' as const,selectionLabel:'Continuă optimizarea aprobată',onPrompt};
+ const element:any=MetaReviewDetails(props);element.props.children.find((child:any)=>child?.type==='button').props.onClick();
+ expect(onPrompt).toHaveBeenCalledWith(namedChoiceText(props.selectionSource,props.row),undefined,{source:props.selectionSource,rowId:props.row.id});
+ expect(onPrompt.mock.calls[0][0]).not.toContain(id);
+});
 
 it('shows the CPL rule and incomplete evidence without hiding uncertainty',()=>{vi.stubGlobal('React',React);const html=renderToStaticMarkup(React.createElement(MetaReviewDetails,{row:{anomaly:{flagged:null,currentCpl:null,previousCpl:20,ratio:null,rule:'Prag euristic',reason:'Zero leaduri'}},selection:false,busy:false,onPrompt:()=>{}}));expect(html).toContain('Monitorizare CPL');expect(html).toContain('Prag euristic');expect(html).toContain('Zero leaduri');expect(html).toContain('Indisponibil');});
 

@@ -108,3 +108,26 @@ it('refuses to substitute another command for an existing request checkpoint',as
  await expect(chatTurn(ctx,{...input,prompt:'Altă cerere'})).rejects.toThrow('altui mesaj');
  expect(rows.get('agencies/a/assistantSessions/s/messages/r-user').text).toBe(input.prompt);expect(planTurn).not.toHaveBeenCalled();
 });
+
+it('keeps named-choice labels and source access references while planning the exact selected record',async()=>{
+ const {ctx,rows}=fixture();
+ rows.set('agencies/a/assistantSessions/s',{ownerId:'u'});
+ rows.set('agencies/a/assistantSessions/s/messages/offer',{role:'assistant',text:'Alege',createdAt:'2026-10-18T10:00:00Z',cards:[{type:'data',source:'metaReviewSelection',title:'Campanii',rows:[{id:'internal',campaignName:'Cișmigiu'}]}],accessRefs:[{resource:'properties',id:'p'}]});
+ vi.mocked(planTurn).mockResolvedValueOnce({text:'Date verificate',cards:[],actions:[],accessRefs:[],metrics:{status:'success',elapsedMs:1,tools:[],models:[]}});
+ const input={sessionId:'s',requestId:'r',prompt:'Selectează campania: Cișmigiu',choice:{messageId:'offer',source:'metaReviewSelection' as const,rowId:'internal'}};
+ await chatTurn(ctx,input);
+ expect(planTurn).toHaveBeenCalledWith(expect.anything(),'Campanie Meta: internal',expect.any(Array),expect.anything());
+ expect(rows.get('agencies/a/assistantSessions/s/messages/r-user')).toMatchObject({text:input.prompt,choice:input.choice,accessRefs:[{resource:'properties',id:'p'}]});
+ await expect(chatTurn(ctx,{...input,choice:{...input.choice,rowId:'different'}})).rejects.toThrow('altui mesaj');
+});
+
+it('preserves the original choice and access references when the worker records an early failure',async()=>{
+ const {ctx,rows}=fixture();const input={sessionId:'s',requestId:'r',prompt:'Selectează campania: Cișmigiu'};
+ const choice={messageId:'offer',source:'metaReviewSelection',rowId:'selected'};
+ rows.set('assistantAgentJobs/r',{...input,choice,userId:'u',agencyId:'a',role:'agent',jobType:'turn',status:'running',claimId:'claim'});
+ rows.set('agencies/a/assistantSessions/s',{ownerId:'u'});
+ const original={role:'user',text:input.prompt,choice,accessRefs:[{resource:'properties',id:'p'}],createdAt:'original'};
+ rows.set('agencies/a/assistantSessions/s/messages/r-user',original);
+ expect(await saveWorkerTurnFailure(ctx,input,'claim')).not.toBeNull();
+ expect(rows.get('agencies/a/assistantSessions/s/messages/r-user')).toEqual(original);
+});

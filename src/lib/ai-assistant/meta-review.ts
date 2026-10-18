@@ -79,7 +79,7 @@ export async function prepareMetaReview(ctx: AssistantContext, prompt: string, h
     const candidates = campaigns.filter(row => !propertyId || row.propertyId === propertyId);
     let target = chosen ? candidates.find(row => row.id === chosen[1]) : inferredId ? candidates.find(row => row.id === inferredId) : candidates.length === 1 ? candidates[0] : null;
     if (chosen && (!pending.some(row => row.id === chosen[1]) || !target || pending.some(row => row.contextPropertyId && row.contextPropertyId !== propertyId))) throw new Error('Campania selectată nu mai este accesibilă în context');
-    if (!target) return { source: 'metaReviewSelection', rows: candidates.map(row => ({ id: row.id, campaignName: text(row.campaignName), propertyId: text(row.propertyId), contextPropertyId: propertyId, prompt: effective })), text: candidates.length ? 'Alege campania: „Campanie Meta: ID”.' : 'Nu există campanii eligibile în contextul curent.' };
+    if (!target) return { source: 'metaReviewSelection', rows: candidates.map(row => ({ id: row.id, campaignName: text(row.campaignName), propertyId: text(row.propertyId), contextPropertyId: propertyId, prompt: effective })), text: candidates.length ? 'Alege campania din cardurile afișate.' : 'Nu există campanii eligibile în contextul curent.' };
     target = { ...target };
     const base = { id: target.id, propertyId: target.propertyId, campaignName: text(target.campaignName), mode };
     if (mode === 'configuration') return { source: 'metaCampaignReview', rows: [{ ...base, status: target.status, ...configuration(target) }], text: 'Configurația salvată a campaniei ' + target.id + ', inclusiv buget, programare în București, audiență, materiale și tracking.' };

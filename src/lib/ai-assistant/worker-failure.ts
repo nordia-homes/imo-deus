@@ -1,3 +1,4 @@
+import { requestCheckpointHash } from './request-checkpoint';
 import { collectionFor, type AssistantContext } from './access';
 import type { AssistantMessage } from './contracts';
 
@@ -10,12 +11,13 @@ export async function saveWorkerTurnFailure(ctx: AssistantContext, input: { sess
   const createdAt = new Date().toISOString();
   const message: AssistantMessage = { id: replyRef.id, role: 'assistant', outputType: 'ERROR_EVENT', accessRefs: [], createdAt, text: 'Nu am putut confirma finalizarea acestei comenzi. Verifică istoricul și înregistrările CRM înainte de a repeta o acțiune. Poți solicita din nou o citire.' };
   return ctx.adminDb.runTransaction(async tx => {
-    const [job, member, session, reply] = await Promise.all([tx.get(jobRef), tx.get(ctx.adminDb.collection('users').doc(ctx.uid)), tx.get(sessionRef), tx.get(replyRef)]);
+    const userRef = sessionRef.collection('messages').doc(input.requestId+'-user');
+    const [job, member, session, reply, original] = await Promise.all([tx.get(jobRef), tx.get(ctx.adminDb.collection('users').doc(ctx.uid)), tx.get(sessionRef), tx.get(replyRef), tx.get(userRef)]);
     const source = job.data();
     if (source?.claimId !== claimId || source?.status !== 'running' || source?.jobType !== 'turn' || source?.sessionId !== input.sessionId || source?.prompt !== input.prompt || source?.userId !== ctx.uid || source?.agencyId !== ctx.agencyId || source?.role !== ctx.role || member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role || !['admin', 'agent'].includes(ctx.role || '')) return null;
     if ((session.exists && session.data()?.ownerId !== ctx.uid) || reply.exists) return null;
     if (!session.exists) tx.create(sessionRef, { ownerId: ctx.uid, title: input.prompt.slice(0, 100), createdAt, updatedAt: createdAt, busyUntil: 0 });
-    tx.set(sessionRef.collection('messages').doc(`${input.requestId}-user`), { role: 'user', text: input.prompt, createdAt });
+    if (!original.exists) tx.create(userRef, { role: 'user', text: input.prompt, requestHash: requestCheckpointHash({ ...input, ...(source.choice ? { choice: source.choice } : {}), ...(source.currentRecord !== undefined ? { currentRecord: source.currentRecord } : {}) }), ...(source.choice ? { choice: source.choice } : {}), createdAt });
     tx.create(replyRef, message);
     if (session.exists) tx.update(sessionRef, { updatedAt: createdAt });
     return message;

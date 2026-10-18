@@ -59,7 +59,7 @@ export async function prepareMetaPerformance(ctx: AssistantContext, prompt: stri
         return { source: 'metaPerformanceReview', rows: [], text: 'Nu există campanii cu identificator Meta în contextul curent. Nu pot evalua CPL.' };
     if (mode !== 'anomalies' && ids.length < required) {
         const enough = candidates.length >= required;
-        return { source: 'metaPerformanceSelection', rows: enough ? candidates.filter(row => !ids.includes(row.id)).map(row => ({ id: row.id, campaignName: String(row.data.campaignName || row.id), prompt: effective, contextPropertyId: propertyId, snapshotRevision: revision, selectedIds: ids })) : [], text: enough ? (ids.length ? 'Alege a doua campanie pentru comparație.' : 'Alege campania pentru raport: „Statistici Meta: ID”.') : 'Nu există suficiente campanii cu identificator Meta în contextul curent.' };
+        return { source: 'metaPerformanceSelection', rows: enough ? candidates.filter(row => !ids.includes(row.id)).map(row => ({ id: row.id, campaignName: String(row.data.campaignName || 'Campanie fără denumire'), prompt: effective, contextPropertyId: propertyId, snapshotRevision: revision, selectedIds: ids })) : [], text: enough ? (ids.length ? 'Alege a doua campanie pentru comparație.' : 'Alege campania pentru raport din cardurile afișate.') : 'Nu există suficiente campanii cu identificator Meta în contextul curent.' };
     }
     const { readMetaCampaignPeriodInsights } = await import('@/lib/meta-marketing');
     const periods = metaComparisonPeriods();
@@ -69,7 +69,7 @@ export async function prepareMetaPerformance(ctx: AssistantContext, prompt: stri
         const campaign = candidates.find(row => row.id === id)!;
         const report = await readMetaCampaignPeriodInsights(ctx.agencyId, id, { periods, expectedRevision: metaDraftRevision(campaign.data), actor: { uid: ctx.uid, role: ctx.role } });
         const time = bucharestInputFromIso(report.checkedAt);
-        return { id, objective: String(campaign.data.objective || ''), providerObjective: report.providerObjective, campaignName: String(campaign.data.campaignName || id), propertyId: String(campaign.data.propertyId || ''), current: report.current, ...(mode === 'periods' || mode === 'anomalies' ? { previous: report.previous, changes: metaMetricChanges(report.current, report.previous) } : {}), attribution: report.attribution, checkedAt: time.date + ' ' + time.time + ', București', providerValidated: true };
+        return { id, objective: String(campaign.data.objective || ''), providerObjective: report.providerObjective, campaignName: String(campaign.data.campaignName || 'Campanie fără denumire'), propertyId: String(campaign.data.propertyId || ''), current: report.current, ...(mode === 'periods' || mode === 'anomalies' ? { previous: report.previous, changes: metaMetricChanges(report.current, report.previous) } : {}), attribution: report.attribution, checkedAt: time.date + ' ' + time.time + ', București', providerValidated: true };
     };
     const rows: Awaited<ReturnType<typeof readRow>>[] = [];
     // Bound concurrent provider reads while retaining every eligible campaign.

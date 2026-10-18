@@ -1,3 +1,4 @@
+import { namedChoiceText } from '../named-choice-contract';
 import { createCipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -27,6 +28,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('persisted Jarvis campaign
   const history=[{id:'current-page-context',role:'assistant',cards:[{source:'properties',rows:[{id:'property'}]}]}] as any;
   return {ctx,agency,profile,campaign,other,property,grant,send,history,sessionId};
  }
+ it('executes the named choice through persisted chat and keeps IDs out of user text',async()=>{
+  const f=await fixture(),offered=await f.send('Pune campania pe pauză.');
+  const row=offered.message.cards!.find(card=>card.source==='metaPauseSelection')!.rows.find(row=>row.id==='selected')!;
+  const choice={messageId:offered.message.id,source:'metaPauseSelection' as const,rowId:'selected'};
+  const input={sessionId:f.sessionId,requestId:randomUUID(),prompt:namedChoiceText(choice.source,row),choice,currentRecord:{resource:'properties',id:'property'} as const};
+  const result=await chatTurn(f.ctx,input);
+  expect(result.message.text).toContain('Meta a confirmat pauza');expect((await f.campaign.get()).data()?.status).toBe('paused');
+  const user=(await f.agency.collection('assistantSessions').doc(f.sessionId).collection('messages').doc(input.requestId+'-user').get()).data()!;
+  expect(user.text).toBe('Confirmă pauza: Selectată');expect(user.text).not.toContain('selected');expect(user.choice).toEqual(choice);
+  expect((await f.other.get()).data()?.status).toBe('published');
+  expect((await chatTurn(f.ctx,input)).message.id).toBe(result.message.id);
+  expect(mocks.fetch.mock.calls.filter(([,init])=>init.method==='POST')).toHaveLength(1);
+  await expect(chatTurn(f.ctx,{...input,choice:{...choice,rowId:'other'}})).rejects.toThrow('altui mesaj');
+ });
+ it('still validates current campaign revision for named choices',async()=>{
+  const f=await fixture(),offered=await f.send('Pune campania pe pauză.');
+  const row=offered.message.cards![0].rows.find(row=>row.id==='selected')!;
+  await f.campaign.update({campaignName:'Changed after presentation'});
+  const result=await chatTurn(f.ctx,{sessionId:f.sessionId,requestId:randomUUID(),prompt:namedChoiceText('metaPauseSelection',row),choice:{messageId:offered.message.id,source:'metaPauseSelection',rowId:'selected'}});
+  expect(result.message.text).toContain('schimbat');expect(mocks.fetch).not.toHaveBeenCalled();expect((await f.campaign.get()).data()?.status).toBe('published');
+ });
+ it('rejects invented choices before planning or saving a user message',async()=>{
+  const f=await fixture(),offered=await f.send('Pune campania pe pauză.'),requestId=randomUUID();
+  await expect(chatTurn(f.ctx,{sessionId:f.sessionId,requestId,prompt:'Confirmă pauza: Inventată',choice:{messageId:offered.message.id,source:'metaPauseSelection',rowId:'foreign'}})).rejects.toThrow('Opțiunea');
+  expect((await f.agency.collection('assistantSessions').doc(f.sessionId).collection('messages').doc(requestId+'-user').get()).exists).toBe(false);
+  expect(mocks.fetch).not.toHaveBeenCalled();
+ });
  for(const n of [413,414,440,441])it('executes original master-'+String(n).padStart(4,'0'),async()=>{
   const f=await fixture(),scenarioId='master-'+String(n).padStart(4,'0'),prompt=corpus.scenarios.find(row=>row.id===scenarioId)!.text,runs:any[]=[];
   const otherBefore=(await f.other.get()).data(),propertyBefore=(await f.property.get()).data();

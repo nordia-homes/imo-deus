@@ -351,7 +351,7 @@ export function JarvisVoice() {
     }
   }
 
-  function command(prompt: string, epoch = audio.current?.epoch || 0, selectedRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord) {
+  function command(prompt: string, epoch = audio.current?.epoch || 0, selectedRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord, choice?: import('@/lib/ai-assistant/named-choice-contract').NamedChoice) {
     const currentRecord = selectedRecord || currentRecordFromPath(window.location.pathname);
     const active = voiceSession.current,
       approvalId = pendingPlan.current?.id;
@@ -391,7 +391,8 @@ export function JarvisVoice() {
               sessionId: session.current,
               requestId: crypto.randomUUID(),
               currentRecord: currentRecord || null,
-              prompt: prompt + (uploadedFiles.current.length ? '\nFișiere încărcate privat: ' + JSON.stringify(uploadedFiles.current) : ''),
+              ...(choice ? { choice } : {}),
+              prompt: prompt + (!choice && uploadedFiles.current.length ? '\nFișiere încărcate privat: ' + JSON.stringify(uploadedFiles.current) : ''),
             },
             background.current,
           );
@@ -960,7 +961,7 @@ export function JarvisVoice() {
                     card={card}
                     compact
                     busy={state === "PROCESSING" || state === "WORKING"}
-                    onPrompt={(text, record) => command(text, undefined, record)}
+                    onPrompt={(text, record, choice) => { if (choice && !lastMessage.current?.id) return; command(text, undefined, record, choice ? {...choice,messageId:lastMessage.current!.id} : undefined); }}
                     onPrepare={(actions: AssistantAction[]) => {
                       const active = voiceSession.current;
                       queue.current = queue.current

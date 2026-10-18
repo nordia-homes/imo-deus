@@ -30,7 +30,7 @@ export async function readMetaInventory(ctx:AssistantContext,prompt:string,histo
  let cursor=0;const deadline=Date.now()+25000;
  await Promise.all(Array.from({length:Math.min(3,campaigns.length)},async()=>{
   for(;;){const index=cursor++;if(index>=campaigns.length)return;const doc=campaigns[index],row=doc.data;
-   const base={id:doc.id,propertyId:typeof row.propertyId==='string'?row.propertyId:'',campaignName:String(row.campaignName||doc.id),localStatus:String(row.status||'unknown'),providerStatus:null,effectiveStatus:null,checkedAt:null};
+   const base={id:doc.id,propertyId:typeof row.propertyId==='string'?row.propertyId:'',campaignName:String(row.campaignName||'Campanie fără denumire'),localStatus:String(row.status||'unknown'),providerStatus:null,effectiveStatus:null,checkedAt:null};
    if(row.agencyId!==ctx.agencyId){states[index]={...base,activity:'unknown',reason:'Identificarea agenției în campanie este incompletă; starea nu este confirmată.'};continue;}
    if(!row.metaCampaignId){
     const localOnly=['draft','ready'].includes(row.status)&&!['metaAdSetId','metaAdId','metaCreativeId','lastPublishAttemptAt','publishAttempts'].some(key=>row[key]);

@@ -162,3 +162,12 @@ describe('durable tenant-scoped jobs', () => {
     expect(runPlan).toHaveBeenCalledWith(expect.anything(), 'plan', false, 10);
   });
 });
+
+it('preserves named-choice metadata through the durable worker and prevents request substitution',async()=>{
+ const f=database();const choice={messageId:'offer',source:'metaReviewSelection' as const,rowId:'campaign'};
+ const selected={...input,choice,prompt:'Selectează campania: Cișmigiu'};
+ await enqueueTurn(f.ctx,selected);await enqueueTurn(f.ctx,selected);
+ await expect(enqueueTurn(f.ctx,{...selected,choice:{...choice,rowId:'other'}})).rejects.toThrow('altei solicitări');
+ await drainAgentJobs(f.db as any);
+ expect(chatTurn).toHaveBeenCalledWith(expect.anything(),expect.objectContaining(selected),expect.any(Function));
+});

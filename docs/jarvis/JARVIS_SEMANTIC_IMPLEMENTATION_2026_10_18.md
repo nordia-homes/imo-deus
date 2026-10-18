@@ -55,3 +55,21 @@ Remaining migration: structured named choices for legacy ID selections; checkpoi
 Rollback for this continuation: inspect a3428e07277f84172b6a7a6f79d18af3d34773ba in a separate worktree or revert the continuation commit. Preserve request/execution ledgers and application data. The original pre-semantic checkpoint remains dfa838e2c6627c70a0c468721849f9cadd033f46.
 
 Final continuation verification: 252 distinct unit/planner checks passed across 12 suites, plus 44 emulator integration checks. The combined unit run had two 5-second timeouts while the production build ran concurrently; both affected suites passed in full (73 checks) when rerun separately with one worker and the unchanged timeout. Full npm run build including TypeScript passed; ESLint passed with zero warnings on changed files; git diff --check passed. The same-drive build still reports the pre-existing standalone playwright-core browser-copy skip, so production browser packaging remains unverified. No live language-model evaluation or production rollout was performed.
+
+
+## Continuation: named Meta choices
+
+Implemented locally after 5fb9b167771c03b6dbadc6dd561c92f2b3ba98f8, without production deployment. Policy request-crm-17 / tools 205.
+
+- Eleven existing Meta selection types now submit human-readable text plus separate source-message/source/row metadata in Text and Voice, including durable jobs. The browser cannot supply the legacy execution prefix. The server translates only the exact offered row in the latest authorized assistant response, and existing domain handlers still validate current revisions, rights and provider approvals.
+- Campaign names appear in card headings. Missing campaign names no longer fall back to IDs. Selection instructions refer to buttons rather than asking agents to copy IDs. Original historical messages and legacy typed commands remain intact; this is a migration of the Meta selection UI, not all Facebook/social selections.
+- Replay hashes bind the chosen row, source and original response as well as the request and current record. Queue/reply reuse with changed selection is rejected. Selected-source ACL references are inherited by the saved user message; revoked references cannot produce a selectable card.
+- Worker failure persistence no longer overwrites an existing user message, its original timestamp, selection or access references. Newly persisted failures retain the queued selection hash. Voice selections are not mixed with unrelated uploaded-file text.
+
+Verification: 166 unit/component/transport checks passed in 11 suites; 108 Firestore emulator integration checks passed across control, pause, publication and image suites. The new named-choice chat integration confirms the selected campaign is paused, a sibling is unchanged, the visible saved message contains the name, stale revisions are refused, forged rows are rejected before persistence, and replay does not repeat the provider effect. Provider transport was simulated; no real Meta campaign was changed. Standalone TypeScript passed. Final build/lint status is recorded below after completion.
+
+Limits: browser interaction against a signed-in real application and speech recognition were not certified. This does not measure live-model understanding. General Facebook account/group/property choices, other legacy choices, persistent unresolved goals and continuation inside the model/tool planning loop remain outstanding. Existing per-request safeguards remain; there is no new conversation-wide token cap.
+
+Rollback for this lot: revert its commit or inspect 5fb9b167771c03b6dbadc6dd561c92f2b3ba98f8 in another worktree. Keep all request records, execution ledgers and business data; do not replay external effects. No incompatible data migration was introduced.
+
+Final named-choice verification: full npm run build passed, including TypeScript and page generation. ESLint completed with zero errors and the previously recorded React hook warning in ai-assistant/page.tsx:79; strict zero-warning lint is not certified. The staging build still skips copying the nested standalone playwright-core browser folder, so production browser packaging remains unverified. The 166 unit/component checks and 108 emulator checks are distinct checks in this lot, not new corpus completion claims. Production remains unchanged.

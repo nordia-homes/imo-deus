@@ -125,3 +125,10 @@ describe("local audio gate", () => {
     expect(view.getUint16(22, true)).toBe(1);
   });
 });
+
+it.each([false,true])('transmits named choices separately from the spoken prompt, background=%s',async background=>{
+ const api=vi.fn().mockResolvedValueOnce(background?{jobId:'j'}:{message:{text:'OK'}}).mockResolvedValue({status:'completed',message:{text:'OK'}});
+ const choice={messageId:'m',source:'metaReviewSelection' as const,rowId:'internal'};
+ await existingJarvisCommand(api,{sessionId:'s',requestId:'r',prompt:'Selectează campania: Cișmigiu',choice},background);
+ expect(api.mock.calls[0][1]).toMatchObject({prompt:'Selectează campania: Cișmigiu',choice});
+});

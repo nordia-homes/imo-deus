@@ -104,7 +104,7 @@ function AiAssistantWorkspace() {
     if (busy) return;
     generation.current++; const id=crypto.randomUUID();setSessionId(id);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,id,false); setMessages([]); setPlans({}); setHistoryCursor(null); setError('');
   }
-  async function send(text = input, currentRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord) {
+  async function send(text = input, currentRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord, choice?: import('@/lib/ai-assistant/named-choice-contract').NamedChoice) {
     if (!text.trim() || !sessionId || busy) return;
     await perform(async () => {
       const version = generation.current, requestId = crypto.randomUUID();
@@ -112,7 +112,7 @@ function AiAssistantWorkspace() {
       setMessages(m => [...m, message]); setInput('');
       let data;
       if (backgroundConfigured) {
-        const job = await api('/api/ai-assistant/workspace', { kind: 'start', sessionId, requestId, prompt: text.trim(), ...(currentRecord ? { currentRecord } : {}) });
+        const job = await api('/api/ai-assistant/workspace', { kind: 'start', sessionId, requestId, prompt: text.trim(), ...(currentRecord ? { currentRecord } : {}), ...(choice ? { choice } : {}) });
         setProgress('Comanda este salvată și va fi procesată pe server.');
         const started = Date.now(); let completed = false;
         while (!completed && version === generation.current && Date.now() - started < 180000) {
@@ -135,7 +135,7 @@ function AiAssistantWorkspace() {
           }
         }
         if (!data) throw new Error('Procesarea continuă pe server. Deschide istoricul pentru rezultat.');
-      } else data = await api('/api/ai-assistant/workspace', { kind: 'chat', sessionId, requestId, prompt: text.trim(), ...(currentRecord ? { currentRecord } : {}) });
+      } else data = await api('/api/ai-assistant/workspace', { kind: 'chat', sessionId, requestId, prompt: text.trim(), ...(currentRecord ? { currentRecord } : {}), ...(choice ? { choice } : {}) });
       setProgress('');
       if (version !== generation.current) return;
       setMessages(m => [...m, data.message]);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,sessionId);
@@ -227,7 +227,7 @@ function AiAssistantWorkspace() {
   }
 
   function renderCard(card: AssistantCard, messageId: string, cardIndex: number) {
-    return <AssistantResultCard key={cardIndex} card={card} busy={busy} onPrompt={(text, record) => { void send(text, record); }} onPrepare={actions => { void prepareActions(actions); }} onConsent={row => { void startConsent(row); }} onArtifact={row => { void downloadArtifact(row); }} onContinue={() => {
+    return <AssistantResultCard key={cardIndex} card={card} busy={busy} onPrompt={(text, record, choice) => { void send(text, record, choice ? {...choice,messageId} : undefined); }} onPrepare={actions => { void prepareActions(actions); }} onConsent={row => { void startConsent(row); }} onArtifact={row => { void downloadArtifact(row); }} onContinue={() => {
       if (card.search) void search({ ...card.search, cursor: card.nextCursor! }, messageId, cardIndex);
       else if(card.query || card.timeline) void perform(async () => { const result = await api('/api/ai-assistant/workspace', {kind:card.timeline?'timeline':'query',query:{...(card.timeline || card.query),cursor:card.nextCursor}}); setMessages(messages => messages.map(message => message.id===messageId ? {...message,cards:message.cards?.map((old,index)=>index===cardIndex?{...old,...result,rows:[...old.rows,...result.rows]}:old)} : message)); });
     }} onCrm={() => { if(card.search){const {cursor:_,...query}=card.search;void search({...query,source:'crm'});} }}/>;

@@ -28,7 +28,7 @@ export async function prepareMetaMedia(ctx: AssistantContext, prompt: string, hi
   const chosen=answer&&offered?.source==='metaMediaCampaignSelection'?answer[2]:answer&&offered?.source==='metaMediaSelection'?offered.rows[0]?.campaignId:inferred;
   const campaign=chosen?eligible.find(doc=>doc.id===chosen):eligible.length===1?eligible[0]:null;
   if(answer&&(!offered||!offered.rows.some(row=>row.id===answer[2])||offered.rows.some(row=>row.contextPropertyId!==pageId)||!campaign))throw new Error('Selecție indisponibilă');
-  if(!campaign)return {actions,source:'metaMediaCampaignSelection',rows:eligible.map(doc=>({id:doc.id,campaignName:doc.data().campaignName||doc.id,contextPropertyId:pageId,prompt:effective})),text:eligible.length?'Alege draftul: „Campanie material Meta: ID”.':'Nu există drafturi locale eligibile în context.'};
+  if(!campaign)return {actions,source:'metaMediaCampaignSelection',rows:eligible.map(doc=>({id:doc.id,campaignName:doc.data().campaignName||'Campanie fără denumire',contextPropertyId:pageId,prompt:effective})),text:eligible.length?'Alege ciorna folosind butonul campaniei afișate.':'Nu există drafturi locale eligibile în context.'};
   const row=campaign.data(),propertyId=String(row.propertyId),property=(await tx.get(agency.collection('properties').doc(propertyId))).data();
   if(!property||property.deletedAt||property.agencyId&&property.agencyId!==ctx.agencyId)throw new Error('Proprietate indisponibilă');
   const propertyRevision=metaDraftRevision(property),campaignRevision=metaDraftRevision(row);

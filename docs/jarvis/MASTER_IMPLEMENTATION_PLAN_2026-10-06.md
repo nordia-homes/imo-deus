@@ -1286,3 +1286,8 @@ Vezi [implementarea semantică](JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md). B
 ### Semantic continuation — 18 October 2026
 
 Implemented locally: authorized catalog fallback for unmatched wording; real registry descriptions; compact schema expansion before domain eviction; bounded original-history search with Romanian normalization and ACL revalidation; semantic denials across all action families; semantic intent for scoped Facebook controls and conversation edits. Firestore integration confirms cancellation and idempotent replay. These changes do not certify arbitrary language, all 1000 examples or full manual parity, and are not deployed. Current static parity inventory: 181 operations / 41 native actions / 46 UI mutation files. Remaining named-choice, planner continuation and real-language verification work is tracked in JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
+
+
+### Named selections — 18 October 2026
+
+Migrated eleven Meta selection types to human-readable messages and server-validated selection metadata in Text, Voice and durable jobs. Saved-offer identity, current ACLs, domain revisions and execution deduplication remain enforced. Added real local Firestore coverage for a named selection through chat and its persisted outcome. This completes the Meta UI portion of the named-choice migration, not Facebook group/account selections or planner-loop continuation. Source checkpoint before this lot: 5fb9b167771c03b6dbadc6dd561c92f2b3ba98f8. No production deployment or live-model certification.

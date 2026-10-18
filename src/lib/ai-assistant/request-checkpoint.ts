@@ -1,12 +1,13 @@
+import type { NamedChoice } from './named-choice-contract';
 import { createHash } from 'node:crypto';
 import { collectionFor, referencesAllowed, type AssistantContext } from './access';
 import { actionSchema } from './contracts';
 import { VERSIONS } from './models';
 import type { planTurn } from './planner';
 type PlannedTurn = Awaited<ReturnType<typeof planTurn>>;
-type Input = { sessionId: string; requestId: string; prompt: string; currentRecord?: { resource: string; id: string } | null };
+type Input = { sessionId: string; requestId: string; prompt: string; currentRecord?: { resource: string; id: string } | null; choice?: NamedChoice };
 export function requestCheckpointHash(input: Input) {
- return createHash('sha256').update(JSON.stringify([input.sessionId,input.requestId,input.prompt,input.currentRecord?.resource || null,input.currentRecord?.id || null])).digest('hex');
+ return createHash('sha256').update(JSON.stringify([input.sessionId,input.requestId,input.prompt,input.currentRecord?.resource || null,input.currentRecord?.id || null,...(input.choice ? [input.choice.messageId,input.choice.source,input.choice.rowId] : [])])).digest('hex');
 }
 export async function loadRequestCheckpoint(ctx: AssistantContext, input: Input): Promise<PlannedTurn | undefined> {
  const session = collectionFor(ctx,'assistantSessions').doc(input.sessionId);

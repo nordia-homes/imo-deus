@@ -1,3 +1,5 @@
+import type { NamedChoice } from './named-choice-contract';
+import { requestCheckpointHash } from './request-checkpoint';
 import { randomUUID } from 'node:crypto';
 import { PLAN_WORKER_STEPS } from './plan-limits';
 import { collectionFor, referencesAllowed, type AssistantContext } from './access';
@@ -19,14 +21,14 @@ export async function renewAgentJobLease(db: Firestore, ctx: AssistantContext) {
   });
 }
 
-export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null }) {
+export async function enqueueTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null; choice?: NamedChoice }) {
   if (ctx.runtimeMode === 'demo') throw new CommunicationError('Joburile durabile sunt indisponibile în demo.', 403);
   const ref = ctx.adminDb.collection('assistantAgentJobs').doc(input.requestId);
   const queue = collectionFor(ctx, 'assistantLocks').doc(`queue-${ctx.uid}`);
   await ctx.adminDb.runTransaction(async tx => {
     const [job, session, actor] = await Promise.all([tx.get(ref), tx.get(collectionFor(ctx, 'assistantSessions').doc(input.sessionId)), tx.get(queue)]);
     if (session.exists && session.data()?.ownerId !== ctx.uid) throw new CommunicationError('Conversație inaccesibilă.', 403);
-    if (job.exists) { if (job.data()?.userId !== ctx.uid || job.data()?.agencyId !== ctx.agencyId) throw new CommunicationError('Job inaccesibil.', 403); return; }
+    if (job.exists) { if (job.data()?.userId !== ctx.uid || job.data()?.agencyId !== ctx.agencyId) throw new CommunicationError('Job inaccesibil.', 403); if (requestCheckpointHash(job.data() as any) !== requestCheckpointHash(input)) throw new CommunicationError('Identificatorul jobului aparține altei solicitări.',409); return; }
     const previousId = actor.data()?.jobId;
     if (previousId && ['pending', 'running'].includes((await tx.get(ctx.adminDb.collection('assistantAgentJobs').doc(previousId))).data()?.status)) throw new CommunicationError('O comandă este deja în coadă pentru acest agent.', 409);
     tx.create(ref, { ...input, jobType: 'turn', agencyId: ctx.agencyId, userId: ctx.uid, role: ctx.role, status: 'pending', attempts: 0, createdAt: new Date().toISOString(), events: [] });
@@ -123,7 +125,7 @@ export async function drainAgentJobs(db: Firestore, limit = 1) {
           ? { status: 'pending', planStatus: 'pending', notBefore: plan.waitUntil || 0, confirmedSteps: plan.results?.length || 0, createdAt: new Date().toISOString() }
           : { status: 'completed', planStatus: plan.status, confirmedSteps: plan.results?.length || 0, completedAt: new Date().toISOString() };
       } else {
-        const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt, ...(job.currentRecord !== undefined ? { currentRecord: job.currentRecord } : {}) }, async event => { events.push(event); await publishProgress(events.slice(-60)); });
+        const result = await chatTurn(ctx, { sessionId: job.sessionId, requestId: row.id, prompt: job.prompt, ...(job.choice ? { choice: job.choice } : {}), ...(job.currentRecord !== undefined ? { currentRecord: job.currentRecord } : {}) }, async event => { events.push(event); await publishProgress(events.slice(-60)); });
         outcome = { status: 'completed', message: result.message, ...(result.message.outputType === 'ERROR_EVENT' ? { planStatus: 'failed' } : {}), completedAt: new Date().toISOString() };
       }
     } catch (error) {

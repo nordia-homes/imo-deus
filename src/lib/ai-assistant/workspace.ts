@@ -1,4 +1,6 @@
-import { loadRequestCheckpoint, saveRequestCheckpoint } from './request-checkpoint';
+import { resolveNamedChoice } from './named-choice';
+import type { NamedChoice } from './named-choice-contract';
+import { loadRequestCheckpoint, saveRequestCheckpoint, requestCheckpointHash } from './request-checkpoint';
 import { metaControlExecutionPrompt } from './meta-control';
 import { metaMediaExecutionPrompt } from './meta-media';
 import { metaDraftExecutionPrompt } from './meta-draft';
@@ -74,25 +76,28 @@ export async function sessionHistory(ctx: AssistantContext, sessionId: string, b
   }));
   return { messages: messages.reverse(), nextCursor: docs.size === 40 ? docs.docs.at(-1)!.id : null };
 }
-export async function chatTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null }, progress?: (event: AgentEvent) => void | Promise<void>) {
+export async function chatTurn(ctx: AssistantContext, input: { sessionId: string; requestId: string; prompt: string; currentRecord?: CurrentRecord | null; choice?: NamedChoice }, progress?: (event: AgentEvent) => void | Promise<void>) {
   const ref = collectionFor(ctx, 'assistantSessions').doc(input.sessionId);
   const reply = ref.collection('messages').doc(`${input.requestId}-assistant`);
   const prior = await reply.get();
-  if (prior.exists) { await requireSession(ctx, input.sessionId); if (!(await referencesAllowed(ctx, prior.data()?.accessRefs))) throw new CommunicationError('Accesul la resursele răspunsului a fost revocat.', 403); return { message: { ...prior.data(), id: prior.id } as AssistantMessage }; }
+  if (prior.exists) { await requireSession(ctx, input.sessionId); const original = (await ref.collection('messages').doc(input.requestId+'-user').get()).data(); if (original?.requestHash ? original.requestHash !== requestCheckpointHash(input) : original?.text !== input.prompt || Boolean(input.choice)) throw new CommunicationError('Identificatorul solicitării aparține altui mesaj.', 409); if (!(await referencesAllowed(ctx, prior.data()?.accessRefs))) throw new CommunicationError('Accesul la resursele răspunsului a fost revocat.', 403); return { message: { ...prior.data(), id: prior.id } as AssistantMessage }; }
+  const choiceHistory = input.choice ? (await sessionHistory(ctx,input.sessionId)).messages : undefined;
+  if (input.choice) resolveNamedChoice(input.choice,input.prompt,choiceHistory!);
+  const choiceRefs = choiceHistory?.find(message=>message.id===input.choice?.messageId)?.accessRefs || [];
   const pageContext = input.currentRecord !== undefined ? await currentRecordMessage(ctx, input.currentRecord) : undefined;
   const now = new Date().toISOString();
   const actorLock = collectionFor(ctx, 'assistantLocks').doc(`chat-${ctx.uid}`);
   await ctx.adminDb.runTransaction(async tx => {
     const userMessage = ref.collection('messages').doc(`${input.requestId}-user`);
     const [snap, actor, original] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(userMessage)]);
-    if (original.exists && original.data()?.text !== input.prompt) throw new CommunicationError('Identificatorul solicitării aparține altui mesaj.', 409);
+    if (original.exists && (original.data()?.text !== input.prompt || (original.data()?.requestHash ? original.data()?.requestHash !== requestCheckpointHash(input) : Boolean(input.choice)))) throw new CommunicationError('Identificatorul solicitării aparține altui mesaj.', 409);
     if (snap.exists && snap.data()?.ownerId !== ctx.uid) throw new CommunicationError('Conversația nu este accesibilă.', 404);
     if (Number(snap.data()?.busyUntil || 0) > Date.now()) throw new CommunicationError('O cerere este deja în curs în această conversație.', 409);
     if (Number(actor.data()?.busyUntil || 0) > Date.now()) throw new CommunicationError('O comandă a agentului este deja în curs.', 429);
     tx.set(actorLock, { busyUntil: Date.now() + 180000, turnId: input.requestId });
     if (!snap.exists) tx.create(ref, { ownerId: ctx.uid, title: input.prompt.slice(0, 100), createdAt: now, updatedAt: now, busyUntil: Date.now() + 180000, turnId: input.requestId });
     else tx.update(ref, { busyUntil: Date.now() + 180000, turnId: input.requestId });
-    if (!original.exists) tx.set(userMessage, { role: 'user', text: input.prompt, createdAt: now, ...(pageContext ? { cards: pageContext.cards, ...(pageContext.accessRefs ? { accessRefs: pageContext.accessRefs } : {}) } : {}) });
+    if (!original.exists) tx.set(userMessage, { role: 'user', text: input.prompt, requestHash: requestCheckpointHash(input), ...(input.choice ? { choice: input.choice } : {}), createdAt: now, ...(pageContext ? { cards: pageContext.cards } : {}), ...((choiceRefs.length || pageContext?.accessRefs?.length) ? { accessRefs: uniqueReferences([...choiceRefs,...(pageContext?.accessRefs || [])]) } : {}) });
   });
   let turnMetrics: TurnMetrics | undefined;
   const started = Date.now();
@@ -101,7 +106,8 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const conversationHistory = [...history];
     if (pageContext) history.push(pageContext);
     const session = await ref.get();
-    const editPrompt = conversationEditPrompt(input.prompt, conversationHistory);
+    const selectedPrompt = input.choice ? resolveNamedChoice(input.choice, input.prompt, conversationHistory) : input.prompt;
+    const editPrompt = conversationEditPrompt(selectedPrompt, conversationHistory);
     const planningPrompt = prospectPlanningPrompt(editPrompt, conversationHistory);
     ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.prompt } };
     const restored = await loadRequestCheckpoint(ctx, input);

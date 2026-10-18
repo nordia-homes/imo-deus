@@ -33,7 +33,7 @@ export async function prepareMetaControl(ctx: AssistantContext, prompt: string, 
   const snapshot = await tx.get(agency.collection('metaCampaignDrafts'));
   const rows = snapshot.docs.filter(doc => {
    const row = doc.data(); return row.agencyId === ctx.agencyId && !row.deletedAt && ['published','paused','error'].includes(row.status) && /^\d+$/.test(String(row.metaCampaignId || '')) && (!propertyId || row.propertyId === propertyId);
-  }).map(doc => ({ id: doc.id, propertyId: String(doc.data().propertyId), campaignName: String(doc.data().campaignName || doc.id), status: String(doc.data().status), campaignRevision: metaDraftRevision(doc.data()), contextPropertyId: propertyId }));
+  }).map(doc => ({ id: doc.id, propertyId: String(doc.data().propertyId), campaignName: String(doc.data().campaignName || 'Campanie fără denumire'), status: String(doc.data().status), campaignRevision: metaDraftRevision(doc.data()), contextPropertyId: propertyId }));
   const previous = last(history);
   const reviewed = previous?.cards?.find(card => card.source === 'metaCampaignReview')?.rows;
   const receipt = previous?.cards?.find(card => card.source === 'autonomy')?.rows?.[0]?.result as Record<string, unknown> | undefined;
@@ -43,7 +43,7 @@ export async function prepareMetaControl(ctx: AssistantContext, prompt: string, 
    const selected = offered?.rows.find(row => row.id === answer[1]);
    if (!selected || !target || selected.contextPropertyId !== propertyId || selected.campaignRevision !== target.campaignRevision || selected.propertyId !== target.propertyId) throw new Error('Campania selectată s-a schimbat');
   }
-  if (!target || mode === 'confirm') return { actions, source: 'metaPauseSelection', rows: target ? [target] : rows, text: rows.length ? 'Selectează campania și confirmă pauza: „Confirm pauza Meta: ID”. Verific rezultatul la Meta; celelalte campanii rămân nemodificate.' : 'Nu există o campanie publicată eligibilă în context. Drafturile nu se pun în pauză.' };
+  if (!target || mode === 'confirm') return { actions, source: 'metaPauseSelection', rows: target ? [target] : rows, text: rows.length ? 'Selectează campania și confirmă pauza folosind butonul din card. Verific rezultatul la Meta; celelalte campanii rămân nemodificate.' : 'Nu există o campanie publicată eligibilă în context. Drafturile nu se pun în pauză.' };
   const property = (await tx.get(agency.collection('properties').doc(target.propertyId))).data();
   if (!property || property.deletedAt || property.agencyId && property.agencyId !== ctx.agencyId) throw new Error('Proprietate indisponibilă');
   actions.push({ kind: 'existing_operation', operation: 'meta_campaign_pause', params: { campaignId: target.id }, query: {}, body: { jarvisPause: true, propertyId: target.propertyId, expectedRevision: target.campaignRevision } });
