@@ -44,6 +44,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     options = { ...options, ownerHistoryIdentity: { listingId: historyReply.pending.listingId, phone: historyReply.phone || undefined, associations: historyReply.associations || historyReply.pending.associations } };
   }
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], accessRefs: AccessReference[] = uniqueReferences(history.flatMap(message => message.accessRefs || []));
+  let recoveryRequestId: string | undefined;
+  const inspectedRecoveries = new Set<string>();
   let goalCoverage: GoalCoverage | undefined;
   const blockedProspects = new Map<string, string>();
   const successfulReads = new Set<string>();
@@ -71,7 +73,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     if (collaborationDraft && status === 'success') text = `Ciornă de colaborare — nu a fost trimisă.\n\n${text}`;
     if (goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) text += '\nCerințe încă neacoperite: ' + goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.description).join('; ');
     const semanticAuthority = bindSemanticAuthority(ctx.prospectingRequest?.prompt || prompt, actions, goalCoverage);
-    return { text, cards, actions, ...(semanticAuthority ? { semanticAuthority } : {}), ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
+    return { text, cards, actions, ...(recoveryRequestId ? { recoveryRequestId } : {}), ...(semanticAuthority ? { semanticAuthority } : {}), ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
   if (historyReply && ((!historyReply.phone && !historyReply.associationAnswered) || historyReply.associationAnswered === false)) {
@@ -821,6 +823,16 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           try { response = await Promise.race([invoke(), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Tool timeout; rezultatul nu este confirmat.')), Math.min(definition.timeoutMs, Math.max(1, budget.limits.maxExecutionMs - (Date.now() - budget.started)))); })]); }
           finally { if (timer) clearTimeout(timer); }
           definition.outputSchema.parse(response.data);
+          if (name === 'request_recovery') {
+            if (payload.mode === 'inspect' && response.data.resumable === true && typeof response.data.requestId === 'string') inspectedRecoveries.add(response.data.requestId);
+            if (payload.mode === 'resume') {
+              if (options.child || actions.length || result.calls.length !== 1 || !payload.requestId || !inspectedRecoveries.has(payload.requestId) || response.data.resumable !== true || response.data.requestId !== payload.requestId) throw new Error('Inspectează cererea neterminată înainte de reluare; nu combina recuperarea cu alte acțiuni.');
+              metrics.tools.push({ name, status: 'success', latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
+              recoveryRequestId = payload.requestId;
+              accessRefs.push(...response.refs);
+              return finish('Recuperez cererea neterminată și verific execuțiile deja salvate.', 'recovery');
+            }
+          }
           if (prospectAssignmentRead && name === 'read') {
             let rows: Record<string, unknown>[] = (prospectOwnershipGuard ? otherAssignedProspects : otherReservations ? otherReservedProspects : ownActiveProspects)(Array.isArray(response.data.rows) ? response.data.rows : [], ctx.uid, activeProspectsAt);
             activeProspectsComplete = response.data.complete === true;
@@ -933,7 +945,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           } };
         }
         metrics.tools.push({ name: toolRegistry.has(name) ? name : 'unknown_tool', status, latencyMs: Date.now() - started, version: VERSIONS.tools, argumentsHash: createHash('sha256').update(call.arguments).digest('hex') });
-        input.push({ type: 'function_call_output', call_id: call.id, output: compressedResult(data, 7000) });
+        input.push({ type: 'function_call_output', call_id: call.id, output: name === 'request_recovery' ? JSON.stringify(data) : compressedResult(data, 7000) });
         if (ownerHistoryContinuation) return finish(ownerHistoryQuestion(ownerHistoryContinuation), 'clarification');
         if (prospectRead && historyReady() && status === 'success' && ['owner_prospects', 'timeline'].includes(name)) input.push({ role: 'developer', content: 'Citirile obligatorii sunt încheiate. Validează acum goal_coverage cu resolution=answered și steps=[]. Copiază exact citatul și ID-urile dovezilor curente: ' + JSON.stringify({ sourceQuote: prompt.slice(0, 1000), evidenceCallIds: [...successfulReads].slice(-20) }) });
       }

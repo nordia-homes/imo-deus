@@ -1,8 +1,9 @@
+import { beginRequestRecovery, readRequestRecovery } from './request-recovery';
 import { executionScope } from './execution-scope';
 import { retainSemanticChoices, deferredSemanticCard } from './semantic-clarification';
 import { resolveNamedChoice } from './named-choice';
 import type { NamedChoice } from './named-choice-contract';
-import { loadRequestCheckpoint, saveRequestCheckpoint, requestCheckpointHash } from './request-checkpoint';
+import { incompletePlanning, loadRequestCheckpoint, saveRequestCheckpoint, requestCheckpointHash } from './request-checkpoint';
 import { metaControlExecutionPrompt } from './meta-control';
 import { metaMediaExecutionPrompt } from './meta-media';
 import { metaDraftExecutionPrompt } from './meta-draft';
@@ -109,11 +110,44 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     if (pageContext) history.push(pageContext);
     const session = await ref.get();
     const selectedPrompt = input.choice ? resolveNamedChoice(input.choice, input.prompt, conversationHistory) : input.prompt;
-    const editPrompt = conversationEditPrompt(selectedPrompt, conversationHistory);
-    const planningPrompt = prospectPlanningPrompt(editPrompt, conversationHistory);
+    let editPrompt = conversationEditPrompt(selectedPrompt, conversationHistory);
+    let planningPrompt = prospectPlanningPrompt(editPrompt, conversationHistory);
     ctx = { ...ctx, executionScope: executionScope(input.sessionId,input.requestId,input.choice ? conversationHistory.find(message=>message.id===input.choice?.messageId)?.executionScope : undefined), prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.choice?.source === 'facebookSemanticProperty' || input.choice?.source === 'facebookSemanticAccount' ? selectedPrompt : input.prompt } };
+    await beginRequestRecovery(ctx, { input, planningPrompt, executionPrompt: editPrompt, authorityPrompt: ctx.prospectingRequest!.prompt, executionScope: ctx.executionScope!, accessRefs: uniqueReferences(history.flatMap(message=>message.accessRefs || [])) });
+    let executionRequestId = input.requestId;
+    let executionEligibilityPrompt = input.prompt;
+    let recoveryRootId = input.requestId;
+    let sourceCheckpointInput: Parameters<typeof saveRequestCheckpoint>[1] | undefined;
+    let replaceIncompleteCheckpoint = false;
     const restored = await loadRequestCheckpoint(ctx, input);
-    const result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
+    let result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
+    if (result.recoveryRequestId) {
+      const selectionMetrics = result.metrics;
+      const recovered = await readRequestRecovery(ctx, result.recoveryRequestId);
+      if (!recovered || recovered.record.status !== 'pending') throw new Error('Cererea nu mai poate fi reluată automat.');
+      const original = recovered.record;
+      recoveryRootId = executionRequestId = recovered.requestId;
+      await ctx.adminDb.runTransaction(async tx => {
+        const owner = await tx.get(ref);
+        if (owner.data()?.ownerId !== ctx.uid || owner.data()?.turnId !== input.requestId) throw new Error('Cererea nu mai deține conversația.');
+        tx.update(ref, { pendingRecoveryId: recoveryRootId });
+        tx.update(ref.collection('recoveries').doc(input.requestId), { status: 'redirected' });
+      });
+      executionEligibilityPrompt = original.input.prompt;
+      planningPrompt = original.planningPrompt;
+      editPrompt = original.executionPrompt;
+      ctx = { ...ctx, executionScope: original.executionScope, prospectingRequest: { ...ctx.prospectingRequest!, prompt: original.authorityPrompt } };
+      // Once a complete plan is saved, NEVER regenerate its order or ledger keys.
+      // Before that boundary there have been no executor effects: restart planning.
+      const frozen = await loadRequestCheckpoint(ctx, original.input);
+      if (frozen && !incompletePlanning(frozen, original.input.prompt)) result = { ...frozen, recoveryRequestId: recoveryRootId, metrics: { ...selectionMetrics, status: frozen.metrics.status } };
+      else {
+        const replanned = await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
+        result = { ...replanned, recoveryRequestId: recoveryRootId, metrics: { ...replanned.metrics, models: [...selectionMetrics.models, ...replanned.metrics.models], tools: [...selectionMetrics.tools, ...replanned.metrics.tools] } };
+        sourceCheckpointInput = original.input;
+        replaceIncompleteCheckpoint = Boolean(frozen);
+      }
+    }
     if (!restored) {
       const previousChoice = conversationHistory.find(message=>message.id===input.choice?.messageId);
       result.cards = retainSemanticChoices(result.cards, previousChoice, input.choice, selectedPrompt);
@@ -129,11 +163,12 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
         result.metrics.status='clarification';
         result.text = 'Alege înregistrările rămase din cardurile afișate pentru a continua cererea.' + (deferred ? ' Pașii deja pregătiți au fost păstrați; nu au fost executați.' : '');
       }
+      if (sourceCheckpointInput) await saveRequestCheckpoint(ctx, sourceCheckpointInput, result, input.requestId, replaceIncompleteCheckpoint);
       await saveRequestCheckpoint(ctx, input, result);
     }
     turnMetrics = result.metrics;
-    const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(input.prompt, result.metrics.status, result.actions, result.goalCoverage);
-    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(socialRemoveExecutionPrompt(metaDraftExecutionPrompt(metaMediaExecutionPrompt(metaControlExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory), result.semanticAuthority) : { actions: result.actions, results: [], blocked: false };
+    const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(executionEligibilityPrompt, result.metrics.status, result.actions, result.goalCoverage);
+    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, executionRequestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(socialRemoveExecutionPrompt(metaDraftExecutionPrompt(metaMediaExecutionPrompt(metaControlExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory), result.semanticAuthority) : { actions: result.actions, results: [], blocked: false };
     for (const step of autonomous.results) {
       const receipt = step.result as Record<string, unknown> | undefined;
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });
@@ -164,7 +199,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Rezultatele cererii', source: 'autonomy', rows: autonomous.results });
       if (autonomous.blocked || rejectedMessages.length) result.metrics.status = 'partial';
     }
-    const planId = result.actions.length ? randomUUID() : undefined;
+    const planId = executable && result.actions.length ? randomUUID() : undefined;
     const pendingProspect = pendingProspectRequest(planningPrompt, result.metrics.status, history);
     const message: AssistantMessage = { executionScope:ctx.executionScope, id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.choiceSource || ['semanticDeferredActions','facebookSemanticRequest','facebookImmediateRequest','facebookAccountRequest','facebookScheduleRequest','metaStatusReview', 'metaAssetsReview', 'metaImageResumeSelection', 'metaImageSelection', 'metaImageApproval', 'metaImageReview', 'metaPerformanceSelection', 'metaPerformanceReview', 'metaPublishSelection', 'metaPublishReview', 'metaCampaignReview', 'metaMediaSelection'].includes(card.source) ? card.rows : card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
     if (pendingProspect) message.prospectContinuation = pendingProspect;
@@ -173,7 +208,10 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       const [fresh, actor, member] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(ctx.adminDb.collection('users').doc(ctx.uid))]);
       if (member.data()?.agencyId !== ctx.agencyId || member.data()?.role !== ctx.role) throw new CommunicationError('Acces revocat.', 403);
       if (fresh.data()?.turnId !== input.requestId) throw new CommunicationError('Cererea a expirat. Reîncarcă istoricul.', 409);
-      if (planId) tx.create(collectionFor(ctx, 'assistantPlans').doc(planId), { ownerId: ctx.uid, sessionId: input.sessionId, telemetryId: input.requestId, actions: result.actions, goal: planGoal(input.prompt, result.actions, result.goalCoverage, true), outcome: summarizeOutcome('pending', result.actions.length, []), accessRefs: message.accessRefs, status: 'pending', createdAt: message.createdAt, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, planId, result.actions, Date.now() + 3600000), versions: VERSIONS });
+      if (planId) tx.create(collectionFor(ctx, 'assistantPlans').doc(planId), { ownerId: ctx.uid, sessionId: input.sessionId, telemetryId: input.requestId, actions: result.actions, goal: planGoal(ctx.prospectingRequest?.prompt || input.prompt, result.actions, result.goalCoverage, true), outcome: summarizeOutcome('pending', result.actions.length, []), accessRefs: message.accessRefs, status: 'pending', createdAt: message.createdAt, expiresAt: Date.now() + 3600000, approval: approvalEnvelope(ctx.uid, ctx.agencyId, planId, result.actions, Date.now() + 3600000), versions: VERSIONS });
+      tx.update(ref.collection('recoveries').doc(recoveryRootId), { status: planId ? 'plan_pending' : result.metrics.status === 'success' && !autonomous.blocked ? 'complete' : 'pending', accessRefs: uniqueReferences(message.accessRefs || []) });
+      if (recoveryRootId !== input.requestId) tx.update(ref.collection('recoveries').doc(input.requestId), { status: 'redirected' });
+      tx.update(ref, { pendingRecoveryId: planId || result.metrics.status !== 'success' || autonomous.blocked ? recoveryRootId : recoveryRootId === input.requestId && !input.choice ? session.data()?.pendingRecoveryId || null : null });
       tx.set(reply, message);
       tx.set(collectionFor(ctx, 'assistantTelemetry').doc(input.requestId), telemetryDocument(ctx, input.requestId, input.sessionId, { ...result.metrics, requiresApproval: Boolean(planId) }));
       tx.update(ref, { busyUntil: 0, updatedAt: message.createdAt, summary: sessionSummary([...history, message]) });

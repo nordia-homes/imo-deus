@@ -1,3 +1,5 @@
+import { beginRequestRecovery, readRequestRecovery } from '../request-recovery';
+import { saveRequestCheckpoint } from '../request-checkpoint';
 import { executionScope } from '../execution-scope';
 import * as plannerModule from '../planner';
 import { dispatchTool } from '../tool-dispatch';
@@ -151,6 +153,123 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     expect(missing.blocked).toBe(true);expect(missing.results).toEqual([]);
     expect((await f.agency.collection('contacts').get()).size).toBe(0);expect(mocks.fetch).not.toHaveBeenCalled();
   });
+
+  function modelCall(name: string, payload: unknown) {
+    const id=randomUUID(), args=JSON.stringify({payload:JSON.stringify(payload)});
+    return {calls:[{id,name,arguments:args}],items:[{type:'function_call',call_id:id,name,arguments:args}],text:'',usage:{inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false},status:'completed',latencyMs:1};
+  }
+  async function recoveryFixture(actions: any[] = [], frozen=true) {
+    const f=await fixture(), sessionId=randomUUID(), requestId=randomUUID();
+    const input={sessionId,requestId,prompt:'Creează sarcina de apel și adaugă cumpărătorul Matei Alin.',currentRecord:null};
+    const session=f.agency.collection('assistantSessions').doc(sessionId);
+    await session.set({ownerId:f.ctx.uid,turnId:requestId,busyUntil:0});
+    const ctx={...f.ctx,executionScope:executionScope(sessionId,requestId),prospectingRequest:{sessionId,requestId,prompt:input.prompt}};
+    await beginRequestRecovery(ctx,{input,planningPrompt:input.prompt,executionPrompt:input.prompt,authorityPrompt:input.prompt,executionScope:ctx.executionScope,accessRefs:[]});
+    const planned={text:'Pregătit.',cards:[],actions,accessRefs:[],metrics:{status:'success',models:[],tools:[],elapsedMs:1}};
+    if(frozen) await saveRequestCheckpoint(ctx,input,planned as any);
+    return {...f,ctx,session,input,planned};
+  }
+  it.each(['Continuă.','Du până la capăt ce am început.','Reia de unde s-a întrerupt, fără să refaci pașii terminați.'])('recovers frozen execution through the real planner and workspace: %s',async(prompt)=>{
+    const actions=[{kind:'create_task',description:'Apel proprietar',dueDate:'2030-01-01',propertyId:'property',participantSource:'property_owner'},{kind:'create_contact',name:'Matei Alin',phone:'0712345678'}];
+    const f=await recoveryFixture(actions);
+    await f.property.update({ownerName:'Proprietar',ownerPhone:'0712345679'});
+    const done=await executeSafePrefix(f.ctx,f.input.requestId,[actions[0]] as any,f.input.prompt);
+    expect(done.results).toHaveLength(1);
+    vi.stubEnv('OPENAI_API_KEY','test-only');
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockResolvedValueOnce(modelCall('request_recovery',{mode:'inspect'}) as any).mockResolvedValueOnce(modelCall('request_recovery',{mode:'resume',requestId:f.input.requestId}) as any);
+    try {
+      const input={sessionId:f.input.sessionId,requestId:randomUUID(),prompt,currentRecord:null};
+      const result=await chatTurn(f.ctx,input);
+      expect(result.message.outputType).not.toBe('ERROR_EVENT');
+      expect(result.message.text).toContain('Pași confirmați din execuții anterioare: 1');
+      expect((await f.agency.collection('tasks').get()).size).toBe(1);
+      expect((await f.agency.collection('contacts').get()).size).toBe(1);
+      expect((await f.session.collection('recoveries').doc(f.input.requestId).get()).data()?.status).toBe('complete');
+      await chatTurn(f.ctx,input);expect(model).toHaveBeenCalledTimes(2);
+      expect(mocks.fetch).not.toHaveBeenCalled();expect(mocks.runner).not.toHaveBeenCalled();
+    } finally {model.mockRestore();vi.unstubAllEnvs();}
+  });
+  it('restarts interrupted planning with the full original request and saves it before execution',async()=>{
+    const f=await recoveryFixture([{kind:'create_contact',name:'Matei Alin',phone:'0712345678'}],false);
+    const planner=vi.spyOn(plannerModule,'planTurn').mockResolvedValueOnce({...f.planned,actions:[],recoveryRequestId:f.input.requestId} as any).mockResolvedValueOnce(f.planned as any);
+    try {
+      const result=await chatTurn(f.ctx,{sessionId:f.input.sessionId,requestId:randomUUID(),prompt:'Termină ce mai rămăsese.',currentRecord:null});
+      expect(result.message.outputType).not.toBe('ERROR_EVENT');
+      expect(planner).toHaveBeenCalledTimes(2);expect(planner.mock.calls[1][1]).toBe(f.input.prompt);
+      expect((await f.session.collection('requests').doc(f.input.requestId).get()).exists).toBe(true);
+      expect((await f.agency.collection('contacts').get()).size).toBe(1);
+    } finally {planner.mockRestore();}
+  });
+  it('preserves the unfinished request across unrelated successful answers and beyond recent history',async()=>{
+    const f=await recoveryFixture();
+    const planner=vi.spyOn(plannerModule,'planTurn').mockResolvedValue({...f.planned,text:'Răspuns la întrebare.'} as any);
+    try {
+      await chatTurn(f.ctx,{sessionId:f.input.sessionId,requestId:randomUUID(),prompt:'Care este starea calendarului?',currentRecord:null});
+      expect((await f.session.get()).data()?.pendingRecoveryId).toBe(f.input.requestId);
+      const newId=randomUUID();await f.session.update({turnId:newId});
+      await beginRequestRecovery({...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:newId}},{input:{...f.input,requestId:newId,prompt:'Continuă'},planningPrompt:'Continuă',executionPrompt:'Continuă',authorityPrompt:'Continuă',executionScope:executionScope(f.input.sessionId,newId),accessRefs:[]});
+      const recovered=await readRequestRecovery({...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:newId}});
+      expect(recovered?.requestId).toBe(f.input.requestId);
+      expect(recovered?.record.planningPrompt).toBe(f.input.prompt);
+    } finally {planner.mockRestore();}
+  });
+  it('rejects recovery across owners, sessions, versions and revoked resource access',async()=>{
+    const f=await recoveryFixture();
+    const current={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    await expect(readRequestRecovery({...current,uid:'other'},f.input.requestId)).rejects.toThrow();
+    await expect(readRequestRecovery({...current,prospectingRequest:{...current.prospectingRequest,sessionId:randomUUID()}},f.input.requestId)).rejects.toThrow();
+    const record=f.session.collection('recoveries').doc(f.input.requestId);
+    await record.update({version:'old'});await expect(readRequestRecovery(current,f.input.requestId)).rejects.toThrow('Versiunea');
+    await record.update({version:JSON.stringify(VERSIONS),accessRefs:[{resource:'properties',id:'missing'}]});
+    await expect(readRequestRecovery(current,f.input.requestId)).rejects.toThrow('revocat');
+  });
+
+
+  it('replans an interrupted partial plan without exposing or executing the incomplete actions',async()=>{
+    const f=await fixture(),input={sessionId:randomUUID(),requestId:randomUUID(),prompt:'Adaugă cumpărătorul Matei Alin.',currentRecord:null};
+    const complete={text:'Pregătit.',cards:[],actions:[{kind:'create_contact',name:'Matei Alin',phone:'0712345678'}],accessRefs:[],metrics:{status:'success',models:[],tools:[],elapsedMs:1}};
+    const planner=vi.spyOn(plannerModule,'planTurn').mockResolvedValueOnce({...complete,metrics:{...complete.metrics,status:'partial'}} as any).mockResolvedValueOnce({...complete,actions:[],recoveryRequestId:input.requestId} as any).mockResolvedValueOnce(complete as any);
+    try {
+      const first=await chatTurn(f.ctx,input);expect(first.message.planId).toBeUndefined();expect((await f.agency.collection('contacts').get()).size).toBe(0);
+      const session=f.agency.collection('assistantSessions').doc(input.sessionId);
+      expect((await session.collection('requests').doc(input.requestId).get()).data()?.phase).toBe('planning_incomplete');
+      const resumed=await chatTurn(f.ctx,{...input,requestId:randomUUID(),prompt:'Poți duce la capăt ce a rămas?'});
+      expect(resumed.message.outputType).not.toBe('ERROR_EVENT');expect((await f.agency.collection('contacts').get()).size).toBe(1);
+      expect((await session.collection('requests').doc(input.requestId).get()).data()?.phase).toBe('planned');
+      expect(planner.mock.calls[2][1]).toBe(input.prompt);
+    } finally {planner.mockRestore();}
+  });
+  it('does not honor a model recovery directive without inspecting the original request first',async()=>{
+    const f=await recoveryFixture();
+    const current={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const final={calls:[],items:[],text:'Nu am reluat.',intentStatus:'clarification',usage:{inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false},status:'completed',latencyMs:1};
+    const respond=vi.fn().mockResolvedValueOnce(modelCall('request_recovery',{mode:'resume',requestId:f.input.requestId})).mockResolvedValue(final);
+    const result=await plannerModule.planTurn(current,'Continuă',[],{provider:{id:'fixture',respond}});
+    expect(result.recoveryRequestId).toBeUndefined();expect(result.actions).toEqual([]);
+    expect(result.metrics.tools).toContainEqual(expect.objectContaining({name:'request_recovery',status:'failed'}));
+  });
+
+
+  it('does not claim a deleted completed task still exists or recreate it on recovery',async()=>{
+    const actions=[{kind:'create_task' as const,description:'Apel proprietar',dueDate:'2030-01-01',propertyId:'property',participantSource:'property_owner' as const}];
+    const f=await recoveryFixture(actions);await f.property.update({ownerName:'Proprietar'});
+    const first=await executeSafePrefix(f.ctx,f.input.requestId,actions,f.input.prompt);expect(first.results).toHaveLength(1);
+    await f.agency.collection('tasks').doc((first.results[0].result as any).taskId).delete();
+    const repeated=await executeSafePrefix(f.ctx,f.input.requestId,actions,f.input.prompt);
+    expect(repeated.blocked).toBe(true);expect(repeated.results).toEqual([]);expect((await f.agency.collection('tasks').get()).size).toBe(0);
+  });
+  it('passes the complete saved request to the model, including constraints beyond the ordinary tool preview',async()=>{
+    const f=await recoveryFixture();
+    const original='Context detaliat. '.repeat(500)+'Nu contacta proprietarul și nu publica nimic.';
+    await f.session.collection('recoveries').doc(f.input.requestId).update({planningPrompt:original});
+    const current={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const final={calls:[],items:[],text:'Nu am reluat.',intentStatus:'clarification',usage:{inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false},status:'completed',latencyMs:1};
+    const respond=vi.fn().mockResolvedValueOnce(modelCall('request_recovery',{mode:'inspect',requestId:f.input.requestId})).mockResolvedValue(final);
+    await plannerModule.planTurn(current,'Ce rămăsese neterminat?',[],{provider:{id:'fixture',respond}});
+    const input=JSON.stringify(respond.mock.calls[1]);expect(input).toContain(original);
+    expect((await f.agency.collection('contacts').get()).size).toBe(0);expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
   it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {
     const f = await fixture('cloud'), sessionId = randomUUID();

@@ -1,3 +1,4 @@
+import { requestRecoveryTool } from './request-recovery';
 import { prepareFacebookPublication } from './facebook-natural';
 import { readConversationHistory } from './conversation-history';
 import { viewingConfirmationDraft } from './viewing-confirmation-draft';
@@ -57,6 +58,9 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     cards.push({ type: 'data', ...(choiceSource ? {choiceSource,choiceOfferId} : {}), title: prepared.source === 'facebookConnections' ? ('Conturi Facebook pentru ' + (prepared.pending && 'propertyTitle' in prepared.pending ? prepared.pending.propertyTitle : 'proprietatea selectată')) : ('Proprietăți pentru publicare' + (typeof payload.query === 'string' && payload.query.trim() ? ' · '+payload.query.trim() : '')), source: prepared.source, rows: prepared.rows, note: text });
     if (prepared.source === 'properties') for (const row of prepared.rows) if (typeof row.id === 'string') refs.push({ resource: 'properties', id: row.id });
     for (const action of prepared.actions) if (action.kind === 'existing_operation' && typeof action.body.propertyId === 'string') refs.push({ resource: 'properties', id: action.body.propertyId });
+  } else if (name === 'request_recovery') {
+    const result = await requestRecoveryTool(ctx, payload);
+    data = result.data; refs.push(...result.refs);
   } else if (name === 'conversation_history') {
     const result = await readConversationHistory(ctx, payload);
     data = result.data; refs.push(...result.refs);
