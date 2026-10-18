@@ -79,3 +79,12 @@ Verified 14:30 UTC: build-20261018-jarvis-176, commit 442ee76e31d62d87dbc88b393c
 Firebase build passed. Local functional checks: 128 passed; production-source TypeScript passed. Existing fixture typing limitations remain documented in the implementation report. Live availability: Jarvis page 200, anonymous workspace/metrics 401. No paid speech or live CRM posting test performed.
 
 Rollback: create a fresh App Hosting rollout for projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-175, commit 2ef242c1f30c4e43985e889261be1ec6453e99de. Verify every traffic split and Cloud Run allocation returns to 100%. No database migration, data deletion or operation replay is needed. Auto-rollout branch unchanged.
+
+
+## 2026-10-18 — distribution workflows and Romanian voice
+
+Verified at 18:37 UTC: build-20261018-jarvis-180, commit a46ef6c09e018ce810ef10b922147a46e13bf92d, READY and 100% traffic in App Hosting and Cloud Run. Includes both pending implementation commits: 3132f419 (distribution/client portal batches) and a46ef6c0 (voice progress, Romanian numeric speech, named responses). Evidence: RELEASE_2026_10_18_DISTRIBUTION_VOICE.json. Supersedes build 179. Jev remains active; automatic rollout branch remains unchanged.
+
+Cloud compilation, TypeScript, generation and deployment passed. Firestore rules were deployed from src/firestore.rules and their live content was compared successfully with the source. No functions, indexes or incompatible data migrations changed. Live read-only checks: Jarvis 200; anonymous workspace/metrics 401. No real outbound acceptance messages/posts or paid speech tests were performed.
+
+Rollback: create a fresh rollout for projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-179 (commit f46bc71c13a6231dca729f69e13663ffb0eb794c) and verify 100% traffic. Preserve the additive delivery-batch rules and all new data; never replay external effects. Previous ruleset was 0a21547c-11d1-4486-9c40-b546558f872a, retained in a local backup; do not restore it blindly because existing batch links must remain readable.

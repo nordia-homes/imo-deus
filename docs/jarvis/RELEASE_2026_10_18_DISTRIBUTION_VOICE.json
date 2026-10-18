@@ -1,0 +1,83 @@
+{
+  "before": {
+    "at": "2026-10-18T18:21:33.761Z",
+    "builds": [
+      {
+        "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-179",
+        "state": "READY",
+        "commit": "f46bc71c13a6231dca729f69e13663ffb0eb794c",
+        "percent": 100
+      }
+    ],
+    "reconciling": false,
+    "run": {
+      "latestReadyRevision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261018-jarvis-179",
+      "traffic": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "studio-build-20261018-jarvis-179",
+          "percent": 100,
+          "tag": "t-3497659106",
+          "uri": "https://t-3497659106---studio-lz5qfusjya-uc.a.run.app"
+        }
+      ]
+    },
+    "jevMode": "active"
+  },
+  "after": {
+    "at": "2026-10-18T18:37:35.216Z",
+    "builds": [
+      {
+        "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-180",
+        "state": "READY",
+        "commit": "a46ef6c09e018ce810ef10b922147a46e13bf92d",
+        "percent": 100
+      }
+    ],
+    "reconciling": false,
+    "run": {
+      "latestReadyRevision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261018-jarvis-180",
+      "traffic": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "studio-build-20261018-jarvis-180",
+          "percent": 100,
+          "tag": "t-3447326226",
+          "uri": "https://t-3447326226---studio-lz5qfusjya-uc.a.run.app"
+        }
+      ]
+    },
+    "jevMode": "active"
+  },
+  "verification": {
+    "at": "2026-10-18T18:37:37.614Z",
+    "rulesetName": "projects/studio-652232171-42fb6/rulesets/d309d5ff-1809-42b1-a254-f0277dcd387d",
+    "rulesMatch": true,
+    "probes": [
+      {
+        "path": "/ai-assistant",
+        "status": 200
+      },
+      {
+        "path": "/api/ai-assistant/workspace",
+        "status": 401
+      },
+      {
+        "path": "/api/ai-assistant/metrics",
+        "status": 401
+      }
+    ]
+  },
+  "includedCommits": [
+    "3132f419",
+    "a46ef6c0"
+  ],
+  "sourceBranch": "codex/jarvis-semantic-20261018",
+  "outboundTestActions": 0,
+  "scope": "Availability and exact deployed version verified. No live customer messages or social posts used for acceptance.",
+  "rollback": {
+    "build": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-179",
+    "commit": "f46bc71c13a6231dca729f69e13663ffb0eb794c",
+    "instruction": "Create a fresh rollout for the previous READY build, then verify 100% traffic. Keep additive delivery-batch rules and data; do not delete client batches or replay outbound effects."
+  }
+}
