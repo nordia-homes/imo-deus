@@ -1306,3 +1306,8 @@ The existing group clarification path now uses named checkboxes and validates al
 ### Semantic Facebook clarification handoff — 18 October 2026
 
 Preflight property/account clarifications now retain the full original request and structured selection, then return them to semantic planning through server-validated named choices. Selection does not grant publication and internal continuation data stays out of the panel. Evidence: 43 unit/component checks and 52 emulator integration checks, with a simulated model confirming preservation of a preparation-only compound request after account selection. Full live semantic completion, multiple simultaneous offers, durable goal/effect reconciliation and planner-loop checkpoints remain open. No deployment or corpus certification increase. See JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
+
+
+### Simultaneous semantic offers — 18 October 2026
+
+Distinct offer metadata now binds semantic property/account choices to the correct saved preflight, even when two properties offer the same accounts. Account cards show property names. No-action clarification responses preserve unanswered siblings and earlier selections. Two successive selections through application chat were exercised with real local preflights and a simulated model; no publishing was attempted. Mixed action/clarification goal reconciliation, planner-loop persistence and live-model completion remain open. Details and rollback are in JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md; no deployment or corpus certification increase.

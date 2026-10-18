@@ -120,3 +120,19 @@ Limits: this is the clarification handoff, not full certification of a live-mode
 Rollback: revert this lot's commit or inspect 8105602602b2d48ec08ae3f3640639dc4e6a9fcf in a separate worktree. Preserve business data, request records and execution ledgers. No incompatible migration or external replay.
 
 Final clarification verification: full npm run build passed, including TypeScript and page generation; git diff --check passed. The pre-existing standalone playwright-core copy skip remains, so production browser packaging is not certified. No deployment performed.
+
+
+## Continuation: distinct simultaneous semantic offers
+
+Local implementation after b89afcfcad28eb84e3703b8c50884278d4902187. Policy request-crm-21 / tools 209. No deployment.
+
+- Semantic property/account clarification cards carry a server-generated offer identity derived from the preflight input, selection type and offered rows. Buttons send it as metadata; it is not displayed. The resolver binds both the offered row and saved continuation to this identity, preventing two cards with identical account IDs from selecting the wrong property's request. Replay hashes include the offer identity while older selections retain their previous hashes.
+- Account cards name the relevant CRM property. Property choices include the requested query. Repeated identical offers are collapsed at persistence.
+- After a clarification turn with no prepared actions, unanswered sibling offers are retained in the next response. Their continuation includes the earlier verified selection. Unrelated requests do not inherit these cards. The response remains a clarification while these choices are outstanding; retained data inherits the existing ACL references and is revalidated through normal handlers.
+- Verification: 78 unit/component/worker checks passed, plus the Facebook emulator suite. The integration saves two real preflight offers for Cișmigiu and Titan with the same accounts, selects one, verifies the other remains, then selects the second and verifies both turns reach a simulated model with the original preparation-only request. No publication job is created. Invalid/missing offer identities and replay substitutions are rejected in unit tests. No external model or Facebook call occurred. Final integration/build status is recorded below.
+
+Limits: preservation here covers no-action clarification responses. Mixed responses that also prepare/execute other goals still need durable goal and completed-effect reconciliation. This does not implement durable checkpoints inside the planner loop or certify actual multi-property publication by a live model. Other legacy choices and end-to-end corpus certification remain open.
+
+Rollback: revert this lot's commit or inspect b89afcfcad28eb84e3703b8c50884278d4902187 in a separate worktree. Preserve request records, execution ledgers and CRM data. No incompatible migration or external replay.
+
+Final offer verification: 78 unit/component/worker checks plus 52 emulator checks passed on the updated flow, including property-name headings (130 distinct checks). Full final npm run build passed with TypeScript and page generation. ESLint completed with zero warnings on changed sources; git diff --check and parity manifest passed. The existing standalone playwright-core browser-copy skip remains; production browser packaging and live posting remain unverified. No deployment.

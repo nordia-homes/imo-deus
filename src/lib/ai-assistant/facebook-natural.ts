@@ -60,7 +60,7 @@ export async function prepareFacebookNatural(ctx: AssistantContext, prompt: stri
   if (!connectionId) {
     const available = (await readFacebookSetup(ctx, 'accounts', history)).rows.filter(row => 'publishingBlocked' in row && !row.publishingBlocked);
     if (available.length === 1) connectionId = available[0].id;
-    else return { ...empty, source: 'facebookConnections', rows: available, pending: available.length ? { id: 'pending', prompt: effective, propertyId: selectedId, connectionIds: available.map(row => row.id) } : null, text: available.length ? 'Alege contul pentru publicare din cardurile afișate.' : 'Nu există un cont Facebook propriu conectat și disponibil pentru publicare.' };
+    else return { ...empty, source: 'facebookConnections', rows: available, pending: available.length ? { id: 'pending', prompt: effective, propertyId: selectedId, propertyTitle: String(property.title || 'Proprietate'), connectionIds: available.map(row => row.id) } : null, text: available.length ? 'Alege contul pentru publicare din cardurile afișate.' : 'Nu există un cont Facebook propriu conectat și disponibil pentru publicare.' };
   }
   if (typeof connectionId !== 'string' || !/^[A-Za-z0-9_-]{1,180}$/.test(connectionId)) throw new Error('Cont invalid');
   const connection = (await agency.collection('facebookCloudConnections').doc(connectionId).get()).data();

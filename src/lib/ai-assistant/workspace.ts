@@ -1,3 +1,4 @@
+import { retainSemanticChoices } from './semantic-clarification';
 import { resolveNamedChoice } from './named-choice';
 import type { NamedChoice } from './named-choice-contract';
 import { loadRequestCheckpoint, saveRequestCheckpoint, requestCheckpointHash } from './request-checkpoint';
@@ -112,7 +113,16 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.choice?.source === 'facebookSemanticProperty' || input.choice?.source === 'facebookSemanticAccount' ? selectedPrompt : input.prompt } };
     const restored = await loadRequestCheckpoint(ctx, input);
     const result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
-    if (!restored) await saveRequestCheckpoint(ctx, input, result);
+    if (!restored) {
+      // No effects/actions have been produced here: preserve unanswered sibling
+      // offers instead of treating a read-only clarification as the whole goal.
+      result.cards = retainSemanticChoices(result.cards, result.actions.length ? undefined : conversationHistory.find(message=>message.id===input.choice?.messageId), input.choice, selectedPrompt);
+      if (!result.actions.length && result.cards.some(card=>card.choiceSource==='facebookSemanticProperty' || card.choiceSource==='facebookSemanticAccount')) {
+        result.metrics.status='clarification';
+        result.text += '\nAlege înregistrările rămase din cardurile afișate pentru a continua cererea.';
+      }
+      await saveRequestCheckpoint(ctx, input, result);
+    }
     turnMetrics = result.metrics;
     const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(input.prompt, result.metrics.status, result.actions, result.goalCoverage);
     const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(socialRemoveExecutionPrompt(metaDraftExecutionPrompt(metaMediaExecutionPrompt(metaControlExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory), result.semanticAuthority) : { actions: result.actions, results: [], blocked: false };

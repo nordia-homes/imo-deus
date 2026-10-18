@@ -88,3 +88,17 @@ it.each(['facebookSemanticProperty','facebookSemanticAccount'] as const)('preser
  expect(resolved).toContain('nu schimbă intenția');
  m.cards!.pop();expect(()=>resolveNamedChoice(choice,prompt,[m])).toThrow();
 });
+
+it('binds equal row identifiers to the exact semantic offer and its replay',()=>{
+ const m=message('properties',[{id:'same',title:'Cișmigiu'}]);m.cards=[];
+ for(const [offerId,query] of [['a'.repeat(64),'Titan'],['b'.repeat(64),'Cișmigiu']]) {
+  m.cards.push({type:'data',source:'properties',title:query,choiceSource:'facebookSemanticProperty',choiceOfferId:offerId,rows:[{id:'same',title:'Apartament'}]});
+  m.cards.push({type:'data',source:'facebookSemanticRequest',title:'intern',choiceOfferId:offerId,rows:[{prompt:'Nu publica încă; verifică ambele proprietăți.',input:{query},choiceSource:'facebookSemanticProperty'}]});
+ }
+ const choice={messageId:m.id,source:'facebookSemanticProperty' as const,rowId:'same',offerId:'b'.repeat(64)},prompt=namedChoiceText(choice.source,m.cards[0].rows[0]);
+ expect(resolveNamedChoice(choice,prompt,[m])).toContain('"query":"Cișmigiu"');
+ expect(()=>resolveNamedChoice({...choice,offerId:undefined},prompt,[m])).toThrow();
+ expect(()=>resolveNamedChoice({...choice,offerId:'c'.repeat(64)},prompt,[m])).toThrow();
+ const input={sessionId:'s',requestId:'r',prompt,choice};
+ expect(requestCheckpointHash({...input,choice:{...choice,offerId:'a'.repeat(64)}})).not.toBe(requestCheckpointHash(input));
+});

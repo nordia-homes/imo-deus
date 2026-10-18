@@ -6,6 +6,7 @@ export type ChoiceSource = typeof choiceSources[number];
 export const namedChoiceSchema = z.object({
  messageId: z.string().min(1).max(180).regex(/^[^/\u0000-\u001f]+$/),
  source: z.enum(choiceSources),
+ offerId: z.string().regex(/^[a-f0-9]{64}$/).optional(),
  rowId: z.string().min(1).max(260).regex(/^[^\u0000-\u001f]+$/),
  rowIds: z.array(z.string().regex(/^[a-f0-9]{24}$/)).min(1).max(200).optional(),
 }).strict().refine(value => !value.rowIds || (value.source === 'facebookPublicationGroups' && value.rowId === value.rowIds[0] && new Set(value.rowIds).size === value.rowIds.length), 'Selecție multiplă invalidă');
