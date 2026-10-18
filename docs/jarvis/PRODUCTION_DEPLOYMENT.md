@@ -71,3 +71,11 @@ Verified at 12:17 UTC: `build-20261018-jarvis-175`, commit `2ef242c1f30c4e43985e
 Cloud build and all publishing stages passed. Local checks: 206 tests, ESLint and full build passed. Read-only live probes: Jarvis page 200; unauthenticated workspace/metrics 401. No external test posts or messages; live arbitrary-language completion is not certified by these probes.
 
 Rollback: create a fresh App Hosting rollout for `projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-174` (commit `0a54c5b30bffd392371a0819d3b20f21d0964902`), then verify all traffic splits and Cloud Run allocations at 100%. No database migration or data rollback is required. No auto-rollout branch change.
+
+## 2026-10-18 — conversational voice explanations
+
+Verified 14:30 UTC: build-20261018-jarvis-176, commit 442ee76e31d62d87dbc88b393c150897622a23b2, READY and 100% traffic in App Hosting and Cloud Run. Evidence: RELEASE_2026_10_18_VOICE_EXPLANATIONS.json. Supersedes build 175. Keeps server explanations instead of replacing them with first-card counts; includes named Facebook execution receipts and expanded speech limits. Jev stays off.
+
+Firebase build passed. Local functional checks: 128 passed; production-source TypeScript passed. Existing fixture typing limitations remain documented in the implementation report. Live availability: Jarvis page 200, anonymous workspace/metrics 401. No paid speech or live CRM posting test performed.
+
+Rollback: create a fresh App Hosting rollout for projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-175, commit 2ef242c1f30c4e43985e889261be1ec6453e99de. Verify every traffic split and Cloud Run allocation returns to 100%. No database migration, data deletion or operation replay is needed. Auto-rollout branch unchanged.

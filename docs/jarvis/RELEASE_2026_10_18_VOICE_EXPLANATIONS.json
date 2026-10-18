@@ -1,0 +1,42 @@
+{
+  "verifiedAt": "2026-10-18T14:30:51.521Z",
+  "project": "studio-652232171-42fb6",
+  "builds": [
+    {
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-176",
+      "state": "READY",
+      "commit": "442ee76e31d62d87dbc88b393c150897622a23b2",
+      "percent": 100
+    }
+  ],
+  "reconciling": false,
+  "revision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261018-jarvis-176",
+  "runTraffic": [
+    {
+      "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+      "revision": "studio-build-20261018-jarvis-176",
+      "percent": 100,
+      "tag": "t-3497659117",
+      "uri": "https://t-3497659117---studio-lz5qfusjya-uc.a.run.app"
+    }
+  ],
+  "jevMode": "off",
+  "probes": [
+    {
+      "path": "/ai-assistant",
+      "status": 200
+    },
+    {
+      "path": "/api/ai-assistant/workspace",
+      "status": 401
+    },
+    {
+      "path": "/api/ai-assistant/metrics",
+      "status": 401
+    }
+  ],
+  "outboundTestActions": 0,
+  "rollbackBuild": "build-20261018-jarvis-175",
+  "rollbackCommit": "2ef242c1f30c4e43985e889261be1ec6453e99de",
+  "validation": "128 functional tests passed locally; Firebase build passed. Live probes are read-only availability checks, not authenticated voice or CRM acceptance tests. No outbound test actions."
+}
