@@ -1,3 +1,4 @@
+import { FACEBOOK_PUBLICATION_TOOLS } from './capability-catalog';
 import { facebookConversationChoice } from './facebook-conversation-choice';
 import { bindSemanticAuthority, SEMANTIC_EXECUTION_POLICY } from './semantic-authority';
 import { requestsWhatsappProspecting } from './prospecting-consent';
@@ -730,8 +731,11 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         catch { observation=selectionFallback('invalid_selector',0,estimate); }
         finally {if(selectionTimer)clearTimeout(selectionTimer);}
         budget.recordAuxiliary(observation.costUsd, observation.inputTokens + observation.outputTokens);
-        Object.assign(metrics.capabilityRouting,{selected:observation.modules,status:observation.status,reason:observation.reason,estimated:observation.estimated,inputTokens:observation.inputTokens,outputTokens:observation.outputTokens,costUsd:observation.costUsd,latencyMs:observation.latencyMs});
-        if (mode === 'active' && observation.status === 'ok') refreshCapabilities(observation.modules);
+        Object.assign(metrics.capabilityRouting,{selected:observation.modules,workflows:observation.workflows || [],status:observation.status,reason:observation.reason,estimated:observation.estimated,inputTokens:observation.inputTokens,outputTokens:observation.outputTokens,costUsd:observation.costUsd,latencyMs:observation.latencyMs});
+        if (mode === 'active' && observation.status === 'ok') {
+          const facebook = observation.workflows?.includes('facebook_publication');
+          refreshCapabilities([...observation.modules, ...(facebook ? ['marketing'] : [])], facebook ? FACEBOOK_PUBLICATION_TOOLS.filter(name => available.includes(name)) : []);
+        }
       }
     }
     for (let turn = 0; turn < (options.child ? 3 : budget.limits.maxSteps); turn++) {

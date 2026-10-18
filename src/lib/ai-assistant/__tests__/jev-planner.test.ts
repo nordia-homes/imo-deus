@@ -122,3 +122,16 @@ it('loads the reprogramming rule even when the action is wrapped by propose_acti
  const result=await planTurn(ctx,'Continuă.',[],{provider:{id:'fixture',respond},jevSelector:{select:async()=>chosen(['calendar'])}});
  expect(result.actions).toEqual([]);expect(respond.mock.calls[1][0].instructions).toContain('Pentru mutarea unei vizionări');expect(JSON.stringify(respond.mock.calls[1][0].input)).toContain('retryRequired');
 });
+
+
+it.each(['active','shadow','off'])('loads the complete Facebook preflight from a Jev workflow hint in %s mode',async mode=>{
+ vi.stubEnv('JARVIS_JEV_MODE',mode);
+ const respond=vi.fn(async (_request:import('../provider').ProviderRequest)=>final);
+ const select=vi.fn(async()=>({...chosen([]),workflows:['facebook_publication' as const]}));
+ const result=await planTurn(ctx,'Hai să ducem oferta acolo și apoi să verificăm calendarul.',[],{provider:{id:'fixture',respond},jevSelector:{select}});
+ const names=respond.mock.calls[0][0].tools.map(tool=>tool.name);
+ expect(names.includes('facebook_publication_preflight')).toBe(mode==='active');
+ expect(names).toContain('load_capabilities');
+ expect(result.actions).toEqual([]);
+ if(mode==='active')expect(result.metrics.capabilityRouting?.workflows).toEqual(['facebook_publication']);
+});

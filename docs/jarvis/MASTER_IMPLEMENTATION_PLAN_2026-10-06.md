@@ -1335,3 +1335,7 @@ Recovery inspection now resolves saved action dependencies and validates committ
 ### Facebook spoken account selection and confirmation — 18 October 2026
 
 Added validated free-text selection from the latest account offer, cautious close-name suggestions, and conversational yes/no routing through the workspace when no executable plan is pending. The reported Croatian Avadanii / Cristian Avadanii case completes through one persisted publication job in emulator tests. Original compound requests and selected groups survive clarification; access is rechecked and replay does not duplicate dispatch. Evidence: 210 unit checks and 82 integration checks. Tested account continuations require no model calls. Live recognition, arbitrary paraphrases and external delivery remain distinct from this evidence. Not deployed; details and rollback: JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
+
+### Jev Facebook workflow routing — 18 October 2026
+
+Jev selects the full Facebook publication preflight in its existing selector call, while deterministic account choices bypass the model and explicit Facebook requests also preload preflight with Jev off. Current permissions, full goal coverage, cloud job execution and idempotency are retained. Verified: 38 unit checks and 86 emulator integration checks, including active/shadow/off/unavailable modes. Live speed and cost advantage remain unmeasured. Not deployed; see JEV_IMPLEMENTATION_2026_10_18.md.

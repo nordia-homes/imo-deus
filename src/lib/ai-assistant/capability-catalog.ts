@@ -1,6 +1,8 @@
 import { capabilityScore } from './capability-discovery';
 import { normalized } from './contracts';
-export const CAPABILITY_VERSION = '1';
+export const CAPABILITY_VERSION = '2';
+// Workflow hints expose existing authorized tools; they never grant execution rights.
+export const FACEBOOK_PUBLICATION_TOOLS = ['facebook_publication_preflight'] as const;
 export const capabilityCatalog = [
     { id: 'properties', description: 'Căutare și gestionare proprietăți, anunțuri, preț, camere, zonă', terms: 'propriet apartament garsonier casa case teren oferta oferte pret buget chirie inchiri vanzar camere titan pipera', dependencies: [] },
     { id: 'contacts', description: 'Cumpărători, clienți, persoane și cerințe', terms: 'cumparator client contact persoan telefon nume', dependencies: [] },
@@ -62,6 +64,7 @@ export function visibleTools(names: readonly string[], modules: readonly string[
     const ranked = candidates.filter(name => !base.has(name)).map(name => ({ name, score: capabilityScore(query, name) })).filter(row => row.score > 0).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, rankedLimit).map(row => row.name);
     if (modules.includes('properties'))
         base.add('search_properties');
+    if (modules.includes('marketing') && /facebook/i.test(query)) FACEBOOK_PUBLICATION_TOOLS.forEach(name => base.add(name));
     const selected = new Set([...base, ...ranked, ...requested]);
     return names.filter(name => selected.has(name));
 }

@@ -1,4 +1,4 @@
-export type CapabilityRouting = {version:string;mode:string;selected:string[];loaded:string[];expansions:number;status:string;reason?:string;estimated?:boolean;inputTokens:number;outputTokens:number;costUsd:number;latencyMs:number};
+export type CapabilityRouting = {version:string;mode:string;selected:string[];workflows?:string[];loaded:string[];expansions:number;status:string;reason?:string;estimated?:boolean;inputTokens:number;outputTokens:number;costUsd:number;latencyMs:number};
 import { collectionFor, type AssistantContext } from './access';
 import { VERSIONS, modelPricing, type RoutingDecision, type ModelUsage } from './models';
 import { featureFlags } from './skills';

@@ -697,4 +697,27 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const rejected=await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',groupUrls:['https://www.facebook.com/groups/foreign']});
     expect(rejected?.actions).toHaveLength(0);expect((await f.jobs.get()).empty).toBe(true);
   });
+  it.each(['active','shadow','off','unavailable'])('completes cloud publication with Jev workflow routing: %s',async mode=>{
+    const f=await fixture('cloud');
+    vi.stubEnv('JARVIS_JEV_MODE',mode==='unavailable'?'active':mode);
+    const prompt='Mi-ar prinde bine să ajungă și pe grupurile de Facebook oferta de la Cismigiu.';
+    const prepared=await prepareFacebookPublication(f.ctx,{query:'Cismigiu'});
+    const usage={inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false};
+    const call=(id:string,name:string,payload:unknown)=>({calls:[{id,name,arguments:JSON.stringify({payload:JSON.stringify(payload)})}],items:[],text:'',usage,status:'completed' as const,latencyMs:1});
+    const queue=[call('preflight','facebook_publication_preflight',{query:'Cismigiu'}),call('proposal','propose_actions',{actions:prepared!.actions}),call('coverage','goal_coverage',{requirements:[{id:'publish',sourceQuote:prompt,description:'Publicare Facebook',resolution:'planned',steps:[1],evidenceCallIds:['preflight'],execution:{mode:'execute',conditions:[]}}]})];
+    const respond=vi.fn(async()=>queue.shift()||{calls:[],items:[],text:'Cererea este pregătită.',intentStatus:'answer' as const,usage,status:'completed' as const,latencyMs:1});
+    const select=vi.fn(async()=>{if(mode==='unavailable')throw new Error('unavailable');return {modules:[],workflows:['facebook_publication' as const],inputTokens:50,outputTokens:2,costUsd:0.0000021,latencyMs:1,status:'ok' as const,reason:'fixture',estimated:false};});
+    try{
+      const planned=await plannerModule.planTurn(f.ctx,prompt,[],{provider:{id:'fixture',respond},jevSelector:{select}});
+      expect(planned.metrics.status,planned.text).toBe('success');expect(planned.actions).toHaveLength(1);
+      const requestId=randomUUID();
+      const executed=await executeSafePrefix(f.ctx,requestId,planned.actions,prompt,planned.semanticAuthority);
+      expect(executed.blocked).toBe(false);
+      await executeSafePrefix(f.ctx,requestId,planned.actions,prompt,planned.semanticAuthority);
+      expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);
+      expect(select).toHaveBeenCalledTimes(mode==='off'?0:1);
+      expect(respond).toHaveBeenCalledTimes(4);
+    }finally{vi.unstubAllEnvs();}
+  });
+
 });

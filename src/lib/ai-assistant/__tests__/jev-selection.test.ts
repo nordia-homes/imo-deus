@@ -5,8 +5,8 @@ import { JEV_MODEL } from '../jev';
 beforeEach(() => { resetSelectionCircuit(); vi.stubEnv('TYPESAFE_API_KEY', 'synthetic'); });
 afterEach(() => vi.unstubAllEnvs());
 const state = { request: 'Programează o vizionare și trimite confirmarea.', context: [] };
-const valid = () => ({ model: JEV_MODEL, answers: Object.fromEntries(capabilityIds.map(id => [id, { type: 'noul', noul: ['calendar', 'communications'].includes(id) ? 0.9 : 0.01 }])), usage: { input_tokens: 100, output_tokens: 10 } });
-it('selects multiple domains with the exact supported protocol and a pinned model', async () => { const fetcher = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => Response.json(valid())); const result = await new HttpJevSelector(fetcher).select(state); expect(result.modules).toEqual(['calendar', 'communications']); expect(result.costUsd).toBeCloseTo(0.0000042); expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string)).toEqual(selectionRequest(state)); });
+const valid = () => ({ model: JEV_MODEL, answers: {facebook_publication:{type:'noul',noul:0.9},...Object.fromEntries(capabilityIds.map(id => [id, { type: 'noul', noul: ['calendar', 'communications'].includes(id) ? 0.9 : 0.01 }]))}, usage: { input_tokens: 100, output_tokens: 10 } });
+it('selects multiple domains with the exact supported protocol and a pinned model', async () => { const fetcher = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => Response.json(valid())); const result = await new HttpJevSelector(fetcher).select(state); expect(result.modules).toEqual(['calendar', 'communications']); expect(result.workflows).toEqual(['facebook_publication']); expect(result.costUsd).toBeCloseTo(0.0000042); expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string)).toEqual(selectionRequest(state)); });
 it.each(['model', 'missing', 'probability', 'oversized', 'error'])('falls back on %s response', async (kind) => { const body = valid(); if (kind === 'model')
     body.model = 'unknown'; if (kind === 'missing')
     delete body.answers.calendar; if (kind === 'probability')
