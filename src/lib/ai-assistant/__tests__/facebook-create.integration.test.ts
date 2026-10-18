@@ -86,6 +86,63 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     await mkdir('.tmp/jarvis-facebook-create', { recursive: true });
     await writeFile('.tmp/jarvis-facebook-create/' + scenarioId + '-cloud.json', JSON.stringify({ scenarioId, prompt, versions: VERSIONS, executionVerified: true, environment: 'Chat, explicit group selection, autonomous executor and real POST on local Firestore; cloud transport simulated. Job creation only, not Facebook publication certification.', runs: [{ phase: 'original', final: first.message }, { phase: 'selection', final: final.message }] }, null, 2));
   });
+  it('executes the real Rosetti command without a model, preserves CRM content and never duplicates the job', async () => {
+    const f = await fixture('cloud'), sessionId = randomUUID();
+    await f.property.update({ title: 'CA Rosetti | Ultra central | Complet renovat | Balcon generos', propertyType: 'Garsonieră', description: 'Text CRM EXACT.\nFără rescriere.', images: ['https://example.com/2.jpg','https://example.com/1.jpg'] });
+    await f.agency.collection('properties').doc('house').set({title:'CA Rosetti | Ultra central',propertyType:'Casa',transactionType:'Vanzare'});
+    for (let i=0;i<12;i++) await f.agency.collection('facebookCloudConnections').doc('extra'+i).set({ agencyId:f.ctx.agencyId,ownerUid:f.ctx.uid,status:'connected',runnerMode:'cloud' });
+    const input = {sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din C.A. Rosetti, ultracentral, pe grupurile Facebook.',currentRecord:null};
+    const result = await chatTurn(f.ctx,input);
+    expect(result.message.text).toContain('a fost creat');
+    expect(result.message.text).not.toContain('Limita Jarvis');
+    expect(result.message.planId).toBeUndefined();
+    expect((await f.jobs.get()).size).toBe(1);
+    const payload = JSON.parse(mocks.runner.mock.calls[0][1].body);
+    expect(payload).toMatchObject({propertyId:'property',connectionId:'connection',propertyDescription:'Text CRM EXACT.\nFără rescriere.',propertyImages:['https://example.com/2.jpg','https://example.com/1.jpg']});
+    expect(payload.groups.map((g:any)=>g.url)).toEqual(['https://www.facebook.com/groups/sale']);
+    await chatTurn(f.ctx,input);
+    expect(mocks.runner).toHaveBeenCalledTimes(1); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('asks only for an ambiguous account and resumes the original command', async () => {
+    const f = await fixture('cloud'), sessionId = randomUUID();
+    await f.property.update({defaultFacebookConnectionId:null});
+    await f.agency.collection('facebookCloudConnections').doc('other').set({agencyId:f.ctx.agencyId,ownerUid:f.ctx.uid,status:'connected',runnerMode:'cloud'});
+    const first = await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cișmigiu pe grupurile Facebook.',currentRecord:null});
+    expect(first.message.cards?.find(c=>c.source==='facebookConnections')?.rows).toHaveLength(2);
+    expect((await f.jobs.get()).empty).toBe(true);
+    const result = await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Cont Facebook: connection',currentRecord:null});
+    expect(result.message.text).toContain('a fost creat'); expect((await f.jobs.get()).size).toBe(1); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('continues Rosetti with the chosen existing automatic local runner and preserves exact content', async () => {
+    const f=await fixture('local'),sessionId=randomUUID();
+    await f.property.update({defaultFacebookConnectionId:null,title:'CA Rosetti | Ultra central | Complet renovat | Balcon generos',propertyType:'Garsonieră',description:'Exact CRM.',images:['https://example.com/original.jpg']});
+    for(let i=0;i<12;i++) await f.agency.collection('facebookCloudConnections').doc('other'+i).set({agencyId:f.ctx.agencyId,ownerUid:f.ctx.uid,status:'connected',runnerMode:'local',deviceId:'device'});
+    const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din C.A. Rosetti, ultracentral, pe grupurile Facebook.',currentRecord:null});
+    expect(first.message.cards?.find(c=>c.source==='facebookConnections')?.rows).toHaveLength(13);
+    const input={sessionId,requestId:randomUUID(),prompt:'Cont Facebook: connection',currentRecord:null};
+    const result=await chatTurn(f.ctx,input); expect(result.message.text).toContain('a fost creat');
+    expect((await f.jobs.get()).size).toBe(1);
+    const response=await claimLocalJob(new NextRequest('http://localhost/api/marketing/facebook-local/runner/claim',{method:'POST'}));
+    expect(response.status).toBe(200);const {claim}=await response.json();
+    expect(claim.property).toMatchObject({description:'Exact CRM.',images:['https://example.com/original.jpg']});
+    await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(mocks.fetch).not.toHaveBeenCalled();expect(mocks.runner).not.toHaveBeenCalled();
+  });
+  it('asks for an ambiguous property and revalidates the selected ID', async () => {
+    const f = await fixture('cloud'), sessionId = randomUUID();
+    await f.agency.collection('properties').doc('other').set({...((await f.property.get()).data()),title:'Alt apartament Cișmigiu'});
+    const first = await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.',currentRecord:null});
+    expect(first.message.cards?.find(c=>c.source==='properties')?.rows).toHaveLength(2);
+    expect((await f.jobs.get()).empty).toBe(true);
+    const result = await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Proprietate: property',currentRecord:null});
+    expect(result.message.text).toContain('a fost creat'); expect((await f.jobs.get()).size).toBe(1); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it.each(['foreign','revoked','device-revoked'])('does not publish using an unavailable configured account: %s',async variant=>{
+    const f=await fixture('cloud');
+    await f.connection.update(variant==='device-revoked'?{runnerMode:'local'}:variant==='foreign'?{ownerUid:'someone-else'}:{status:'needs_reauthentication'});
+    if(variant==='device-revoked') await f.device.update({revokedAt:'now'});
+    const result=await chatTurn(f.ctx,{sessionId:randomUUID(),requestId:randomUUID(),prompt:'Publică apartamentul din Cismigiu pe grupurile Facebook.',currentRecord:null});
+    expect(result.message.text).not.toContain('a fost creat'); expect((await f.jobs.get()).empty).toBe(true); expect(mocks.runner).not.toHaveBeenCalled();expect(mocks.fetch).not.toHaveBeenCalled();
+  });
   it('revalidates selected groups instead of publishing to removed destinations', async () => {
     const f = await fixture('cloud'), sessionId = randomUUID();
     const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Creează jobul de publicare Facebook.', currentRecord: { resource: 'properties', id: 'property' } });

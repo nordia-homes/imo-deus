@@ -330,7 +330,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const immediate = await prepareFacebookImmediate(ctx, prompt, history);
     if (immediate) {
       actions.push(...immediate.actions);
-      cards.push({ type: 'data', source: 'facebookGroups', title: 'Grupuri eligibile', rows: immediate.rows, complete: true });
+      cards.push({ type: 'data', source: 'source' in immediate ? immediate.source : 'facebookGroups', title: 'Date pentru publicarea Facebook', rows: immediate.rows, complete: true });
       if (immediate.pending) cards.push({ type: 'data', source: 'facebookImmediateRequest', title: 'Publicare în așteptarea selecției', rows: [immediate.pending], complete: true });
       return finish(immediate.text, immediate.actions.length ? undefined : 'clarification');
     }

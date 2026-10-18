@@ -1,22 +1,27 @@
+import { facebookNaturalRequest, facebookNaturalExecutionPrompt, prepareFacebookNatural } from './facebook-natural';
 import type { AssistantContext } from './access';
 import { normalized, type AssistantMessage, type AssistantAction } from './contracts';
 import { facebookGroupSelection, selectedFacebookProperty } from './facebook-setup';
 import { facebookCreateSchema } from '@/lib/facebook-job-create';
 
 export function facebookImmediateRequest(prompt: string) {
-  return ['publica proprietatea acum in grupurile selectate', 'creeaza jobul de publicare facebook'].includes(normalized(prompt).trim().replace(/[.!?]+$/, ''));
+  return Boolean(facebookNaturalRequest(prompt)) || ['publica proprietatea acum in grupurile selectate', 'creeaza jobul de publicare facebook'].includes(normalized(prompt).trim().replace(/[.!?]+$/, ''));
 }
 function pendingSelection(history: AssistantMessage[]) {
   const rows = history.filter(row => row.role === 'assistant' && row.id !== 'current-page-context').at(-1)?.cards?.find(card => card.source === 'facebookImmediateRequest')?.rows;
   return rows?.length === 1 && typeof rows[0].prompt === 'string' && facebookImmediateRequest(rows[0].prompt) ? rows[0] : null;
 }
 export function facebookImmediateExecutionPrompt(prompt: string, history: AssistantMessage[]) {
+  const natural = facebookNaturalExecutionPrompt(prompt, history);
+  if (natural !== prompt) return natural;
   return /^grupuri facebook:\s*[a-f0-9,\s]+$/i.test(prompt.trim()) ? String(pendingSelection(history)?.prompt || prompt) : prompt;
 }
 export function facebookImmediateAction(action: AssistantAction) {
   return action.kind === 'existing_operation' && action.operation === 'facebook_job_create' && !Object.keys(action.params).length && !Object.keys(action.query).length && action.body.scheduledAt === null && !action.body.requestId && facebookCreateSchema.safeParse(action.body).success;
 }
 export async function prepareFacebookImmediate(ctx: AssistantContext, prompt: string, history: AssistantMessage[]) {
+  const natural = await prepareFacebookNatural(ctx, prompt, history);
+  if (natural) return natural;
   const effective = facebookImmediateExecutionPrompt(prompt, history);
   if (!facebookImmediateRequest(effective)) return null;
   const pending = effective !== prompt ? pendingSelection(history) : null;

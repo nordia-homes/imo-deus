@@ -1523,3 +1523,10 @@ Implementare izolată pe codex/jev-modular-20261018, checkpoint local 8dcee44c, 
 2543 teste unitare și 74 teste emulator trecute, plus regresii țintite și build complet. Fluxul cumpărător nou + vizionare + confirmare salvată și reluarea fără duplicate trec cu model simulat în patru moduri. Cele 1000 de cereri au fost verificate pentru selecția locală/dimensionare; nu sunt certificări Jev live sau E2E. Contorul corpusului nu crește prin această verificare.
 
 [Implementare și rollback](JEV_IMPLEMENTATION_2026_10_18.md), [validare](evals/JEV_IMPLEMENTATION_VALIDATION.json), [comparație planner](evals/JEV_PLANNER_COMPARISON.json). Avantajul suplimentar de latență/cost al Jev real rămâne de măsurat cu autorizare pentru apeluri plătite.
+
+
+## Incident producție Rosetti — 18 octombrie 2026
+
+Jarvis-172: comenzile naturale de publicare în grupuri folosesc fluxul determinist și executorul existent, fără creșterea plafonului de tokenuri. Căutarea acceptă C.A./CA, ultra central/ultracentral și diacritice; apartamentele includ garsoniere. Contul implicit este respectat; dacă lipsește și există mai multe conturi proprii eligibile, selecția continuă aceeași comandă. Automatizarea locală existentă publică singură și este diferită de runnerul desktop manual exclus. Descrierea și pozele CRM sunt păstrate.
+
+Validare: 12 teste unitare, 141 regresii, 46 teste de integrare, TypeScript și lint. Proba Rosetti verifică și 13 conturi locale, selecția contului, salvarea jobului, preluarea de către runner și replay fără duplicate. Nu s-a publicat pe Facebook pentru testare; confirmarea publicării efective rămâne dependentă de rezultatul runnerului. Niciun scenariu nou adăugat contorului de 1000. Dovezi: evals/FACEBOOK_NATURAL_COMMAND_2026_10_18.json.

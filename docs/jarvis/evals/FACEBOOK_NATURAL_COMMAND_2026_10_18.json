@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-18",
+  "version": "jarvis-172",
+  "incident": {
+    "request": "Publică apartamentul din C.A. Rosetti, ultracentral, pe grupurile Facebook.",
+    "observed": "Production job completed with partial assistant result and no prepared actions. Generic planner used discovery and read operations; direct creation recognized only two literal commands.",
+    "propertyType": "Garsonieră",
+    "defaultConnectionConfigured": false,
+    "connectedOwnAccounts": 13,
+    "runnerMode": "local",
+    "runnerMeaning": "Existing automatic local worker clicks Publish itself; distinct from excluded manual desktop runner."
+  },
+  "changes": [
+    "Natural imperative command routing before the model loop; no increased token ceiling.",
+    "Romanian accents, initials and compound spacing; apartment requests include studios and exclude known houses.",
+    "Revalidate property, account ownership, account state and local device; use configured default or single eligible account; otherwise preserve command through an explicit account selection.",
+    "Existing job executor, idempotency and runner queue; unchanged CRM description and photo order.",
+    "No changes to manual desktop runner."
+  ],
+  "validation": {
+    "unit": 12,
+    "plannerRegression": 141,
+    "integration": 46,
+    "typescript": "passed",
+    "eslint": "passed",
+    "externalTestPosts": 0,
+    "externalTestModelCalls": 0,
+    "coverage": "Real chat, executor, API route, Firestore and local runner claim on emulator; external Facebook browser publishing not performed."
+  },
+  "productionReadOnlyEvidence": {
+    "ownConnectionCounts": {
+      "local:error:deleted": 1,
+      "local:connected": 13,
+      "local:disconnected:deleted": 5
+    },
+    "inspectedAt": "2026-10-18T07:10:18.816Z",
+    "matchingJobs": 1,
+    "jobStatus": "completed",
+    "createdAt": "2026-10-18T07:01:23.815Z",
+    "propertyMatches": 1,
+    "propertyType": "Garsonieră",
+    "defaultConnectionConfigured": false,
+    "connection": null,
+    "preparedActions": 0,
+    "telemetry": {
+      "status": "partial",
+      "capabilityRouting": {
+        "loaded": [
+          "properties",
+          "contacts",
+          "marketing"
+        ],
+        "costUsd": "0",
+        "latencyMs": "0",
+        "expansions": "0",
+        "mode": "off",
+        "status": "local",
+        "outputTokens": "0",
+        "selected": [],
+        "inputTokens": "0",
+        "version": "1"
+      },
+      "tools": [
+        {
+          "name": "load_capabilities"
+        },
+        {
+          "name": "discover_tools"
+        },
+        {
+          "name": "read"
+        },
+        {
+          "name": "discover_tools"
+        },
+        {
+          "name": "operation_contract"
+        },
+        {
+          "name": "operation_contract"
+        },
+        {
+          "name": "existing_read"
+        },
+        {
+          "name": "existing_read"
+        }
+      ]
+    },
+    "readOnly": true
+  },
+  "productionRelease": "Recorded separately after deployment."
+}
