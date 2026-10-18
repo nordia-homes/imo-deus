@@ -1,3 +1,4 @@
+import { humanReplyForActor } from './human-reply-server';
 import { beginRequestRecovery, readRequestRecovery } from './request-recovery';
 import { executionScope } from './execution-scope';
 import { retainSemanticChoices, deferredSemanticCard } from './semantic-clarification';
@@ -204,6 +205,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
       result.cards.push({ type: 'data', outputType: 'ACTION_RESULT', title: 'Rezultatele cererii', source: 'autonomy', rows: autonomous.results });
       if (autonomous.blocked || rejectedMessages.length) result.metrics.status = 'partial';
     }
+    result.text = await humanReplyForActor(ctx,result.text,[...result.accessRefs,...actionReferences(result.actions)],[...result.cards,...autonomous.results]);
     const planId = executable && result.actions.length ? randomUUID() : undefined;
     const pendingProspect = pendingProspectRequest(planningPrompt, result.metrics.status, history);
     const message: AssistantMessage = { executionScope:ctx.executionScope, id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.choiceSource || ['semanticDeferredActions','facebookSemanticRequest','facebookImmediateRequest','facebookAccountRequest','facebookScheduleRequest','metaStatusReview', 'metaAssetsReview', 'metaImageResumeSelection', 'metaImageSelection', 'metaImageApproval', 'metaImageReview', 'metaPerformanceSelection', 'metaPerformanceReview', 'metaPublishSelection', 'metaPublishReview', 'metaCampaignReview', 'metaMediaSelection'].includes(card.source) ? card.rows : card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
@@ -393,6 +395,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
     const session = await requireSession(ctx, data.sessionId);
     // Serialize finalization with controls arriving during the last action.
     // Its receipt remains committed even when the plan itself is stopped.
+    const finalExplanation = await humanReplyForActor(ctx,executionConfirmation(results),accessRefs,results);
     const status = await ctx.adminDb.runTransaction(async tx => {
       const fresh = (await tx.get(ref)).data();
       if (fresh?.ownerId !== ctx.uid || fresh.status !== 'running' || fresh.executionId !== executionId) throw new CommunicationError('Starea planului s-a schimbat. Verifică rezultatul.', 409);
@@ -400,7 +403,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       const now = new Date().toISOString();
       tx.update(ref, { status, ...(status === 'paused' ? { pausedAt: now } : { completedAt: now }) });
       if (fresh.telemetryId) tx.set(collectionFor(ctx, 'assistantTelemetry').doc(fresh.telemetryId), { executionStatus: status, confirmedSteps: results.length }, { merge: true });
-      if (status === 'completed') tx.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: [executionConfirmation(results), `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`].filter(Boolean).join('\n'), createdAt: now });
+      if (status === 'completed') tx.set(session.collection('messages').doc(`${id}-result`), { role: 'assistant', accessRefs, text: [finalExplanation, `Execuția celor ${results.length} pași s-a încheiat. Rezultatele externe pot necesita verificare; consultă starea fiecărui rezultat.`].filter(Boolean).join('\n'), createdAt: now });
       return status;
     });
     if (status !== 'completed') return { ...data, status, results };

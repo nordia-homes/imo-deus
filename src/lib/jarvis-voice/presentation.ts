@@ -1,3 +1,4 @@
+import { humanReply } from '@/lib/ai-assistant/human-reply';
 import { MAX_SPOKEN_CHARACTERS } from "./speech-limits";
 import { executionConfirmation } from "@/lib/ai-assistant/execution-confirmation";
 import type {
@@ -118,7 +119,7 @@ export function presentVoice(
     }
   }
   return {
-    spokenText: concise(spokenText) || "Rezultatul este disponibil în panou.",
+    spokenText: concise(humanReply(spokenText,[...cards,...(plan?.results || [])])) || "Rezultatul este disponibil în panou.",
     visualPayload: cards,
     suggestedAction: state === "AWAITING_CONFIRMATION" ? "confirm" : undefined,
     characterState: state,

@@ -1,3 +1,4 @@
+import { romanianSpeech } from './romanian-speech';
 import WebSocket from "ws";
 export const SPEECH_HINTS = [
   "ImoDeus",
@@ -90,6 +91,7 @@ export function speechStream(
   signal?: AbortSignal,
   onUsage?: (usage: SpeechUsage) => void,
 ) {
+  text = romanianSpeech(text);
   let socket: WebSocket | undefined,
     closed = false,
     bytes = 0,

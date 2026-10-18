@@ -74,7 +74,7 @@ describe("Voice shell parity and presentation", () => {
         },
       ],
     });
-    expect(p.spokenText).toContain("Am afișat 1");
+    expect(p.spokenText).toContain("Am afișat o proprietate");
     expect(p.spokenText).toContain("continua");
   });
   it("distinguishes pending approval from successful execution and uncertain delivery", () => {

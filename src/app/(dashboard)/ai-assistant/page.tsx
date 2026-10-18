@@ -1,4 +1,5 @@
 'use client';
+import { humanReply } from '@/lib/ai-assistant/human-reply';
 import { AutomationsPanel } from '@/components/ai/AutomationsPanel';
 import { AssistantExecutionControls } from '@/components/ai/AssistantExecutionControls';
 import { GmailHandoff } from '@/components/ai/GmailHandoff';
@@ -246,7 +247,7 @@ function AiAssistantWorkspace() {
         {progress && busy && <p role="status" className="rounded-xl border p-3 text-sm text-muted-foreground">{progress}</p>}
         {messages.map(message => <article key={message.id} className={message.role === 'user' ? 'ml-auto max-w-[85%] rounded-2xl bg-muted px-4 py-3' : 'max-w-full'}>
           <div className="mb-1 text-xs font-medium text-muted-foreground">{message.role === 'user' ? 'Tu' : 'AI Assistant'}</div>
-          <div className="prose prose-sm max-w-none dark:prose-invert"><Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown></div>
+          <div className="prose prose-sm max-w-none dark:prose-invert"><Markdown remarkPlugins={[remarkGfm]}>{message.role === 'assistant' ? humanReply(message.text,message.cards || []) : message.text}</Markdown></div>
           {message.cards?.map((card, index) => renderCard(card, message.id, index))}
           {message.planId && <div className="my-3 rounded-2xl border border-emerald-200 bg-emerald-50/30 p-4"><strong>Plan de acțiune</strong><ol className="my-3 space-y-2">{message.actions?.map((action, index) => <li key={index} className="rounded-xl border bg-background p-3"><p className="text-sm font-medium">{index + 1}. {labels[action.kind]}{action.kind === 'existing_operation' ? ': ' + action.operation : ''}</p><ActionPreview action={action} resolveName={id=>{const row=messages.flatMap(m=>m.cards||[]).flatMap(c=>c.rows).find(r=>r.id===id);return String(row?.name||row?.title||row?.label||row?.displayName||id);}}/></li>)}</ol>
             {plans[message.planId] && <AssistantExecutionControls plan={plans[message.planId]} user={user} resumeDisabled={busy} onPlan={plan => setPlans(p => ({ ...p, [plan.id]: plan }))} onResume={() => void execute(message.planId!)} onError={setError} />}

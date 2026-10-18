@@ -115,3 +115,12 @@ describe("Eleven v3 Conversational speech renderer", () => {
     await expect(second.read()).rejects.toThrow();
   });
 });
+
+it('sends Romanian words for amounts and phones to the actual speech transport',async()=>{
+ vi.stubEnv('ELEVENLABS_API_KEY','test-server-key');
+ const reader=speechStream('130000 euro, telefon 0722123456','romanian-voice').getReader();
+ const socket=sockets.at(-1)!;socket.emit('open');
+ expect(socket.sent[1].inputs[0].text).toContain('o sută treizeci de mii de euro');
+ expect(socket.sent[1].inputs[0].text).toContain('zero, șapte, doi, doi, unu, doi, trei, patru, cinci, șase');
+ await reader.cancel();
+});

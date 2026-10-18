@@ -1,23 +1,31 @@
-// Only verified stage identifiers select narration; raw tool text is never spoken.
+// Narration follows verified stages only, never raw tool output.
 export function voiceProgressText(stage?: string) {
-  if (stage === 'query_records') return 'Consult datele din aplicație pentru cererea ta.';
-  if (stage === 'search_properties') return 'Caut proprietatea potrivită în portofoliu.';
-  if (stage === 'facebook_publication_preflight') return 'Verific proprietatea, contul Facebook și grupurile pentru publicare.';
-  if (stage === 'verify_request_coverage' || stage === 'goal_coverage') return 'Verific să fie îndeplinite toate cerințele tale.';
-  if (stage === 'propose_actions') return 'Pregătesc pașii necesari pentru cererea ta.';
-  if (stage === 'planning') return 'Verific ce mai este necesar pentru cererea ta.';
-  if (stage === 'provider_retry' || stage === 'tool_retry') return 'Durează puțin mai mult. Încerc din nou să obțin informațiile necesare.';
-  return 'Mă ocup de cererea ta. Încă aștept rezultatul.';
+ const messages: Record<string,string> = {
+ query_records:'Consult datele din aplicație pentru cererea ta.',
+ search_properties:'Caut proprietatea potrivită în portofoliu.',
+ facebook_publication_preflight:'Verific proprietatea, contul Facebook și grupurile pentru publicare.',
+ verify_request_coverage:'Verific să fie îndeplinite toate cerințele tale.',
+ goal_coverage:'Verific să fie îndeplinite toate cerințele tale.',
+ propose_actions:'Pregătesc pașii necesari pentru cererea ta.',
+ planning:'Verific ce mai este necesar pentru cererea ta.',
+ provider_retry:'Durează puțin mai mult. Încerc din nou să obțin informațiile necesare.',
+ tool_retry:'Durează puțin mai mult. Încerc din nou să obțin informațiile necesare.'
+ };
+ return messages[stage || ''] || 'Cererea ta este în curs. Aștept rezultatul.';
 }
-export function startVoiceProgress(say: (text: string) => Promise<void>, cancel: () => void) {
-  let stage: string | undefined, stopped = false, speaking = false;
-  const tick = async () => {
-    if (stopped || speaking) return;
-    speaking = true;
-    try { await say(voiceProgressText(stage)); } catch { /* Progress must not fail the request. */ }
-    finally { speaking = false; }
-  };
-  let interval: ReturnType<typeof setInterval> | undefined;
-  const first = setTimeout(() => { void tick(); interval = setInterval(() => void tick(), 5000); }, 1000);
-  return { update: (_text: string, next?: string) => { stage = next; }, stop: () => { stopped = true; clearTimeout(first); clearInterval(interval); cancel(); } };
+export function startVoiceProgress(say:(text:string)=>Promise<void>,cancel:()=>void){
+ let stage:string|undefined,stopped=false,speaking=false;
+ const used=new Set<string>();let elapsed=5;
+ const tick=async()=>{
+  if(stopped||speaking)return;
+  const current=voiceProgressText(stage);
+  // Elapsed time varies without inventing a new processing stage or a deadline.
+  const text=used.has(current)?'Au trecut '+elapsed+(elapsed%100>=20||elapsed%100===0?' de':'')+' secunde. Rezultatul nu a sosit încă.':current;
+  if(used.has(text))return;
+  used.add(text);speaking=true;
+  try{await say(text);}catch{/* A narration failure must not stop the task. */}finally{speaking=false;}
+ };
+ let interval:ReturnType<typeof setInterval>|undefined;
+ const first=setTimeout(()=>{void tick();interval=setInterval(()=>{elapsed+=10;void tick();},10000);},5000);
+ return {update:(_text:string,next?:string)=>{stage=next;},stop:()=>{stopped=true;clearTimeout(first);clearInterval(interval);cancel();}};
 }

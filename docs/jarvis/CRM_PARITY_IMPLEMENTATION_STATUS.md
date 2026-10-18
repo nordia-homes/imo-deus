@@ -300,3 +300,14 @@ Validări confirmate: 109 teste unitare în șapte suite; 184 teste Firestore/St
 Limite de acceptanță: nu s-au folosit modele/providere live, nu s-au trimis mesaje și nu s-au publicat anunțuri reale. Autorizarea Meta/TikTok, configurațiile portalurilor și șablonul de recomandări aprobat sunt condiții reale, nu sunt eliminate prin prompt. Trimiterea automată raportează inițial coada, iar Inbox urmărește starea; nu declară livrare înainte de dovadă. Planurile persistate folosesc plan_outcomes pentru verificare. Nicio afirmație de acoperire universală a formulărilor sau de funcționare 100% în producție nu rezultă din aceste teste.
 
 Validare finală suplimentară: 304/304 teste în șase suite Firestore/Storage (calendar-concurrency 70, facebook-create 90, media-pipeline 83, tiktok-schedule 33, matching-delivery 5, meta-publication-reconcile 23). Cele 5 matching-delivery sunt comune cu rularea de 184 teste; totalul distinct este 483 teste de integrare, plus 113 unitare/șablon PDF. Cele 33 probe live rămân neexecutate. Lint fără erori sau avertismente pentru fișierele verificate; diff-check curat; manifest verificat cu 182 operații și 42 acțiuni native, fără a deduce un procent de paritate. Cele două aserțiuni calendar despre replay au fost aliniate explicit la reused:true și trec, păstrând verificarea efectelor unice.
+
+
+## Voce și răspunsuri lizibile — 18 octombrie 2026
+
+Mesajul vocal de progres începe la 5 secunde, apoi la intervale de 10 secunde. Mesajele deja rostite nu se repetă în aceeași cerere, nici când etapa revine; etapa se bazează pe identificatorul verificat, nu pe textul uneltei. Când etapa nu se schimbă, se comunică timpul de așteptare fără a inventa progres sau termen de finalizare. Redarea lungă nu este suprapusă, iar finalizarea/anularea oprește temporizatoarele.
+
+Textul trimis efectiv la sinteză normalizează sume EUR/RON cu separatori, subdiviziuni, numere de telefon (cifră cu cifră, păstrând zero și prefixul internațional), ore și cantități cu acord feminin/masculin. Textul afișat păstrează cifrele utile; corecțiile acordurilor comune și instrucțiunile modelului acoperă o rezervare/un pas și formele plurale. Nu reprezintă un corector universal al limbii române.
+
+Răspunsurile noi folosesc denumirile din datele autorizate și recitesc referințele necesare; formatările text/voce ascund ID-urile cunoscute și marcate explicit. Dacă denumirea nu este disponibilă, se folosește o referință neutră. Linkurile funcționale, argumentele uneltelor și jurnalele își păstrează identificatorii. Nu se modifică entitățile executate pentru a obține o denumire.
+
+Verificări: 94 teste voce/planner/politici, apoi 28 teste relevante cu cele două cazuri suplimentare de acord (96 teste distincte); 173 teste de integrare Facebook și reluare planuri trecute. Testul transportului ElevenLabs verifică textul normalizat transmis efectiv prin socket simulat. Nu s-a făcut audiție cu vocea reală și nu s-a publicat în producție.
