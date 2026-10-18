@@ -1,3 +1,4 @@
+import { bindSemanticAuthority, SEMANTIC_EXECUTION_POLICY } from './semantic-authority';
 import { requestsWhatsappProspecting } from './prospecting-consent';
 import { uniqueProspectingProposals } from './prospecting-plan';
 import { payloadHash } from './approval';
@@ -69,7 +70,8 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     if (actions.length && status === 'success') text = `Am pregătit ${actions.length} acțiuni. Verifică planul și confirmă execuția; acțiunile nu au fost executate.`;
     if (collaborationDraft && status === 'success') text = `Ciornă de colaborare — nu a fost trimisă.\n\n${text}`;
     if (goalCoverage?.requirements.some(row => ['unsupported', 'needs_clarification'].includes(row.resolution))) text += '\nCerințe încă neacoperite: ' + goalCoverage.requirements.filter(row => ['unsupported', 'needs_clarification'].includes(row.resolution)).map(row => row.description).join('; ');
-    return { text, cards, actions, ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
+    const semanticAuthority = bindSemanticAuthority(ctx.prospectingRequest?.prompt || prompt, actions, goalCoverage);
+    return { text, cards, actions, ...(semanticAuthority ? { semanticAuthority } : {}), ...(ownerHistoryContinuation ? { ownerHistoryContinuation } : {}), accessRefs: uniqueReferences(accessRefs), metrics, ...(goalCoverage ? { goalCoverage } : {}) };
   };
   const emit = async (stage: string, text: string) => options.progress?.({ type: 'PROGRESS_EVENT', stage, text, step: budget.steps, at: new Date().toISOString() });
   if (historyReply && ((!historyReply.phone && !historyReply.associationAnswered) || historyReply.associationAnswered === false)) {
@@ -670,7 +672,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   let modules = expandCapabilities(selectCapabilities(contextHint));
   let displayed = focused ? available : visibleTools(available, modules, contextHint);
   const policyDynamic = { readiness, memory: policyMemory, summary: rankingExplain || whatsappCheck || messageStatus ? undefined : options.summary, readOnly: options.child || prospectRead || outreachRead || outreachSettingsRead || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead };
-  const compose = (ids: CapabilityId[], names: string[]) => buildInstructions(ctx, { ...policyDynamic, allowedTools: names, ...(!focused ? { modules: ids } : {}) }) + (!focused ? '\nCAPABILITY_CATALOG ' + JSON.stringify(capabilityCatalog.map(({id,description})=>({id,description,tools:available.filter(name=>toolCapabilities(name).includes(id))}))) + '\nFolosește load_capabilities pentru orice domeniu suplimentar înaintea operațiilor sale. Catalogul este prezentare, nu permisiune. Nu reduce cererea originală la domeniile deja încărcate. Păstrează pașii pregătiți; nu îi repeta.' : '');
+  const compose = (ids: CapabilityId[], names: string[]) => buildInstructions(ctx, { ...policyDynamic, allowedTools: names, ...(!focused ? { modules: ids } : {}) }) + (!focused ? '\nCAPABILITY_CATALOG ' + JSON.stringify(capabilityCatalog.map(({id,description})=>({id,description}))) + '\nFolosește load_capabilities pentru orice domeniu suplimentar înaintea operațiilor sale. Catalogul este prezentare, nu permisiune. Nu reduce cererea originală la domeniile deja încărcate. Păstrează pașii pregătiți; nu îi repeta.' : '') + '\n' + SEMANTIC_EXECUTION_POLICY;
   let instructions = compose(modules, displayed);
   let tools = displayed.map(functionDefinition);
   const refreshCapabilities = (ids: string[], requested: string[] = []) => {
@@ -681,7 +683,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) return { loaded: false, reason: 'Contextul modulelor este prea mare; folosește operation_contract și uneltele generice pentru pasul concret.', modules };
     const added = next.filter(id=>!modules.includes(id)); modules=next;displayed=names;instructions=candidate;tools=definitions;
     if(metrics.capabilityRouting){metrics.capabilityRouting.loaded=modules;metrics.capabilityRouting.expansions+=added.length?1:0;}
-    return {loaded:true,added,modules,executed:false};
+    return {loaded:true,added,modules,executed:false,availableTools:available.filter(name=>toolCapabilities(name).every(id=>modules.includes(id))), instruction: 'Pentru unelte neprezentate, folosește discover_tools sau load_capabilities cu tools.'};
   };
   const input: any[] = contextMessages(rankingExplain || whatsappCheck || messageStatus ? [] : history); input.push({ role: 'user', content: prompt });
   if (prospectAssignmentRead && !otherReservations && !prospectOwnershipGuard && !promisingRead && !rankingExplain) input.push({ role: 'developer', content: 'Citește read resource=ownerListingFavorites limit=50 fără id/search. Serverul filtrează prospectele active ale agentului autentificat conform atribuirii CRM, inclusiv expirarea rezervărilor. Continuă toate paginile nextCursor până la complete=true, chiar dacă o pagină nu conține potriviri. Listează rezultatele tuturor paginilor; acestea sunt prospecte, nu proprietari deduplicați. Nu modifica și nu rezerva nimic. Apoi goal_coverage resolution=answered steps=[] evidenceCallIds citirea completă. Dacă nu există rezultate după ultima pagină, spune că nu ai prospecte active atribuite în agenția curentă.' });
@@ -710,7 +712,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
       const estimate = selectionEstimate(state);
       metrics.capabilityRouting = { version: CAPABILITY_VERSION, mode, selected: [], loaded: modules, expansions: 0, status: 'local', inputTokens: 0, outputTokens: 0, costUsd: 0, latencyMs: 0 };
       // Test model injection alone never authorizes a real provider call. A selector can be injected independently.
-      if (mode !== 'off' && (options.jevSelector || (!options.provider && process.env.TYPESAFE_API_KEY)) && estimate <= 16000 && budget.tokens + estimate + Buffer.byteLength(instructions + JSON.stringify(tools) + JSON.stringify(input)) + budget.limits.maxOutputTokens < budget.limits.maxTokens && budget.cost + estimate * JEV_INPUT_USD_PER_MILLION / 1e6 < budget.limits.maxCost) {
+      if (mode !== 'off' && (options.jevSelector || (!options.provider && process.env.TYPESAFE_API_KEY)) && estimate <= 16000 && (budget.limits.maxTokens === null || budget.tokens + estimate + Buffer.byteLength(instructions + JSON.stringify(tools) + JSON.stringify(input)) + budget.limits.maxOutputTokens < budget.limits.maxTokens) && budget.cost + estimate * JEV_INPUT_USD_PER_MILLION / 1e6 < budget.limits.maxCost) {
         let observation; let selectionTimer: ReturnType<typeof setTimeout> | undefined;
         try { observation=selectionResponseSchema.parse(await Promise.race([(options.jevSelector || new HttpJevSelector()).select(state),new Promise<never>((_,reject)=>{selectionTimer=setTimeout(()=>reject(new Error('selector_timeout')),1500);})])); }
         catch { observation=selectionFallback('invalid_selector',0,estimate); }

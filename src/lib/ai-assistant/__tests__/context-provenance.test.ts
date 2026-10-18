@@ -63,7 +63,8 @@ it('marks history as partial historical context with original qualifications', (
   expect(card).toMatchObject({ historical: true, complete: false, sourceComplete: true, scoreMayBeStale: true, note: history[0].cards![0].note, resultSetId: 'set' });
   expect(card.entities).toHaveLength(6);
   expect(card.entities[0]).toMatchObject({ id: 'p0', ...feedback, scoreMayBeStale: true });
-  expect(contextMessages(history, 500)).toEqual([]);
+  expect(contextMessages(history, 500)).toEqual([{ role: 'developer', content: expect.stringContaining('conversation_history') }]);
+  expect(Buffer.byteLength(contextMessages(history, 500).map(row=>row.content).join(''))).toBeLessThanOrEqual(500);
 });
 
 it.each([0, 255, NaN, Infinity, 1000.5])('rejects unusable byte budget %s', max => {

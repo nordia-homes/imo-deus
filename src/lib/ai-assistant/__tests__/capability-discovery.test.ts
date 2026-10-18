@@ -14,3 +14,10 @@ it('does not confuse clock words with collaboration/prospecting substrings', () 
   expect(capabilityScore('ora', 'update_prospect')).toBe(0);
   expect(capabilityScore('ora', 'import_owner_listing')).toBe(0);
 });
+
+import { discoverTools } from '../registry';
+it('discovers specialized internal tools by domain instead of requiring their exact name',()=>{
+ const page=discoverTools('calendar',0,20,'agent');
+ expect(page.tools.some(tool=>tool.id==='calendar_availability')).toBe(true);
+ expect(page.tools.some(tool=>tool.id==='viewing_confirmation_draft')).toBe(true);
+});

@@ -640,3 +640,17 @@ describe('Responses tool planning', () => {
     expect(readResource).not.toHaveBeenCalled(); expect(result.metrics.tools[0].status).toBe('failed');
   });
 });
+
+it('finishes after the incident usage sequence without confusing cumulative usage with context size',async()=>{
+ const prompt='Consultă proprietățile și prezintă rezultatele.';
+ vi.mocked(readResource).mockResolvedValue({rows:[{id:'p',title:'Proprietate verificată'}],complete:true} as any);
+ const usagePairs=[[6944,26],[6994,65],[7104,71],[7414,45],[8398,53],[8599,40],[8784,41],[8860,51]];
+ const reads=usagePairs.map(([inputTokens,outputTokens],index)=>({...call('read',{resource:'properties',id:'p'+index,limit:1}),usage:{inputTokens,outputTokens,cachedTokens:Math.max(0,inputTokens-500),cacheWriteTokens:0,estimated:false}}));
+ const goal={...call('goal_coverage',{requirements:[{id:'read',sourceQuote:prompt,description:'Citiri cerute',resolution:'answered',steps:[],evidenceCallIds:reads.map(read=>read.calls[0].id),execution:{mode:'prepare',conditions:[]}}]}),usage:{...usage,inputTokens:9000,cachedTokens:8500}};
+ const done={...final,usage:{...usage,inputTokens:9000,cachedTokens:8500}};
+ const model=scripted(...reads,goal,done),budget=new AgentBudget();
+ const result=await planTurn(ctx,prompt,[],{provider:model,budget});
+ expect(result.metrics.status,result.text).toBe('success');
+ expect(model.respond).toHaveBeenCalledTimes(10);expect(budget.tokens).toBeGreaterThan(70000);
+ expect(executeAction).not.toHaveBeenCalled();
+});

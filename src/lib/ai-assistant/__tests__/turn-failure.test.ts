@@ -84,3 +84,27 @@ describe('durable visible turn failures', () => {
   });
   it('logs only fixed error categories', () => { expect(failureCategory({ code: 9, message: 'secret' })).toBe('precondition'); expect(failureCategory({ status: 403 })).toBe('access'); expect(failureCategory(new Error('secret'))).toBe('unexpected'); });
 });
+
+it('reuses the saved plan after interruption instead of spending again or regenerating actions',async()=>{
+ const {ctx,rows}=fixture();
+ const input={sessionId:'s',requestId:'r',prompt:'Cerere nouă'};
+ vi.mocked(planTurn).mockResolvedValueOnce({text:'Rezultat verificat.',cards:[],actions:[],accessRefs:[],metrics:{status:'success',elapsedMs:1,tools:[],models:[]}});
+ const first=await chatTurn(ctx,input);
+ expect(rows.get('agencies/a/assistantSessions/s/requests/r')).toMatchObject({phase:'planned',ownerId:'u',result:{text:'Rezultat verificat.'}});
+ // Simulate loss of the final reply commit; the pre-execution checkpoint survives.
+ rows.delete('agencies/a/assistantSessions/s/messages/r-assistant');
+ vi.mocked(planTurn).mockClear();
+ const replay=await chatTurn(ctx,input);
+ expect(replay.message.text).toBe(first.message.text);
+ expect(planTurn).not.toHaveBeenCalled();
+});
+it('refuses to substitute another command for an existing request checkpoint',async()=>{
+ vi.spyOn(console,'error').mockImplementation(()=>{});
+ const {ctx,rows}=fixture();
+ const input={sessionId:'s',requestId:'r',prompt:'Cererea originală'};
+ vi.mocked(planTurn).mockResolvedValueOnce({text:'Răspuns',cards:[],actions:[],accessRefs:[],metrics:{status:'success',elapsedMs:1,tools:[],models:[]}});
+ await chatTurn(ctx,input); rows.delete('agencies/a/assistantSessions/s/messages/r-assistant');
+ vi.mocked(planTurn).mockClear();
+ await expect(chatTurn(ctx,{...input,prompt:'Altă cerere'})).rejects.toThrow('altui mesaj');
+ expect(rows.get('agencies/a/assistantSessions/s/messages/r-user').text).toBe(input.prompt);expect(planTurn).not.toHaveBeenCalled();
+});

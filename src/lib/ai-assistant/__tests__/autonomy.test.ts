@@ -172,3 +172,22 @@ it.each([['Trimite mesajul aprobat.', 1], ['Arată-mi preview-ul mesajului înai
   const result = await runSafePrefix(context, 'draft-request', [action], String(prompt));
   expect(result.results).toHaveLength(Number(count)); expect(executeAction).toHaveBeenCalledTimes(Number(count));
 });
+// These tests exercise semantic-contract consumption and the real executor boundary;
+// they do not claim that a scripted interpretation measures language accuracy.
+import { bindSemanticAuthority } from '../semantic-authority';
+it('executes a semantically requested buyer without requiring a hardcoded imperative', async()=>{
+ const prompt='Aș vrea să-l avem pe Matei Alin în lista de cumpărători.';
+ const action: AssistantAction={kind:'create_contact',name:'Matei Alin',phone:'0123123123',email:'',contactType:'Cumparator'};
+ const authority=bindSemanticAuthority(prompt,[action],{requirements:[{id:'buyer',sourceQuote:prompt,description:'Cumpărător nou',resolution:'planned',steps:[1],evidenceCallIds:[],execution:{mode:'execute',conditions:[]}}]});
+ const result=await runSafePrefix(ctx(),'semantic-buyer',[action],prompt,authority);
+ expect(result.results).toHaveLength(1);
+ expect(executeAction).toHaveBeenCalledWith(expect.anything(),expect.objectContaining({name:'Matei Alin'}),'semantic-buyer-safe-0');
+});
+it('does not let a legacy imperative override draft-only semantic intent', async()=>{
+ const prompt='Creează cumpărătorul doar în propunere, fără salvare.';
+ const action: AssistantAction={kind:'create_contact',name:'Matei Alin',phone:'0123123123',email:'',contactType:'Cumparator'};
+ const authority=bindSemanticAuthority(prompt,[action],{requirements:[{id:'buyer',sourceQuote:prompt,description:'Propunere',resolution:'planned',steps:[1],evidenceCallIds:[],execution:{mode:'prepare',conditions:[]}}]});
+ const result=await runSafePrefix(ctx(),'semantic-draft',[action],prompt,authority);
+ expect(result.results).toHaveLength(0);
+ expect(executeAction).not.toHaveBeenCalled();
+});

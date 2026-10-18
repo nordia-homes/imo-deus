@@ -71,7 +71,7 @@ type Props = {
   compact?: boolean;
   card: AssistantCard;
   busy: boolean;
-  onPrompt: (text: string) => void;
+  onPrompt: (text: string, currentRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord) => void;
   onPrepare: (actions: AssistantAction[]) => void;
   onConsent: (row: Record<string, unknown>) => void;
   onContinue: () => void;
@@ -198,7 +198,7 @@ export function AssistantResultCard({
         <div className={property ? "grid gap-4 xl:grid-cols-2" : "space-y-3"}>
           {shown.map((row, index) => {
             const name = String(
-              row.title ||
+              row.title || row.label || row.displayName ||
                 row.name ||
                 row.propertyTitle ||
                 row.description ||
@@ -451,7 +451,7 @@ export function AssistantResultCard({
                             disabled={busy}
                             onClick={() =>
                               onPrompt(
-                                `Programează o vizionare pentru proprietatea ${row.id}.`,
+                                `Programează o vizionare pentru proprietatea „${name}”.`, { resource: "properties", id: String(row.id) },
                               )
                             }
                           >
@@ -482,7 +482,7 @@ export function AssistantResultCard({
                         variant="outline"
                         disabled={busy}
                         onClick={() =>
-                          onPrompt(`Fă follow-up cu clientul ${row.id}.`)
+                          onPrompt(`Fă follow-up cu clientul „${name}”.`, { resource: "contacts", id: String(row.id) })
                         }
                       >
                         Follow-up

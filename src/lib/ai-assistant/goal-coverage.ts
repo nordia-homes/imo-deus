@@ -6,6 +6,10 @@ export const goalCoverageSchema = z.object({ requirements: z.array(z.object({
   sourceQuote: z.string().min(1).max(1000),
   description: z.string().min(1).max(500),
   resolution: z.enum(['planned', 'answered', 'needs_clarification', 'unsupported']),
+  execution: z.object({
+    mode: z.enum(['execute', 'prepare', 'prohibited']),
+    conditions: z.array(z.object({ sourceQuote: z.string().min(1).max(1000), satisfied: z.boolean(), evidenceCallIds: z.array(z.string().min(1).max(180)).max(20) }).strict()).max(20),
+  }).strict().optional(),
   steps: z.array(z.number().int().min(1).max(100)).max(100),
   evidenceCallIds: z.array(z.string().min(1).max(180)).max(20),
 }).strict()).min(1).max(30) }).strict();
@@ -19,6 +23,11 @@ export function validateGoalCoverage(value: unknown, request: string, actionCoun
     if (ids.has(requirement.id)) throw new Error('ID de cerință duplicat.');
     ids.add(requirement.id);
     if (!request.includes(requirement.sourceQuote)) throw new Error('Cerința trebuie legată de un citat exact din cererea curentă.');
+    for (const condition of requirement.execution?.conditions || []) {
+      if (!request.includes(condition.sourceQuote)) throw new Error('Condiția trebuie legată de cererea originală.');
+      if (condition.satisfied && !condition.evidenceCallIds.length) throw new Error('Condiția îndeplinită necesită dovezi actuale.');
+      if (condition.evidenceCallIds.some(id => !successfulReads.has(id))) throw new Error('Dovadă necunoscută pentru condiție.');
+    }
     if (new Set(requirement.steps).size !== requirement.steps.length || requirement.steps.some(step => step > actionCount)) throw new Error('Referință invalidă la pașii planului.');
     if (requirement.resolution === 'planned' && !requirement.steps.length) throw new Error('Cerința planificată necesită cel puțin un pas.');
     if (requirement.resolution !== 'planned' && requirement.steps.length) throw new Error('Numai cerințele planificate pot declara pași.');

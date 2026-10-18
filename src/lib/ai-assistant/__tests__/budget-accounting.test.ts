@@ -38,3 +38,22 @@ it('accepts zero usage and finite fractional dollar charges', () => {
   budget.reserve('gpt-6-luna', 0, 0);
   expect(budget.snapshot()).toMatchObject({ tokens: 1, costUsd: 0.000001 });
 });
+
+it('allows repeated cached context beyond the former cumulative cap while preserving cost and context limits', () => {
+  const budget = new AgentBudget();
+  for (let i = 0; i < 20; i++) {
+    budget.reserve('gpt-6-luna', 10000, 100);
+    budget.record('gpt-6-luna', { inputTokens: 9000, outputTokens: 50, cachedTokens: 8500, cacheWriteTokens: 0, estimated: false });
+  }
+  expect(budget.tokens).toBe(181000);
+  expect(() => budget.reserve('gpt-6-luna', 70000, 1)).toThrow('contextul apelului');
+  expect(() => budget.recordAuxiliary(DEFAULT_LIMITS.maxCost, 0)).toThrow('cost');
+});
+it('starts a fresh request budget without carrying consumption between conversation turns', () => {
+  for (let request = 0; request < 110; request++) {
+    const budget = new AgentBudget();
+    expect(budget.tokens).toBe(0);
+    budget.recordAuxiliary(0.001, 100000);
+    expect(budget.tokens).toBe(100000);
+  }
+});

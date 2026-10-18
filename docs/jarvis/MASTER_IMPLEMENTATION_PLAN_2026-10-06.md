@@ -1276,3 +1276,8 @@ Validări: 69 teste țintite și 1715/1715 teste de regresie în 134 de fișiere
 Implementarea și procedura de revenire sunt descrise în [JEV_IMPLEMENTATION_2026_10_18.md](JEV_IMPLEMENTATION_2026_10_18.md). Catalog comun, reguli conservate, separarea autorizării de prezentare, încărcare progresivă și moduri off/shadow/active. Fluxurile deterministe sunt păstrate. Activarea este aditivă, cu dependențe și fallback compact; nu înlocuiește executorul și verificarea rezultatului.
 
 Acest lot nu rezumă istoricul pentru a remedia bugetul. Recuperarea arbitrară a întregului istoric rămâne distinctă și neimplementată aici. Testarea corpusului privește selecția locală și dimensionarea, nu precizia Jev live sau succesul E2E al tuturor scenariilor. Nu s-au făcut teste externe cu plată, publicare în producție sau modificări de date reale. Pragurile Jev și avantajul de latență/cost necesită benchmark live autorizat înainte de activare globală.
+
+
+## Actualizare 2026-10-18 — migrare semantică în curs
+
+Vezi [implementarea semantică](JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md). Bugetul cumulat, recuperarea istoricului, intenția structurată CRM/Facebook, checkpoint-ul anterior execuției și selecțiile CRM prin denumiri sunt implementate local. Migrarea tuturor fluxurilor, continuarea durabilă în interiorul planificării și evaluarea limbajului real rămân deschise. Nu se modifică numărul scenariilor certificate și nu se declară finalizarea masterplanului.

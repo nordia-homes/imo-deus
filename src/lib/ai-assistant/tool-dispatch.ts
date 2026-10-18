@@ -1,3 +1,5 @@
+import { prepareFacebookPublication } from './facebook-natural';
+import { readConversationHistory } from './conversation-history';
 import { viewingConfirmationDraft } from './viewing-confirmation-draft';
 import { viewingAttendance } from './viewing-attendance';
 import { viewingRisk } from './viewing-risk';
@@ -39,7 +41,18 @@ export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
-  if (name === 'tomorrow_order') {
+  if (name === 'facebook_publication_preflight') {
+    const prepared = await prepareFacebookPublication(ctx, payload);
+    if (!prepared) throw new Error('Pregătirea publicării nu a produs un rezultat.');
+    const text = prepared.text.replace(/Răspunde „Proprietate: ID” din listă pentru a continua publicarea\./g, 'Alege proprietatea după denumire.').replace(/Alege contul pentru publicare: „Cont Facebook: ID”\./g, 'Alege contul pentru publicare după denumire.');
+    data = { ...prepared, text, complete: prepared.actions.length > 0, executed: false };
+    cards.push({ type: 'data', title: prepared.source === 'facebookConnections' ? 'Conturi Facebook disponibile' : 'Proprietăți pentru publicare', source: prepared.source, rows: prepared.rows, note: text });
+    if (prepared.source === 'properties') for (const row of prepared.rows) if (typeof row.id === 'string') refs.push({ resource: 'properties', id: row.id });
+    for (const action of prepared.actions) if (action.kind === 'existing_operation' && typeof action.body.propertyId === 'string') refs.push({ resource: 'properties', id: action.body.propertyId });
+  } else if (name === 'conversation_history') {
+    const result = await readConversationHistory(ctx, payload);
+    data = result.data; refs.push(...result.refs);
+  } else if (name === 'tomorrow_order') {
     data = await tomorrowOrder(ctx);
     const displayRows = data.rows.map((row: Record<string, any>) => {
       const { at: _at, until: _until, duration: _duration, ...display } = row;

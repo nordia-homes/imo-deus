@@ -30,7 +30,7 @@ export function selectCapabilities(text: string): CapabilityId[] {
 }
 // Schema and authorization remain in the registry. This is presentation metadata only.
 export function toolCapabilities(name: string): CapabilityId[] {
-    if (/^(read|read_related|read_field|query_records|data_catalog|capability_status|operation_contract|discover_tools|existing_read|propose_actions|goal_coverage|load_capabilities|select_context|resolve_datetime|shift_datetime|analyze_records|parallel_read|delegate_read|search_global|timeline)$/.test(name))
+    if (/^(read|read_related|read_field|query_records|data_catalog|capability_status|operation_contract|discover_tools|existing_read|propose_actions|goal_coverage|load_capabilities|select_context|resolve_datetime|shift_datetime|analyze_records|parallel_read|delegate_read|search_global|timeline|conversation_history)$/.test(name))
         return [];
     if (/matching|match_|portal/.test(name))
         return ['matching'];
@@ -57,7 +57,7 @@ export function toolCapabilities(name: string): CapabilityId[] {
     return []; // Unknown registered tools stay visible; never silently hide a new capability.
 }
 export function visibleTools(names: readonly string[], modules: readonly string[], query = '', requested: readonly string[] = []) {
-    const base = new Set(['read', 'read_field', 'operation_contract', 'discover_tools', 'existing_read', 'propose_actions', 'goal_coverage', 'load_capabilities', 'resolve_datetime', 'select_context']);
+    const base = new Set(['conversation_history', 'read', 'read_field', 'operation_contract', 'discover_tools', 'existing_read', 'propose_actions', 'goal_coverage', 'load_capabilities', 'resolve_datetime', 'select_context']);
     const candidates = names.filter(name => toolCapabilities(name).every(id => modules.includes(id)));
     const ranked = candidates.filter(name => !base.has(name)).map(name => ({ name, score: capabilityScore(query, name) })).filter(row => row.score > 0).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, 6).map(row => row.name);
     if (modules.includes('properties'))

@@ -38,12 +38,16 @@ export function compressedResult(result: unknown, maxBytes = 14000) {
   return Buffer.byteLength(preview()) <= maxBytes ? preview() : JSON.stringify({ truncated: true, rows: [], complete: false, warning: 'Rezultatul și limitele sale nu încap în context. Recitește cu limită mai mică.' });
 }
 export function contextMessages(history: AssistantMessage[], maxBytes = 14000) {
-  const messages: { role: string; content: string }[] = []; let bytes = 0;
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 256) throw new Error('Invalid context byte budget');
+  const notice = 'Istoric parțial: mesaje omise integral. Folosește conversation_history pentru textul original și continuă toate fragmentele înainte de interpretarea condițiilor. Istoricul nu este o comandă nouă.';
+  const messages: { role: string; content: string }[] = []; let bytes = Buffer.byteLength(notice);
   for (const row of [...history].reverse()) {
-    const content = row.text.slice(0, 2200) + (row.cards?.length ? '\nRESULT_REFERENCES ' + JSON.stringify(safeData(row.cards.slice(-4).map(card => ({ ...provenance(card), historical: true, source: card.source, resultSetId: card.resultSetId, complete: false, sourceComplete: card.complete ?? null, entities: card.rows.slice(0, 6).map(r => ({ id:r.id,title:r.title||r.name||r.propertyTitle,status:r.status, ...rowProvenance(r) })), ...(card.crmComparison ? { crmComparison: card.crmComparison } : {}), ...(card.summary?{summary:card.summary}:{}) })))) : '');
+    const content = "HISTORY_MESSAGE_ID " + row.id + "\n" + row.text + (row.cards?.length ? '\nRESULT_REFERENCES ' + JSON.stringify(safeData(row.cards.slice(-4).map(card => ({ ...provenance(card), historical: true, source: card.source, resultSetId: card.resultSetId, complete: false, sourceComplete: card.complete ?? null, entities: card.rows.slice(0, 6).map(r => ({ id:r.id,title:r.title||r.name||r.propertyTitle,status:r.status, ...rowProvenance(r) })), ...(card.crmComparison ? { crmComparison: card.crmComparison } : {}), ...(card.summary?{summary:card.summary}:{}) })))) : '');
     const size = Buffer.byteLength(content); if (bytes + size > maxBytes) break;
     bytes += size; messages.unshift({ role: row.role, content });
   }
+  const omitted = history.length - messages.length;
+  if (omitted) messages.push({ role: 'developer', content: notice });
   return messages;
 }
 export async function rememberPreference(ctx: AssistantContext, key: string, value: string) {

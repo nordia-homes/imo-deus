@@ -351,8 +351,8 @@ export function JarvisVoice() {
     }
   }
 
-  function command(prompt: string, epoch = audio.current?.epoch || 0) {
-    const currentRecord = currentRecordFromPath(window.location.pathname);
+  function command(prompt: string, epoch = audio.current?.epoch || 0, selectedRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord) {
+    const currentRecord = selectedRecord || currentRecordFromPath(window.location.pathname);
     const active = voiceSession.current,
       approvalId = pendingPlan.current?.id;
     queue.current = queue.current
@@ -960,7 +960,7 @@ export function JarvisVoice() {
                     card={card}
                     compact
                     busy={state === "PROCESSING" || state === "WORKING"}
-                    onPrompt={command}
+                    onPrompt={(text, record) => command(text, undefined, record)}
                     onPrepare={(actions: AssistantAction[]) => {
                       const active = voiceSession.current;
                       queue.current = queue.current

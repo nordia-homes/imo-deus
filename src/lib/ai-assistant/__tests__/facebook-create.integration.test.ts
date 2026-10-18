@@ -1,3 +1,6 @@
+import { prepareFacebookPublication } from '../facebook-natural';
+import { executeSafePrefix } from '../autonomy';
+import { bindSemanticAuthority } from '../semantic-authority';
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { NextRequest } from 'next/server';
@@ -259,5 +262,38 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     await f.agency.collection('properties').doc('house').set({ ...(await f.property.get()).data(), propertyType: 'Casa', title: 'Casă Cișmigiu' });
     const result = await chatTurn(f.ctx, { sessionId: randomUUID(), requestId: randomUUID(), prompt: corpus.scenarios.find(row => row.id === 'master-0357')!.text, currentRecord: null });
     expect(result.message.text).toContain('a fost creat și programat'); expect((await f.jobs.get()).docs[0].data().propertyId).toBe('property');
+  });
+
+  it('executes a structured semantic Facebook request through the real job ledger without an imperative template', async()=>{
+    const f=await fixture('local');
+    const description='Textul original — Cișmigiu. Fără rescriere.';
+    const images=['https://example.com/second.jpg','https://example.com/first.jpg'];
+    await f.property.update({description,images});
+    const prompt='Mi-ar prinde bine să ajungă și pe grupurile de Facebook oferta de la Cismigiu.';
+    const prepared=await prepareFacebookPublication(f.ctx,{query:'Cismigiu'});
+    expect(prepared?.actions).toHaveLength(1);
+    expect((await f.jobs.get()).empty).toBe(true);
+    const actions=prepared!.actions;
+    const authority=bindSemanticAuthority(prompt,actions,{requirements:[{id:'publish',sourceQuote:prompt,description:'Publicare Facebook',resolution:'planned',steps:[1],evidenceCallIds:['preflight'],execution:{mode:'execute',conditions:[]}}]});
+    const requestId=randomUUID();
+    const result=await executeSafePrefix(f.ctx,requestId,actions,prompt,authority);
+    expect(result.results).toHaveLength(1);
+    expect(result.blocked).toBe(false);
+    await executeSafePrefix(f.ctx,requestId,actions,prompt,authority);
+    const jobs=await f.jobs.get(); expect(jobs.size).toBe(1);
+    await jobs.docs[0].ref.update({scheduledAt:new Date(Date.now()-60000).toISOString()});
+    const response=await claimLocalJob(new NextRequest('http://localhost/api/marketing/facebook-local/runner/claim',{method:'POST'}));
+    expect(response.status).toBe(200);
+    const {claim}=await response.json();
+    expect(claim.property.description).toBe(description);expect(claim.property.images).toEqual(images);
+    expect(mocks.fetch).not.toHaveBeenCalled();expect(mocks.runner).not.toHaveBeenCalled();
+  });
+  it('does not replace a requested Facebook subset with every configured group',async()=>{
+    const f=await fixture();
+    await f.agency.update({facebookGroups:[{name:'Primul',url:'https://www.facebook.com/groups/one',purpose:'sale'},{name:'Al doilea',url:'https://www.facebook.com/groups/two',purpose:'sale'}]});
+    const prepared=await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',groupUrls:['https://www.facebook.com/groups/two']});
+    expect(prepared?.actions[0]).toMatchObject({body:{groupUrls:['https://www.facebook.com/groups/two']}});
+    const rejected=await prepareFacebookPublication(f.ctx,{propertyId:'property',query:'',groupUrls:['https://www.facebook.com/groups/foreign']});
+    expect(rejected?.actions).toHaveLength(0);expect((await f.jobs.get()).empty).toBe(true);
   });
 });

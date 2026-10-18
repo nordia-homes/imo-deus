@@ -11,7 +11,7 @@ export function operationCards(operation: string, description: string, raw: Reco
   return [{ type: 'data', title, source, note: data.note || null, freshness: 'domain_handler', rows: rows.map((row: any) => typeof row !== 'object' || row === null ? { text: String(row ?? '') } : {
     ...row, imageUrl: row.imageUrl || row.thumbnailUrl || row.coverUrl || null,
     link: row.link || row.actionUrl || row.checkoutUrl || row.portalUrl || row.authorizationUrl || row.connectUrl || null,
-    title: row.title || row.name || row.subject || row.propertyTitle || row.summary || title,
+    title: row.title || row.name || row.label || row.displayName || row.subject || row.propertyTitle || row.summary || title,
     description: row.description || row.summary || row.note || row.error || data.note || null,
     dueDate: row.viewingDate || row.dueDate || row.scheduledAt || row.createdAt || null,
   }), ...(typeof data.complete === 'boolean' ? { complete: data.complete } : {}) }];

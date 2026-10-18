@@ -1,3 +1,4 @@
+import { semanticActionDecision, type SemanticAuthority } from './semantic-authority';
 import { metaImageAction, metaImageApproved } from './meta-image';
 import { metaPublishAction, metaPublishApproved } from './meta-publish';
 import { metaControlAction, metaControlRequest } from './meta-control';
@@ -123,13 +124,18 @@ function remapReferences(value: unknown, completed: Record<string, unknown>[]): 
   return value;
 }
 // Optional non-CRM autonomy is set only by authenticated UI; CRM scope comes from the request.
-export async function executeSafePrefix(ctx: AssistantContext, requestId: string, actions: AssistantAction[], prompt: string) {
+export async function executeSafePrefix(ctx: AssistantContext, requestId: string, actions: AssistantAction[], prompt: string, semanticAuthority?: SemanticAuthority) {
   const results: Record<string, unknown>[] = [];
   const policy = await autonomyPolicy(ctx);
   const independentProspecting = actions.length > 0 && actions.every(action => action.kind === 'existing_operation' && action.operation === 'message_send' && requestAuthorizedCrmAction(action) && explicitlyRequestedSafeAction(action, prompt)) && !JSON.stringify(actions).includes('@step:');
   try {
     for (const action of actions.slice(0, MAX_PLAN_ACTIONS)) {
-      if (!(requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action)) || !explicitlyRequestedSafeAction(action, prompt)) break;
+      // Semantic interpretation replaces lexical verbs only for already authorized
+      // CRM actions and validated immediate Facebook jobs. Other external operations
+      // retain their concrete approvals. The job service still validates all inputs.
+      const semantic = (action.kind !== 'existing_operation' || facebookImmediateAction(action)) && requestAuthorizedCrmAction(action)
+        ? semanticActionDecision(semanticAuthority, ctx.prospectingRequest?.prompt || prompt, action, results.length + 1) : undefined;
+      if (!(requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action)) || !(semantic ?? explicitlyRequestedSafeAction(action, prompt))) break;
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');
       const resolved = continuePlanRevision(resolveAction(action, results), results);

@@ -104,7 +104,7 @@ function AiAssistantWorkspace() {
     if (busy) return;
     generation.current++; const id=crypto.randomUUID();setSessionId(id);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,id,false); setMessages([]); setPlans({}); setHistoryCursor(null); setError('');
   }
-  async function send(text = input) {
+  async function send(text = input, currentRecord?: import('@/lib/ai-assistant/current-record-contract').CurrentRecord) {
     if (!text.trim() || !sessionId || busy) return;
     await perform(async () => {
       const version = generation.current, requestId = crypto.randomUUID();
@@ -112,7 +112,7 @@ function AiAssistantWorkspace() {
       setMessages(m => [...m, message]); setInput('');
       let data;
       if (backgroundConfigured) {
-        const job = await api('/api/ai-assistant/workspace', { kind: 'start', sessionId, requestId, prompt: text.trim() });
+        const job = await api('/api/ai-assistant/workspace', { kind: 'start', sessionId, requestId, prompt: text.trim(), ...(currentRecord ? { currentRecord } : {}) });
         setProgress('Comanda este salvată și va fi procesată pe server.');
         const started = Date.now(); let completed = false;
         while (!completed && version === generation.current && Date.now() - started < 180000) {
@@ -135,7 +135,7 @@ function AiAssistantWorkspace() {
           }
         }
         if (!data) throw new Error('Procesarea continuă pe server. Deschide istoricul pentru rezultat.');
-      } else data = await api('/api/ai-assistant/workspace', { kind: 'chat', sessionId, requestId, prompt: text.trim() });
+      } else data = await api('/api/ai-assistant/workspace', { kind: 'chat', sessionId, requestId, prompt: text.trim(), ...(currentRecord ? { currentRecord } : {}) });
       setProgress('');
       if (version !== generation.current) return;
       setMessages(m => [...m, data.message]);if(user&&agencyId)storeJarvisSession(user.uid,agencyId,sessionId);
@@ -227,7 +227,7 @@ function AiAssistantWorkspace() {
   }
 
   function renderCard(card: AssistantCard, messageId: string, cardIndex: number) {
-    return <AssistantResultCard key={cardIndex} card={card} busy={busy} onPrompt={text => { void send(text); }} onPrepare={actions => { void prepareActions(actions); }} onConsent={row => { void startConsent(row); }} onArtifact={row => { void downloadArtifact(row); }} onContinue={() => {
+    return <AssistantResultCard key={cardIndex} card={card} busy={busy} onPrompt={(text, record) => { void send(text, record); }} onPrepare={actions => { void prepareActions(actions); }} onConsent={row => { void startConsent(row); }} onArtifact={row => { void downloadArtifact(row); }} onContinue={() => {
       if (card.search) void search({ ...card.search, cursor: card.nextCursor! }, messageId, cardIndex);
       else if(card.query || card.timeline) void perform(async () => { const result = await api('/api/ai-assistant/workspace', {kind:card.timeline?'timeline':'query',query:{...(card.timeline || card.query),cursor:card.nextCursor}}); setMessages(messages => messages.map(message => message.id===messageId ? {...message,cards:message.cards?.map((old,index)=>index===cardIndex?{...old,...result,rows:[...old.rows,...result.rows]}:old)} : message)); });
     }} onCrm={() => { if(card.search){const {cursor:_,...query}=card.search;void search({...query,source:'crm'});} }}/>;
@@ -246,7 +246,7 @@ function AiAssistantWorkspace() {
           <div className="mb-1 text-xs font-medium text-muted-foreground">{message.role === 'user' ? 'Tu' : 'AI Assistant'}</div>
           <div className="prose prose-sm max-w-none dark:prose-invert"><Markdown remarkPlugins={[remarkGfm]}>{message.text}</Markdown></div>
           {message.cards?.map((card, index) => renderCard(card, message.id, index))}
-          {message.planId && <div className="my-3 rounded-2xl border border-emerald-200 bg-emerald-50/30 p-4"><strong>Plan de acțiune</strong><ol className="my-3 space-y-2">{message.actions?.map((action, index) => <li key={index} className="rounded-xl border bg-background p-3"><p className="text-sm font-medium">{index + 1}. {labels[action.kind]}{action.kind === 'existing_operation' ? ': ' + action.operation : ''}</p><ActionPreview action={action} resolveName={id=>{const row=messages.flatMap(m=>m.cards||[]).flatMap(c=>c.rows).find(r=>r.id===id);return String(row?.name||row?.title||id);}}/><details className="mt-1 text-xs"><summary className="cursor-pointer text-muted-foreground">Verifică datele acțiunii</summary><pre className="mt-2 overflow-auto whitespace-pre-wrap">{JSON.stringify(action, null, 2)}</pre></details></li>)}</ol>
+          {message.planId && <div className="my-3 rounded-2xl border border-emerald-200 bg-emerald-50/30 p-4"><strong>Plan de acțiune</strong><ol className="my-3 space-y-2">{message.actions?.map((action, index) => <li key={index} className="rounded-xl border bg-background p-3"><p className="text-sm font-medium">{index + 1}. {labels[action.kind]}{action.kind === 'existing_operation' ? ': ' + action.operation : ''}</p><ActionPreview action={action} resolveName={id=>{const row=messages.flatMap(m=>m.cards||[]).flatMap(c=>c.rows).find(r=>r.id===id);return String(row?.name||row?.title||row?.label||row?.displayName||id);}}/></li>)}</ol>
             {plans[message.planId] && <AssistantExecutionControls plan={plans[message.planId]} user={user} resumeDisabled={busy} onPlan={plan => setPlans(p => ({ ...p, [plan.id]: plan }))} onResume={() => void execute(message.planId!)} onError={setError} />}
             {plans[message.planId]?.risks && <p className="mb-2 text-xs text-muted-foreground">Risc pe pași: {plans[message.planId].risks!.join(', ')}.</p>}
             {plans[message.planId]?.externalCostNote && <p className="mb-3 rounded-xl border border-amber-200 p-3 text-sm">{plans[message.planId].externalCostNote}</p>}

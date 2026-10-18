@@ -11,3 +11,7 @@ describe('Domain result cards', () => {
     expect(card.rows[0]).toMatchObject({ id: 'j', status: 'processing', description: 'Randarea continuă.' });
   });
 });
+
+it('uses connection labels instead of the operation title', () => {
+  expect(operationCards('facebook_connections', 'Consultă conexiunile Facebook.', { connections: [{id:'internal-key', label:'Nordia București'}] })[0].rows[0].title).toBe('Nordia București');
+});

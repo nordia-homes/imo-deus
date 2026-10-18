@@ -1,3 +1,4 @@
+import { loadRequestCheckpoint, saveRequestCheckpoint } from './request-checkpoint';
 import { metaControlExecutionPrompt } from './meta-control';
 import { metaMediaExecutionPrompt } from './meta-media';
 import { metaDraftExecutionPrompt } from './meta-draft';
@@ -82,14 +83,16 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
   const now = new Date().toISOString();
   const actorLock = collectionFor(ctx, 'assistantLocks').doc(`chat-${ctx.uid}`);
   await ctx.adminDb.runTransaction(async tx => {
-    const [snap, actor] = await Promise.all([tx.get(ref), tx.get(actorLock)]);
+    const userMessage = ref.collection('messages').doc(`${input.requestId}-user`);
+    const [snap, actor, original] = await Promise.all([tx.get(ref), tx.get(actorLock), tx.get(userMessage)]);
+    if (original.exists && original.data()?.text !== input.prompt) throw new CommunicationError('Identificatorul solicitării aparține altui mesaj.', 409);
     if (snap.exists && snap.data()?.ownerId !== ctx.uid) throw new CommunicationError('Conversația nu este accesibilă.', 404);
     if (Number(snap.data()?.busyUntil || 0) > Date.now()) throw new CommunicationError('O cerere este deja în curs în această conversație.', 409);
     if (Number(actor.data()?.busyUntil || 0) > Date.now()) throw new CommunicationError('O comandă a agentului este deja în curs.', 429);
     tx.set(actorLock, { busyUntil: Date.now() + 180000, turnId: input.requestId });
     if (!snap.exists) tx.create(ref, { ownerId: ctx.uid, title: input.prompt.slice(0, 100), createdAt: now, updatedAt: now, busyUntil: Date.now() + 180000, turnId: input.requestId });
     else tx.update(ref, { busyUntil: Date.now() + 180000, turnId: input.requestId });
-    tx.set(ref.collection('messages').doc(`${input.requestId}-user`), { role: 'user', text: input.prompt, createdAt: now, ...(pageContext ? { cards: pageContext.cards, ...(pageContext.accessRefs ? { accessRefs: pageContext.accessRefs } : {}) } : {}) });
+    if (!original.exists) tx.set(userMessage, { role: 'user', text: input.prompt, createdAt: now, ...(pageContext ? { cards: pageContext.cards, ...(pageContext.accessRefs ? { accessRefs: pageContext.accessRefs } : {}) } : {}) });
   });
   let turnMetrics: TurnMetrics | undefined;
   const started = Date.now();
@@ -101,10 +104,12 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const editPrompt = conversationEditPrompt(input.prompt, conversationHistory);
     const planningPrompt = prospectPlanningPrompt(editPrompt, conversationHistory);
     ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.prompt } };
-    const result = await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
+    const restored = await loadRequestCheckpoint(ctx, input);
+    const result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
+    if (!restored) await saveRequestCheckpoint(ctx, input, result);
     turnMetrics = result.metrics;
     const executable = result.metrics.status === 'success' || canExecutePreparedProspecting(input.prompt, result.metrics.status, result.actions, result.goalCoverage);
-    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(socialRemoveExecutionPrompt(metaDraftExecutionPrompt(metaMediaExecutionPrompt(metaControlExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory)) : { actions: result.actions, results: [], blocked: false };
+    const autonomous = executable && result.actions.length ? await executeSafePrefix(ctx, input.requestId, result.actions, prospectExecutionPrompt(propertyShareExecutionPrompt(templateExecutionPrompt(facebookControlExecutionPrompt(facebookScheduleExecutionPrompt(facebookImmediateExecutionPrompt(facebookAccountExecutionPrompt(socialCommentExecutionPrompt(socialDraftExecutionPrompt(socialScheduleExecutionPrompt(socialPublishExecutionPrompt(socialRemoveExecutionPrompt(metaDraftExecutionPrompt(metaMediaExecutionPrompt(metaControlExecutionPrompt(editPrompt, conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), conversationHistory), result.actions, conversationHistory), result.semanticAuthority) : { actions: result.actions, results: [], blocked: false };
     for (const step of autonomous.results) {
       const receipt = step.result as Record<string, unknown> | undefined;
       if (step.kind === 'create_contact' && typeof receipt?.contactId === 'string') result.accessRefs.push({ resource: 'contacts', id: receipt.contactId });

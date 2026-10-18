@@ -7,6 +7,7 @@ import { VERSIONS } from './models';
 import type { AssistantContext } from './access';
 import type { AgentOptions } from './planner';
 import type { ToolResult } from './tool-dispatch';
+import { toolCapabilities } from './capability-catalog';
 import { capabilityScore } from './capability-discovery';
 export type RiskLevel = 'READ' | 'SAFE_WRITE' | 'SENSITIVE' | 'CRITICAL';
 export type ToolDefinition = { name: string; version: string; description: string; inputSchema: z.ZodTypeAny; outputSchema: z.ZodTypeAny; handler: (ctx: AssistantContext, payload: unknown, prompt: string, options: AgentOptions) => Promise<ToolResult>; permissions: string[]; riskLevel: RiskLevel; timeoutMs: number; retryPolicy: { maxAttempts: number; retryable: string[] }; idempotencyPolicy: string; auditPolicy: string };
@@ -66,9 +67,9 @@ export function requireTool(name: string, role: string) {
   return tool;
 }
 export function discoverTools(category = '', cursor = 0, limit = 12, role = 'agent') {
-  const catalog = [...operationCatalog(), ...Object.keys(actionToolSchemas).map(id => ({ id, method: 'ACTION', readOnly: false, description: `Acțiune CRM ${id.replaceAll('_', ' ')}`, params: [], external: false }))]
+  const catalog = [...Object.entries(core).map(([id, [, , description]]) => ({ id, method: 'TOOL', readOnly: !['propose_actions', 'remember_preference', 'forget_preference'].includes(id), description, params: [], external: false })), ...operationCatalog(), ...Object.keys(actionToolSchemas).map(id => ({ id, method: 'ACTION', readOnly: false, description: `Acțiune CRM ${id.replaceAll('_', ' ')}`, params: [], external: false }))]
     .filter(op => { try { requireTool(op.id, role); return true; } catch { return false; } })
-    .map(op => ({ ...op, score: category ? capabilityScore(category, op.id, op.description) : 0 }))
+    .map(op => ({ ...op, score: category ? (toolCapabilities(op.id).includes(category as any) ? 100 : capabilityScore(category, op.id, op.description)) : 0 }))
     .filter(op => !category || op.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
   return { tools: catalog.slice(cursor, cursor + limit), nextCursor: cursor + limit < catalog.length ? cursor + limit : null, total: catalog.length };
 }
