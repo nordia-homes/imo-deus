@@ -186,3 +186,20 @@ Rollback: inspect be95b27d8a1e2abc31dfb7defae292d99d90ab41 in a separate worktre
 
 Final recovery verification: full npm run build passed, including TypeScript and page generation. ESLint passed with zero warnings; diff and parity checks passed. The existing standalone playwright-core copy skip remains; production browser packaging is not certified. All 191 checks above passed. No deployment.
 
+
+
+## Continuation: inspect committed effects before planning a changed request
+
+Local implementation after 676016d6fc584739c7bf3da20a40201f7133ffea. Policy request-crm-25 / tools 213. No deployment.
+
+- request_recovery inspect now reads the saved plan and its execution receipts using the same scoped keys, resolved dependencies, occurrence counters and revision propagation as execution. Actor and canonical action bindings are validated. This provides the model with real existing record references before it decides how to handle a reformulated or changed request.
+- Completed effects are separated from prepared-only, missing-receipt, unconfirmed, unresolved-dependency and unavailable-result states. Missing receipts do not imply non-execution: domain-specific handlers may use separate ledgers. Unknown effects are not automatically retried.
+- Completed native result references are reread through current CRM access checks. A limited field set exposes current names, status, calendar data and revision, rather than raw provider bodies or tokens. Historical completion is not represented as proof that current values are unchanged. Records without updatedAt explicitly expose null so an update can retain the existing optimistic-concurrency precondition. Deleted/inaccessible result details are withheld.
+- Verification: 127 unit/planner/autonomy/scope checks and 71 Firestore-emulator integration checks passed (198 distinct checks). Added real persisted buyer inspection/update, dependent buyer/viewing reconciliation without replay, missing versus ambiguous receipts, withholding deleted results, and mismatched actor/action rejection. A controlled-provider test runs the real planner, tool dispatch, coverage/authority, chat workspace and executor: inspect the prior buyer, propose update_contact, save the changed name, assert exactly one buyer. Initial testing caught the absent updatedAt case; the inspection contract now returns explicit null. No paid provider calls or external sends/posts.
+
+Remaining: this provides verified evidence for changed-request planning; it is not a complete semantic equivalence engine or a durable supersession graph for all changed goals. Domain-specific ledgers without assistantExecutions receipts still require their own reconciliation tools. Live-model paraphrase quality, old pre-recovery workflows, relative-date replanning across midnight, multiple suspended-goal discovery and mid-loop persistence remain open. No increase in certified end-to-end corpus coverage. Large effect inventories may require further progressive loading.
+
+Rollback: revert this lot or inspect 676016d6fc584739c7bf3da20a40201f7133ffea in a separate worktree. Preserve CRM records, requests, recoveries and assistantExecutions; do not replay completed effects with fresh keys. No data migration or production change.
+
+Final effects-inspection verification: full npm run build passed, including TypeScript and page generation. ESLint, diff and parity checks passed. AccessReference now includes tasks and viewings so their recited result references remain subject to current-access checks. The existing standalone playwright-core copy skip remains; production browser packaging is not certified. All 198 checks above passed; no deployment.
+

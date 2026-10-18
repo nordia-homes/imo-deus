@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { recoveryEffects } from './recovery-effects';
 import { collectionFor, referencesAllowed, type AssistantContext } from './access';
 import { idSchema, type AccessReference } from './contracts';
 import { requestCheckpointHash } from './request-checkpoint';
@@ -51,5 +52,6 @@ export async function readRequestRecovery(ctx: AssistantContext, requestedId?: s
 export async function requestRecoveryTool(ctx: AssistantContext, input: z.infer<typeof requestRecoverySchema>) {
  const found = await readRequestRecovery(ctx, input.requestId);
  if (!found) return { data: { status: 'none', resumable: false }, refs: [] };
- return { data: { requestId: found.requestId, prompt: found.record.planningPrompt, status: found.record.status, resumable: found.record.status === 'pending', instruction: 'Păstrează integral scopul și restricțiile originale. resume este numai pentru continuarea aceleiași cereri, fără modificări. Pentru schimbări, interdicții sau simpla verificare a stării, nu relua execuția. plan_pending se gestionează prin planul existent.' }, refs: found.record.accessRefs };
+ const effects = input.mode==='inspect' ? await recoveryEffects(ctx,found.record) : undefined;
+ return { data: { ...(effects ? {effects:{phase:effects.phase,steps:effects.steps}} : {}), requestId: found.requestId, prompt: found.record.planningPrompt, status: found.record.status, resumable: found.record.status === 'pending', instruction: 'Păstrează integral scopul și restricțiile originale. resume este numai pentru continuarea aceleiași cereri, fără modificări. Pentru schimbări, interdicții sau simpla verificare a stării, nu relua execuția. plan_pending se gestionează prin planul existent.' }, refs: effects?.refs || found.record.accessRefs };
 }

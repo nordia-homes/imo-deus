@@ -1,4 +1,4 @@
-import { beginRequestRecovery, readRequestRecovery } from '../request-recovery';
+import { beginRequestRecovery, readRequestRecovery, requestRecoveryTool } from '../request-recovery';
 import { saveRequestCheckpoint } from '../request-checkpoint';
 import { executionScope } from '../execution-scope';
 import * as plannerModule from '../planner';
@@ -270,6 +270,77 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     expect((await f.agency.collection('contacts').get()).size).toBe(0);expect(mocks.fetch).not.toHaveBeenCalled();
   });
 
+
+  it('inspects persisted creation effects and updates the existing buyer after a changed request',async()=>{
+    const action={kind:'create_contact' as const,name:'Matei Alin',phone:'0712345678'};
+    const f=await recoveryFixture([action]);
+    const created=await executeSafePrefix(f.ctx,f.input.requestId,[action],f.input.prompt);
+    const id=(created.results[0].result as any).contactId;
+    const ctx={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const inspected=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});
+    const effect=(inspected.data as any).effects.steps[0];
+    expect(effect).toMatchObject({state:'completed',currentStateVerified:true});
+    expect(effect.currentRecords[0]).toMatchObject({id,name:'Matei Alin'});
+    const changed=await executeSafePrefix(ctx,ctx.prospectingRequest.requestId,[{kind:'update_contact',contactId:effect.currentRecords[0].id,expectedUpdatedAt:effect.currentRecords[0].updatedAt,patch:{name:'Alin Matei'}}],'Modifică numele cumpărătorului în Alin Matei.');
+    expect(changed.blocked).toBe(false);expect(changed.results).toHaveLength(1);
+    expect((await f.agency.collection('contacts').get()).size).toBe(1);
+    const reread=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});
+    expect((reread.data as any).effects.steps[0].currentRecords[0].name).toBe('Alin Matei');
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('resolves dependent viewing receipts without replaying the buyer or viewing',async()=>{
+    const actions=[{kind:'create_contact' as const,name:'Matei Alin',phone:'0712345678'},{kind:'schedule_viewing' as const,propertyId:'property',contactId:'@step:1:contactId',viewingDate:'2030-01-01T05:30:00.000Z',duration:60,notes:''}];
+    const f=await recoveryFixture(actions);await f.property.update({status:'Activ'});
+    expect((await executeSafePrefix(f.ctx,f.input.requestId,actions,'Adaugă cumpărătorul și programează vizionarea.')).results).toHaveLength(2);
+    const ctx={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const inspected=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});
+    expect((inspected.data as any).effects.steps.map((step:any)=>step.state)).toEqual(['completed','completed']);
+    expect((await f.agency.collection('contacts').get()).size).toBe(1);expect((await f.agency.collection('viewings').get()).size).toBe(1);
+  });
+  it('does not turn missing or ambiguous receipts into a claim that an action never ran',async()=>{
+    const action={kind:'create_task' as const,description:'Apel',dueDate:'2030-01-01',propertyId:'property',participantSource:'property_owner' as const};
+    const f=await recoveryFixture([action]);const ctx={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const absent=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});expect((absent.data as any).effects.steps[0].state).toBe('no_receipt');
+    await f.agency.collection('assistantExecutions').doc(f.input.requestId+'-safe-0').set({actorId:f.ctx.uid,action,status:'unknown'});
+    const unknown=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});expect((unknown.data as any).effects.steps[0].state).toBe('unconfirmed');
+    expect((await f.agency.collection('tasks').get()).size).toBe(0);
+  });
+  it('withholds completed result details after the created record is deleted',async()=>{
+    const action={kind:'create_contact' as const,name:'Private buyer',phone:'0712345678'};
+    const f=await recoveryFixture([action]);const created=await executeSafePrefix(f.ctx,f.input.requestId,[action],f.input.prompt);
+    await f.agency.collection('contacts').doc((created.results[0].result as any).contactId).delete();
+    const ctx={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const inspected=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});
+    const effect=(inspected.data as any).effects.steps[0];expect(effect.state).toBe('result_unavailable');expect(effect.currentRecords).toBeUndefined();expect(effect.references).toBeUndefined();
+  });
+
+
+  it('uses inspected effects through planner and chat to save a changed buyer name without a second buyer',async()=>{
+    const action={kind:'create_contact' as const,name:'Matei Alin',phone:'0712345678'};
+    const f=await recoveryFixture([action]);await executeSafePrefix(f.ctx,f.input.requestId,[action],f.input.prompt);
+    const ctx={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    const inspected=await requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId});const row=(inspected.data as any).effects.steps[0].currentRecords[0];
+    const prompt='La cumpărătorul pe care l-ai adăugat, trece numele Alin Matei în loc de Matei Alin.';
+    const inspection=modelCall('request_recovery',{mode:'inspect',requestId:f.input.requestId});
+    const proposal=modelCall('propose_actions',{actions:[{kind:'update_contact',contactId:row.id,expectedUpdatedAt:row.updatedAt,patch:{name:'Alin Matei'}}]});
+    const coverage=modelCall('goal_coverage',{requirements:[{id:'rename',sourceQuote:prompt,description:'Actualizarea numelui cumpărătorului existent',resolution:'planned',steps:[1],evidenceCallIds:[inspection.calls[0].id],execution:{mode:'execute',conditions:[]}}]});
+    const final={calls:[],items:[],text:'Pregătit.',intentStatus:'answer',usage:{inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false},status:'completed',latencyMs:1};
+    vi.stubEnv('OPENAI_API_KEY','test-only');
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockResolvedValueOnce(inspection as any).mockResolvedValueOnce(modelCall('load_capabilities',{capabilities:['contacts']}) as any).mockResolvedValueOnce(proposal as any).mockResolvedValueOnce(coverage as any).mockResolvedValue(final as any);
+    try {
+      const result=await chatTurn(f.ctx,{sessionId:f.input.sessionId,requestId:randomUUID(),prompt,currentRecord:null});
+      expect(result.message.outputType).not.toBe('ERROR_EVENT');expect(result.message.planId).toBeUndefined();
+      expect((await f.agency.collection('contacts').get()).size).toBe(1);
+      expect((await f.agency.collection('contacts').doc(row.id).get()).data()?.name).toBe('Alin Matei');
+      expect(JSON.stringify(model.mock.calls[1])).toContain('currentRecords');expect(mocks.fetch).not.toHaveBeenCalled();
+    } finally {model.mockRestore();vi.unstubAllEnvs();}
+  });
+  it.each(['actor','payload'])('rejects a receipt with mismatched %s',async(mismatch)=>{
+    const action={kind:'create_task' as const,description:'Apel',dueDate:'2030-01-01'};const f=await recoveryFixture([action]);
+    await f.agency.collection('assistantExecutions').doc(f.input.requestId+'-safe-0').set({actorId:mismatch==='actor'?'other':f.ctx.uid,action:mismatch==='payload'?{...action,description:'Other'}:action,status:'completed',result:{taskId:'secret'}});
+    const ctx={...f.ctx,prospectingRequest:{...f.ctx.prospectingRequest,requestId:randomUUID()}};
+    await expect(requestRecoveryTool(ctx,{mode:'inspect',requestId:f.input.requestId})).rejects.toThrow('nu corespunde');
+  });
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
   it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {
     const f = await fixture('cloud'), sessionId = randomUUID();
