@@ -115,7 +115,7 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         if (!job || job.agencyId !== ctx.agencyId || job.ownerUid !== ctx.uid || job.propertyId !== body.propertyId || job.connectionId !== body.connectionId || job.dispatchState === 'pending' || job.dispatchState === 'unknown') throw new OperationFailure('Crearea jobului Facebook nu este confirmată.', 409, {});
         const { facebookOutcome } = await import('./facebook-outcome');
         const outcome = facebookOutcome(ctx, job.id, body, job);
-        result = { operation: 'facebook_job_create', jobId: job.id, scheduledAt: job.scheduledAt, businessStatus: job.status, executionState: outcome.executionState, publicationConfirmed: false, schedulingConfirmed: outcome.completionSatisfied };
+        result = { operation: 'facebook_job_create', jobId: job.id, propertyTitle: job.propertyTitle || 'Proprietatea selectată', connectionLabel: job.connectionLabel || 'contul selectat', groupCount: job.groups?.length || 0, scheduledAt: job.scheduledAt, businessStatus: job.status, executionState: outcome.executionState, publicationConfirmed: false, schedulingConfirmed: outcome.completionSatisfied };
       }
       if (['facebook_job_update', 'facebook_job_remove'].includes(action.operation)) {
         const { facebookControlReceipt } = await import('./facebook-control');

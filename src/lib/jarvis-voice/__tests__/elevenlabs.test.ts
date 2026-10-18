@@ -89,6 +89,12 @@ describe("Eleven v3 Conversational speech renderer", () => {
     expect(sockets[0].close).toHaveBeenCalledOnce();
     expect(sockets[0].sent).toHaveLength(0);
   });
+  it("allows explanations longer than the former 25-second audio ceiling", async () => {
+    const reader = speechStream("Explicație detaliată. ".repeat(100)).getReader();
+    sockets[0].emit("message", Buffer.from(JSON.stringify({ audio: Buffer.alloc(1440000).toString("base64"), is_final: true })));
+    expect((await reader.read()).value?.length).toBe(1440000);
+    expect((await reader.read()).done).toBe(true);
+  });
   it("bounds output and rejects incomplete PCM frames", async () => {
     const reader = speechStream("Salut").getReader();
     sockets[0].emit(

@@ -1,3 +1,4 @@
+import { MAX_SPOKEN_CHARACTERS } from "@/lib/jarvis-voice/speech-limits";
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { assistantContext } from "@/lib/ai-assistant/access";
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
           jarvisMs: z.number().min(0).max(240000).optional(),
           firstAudioMs: z.number().min(0).max(240000).optional(),
           turnToAudioMs: z.number().min(0).max(240000).optional(),
-          spokenWords: z.number().int().min(0).max(100).optional(),
+          spokenWords: z.number().int().min(0).max(MAX_SPOKEN_CHARACTERS).optional(),
           interruptions: z.number().int().min(0).max(1).optional(),
           sessionSeconds: z.number().min(0).max(86400).optional(),
         })
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
     const input = z
       .object({
-        text: z.string().trim().min(1).max(400),
+        text: z.string().trim().min(1).max(MAX_SPOKEN_CHARACTERS),
         voiceSessionId: session,
         platform: platform.default("web"),
       })

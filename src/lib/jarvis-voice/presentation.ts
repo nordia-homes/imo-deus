@@ -1,3 +1,5 @@
+import { MAX_SPOKEN_CHARACTERS } from "./speech-limits";
+import { executionConfirmation } from "@/lib/ai-assistant/execution-confirmation";
 import type {
   AssistantMessage,
   AssistantPlan,
@@ -42,14 +44,14 @@ export type VoicePresentationResult = {
   characterState: CharacterState;
   gestureHint: Gesture;
 };
+// Preserve the assistant's explanation; cards supplement it, never replace it.
 export function concise(text: string) {
-  return text
-    .replace(/^[\s]*(?:Sigur|Desigur|Bineînțeles|Am înțeles)[.!,:]?\s*/i, "")
-    .replace(/[*#`]/g, "")
-    .split(/(?<=[.!?])\s+/)
-    .slice(0, 2)
-    .join(" ")
-    .slice(0, 320);
+  const spoken = text.replace(/[*#`]/g, '').trim();
+  if (spoken.length <= MAX_SPOKEN_CHARACTERS) return spoken;
+  const notice = ' Răspunsul complet continuă în conversație.';
+  const prefix = spoken.slice(0, MAX_SPOKEN_CHARACTERS - notice.length);
+  const boundary = Math.max(prefix.lastIndexOf('. '), prefix.lastIndexOf('? '), prefix.lastIndexOf('! '));
+  return prefix.slice(0, boundary > 0 ? boundary + 1 : prefix.lastIndexOf(' ')) + notice;
 }
 export function presentVoice(
   message: AssistantMessage,
@@ -63,7 +65,7 @@ export function presentVoice(
     if (plan.outcome && plan.outcome.state !== 'COMPLETED' && plan.status === 'completed') {
       spokenText = plan.outcome.note;
     } else if (plan.status === "completed") {
-      spokenText = `Gata. ${plan.results?.length || plan.actions.length} ${plan.actions.length === 1 ? "acțiune confirmată" : "acțiuni confirmate"}.`;
+      spokenText = executionConfirmation((plan.results || []) as Record<string, unknown>[]) || `Gata. ${plan.results?.length || plan.actions.length} ${plan.actions.length === 1 ? "acțiune confirmată" : "acțiuni confirmate"}.`;
       state = "SUCCESS";
       gesture = "SUCCESS";
     } else if (plan.status === "cancelled") {
@@ -85,7 +87,7 @@ export function presentVoice(
     spokenText = `Planul cu ${message.actions?.length || 1} pași este pregătit. Îl execut?`;
     state = "AWAITING_CONFIRMATION";
     gesture = "CONFIRM";
-  } else if (cards.length) {
+  } else if (cards.length && !spokenText) {
     const card = cards[0],
       n = card.summary?.count ?? card.rows.length,
       partial =
@@ -116,7 +118,7 @@ export function presentVoice(
     }
   }
   return {
-    spokenText: spokenText || "Rezultatul este disponibil în panou.",
+    spokenText: concise(spokenText) || "Rezultatul este disponibil în panou.",
     visualPayload: cards,
     suggestedAction: state === "AWAITING_CONFIRMATION" ? "confirm" : undefined,
     characterState: state,

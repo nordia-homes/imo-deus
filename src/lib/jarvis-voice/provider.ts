@@ -155,7 +155,7 @@ export function speechStream(
         headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
         perMessageDeflate: false,
       });
-      timer = setTimeout(fail, 30000);
+      timer = setTimeout(fail, Math.min(120000, Math.max(30000, text.length * 20)));
       signal?.addEventListener("abort", fail, { once: true });
       detachAbort = () => signal?.removeEventListener("abort", fail);
       socket.on("error", fail);
@@ -184,7 +184,7 @@ export function speechStream(
         if (typeof event.audio === "string" && event.audio) {
           const chunk = Buffer.from(event.audio, "base64");
           bytes += chunk.length;
-          if (bytes > 24000 * 2 * 25) {
+          if (bytes > 24000 * 2 * Math.min(600, Math.max(25, Math.ceil(text.length / 10)))) {
             fail();
             return;
           }

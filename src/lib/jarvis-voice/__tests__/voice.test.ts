@@ -42,7 +42,7 @@ describe("Voice shell parity and presentation", () => {
     const p = presentVoice({
       id: "r",
       role: "assistant",
-      text: "Long response",
+      text: "",
       createdAt: "now",
       cards: [
         {
