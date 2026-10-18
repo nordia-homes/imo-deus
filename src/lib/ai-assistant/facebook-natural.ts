@@ -51,7 +51,7 @@ export async function prepareFacebookNatural(ctx: AssistantContext, prompt: stri
     return row && (!request.propertyType || !row.propertyType || (request.propertyType === 'apartament' ? /apartament|garsonier/.test(normalizeCrmSearch(row.propertyType)) : normalizeCrmSearch(row.propertyType).includes(request.propertyType))) && !row.deletedAt && canReadResource(ctx, 'properties', row) && (!request.query || matchesFacebookProperty(row, request.query));
   });
   const rows = matches.map(doc => ({ id: doc.id, title: String(doc.data()?.title || 'Proprietate') }));
-  if (matches.length !== 1) return { ...empty, rows, pending: matches.length ? { id: 'pending', prompt: effective, propertyIds: matches.map(d => d.id) } : null, text: matches.length ? 'Am găsit mai multe proprietăți. Răspunde „Proprietate: ID” din listă pentru a continua publicarea.' : 'Nu am găsit proprietatea cerută în CRM. Precizează titlul sau adresa.' };
+  if (matches.length !== 1) return { ...empty, rows, pending: matches.length ? { id: 'pending', prompt: effective, propertyIds: matches.map(d => d.id) } : null, text: matches.length ? 'Am găsit mai multe proprietăți. Alege proprietatea din cardurile afișate pentru a continua publicarea.' : 'Nu am găsit proprietatea cerută în CRM. Precizează titlul sau adresa.' };
   const property = matches[0].data()!, selectedId = matches[0].id;
   assertFacebookPropertyAvailable(property, ctx.agencyId);
   const selectedConnection = semantic?.connectionId || /^cont facebook:\s*([A-Za-z0-9_-]{1,180})\s*$/i.exec(prompt)?.[1];
@@ -60,7 +60,7 @@ export async function prepareFacebookNatural(ctx: AssistantContext, prompt: stri
   if (!connectionId) {
     const available = (await readFacebookSetup(ctx, 'accounts', history)).rows.filter(row => 'publishingBlocked' in row && !row.publishingBlocked);
     if (available.length === 1) connectionId = available[0].id;
-    else return { ...empty, source: 'facebookConnections', rows: available, pending: available.length ? { id: 'pending', prompt: effective, propertyId: selectedId, connectionIds: available.map(row => row.id) } : null, text: available.length ? 'Alege contul pentru publicare: „Cont Facebook: ID”.' : 'Nu există un cont Facebook propriu conectat și disponibil pentru publicare.' };
+    else return { ...empty, source: 'facebookConnections', rows: available, pending: available.length ? { id: 'pending', prompt: effective, propertyId: selectedId, connectionIds: available.map(row => row.id) } : null, text: available.length ? 'Alege contul pentru publicare din cardurile afișate.' : 'Nu există un cont Facebook propriu conectat și disponibil pentru publicare.' };
   }
   if (typeof connectionId !== 'string' || !/^[A-Za-z0-9_-]{1,180}$/.test(connectionId)) throw new Error('Cont invalid');
   const connection = (await agency.collection('facebookCloudConnections').doc(connectionId).get()).data();

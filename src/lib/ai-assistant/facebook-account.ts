@@ -25,7 +25,7 @@ export async function prepareFacebookAccount(ctx: AssistantContext, prompt: stri
   const setup = await readFacebookSetup(ctx, 'accounts', history);
   const rows = setup.rows.filter(row => 'publishingBlocked' in row && !row.publishingBlocked);
   const chosen = pending ? /^cont facebook:\s*([A-Za-z0-9_-]{1,180})\s*$/i.exec(prompt.trim())?.[1] : null;
-  if (!chosen || !Array.isArray(pending?.connectionIds) || !pending.connectionIds.includes(chosen) || !rows.some(row => row.id === chosen)) return { actions, rows, pending: rows.length ? { id: 'pending', prompt: effective, propertyId, connectionIds: rows.map(row => row.id) } : null, text: rows.length ? 'Alege contul dorit: răspunde „Cont Facebook: ID” din listă. Îl voi salva pe proprietate.' : 'Nu există un cont Facebook propriu disponibil pentru publicare. Conectează contul înainte de setare.' };
+  if (!chosen || !Array.isArray(pending?.connectionIds) || !pending.connectionIds.includes(chosen) || !rows.some(row => row.id === chosen)) return { actions, rows, pending: rows.length ? { id: 'pending', prompt: effective, propertyId, connectionIds: rows.map(row => row.id) } : null, text: rows.length ? 'Alege contul dorit folosind butonul din card. Îl voi salva pe proprietate.' : 'Nu există un cont Facebook propriu disponibil pentru publicare. Conectează contul înainte de setare.' };
   if (property.defaultFacebookConnectionId === chosen) return { actions, rows: [], pending: null, text: 'Contul Facebook ales este deja setat pe proprietate.' };
   actions.push({ kind: 'update_property', propertyId, expectedUpdatedAt: property.updatedAt || null, patch: { defaultFacebookConnectionId: chosen } });
   return { actions, rows: [], pending: null, text: 'Salvez contul Facebook ales pe proprietate.' };

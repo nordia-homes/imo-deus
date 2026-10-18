@@ -322,8 +322,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const account = await prepareFacebookAccount(ctx, prompt, history);
     if (account) {
       actions.push(...account.actions);
-      cards.push({ type: 'data', source: 'facebookConnections', title: 'Conturi Facebook disponibile', rows: account.rows, complete: true });
+      cards.push({ type: 'data', source: 'facebookConnections', ...(account.pending ? {choiceSource: 'facebookDefaultAccount' as const} : {}), title: 'Conturi Facebook disponibile', rows: account.rows, complete: true });
       if (account.pending) cards.push({ type: 'data', source: 'facebookAccountRequest', title: 'Alegerea contului', rows: [account.pending], complete: true });
+      if (typeof account.pending?.propertyId === 'string') accessRefs.push({resource:'properties',id:account.pending.propertyId});
       return finish(account.text, account.pending ? 'clarification' : undefined);
     }
   } catch { return finish('Nu am putut verifica proprietatea și conturile disponibile. Nu am schimbat contul Facebook.', 'unavailable'); }
@@ -332,8 +333,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const immediate = await prepareFacebookImmediate(ctx, prompt, history);
     if (immediate) {
       actions.push(...immediate.actions);
-      cards.push({ type: 'data', source: 'source' in immediate ? immediate.source : 'facebookGroups', title: 'Date pentru publicarea Facebook', rows: immediate.rows, complete: true });
+      cards.push({ type: 'data', source: 'source' in immediate ? immediate.source : 'facebookGroups', ...(immediate.pending && 'source' in immediate && immediate.source === 'properties' ? {choiceSource:'facebookPublicationProperty' as const} : immediate.pending && 'source' in immediate && immediate.source === 'facebookConnections' ? {choiceSource:'facebookPublicationAccount' as const} : {}), title: 'Date pentru publicarea Facebook', rows: immediate.rows, complete: true });
       if (immediate.pending) cards.push({ type: 'data', source: 'facebookImmediateRequest', title: 'Publicare în așteptarea selecției', rows: [immediate.pending], complete: true });
+      if ('source' in immediate && immediate.source === 'properties') for (const row of immediate.rows) if (typeof row.id === 'string') accessRefs.push({resource:'properties',id:row.id});
+      if (immediate.pending && 'propertyId' in immediate.pending && typeof immediate.pending.propertyId === 'string') accessRefs.push({resource:'properties',id:immediate.pending.propertyId});
       return finish(immediate.text, immediate.actions.length ? undefined : 'clarification');
     }
   } catch { return finish('Nu am putut verifica proprietatea sau selecția pentru publicare. Nu am creat jobul.', 'unavailable'); }
@@ -342,8 +345,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     const schedule = await prepareFacebookSchedule(ctx, prompt, history);
     if (schedule) {
       actions.push(...schedule.actions);
-      cards.push({ type: 'data', source: 'properties', title: 'Proprietate pentru Facebook', rows: schedule.rows, complete: true });
+      cards.push({ type: 'data', source: 'properties', ...(schedule.pendingPrompt ? {choiceSource:'facebookScheduleProperty' as const} : {}), title: 'Proprietate pentru Facebook', rows: schedule.rows, complete: true });
       if (schedule.pendingPrompt) cards.push({ type: 'data', source: 'facebookScheduleRequest', title: 'Programare în așteptarea selecției', rows: [{ id: 'pending', prompt: schedule.pendingPrompt, scheduledAt: schedule.scheduledAt }], complete: true });
+      for (const row of schedule.rows) if (typeof row.id === 'string') accessRefs.push({resource:'properties',id:row.id});
       return finish(schedule.text, schedule.actions.length ? undefined : 'clarification');
     }
   } catch { return finish('Nu am putut verifica datele necesare programării Facebook. Nu am creat jobul.', 'unavailable'); }

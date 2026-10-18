@@ -43,3 +43,11 @@ it('normalizes label whitespace consistently with API prompt trimming',()=>{
  expect(prompt).toBe('Selectează campania: Cișmigiu');
  expect(resolveNamedChoice({messageId:'offer',source:'metaReviewSelection',rowId:'c'},prompt.trim(),[m])).toBe('Campanie Meta: c');
 });
+
+it('uses the explicit choice marker while preserving the original Facebook card source',()=>{
+ const m=message('facebookConnections',[{id:'c',label:'Contul agenției'}]);m.cards![0].choiceSource='facebookPublicationAccount';
+ const prompt=namedChoiceText('facebookPublicationAccount',m.cards![0].rows[0]);
+ expect(resolveNamedChoice({messageId:m.id,source:'facebookPublicationAccount',rowId:'c'},prompt,[m])).toBe('Cont Facebook: c');
+ delete m.cards![0].choiceSource;
+ expect(()=>resolveNamedChoice({messageId:m.id,source:'facebookPublicationAccount',rowId:'c'},prompt,[m])).toThrow();
+});

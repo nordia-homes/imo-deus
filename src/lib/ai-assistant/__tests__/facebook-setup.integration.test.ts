@@ -1,3 +1,4 @@
+import { namedChoiceText } from '../named-choice-contract';
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -70,6 +71,15 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook configuration th
     await expect(executeAction(f.ctx, { kind: 'update_property', propertyId: 'property', patch: { defaultFacebookConnectionId: 'connected' } }, randomUUID())).rejects.toThrow();
     expect((await f.property.get()).data()?.defaultFacebookConnectionId).toBe('reauth');
     expect((await f.property.collection('assistantChanges').get()).empty).toBe(true);
+  });
+  it('saves the property default account from a named choice without publishing',async()=>{
+    const f=await fixture();mocks.actor=f.ctx;const sessionId=randomUUID();
+    const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Setează contul corect dacă am permisiune.',currentRecord:{resource:'properties',id:'property'}});
+    const card=first.message.cards!.find(card=>card.choiceSource==='facebookDefaultAccount')!,row=card.rows.find(row=>row.id==='connected')!;
+    const input={sessionId,requestId:randomUUID(),prompt:namedChoiceText(card.choiceSource!,row),choice:{messageId:first.message.id,source:card.choiceSource!,rowId:'connected'},currentRecord:null};
+    await chatTurn(f.ctx,input);expect((await f.property.get()).data()?.defaultFacebookConnectionId).toBe('connected');
+    await chatTurn(f.ctx,input);expect((await f.property.collection('assistantChanges').get()).size).toBe(1);
+    expect(mocks.fetch).not.toHaveBeenCalled();
   });
   it.each(['deleted', 'disconnected', 'foreign', 'other-property', 'revoked-profile', 'not-offered'])('rechecks account selection: %s', async variant => {
     const f = await fixture(); mocks.actor = f.ctx; const sessionId = randomUUID();

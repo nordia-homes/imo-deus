@@ -73,3 +73,19 @@ Limits: browser interaction against a signed-in real application and speech reco
 Rollback for this lot: revert its commit or inspect 5fb9b167771c03b6dbadc6dd561c92f2b3ba98f8 in another worktree. Keep all request records, execution ledgers and business data; do not replay external effects. No incompatible data migration was introduced.
 
 Final named-choice verification: full npm run build passed, including TypeScript and page generation. ESLint completed with zero errors and the previously recorded React hook warning in ai-assistant/page.tsx:79; strict zero-warning lint is not certified. The staging build still skips copying the nested standalone playwright-core browser folder, so production browser packaging remains unverified. The 166 unit/component checks and 108 emulator checks are distinct checks in this lot, not new corpus completion claims. Production remains unchanged.
+
+
+## Continuation: named Facebook property and account choices
+
+Local implementation after checkpoint 8305e2ef5f579c0971638ea95cb7bc37c0f26d87. Policy request-crm-18 / tools 206. No deployment.
+
+- Four choice types now use names plus server-validated metadata: immediate-publication property, publication account, property default account and scheduled-publication property. Existing source identifiers and domain handlers are retained. Only actionable clarification cards expose the new buttons; read-only account cards do not.
+- Persisted pending Facebook requests and marked choice cards retain complete selection arrays. Previously generic card previews truncated nested arrays to five entries, making later accounts unavailable on continuation despite being displayed. A persisted chat test now selects account thirteen out of thirteen, creates exactly one job, and confirms replay does not duplicate it.
+- Property access references are attached to these clarification responses and inherited by selections. Current resource permissions and domain membership are still checked before execution. Original CRM description and photo order are preserved by the automatic publication job. The disabled manual desktop publishing runner is unchanged.
+- Verification: 29 unit/component checks and 81 Firestore emulator integration checks passed (50 publication/scheduling, 31 configuration). Tests cover named property/account selection, saved scheduling, default account changes, invalid selections, concurrency and replay. No real Facebook publication, external message or paid model call occurred. ESLint passed with zero warnings on changed source files.
+
+Remaining: group multi-selection, other job/legacy choices, semantic preflight continuation across clarification, durable unresolved goals and checkpoints inside the planning loop. These checks do not certify all 1000 corpus examples, arbitrary language understanding, real browser interaction or speech recognition.
+
+Rollback: revert this lot's commit, or inspect checkpoint 8305e2ef5f579c0971638ea95cb7bc37c0f26d87 in a separate worktree. Preserve application data, request records and execution ledgers; never replay external effects as part of rollback. No incompatible data migration was introduced.
+
+Final verification for Facebook named choices: npm run build passed, including TypeScript and page generation; git diff --check and the static parity manifest check passed. The existing standalone playwright-core browser-copy skip remains, so production browser packaging is not certified. Production is unchanged.

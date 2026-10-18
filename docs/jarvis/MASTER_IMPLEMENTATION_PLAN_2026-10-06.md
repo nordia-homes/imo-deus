@@ -1291,3 +1291,8 @@ Implemented locally: authorized catalog fallback for unmatched wording; real reg
 ### Named selections — 18 October 2026
 
 Migrated eleven Meta selection types to human-readable messages and server-validated selection metadata in Text, Voice and durable jobs. Saved-offer identity, current ACLs, domain revisions and execution deduplication remain enforced. Added real local Firestore coverage for a named selection through chat and its persisted outcome. This completes the Meta UI portion of the named-choice migration, not Facebook group/account selections or planner-loop continuation. Source checkpoint before this lot: 5fb9b167771c03b6dbadc6dd561c92f2b3ba98f8. No production deployment or live-model certification.
+
+
+### Facebook named selections — 18 October 2026
+
+Implemented four Facebook choices using human-readable names and bound server-side selection metadata: publication property/account, default property account and scheduled property. Fixed persisted selection state truncation after five accounts; a real local chat integration selects the thirteenth account and verifies a single publication job with exact CRM content. Verification: 29 unit/component checks and 81 emulator integration checks passed. No production deployment or live-model certification. Group multi-selection, semantic clarification continuation, durable unresolved goals and planner-loop checkpoints remain outstanding. See JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md for evidence and rollback; corpus certification counts are unchanged.

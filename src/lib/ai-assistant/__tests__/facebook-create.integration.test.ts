@@ -1,3 +1,4 @@
+import { namedChoiceText } from '../named-choice-contract';
 import { prepareFacebookPublication } from '../facebook-natural';
 import { executeSafePrefix } from '../autonomy';
 import { bindSemanticAuthority } from '../semantic-authority';
@@ -139,6 +140,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const result = await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Proprietate: property',currentRecord:null});
     expect(result.message.text).toContain('a fost creat'); expect((await f.jobs.get()).size).toBe(1); expect(mocks.fetch).not.toHaveBeenCalled();
   });
+  it('selects the thirteenth account by name, preserves the saved request and creates only one job',async()=>{
+    const f=await fixture(),sessionId=randomUUID();
+    await f.property.update({defaultFacebookConnectionId:null,description:'Descriere exactă CRM.',images:['https://example.com/original.jpg']});
+    for(let i=0;i<12;i++)await f.agency.collection('facebookCloudConnections').doc('extra'+i).set({agencyId:f.ctx.agencyId,ownerUid:f.ctx.uid,status:'connected',runnerMode:'local',deviceId:'device',label:'Contul '+i});
+    const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul Cișmigiu pe grupurile Facebook.',currentRecord:null});
+    const card=first.message.cards!.find(card=>card.choiceSource==='facebookPublicationAccount')!;
+    expect(card.rows).toHaveLength(13);
+    const pending=first.message.cards!.find(card=>card.source==='facebookImmediateRequest')!.rows[0];
+    const ids=pending.connectionIds as string[];expect(ids).toHaveLength(13);
+    const row=card.rows.find(row=>row.id===ids[12])!;
+    const input={sessionId,requestId:randomUUID(),prompt:namedChoiceText(card.choiceSource!,row),choice:{messageId:first.message.id,source:card.choiceSource!,rowId:String(row.id)},currentRecord:null};
+    const result=await chatTurn(f.ctx,input);expect(result.message.text).toContain('a fost creat');
+    const jobs=await f.jobs.get();expect(jobs.size).toBe(1);expect(jobs.docs[0].data().connectionId).toBe(row.id);
+    expect((await chatTurn(f.ctx,input)).message.id).toBe(result.message.id);expect((await f.jobs.get()).size).toBe(1);
+    const saved=(await f.agency.collection('assistantSessions').doc(sessionId).collection('messages').doc(input.requestId+'-user').get()).data()!;
+    expect(saved.text).toBe(input.prompt);expect(saved.text).not.toContain('Cont Facebook:');
+    const claimed=await claimLocalJob(new NextRequest('http://localhost/api/marketing/facebook-local/runner/claim',{method:'POST'}));
+    expect((await claimed.json()).claim.property).toMatchObject({description:'Descriere exactă CRM.',images:['https://example.com/original.jpg']});
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('selects an ambiguous property by name and leaves the other property unpublished',async()=>{
+    const f=await fixture(),sessionId=randomUUID();await f.agency.collection('properties').doc('second').set({...(await f.property.get()).data(),title:'Apartament Cișmigiu, balcon'});
+    const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul Cișmigiu pe grupurile Facebook.',currentRecord:null});
+    const card=first.message.cards!.find(card=>card.choiceSource==='facebookPublicationProperty')!,row=card.rows.find(row=>row.id==='second')!;
+    const result=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:namedChoiceText(card.choiceSource!,row),choice:{messageId:first.message.id,source:card.choiceSource!,rowId:'second'},currentRecord:null});
+    expect(result.message.text).toContain('a fost creat');const jobs=await f.jobs.get();expect(jobs.size).toBe(1);expect(jobs.docs[0].data().propertyId).toBe('second');
+  });
   it.each(['foreign','revoked','device-revoked'])('does not publish using an unavailable configured account: %s',async variant=>{
     const f=await fixture('cloud');
     await f.connection.update(variant==='device-revoked'?{runnerMode:'local'}:variant==='foreign'?{ownerUid:'someone-else'}:{status:'needs_reauthentication'});
@@ -210,8 +238,9 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
   it('continues after choosing one of multiple matching properties', async () => {
     const f = await fixture(); await f.agency.collection('properties').doc('SecondID').set({ ...(await f.property.get()).data(), title: 'Apartament Cişmigiu 2' });
     const sessionId = randomUUID(), prompt = corpus.scenarios.find(row => row.id === 'master-0357')!.text;
-    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt, currentRecord: null }); expect(first.message.text).toContain('Proprietate: ID'); expect((await f.jobs.get()).empty).toBe(true);
-    const result = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: 'Proprietate: SecondID', currentRecord: null }); expect(result.message.text).toContain('a fost creat și programat'); expect((await f.jobs.get()).docs[0].data().propertyId).toBe('SecondID');
+    const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt, currentRecord: null }); expect(first.message.text).toContain('Alege proprietatea'); expect((await f.jobs.get()).empty).toBe(true);
+    const card=first.message.cards!.find(card=>card.choiceSource==='facebookScheduleProperty')!,row=card.rows.find(row=>row.id==='SecondID')!;
+    const result = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt: namedChoiceText(card.choiceSource!,row), choice:{messageId:first.message.id,source:card.choiceSource!,rowId:'SecondID'}, currentRecord: null }); expect(result.message.text).toContain('a fost creat și programat'); expect((await f.jobs.get()).docs[0].data().propertyId).toBe('SecondID');
   });
   it('serializes concurrent identical requests and rejects payload changes', async () => {
     const f = await fixture();

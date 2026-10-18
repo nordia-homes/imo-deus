@@ -41,7 +41,7 @@ export async function prepareFacebookSchedule(ctx: AssistantContext, prompt: str
   });
   const actions: AssistantAction[] = [];
   const rows = matches.map(doc => ({ id: doc.id, title: String(doc.data().title || 'Proprietate') }));
-  if (matches.length !== 1) return { actions, rows, scheduledAt, pendingPrompt: matches.length ? effective : null, text: matches.length ? 'Am găsit mai multe proprietăți. Răspunde cu „Proprietate: ID” din listă; voi continua programarea.' : 'Nu am găsit proprietatea cerută după titlu, localizare sau adresă. Precizează titlul exact al anunțului din CRM.' };
+  if (matches.length !== 1) return { actions, rows, scheduledAt, pendingPrompt: matches.length ? effective : null, text: matches.length ? 'Am găsit mai multe proprietăți. Alege proprietatea din cardurile afișate; voi continua programarea.' : 'Nu am găsit proprietatea cerută după titlu, localizare sau adresă. Precizează titlul exact al anunțului din CRM.' };
   const property = matches[0].data(), propertyId = matches[0].id;
   const connectionId = property.defaultFacebookConnectionId || member.defaultFacebookCloudConnectionId;
   if (typeof connectionId !== 'string' || !connectionId) return { actions, rows, pendingPrompt: null, text: 'Proprietatea și profilul nu au un cont Facebook implicit configurat. Setează contul dorit înainte de programare.' };
