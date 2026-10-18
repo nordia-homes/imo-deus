@@ -20,7 +20,7 @@ env:
       - RUNTIME
 
   - variable: JARVIS_JEV_MODE
-    value: "off"
+    value: "active"
     availability:
       - RUNTIME
 
