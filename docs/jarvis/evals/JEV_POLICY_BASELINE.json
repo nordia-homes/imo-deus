@@ -167,7 +167,7 @@
         "matching",
         "communications"
       ],
-      "expression": "'Pentru trimiterea unei proprietăți din matching, resolve_matching_recipient leagă poziția salvată de clientul setului și conversația asociată exact. Dacă există mai multe liste, precizează messageId; dacă există mai multe conversații sau căutarea este parțială, cere alegerea. Nu înlocui clientul prin potrivirea numelui/telefonului. resolved identifică destinatarul, nu certifică eligibilitatea. Pregătește apoi message_send cu body.matchingSelection copiat integral din rezultatul resolverului și text concret; serverul verifică previewul și costul. Nu trimite linkuri CRM private unui client. Pentru un link de portal nou, pregătește întâi recomandarea; după executare citește linkul concret și pregătește separat mesajul pentru aprobare.'"
+      "expression": "'Pentru referințe la matching, resolve_matching_recipient leagă poziția și clientul setului salvat; păstrează identitatea exactă, fără substituții după telefon/nume. Rezolvarea identității nu certifică eligibilitatea. Pentru oferte către cumpărător consultă fluxul matched_buyers_whatsapp: send_client_portal salvează lotul nou și trimite șablonul aprobat. Nu substitui text liber sau URL-ul proprietății. La pregătire separată, recommend_properties deliveryBatch=true produce linkul și portalBatch obligatorii pentru message_send.'"
     },
     {
       "id": "general-47",
@@ -479,6 +479,15 @@
         "prospecting"
       ],
       "expression": "outreachSettings"
+    },
+    {
+      "id": "distribution-workflows",
+      "modules": [
+        "marketing",
+        "matching",
+        "communications"
+      ],
+      "expression": "'Pentru distribuire și comenzi compuse consultă workflow_catalog după sens, apoi contractele actuale. Execută toate etapele și verifică efectele. Pentru nume transcrise aproximativ folosește resolve_crm_name și paginarea; clarifică numai ambiguitățile reale. Canalele necondiționate pot avea cerințe independent=true, cu un singur pas fără dependențe. Cumpărătorilor trimite prin send_client_portal șablonul aprobat cu {{portal_url}}: portalul CLIENTULUI, lot separat numai cu oferte noi, fără linkul proprietății. Nu retrimite efecte incerte; reconciliază. queued nu înseamnă livrat.'"
     }
   ],
   "bindings": [

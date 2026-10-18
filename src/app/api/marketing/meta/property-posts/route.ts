@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
     ]);
 
     const { agencyId, uid, role } = await requireAgencyUserFromBearerToken(request.headers.get('authorization'));
-    if (role !== 'admin') {
-      return NextResponse.json({ message: 'Doar administratorii agentiei pot publica pe pagina Facebook.' }, { status: 403 });
+    if (!['admin', 'agent'].includes(role || '')) {
+      return NextResponse.json({ message: 'Acces de agent al agenției necesar pentru publicare.' }, { status: 403 });
     }
     if (isDemoAgencyId(agencyId)) {
       return createDemoBlockedResponse('Publicarea pe Facebook este blocata in mediul demo.');

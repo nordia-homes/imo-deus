@@ -1,3 +1,4 @@
+import { portalBatchSchema, validatePortalBatch } from './portal-batch';
 import { randomUUID } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { previousPropertyShare } from './property-share-history';
@@ -22,7 +23,7 @@ import { matchingSendSchema, assertMatchingSend } from './matching-send';
 import { assertNoReplySince } from '@/lib/ai-assistant/reply-stop';
 import { personalRecipientSchema, assertPersonalRecipient } from './personal-recipient';
 
-const inputSchema = z.object({ prospectingListingId: z.string().regex(/^[a-zA-Z0-9_.:-]+$/).optional(), viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), preventPropertyResend: z.boolean().optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
+const inputSchema = z.object({ portalBatch: portalBatchSchema.optional(), prospectingListingId: z.string().regex(/^[a-zA-Z0-9_.:-]+$/).optional(), viewingConfirmation: viewingConfirmationLinkSchema.optional(), text: z.string().trim().max(4000).default(''), requestId: z.string().uuid(), personalRecipient: personalRecipientSchema.optional(), stopOnReplySince: z.string().datetime({ offset: true }).optional(), matchingSelection: matchingSendSchema.optional(), preventPropertyResend: z.boolean().optional(), sendApproval: sendApprovalSchema.optional(), expectedRecipientRevision: z.string().regex(/^[a-f0-9]{64}$/).optional(), attachmentId: z.string().uuid().optional(), template: z.object({ name: z.string(), language: z.string(), parameters: z.array(z.string().max(1000)).max(20).default([]) }).optional() }).refine(d => Boolean(d.text || d.template || d.attachmentId), 'Scrie un mesaj.').refine(d => !(d.template && d.attachmentId), 'Atașamentele în șabloane nu sunt acceptate de acest editor.');
 type SendInput = z.infer<typeof inputSchema>;
 // Re-read mutable eligibility after preparation, including inside the queue transaction.
 async function assertCurrentRecipientEligibility(db: Firestore, actor: Actor, conversation: Conversation, input: SendInput, category: string, tx?: Transaction) {
@@ -101,6 +102,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
   const recipient = recipientRevision(conversation);
   assertNoReplySince(conversation, input.stopOnReplySince);
   await assertMatchingSend(db, actor, conversation, input.matchingSelection);
+  await validatePortalBatch(db, actor, conversation, input);
   const binding = await bindViewingConfirmation(db, actor.agencyId, conversation, input.viewingConfirmation);
   const estimate = await estimateSend(db, actor, conversation, input);
   assertViewingTemplate(binding, estimate.renderedText, Boolean(input.template));
@@ -131,6 +133,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     assertNoReplySince(fresh.data()!, input.stopOnReplySince);
     await assertCurrentRecipientEligibility(db, actor, { ...fresh.data(), id } as Conversation, input, estimate.category, tx);
     await assertMatchingSend(db, actor, fresh.data()!, input.matchingSelection, tx);
+    const batchClaims = await validatePortalBatch(db, actor, fresh.data()!, input, tx, jobId);
     const shareRef = input.matchingSelection ? agencyCollection(db, actor.agencyId, 'communicationPropertyShares').doc(stableId(input.matchingSelection.contactId, input.matchingSelection.propertyId)) : null;
     const ledger = shareRef ? await tx.get(shareRef) : null;
     const previousShare = ledger?.exists ? { messageId: String(ledger.data()!.messageId), conversationId: String(ledger.data()!.conversationId), historical: false } : historicalShare;
@@ -147,6 +150,7 @@ export async function queueMessage(db: Firestore, actor: Actor, id: string, body
     if (input.attachmentId && attachment) message.attachments = [{ localId: input.attachmentId, name: attachment.name, type: attachment.mime }];
     tx.create(conversationRef.collection('messages').doc(jobId), { ...message, ...(binding ? { viewingConfirmation: binding } : {}) });
     if (shareRef) tx.create(shareRef, { contactId: input.matchingSelection!.contactId, propertyId: input.matchingSelection!.propertyId, messageId: jobId, conversationId: id, createdAt: nowIso() });
+    for (const claim of batchClaims) tx.create(claim.ref, { contactId: claim.contactId, propertyId: claim.propertyId, portalId: claim.portalId, batchId: claim.batchId, messageId: jobId, conversationId: id, createdAt: nowIso() });
     tx.create(job, { agencyId: actor.agencyId, uid: actor.uid, conversationId: id, connectionId: conversation.connectionId, input, recipientRevision: recipient,
       ...(binding ? { viewingConfirmation: binding } : {}), estimate: { amount: estimate.amount, currency: estimate.currency, rateId: estimate.rateId }, budgetId: budgetRef.id, budgetSettled: false, status: 'queued', createdAt: nowIso() });
   });
@@ -294,6 +298,7 @@ export async function drainOutbound(db: Firestore) {
       await assertPersonalRecipient(db, actor, latestConversation, job.input.personalRecipient);
       assertNoReplySince(latestConversation, job.input.stopOnReplySince);
       await assertMatchingSend(db, actor, latestConversation, job.input.matchingSelection);
+      await validatePortalBatch(db, actor, latestConversation, job.input, undefined, row.id);
       const currentBinding = await bindViewingConfirmation(db, actor.agencyId, latestConversation, job.input.viewingConfirmation);
       if (JSON.stringify(currentBinding) !== JSON.stringify(job.viewingConfirmation || null)) throw new CommunicationError('Programarea sau participantul s-a schimbat.', 409);
       assertViewingTemplate(currentBinding, estimate.renderedText, Boolean(job.input.template));

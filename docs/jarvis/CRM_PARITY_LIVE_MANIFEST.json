@@ -366,7 +366,7 @@
       "method": "POST",
       "path": "/api/imobiliare/reconcile",
       "handler": "src/app/api/imobiliare/reconcile/route.ts",
-      "description": "Verifică starea reală a publicării: propertyId.",
+      "description": "Reconciliere administrativă pentru întreaga agenție. Pentru un anunț precis folosește property_publication_status.",
       "readOnly": false,
       "externallySensitive": false,
       "verification": "registered_handler_not_provider_certification"
@@ -437,6 +437,16 @@
       "path": "/api/romimo/publish",
       "handler": "src/app/api/romimo/[action]/route.ts",
       "description": "Publică pe Romimo după preview: propertyId, previewHash, settings.",
+      "readOnly": false,
+      "externallySensitive": true,
+      "verification": "registered_handler_not_provider_certification"
+    },
+    {
+      "id": "romimo_unpublish",
+      "method": "POST",
+      "path": "/api/romimo/unpublish",
+      "handler": "src/app/api/romimo/[action]/route.ts",
+      "description": "Retrage proprietatea de pe Romimo și verifică rezultatul; body propertyId.",
       "readOnly": false,
       "externallySensitive": true,
       "verification": "registered_handler_not_provider_certification"
@@ -1850,6 +1860,7 @@
     "update_task",
     "schedule_viewing",
     "update_viewing",
+    "send_client_portal",
     "recommend_properties",
     "create_automation",
     "update_automation",

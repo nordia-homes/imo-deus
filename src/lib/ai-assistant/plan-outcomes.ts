@@ -31,6 +31,13 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
     let refreshAttempted = false;
     try {
       const action = resolveAction(plan.actions[index], plan.results || []);
+      if (original.independentFailure === true) return {...base,completionSatisfied:false,watchable:false,note:'Canal neconfirmat. Celelalte rezultate nu confirmă acest canal.'};
+      if (action.kind === 'send_client_portal') {
+        if (original.empty === true) return { ...base, executionState: 'succeeded', completionSatisfied: true, note: 'Nicio ofertă nouă; mesajul nu a fost trimis.' };
+        const conversation = await getResource(ctx, 'conversations', original.conversationId);
+        const [job,message] = await Promise.all([ctx.adminDb.collection('communicationOutboundJobs').doc(original.messageId).get(), collectionFor(ctx,'conversations').doc(original.conversationId).collection('messages').doc(original.messageId).get()]);
+        return { ...base, ...messageOutcome(ctx,original.conversationId,original.body || {},conversation,job.data(),message.data() || {}) };
+      }
       if (action.kind === 'recommend_properties') {
         refreshAttempted = true;
         return { ...base, ...await recommendationOutcome(ctx, action.contactId, action.propertyIds, original) };
@@ -42,6 +49,18 @@ export async function readPlanOutcomes(ctx: AssistantContext, planId: string) {
       const outputs: VerifiedOutputs = {};
       const read = (operation: string, params: Record<string, string>) => { refreshAttempted = true; return invokeOperation(ctx, { operation, params, query: {}, body: {} }, true); };
       const listingId = id(action.body.listingId);
+      if (action.operation === 'meta_property_post') {
+        refreshAttempted=true;
+        const property=await getResource(ctx,'properties',String(action.body.propertyId));
+        const current=operationResult('meta_property_post',{post:property.metaFacebookPost});
+        const same=original.postId && original.postId===current.postId;
+        return {...base,...current,executionState:same?current.executionState:'unknown',completionSatisfied:Boolean(same&&current.completionSatisfied),evidenceSource:'saved_provider_verification',watchable:false};
+      }
+      if (['imobiliare_publish','imobiliare_unpublish','storia_publish','storia_unpublish','romimo_publish','romimo_unpublish'].includes(action.operation)) {
+        refreshAttempted=true;
+        const {propertyPublicationStatus}=await import('./publication-status');
+        return {...base,...await propertyPublicationStatus(ctx,{propertyId:String(action.body.propertyId),portal:action.operation.split('_')[0] as 'imobiliare'|'storia'|'romimo',desired:action.operation.endsWith('_unpublish')?'unpublished':'published'})};
+      }
       if (action.operation === 'owner_prospect' && listingId) {
         refreshAttempted = true;
         const prospect = await getResource(ctx, 'ownerListingFavorites', listingId);

@@ -2846,3 +2846,9 @@ export async function publishPropertyToImobiliare(params: Parameters<typeof publ
 export async function updatePropertyImobiliarePromotionSettings(params: Parameters<typeof updatePropertyImobiliarePromotionSettingsInternal>[0]) {
   return withPropertyOperation({ db: adminDb, ...params }, 'publish', () => updatePropertyImobiliarePromotionSettingsInternal(params));
 }
+
+export async function inspectImobiliarePublication(agencyId: string, property: Property) {
+ const reference=property.portalProfiles?.imobiliare?.customReference || property.id;
+ const current=await getListingByCustomReference(agencyId,reference);
+ return {remoteId:reference,state:current?.data?.state || 'unknown'};
+}

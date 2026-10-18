@@ -478,4 +478,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('durable media dependencie
     expect(await runPlan(f.ctx, 'plan')).toMatchObject({ status: 'completed', outcome: { state: 'COMPLETED' } });
     expect(executeAction).toHaveBeenCalledTimes(4);
   }, 20000);
+  it('finishes video generation through TikTok publication without stopping at the draft',async()=>{
+    const f=await fixture(),saved=(await f.plan.get()).data()!;
+    const actions=[...saved.actions,actionSchema.parse({kind:'existing_operation',operation:'tiktok_post_publish',params:{draftId:'@step:4:draftId'},body:{},query:{}})];
+    await f.plan.update({actions,approval:approvalEnvelope(f.ctx.uid,f.ctx.agencyId,'plan',actions,saved.expiresAt)});
+    const execute=vi.mocked(executeAction).getMockImplementation()!;
+    vi.mocked(executeAction).mockImplementation(async(ctx,action:any,key)=>{
+      if(action.operation==='tiktok_post_publish'){expect(action.params.draftId).toBe('draft');return {executionState:'queued',draftId:'draft'};}
+      return execute(ctx,action,key);
+    });
+    let ready=false;
+    vi.mocked(invokeOperation).mockImplementation(async(_ctx,input:any)=>input.operation==='tiktok_post_status'?{executionState:'succeeded',draft:{id:'draft',status:'published'}}:{executionState:ready?'succeeded':'queued',job:{id:'job',propertyId:'p',agencyId:f.ctx.agencyId,requestedByUid:f.ctx.uid,status:ready?'completed':'running',videoUrl:ready?f.url:undefined}});
+    expect(await runPlan(f.ctx,'plan')).toMatchObject({status:'pending'});
+    expect(executeAction).toHaveBeenCalledTimes(2);
+    ready=true;await f.plan.update({waitUntil:0});
+    expect(await runPlan(f.ctx,'plan')).toMatchObject({status:'completed',outcome:{state:'COMPLETED'}});
+    expect(executeAction).toHaveBeenCalledTimes(5);
+    await runPlan(f.ctx,'plan');expect(executeAction).toHaveBeenCalledTimes(5);
+  });
+  it.each([true,false])('continues after a failed channel only when the next goal explicitly permits independence: %s',async independent=>{
+    const f=await fixture(),saved=(await f.plan.get()).data()!;
+    const actions=['Prima','A doua'].map(name=>actionSchema.parse({kind:'create_contact',name,contactType:'Cumparator'}));
+    const coverage={requirements:actions.map((_,i)=>({id:'goal'+i,sourceQuote:'cerere',description:'Destinație',resolution:'planned',steps:[i+1],evidenceCallIds:[],independent,execution:{mode:'execute',conditions:[]}}))};
+    await f.plan.update({actions,goal:{schemaVersion:1,coverage},approval:approvalEnvelope(f.ctx.uid,f.ctx.agencyId,'plan',actions,saved.expiresAt)});
+    vi.mocked(executeAction).mockRejectedValueOnce(new Error('Provider unavailable')).mockResolvedValue({contactId:'saved'});
+    const result=await runPlan(f.ctx,'plan');
+    expect(executeAction).toHaveBeenCalledTimes(independent?2:1);
+    if(independent){expect(result.status).toBe('completed');expect(result.outcome?.state).not.toBe('COMPLETED');expect(result.results[0].result.independentFailure).toBe(true);}
+  });
+
 });

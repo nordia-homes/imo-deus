@@ -2,7 +2,14 @@ import { getResource, type AssistantContext } from './access';
 
 export async function recommendationOutcome(ctx: AssistantContext, contactId: string, propertyIds: string[], receipt: Record<string, any>) {
   const evidence = (confirmed: boolean, note: string) => ({ executionState: confirmed ? 'succeeded' : 'unknown', businessStatus: confirmed ? 'portal_recommended' : 'portal_unconfirmed', completionSatisfied: confirmed, watchable: false, verifiedAt: new Date().toISOString(), evidenceSource: 'current_domain_state', note });
-  const expected = [...new Set(propertyIds)].sort();
+  const requested = [...new Set(propertyIds)].sort();
+  const expected = receipt.batchId || receipt.empty ? [...new Set<string>(receipt.propertyIds || [])].sort() : requested;
+  if (receipt.requestedPropertyIds && JSON.stringify([...new Set(receipt.requestedPropertyIds)].sort()) !== JSON.stringify(requested)) return evidence(false, 'Lotul nu corespunde cererii.');
+  if (receipt.empty) return evidence(true, 'Nu există oferte noi; nu trebuie trimis niciun mesaj.');
+  if (receipt.batchId) {
+    const batch = await ctx.adminDb.collection('portals').doc(receipt.portalId).collection('deliveryBatches').doc(receipt.batchId).get();
+    if (!batch.exists || JSON.stringify([...(batch.data()?.propertyIds || [])].sort()) !== JSON.stringify(expected)) return evidence(false, 'Lotul portalului nu corespunde recomandărilor.');
+  }
   if (typeof receipt.portalId !== 'string' || !/^[A-Za-z0-9_.:-]{1,180}$/.test(receipt.portalId) || !Array.isArray(receipt.propertyIds) || JSON.stringify([...new Set(receipt.propertyIds)].sort()) !== JSON.stringify(expected)) return evidence(false, 'Receiptul nu confirmă recomandările cerute. Nu se repetă acțiunea.');
   const contact = await getResource(ctx, 'contacts', contactId);
   const portal = await getResource(ctx, 'portals', receipt.portalId);

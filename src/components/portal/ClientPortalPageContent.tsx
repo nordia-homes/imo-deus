@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useMemo } from 'react';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { Suspense, useMemo, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { doc, collection, query, where, onSnapshot, type Firestore } from 'firebase/firestore';
 import { ArrowRight, Home } from 'lucide-react';
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import type { ClientPortal, PortalRecommendation, Property } from '@/lib/types';
@@ -16,6 +17,9 @@ import { cn } from '@/lib/utils';
 import { getAgencyThemePreset } from '@/lib/theme';
 
 export function ClientPortalPageContent({ portalId }: { portalId: string }) {
+  return <Suspense fallback={<p>Se încarcă ofertele...</p>}><ClientPortalContent portalId={portalId} /></Suspense>;
+}
+function ClientPortalContent({ portalId }: { portalId: string }) {
   const firestore = useFirestore();
   const { isCustomDomain, agency } = usePublicAgency();
   const publicPath = usePublicPath();
@@ -29,25 +33,26 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
     () => collection(firestore, 'portals', portalId, 'recommendations'),
     [firestore, portalId]
   );
-  const { data: recommendations, isLoading: areRecsLoading } = useCollection<PortalRecommendation>(recommendationsQuery);
+  const { data: allRecommendations, isLoading: areRecsLoading } = useCollection<PortalRecommendation>(recommendationsQuery);
+  const batchParam = useSearchParams()?.get('batch') ?? null;
+  const batchId = batchParam && /^[a-f0-9]{64}$/.test(batchParam) ? batchParam : null;
+  const batchRef = useMemoFirebase(() => batchId ? doc(firestore, 'portals', portalId, 'deliveryBatches', batchId) : null, [firestore, portalId, batchId]);
+  const { data: deliveryBatch, isLoading: isBatchLoading } = useDoc<{ propertyIds: string[] }>(batchRef);
+  const recommendations = useMemo(() => batchParam === null ? allRecommendations : allRecommendations?.filter(rec => deliveryBatch?.propertyIds?.includes(rec.propertyId)) || [], [allRecommendations, batchParam, deliveryBatch]);
 
   const propertyIds = useMemo(() => {
     if (!recommendations) return [];
     return recommendations.map((rec) => rec.propertyId);
   }, [recommendations]);
 
-  const propertiesQuery = useMemoFirebase(() => {
-    if (!portal || propertyIds.length === 0) return null;
-    return query(collection(firestore, 'agencies', portal.agencyId, 'properties'), where('__name__', 'in', propertyIds));
-  }, [firestore, portal, propertyIds]);
-  const { data: properties, isLoading: arePropertiesLoading } = useCollection<Property>(propertiesQuery);
+  const { data: properties, isLoading: arePropertiesLoading } = usePortalProperties(firestore, portal?.agencyId, propertyIds);
 
   const propertiesById = useMemo(() => {
     if (!properties) return new Map();
     return new Map(properties.map((property) => [property.id, property]));
   }, [properties]);
 
-  const isLoading = isPortalLoading || areRecsLoading || arePropertiesLoading;
+  const isLoading = isPortalLoading || areRecsLoading || arePropertiesLoading || Boolean(batchId && isBatchLoading);
 
   if (isLoading) {
     return (
@@ -238,4 +243,25 @@ export function ClientPortalPageContent({ portalId }: { portalId: string }) {
       )}
     </div>
   );
+}
+
+function usePortalProperties(firestore: Firestore, agencyId: string | undefined, ids: string[]) {
+  const key = JSON.stringify([agencyId || null, ids]);
+  const [state, setState] = useState<{ key: string; data: Property[]; complete: boolean; error?: Error }>({key:'',data:[],complete:false});
+  useEffect(() => {
+    if (!agencyId || !ids.length) return;
+    let active = true;
+    const groups: string[][] = [];
+    for (let i=0; i<ids.length; i+=30) groups.push(ids.slice(i,i+30));
+    const rows = new Map<number,Property[]>();
+    const stops = groups.map((group,index) => onSnapshot(query(collection(firestore,'agencies',agencyId,'properties'),where('__name__','in',group)), snapshot => {
+      if (!active) return;
+      rows.set(index,snapshot.docs.map(doc=>({...doc.data(),id:doc.id} as Property)));
+      setState({key,data:[...rows.values()].flat(),complete:rows.size===groups.length});
+    },error=>{if(active)setState({key,data:[],complete:true,error});}));
+    return () => {active=false;stops.forEach(stop=>stop());};
+  },[firestore,agencyId,ids,key]);
+  if (!agencyId || !ids.length) return {data:[],isLoading:false};
+  if(state.key===key && state.error) throw state.error;
+  return {data:state.key===key?state.data:[],isLoading:state.key!==key||!state.complete};
 }

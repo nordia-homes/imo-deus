@@ -210,7 +210,7 @@ export async function startContactConversation(db: Firestore, actor: Actor, body
   const [contact, connection] = await Promise.all([agencyCollection(db, actor.agencyId, 'contacts').doc(data.contactId).get(), agencyCollection(db, actor.agencyId, 'channelConnections').doc(data.connectionId).get()]);
   if (!contact.exists || connection.data()?.channel !== 'whatsapp' || connection.data()?.status !== 'connected') throw new CommunicationError('Alege un contact și un număr WhatsApp conectat.');
   const raw = String(contact.data()?.phone || '').replace(/[\s().-]/g, '');
-  const phone = raw.startsWith('+') ? raw.slice(1) : raw.startsWith('00') ? raw.slice(2) : raw;
+  const phone = /^0[2-9]\d{8}$/.test(raw) ? '40' + raw.slice(1) : raw.startsWith('+') ? raw.slice(1) : raw.startsWith('00') ? raw.slice(2) : raw;
   if (!/^[1-9]\d{7,14}$/.test(phone)) throw new CommunicationError('Completează telefonul contactului în format internațional, de exemplu +407…');
   if (data.propertyId && !(await agencyCollection(db, actor.agencyId, 'properties').doc(data.propertyId).get()).exists) throw new CommunicationError('Proprietatea nu există.');
   const id = stableId(data.connectionId, phone); const ref = agencyCollection(db, actor.agencyId, 'conversations').doc(id);

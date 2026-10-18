@@ -21,6 +21,16 @@ export function operationResult(operation: string, raw: Record<string, any>, rea
   const key = String(state || '').toLowerCase();
   const groups: Record<string, string[]> = { queued: ['queued', 'pending', 'scheduled', 'waiting'], running: ['running', 'processing', 'calling', 'rendering', 'uploading'], succeeded: ['succeeded', 'completed', 'sent', 'delivered', 'read', 'published', 'live', 'success'], failed: ['failed', 'error', 'rejected'], unknown: ['unknown', 'unknown_external_state', 'partial'], cancelled: ['cancelled', 'canceled'], draft: ['draft', 'ready', 'ready_to_publish', 'pending_approval'] };
   result.executionState = Object.entries(groups).find(([, values]) => values.includes(key))?.[0] || (readOnly ? 'observed' : 'accepted_unverified');
+  if (operation === 'meta_property_post') {
+    result.operation = operation;
+    const post = result.post, proof = post?.providerVerification;
+    const confirmed = post?.status === 'published' && proof?.publishedConfirmed === true && proof.postId === post.postId && proof.pageId === post.pageId && proof.permalinkUrl === post.permalinkUrl && typeof proof.checkedAt === 'string';
+    result.executionState = confirmed ? 'succeeded' : 'unknown';
+    result.completionSatisfied = confirmed;
+    result.publicationConfirmed = confirmed;
+    result.businessStatus = post?.status || 'unknown';
+    if (confirmed) { result.postId = post.postId; result.link = post.permalinkUrl; result.pageName = post.pageName; }
+  }
   if (operation === 'file_apply' && key === 'attached' && result.mutationRevision?.resource === 'properties') result.executionState = 'succeeded';
   if (operation === 'meta_campaign_optimize_image') {
     const proof=result.proof;

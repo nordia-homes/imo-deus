@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { GoalOutcome, OutcomeEvidence } from './outcome';
 
 export const goalCoverageSchema = z.object({ requirements: z.array(z.object({
+  independent: z.boolean().optional(),
   id: z.string().regex(/^[a-z0-9_-]{1,40}$/),
   sourceQuote: z.string().min(1).max(1000),
   description: z.string().min(1).max(500),

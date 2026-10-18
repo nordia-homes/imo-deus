@@ -44,3 +44,13 @@ describe('remote withdrawal confirmation', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
+
+it('reads current publication for both portals without a publication or withdrawal request',async()=>{
+ const {inspectImobiliarePublication}=await import('@/lib/imobiliare');
+ const {inspectStoriaPublication}=await import('@/lib/storia');
+ fetchMock.mockResolvedValueOnce(response({data:{state:'online'}}));
+ expect(await inspectImobiliarePublication('a',property)).toMatchObject({state:'online'});
+ fetchMock.mockResolvedValueOnce(response({data:{state:{code:'active'}}}));
+ expect(await inspectStoriaPublication('a',property)).toMatchObject({state:'active'});
+ expect(fetchMock.mock.calls.every(([,init])=>!init?.method||init.method==='GET')).toBe(true);
+});

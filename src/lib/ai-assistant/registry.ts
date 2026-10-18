@@ -86,5 +86,5 @@ export function discoverTools(category = '', cursor = 0, limit = 12, role = 'age
 }
 export function actionRisk(action: z.infer<typeof actionSchema>): RiskLevel {
   if (action.kind === 'update_property' && action.patch.price !== undefined) return 'SENSITIVE';
-  return action.kind === 'existing_operation' ? toolRegistry.get(action.operation)?.riskLevel || 'SENSITIVE' : ['delete_task', 'delete_viewing', 'delete_offer'].includes(action.kind) ? 'CRITICAL' : ['create_property', 'update_property', 'update_property_status', 'set_property_featured', 'archive_contact', 'assign_record', 'activate_property', 'create_automation', 'update_automation', 'update_agency', 'portal_action', 'update_prospect', 'create_sale', 'update_offer'].includes(action.kind) ? 'SENSITIVE' : 'SAFE_WRITE';
+  return action.kind === 'send_client_portal' ? 'SENSITIVE' : action.kind === 'existing_operation' ? toolRegistry.get(action.operation)?.riskLevel || 'SENSITIVE' : ['delete_task', 'delete_viewing', 'delete_offer'].includes(action.kind) ? 'CRITICAL' : ['create_property', 'update_property', 'update_property_status', 'set_property_featured', 'archive_contact', 'assign_record', 'activate_property', 'create_automation', 'update_automation', 'update_agency', 'portal_action', 'update_prospect', 'create_sale', 'update_offer'].includes(action.kind) ? 'SENSITIVE' : 'SAFE_WRITE';
 }

@@ -2453,3 +2453,10 @@ export async function publishPropertyToStoria(params: Parameters<typeof publishP
 export async function applyStoriaPromotions(params: Parameters<typeof applyStoriaPromotionsInternal>[0]) {
   return withPropertyOperation({ db: adminDb, ...params }, 'publish', () => applyStoriaPromotionsInternal(params));
 }
+
+export async function inspectStoriaPublication(agencyId: string, property: Property) {
+ const uuid=property.portalProfiles?.storia?.remoteUuid || property.promotions?.storia?.remoteId;
+ if(!uuid)return {remoteId:null,state:'unknown'};
+ const current=await storiaRequest<AdvertMetadataResponse>(agencyId,'/advert/v1/'+encodeURIComponent(uuid)+'/meta',{method:'GET'});
+ return {remoteId:uuid,state:getAdvertMetadataState(current).code};
+}

@@ -222,3 +222,81 @@ Nu este încă îndeplinit criteriul „paritate completă”: elementele restan
 - Probe: concurență Firestore contact/preferințe cu intervenție manuală, receipt RLV, checkpoint/recovery și prefix autonom spre aprobare. Text UI verifică queued → delivered fără replay, oprire la terminal și ascunderea rezultatului după revocare; Voice folosește același control.
 - Validare finală: 362 teste AI trecute (23 probe sunt rezervate emulatorului în această rulare), 38 teste Firestore/Storage reale trecute în 12 suite, typecheck, manifest fără drift și build Next.js final trecute. Text: 21 scenarii enumerate plus urmărire automată/opririle/ascunderea la revocare. Voice: 14 scenarii cu audio/microfon simulate; hardware-ul real nu este certificat. Editarea urmată de ștergere a sarcinii păstrează două ledgere confirmate și nu produce o revizie fictivă pentru înregistrarea eliminată.
 - Acest lot este încă local, separat de releaseul parity-26 confirmat. Nu s-a pornit un nou rollout; publicarea rămâne grupată. Restantele globale E0–E7 din matrice rămân deschise, în special corpus/cursor, adaptori externi și acceptanță semantică/provider/dispozitive.
+
+
+## 2026-10-18 — Catalogul fluxurilor de distribuire
+
+Catalog executabil prin instrumentele existente, expus plannerului prin workflow_catalog (index compact, detalii la cerere). Nu este un executor nou și nu certifică execuția externă. Acoperă: pagina Facebook organică; TikTok organic cu verificare/generare video cloud; Imobiliare/Storia/Romimo; WhatsApp către matching cu șablon aprobat și link public propriu; grupuri Facebook cloud; PDF; contact și vizionare; retragere portaluri. Fluxurile se aleg semantic și se pot combina.
+
+property_public_link verifică accesul la proprietate și statusul activ, folosește domeniul public configurat al agenției sau ruta /agencies/{agencyId}/properties/{propertyId}, respinge URL ne-HTTPS. Nu verifică HTTP și nu pretinde disponibilitatea domeniului. Șablonul WhatsApp trebuie să suporte linkul; nicio substituire cu link privat sau șablon de prospectare proprietari.
+
+Limite constatate: publicarea pe pagina Facebook este admin-only în handlerul manual; catalogul nu ridică acest drept. TikTok cere video ready și condițiile providerului. Așteptarea unui job lung și reluarea automată până la publicare nu au fost validate end-to-end în această schimbare. Nicio postare, trimitere WhatsApp sau randare cu cost real nu a fost efectuată. Catalogarea și regresiile locale nu reprezintă certificare că toate fluxurile se execută complet în producție. Modificările nu sunt publicate în producție.
+
+
+## Audit de închidere a fluxurilor — portalul clientului — 2026-10-18
+
+Verdict: catalogul de opt fluxuri NU certifică executarea completă. Auditul verifică ramura locală; nu publică și nu testează efecte externe reale. Cerința clarificată înlocuiește regula anterioară despre linkul public al proprietății: mesajul pentru cumpărător conține linkul PORTALULUI CLIENTULUI și numai ofertele noi din lotul acelei trimiteri.
+
+### Constatări pe flux
+
+| Flux | Dovezi existente | Lipsuri / limite pentru închidere |
+| --- | --- | --- |
+| Pagina Facebook organică | Handler comun, galerie cu jurnal și verificare Meta în meta-property-post; fotografii și descriere CRM. | API-ul este admin-only. Registrul nu declară aceeași restricție pentru meta_property_post. Rezultatul este în post; normalizatorul generic nu extrage post.status, iar plan_outcomes nu are recitire dedicată acestei operații. Astfel succesul providerului și răspunsul Jarvis nu sunt uniform legate. Nu certificăm varianta video din verificarea galeriei. |
+| TikTok, inclusiv video lipsă | Executorul păstrează checkpoint, verifică videoUrl înainte de import, continuă pașii deja planificați; testele media-pipeline și tiktok-schedule trec cu provideri simulați. | Lanțul testat video -> asset -> draft nu este o dovadă a unei comenzi naturale până la postare reală. Trebuie închis și verificat video -> draft -> publish -> status pentru același job/cont. Verificare limitată la 30 minute, plan valabil o oră. Watcherul verifică starea, nu generează singur pași lipsă din plan. |
+| Portaluri conectate | Imobiliare publish/reconcile, Storia publish, Romimo preview/publish/verify sunt în registru. | plan_outcomes nu are reconciliere dedicată pentru aceste publicări. În runPlan, un rezultat pending/failed/unknown oprește pașii următori, inclusiv canale independente într-un plan liniar. Nu există dovadă testată aici că o singură comandă publică pe toate integrările active și închide fiecare destinație. |
+| Matching -> portal client -> WhatsApp | Matching și recommend_properties persistă în Firestore; verificarea mesajelor distinge coadă/trimitere/livrare. | recommend_properties cumulează recomandările în același portal. ClientPortalPageContent citește întreaga colecție fără selector de lot. Nu există în acest flux un lot distinct asociat trimiterii și excluderii ofertelor expediate anterior. Testul matching-delivery introduce manual mesajul/jobul simulat: NU exercită cap-coadă handlerul real de trimitere. Conversația nouă trebuie executată înainte de pregătirea mesajului, cu ID real; catalogul singur nu garantează reluarea planificării. |
+| Grupuri Facebook cloud | Testele includ cazul Croatian Avadanii -> Cristian Avadanii, selecție și creare unică a jobului, precum și context conversațional. | Crearea jobului nu dovedește postările pe fiecare grup. Providerul/runnerul sunt simulate în verificarea locală. Potrivirea aproximativă este limitată; ambiguitățile nu pot fi rezolvate sigur prin alegerea arbitrară a unui cont. |
+| PDF | Handlerul generează PDF cu Playwright; adaptorul salvează răspunsul binar în storage și oferă link. Testele șablonului trec. | Nu s-a generat aici un PDF prin infrastructura de producție. Chromium, fotografiile, fonturile, serviciul de obiective și storage sunt dependențe de verificat; testul HTML nu certifică artefactul final. |
+| Contact și vizionare | Tranzacții, prevenirea suprapunerilor, idempotentă, referințe între pași, Europe/Bucharest. | Nu există dovadă universală pentru orice transcriere de nume. Cele două teste de replay descrise mai jos au așteptări neactualizate. Confirmarea participanților WhatsApp este o etapă separată. |
+| Retragere portaluri | Imobiliare/Storia au unelte și verificări de domeniu. | Romimo are unpublish în handlerul manual, dar nu are operație romimo_unpublish în registrul Jarvis. Nu se poate declara paritate pentru toate portalurile. |
+
+### Blocaje transversale identificate
+
+- search-text normalizează diacritice, punctuație, ordine de cuvinte și telefoane; nu implementează corecție fonetică generală. facebook-name-match are distanță de editare limitată pentru label/displayName. Nu extinde implicit această garanție la cumpărători, proprietăți, pagini și conturi TikTok.
+- Mai multe entități similare, rezultate paginate/incomplete, pronunții care schimbă un nume în altul valid, negări, excluderi, referințe precum «același/celelalte» trebuie validate înainte de scriere. O potrivire unică bine susținută poate fi folosită direct; ambiguitatea reală cere o întrebare cu denumiri.
+- Executorul liniar poate opri destinații independente. Timeout după acceptarea externă cere reconciliere, nu reexpediere. Revocarea accesului, modificarea proprietății, cont deconectat, șablon respins, parametru lipsă și media invalidă sunt blocaje reale, nu se rezolvă printr-o instrucțiune de prompt.
+- Portalul clientului face un singur query «in» pentru întreaga listă cumulată de proprietăți; loturile mari trebuie fragmentate/paginate pentru a respecta limitele bazei de date.
+- «Pregătit», «în coadă», «publicat», «trimis», «livrat» și «citit» nu sunt echivalente. Răspunsul final trebuie construit din dovezi pe canal/destinatar, nu doar din numărul de rezultate.
+
+### Contractul necesar pentru loturile portalului clientului
+
+1. Matching autorizat -> selectarea ofertelor -> excluderea celor deja trimise acelui client, pe baza istoricului real de expediere. Simpla recomandare nu înseamnă trimitere.
+2. Persistă atomic un lot stabil cu client, portal, proprietăți, autor și identificatorul cererii. O reluare reutilizează lotul; două cereri concurente nu revendică aceleași oferte pentru două trimiteri accidentale.
+3. Linkul portalului clientului selectează lotul respectiv. Nu șterge recomandările sau feedbackul vechi. Linkurile vechi își păstrează sensul; URL-ul nou nu expune istoricul complet.
+4. Șablon WhatsApp aprobat pentru recomandări, cu parametrul/butonul linkului de portal real. Verifică identitatea conversației, refuzurile și eligibilitatea. Fără șablon compatibil nu substitui un link de proprietate.
+5. Leagă lotul de mesaj/job; păstrează prepared/queued/sent/delivered/failed/unknown. La rezultat incert nu retrimite până la reconciliere. Lotul gol produce «nu sunt oferte noi», fără mesaj gol.
+6. Teste necesare: primul lot; al doilea lot fără ofertele primului; overlap; nimic nou; retry înainte/după acceptarea providerului; concurență; refuz; schimbare număr; proprietate retrasă; feedback; lot mare; client/agenție greșite; acces prin domeniu propriu și ruta standard.
+
+### Verificări rulate
+
+- 96/96 teste în șapte fișiere: catalog, planner Jev, conservarea politicilor, alegeri după nume, normalizare CRM, șablon PDF, retragere portaluri.
+- Emulator Firestore/Storage: 296/299 trecute în șase fișiere (matching-delivery, media-pipeline, tiktok-schedule, facebook-create, calendar-concurrency, meta-publication-reconcile).
+- Două eșecuri calendar sunt comparații de replay care nu includ noul câmp reused:true; diferența afișată nu demonstrează un efect duplicat. Testele nu au fost slăbite/modificate pentru audit.
+- Un eșec de concurență: INVALID_ARGUMENT Transaction is invalid or closed. Repetarea izolată a trecut (1 passed, 69 skipped). Nu este dovadă de dispariție definitivă a riscului de concurență.
+- Nu sunt teste cu modele/provideri live. Nicio publicare, trimitere WhatsApp sau cheltuială externă reală.
+
+Corecții efectuate în acest audit: workflow_catalog v2 și politica plannerului cer portalul clientului, exclud explicit linkul proprietății și semnalează lipsa loturilor. Instrumentul property_public_link rămâne disponibil pentru alte scopuri; nu este instrumentul de livrare către cumpărător. Implementarea loturilor și închiderea lacunelor de mai sus rămân de făcut. Nu s-a publicat în producție.
+
+
+## Implementarea după audit — 18 octombrie 2026
+
+Această secțiune actualizează constatările auditului de mai sus, care descriu starea anterioară. Implementarea este locală, pe codex/jarvis-semantic-20261018; nu este un rollout de producție.
+
+| Flux | Implementare și verificare actuală |
+| --- | --- |
+| Portal client → WhatsApp | Noua acțiune send_client_portal execută recomandarea, crearea/reutilizarea conversației exacte, pregătirea șablonului aprobat și coada reală. URL-ul este portalul CLIENTULUI cu selector de lot. Lotul nou exclude ofertele cu o trimitere deja înregistrată; istoricul și linkurile vechi se păstrează. Reluarea reutilizează aceeași operație. Un lot gol nu trimite mesaj. |
+| Protecția loturilor | Revendicarea ofertelor și crearea jobului se fac în aceeași tranzacție. Serviciul reverifică destinatarul, URL-ul exact, accesul și disponibilitatea proprietăților înainte de expediere. Trimiterile incerte nu sunt reluate automat. Reguli Firestore: citirea unui lot exact, fără enumerare și fără modificări din client. Interfața filtrează lotul și fragmentează citirile mari în grupuri de maximum 30. |
+| Pagina Facebook organică | Galerie prin serviciul verificat comun, disponibil agenților agenției. Schimbarea rolului/accesului în timpul publicării oprește confirmarea. Jarvis extrage dovada Meta și comunică publicarea, nu numai numărul de rezultate. Dovada de galerie nu certifică separat vechiul traseu video al paginii. |
+| TikTok organic | Catalogul cere întregul plan video → asset → draft → publish. Testul executorului verifică așteptarea randării, continuarea până la publicare și reluarea fără a repeta cei cinci pași. Randarea și furnizorul sunt simulate în această probă; nu este certificare live. |
+| Publicare/retragere portaluri | property_publication_status citește starea proprietății exacte pentru Imobiliare, Storia și Romimo. plan_outcomes folosește această dovadă. romimo_unpublish este legat de handlerul manual existent. Verificarea Imobiliare/Storia folosește citiri, fără o nouă publicare/retragere. |
+| Destinații independente | Cerințele explicit independente, cu un singur pas fără referințe sau condiții, pot continua după eșecul canalului precedent. Canalul eșuat rămâne neconfirmat. Aceasta nu este o planificare generală de graf: un lanț dependent blocat nu este sărit pentru a căuta arbitrar pași ulteriori. |
+| Identificare | resolve_crm_name adaugă recuperarea numelor apropiate pentru proprietăți/contacte, cu diacritice și ordine de cuvinte normalizate, paginare și verificarea accesului. Numerele nu sunt aproximative. Mai multe identități plauzibile cer alegere. Se păstrează resolverul existent pentru conturile Facebook. |
+| Grupuri, PDF, vizionări | Serviciile existente rămân executorii: grupuri cloud cu fotografiile/descrierea originale, prezentarea PDF și contact/vizionare cu ora București. Sunt incluse în verificarea regresiilor; nu sunt înlocuite cu un executor paralel. |
+
+Politicile de matching și distribuire au fost aliniate: fără text liber/link de proprietate ca substitut pentru livrarea ofertelor în portalul clientului. Detaliile sunt încărcate din catalog la nevoie, pentru a păstra selecția Jev în bugetul existent de context.
+
+Validări confirmate: 109 teste unitare în șapte suite; 184 teste Firestore/Storage în patru suite, cu 33 de teste live neexecutate; încă 4 teste pentru șablonul PDF. Testul nou pentru WhatsApp trece prin serviciul nativ, pregătirea reală, coada și workerul real, cu Meta simulat, apoi verifică dovada de livrare simulată. Typecheck și build Next.js au trecut. Build-ul a necesitat rerulare în afara sandboxului din cauza accesului Windows la un director temporar. Copierea Chromium în standalone a raportat că directorul playwright-core nu există în layout-ul copiei locale; artefactul PDF nu este certificat în producție prin acest build.
+
+Limite de acceptanță: nu s-au folosit modele/providere live, nu s-au trimis mesaje și nu s-au publicat anunțuri reale. Autorizarea Meta/TikTok, configurațiile portalurilor și șablonul de recomandări aprobat sunt condiții reale, nu sunt eliminate prin prompt. Trimiterea automată raportează inițial coada, iar Inbox urmărește starea; nu declară livrare înainte de dovadă. Planurile persistate folosesc plan_outcomes pentru verificare. Nicio afirmație de acoperire universală a formulărilor sau de funcționare 100% în producție nu rezultă din aceste teste.
+
+Validare finală suplimentară: 304/304 teste în șase suite Firestore/Storage (calendar-concurrency 70, facebook-create 90, media-pipeline 83, tiktok-schedule 33, matching-delivery 5, meta-publication-reconcile 23). Cele 5 matching-delivery sunt comune cu rularea de 184 teste; totalul distinct este 483 teste de integrare, plus 113 unitare/șablon PDF. Cele 33 probe live rămân neexecutate. Lint fără erori sau avertismente pentru fișierele verificate; diff-check curat; manifest verificat cu 182 operații și 42 acțiuni native, fără a deduce un procent de paritate. Cele două aserțiuni calendar despre replay au fost aliniate explicit la reused:true și trec, păstrând verificarea efectelor unice.

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { afterAll, beforeAll, describe, it } from 'vitest';
 import { initializeTestEnvironment, assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, getDocs, collection } from 'firebase/firestore';
 describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('assistant server-managed records', () => {
   let env: RulesTestEnvironment;
   beforeAll(async () => {
@@ -30,4 +30,12 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('assistant server-managed 
     await assertFails(setDoc(doc(db, 'assistantAutomationJobs', 'fake'), { status: 'active' }));
     await assertFails(setDoc(doc(db, 'assistantAgentJobs', 'fake'), { status: 'running' }));
   });
+  it('allows opening an exact client batch but not enumerating or changing delivery snapshots',async()=>{
+    await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),'portals','client'),{agencyId:'a'});await setDoc(doc(c.firestore(),'portals','client','deliveryBatches','batch'),{propertyIds:['p']});});
+    const db=env.unauthenticatedContext().firestore();
+    await assertSucceeds(getDoc(doc(db,'portals','client','deliveryBatches','batch')));
+    await assertFails(getDocs(collection(db,'portals','client','deliveryBatches')));
+    for(const client of [db,env.authenticatedContext('agent').firestore(),env.authenticatedContext('admin').firestore()])await assertFails(setDoc(doc(client,'portals','client','deliveryBatches','batch'),{propertyIds:['different']}));
+  });
+
 });

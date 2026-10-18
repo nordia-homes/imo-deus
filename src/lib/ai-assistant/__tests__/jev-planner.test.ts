@@ -167,3 +167,15 @@ it('keeps prior context available for a referential follow-up without rerunning 
  const result=await planTurn(ctx,'Și pentru aceeași proprietate?', [{id:'old',role:'assistant',text:'Proprietatea Cișmigiu',createdAt:new Date().toISOString(),cards:[{type:'data',source:'properties',title:'Proprietate',rows:[{id:'p',title:'Cișmigiu'}]}]}],{provider:{id:'fixture',respond}});
  expect(JSON.stringify(respond.mock.calls[0][0].input)).toContain('Cișmigiu');expect(result.actions).toEqual([]);expect(respond.mock.calls[0][0].tools.map(t=>t.name)).toContain('conversation_history');
 });
+
+it.each(['off','shadow','active'])('reads complete distribution workflows through the real dispatcher in %s mode', async mode => {
+ vi.stubEnv('JARVIS_JEV_MODE', mode);
+ const catalogCall=call('workflow_catalog',{ids:['tiktok_organic','matched_buyers_whatsapp']});
+ const respond=vi.fn().mockResolvedValueOnce(catalogCall).mockResolvedValueOnce(call('goal_coverage',{requirements:[{id:'explain',sourceQuote:'Explică pașii pentru TikTok și WhatsApp, fără să publici.',description:'Explicarea fluxurilor fără execuție',resolution:'answered',steps:[],evidenceCallIds:[catalogCall.calls[0].id]}]})).mockResolvedValue(final);
+ const result=await planTurn(ctx,'Explică pașii pentru TikTok și WhatsApp, fără să publici.',[],{provider:{id:'fixture',respond},jevSelector:{select:async()=>chosen(['marketing','communications'])}});
+ expect(result.metrics.status,result.text).toBe('success');
+ expect(JSON.stringify(respond.mock.calls[1][0].input)).toContain('recommend_properties');
+ expect(JSON.stringify(respond.mock.calls[1][0].input)).toContain('video_job');
+ expect(result.actions).toHaveLength(0);
+ expect(executeAction).not.toHaveBeenCalled();
+});

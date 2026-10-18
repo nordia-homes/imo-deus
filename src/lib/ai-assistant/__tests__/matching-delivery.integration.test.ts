@@ -90,4 +90,40 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('matching, portal and mess
     await db.collection('users').doc(ctx.uid).update({ agencyId: 'other' });
     await expect(readPlanOutcomes(ctx, 'plan')).rejects.toMatchObject({ status: 403 });
   }, 30000);
+  it('keeps immutable client portal batches and excludes offers with a recorded send', async () => {
+    const { ctx, agency, matches } = await fixture();
+    const { stableId } = await import('@/lib/communications/crypto');
+    const key=randomUUID(); portals.push(key);
+    const action=actionSchema.parse({kind:'recommend_properties',contactId:'c',propertyIds:[matches[0].id],deliveryBatch:true});
+    const first:any=await executeAction(ctx,action,key);
+    expect(first.link).toContain('/portal/'+key+'?batch=');
+    expect(await executeAction(ctx,action,key)).toEqual(first);
+    await agency.collection('communicationPropertyShares').doc(stableId('c',matches[0].id)).set({messageId:'sent-first',conversationId:'conversation'});
+    const second:any=await executeAction(ctx,actionSchema.parse({...action,propertyIds:[matches[0].id,matches[1].id]}),randomUUID());
+    expect(second.propertyIds).toEqual([matches[1].id]);
+    expect(second.excludedPropertyIds).toEqual([matches[0].id]);
+    expect(second.link).not.toBe(first.link);
+    expect((await db.collection('portals').doc(key).collection('deliveryBatches').doc(first.batchId).get()).data()?.propertyIds).toEqual([matches[0].id]);
+    expect((await db.collection('portals').doc(key).collection('recommendations').get()).size).toBe(2);
+    const empty:any=await executeAction(ctx,action,randomUUID());
+    expect(empty).toMatchObject({empty:true,propertyIds:[],link:null,portalBatch:null});
+  });
+  it('binds a template to the exact client batch, checks availability and permits only the owning message after claim', async () => {
+    const {ctx,agency,matches}=await fixture();
+    const {validatePortalBatch}=await import('@/lib/communications/portal-batch');
+    const key=randomUUID();portals.push(key);
+    const receipt:any=await executeAction(ctx,actionSchema.parse({kind:'recommend_properties',contactId:'c',propertyIds:[matches[0].id],deliveryBatch:true}),key);
+    const conversation={channel:'whatsapp',contactId:'c'};
+    const input={portalBatch:receipt.portalBatch,template:{parameters:[receipt.link]}};
+    await expect(validatePortalBatch(db as any,ctx,{...conversation,contactId:'other'},input)).rejects.toThrow();
+    await expect(validatePortalBatch(db as any,ctx,conversation,{...input,template:{parameters:['https://example.com/property']}})).rejects.toThrow();
+    const claims=await validatePortalBatch(db as any,ctx,conversation,input);
+    expect(claims).toHaveLength(1);
+    await claims[0].ref.create({messageId:'same',conversationId:'conversation'});
+    await expect(validatePortalBatch(db as any,ctx,conversation,input)).rejects.toThrow();
+    await expect(validatePortalBatch(db as any,ctx,conversation,input,undefined,'same')).resolves.toHaveLength(0);
+    await agency.collection('properties').doc(matches[0].id).update({status:'Vândut'});
+    await expect(validatePortalBatch(db as any,ctx,conversation,input,undefined,'same')).rejects.toThrow();
+  });
+
 });

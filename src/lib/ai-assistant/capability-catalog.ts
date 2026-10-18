@@ -34,6 +34,7 @@ export function selectCapabilities(text: string): CapabilityId[] {
 export function toolCapabilities(name: string): CapabilityId[] {
     if (/^(read|read_related|read_field|query_records|data_catalog|capability_status|operation_contract|discover_tools|existing_read|propose_actions|goal_coverage|load_capabilities|select_context|resolve_datetime|shift_datetime|analyze_records|parallel_read|delegate_read|search_global|timeline|conversation_history|request_recovery)$/.test(name))
         return [];
+    if (name === 'workflow_catalog') return [];
     if (/matching|match_|portal/.test(name))
         return ['matching'];
     if (/viewing|task|calendar|today_review|tomorrow_order/.test(name))
@@ -65,7 +66,9 @@ export function visibleTools(names: readonly string[], modules: readonly string[
     const ranked = candidates.filter(name => !base.has(name)).map(name => ({ name, score: capabilityScore(query, name) })).filter(row => row.score > 0).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)).slice(0, rankedLimit).map(row => row.name);
     if (modules.includes('properties'))
         base.add('search_properties');
+    // Identity recovery is discoverable on demand to keep each model call compact.
     if (modules.includes('marketing') && /facebook/i.test(query)) FACEBOOK_PUBLICATION_TOOLS.forEach(name => base.add(name));
+    if (modules.some(id => ['marketing', 'matching', 'communications'].includes(id))) base.add('workflow_catalog');
     const selected = new Set([...base, ...ranked, ...requested]);
     return names.filter(name => selected.has(name));
 }

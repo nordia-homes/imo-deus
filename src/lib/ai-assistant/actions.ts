@@ -1,3 +1,5 @@
+import { buildClientPortalUrl } from '@/lib/domain-routing';
+import { stableId } from '@/lib/communications/crypto';
 import { readCalendarAvailability } from './calendar-availability';
 import { taskParticipant } from './task-participant';
 import { deferralBlocked } from './task-deferral';
@@ -52,6 +54,7 @@ export async function matchProperty(ctx: AssistantContext, propertyId: string, l
 export async function executeAction(ctx: AssistantContext, action: AssistantAction, key: string) {
   assertTaskEdit(action);
   if ((process.env.JARVIS_DISABLED_TOOLS || '').split(',').map(value => value.trim()).includes(action.kind)) throw new CommunicationError('Această acțiune este dezactivată de administrator.', 403);
+  if (action.kind === 'send_client_portal') { const { sendClientPortal } = await import('./send-client-portal'); return sendClientPortal(ctx, action, key); }
   const ledger = collectionFor(ctx, 'assistantExecutions').doc(key);
   if (action.kind === 'existing_operation') {
     const { requireTool } = await import('./registry'); requireTool(action.operation, ctx.role || '');
@@ -638,7 +641,16 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       result = { ...(action.kind === 'update_viewing' && action.appendNotes !== undefined ? { appendedNote: action.appendNotes } : {}), viewingId: ref.id, viewingDate, status, contactName: contact.name, propertyTitle: property.title, link: '/viewings' };
     } else if (action.kind === 'recommend_properties') {
       const contact = await read('contacts', action.contactId);
-      const ids = [...new Set(action.propertyIds)];
+      let ids = [...new Set(action.propertyIds)];
+      const excludedPropertyIds: string[] = [];
+      if (action.deliveryBatch) {
+        for (const id of ids) {
+          const share = await tx.get(collectionFor(ctx, 'communicationPropertyShares').doc(stableId(action.contactId, id)));
+          const legacy = await tx.get(ctx.adminDb.collection('communicationOutboundJobs').where('agencyId', '==', ctx.agencyId).where('input.matchingSelection.contactId', '==', action.contactId).where('input.matchingSelection.propertyId', '==', id).limit(1));
+          if (share.exists || !legacy.empty) excludedPropertyIds.push(id);
+        }
+        ids = ids.filter(id => !excludedPropertyIds.includes(id));
+      }
       const properties = await Promise.all(ids.map(id => read('properties', id)));
       if (properties.some(p => p.status !== 'Activ')) throw new CommunicationError('Unele proprietăți nu mai sunt active.', 409);
       const portalId = contact.portalId || key;
@@ -646,6 +658,11 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
       const portalSnap = await tx.get(portal);
       if (portalSnap.exists && (portalSnap.data()?.agencyId !== ctx.agencyId || portalSnap.data()?.contactId !== action.contactId)) throw new CommunicationError('Portalul nu aparține acestui contact.', 403);
       const previous = await Promise.all(ids.map(id => tx.get(portal.collection('recommendations').doc(id))));
+      const agencySnapshot = action.deliveryBatch ? await tx.get(ctx.adminDb.collection('agencies').doc(ctx.agencyId)) : null;
+      const batchId = action.deliveryBatch ? createHash('sha256').update(key).digest('hex') : null;
+      const relativeLink = buildClientPortalUrl({ id: ctx.agencyId, customDomain: agencySnapshot?.data()?.customDomain }, portalId);
+      const batchUrl = action.deliveryBatch && ids.length ? new URL(relativeLink + '?batch=' + batchId, ctx.appOrigin || process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://imodeus.ro').href : null;
+      if (batchUrl && !batchUrl.startsWith('https://')) throw new CommunicationError('Portalul clientului necesită HTTPS.');
       if (!portalSnap.exists) tx.create(portal, { id: portalId, agencyId: ctx.agencyId, contactId: action.contactId, contactName: contact.name, agentName: '', createdAt: now });
       const history = { ...(contact.recommendationHistory || {}) };
       ids.forEach((id, index) => {
@@ -654,7 +671,8 @@ export async function executeAction(ctx: AssistantContext, action: AssistantActi
         history[id] = recommendation;
       });
       tx.update(collectionFor(ctx, 'contacts').doc(action.contactId), { portalId, recommendationHistory: history });
-      result = { portalId, propertyIds: ids, link: `/portal/${portalId}`, note: 'Ofertele au fost adăugate în portal. Mesajul către client este o acțiune separată.' };
+      if (batchId && ids.length) tx.create(portal.collection('deliveryBatches').doc(batchId), { propertyIds: ids, createdAt: now, url: batchUrl });
+      result = { portalId, propertyIds: ids, ...(action.deliveryBatch ? { batchId: ids.length ? batchId : null, excludedPropertyIds, requestedPropertyIds: action.propertyIds, empty: !ids.length, portalBatch: ids.length ? { portalId, batchId, contactId: action.contactId } : null } : {}), link: action.deliveryBatch ? batchUrl : '/portal/' + portalId, note: 'Ofertele au fost adăugate în portal. Mesajul către client este o acțiune separată.' };
     } else if (action.kind === 'create_automation') {
       if (!process.env.AI_ASSISTANT_WORKER_SECRET) throw new CommunicationError('Worker-ul de automatizări nu este configurat. Configurează secretul și scheduler-ul înainte de activare.', 503);
       const heartbeat = await tx.get(ctx.adminDb.collection('assistantWorkerState').doc('global'));

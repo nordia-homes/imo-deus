@@ -2033,5 +2033,16 @@
     ],
     "queryFields": [],
     "note": "Aplică numai fotografia propunerii. Verifică citirea Meta și dovada persistentă înainte de confirmare. Reluarea cere o execuție originală aprobată, a aceluiași actor, cu rezultat incert."
+  },
+  "romimo_unpublish": {
+    "method": "POST",
+    "validation": "settingsSchema = z.object({\n  category: z.number().int().nonnegative(), currency: z.string().max(3),\n  county: z.string().max(150), city: z.string().max(150), area: z.string().max(150),\n  contactName: z.string().max(150), contactEmail: z.string().max(254), contactPhone: z.string().max(40),\n  validFrom: z.string().max(40), validTo: z.string().max(40),\n  fields: z.record(z.string().max(100), z.string().max(2000)).refine(v => Object.keys(v).length <= 100),\n}).strict()\n\npropertyIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/)",
+    "bodyFields": [
+      "propertyId"
+    ],
+    "queryFields": [
+      "cursor"
+    ],
+    "note": "Handler-ul și serviciul domeniului rămân autoritatea de validare. Nu executa scrieri pentru a ghici date lipsă."
   }
 }

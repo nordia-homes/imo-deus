@@ -1,3 +1,7 @@
+import { resolveCrmName } from './crm-name-resolution';
+import { propertyPublicationStatus } from './publication-status';
+import { distributionWorkflowCatalog } from './distribution-workflows';
+import { propertyPublicLink } from './property-public-link';
 import { requestRecoveryTool } from './request-recovery';
 import { prepareFacebookPublication } from './facebook-natural';
 import { readConversationHistory } from './conversation-history';
@@ -210,7 +214,11 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
     cards.push({ type: 'results', title: 'Matching CRM', source: name === 'match_contact' ? 'crm' : 'contacts', ...data } as AssistantCard);
   } else if (name === 'filter_existing_matches') {
     data = await filterResultSet(ctx, payload); cards.push({ type: 'results', title: 'Matching CRM filtrat', source: 'crm', ...data } as AssistantCard);
-  } else if (name === 'discover_tools') data = discoverTools(payload.category, payload.cursor, payload.limit, ctx.role || '');
+  } else if (name === 'resolve_crm_name') data = await resolveCrmName(ctx,payload);
+  else if (name === 'property_publication_status') data = await propertyPublicationStatus(ctx,payload);
+  else if (name === 'workflow_catalog') data = distributionWorkflowCatalog(payload.ids);
+  else if (name === 'property_public_link') data = await propertyPublicLink(ctx, payload.propertyId);
+  else if (name === 'discover_tools') data = discoverTools(payload.category, payload.cursor, payload.limit, ctx.role || '');
   else if (name === 'operation_contract') {
     requireTool(payload.operation, ctx.role || '');
     data = payload.actionKind || !Object.hasOwn(operations, payload.operation) ? inputContract(payload.operation, payload.actionKind) : operationContract(payload.operation) as Record<string, unknown>;

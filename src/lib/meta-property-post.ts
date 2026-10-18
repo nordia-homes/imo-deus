@@ -70,8 +70,9 @@ export async function publishVerifiedPropertyGallery(options: {
     const o = options, content = (row: Record<string, any>) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== 'metaFacebookPost'));
     if (!/^[0-9]+$/.test(o.pageId) || !o.destinationUrl.startsWith('https://') || o.images.length > 10 || o.images.some(i => !i.url.startsWith('https://')))
         throw Error('Galerie invalidă pentru publicare verificată.');
+    const initialRole = (await o.memberRef.get()).data()?.role;
     const expectedProperty = hash(content(o.property)), expectedGrant = hash(o.grant), requestHash = hash({ pageId: o.pageId, message: o.message, destinationUrl: o.destinationUrl, images: o.images, property: expectedProperty }), ref = o.propertyRef.collection('metaPostExecutions').doc(requestHash), db = ref.firestore;
-    const guard = async (tx: Transaction) => { const [p, g, m] = await Promise.all([tx.get(o.propertyRef), tx.get(o.grantRef), tx.get(o.memberRef)]); const row = p.data(); if (!row || row.deletedAt || row.agencyId && row.agencyId !== o.agencyId || hash(content(row)) !== expectedProperty || !g.exists || hash(g.data()) !== expectedGrant || g.data()?.agencyId !== o.agencyId || g.data()?.connected !== true || m.data()?.agencyId !== o.agencyId || m.data()?.role !== 'admin')
+    const guard = async (tx: Transaction) => { const [p, g, m] = await Promise.all([tx.get(o.propertyRef), tx.get(o.grantRef), tx.get(o.memberRef)]); const row = p.data(); if (!row || row.deletedAt || row.agencyId && row.agencyId !== o.agencyId || hash(content(row)) !== expectedProperty || !g.exists || hash(g.data()) !== expectedGrant || g.data()?.agencyId !== o.agencyId || g.data()?.connected !== true || m.data()?.agencyId !== o.agencyId || (!['admin','agent'].includes(m.data()?.role) || m.data()?.role !== initialRole))
         throw Error('Proprietatea, conexiunea sau accesul s-a schimbat.'); };
     const saved = await db.runTransaction(async (tx) => { await guard(tx); const state = await tx.get(ref); if (!state.exists) {
         const pending = await tx.get(o.propertyRef.collection('metaPostExecutions').where('state', '==', 'pending'));

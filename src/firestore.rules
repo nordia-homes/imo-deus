@@ -361,6 +361,11 @@ service cloud.firestore {
       // Deletes must read the existing document because request.resource is null on delete.
       allow delete: if isSignedIn() && isUserInAgency(resource.data.agencyId);
 
+      match /deliveryBatches/{batchId} {
+        allow get: if true;
+        allow list, write: if false;
+      }
+
       // --- Recommendations Sub-collection ---
       match /recommendations/{recommendationId} {
         // Publicly readable for the client with the portal link.

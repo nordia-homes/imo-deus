@@ -332,7 +332,8 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       expect(result.blocked).toBe(false); expect(result.actions).toEqual([]); expect(result.results).toHaveLength(2);
       expect((await agency.collection('properties').doc('p').get()).data()?.price).toBe(110000);
       expect((await agency.collection('contacts').doc('c').get()).data()?.phone).toBe('0700000002');
-      expect((await executeSafePrefix(ctx, 'crm-command', actions, prompt)).results).toEqual(result.results);
+      const replay = await executeSafePrefix(ctx, 'crm-command', actions, prompt);
+        expect(replay.results).toEqual(result.results.map(row => ({...row,reused:true})));
       expect((await agency.collection('assistantPolicies').doc(ctx.uid).get()).exists).toBe(false);
     } finally { await profile.delete(); }
   });
@@ -349,7 +350,7 @@ describe.skipIf(!host)('calendar concurrency on actual Firestore transactions', 
       const result = await executeSafePrefix(ctx, 'append-note', [action], 'Adaugă o notă la vizionare.');
       expect(result.blocked).toBe(false); expect(result.actions).toEqual([]);
       expect((await viewing.get()).data()).toEqual({ ...original, updatedAt: expect.any(String), notes: 'Nota inițială.\nRevine cu familia.' });
-      expect((await executeSafePrefix(ctx, 'append-note', [action], 'Adaugă o notă la vizionare.')).results).toEqual(result.results);
+      expect((await executeSafePrefix(ctx, 'append-note', [action], 'Adaugă o notă la vizionare.')).results).toEqual(result.results.map(row => ({...row,reused:true})));
       expect((await viewing.get()).data()?.notes).toBe('Nota inițială.\nRevine cu familia.');
       await expect(executeAction(ctx, { ...action, appendNotes: 'Altă notă.' }, 'stale-note')).rejects.toThrow('modificat');
       await expect(executeAction(ctx, { ...action, expectedUpdatedAt: undefined, notes: 'Înlocuire' }, 'conflicting-note')).rejects.toThrow('nu ambele');

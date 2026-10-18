@@ -135,10 +135,11 @@ export async function executeSafePrefix(ctx: AssistantContext, requestId: string
       // A prohibition, unresolved condition or mismatched binding applies to ALL
       // operations, including those that still require concrete send approvals.
       const semantic = semanticActionDecision(semanticAuthority, ctx.prospectingRequest?.prompt || prompt, action, results.length + 1);
-      const eligible = requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action);
+      const organicPage = action.kind === 'existing_operation' && action.operation === 'meta_property_post';
+      const eligible = (action.kind === 'send_client_portal' || organicPage) && semantic === true || requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action);
       // Only these already scoped handlers replace lexical intent. External sends
       // and provider approvals retain their existing preparation/approval checks.
-      const semanticIntentSupported = action.kind !== 'existing_operation' || facebookImmediateAction(action) || facebookControlAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action);
+      const semanticIntentSupported = organicPage || action.kind !== 'existing_operation' || facebookImmediateAction(action) || facebookControlAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action);
       if (!eligible || semantic === false || !(semantic === true && semanticIntentSupported || explicitlyRequestedSafeAction(action, prompt))) break;
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');

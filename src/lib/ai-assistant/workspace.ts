@@ -47,6 +47,7 @@ import { failureCategory } from './failure';
 import { bindCalendarRevisions } from './calendar-revisions';
 import { bindAgencyRevisions } from './agency-revisions';
 import { bindBusinessRevisions } from './business-revisions';
+import { independentStep } from './independent-step';
 import { continuePlanRevision } from './plan-revisions';
 import { summarizeOutcome, type GoalContract } from './outcome';
 import type { GoalCoverage } from './goal-coverage';
@@ -191,7 +192,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     if (autonomous.results.length || autonomous.blocked) {
       const hasFacebookCreation = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'facebook_job_create');
       const hasSocialAction = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'social_reply' || (step.result as Record<string, unknown> | undefined)?.operation === 'social_publish' || (step.result as Record<string, unknown> | undefined)?.operation === 'social_destination_remove');
-      const hasOutbound = autonomous.results.some(step => (step.result as Record<string, unknown> | undefined)?.operation === 'message_send');
+      const hasOutbound = autonomous.results.some(step => step.kind === 'send_client_portal' && !(step.result as Record<string, unknown> | undefined)?.empty || (step.result as Record<string, unknown> | undefined)?.operation === 'message_send');
       result.text = `Am finalizat ${autonomous.results.length - rejectedMessages.length - autonomous.results.filter(step=>step.reused).length} pași din cererea ta.${autonomous.results.some(step=>step.reused) ? " Am verificat și pașii salvați anterior, fără să îi repet." : ""} ${autonomous.blocked ? 'Execuția a fost oprită; verifică înregistrările înainte de reluare. Pașii următori nu au fost executați.' : result.actions.length ? 'Planul rămas necesită confirmare.' : hasFacebookCreation ? 'Cererea de publicare a fost înregistrată pentru automatizarea Facebook, cu descrierea și fotografiile din CRM. Poți urmări progresul în jobul Facebook; crearea jobului nu înseamnă că postările sunt deja publicate în grupuri.' : hasSocialAction ? 'Starea acțiunii sociale este descrisă mai sus.' : hasOutbound ? 'Starea mesajelor este disponibilă în Inbox.' : 'Nu au fost trimise mesaje sau publicate anunțuri.'}`;
       const confirmation = executionConfirmation(autonomous.results);
       if (confirmation) result.text = `${confirmation}\n${result.text}`;
@@ -354,7 +355,7 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       }
       // New plans verify committed asynchronous effects before advancing. Legacy
       // plans retain their original execution semantics; no implicit migration.
-      if (data.goal?.schemaVersion === 1 && results.length) {
+      if (data.goal?.schemaVersion === 1 && results.length && !independentStep(data, index)) {
         const { readPlanOutcomes } = await import('./plan-outcomes');
         const verification = await readPlanOutcomes(ctx, id);
         const outcome = verification.outcome;
@@ -378,7 +379,12 @@ export async function runPlan(ctx: AssistantContext, id: string, cancel = false,
       // it prevent execution; later controls stop after this in-flight step.
       const gate = await transition({ lastStartedStep: index + 1 });
       if (gate.status === 'paused' || gate.status === 'cancelled' || gate.status === 'failed') return { ...data, ...gate, results };
-      const result = await executeAction(ctx, resolved, `${id}-${index}`);
+      let result;
+      try { result = await executeAction(ctx, resolved, id + '-' + index); }
+      catch (error) {
+        if (!independentStep(data,index+1)) throw error;
+        result = { independentFailure: true, executionState: 'unknown', completionSatisfied: false, note: 'Rezultatul acestui canal necesită verificare. Continui numai acțiunile declarate independente; operația nu este retrimisă.' };
+      }
       accessRefs.push(...actionReferences([resolved]));
       if (typeof result?.conversationId === 'string') accessRefs.push({ resource: 'conversations', id: result.conversationId });
       results.push({ step: index + 1, kind: action.kind, result });

@@ -280,6 +280,33 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
     const action = actions[0]; if (action.kind !== 'existing_operation') throw new Error('Wrong action');
     return { ...f, token, consent, budget, templates, input: { ...action.body, requestId: randomUUID() } };
   }
+  it('client portal complete workflow creates conversation, sends only new batches and preserves replay through the real queue',async()=>{
+    const f=await marketingFixture(),agency=db.collection('agencies').doc(f.actor.agencyId),ctx={...f.actor,adminDb:db} as any;
+    const {executeAction}=await import('../actions');
+    const {actionSchema}=await import('../contracts');
+    const {readPlanOutcomes}=await import('../plan-outcomes');
+    await agency.collection('contacts').doc('buyer').set({name:'Matei Alin',phone:'0722123456',contactType:'Cumparator'});
+    await agency.collection('properties').doc('p1').set({title:'Cișmigiu',status:'Activ'});
+    await agency.collection('properties').doc('p2').set({title:'Titan',status:'Activ'});
+    f.templates.data[0].name='oferte_client';f.templates.data[0].components[0].text='Ofertele noi sunt în portalul dumneavoastră: {{1}}';
+    const action=actionSchema.parse({kind:'send_client_portal',contactId:'buyer',propertyIds:['p1'],connectionId:f.conversation.connectionId,template:{name:'oferte_client',language:'ro',parameters:['{{portal_url}}']}});
+    const key=randomUUID();
+    const first:any=await executeAction(ctx,action,key);
+    expect(first.executionState).toBe('queued');expect(first.propertyIds).toEqual(['p1']);
+    expect(await executeAction(ctx,action,key)).toEqual(first);
+    await drainOutbound(db as any);expect(templateSends()).toHaveLength(1);
+    expect(JSON.stringify(templateSends()[0])).toContain(first.link);
+    const second:any=await executeAction(ctx,actionSchema.parse({...action,propertyIds:['p1','p2']}),randomUUID());
+    expect(second.propertyIds).toEqual(['p2']);expect(second.link).not.toBe(first.link);
+    await drainOutbound(db as any);expect(templateSends()).toHaveLength(2);
+    const empty:any=await executeAction(ctx,action,randomUUID());expect(empty.empty).toBe(true);expect(templateSends()).toHaveLength(2);
+    const job=await db.collection('communicationOutboundJobs').doc(first.messageId).get();
+    expect(job.data()?.input.portalBatch.batchId).toBe(first.batchId);
+    await agency.collection('assistantPlans').doc(key).set({ownerId:ctx.uid,status:'completed',actions:[action],results:[{step:1,kind:action.kind,result:first}]});
+    await agency.collection('conversations').doc(first.conversationId).collection('messages').doc(first.messageId).update({status:'delivered',externalId:'provider-confirmed'});
+    expect((await readPlanOutcomes(ctx,key)).rows[0]).toMatchObject({businessStatus:'delivered',completionSatisfied:true});
+    await db.recursiveDelete(db.collection('portals').doc(first.portalId));await f.rate.delete();
+  },60000);
   const templateSends = () => mocks.graph.mock.calls.filter(call => /\/messages$/.test(call[0]));
   for (const scenarioId of ['master-0281', 'master-0314', 'master-0315']) it.skipIf(process.env.JARVIS_WHATSAPP_PROSPECTING_LIVE !== 'true')(`live prospecting ${scenarioId}: reads the actual queued, accepted, delivered and read message without resending`, async () => {
     const dotenv = await import('dotenv'); dotenv.config({ path: '.env.local', quiet: true });
@@ -1128,7 +1155,8 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('approved recipient throug
       expect(executionConfirmation(executed.results)).toContain('Mesaj nepus în coadă');
       expect((await f.agency.collection('assistantExecutions').get()).docs.map(doc => doc.data().status).sort()).toEqual(['completed', 'completed', 'rejected']);
       const replay = await executeSafePrefix(f.ctx, requestId, actions, f.request.prompt);
-      expect(replay.results).toEqual(executed.results);
+      expect(replay.results.map(({ reused, ...receipt }) => receipt)).toEqual(executed.results.map(({ reused, ...receipt }) => receipt));
+      expect(replay.results.filter(receipt => receipt.result.executionState !== 'failed').every(receipt => receipt.reused === true)).toBe(true);
       expect((await db.collection('communicationOutboundJobs').where('agencyId', '==', f.actor.agencyId).get()).size).toBe(2);
       await drainOutbound(db as any); await drainOutbound(db as any);
       expect(templateSends().map(call => call[2].to).sort()).toEqual(['40722555500', '40722555502']);

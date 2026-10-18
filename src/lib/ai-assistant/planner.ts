@@ -127,7 +127,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     } catch { return finish('Nu am putut verifica prospectul selectat. Reîncearcă solicitarea.', 'unavailable'); }
   }
   const { propertyShareRequest, propertyShareExecutionPrompt, preparePropertyShares } = await import('./property-share');
-  if (propertyShareRequest(propertyShareExecutionPrompt(prompt, history))) {
+  if (propertyShareRequest(propertyShareExecutionPrompt(prompt, history)) === 'duplicates') {
     try {
       const prepared = await preparePropertyShares(ctx, prompt, history);
       if (!prepared) throw new Error('Selecție indisponibilă.');
