@@ -5,21 +5,21 @@
   "rows": [
     {
       "prompt": "Salut",
-      "baselineBytes": 99497,
-      "modularBytes": 17139,
-      "reductionPercent": 82.8
+      "baselineBytes": 100137,
+      "modularBytes": 17779,
+      "reductionPercent": 82.2
     },
     {
       "prompt": "Găsește apartamente în Titan sub 130000 euro",
-      "baselineBytes": 99539,
-      "modularBytes": 28508,
-      "reductionPercent": 71.4
+      "baselineBytes": 100179,
+      "modularBytes": 29148,
+      "reductionPercent": 70.9
     },
     {
       "prompt": "Programează o vizionare pentru apartamentul Cișmigiu cu Matei Alin mâine la 07:30",
-      "baselineBytes": 99576,
-      "modularBytes": 30710,
-      "reductionPercent": 69.2
+      "baselineBytes": 100216,
+      "modularBytes": 31350,
+      "reductionPercent": 68.7
     }
   ]
 }

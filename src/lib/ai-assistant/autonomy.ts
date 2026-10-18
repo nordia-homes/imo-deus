@@ -130,12 +130,14 @@ export async function executeSafePrefix(ctx: AssistantContext, requestId: string
   const independentProspecting = actions.length > 0 && actions.every(action => action.kind === 'existing_operation' && action.operation === 'message_send' && requestAuthorizedCrmAction(action) && explicitlyRequestedSafeAction(action, prompt)) && !JSON.stringify(actions).includes('@step:');
   try {
     for (const action of actions.slice(0, MAX_PLAN_ACTIONS)) {
-      // Semantic interpretation replaces lexical verbs only for already authorized
-      // CRM actions and validated immediate Facebook jobs. Other external operations
-      // retain their concrete approvals. The job service still validates all inputs.
-      const semantic = (action.kind !== 'existing_operation' || facebookImmediateAction(action)) && requestAuthorizedCrmAction(action)
-        ? semanticActionDecision(semanticAuthority, ctx.prospectingRequest?.prompt || prompt, action, results.length + 1) : undefined;
-      if (!(requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action)) || !(semantic ?? explicitlyRequestedSafeAction(action, prompt))) break;
+      // A prohibition, unresolved condition or mismatched binding applies to ALL
+      // operations, including those that still require concrete send approvals.
+      const semantic = semanticActionDecision(semanticAuthority, ctx.prospectingRequest?.prompt || prompt, action, results.length + 1);
+      const eligible = requestAuthorizedCrmAction(action) || policy.enabled && (results.length < 4 || action.kind === 'update_task' && action.deferNonUrgent) && safeAutonomousAction(action);
+      // Only these already scoped handlers replace lexical intent. External sends
+      // and provider approvals retain their existing preparation/approval checks.
+      const semanticIntentSupported = action.kind !== 'existing_operation' || facebookImmediateAction(action) || facebookControlAction(action) || simpleConversationUpdate(action) || simpleConversationEdit(action);
+      if (!eligible || semantic === false || !(semantic === true && semanticIntentSupported || explicitlyRequestedSafeAction(action, prompt))) break;
       const member = (await ctx.adminDb.collection('users').doc(ctx.uid).get()).data();
       if (member?.agencyId !== ctx.agencyId || member?.role !== ctx.role) throw new Error('Acces revocat.');
       const resolved = continuePlanRevision(resolveAction(action, results), results);

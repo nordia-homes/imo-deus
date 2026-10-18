@@ -1281,3 +1281,8 @@ Acest lot nu rezumă istoricul pentru a remedia bugetul. Recuperarea arbitrară 
 ## Actualizare 2026-10-18 — migrare semantică în curs
 
 Vezi [implementarea semantică](JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md). Bugetul cumulat, recuperarea istoricului, intenția structurată CRM/Facebook, checkpoint-ul anterior execuției și selecțiile CRM prin denumiri sunt implementate local. Migrarea tuturor fluxurilor, continuarea durabilă în interiorul planificării și evaluarea limbajului real rămân deschise. Nu se modifică numărul scenariilor certificate și nu se declară finalizarea masterplanului.
+
+
+### Semantic continuation — 18 October 2026
+
+Implemented locally: authorized catalog fallback for unmatched wording; real registry descriptions; compact schema expansion before domain eviction; bounded original-history search with Romanian normalization and ACL revalidation; semantic denials across all action families; semantic intent for scoped Facebook controls and conversation edits. Firestore integration confirms cancellation and idempotent replay. These changes do not certify arbitrary language, all 1000 examples or full manual parity, and are not deployed. Current static parity inventory: 181 operations / 41 native actions / 46 UI mutation files. Remaining named-choice, planner continuation and real-language verification work is tracked in JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.

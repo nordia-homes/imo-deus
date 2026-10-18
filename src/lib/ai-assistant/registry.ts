@@ -67,11 +67,22 @@ export function requireTool(name: string, role: string) {
   return tool;
 }
 export function discoverTools(category = '', cursor = 0, limit = 12, role = 'agent') {
-  const catalog = [...Object.entries(core).map(([id, [, , description]]) => ({ id, method: 'TOOL', readOnly: !['propose_actions', 'remember_preference', 'forget_preference'].includes(id), description, params: [], external: false })), ...operationCatalog(), ...Object.keys(actionToolSchemas).map(id => ({ id, method: 'ACTION', readOnly: false, description: `Acțiune CRM ${id.replaceAll('_', ' ')}`, params: [], external: false }))]
-    .filter(op => { try { requireTool(op.id, role); return true; } catch { return false; } })
-    .map(op => ({ ...op, score: category ? (toolCapabilities(op.id).includes(category as any) ? 100 : capabilityScore(category, op.id, op.description)) : 0 }))
-    .filter(op => !category || op.score > 0).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
-  return { tools: catalog.slice(cursor, cursor + limit), nextCursor: cursor + limit < catalog.length ? cursor + limit : null, total: catalog.length };
+  const operationMetadata = new Map(operationCatalog().map(op => [op.id, op]));
+  // Use the actual registry as the single source: descriptions and names must
+  // match the handler that will execute, without duplicate catalog entries.
+  const authorized = [...toolRegistry.values()].filter(tool => { try { requireTool(tool.name, role); return true; } catch { return false; } });
+  const ranked = authorized.map(tool => ({
+    ...(operationMetadata.get(tool.name) || { method: Object.hasOwn(actionToolSchemas, tool.name) ? 'ACTION' : 'TOOL', readOnly: tool.riskLevel === 'READ', params: [], external: false }),
+    id: tool.name, description: tool.description, capabilities: toolCapabilities(tool.name),
+    score: category ? (toolCapabilities(tool.name).includes(category as any) ? 100 : capabilityScore(category, tool.name, tool.description)) : 0,
+  })).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+  const matches = category ? ranked.filter(tool => tool.score > 0) : ranked;
+  const fallback = Boolean(category && !matches.length);
+  const catalog = fallback ? ranked : matches;
+  return { tools: catalog.slice(cursor, cursor + limit), nextCursor: cursor + limit < catalog.length ? cursor + limit : null, total: catalog.length,
+    matching: fallback ? 'authorized_catalog_fallback' : category ? 'lexical_or_domain_ranking' : 'authorized_catalog',
+    ...(fallback ? { instruction: 'Formularea nu a produs potriviri lexicale. Acest lucru NU înseamnă că operația lipsește. Rezultatele sunt catalogul autorizat, fără clasament de relevanță. Citește descrierile, alege domeniul potrivit sau continuă nextCursor; cere operation_contract înainte de utilizare.' } : {}),
+  };
 }
 export function actionRisk(action: z.infer<typeof actionSchema>): RiskLevel {
   if (action.kind === 'update_property' && action.patch.price !== undefined) return 'SENSITIVE';

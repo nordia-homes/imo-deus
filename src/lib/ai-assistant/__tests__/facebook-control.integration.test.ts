@@ -1,3 +1,6 @@
+import { executeSafePrefix } from '../autonomy';
+import { bindSemanticAuthority } from '../semantic-authority';
+import type { AssistantAction } from '../contracts';
 import { withAssistantPrincipal, INTERNAL_PRINCIPAL_HEADER } from '../principal';
 import { randomUUID } from 'node:crypto';
 import { Firestore } from '@google-cloud/firestore';
@@ -41,6 +44,29 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook controls through
   }
   function request(method: string, body: any) { return new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs/job', { method, headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) }); }
   function moveBody(f: any) { return { connectionId: 'connection', groupUrls: f.raw.groups.map((g: any) => g.url), scheduledAt: tomorrowBucharest(new Date()) + 'T05:00:00.000Z', expectedUpdatedAt: f.raw.updatedAt }; }
+  it('executes a semantic cancellation through real handlers and replays without another effect', async () => {
+    const f = await fixture();
+    const prompt = 'M-am răzgândit în privința postării programate; renunț la ea.';
+    const action: AssistantAction = { kind: 'existing_operation', operation: 'facebook_job_remove', params: { jobId: 'job' }, query: {}, body: { expectedUpdatedAt: f.raw.updatedAt } };
+    const authority = bindSemanticAuthority(prompt, [action], { requirements: [{ id: 'cancel', sourceQuote: prompt, description: 'Anulare postare programată', resolution: 'planned', steps: [1], evidenceCallIds: [], execution: { mode: 'execute', conditions: [] } }] });
+    const first = await executeSafePrefix(f.ctx, 'semantic-cancel', [action], prompt, authority);
+    expect(first.blocked).toBe(false); expect(first.results).toHaveLength(1);
+    expect((await f.job.get()).data()?.status).toBe('cancelled');
+    const saved = (await f.job.get()).data();
+    const replay = await executeSafePrefix(f.ctx, 'semantic-cancel', [action], prompt, authority);
+    expect(replay.results).toEqual(first.results);
+    expect((await f.job.get()).data()).toEqual(saved);
+    expect(mocks.runner).not.toHaveBeenCalled(); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('leaves the real job unchanged for prepare-only semantic cancellation', async () => {
+    const f = await fixture();
+    const prompt = 'Anulează jobul dacă fluxul suportă anularea.';
+    const action: AssistantAction = { kind: 'existing_operation', operation: 'facebook_job_remove', params: { jobId: 'job' }, query: {}, body: { expectedUpdatedAt: f.raw.updatedAt } };
+    const authority = bindSemanticAuthority(prompt, [action], { requirements: [{ id: 'cancel', sourceQuote: prompt, description: 'Propunere', resolution: 'planned', steps: [1], evidenceCallIds: [], execution: { mode: 'prepare', conditions: [] } }] });
+    expect((await executeSafePrefix(f.ctx, 'semantic-prepare', [action], prompt, authority)).results).toHaveLength(0);
+    expect((await f.job.get()).data()?.status).toBe('scheduled');
+    expect(mocks.runner).not.toHaveBeenCalled(); expect(mocks.fetch).not.toHaveBeenCalled();
+  });
   it.each(['pending', 'unknown'])('refuses reschedule for %s cloud dispatch without contacting runner', async dispatchState => {
     const f = await fixture('cloud'); await f.job.update({ dispatchState });
     const before = (await f.job.get()).data();

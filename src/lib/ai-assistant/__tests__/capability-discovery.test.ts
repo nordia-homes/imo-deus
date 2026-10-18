@@ -21,3 +21,28 @@ it('discovers specialized internal tools by domain instead of requiring their ex
  expect(page.tools.some(tool=>tool.id==='calendar_availability')).toBe(true);
  expect(page.tools.some(tool=>tool.id==='viewing_confirmation_draft')).toBe(true);
 });
+
+import { toolRegistry, requireTool } from '../registry';
+it('keeps the complete authorized catalog discoverable when wording has no lexical overlap',()=>{
+ const first=discoverTools('xyzzunmatched',0,20,'agent');
+ expect(first.matching).toBe('authorized_catalog_fallback');
+ const ids:string[]=[];
+ let cursor:number|null=0;
+ while(cursor!==null){const page=discoverTools('xyzzunmatched',cursor,20,'agent');ids.push(...page.tools.map(tool=>tool.id));cursor=page.nextCursor;}
+ const expected=[...toolRegistry.keys()].filter(id=>{try{requireTool(id,'agent');return true;}catch{return false;}});
+ expect(ids.sort()).toEqual(expected.sort());expect(new Set(ids).size).toBe(ids.length);
+ expect(ids).not.toContain('meta_campaign_publish');
+});
+it('uses actual registry descriptions and keeps category search explicitly lexical',()=>{
+ const page=discoverTools('calendar',0,20,'agent');
+ expect(page.matching).toBe('lexical_or_domain_ranking');
+ for(const tool of page.tools)expect(tool.description).toBe(toolRegistry.get(tool.id)!.description);
+});
+
+import { visibleTools } from '../capability-catalog';
+it('fits requested schemas without losing discovery or loading unrelated ranked tools',()=>{
+ const names=['read','discover_tools','operation_contract','load_capabilities','goal_coverage','propose_actions','schedule_viewing','update_viewing','create_task'];
+ const compact=visibleTools(names,['calendar'],'modifică vizionarea',['schedule_viewing'],0);
+ expect(compact).toContain('schedule_viewing');expect(compact).toContain('discover_tools');expect(compact).toContain('propose_actions');
+ expect(compact).not.toContain('update_viewing');expect(compact).not.toContain('create_task');
+});

@@ -679,7 +679,10 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
     if (requested.some(name=>!available.includes(name))) throw new Error('Unealtă neautorizată în acest flux.');
     let next = expandCapabilities([...modules, ...ids, ...requested.flatMap(toolCapabilities)]);
     let names = visibleTools(available, next, contextHint, requested), candidate = compose(next, names), definitions = names.map(functionDefinition);
-    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { next=expandCapabilities([...ids,...requested.flatMap(toolCapabilities)]);names=visibleTools(available,next,contextHint,requested);candidate=compose(next,names);definitions=names.map(functionDefinition); }
+    // Drop speculative schemas before evicting domain instructions. The requested
+    // tools and base discovery remain available; prepared actions stay unchanged.
+    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { names=visibleTools(available,next,contextHint,requested,0);candidate=compose(next,names);definitions=names.map(functionDefinition); }
+    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { next=expandCapabilities([...ids,...requested.flatMap(toolCapabilities)]);names=visibleTools(available,next,contextHint,requested,0);candidate=compose(next,names);definitions=names.map(functionDefinition); }
     if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) return { loaded: false, reason: 'Contextul modulelor este prea mare; folosește operation_contract și uneltele generice pentru pasul concret.', modules };
     const added = next.filter(id=>!modules.includes(id)); modules=next;displayed=names;instructions=candidate;tools=definitions;
     if(metrics.capabilityRouting){metrics.capabilityRouting.loaded=modules;metrics.capabilityRouting.expansions+=added.length?1:0;}

@@ -191,3 +191,35 @@ it('does not let a legacy imperative override draft-only semantic intent', async
  expect(result.results).toHaveLength(0);
  expect(executeAction).not.toHaveBeenCalled();
 });
+
+function intent(prompt:string,action:AssistantAction,mode:'execute'|'prepare'|'prohibited') {
+ return bindSemanticAuthority(prompt,[action],{requirements:[{id:'r',sourceQuote:prompt,description:'Cerere',resolution:'planned',steps:[1],evidenceCallIds:[],execution:{mode,conditions:[]}}]});
+}
+it.each(['prepare','prohibited'] as const)('honors %s semantic intent even for externally approved messages',async mode=>{
+ const action:AssistantAction={kind:'existing_operation',operation:'message_send',params:{conversationId:'c'},query:{},body:{assistantDraftId:'d',assistantSessionId:'s'}};
+ const prompt='Trimite mesajul aprobat.';
+ const result=await runSafePrefix(ctx(),'external-denied',[action],prompt,intent(prompt,action,mode));
+ expect(result.results).toHaveLength(0);expect(executeAction).not.toHaveBeenCalled();
+});
+it.each([
+ ['Aici am terminat discuția, pune-o la cele rezolvate.',{kind:'existing_operation',operation:'conversation_update',params:{conversationId:'c'},query:{},body:{version:3,status:'resolved'}}],
+ ['Reține în discuție că proprietarul revine joi.',{kind:'existing_operation',operation:'conversation_note',params:{conversationId:'c'},query:{},body:{version:3,text:'Proprietarul revine joi.'}}],
+ ['Renunț la această postare programată.',{kind:'existing_operation',operation:'facebook_job_remove',params:{jobId:'j'},query:{},body:{expectedUpdatedAt:'2026-10-18T10:00:00.000Z'}}],
+ ] as const)('consumes semantic intent through scoped handlers: %s',async(prompt,input)=>{
+ const action=input as AssistantAction;
+ const result=await runSafePrefix(ctx(),'semantic-scoped',[action],prompt,intent(prompt,action,'execute'));
+ expect(result.results).toHaveLength(1);expect(executeAction).toHaveBeenCalledTimes(1);
+});
+it('uses semantic intent for opted-in tasks without granting that opt-in',async()=>{
+ const prompt='Amintește-mi să sun mâine.';
+ expect((await runSafePrefix(ctx(),'task-enabled',[task],prompt,intent(prompt,task,'execute'))).results).toHaveLength(1);
+ vi.mocked(executeAction).mockClear();
+ const context=ctx();(context as any).policy.enabled=false;
+ expect((await runSafePrefix(context,'task-disabled',[task],prompt,intent(prompt,task,'execute'))).results).toHaveLength(0);
+ expect(executeAction).not.toHaveBeenCalled();
+});
+it('does not use semantic intent to bypass unprepared external sends',async()=>{
+ const prompt='Aș dori să primească oferta.';
+ expect((await runSafePrefix(ctx(),'unprepared',[message],prompt,intent(prompt,message,'execute'))).results).toHaveLength(0);
+ expect(executeAction).not.toHaveBeenCalled();
+});
