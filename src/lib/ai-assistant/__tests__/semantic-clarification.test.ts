@@ -1,5 +1,5 @@
 import { expect,it } from 'vitest';
-import { retainSemanticChoices } from '../semantic-clarification';
+import { retainSemanticChoices, deferredSemanticCard } from '../semantic-clarification';
 import type { AssistantCard,AssistantMessage } from '../contracts';
 const card=(id:string,state=false):AssistantCard=>({type:'data',source:state?'facebookSemanticRequest':'facebookConnections',title:'Conturi',choiceOfferId:id,...(!state?{choiceSource:'facebookSemanticAccount' as const}:{}),rows:state?[{prompt:'original',input:{propertyId:id}}]:[{id:'same',label:'Contul agenției'}]});
 it('retains only unanswered offers with previous selections and collapses exact repeated offers',()=>{
@@ -13,4 +13,15 @@ it('retains only unanswered offers with previous selections and collapses exact 
 it('does not carry old offers into an unrelated request',()=>{
  const previous={cards:[card('a')]} as AssistantMessage;
  expect(retainSemanticChoices([],previous,undefined,'new request')).toEqual([]);
+});
+
+it('preserves every deferred action and its conditions without an executable authority',()=>{
+ const actions=Array.from({length:8},(_,i)=>({kind:'create_contact' as const,name:'Cumpărător '+i,phone:'0712345678'}));
+ const coverage={requirements:[{execution:{mode:'prepare',conditions:[{sourceQuote:'nu publica încă'}]}}]};
+ const card=deferredSemanticCard(actions,undefined,coverage)!;
+ expect(card.rows[0]).toEqual({actions,goalCoverage:coverage});
+ const previous={cards:[card]} as AssistantMessage;
+ expect(deferredSemanticCard(actions,previous,coverage)!.rows).toHaveLength(1);
+ expect(deferredSemanticCard([],previous,undefined)!.rows[0].actions).toHaveLength(8);
+ expect(deferredSemanticCard([],undefined,undefined)).toBeUndefined();
 });

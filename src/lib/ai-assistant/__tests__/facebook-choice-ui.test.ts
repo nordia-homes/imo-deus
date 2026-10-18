@@ -28,3 +28,7 @@ it('offers named group checkboxes and an initially disabled batch action',()=>{
 it('does not expose internal semantic continuation data in the panel',()=>{
  expect(render({type:'data',source:'facebookSemanticRequest',title:'intern',rows:[{id:'pending',prompt:'private original',input:{propertyId:'opaque'}}]})).toBe('');
 });
+
+it('does not render deferred candidate actions as executable panel controls',()=>{
+ expect(render({type:'data',source:'semanticDeferredActions',title:'intern',rows:[{actions:[{kind:'create_contact',name:'Nume privat'}]}]})).toBe('');
+});

@@ -1311,3 +1311,8 @@ Preflight property/account clarifications now retain the full original request a
 ### Simultaneous semantic offers — 18 October 2026
 
 Distinct offer metadata now binds semantic property/account choices to the correct saved preflight, even when two properties offer the same accounts. Account cards show property names. No-action clarification responses preserve unanswered siblings and earlier selections. Two successive selections through application chat were exercised with real local preflights and a simulated model; no publishing was attempted. Mixed action/clarification goal reconciliation, planner-loop persistence and live-model completion remain open. Details and rollback are in JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md; no deployment or corpus certification increase.
+
+
+### Mixed prepared actions and clarification — 18 October 2026
+
+Unresolved semantic choices now retain candidate actions without exposing an executable partial plan. Candidates, conditions and resource references survive checkpoint persistence; selections return them to planning for fresh validation. Evidence: 41 unit/component checks and 53 emulator checks, including eight deferred actions and idempotent request replay through the real workspace with a controlled planner. Live completion after re-planning, earlier completed-effect reconciliation and planner-loop checkpoints remain open. No deployment or corpus certification increase. Details and rollback: JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.

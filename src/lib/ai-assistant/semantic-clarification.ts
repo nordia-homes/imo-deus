@@ -1,4 +1,4 @@
-import type { AssistantCard, AssistantMessage } from './contracts';
+import type { AssistantAction, AssistantCard, AssistantMessage } from './contracts';
 import type { NamedChoice } from './named-choice-contract';
 
 export function retainSemanticChoices(cards: AssistantCard[], previous: AssistantMessage | undefined, choice: NamedChoice | undefined, continuedPrompt: string) {
@@ -11,4 +11,15 @@ export function retainSemanticChoices(cards: AssistantCard[], previous: Assistan
   if(seen.has(key)) return false;
   seen.add(key);return true;
  });
+}
+
+// Candidates remain data, never an executable plan or reusable authority.
+export function deferredSemanticCard(actions: AssistantAction[], previous: AssistantMessage | undefined, goalCoverage: unknown): AssistantCard | undefined {
+ const rows = [
+  ...(previous?.cards?.filter(card=>card.source==='semanticDeferredActions').flatMap(card=>card.rows) || []),
+  ...(actions.length ? [{actions,goalCoverage:goalCoverage || null}] : []),
+ ];
+ if (!rows.length) return undefined;
+ const seen=new Set<string>();
+ return {type:'data',source:'semanticDeferredActions',title:'Pași pregătiți, neexecutați',rows:rows.filter(row=>{const key=JSON.stringify(row);if(seen.has(key))return false;seen.add(key);return true;}),complete:true};
 }

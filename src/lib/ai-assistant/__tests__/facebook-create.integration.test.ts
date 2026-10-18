@@ -1,3 +1,4 @@
+import * as plannerModule from '../planner';
 import { dispatchTool } from '../tool-dispatch';
 import { OpenAIAdapter } from '../provider';
 import { namedChoiceText, namedGroupChoiceText } from '../named-choice-contract';
@@ -96,6 +97,31 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       expect((await f.jobs.get()).empty).toBe(true);expect(mocks.runner).not.toHaveBeenCalled();expect(mocks.fetch).not.toHaveBeenCalled();
       const saved=(await session.collection('messages').doc(input.requestId+'-user').get()).data();expect(saved?.text).toBe(input.prompt);expect(saved?.text).not.toContain(selected.id);
     } finally {model.mockRestore();vi.unstubAllEnvs();}
+  });
+  it('checkpoints mixed prepared actions without executing or exposing a partial plan, then restores them to planning',async()=>{
+    const f=await fixture(),sessionId=randomUUID();
+    await f.property.update({defaultFacebookConnectionId:null});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Al doilea cont'});
+    const original='Adaugă cumpărătorii și pregătește publicarea apartamentului Cișmigiu.';
+    const offer=await dispatchTool('facebook_publication_preflight',f.ctx,{query:'Cișmigiu',groupUrls:f.body.groupUrls},original,{});
+    const actions=Array.from({length:8},(_,i)=>({kind:'create_contact' as const,name:'Cumpărător '+i,phone:'0712345678'}));
+    const fakeResult={text:'Plan pregătit.',cards:offer.cards,actions,accessRefs:offer.refs,metrics:{status:'success',models:[],tools:[],elapsedMs:1}};
+    const planner=vi.spyOn(plannerModule,'planTurn').mockResolvedValueOnce(fakeResult as any).mockResolvedValue({text:'Date recuperate.',cards:[],actions:[],accessRefs:offer.refs,metrics:{status:'clarification',models:[],tools:[],elapsedMs:1}} as any);
+    try {
+      const input={sessionId,requestId:randomUUID(),prompt:original,currentRecord:null};
+      const first=await chatTurn(f.ctx,input);expect(first.message.planId).toBeUndefined();expect(first.message.actions).toBeUndefined();
+      const deferred=first.message.cards!.find(card=>card.source==='semanticDeferredActions')!;
+      expect(deferred.rows[0].actions).toHaveLength(8);
+      expect((await f.agency.collection('contacts').get()).empty).toBe(true);expect((await f.agency.collection('assistantPlans').get()).empty).toBe(true);
+      const checkpoint=(await f.agency.collection('assistantSessions').doc(sessionId).collection('requests').doc(input.requestId).get()).data()!;
+      expect(checkpoint.result.actions).toEqual([]);expect(checkpoint.result.semanticAuthority).toBeUndefined();
+      expect(checkpoint.result.cards.find((card:any)=>card.source==='semanticDeferredActions').rows[0].actions).toHaveLength(8);
+      await chatTurn(f.ctx,input);expect(planner).toHaveBeenCalledTimes(1);
+      const card=first.message.cards!.find(card=>card.choiceSource==='facebookSemanticAccount')!,row=card.rows[0];
+      await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:namedChoiceText('facebookSemanticAccount',row),choice:{messageId:first.message.id,source:'facebookSemanticAccount',rowId:String(row.id),offerId:card.choiceOfferId},currentRecord:null});
+      expect(planner.mock.calls[1][1]).toContain('Cumpărător 7');expect(planner.mock.calls[1][1]).toContain('NEEXECUTAȚI');
+      expect((await f.agency.collection('contacts').get()).empty).toBe(true);expect((await f.jobs.get()).empty).toBe(true);expect(mocks.fetch).not.toHaveBeenCalled();
+    } finally {planner.mockRestore();}
   });
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
   it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {

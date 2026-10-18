@@ -136,3 +136,18 @@ Limits: preservation here covers no-action clarification responses. Mixed respon
 Rollback: revert this lot's commit or inspect b89afcfcad28eb84e3703b8c50884278d4902187 in a separate worktree. Preserve request records, execution ledgers and CRM data. No incompatible migration or external replay.
 
 Final offer verification: 78 unit/component/worker checks plus 52 emulator checks passed on the updated flow, including property-name headings (130 distinct checks). Full final npm run build passed with TypeScript and page generation. ESLint completed with zero warnings on changed sources; git diff --check and parity manifest passed. The existing standalone playwright-core browser-copy skip remains; production browser packaging and live posting remain unverified. No deployment.
+
+
+## Continuation: mixed clarification and prepared actions
+
+Local implementation after 840dad9890855f954968cbfb04b12fe5c1cfd344. Policy request-crm-22 / tools 210. No deployment.
+
+- Unanswered semantic offers are retained even when planning produces actions. While an offer remains unresolved, candidate actions and their coverage/conditions are saved as internal deferred data. The executable action list, old execution authority and executable coverage are cleared before checkpoint persistence. No partial assistantPlan is offered for approval or automatic execution.
+- Deferred data keeps complete arrays and is hidden from the panel. Its resource references are preserved before clearing the executable list. Selecting a semantic offer supplies the complete original request, selection and deferred candidates to planning, explicitly marked NOT EXECUTED and requiring fresh validation. Older candidates survive another unresolved selection; identical candidate records are not duplicated.
+- Verification: 41 unit/component checks and 53 Firestore emulator integration checks passed (94 distinct checks). The new test uses controlled planner results and real workspace persistence: eight actions survive the checkpoint and displayed response without preview truncation; contacts, publication jobs and executable assistant plans remain absent; request replay does not rerun planning; the next selection receives all eight candidates. This proves the handoff and execution barrier, not that a live model subsequently completes every candidate. Existing real job creation/replay regressions remain passing. ESLint, diff checks and the static parity manifest passed.
+
+Limits: this defers the whole prepared batch until semantic choices are resolved, including independent actions. Completed effects from earlier turns still need durable goal/effect reconciliation; durable checkpoints inside planning and live-model completion remain open. No live external messages/posts, paid model call, production deployment or corpus certification increase.
+
+Rollback: revert this lot's commit or inspect 840dad9890855f954968cbfb04b12fe5c1cfd344 in a separate worktree. Preserve CRM data, request checkpoints and execution ledgers. Deferred candidates must not be replayed as executable operations during rollback.
+
+Final deferred-plan verification: full npm run build passed, including TypeScript and page generation. The existing standalone playwright-core copy skip remains; production browser packaging is not certified. The 94 checks above passed; no deployment or live-model completion claim.

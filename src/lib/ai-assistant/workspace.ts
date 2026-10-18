@@ -1,4 +1,4 @@
-import { retainSemanticChoices } from './semantic-clarification';
+import { retainSemanticChoices, deferredSemanticCard } from './semantic-clarification';
 import { resolveNamedChoice } from './named-choice';
 import type { NamedChoice } from './named-choice-contract';
 import { loadRequestCheckpoint, saveRequestCheckpoint, requestCheckpointHash } from './request-checkpoint';
@@ -114,12 +114,19 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const restored = await loadRequestCheckpoint(ctx, input);
     const result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
     if (!restored) {
-      // No effects/actions have been produced here: preserve unanswered sibling
-      // offers instead of treating a read-only clarification as the whole goal.
-      result.cards = retainSemanticChoices(result.cards, result.actions.length ? undefined : conversationHistory.find(message=>message.id===input.choice?.messageId), input.choice, selectedPrompt);
-      if (!result.actions.length && result.cards.some(card=>card.choiceSource==='facebookSemanticProperty' || card.choiceSource==='facebookSemanticAccount')) {
+      const previousChoice = conversationHistory.find(message=>message.id===input.choice?.messageId);
+      result.cards = retainSemanticChoices(result.cards, previousChoice, input.choice, selectedPrompt);
+      if (result.cards.some(card=>card.choiceSource==='facebookSemanticProperty' || card.choiceSource==='facebookSemanticAccount')) {
+        const deferred = deferredSemanticCard(result.actions, previousChoice, result.goalCoverage);
+        result.accessRefs.push(...actionReferences(result.actions));
+        if (deferred) result.cards.push(deferred);
+        // An unresolved selection must not expose an executable partial plan.
+        // Preserve candidates in the checkpoint and revalidate after selection.
+        result.actions=[];
+        delete result.semanticAuthority;
+        delete result.goalCoverage;
         result.metrics.status='clarification';
-        result.text += '\nAlege înregistrările rămase din cardurile afișate pentru a continua cererea.';
+        result.text = 'Alege înregistrările rămase din cardurile afișate pentru a continua cererea.' + (deferred ? ' Pașii deja pregătiți au fost păstrați; nu au fost executați.' : '');
       }
       await saveRequestCheckpoint(ctx, input, result);
     }
@@ -158,7 +165,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     }
     const planId = result.actions.length ? randomUUID() : undefined;
     const pendingProspect = pendingProspectRequest(planningPrompt, result.metrics.status, history);
-    const message: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.choiceSource || ['facebookSemanticRequest','facebookImmediateRequest','facebookAccountRequest','facebookScheduleRequest','metaStatusReview', 'metaAssetsReview', 'metaImageResumeSelection', 'metaImageSelection', 'metaImageApproval', 'metaImageReview', 'metaPerformanceSelection', 'metaPerformanceReview', 'metaPublishSelection', 'metaPublishReview', 'metaCampaignReview', 'metaMediaSelection'].includes(card.source) ? card.rows : card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
+    const message: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.choiceSource || ['semanticDeferredActions','facebookSemanticRequest','facebookImmediateRequest','facebookAccountRequest','facebookScheduleRequest','metaStatusReview', 'metaAssetsReview', 'metaImageResumeSelection', 'metaImageSelection', 'metaImageApproval', 'metaImageReview', 'metaPerformanceSelection', 'metaPerformanceReview', 'metaPublishSelection', 'metaPublishReview', 'metaCampaignReview', 'metaMediaSelection'].includes(card.source) ? card.rows : card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
     if (pendingProspect) message.prospectContinuation = pendingProspect;
     if (result.ownerHistoryContinuation) message.ownerHistoryContinuation = result.ownerHistoryContinuation;
     await ctx.adminDb.runTransaction(async tx => {
