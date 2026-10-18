@@ -1,4 +1,4 @@
-import { namedChoiceText } from '../named-choice-contract';
+import { namedChoiceText, namedGroupChoiceText } from '../named-choice-contract';
 import { prepareFacebookPublication } from '../facebook-natural';
 import { executeSafePrefix } from '../autonomy';
 import { bindSemanticAuthority } from '../semantic-authority';
@@ -43,6 +43,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const body = { propertyId: 'property', connectionId: 'connection', groupUrls: [groups[0].url], scheduledAt: tomorrowBucharest(new Date()) + 'T04:00:00.000Z', requestId: randomUUID() };
     return { ctx, agency, profile, property, connection, device, body, jobs: agency.collection('facebookCloudPublishingJobs') };
   }
+  it('persists all group choices, publishes only selected groups and rejects changed replay', async()=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();
+    const configured=Array.from({length:8},(_,i)=>({name:'Grupul '+(i+1),url:'https://www.facebook.com/groups/group'+i,purpose:'sale'}));
+    await f.agency.update({facebookGroups:configured});
+    await f.property.update({description:'Descriere originală',images:['https://example.com/original.jpg']});
+    const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică proprietatea acum în grupurile selectate',currentRecord:{resource:'properties',id:'property'}});
+    const card=first.message.cards!.find(card=>card.choiceSource==='facebookPublicationGroups')!;
+    expect(card.rows).toHaveLength(8);
+    const selected=card.rows.filter((_,i)=>i!==1);
+    const input={sessionId,requestId:randomUUID(),prompt:namedGroupChoiceText(selected),currentRecord:null,choice:{messageId:first.message.id,source:'facebookPublicationGroups' as const,rowId:String(selected[0].id),rowIds:selected.map(row=>String(row.id))}};
+    const result=await chatTurn(f.ctx,input);expect(result.message.text).toContain('a fost creat');
+    const payload=JSON.parse(mocks.runner.mock.calls[0][1].body);
+    expect(payload.groups.map((row:any)=>row.url)).toEqual(selected.map(row=>row.url));
+    expect(payload.propertyDescription).toBe('Descriere originală');expect(payload.propertyImages).toEqual(['https://example.com/original.jpg']);
+    await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);
+    await expect(chatTurn(f.ctx,{...input,choice:{...input.choice,rowIds:input.choice.rowIds.slice(0,1)}})).rejects.toThrow();
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
   it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {
     const f = await fixture('cloud'), sessionId = randomUUID();
@@ -76,7 +94,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const first = await chatTurn(f.ctx, { sessionId, requestId: randomUUID(), prompt, currentRecord: { resource: 'properties', id: 'property' } });
     const groups = first.message.cards?.find(card => card.source === 'facebookGroups')?.rows || [];
     expect(groups).toHaveLength(1); expect((await f.jobs.get()).empty).toBe(true);
-    const input = { sessionId, requestId: randomUUID(), prompt: 'Grupuri Facebook: ' + groups[0].id, currentRecord: null };
+    const input = { sessionId, requestId: randomUUID(), prompt: namedGroupChoiceText(groups), choice: {messageId:first.message.id,source:'facebookPublicationGroups' as const,rowId:String(groups[0].id),rowIds:groups.map(row=>String(row.id))}, currentRecord: null };
     const final = await chatTurn(f.ctx, input);
     expect(final.message.planId).toBeUndefined();
     expect(final.message.text).toContain('a fost creat');

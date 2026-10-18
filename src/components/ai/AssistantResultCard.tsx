@@ -1,5 +1,5 @@
 "use client";
-import { namedChoiceText, choiceLabels } from '@/lib/ai-assistant/named-choice-contract';
+import { namedChoiceText, namedGroupChoiceText, choiceLabels } from '@/lib/ai-assistant/named-choice-contract';
 import { MetaReviewDetails } from './MetaReviewDetails';
 import { useState } from "react";
 import Image from "next/image";
@@ -91,6 +91,9 @@ export function AssistantResultCard({
   onArtifact,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const groupRows = card.rows.filter(row => selectedGroups.includes(String(row.id)));
+  const groupChoice = card.choiceSource === 'facebookPublicationGroups';
   const property = ["owners", "crm", "properties"].includes(card.source),
     calendar = card.source === "viewings",
     task = card.source === "tasks",
@@ -142,6 +145,10 @@ export function AssistantResultCard({
           {total} {card.summary?.label || "rezultate"}
         </span>
       </header>
+      {groupChoice && <div className="border-b px-5 py-3">
+        <button type="button" disabled={busy || !groupRows.length} className="rounded-lg border px-3 py-2 text-sm" onClick={() => onPrompt(namedGroupChoiceText(groupRows), undefined, {source:'facebookPublicationGroups',rowId:String(groupRows[0].id),rowIds:groupRows.map(row=>String(row.id))})}>Publică în grupurile selectate ({groupRows.length})</button>
+        <p className="mt-2 text-xs text-muted-foreground">Selectează până la 200 de grupuri pentru această publicare.</p>
+      </div>}
       {card.note && (
         <p className="border-b bg-amber-50/70 px-5 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">{card.note}</p>
       )}
@@ -353,7 +360,8 @@ export function AssistantResultCard({
                       {String(row.reasoning)}
                     </p>
                   ) : null}
-                  {card.choiceSource && <button type="button" disabled={busy} className="mt-3 rounded-lg border px-3 py-2 text-sm" onClick={() => onPrompt(namedChoiceText(card.choiceSource!, row), undefined, {source:card.choiceSource!,rowId:String(row.id)})}>{choiceLabels[card.choiceSource]}</button>}
+                  {groupChoice && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={selectedGroups.includes(String(row.id))} disabled={busy || (!selectedGroups.includes(String(row.id)) && groupRows.length >= 200)} onChange={event => setSelectedGroups(current => event.target.checked ? [...current,String(row.id)] : current.filter(id=>id!==String(row.id)))} />{String(row.name || 'Grup Facebook')}</label>}
+                  {card.choiceSource && !groupChoice && <button type="button" disabled={busy} className="mt-3 rounded-lg border px-3 py-2 text-sm" onClick={() => onPrompt(namedChoiceText(card.choiceSource!, row), undefined, {source:card.choiceSource!,rowId:String(row.id)})}>{choiceLabels[card.choiceSource]}</button>}
                   {["metaAssetsReview", "metaImageResumeSelection", "metaImageSelection", "metaImageApproval", "metaImageReview", "metaPerformanceSelection", "metaPerformanceReview", "metaPublishSelection", "metaPublishReview", "metaPromotionRecommendations", "metaActiveCampaigns", "metaPropertiesWithoutActive", "metaUnknownCampaigns", "metaStatusSelection", "metaStatusReview", "metaPauseSelection", "metaPauseReview", "metaMediaSelection", "metaMediaCampaignSelection", "metaMediaReview", "metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && <MetaReviewDetails row={row} selection={["metaImageResumeSelection", "metaImageSelection", "metaImageApproval", "metaPerformanceSelection", "metaPublishSelection", "metaStatusSelection", "metaPauseSelection", "metaMediaSelection", "metaMediaCampaignSelection", "metaReviewSelection", "metaDraftSelection"].includes(card.source)} selectionLabel={card.source === "metaImageResumeSelection" ? "Continuă optimizarea aprobată" : card.source === "metaImageSelection" ? "Pregătește această fotografie" : card.source === "metaImageApproval" ? "Confirmă schimbarea fotografiei" : card.source === "metaPublishSelection" ? "Confirmă publicarea în pauză" : card.source === "metaPauseSelection" ? "Confirmă pauza" : card.source === "metaMediaSelection" ? "Selectează fotografia" : undefined} selectionSource={card.source as import('@/lib/ai-assistant/named-choice-contract').ChoiceSource} busy={busy} onPrompt={onPrompt} />}
                   {!["metaAssetsReview", "metaImageResumeSelection", "metaImageSelection", "metaImageApproval", "metaImageReview", "metaPerformanceSelection", "metaPerformanceReview", "metaPublishSelection", "metaPublishReview", "metaPromotionRecommendations", "metaActiveCampaigns", "metaPropertiesWithoutActive", "metaUnknownCampaigns", "metaStatusSelection", "metaStatusReview", "metaPauseSelection", "metaPauseReview", "metaMediaSelection", "metaMediaCampaignSelection", "metaMediaReview", "metaDraftSelection", "metaCampaignReview", "metaReviewSelection", "metaConnectionReview", "metaPropertyCampaigns", "metaDashboardReview", "metaZeroLeadCampaigns"].includes(card.source) && !property && !calendar && !task && !client && !sale && (
                     <div className="mt-3 space-y-2">

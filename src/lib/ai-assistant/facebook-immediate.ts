@@ -42,7 +42,7 @@ export async function prepareFacebookImmediate(ctx: AssistantContext, prompt: st
   const requested = [...new Set(selection)];
   const offered = Array.isArray(pending?.groupIds) ? pending.groupIds : [];
   if (!requested.length || requested.some(id => !offered.includes(id) || !groups.some(group => group.id === id))) {
-    return { actions, rows: groups, pending: groups.length ? { id: 'pending', prompt: effective, propertyId, groupIds: groups.map(group => group.id) } : null, text: groups.length ? 'Alege grupurile pentru această proprietate: răspunde „Grupuri Facebook: ID1, ID2” cu ID-urile din listă. Voi crea jobul folosind descrierea și pozele din CRM.' : 'Nu există grupuri eligibile pentru această proprietate.' };
+    return { actions, rows: groups, pending: groups.length ? { id: 'pending', prompt: effective, propertyId, groupIds: groups.map(group => group.id) } : null, text: groups.length ? 'Bifează grupurile pentru această proprietate și apasă „Publică în grupurile selectate”. Voi crea jobul folosind descrierea și pozele din CRM.' : 'Nu există grupuri eligibile pentru această proprietate.' };
   }
   const connectionId = property.defaultFacebookConnectionId || profile.defaultFacebookCloudConnectionId;
   if (typeof connectionId !== 'string' || !/^[A-Za-z0-9_-]{1,180}$/.test(connectionId)) return { ...empty, text: 'Configurează contul Facebook al proprietății sau contul implicit al profilului înainte de publicare.' };

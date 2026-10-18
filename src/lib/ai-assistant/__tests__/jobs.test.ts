@@ -171,3 +171,13 @@ it('preserves named-choice metadata through the durable worker and prevents requ
  await drainAgentJobs(f.db as any);
  expect(chatTurn).toHaveBeenCalledWith(expect.anything(),expect.objectContaining(selected),expect.any(Function));
 });
+
+it('retains every selected Facebook group through queued work and binds replay to the whole selection',async()=>{
+ const f=database(),ids=['a'.repeat(24),'b'.repeat(24)];
+ const choice={messageId:'offer',source:'facebookPublicationGroups' as const,rowId:ids[0],rowIds:ids};
+ const selected={...input,choice,prompt:'Publică în grupurile selectate: Titan; Cișmigiu'};
+ await enqueueTurn(f.ctx,selected);
+ await expect(enqueueTurn(f.ctx,{...selected,choice:{...choice,rowIds:[ids[0]]}})).rejects.toThrow('altei solicitări');
+ await drainAgentJobs(f.db as any);
+ expect(chatTurn).toHaveBeenCalledWith(expect.anything(),expect.objectContaining(selected),expect.any(Function));
+});

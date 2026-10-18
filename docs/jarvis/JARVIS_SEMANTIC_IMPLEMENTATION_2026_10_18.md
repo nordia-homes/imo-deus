@@ -89,3 +89,19 @@ Remaining: group multi-selection, other job/legacy choices, semantic preflight c
 Rollback: revert this lot's commit, or inspect checkpoint 8305e2ef5f579c0971638ea95cb7bc37c0f26d87 in a separate worktree. Preserve application data, request records and execution ledgers; never replay external effects as part of rollback. No incompatible data migration was introduced.
 
 Final verification for Facebook named choices: npm run build passed, including TypeScript and page generation; git diff --check and the static parity manifest check passed. The existing standalone playwright-core browser-copy skip remains, so production browser packaging is not certified. Production is unchanged.
+
+
+## Continuation: named Facebook group multi-selection
+
+Local implementation after cad36b218f5cb9ac122aac5bb7eba7271a68789f. Policy request-crm-19 / tools 207. No production deployment.
+
+- Actionable Facebook group clarification cards now offer named checkboxes and one publication action for the selected subset. Read-only group lists remain read-only. This replaces the instruction to copy group IDs; it does not add an approval step to requests with already known destinations.
+- The selection carries every destination separately from the visible text. The server binds all rows to the latest authorized offer, checks exact text, rejects duplicates/foreign rows and delegates to the existing handler for live eligibility and account validation. Request replay hashes bind the complete list, including queued work. Single-choice hashes remain compatible.
+- Up to 200 groups are accepted, matching the existing publication API. The visible message lists up to 20 names and explicitly counts remaining selected groups; execution retains all IDs and the UI retains all names. This bounds the chat message without silently dropping destinations.
+- Verification: 72 unit/component/worker checks and 51 Firestore emulator integration checks passed. The integration creates one job for exactly seven selected destinations out of eight, preserves exact CRM description/photos, and rejects a changed selection on replay. Existing publication/scheduling regressions also passed. A unit check retains all 200 groups through resolution. External provider transport is simulated; no real post, message or paid model call occurred. ESLint passed with zero warnings; the static parity manifest remains 181 operations / 41 action kinds / 46 UI files.
+
+Remaining: semantic preflight continuation across clarifications, other legacy job selections, durable unresolved goals and checkpoints inside the planner loop, real-language evaluation and live browser verification. Multi-selection is implemented on the existing explicit group-selection path; it is not certification of all semantic Facebook commands or all corpus scenarios.
+
+Rollback: revert this lot's commit or inspect cad36b218f5cb9ac122aac5bb7eba7271a68789f in a separate worktree. Preserve request records, execution ledgers and business data; do not resend effects. No incompatible data migration.
+
+Final group-selection verification: full npm run build passed, including TypeScript and page generation; git diff --check passed. The pre-existing standalone playwright-core browser-copy skip remains; production browser packaging and live Facebook posting are not certified. No deployment performed.

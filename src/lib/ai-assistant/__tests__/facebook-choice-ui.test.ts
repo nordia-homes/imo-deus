@@ -17,3 +17,10 @@ it('keeps the property name visible beside its publication choice',()=>{
  const html=render({type:'data',source:'properties',choiceSource:'facebookPublicationProperty',title:'Proprietăți',rows:[{id:'p',title:'Apartament Cișmigiu'}]});
  expect(html).toContain('Apartament Cișmigiu');expect(html).toContain('Publică proprietatea');
 });
+
+it('offers named group checkboxes and an initially disabled batch action',()=>{
+ const html=render({type:'data',source:'facebookGroups',choiceSource:'facebookPublicationGroups',title:'Grupuri',rows:[{id:'a'.repeat(24),name:'Titan'},{id:'b'.repeat(24),name:'Cișmigiu'}]});
+ expect(html.match(/type="checkbox"/g)).toHaveLength(2);
+ expect(html).toContain('Publică în grupurile selectate (0)');expect(html).toContain('disabled');
+ expect(html.replace(/<[^>]*>/g,'')).not.toContain('a'.repeat(24));
+});

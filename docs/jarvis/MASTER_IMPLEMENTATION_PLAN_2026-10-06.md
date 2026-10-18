@@ -1296,3 +1296,8 @@ Migrated eleven Meta selection types to human-readable messages and server-valid
 ### Facebook named selections — 18 October 2026
 
 Implemented four Facebook choices using human-readable names and bound server-side selection metadata: publication property/account, default property account and scheduled property. Fixed persisted selection state truncation after five accounts; a real local chat integration selects the thirteenth account and verifies a single publication job with exact CRM content. Verification: 29 unit/component checks and 81 emulator integration checks passed. No production deployment or live-model certification. Group multi-selection, semantic clarification continuation, durable unresolved goals and planner-loop checkpoints remain outstanding. See JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md for evidence and rollback; corpus certification counts are unchanged.
+
+
+### Named Facebook group multi-selection — 18 October 2026
+
+The existing group clarification path now uses named checkboxes and validates all selected rows server-side. Exact destinations survive saved state and queued work; changed replay selections are rejected. Local evidence: 72 unit/component/worker checks and 51 emulator checks, including one job for seven selected groups out of eight with unchanged CRM content. The existing 200-group API limit is retained. Semantic preflight clarification, other legacy job selections and durable planner-loop continuation remain open; no production rollout, live-language claim or corpus certification increment. Details and rollback are in JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
