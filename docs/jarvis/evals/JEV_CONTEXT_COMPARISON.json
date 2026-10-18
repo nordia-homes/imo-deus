@@ -1,0 +1,25 @@
+{
+  "scope": "Full-catalog policy versus modular assembly with identical synthetic inputs. Not an A/B production planner benchmark or billable-token measurement. Dynamic planner catalog metadata and history not included.",
+  "liveProviderCalls": 0,
+  "jevIncrementalSpeedOrCostBenefitMeasured": false,
+  "rows": [
+    {
+      "prompt": "Salut",
+      "baselineBytes": 97000,
+      "modularBytes": 15846,
+      "reductionPercent": 83.7
+    },
+    {
+      "prompt": "Găsește apartamente în Titan sub 130000 euro",
+      "baselineBytes": 97042,
+      "modularBytes": 27215,
+      "reductionPercent": 72
+    },
+    {
+      "prompt": "Programează o vizionare pentru apartamentul Cișmigiu cu Matei Alin mâine la 07:30",
+      "baselineBytes": 97079,
+      "modularBytes": 29417,
+      "reductionPercent": 69.7
+    }
+  ]
+}

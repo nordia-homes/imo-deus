@@ -35,7 +35,7 @@ import { readProspectingOperation } from './prospecting-template-read';
 import { queryRecords, decorateRecords } from './record-query';
 import { operationCards } from './operation-cards';
 import { dataCatalog, capabilityStatus } from './catalog';
-export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]; actions: AssistantAction[]; refs: AccessReference[]; childMetrics?: Awaited<ReturnType<typeof import('./planner').planTurn>>['metrics'] };
+export type ToolResult = { data: Record<string, unknown>; cards: AssistantCard[]; actions: AssistantAction[]; refs: AccessReference[]; childMetrics?: import('./telemetry').TurnMetrics };
 export async function dispatchTool(name: string, ctx: AssistantContext, payload: any, prompt: string, options: AgentOptions): Promise<ToolResult> {
   const cards: AssistantCard[] = [], actions: AssistantAction[] = [], refs: AccessReference[] = [];
   let data: Record<string, any>, childMetrics: ToolResult['childMetrics'];
@@ -120,7 +120,8 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
   } else if (name === 'legal_source_read') {
     const { readOfficialSource } = await import('./legal-source'); data = await readOfficialSource(ctx, payload.url, payload.offset, payload.snapshotId);
     cards.push({ type: 'data', title: 'Sursă oficială consultată', source: 'legal', rows: [{ sourceUrl: data.sourceUrl, authority: data.authority, retrievedAt: data.retrievedAt, contentHash: data.contentHash, temporalValidityVerified: false }], note: data.note });
-  } else if (name === 'data_catalog') data = dataCatalog(payload.category);
+  } else if (name === 'load_capabilities') { if (!options.loadCapabilities) throw new Error('Încărcarea nu este disponibilă în acest flux restrâns.'); data = options.loadCapabilities(payload.capabilities, payload.tools) as Record<string, any>; }
+  else if (name === 'data_catalog') data = dataCatalog(payload.category);
   else if (name === 'capability_status') data = await capabilityStatus(ctx, payload.operation);
   else if (name === 'prospect_followup_stop') {
     const { readProspectFollowupStop } = await import('./prospect-followup-stop'); data = await readProspectFollowupStop(ctx, payload);

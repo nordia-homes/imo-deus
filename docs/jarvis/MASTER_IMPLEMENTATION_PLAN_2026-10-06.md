@@ -1269,3 +1269,10 @@ Buildul complet, inclusiv TypeScript și 227/227 pagini, a trecut. Rămân avert
 Auditul MASTER_AUDIT_2026-10-08.md leagă etapele de cod și dovezi, corectează confuzia dintre cazuri revizuite și acceptate și reordonează lucrările rămase. Planul integral nu este închis. Raportarea pe cerință este disponibilă în API și componenta comună Text/Voice: confirmări, așteptări, incertitudini, limitări și răspunsuri istorice sunt distincte. Acoperirea invalidă nu produce o confirmare globală pentru planurile care o cer. Legăturile către pași sunt validate; dovezile contradictorii sunt păstrate pentru reducerul comun. Contorul de execuție spune pași cu rezultat înregistrat, iar ora verificării este explicit Europe/Bucharest.
 
 Validări: 69 teste țintite și 1715/1715 teste de regresie în 134 de fișiere; ESLint, paritate, UI Text și Voice simulate, capturi inspectate și build complet cu TypeScript și 227 pagini. Versiunea uneltelor este 55. Avertismentele cunoscute de build rămân. Emulatorul nu a fost relansat; nu există schemă sau scrieri Firestore noi. Nu s-au folosit provideri reali și nu s-a publicat în producție. Bugetul persistent și restul criteriilor din audit rămân de implementat/acceptat.
+
+
+## E6 — catalog modular și selector Jev opțional — 18 octombrie 2026
+
+Implementarea și procedura de revenire sunt descrise în [JEV_IMPLEMENTATION_2026_10_18.md](JEV_IMPLEMENTATION_2026_10_18.md). Catalog comun, reguli conservate, separarea autorizării de prezentare, încărcare progresivă și moduri off/shadow/active. Fluxurile deterministe sunt păstrate. Activarea este aditivă, cu dependențe și fallback compact; nu înlocuiește executorul și verificarea rezultatului.
+
+Acest lot nu rezumă istoricul pentru a remedia bugetul. Recuperarea arbitrară a întregului istoric rămâne distinctă și neimplementată aici. Testarea corpusului privește selecția locală și dimensionarea, nu precizia Jev live sau succesul E2E al tuturor scenariilor. Nu s-au făcut teste externe cu plată, publicare în producție sau modificări de date reale. Pragurile Jev și avantajul de latență/cost necesită benchmark live autorizat înainte de activare globală.

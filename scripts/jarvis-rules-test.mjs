@@ -93,5 +93,6 @@ if (process.argv.includes('--corpus-prospecting-live')) {
   if (selected) process.env.JARVIS_PROSPECTING_CASE = selected.slice(7);
   command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/corpus-prospecting.live.integration.test.ts';
 }
+if (process.argv.includes('--jev-review')) command = command.slice(0, command.indexOf(' src/lib/')) + ' src/lib/ai-assistant/__tests__/jev-viewing.integration.test.ts src/lib/ai-assistant/__tests__/calendar-concurrency.integration.test.ts --testTimeout=60000';
 const child = spawn(process.execPath, ['node_modules/firebase-tools/lib/bin/firebase.js', 'emulators:exec', '--project', 'demo-imodeus-ai-assistant', '--only', 'firestore,storage', command], { stdio: 'inherit', windowsHide: true, env: { ...process.env, JAVA_HOME: javaHome, PATH: [path.join(javaHome, 'bin'), path.dirname(process.execPath), path.join(process.env.SystemRoot || 'C:/Windows', 'System32'), process.env.PATH].join(path.delimiter) } });
 process.exitCode = await new Promise(resolve => child.on('exit', code => resolve(code || 0)));

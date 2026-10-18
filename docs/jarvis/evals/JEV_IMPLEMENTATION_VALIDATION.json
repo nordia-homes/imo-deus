@@ -1,0 +1,91 @@
+{
+  "verifiedAt": "2026-10-18T06:31:24.910Z",
+  "versions": {
+    "prompt": "jarvis-171",
+    "tools": "202",
+    "capabilities": "1"
+  },
+  "checkpoint": "8dcee44c9f7b34f06e6fcdac3487a6a15817bb96",
+  "productionChanged": false,
+  "liveModelCalls": 0,
+  "externalTestCostUsd": 0,
+  "validation": {
+    "broadUnitRun": {
+      "passed": 2543,
+      "files": 196
+    },
+    "emulator": {
+      "passed": 74,
+      "viewingVariants": [
+        "off",
+        "shadow",
+        "active_wrong_domain",
+        "unavailable"
+      ],
+      "realFirestoreWrites": true,
+      "simulatedModel": true,
+      "duplicateReplayVerified": true
+    },
+    "finalTargetedRuns": [
+      {
+        "scope": "Jev, policy, budget, record query and context comparison",
+        "passed": 46
+      },
+      {
+        "scope": "Accounting, architecture and evaluation",
+        "passed": 80
+      },
+      {
+        "scope": "Planner suite after wrapped-action rule guard",
+        "passed": 61
+      },
+      {
+        "scope": "Jev planner after wrapped-action fixture correction",
+        "passed": 11
+      },
+      {
+        "scope": "All original policy expressions and shared text bindings",
+        "passed": 3
+      }
+    ],
+    "parity": {
+      "operations": 181,
+      "nativeActions": 41,
+      "uiFiles": 46
+    },
+    "corpus": {
+      "prompts": 1000,
+      "initialContextsUnderVerifiedBound": 1000,
+      "emptyLocalSelection": 254,
+      "liveJevAccuracyMeasured": false,
+      "fullE2ECertification": false
+    },
+    "build": {
+      "status": "passed",
+      "command": "npm run build",
+      "exitCode": 0,
+      "buildDirectory": "D:/imo-deus/.tmp/jev-build-20261018",
+      "nodeOptions": "--max-old-space-size=8192",
+      "runtimeSourceManifest": "JEV_BUILD_SOURCE_MANIFEST.json",
+      "environmentRepairs": [
+        "Cross-drive node_modules junction caused invalid Webpack paths; same-drive source copy used.",
+        "Default Node heap exhausted during TypeScript; process-local 8 GiB heap used."
+      ],
+      "warnings": [
+        "Existing optional Jaeger exporter warning",
+        "Existing Tailwind class ambiguity warnings",
+        "Standalone Playwright browser copy skipped: dependency folder absent"
+      ]
+    },
+    "typescript": "passed",
+    "eslint": "passed",
+    "rollbackReadOnlyCheck": "passed"
+  },
+  "limitations": [
+    "No paid Jev/OpenAI benchmark, so additional real Jev latency/cost/semantic accuracy advantage remains unmeasured.",
+    "Active selection is additive and threshold 0.35 is uncalibrated; production mode not changed.",
+    "Original history is preserved; pre-existing recent-context limits remain and arbitrary historical retrieval is not implemented here.",
+    "1000 corpus rows are local routing/sizing evidence, not 1000 successful business executions.",
+    "Rollback checked without executing a production rollback."
+  ]
+}

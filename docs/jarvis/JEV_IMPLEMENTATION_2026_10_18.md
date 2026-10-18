@@ -1,0 +1,74 @@
+# Jev — implementare modulară și revenire — 18 octombrie 2026
+
+## Stare și limite
+
+Implementare izolată pe ramura codex/jev-modular-20261018. Nu este publicată. Nu au fost efectuate apeluri Jev/OpenAI cu plată sau mesaje/postări externe pentru această validare. JARVIS_JEV_MODE rămâne shadow în configurația de producție existentă.
+
+Moduri: off dezactivează apelul Jev, păstrând catalogul modular; shadow înregistrează propunerea fără a o aplica; active adaugă domeniile candidate la selecția locală. O valoare necunoscută dezactivează selecția externă. Modul active nu a fost calibrat pe Jev real și nu este recomandat pentru activare globală înaintea comparației live autorizate.
+
+## Implementare
+
+- capability-catalog.ts definește domeniile, dependențele, termenii de selecție locală, asocierea uneltelor și activarea regulilor pe operații. Schemele și drepturile rămân în registrul și serviciile existente.
+- policy.ts păstrează toate cele 77 de expresii originale în blocuri identificate. JEV_POLICY_BASELINE.json și testul AST verifică păstrarea textelor și clasificării. Regulile comune rămân prezente; fluxurile focalizate existente își păstrează politicile.
+- Plannerul păstrează traseele deterministe existente. Numai fluxul general utilizează noua selecție. Setul autorizat este separat de setul afișat. load_capabilities poate solicita domenii și până la șase unelte concrete autorizate.
+- Un apel neașteptat care necesită alte instrucțiuni încarcă domeniul înainte de pregătirea acțiunilor și cere repetarea acelui apel. Nu execută și nu pregătește acțiuni în acel pas. Încărcarea capabilităților nu este dovadă de rezultat CRM.
+- Încărcarea are un plafon pentru instrucțiuni și scheme. Dacă acumularea depășește plafonul, se încearcă domeniile solicitate pentru pasul curent; rezultatele și acțiunile deja pregătite rămân în starea plannerului. Cererile imposibil de încadrat sunt raportate explicit. Nu există promisiune de context nelimitat.
+- Adaptorul Jev folosește jev-1.13.0 și întrebări noul pentru fiecare domeniu într-un singur apel. Pragul 0,35 favorizează includerea domeniilor incerte; este un prag inițial necalibrat. Selecția activă este aditivă: nu poate elimina un domeniu identificat local.
+- Adaptorul este injectabil separat de modelul principal. Timeout, circuit breaker, răspuns limitat, schemă validată, lipsă cheie și context prea mare au fallback local. Cererea Jev nu este tăiată; dacă nu încape, nu este trimisă.
+- Rezervările disting plafonul unui apel de consumul cumulat, fără creșterea plafonului existent de 70.000. Schimbarea instrucțiunilor/schemelor invalidează estimarea bazată pe consumul anterior. Numărarea conservatoare a octeților rămâne fallback, nu tokenizer exact.
+- Telemetria include modul, modulele propuse/încărcate, extinderile, latența și costul Jev. Consumurile estimate sunt marcate incomplete. Nu sunt logate cereri, istorice sau chei în această telemetrie.
+
+## Istoric și scop
+
+Nu au fost șterse mesaje și nu a fost introdusă comprimarea conversației pentru această remediere. Limitele existente din sessionHistory/contextMessages rămân: până la 40 de mesaje citite și context recent limitat. Nu s-a implementat în acest lot recuperarea arbitrară a întregului istoric de către model. Datele originale rămân în stocare, supuse verificărilor de acces existente.
+
+Scopul original al comenzii rămâne în planner; Jev nu îl înlocuiește. goal_coverage și verificările executorului rămân active. Acestea nu constituie o demonstrație semantică automată pentru toate formulările naturale.
+
+## Validare și interpretarea rezultatelor
+
+- Corpusul de 1000 de cereri: JEV_CORPUS_SELECTION.json măsoară selecția euristică locală și dimensiunea contextului. Nu este benchmark de precizie Jev și nu certifică execuția celor 1000 de scenarii.
+- JEV_CONTEXT_COMPARISON.json compară contextul serializat complet cu asamblarea modulară pentru aceleași intrări sintetice. Reducerea octeților nu reprezintă economie de tokenuri facturabile sau latență măsurată la furnizor.
+- Jev real nu a fost apelat pentru testare, conform interdicției de cheltuieli externe. Avantajul suplimentar Jev față de selecția locală rămâne neconfirmat. În forma aditivă, poate evita descoperiri ulterioare, dar poate și adăuga context și latență.
+- Testul de vizionare folosește plannerul, citirile și executorul real cu Firestore local, cu furnizori AI sintetici. Verifică normalizarea Cișmigiu/Cismigiu, crearea cumpărătorului, salvarea vizionării la 07:30 București, confirmarea și reluarea fără duplicate. Nu certifică interpretarea unui model live sau livrarea WhatsApp.
+
+## Revenire rapidă: păstrează arhitectura modulară
+
+Setează JARVIS_JEV_MODE=off în mediul serverului și repornește procesul local. Nu modifica cheia și nu o pune în NEXT_PUBLIC_. Pentru producție, modificarea configurației și lansarea sunt acțiuni separate, neautorizate de această implementare. Nu schimba direct traficul Cloud Run în afara mecanismului App Hosting.
+
+## Revenire completă locală
+
+Checkpoint: 8dcee44c9f7b34f06e6fcdac3487a6a15817bb96, ramura codex/jev-safety-20261018. Include cele nouă fișiere cu modificări de cod/documentație necomise la început. Directorul original D:/imo-deus a rămas pe această ramură; implementarea este în worktree separat.
+
+1. Oprește serverul local care rulează worktree-ul Jev, dacă există.
+2. Rulează node scripts/jarvis-jev-checkpoint.mjs --local-backups din worktree-ul implementării pentru verificarea obiectelor Git și a copiilor private.
+3. Pornește aplicația din D:/imo-deus, după verificarea că HEAD este checkpoint-ul de mai sus. Nu folosi git reset --hard.
+4. Dacă directorul original a primit ulterior alte modificări, păstrează-le și creează un worktree nou din commitul checkpoint; nu le suprascrie.
+5. Copiile locale excluse din Git sunt în D:/imo-deus/.tmp/jev-checkpoint-20261018: .env.local, hosting.cache și production-runtime.private.json. Restaurează .env.local numai dacă trebuie revenită și configurația locală; verifică înainte dacă au fost rotite cheile. Nu copia configurația privată în Git sau în mesaje.
+
+## Revenire completă producție, numai după autorizare ulterioară
+
+Producția verificată: proiect studio-652232171-42fb6, backend studio, regiune us-central1, build build-20261017-jarvis-140, commit c06958bc203423f29634de06743221374ce7c4d3, READY, trafic 100%, Jev shadow. Este diferită de checkpoint-ul local. Metadatele sunt în JEV_ROLLBACK_CHECKPOINT.json.
+
+Dacă o lansare viitoare trebuie anulată:
+1. Recitește traficul și verifică faptul că buildul vechi este încă disponibil și READY, cu SHA-ul de mai sus.
+2. Pregătește un rollout App Hosting către acel build, nu un rebuild al codului vechi cu dependențe/configurații actualizate. Contractul folosit de helperul existent: POST /v1beta/projects/studio-652232171-42fb6/locations/us-central1/backends/studio/rollouts?rolloutId=ID_UNIC, body {"build":"projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261017-jarvis-140"}.
+3. După autorizare și aplicare, așteaptă încheierea operației și verifică traficul 100%, lipsa reconcilierii, buildul și probele funcționale autentificate.
+4. Compară configurația cu copia privată; nu restaura mecanic secrete rotite. Dacă buildul nu mai există, reconstruirea commitului vechi este o procedură distinctă, care necesită validare.
+
+Nu există migrări de schemă Firestore, ștergeri de date, modificări de indexuri, workere sau schimbări de chei de idempotency în acest lot. Revenirea codului nu anulează acțiunile reale deja efectuate și nu trebuie să le retrimită. Observarea și verificarea metadatelor sunt realizate; un rollback real de producție nu a fost executat.
+
+## Surse de contract
+
+https://docs.typesafe.ai/api
+https://docs.typesafe.ai/models
+https://docs.typesafe.ai/confidence
+
+## Rezultate finale locale
+
+Compilare completă trecută (exit 0), pe o copie cu surse runtime identice de pe D:, cu NODE_OPTIONS=--max-old-space-size=8192. Worktree-ul de pe C: reutilizează dependențe de pe D:, ceea ce a necesitat această copie pentru Webpack. Nu sunt modificări de produs pentru remedierea mediului.
+
+Regresii: 2543 teste unitare / 196 fișiere și 74 teste în emulator; verificări țintite suplimentare după ultimele corecții. Numerele rundelor țintite se suprapun cu suita generală și nu se însumează. Inventar: 181 operații, 41 acțiuni native, 46 fișiere UI; contorul existent rămâne 263 dovezi locale / 1000 și 0 certificări E2E integrale.
+
+Comparație pe același fixture al plannerului, cu Jev off: cererea de vizionare cu istoric rezerva 69851 pentru intrare + 2200 pentru răspuns și era oprită înaintea modelului în checkpoint. Versiunea modulară rezervă 34545 + 2200 și ajunge la model. Aceste valori sunt estimările de rezervare, nu tokenuri facturate. Consultați JEV_PLANNER_COMPARISON.json.
+
+Detalii: [raport de validare](evals/JEV_IMPLEMENTATION_VALIDATION.json). Nu s-a publicat și nu s-a schimbat configurația producției.

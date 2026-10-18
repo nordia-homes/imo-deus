@@ -1,0 +1,157 @@
+{
+  "checkpoint": "8dcee44c9f7b34f06e6fcdac3487a6a15817bb96",
+  "scope": "Same synthetic planner fixture in checkpoint and implementation, Jev off. Actual reservation bytes/tokens estimate, not billed tokens. No live provider calls.",
+  "liveCalls": 0,
+  "rows": [
+    {
+      "prompt": "Salut",
+      "withHistory": false,
+      "before": {
+        "prompt": "Salut",
+        "withHistory": false,
+        "reservation": {
+          "input": 65179,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "after": {
+        "prompt": "Salut",
+        "withHistory": false,
+        "reservation": {
+          "input": 18557,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "reservationReductionPercent": 71.5
+    },
+    {
+      "prompt": "Salut",
+      "withHistory": true,
+      "before": {
+        "prompt": "Salut",
+        "withHistory": true,
+        "reservation": {
+          "input": 67413,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "after": {
+        "prompt": "Salut",
+        "withHistory": true,
+        "reservation": {
+          "input": 20982,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "reservationReductionPercent": 68.9
+    },
+    {
+      "prompt": "Găsește apartamente în Titan sub 130000 euro",
+      "withHistory": false,
+      "before": {
+        "prompt": "Găsește apartamente în Titan sub 130000 euro",
+        "withHistory": false,
+        "reservation": {
+          "input": 67571,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "after": {
+        "prompt": "Găsește apartamente în Titan sub 130000 euro",
+        "withHistory": false,
+        "reservation": {
+          "input": 29926,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "reservationReductionPercent": 55.7
+    },
+    {
+      "prompt": "Găsește apartamente în Titan sub 130000 euro",
+      "withHistory": true,
+      "before": {
+        "prompt": "Găsește apartamente în Titan sub 130000 euro",
+        "withHistory": true,
+        "reservation": {
+          "input": 69805,
+          "output": 2200
+        },
+        "modelReached": false,
+        "status": "partial"
+      },
+      "after": {
+        "prompt": "Găsește apartamente în Titan sub 130000 euro",
+        "withHistory": true,
+        "reservation": {
+          "input": 32351,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "reservationReductionPercent": 53.7
+    },
+    {
+      "prompt": "Programează o vizionare pentru apartamentul X cu Matei Alin mâine la 07:30",
+      "withHistory": false,
+      "before": {
+        "prompt": "Programează o vizionare pentru apartamentul X cu Matei Alin mâine la 07:30",
+        "withHistory": false,
+        "reservation": {
+          "input": 67617,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "after": {
+        "prompt": "Programează o vizionare pentru apartamentul X cu Matei Alin mâine la 07:30",
+        "withHistory": false,
+        "reservation": {
+          "input": 32120,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "reservationReductionPercent": 52.5
+    },
+    {
+      "prompt": "Programează o vizionare pentru apartamentul X cu Matei Alin mâine la 07:30",
+      "withHistory": true,
+      "before": {
+        "prompt": "Programează o vizionare pentru apartamentul X cu Matei Alin mâine la 07:30",
+        "withHistory": true,
+        "reservation": {
+          "input": 69851,
+          "output": 2200
+        },
+        "modelReached": false,
+        "status": "partial"
+      },
+      "after": {
+        "prompt": "Programează o vizionare pentru apartamentul X cu Matei Alin mâine la 07:30",
+        "withHistory": true,
+        "reservation": {
+          "input": 34545,
+          "output": 2200
+        },
+        "modelReached": true,
+        "status": "success"
+      },
+      "reservationReductionPercent": 50.5
+    }
+  ]
+}

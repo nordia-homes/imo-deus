@@ -22,7 +22,9 @@ import { usageRecord, type UsageRecord, type AgentEvent } from './telemetry';
 import { buildInstructions } from './policy';
 import { explicitInstants } from './temporal-policy';
 import { functionDefinition, functionPayload } from './function-tools';
-import { observeJev, jevRequest, JEV_INPUT_USD_PER_MILLION, type JevObservation } from './jev';
+import { capabilityCatalog, expandCapabilities, selectCapabilities, toolCapabilities, visibleTools, requiresToolPolicy, CAPABILITY_VERSION, type CapabilityId } from './capability-catalog';
+import { HttpJevSelector, jevMode, selectionEstimate, selectionFallback, selectionResponseSchema, type JevSelector } from './jev-selection';
+import { JEV_INPUT_USD_PER_MILLION, type JevObservation } from './jev';
 import { validateGoalCoverage, type GoalCoverage } from './goal-coverage';
 import { selectedMessageStatus, selectedMessageReference } from './message-status';
 import { selectedProspectRanking, explainProspectRanking } from './prospect-ranking-explanation';
@@ -31,7 +33,7 @@ import { ownActiveProspects, otherReservedProspects, otherAssignedProspects } fr
 import { operationCards } from './operation-cards';
 import { validatePlannedDependencies } from './dependencies';
 
-export type AgentOptions = { ownerHistoryIdentity?: { listingId: string; phone?: string; associations?: OwnerAssociationAnswer[] }; provider?: ModelProvider; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string; selectedViewingIds?: string[] };
+export type AgentOptions = { ownerHistoryIdentity?: { listingId: string; phone?: string; associations?: OwnerAssociationAnswer[] }; provider?: ModelProvider; jevSelector?: JevSelector; loadCapabilities?: (ids: string[], tools?: string[]) => unknown; budget?: AgentBudget; progress?: (event: AgentEvent) => void | Promise<void>; allowedTools?: string[]; child?: boolean; summary?: unknown; verifiedDates?: Set<string>; selectedViewingId?: string; selectedViewingIds?: string[] };
 export async function planTurn(ctx: AssistantContext, prompt: string, history: AssistantMessage[], options: AgentOptions = {}) {
   const historyReply = ownerHistoryReply(prompt, history);
   let ownerHistoryContinuation: OwnerHistoryContinuation | undefined;
@@ -49,7 +51,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   const selectedViewingId = selectedViewing(history, options.summary);
   const selectedViewingIds = selectedViewingList(history, options.summary);
   const childStarted = Date.now(), initialTokens = budget.tokens, initialCost = budget.cost;
-  const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation }) };
+  const metrics = { models: [] as UsageRecord[], tools: [] as { name: string; status: string; latencyMs: number; version: string; argumentsHash: string }[], status: 'pending', elapsedMs: 0, ...({} as { jev?: JevObservation; capabilityRouting?: import('./telemetry').CapabilityRouting }) };
   let collaborationDraft = false;
   const verifiedMutationPlan = () => actions.length > 0 && !!goalCoverage?.requirements.every(row => ['planned', 'answered'].includes(row.resolution)) && metrics.tools.at(-1)?.name === 'goal_coverage' && metrics.tools.at(-1)?.status === 'success';
   const finish = (text: string, status = 'success') => {
@@ -653,7 +655,9 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   let historyDiscoveryCall: Record<string, unknown> = { listingId: selectedHistoryListingId, ...(prospectHistory ? { scope: 'agency_history' } : {}) };
   const historyReady = () => historyDiscoveryComplete && pendingHistory.size === 0;
   const actionRelevant = (name: string) => !Object.hasOwn(actionToolSchemas, name) || selectedActions.has(name);
-  const available = coreToolNames.filter(name => name !== 'prospect_followup_stop' || followupStop || options.allowedTools?.includes(name)).filter(name => name !== 'outreach_preflight' || outreachLaunch || options.allowedTools?.includes(name)).filter(name => !outreachLaunch || [outreachReadTool, 'goal_coverage', 'propose_actions', ...(outreachScheduleReply ? ['resolve_datetime'] : [])].includes(name)).filter(name => name !== 'outreach_configuration' || outreachSettingsEdit || outreachSettingsRead || /outreach|apel.*ai/.test(contextHint) || options.allowedTools?.includes(name)).filter(name => !outreachSettingsEdit || ['outreach_configuration', 'goal_coverage', 'propose_actions', 'operation_contract'].includes(name)).filter(name => !outreachSettingsRead || ['outreach_configuration', 'goal_coverage', 'propose_actions'].includes(name)).filter(name => name !== 'outreach_history' || (/\bapel/.test(contextHint) && /\bai\b|outreach/.test(contextHint)) || options.allowedTools?.includes(name)).filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => name !== 'owner_prospects' || prospectRead || options.allowedTools?.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(name => !prospectRead || historyTools.has(name)).filter(name => !outreachRead || outreachReadTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const legacyAvailable = coreToolNames.filter(name => name !== 'prospect_followup_stop' || followupStop || options.allowedTools?.includes(name)).filter(name => name !== 'outreach_preflight' || outreachLaunch || options.allowedTools?.includes(name)).filter(name => !outreachLaunch || [outreachReadTool, 'goal_coverage', 'propose_actions', ...(outreachScheduleReply ? ['resolve_datetime'] : [])].includes(name)).filter(name => name !== 'outreach_configuration' || outreachSettingsEdit || outreachSettingsRead || /outreach|apel.*ai/.test(contextHint) || options.allowedTools?.includes(name)).filter(name => !outreachSettingsEdit || ['outreach_configuration', 'goal_coverage', 'propose_actions', 'operation_contract'].includes(name)).filter(name => !outreachSettingsRead || ['outreach_configuration', 'goal_coverage', 'propose_actions'].includes(name)).filter(name => name !== 'outreach_history' || (/\bapel/.test(contextHint) && /\bai\b|outreach/.test(contextHint)) || options.allowedTools?.includes(name)).filter(name => !options.allowedTools || options.allowedTools.includes(name)).filter(name => name !== 'owner_prospects' || prospectRead || options.allowedTools?.includes(name)).filter(name => !(pendingProspect || prospectFollowup) || continuationTools.has(name)).filter(name => !prospectRead || historyTools.has(name)).filter(name => !outreachRead || outreachReadTools.has(name)).filter(actionRelevant).filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
+  const focused = !!(options.child || options.allowedTools || pendingProspect || prospectFollowup || prospectRead || outreachRead || outreachLaunch || outreachSettingsEdit || outreachSettingsRead || humanCallTask || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead || requestsWhatsappProspecting(ctx.prospectingRequest?.prompt || ''));
+  const available = focused ? legacyAvailable : coreToolNames.filter(name => { try { requireTool(name, ctx.role || ''); return true; } catch { return false; } });
   if (requestsWhatsappProspecting(ctx.prospectingRequest?.prompt || '')) available.splice(0, available.length, ...available.filter(name => ['search_properties', 'read', 'read_field', 'existing_read', 'discover_tools', 'operation_contract', 'propose_actions', 'goal_coverage'].includes(name)));
   if (humanCallTask) available.splice(0, available.length, ...available.filter(name => ['read', 'read_field', 'create_task', 'propose_actions', 'goal_coverage', 'resolve_datetime'].includes(name)));
   if (collaborationDraft) available.splice(0, available.length, ...available.filter(name => ['read', 'goal_coverage'].includes(name)));
@@ -662,8 +666,23 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   if (!whatsappTemplates && !options.allowedTools?.includes('whatsapp_template_check')) { const index = available.indexOf('whatsapp_template_check'); if (index >= 0) available.splice(index, 1); }
   if (messageStatus) available.splice(0, available.length, ...available.filter(name => ['existing_read', 'goal_coverage'].includes(name)));
   if (prospectAssignmentRead) available.splice(0, available.length, ...available.filter(name => ['read', 'goal_coverage'].includes(name)));
-  const instructions = buildInstructions(ctx, { readiness, memory: !rankingExplain && !whatsappCheck && !messageStatus && ctx.adminDb ? await relevantMemory(ctx) : [], allowedTools: available, summary: rankingExplain || whatsappCheck || messageStatus ? undefined : options.summary, readOnly: options.child || prospectRead || outreachRead || outreachSettingsRead || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead });
-  const tools = available.map(functionDefinition);
+  const policyMemory = !rankingExplain && !whatsappCheck && !messageStatus && ctx.adminDb ? await relevantMemory(ctx) : [];
+  let modules = expandCapabilities(selectCapabilities(contextHint));
+  let displayed = focused ? available : visibleTools(available, modules, contextHint);
+  const policyDynamic = { readiness, memory: policyMemory, summary: rankingExplain || whatsappCheck || messageStatus ? undefined : options.summary, readOnly: options.child || prospectRead || outreachRead || outreachSettingsRead || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead };
+  const compose = (ids: CapabilityId[], names: string[]) => buildInstructions(ctx, { ...policyDynamic, allowedTools: names, ...(!focused ? { modules: ids } : {}) }) + (!focused ? '\nCAPABILITY_CATALOG ' + JSON.stringify(capabilityCatalog.map(({id,description})=>({id,description,tools:available.filter(name=>toolCapabilities(name).includes(id))}))) + '\nFolosește load_capabilities pentru orice domeniu suplimentar înaintea operațiilor sale. Catalogul este prezentare, nu permisiune. Nu reduce cererea originală la domeniile deja încărcate. Păstrează pașii pregătiți; nu îi repeta.' : '');
+  let instructions = compose(modules, displayed);
+  let tools = displayed.map(functionDefinition);
+  const refreshCapabilities = (ids: string[], requested: string[] = []) => {
+    if (requested.some(name=>!available.includes(name))) throw new Error('Unealtă neautorizată în acest flux.');
+    let next = expandCapabilities([...modules, ...ids, ...requested.flatMap(toolCapabilities)]);
+    let names = visibleTools(available, next, contextHint, requested), candidate = compose(next, names), definitions = names.map(functionDefinition);
+    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) { next=expandCapabilities([...ids,...requested.flatMap(toolCapabilities)]);names=visibleTools(available,next,contextHint,requested);candidate=compose(next,names);definitions=names.map(functionDefinition); }
+    if (Buffer.byteLength(candidate + JSON.stringify(definitions)) > 34000) return { loaded: false, reason: 'Contextul modulelor este prea mare; folosește operation_contract și uneltele generice pentru pasul concret.', modules };
+    const added = next.filter(id=>!modules.includes(id)); modules=next;displayed=names;instructions=candidate;tools=definitions;
+    if(metrics.capabilityRouting){metrics.capabilityRouting.loaded=modules;metrics.capabilityRouting.expansions+=added.length?1:0;}
+    return {loaded:true,added,modules,executed:false};
+  };
   const input: any[] = contextMessages(rankingExplain || whatsappCheck || messageStatus ? [] : history); input.push({ role: 'user', content: prompt });
   if (prospectAssignmentRead && !otherReservations && !prospectOwnershipGuard && !promisingRead && !rankingExplain) input.push({ role: 'developer', content: 'Citește read resource=ownerListingFavorites limit=50 fără id/search. Serverul filtrează prospectele active ale agentului autentificat conform atribuirii CRM, inclusiv expirarea rezervărilor. Continuă toate paginile nextCursor până la complete=true, chiar dacă o pagină nu conține potriviri. Listează rezultatele tuturor paginilor; acestea sunt prospecte, nu proprietari deduplicați. Nu modifica și nu rezerva nimic. Apoi goal_coverage resolution=answered steps=[] evidenceCallIds citirea completă. Dacă nu există rezultate după ultima pagină, spune că nu ai prospecte active atribuite în agenția curentă.' });
   if (rankingExplain) input.push({ role: 'developer', content: 'Explică exact clasamentul afișat anterior, fără reclasificare. Citește read resource=ownerListingFavorites limit=50 fără id/search și continuă toate paginile până la complete=true. Numai rezultatul ultimei pagini conține explicațiile verificate. Păstrează position, priorityScore și priorityReasons istorice. Pentru state=changed precizează separat currentPriorityScore; nu îl prezenta ca punctaj original. Pentru state=unavailable spune numai că poziția nu mai este eligibilă/accesibilă, fără nume, telefon sau detalii din istoric. Explică departajarea egalităților după ID, nu după o probabilitate de succes inventată. ' + PROSPECT_PRIORITY_CRITERIA + ' Nu modifica, rezerva sau contacta nimic. Încheie cu goal_coverage resolution=answered steps=[] după citirea completă.' });
@@ -685,12 +704,21 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
   if (prospectPhoneLookup) input.push({ role: 'developer', content: 'Această cerere verifică telefonul la alte anunțuri, nu istoricul. Folosește owner_prospects {listingId:' + selectedHistoryListingId + '} FĂRĂ scope, apoi același listingId și cursor=nextCursor până la complete=true. Nu citi timeline. Compară rezultatele cu ID-ul selectat: acesta nu este un alt anunț. Prezintă toate celelalte anunțuri, inclusiv inactivele marcate ca atare. Limitează concluzia la prospectele agenției; telefonul comun nu garantează identitatea. Nu contacta și nu modifica nimic. La final goal_coverage resolution=answered, steps=[], sourceQuote=cererea exactă și evidenceCallIds=ID-urile citirilor reușite.' });
   let invalidCalls = 0, closureAttempts = 0, reservingNextTurn = false, previousReservation: InputReservation | undefined; const repetitions = new Map<string, number>();
   try {
-    // Shadow calls never alter the approved execution path. Skip injected test
-    // providers and child planners; reserve conservatively before network I/O.
-    const jevTokens = Buffer.byteLength(JSON.stringify(jevRequest(prompt, available)));
-    if (!options.provider && !options.child && budget.cost + jevTokens * JEV_INPUT_USD_PER_MILLION / 1e6 < budget.limits.maxCost && budget.tokens + jevTokens < budget.limits.maxTokens) {
-      const observation = await observeJev(prompt, available);
-      if (observation) { metrics.jev = observation; budget.recordAuxiliary(observation.costUsd, observation.inputTokens + observation.outputTokens); }
+    if (!focused) {
+      const mode = jevMode();
+      const state = { request: prompt, context: history.slice(-2).map(row=>({role:row.role,text:row.text})) };
+      const estimate = selectionEstimate(state);
+      metrics.capabilityRouting = { version: CAPABILITY_VERSION, mode, selected: [], loaded: modules, expansions: 0, status: 'local', inputTokens: 0, outputTokens: 0, costUsd: 0, latencyMs: 0 };
+      // Test model injection alone never authorizes a real provider call. A selector can be injected independently.
+      if (mode !== 'off' && (options.jevSelector || (!options.provider && process.env.TYPESAFE_API_KEY)) && estimate <= 16000 && budget.tokens + estimate + Buffer.byteLength(instructions + JSON.stringify(tools) + JSON.stringify(input)) + budget.limits.maxOutputTokens < budget.limits.maxTokens && budget.cost + estimate * JEV_INPUT_USD_PER_MILLION / 1e6 < budget.limits.maxCost) {
+        let observation; let selectionTimer: ReturnType<typeof setTimeout> | undefined;
+        try { observation=selectionResponseSchema.parse(await Promise.race([(options.jevSelector || new HttpJevSelector()).select(state),new Promise<never>((_,reject)=>{selectionTimer=setTimeout(()=>reject(new Error('selector_timeout')),1500);})])); }
+        catch { observation=selectionFallback('invalid_selector',0,estimate); }
+        finally {if(selectionTimer)clearTimeout(selectionTimer);}
+        budget.recordAuxiliary(observation.costUsd, observation.inputTokens + observation.outputTokens);
+        Object.assign(metrics.capabilityRouting,{selected:observation.modules,status:observation.status,reason:observation.reason,estimated:observation.estimated,inputTokens:observation.inputTokens,outputTokens:observation.outputTokens,costUsd:observation.costUsd,latencyMs:observation.latencyMs});
+        if (mode === 'active' && observation.status === 'ok') refreshCapabilities(observation.modules);
+      }
     }
     for (let turn = 0; turn < (options.child ? 3 : budget.limits.maxSteps); turn++) {
       reservingNextTurn = true;
@@ -717,7 +745,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
         }
       }
       metrics.models.push(usageRecord(decision, result.usage, usageCost(decision.model, result.usage), result.latencyMs)); budget.record(decision.model, result.usage);
-      previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens};
+      previousReservation = result.usage.estimated ? undefined : {plainBytes:reservation.plainBytes,inputTokens:result.usage.inputTokens,outputTokens:result.usage.outputTokens,fingerprint:reservation.fingerprint};
       input.push(...result.items);
       if (!result.calls.length) {
         const needsCoverage = !options.child && available.includes('goal_coverage') && !goalCoverage && (metrics.tools.length > 0 || prospectRead || outreachRead || outreachSettingsRead || outreachLaunch || collaborationDraft || whatsappCheck || messageStatus || prospectAssignmentRead);
@@ -760,9 +788,18 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
           await emit(name, definition.description);
           let timer: ReturnType<typeof setTimeout> | undefined;
           let response;
-          const invoke = async () => {
+          const invoke = async (): Promise<import('./tool-dispatch').ToolResult> => {
+            if (!focused && name !== 'load_capabilities') {
+              const targets = name === 'propose_actions' ? (payload.actions || []).map((action: any)=>action.kind === 'existing_operation' ? action.operation : action.kind) : [name === 'existing_read' || name === 'operation_contract' ? payload.operation : name];
+              const required = expandCapabilities(targets.flatMap((target: string)=>toolCapabilities(target)));
+              const policyTools = targets.filter((target: string) => available.includes(target) && requiresToolPolicy(target) && !displayed.includes(target));
+              if (required.some(id=>!modules.includes(id)) || policyTools.length || (toolCapabilities(name).length > 0 && !displayed.includes(name))) {
+                const loaded = refreshCapabilities(required, [...policyTools, ...(available.includes(name) ? [name] : [])]);
+                return { data: { ...loaded, complete: false, retryRequired: true, instruction: 'Citește instrucțiunile încărcate la următorul pas și repetă numai acest apel. Nicio acțiune din apel nu a fost pregătită sau executată.' }, actions: [], cards: [], refs: [] };
+              }
+            }
             for (let attempt = 1; ; attempt++) {
-              try { return await definition.handler(ctx, payload, prompt, { ...options, provider, budget, verifiedDates, selectedViewingId, selectedViewingIds }); }
+              try { return await definition.handler(ctx, payload, prompt, { ...options, provider, budget, verifiedDates, selectedViewingId, selectedViewingIds, ...(!focused ? { loadCapabilities: refreshCapabilities } : {}) }); }
               catch (error) {
                 const code = Number((error as { status?: number; httpStatus?: number })?.status || (error as { httpStatus?: number })?.httpStatus);
                 const transient = error instanceof ProviderError ? error.retryable : [429, 502, 503, 504].includes(code);
@@ -828,7 +865,7 @@ export async function planTurn(ctx: AssistantContext, prompt: string, history: A
             response.data = { ...response.data, preparedSteps: response.actions.map((_, index) => actions.length + index + 1) };
           }
           const requestedSearchPage = name === 'search_properties' && requestsWhatsappProspecting(ctx.prospectingRequest?.prompt || '') && Number.isInteger(payload.limit) && payload.limit > 0 && Array.isArray(response.data.rows) && response.data.rows.length >= payload.limit;
-          if (definition.riskLevel === 'READ' && name !== 'goal_coverage' && !response.actions.length && (response.data.complete !== false || requestedSearchPage)) {
+          if (definition.riskLevel === 'READ' && !['goal_coverage','load_capabilities'].includes(name) && !response.actions.length && (response.data.complete !== false || requestedSearchPage)) {
             successfulReads.add(call.id);
             response.data = { ...response.data, evidenceCallId: call.id, ...(requestedSearchPage ? { evidenceScope: 'returned_results_only_not_global_total' } : {}) };
           }

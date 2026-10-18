@@ -1,0 +1,527 @@
+{
+  "local": {
+    "branch": "codex/jev-safety-20261018",
+    "commit": "8dcee44c9f7b34f06e6fcdac3487a6a15817bb96",
+    "previousHead": "2c575d3f0194b893be3107ae91556c49845bc480",
+    "privateBackupDirectory": "D:\\imo-deus\\.tmp\\jev-checkpoint-20261018",
+    "envBackupHashMatched": true,
+    "cacheExcluded": true
+  },
+  "production": {
+    "verifiedAt": "2026-10-18T06:17:24.863Z",
+    "project": "studio-652232171-42fb6",
+    "backend": "studio",
+    "region": "us-central1",
+    "trafficReconciling": false,
+    "builds": [
+      {
+        "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261017-jarvis-140",
+        "state": "READY",
+        "commit": "c06958bc203423f29634de06743221374ce7c4d3",
+        "percent": 100
+      }
+    ],
+    "run": {
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/services/studio",
+      "latestReadyRevision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261017-jarvis-140",
+      "traffic": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+          "revision": "studio-build-20261017-jarvis-140",
+          "percent": 100,
+          "tag": "t-1496503599",
+          "uri": "https://t-1496503599---studio-lz5qfusjya-uc.a.run.app"
+        }
+      ],
+      "inactiveRevisionEntriesOmitted": 787
+    },
+    "configuration": [
+      {
+        "name": "NEXT_PUBLIC_FIREBASE_VAPID_KEY",
+        "valueRedacted": true
+      },
+      {
+        "name": "STORIA_CLIENT_ID",
+        "valueRedacted": true
+      },
+      {
+        "name": "META_APP_ID",
+        "valueRedacted": true
+      },
+      {
+        "name": "NEXT_PUBLIC_APP_URL",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_CLIENT_KEY",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_REDIRECT_URI",
+        "valueRedacted": true
+      },
+      {
+        "name": "TYPESAFE_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/TYPESAFE_API_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "JARVIS_JEV_MODE",
+        "value": "shadow"
+      },
+      {
+        "name": "OLX_PHONE_BROWSER_URL",
+        "valueRedacted": true
+      },
+      {
+        "name": "BROWSERBASE_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/BROWSERBASE_API_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "BROWSERBASE_PROJECT_ID",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/BROWSERBASE_PROJECT_ID",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "BROWSERBASE_EXTENSION_ID",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/BROWSERBASE_EXTENSION_ID",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "BROWSERBASE_REGION",
+        "valueRedacted": true
+      },
+      {
+        "name": "BROWSERBASE_PROXY_COUNTRY",
+        "valueRedacted": true
+      },
+      {
+        "name": "BROWSERBASE_USE_PROXY",
+        "valueRedacted": true
+      },
+      {
+        "name": "FACEBOOK_CLOUD_RUNNER_URL",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/FACEBOOK_CLOUD_RUNNER_URL",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "FACEBOOK_CLOUD_RUNNER_TOKEN",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/FACEBOOK_CLOUD_RUNNER_TOKEN",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "FACEBOOK_CLOUD_RUNNER_CALLBACK_TOKEN",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/FACEBOOK_CLOUD_RUNNER_CALLBACK_TOKEN",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "PLAYWRIGHT_BROWSERS_PATH",
+        "valueRedacted": true
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/OPENAI_API_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "GOOGLE_MAPS_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/GOOGLE_MAPS_API_KEY",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "GOOGLE_MAPS_BROWSER_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/GOOGLE_MAPS_BROWSER_API_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "META_APP_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/META_APP_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "META_WHATSAPP_APP_ID",
+        "valueRedacted": true
+      },
+      {
+        "name": "META_WHATSAPP_APP_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/META_WHATSAPP_APP_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "META_WHATSAPP_CONFIG_ID",
+        "valueRedacted": true
+      },
+      {
+        "name": "WHATSAPP_ONBOARDING_MODE",
+        "valueRedacted": true
+      },
+      {
+        "name": "WHATSAPP_TEST_USER_IDS",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/WHATSAPP_TEST_USER_IDS",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "WHATSAPP_TEST_RECIPIENTS",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/WHATSAPP_TEST_RECIPIENTS",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "META_TOKEN_ENCRYPTION_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/META_TOKEN_ENCRYPTION_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "APP_BASE_URL",
+        "valueRedacted": true
+      },
+      {
+        "name": "COMMUNICATIONS_WORKER_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/COMMUNICATIONS_WORKER_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "AI_ASSISTANT_WORKER_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/AI_ASSISTANT_WORKER_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "META_WEBHOOK_VERIFY_TOKEN",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/META_WEBHOOK_VERIFY_TOKEN",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "STORIA_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/STORIA_API_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "STORIA_CLIENT_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/STORIA_CLIENT_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "STORIA_WEBHOOK_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/STORIA_WEBHOOK_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "TIKTOK_CLIENT_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/TIKTOK_CLIENT_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "TIKTOK_UNAUDITED_PRIVATE_ONLY",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_TOKEN_ENCRYPTION_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/TIKTOK_TOKEN_ENCRYPTION_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/TIKTOK_ADS_MCP_TOKEN_ENCRYPTION_KEY",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "TIKTOK_ADS_MCP_URL",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_READS_ENABLED",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_WRITES_ENABLED",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_SPEND_MUTATIONS_ENABLED",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_ADS_MEDIA_ALLOWED_HOSTS",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_ADS_WORKER_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/TIKTOK_ADS_WORKER_SECRET",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "TIKTOK_ADS_TENANT_MAX_CONCURRENT_CALLS",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_MCP_MAX_RESPONSE_BYTES",
+        "valueRedacted": true
+      },
+      {
+        "name": "TIKTOK_ADS_SIGNIFICANT_CHANGE_BPS",
+        "valueRedacted": true
+      },
+      {
+        "name": "OWNER_LISTINGS_CRON_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/OWNER_LISTINGS_CRON_SECRET",
+            "version": "3"
+          }
+        }
+      },
+      {
+        "name": "VAPI_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/VAPI_API_KEY",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "VAPI_WEBHOOK_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/VAPI_WEBHOOK_SECRET",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/AI_CALLS_DEFAULT_VAPI_ASSISTANT_ID",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/AI_CALLS_DEFAULT_VAPI_PHONE_NUMBER_ID",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "AI_OUTREACH_CRON_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/AI_OUTREACH_CRON_SECRET",
+            "version": "2"
+          }
+        }
+      },
+      {
+        "name": "PROPERTY_VIDEO_TOUR_CRON_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/PROPERTY_VIDEO_TOUR_CRON_SECRET",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "FIREBASE_STORAGE_BUCKET",
+        "valueRedacted": true
+      },
+      {
+        "name": "PROPERTY_VIDEO_TOUR_AVATAR_PROVIDER",
+        "valueRedacted": true
+      },
+      {
+        "name": "OPENAI_TTS_MODEL",
+        "valueRedacted": true
+      },
+      {
+        "name": "OPENAI_ASSISTANT_MODEL",
+        "valueRedacted": true
+      },
+      {
+        "name": "EMAIL_INBOUND_DOMAIN",
+        "valueRedacted": true
+      },
+      {
+        "name": "EMAIL_INBOUND_WEBHOOK_SECRET",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/EMAIL_INBOUND_WEBHOOK_SECRET",
+            "version": "3"
+          }
+        }
+      },
+      {
+        "name": "SALES_DOCUMENT_OCR_ENABLED",
+        "valueRedacted": true
+      },
+      {
+        "name": "GOOGLE_CLOUD_PROJECT_ID",
+        "valueRedacted": true
+      },
+      {
+        "name": "SALES_DOCUMENT_SCAN_URL",
+        "valueRedacted": true
+      },
+      {
+        "name": "SALES_DOCUMENT_SCAN_TOKEN",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/SALES_DOCUMENT_SCAN_TOKEN",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "SALES_DOCUMENT_SCAN_ATTEMPTS",
+        "valueRedacted": true
+      },
+      {
+        "name": "SALES_DOCUMENT_SCAN_TIMEOUT_MS",
+        "valueRedacted": true
+      },
+      {
+        "name": "SALES_DOCUMENT_SCAN_RETRY_DELAY_MS",
+        "valueRedacted": true
+      },
+      {
+        "name": "JARVIS_VOICE_ENABLED",
+        "valueRedacted": true
+      },
+      {
+        "name": "ELEVENLABS_API_KEY",
+        "valueSource": {
+          "secretKeyRef": {
+            "secret": "projects/552699648501/secrets/ELEVENLABS_API_KEY",
+            "version": "1"
+          }
+        }
+      },
+      {
+        "name": "JARVIS_ELEVENLABS_VOICE_ID",
+        "valueRedacted": true
+      },
+      {
+        "name": "WS_NO_BUFFER_UTIL",
+        "valueRedacted": true
+      },
+      {
+        "name": "FIREBASE_CONFIG",
+        "valueRedacted": true
+      },
+      {
+        "name": "NG_TRUST_PROXY_HEADERS",
+        "valueRedacted": true
+      },
+      {
+        "name": "NG_ALLOWED_HOSTS",
+        "valueRedacted": true
+      }
+    ],
+    "scope": "Read-only production checkpoint. No release or data changes."
+  },
+  "implementationBranch": "codex/jev-modular-20261018",
+  "deploymentAuthorized": false
+}

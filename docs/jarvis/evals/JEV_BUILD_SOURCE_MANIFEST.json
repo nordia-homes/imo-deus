@@ -1,0 +1,45 @@
+{
+  "scope": "Runtime source identity between isolated worktree and same-drive build copy. Does not itself assert successful compilation.",
+  "hashes": [
+    {
+      "file": "src/lib/ai-assistant/budget.ts",
+      "sha256": "fa4a0b498b7bc045bcfebaf6d178b6eaa1b1a6d4ec712bbcf6a19961d2c711d8"
+    },
+    {
+      "file": "src/lib/ai-assistant/capability-catalog.ts",
+      "sha256": "14e8ff0d54e7e86403fdf6d6d5b2d18b6be89b3712ec16204b5a6db761b5f8f5"
+    },
+    {
+      "file": "src/lib/ai-assistant/function-tools.ts",
+      "sha256": "5ac804cb5220869f16099d27a46d3382d05dfb7d127c0d78455d2594e4c5a763"
+    },
+    {
+      "file": "src/lib/ai-assistant/jev-selection.ts",
+      "sha256": "9f0d56a9676381d3579fefb3060d75115f6d30da1ce4842ccb2c2192b27f8858"
+    },
+    {
+      "file": "src/lib/ai-assistant/models.ts",
+      "sha256": "21aeb0e2fa214dd5f5d03146de71c71c88be168d826a0520e73456064012efba"
+    },
+    {
+      "file": "src/lib/ai-assistant/planner.ts",
+      "sha256": "4899548f7a70d71d031b7539f7c9fc6ad14503f849ddcb08ca53f98aa27eede3"
+    },
+    {
+      "file": "src/lib/ai-assistant/policy.ts",
+      "sha256": "9605c68204666836d4891376f87345473e933117fb6f0dc1f254348ded907dc6"
+    },
+    {
+      "file": "src/lib/ai-assistant/telemetry.ts",
+      "sha256": "30675f8d83ab56490946ff8f36ca4fb670a03d25f54ab1e2e8bd21160ad02f87"
+    },
+    {
+      "file": "src/lib/ai-assistant/tool-dispatch.ts",
+      "sha256": "97bc95e814f65482d193f0fc32a6b6c4a161cf40f6aee648025e4b09db3730df"
+    },
+    {
+      "file": "src/lib/ai-assistant/tool-schemas.ts",
+      "sha256": "87617e519c7174fa4ba59d2ed58bcdeaef3e1e6def539ee13b043d6322a5979d"
+    }
+  ]
+}

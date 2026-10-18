@@ -1514,3 +1514,12 @@ Versiune: prompt 33, unelte 60. Regresia generală a trecut 1769/1769 în 137 fi
 1757/1757 teste de regresie în 136 de fișiere au trecut pentru versiunea 59 a uneltelor / prompt 32. Suita Firestore/Storage a trecut 260/260 verificări în 18 fișiere, inclusiv salvarea cumpărătorului și vizionării în emulator. Pilotul separat cu model real a trecut după remedierea celor două defecte documentate mai sus. UI Text a trecut inclusiv activarea/dezactivarea noii autorizări; captura viewing-autonomy.png a fost inspectată. ESLint nu are erori; rămâne avertismentul preexistent useEffect/openSession. Paritatea și inventarul loturilor au trecut. Nu s-au trimis mesaje sau lansat campanii reale.
 
 Buildul versiunii 59 a trecut cu TypeScript și 227/227 pagini, după corectarea unei referințe de istoric incompatibile cu schema TypeScript. Rămân avertismentele cunoscute Jaeger/Tailwind și omiterea copierii Playwright în standalone. git diff --check a trecut. Nu s-a publicat în producție.
+
+
+## Jev modular și puncte de revenire — 18 octombrie 2026
+
+Implementare izolată pe codex/jev-modular-20261018, checkpoint local 8dcee44c, producție verificată c06958bc/build-20261017-jarvis-140 neschimbată. Catalog modular, încărcare progresivă, moduri off/shadow/active, adaptor injectabil și rezervări invalidate la schimbarea instrucțiunilor/schemelor.
+
+2543 teste unitare și 74 teste emulator trecute, plus regresii țintite și build complet. Fluxul cumpărător nou + vizionare + confirmare salvată și reluarea fără duplicate trec cu model simulat în patru moduri. Cele 1000 de cereri au fost verificate pentru selecția locală/dimensionare; nu sunt certificări Jev live sau E2E. Contorul corpusului nu crește prin această verificare.
+
+[Implementare și rollback](JEV_IMPLEMENTATION_2026_10_18.md), [validare](evals/JEV_IMPLEMENTATION_VALIDATION.json), [comparație planner](evals/JEV_PLANNER_COMPARISON.json). Avantajul suplimentar de latență/cost al Jev real rămâne de măsurat cu autorizare pentru apeluri plătite.
