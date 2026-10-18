@@ -14,7 +14,7 @@ env:
       - RUNTIME
 
   - variable: JARVIS_JEV_MODE
-    value: "shadow"
+    value: "off"
     availability:
       - RUNTIME
 
