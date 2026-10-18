@@ -44,9 +44,15 @@ export async function dispatchTool(name: string, ctx: AssistantContext, payload:
   if (name === 'facebook_publication_preflight') {
     const prepared = await prepareFacebookPublication(ctx, payload);
     if (!prepared) throw new Error('Pregătirea publicării nu a produs un rezultat.');
-    const text = prepared.text.replace(/Răspunde „Proprietate: ID” din listă pentru a continua publicarea\./g, 'Alege proprietatea după denumire.').replace(/Alege contul pentru publicare: „Cont Facebook: ID”\./g, 'Alege contul pentru publicare după denumire.');
+    const text = prepared.text;
     data = { ...prepared, text, complete: prepared.actions.length > 0, executed: false };
-    cards.push({ type: 'data', title: prepared.source === 'facebookConnections' ? 'Conturi Facebook disponibile' : 'Proprietăți pentru publicare', source: prepared.source, rows: prepared.rows, note: text });
+    const choiceSource = prepared.pending ? (prepared.source === 'facebookConnections' ? 'facebookSemanticAccount' as const : 'facebookSemanticProperty' as const) : undefined;
+    if (choiceSource) {
+      const input={...payload,...('propertyId' in prepared.pending! ? {propertyId:prepared.pending!.propertyId} : {})};
+      cards.push({type:'data',source:'facebookSemanticRequest',title:'Cerere în așteptarea selecției',rows:[{id:'pending',prompt,input,choiceSource}],complete:true});
+      if (typeof input.propertyId === 'string') refs.push({resource:'properties',id:input.propertyId});
+    }
+    cards.push({ type: 'data', ...(choiceSource ? {choiceSource} : {}), title: prepared.source === 'facebookConnections' ? 'Conturi Facebook disponibile' : 'Proprietăți pentru publicare', source: prepared.source, rows: prepared.rows, note: text });
     if (prepared.source === 'properties') for (const row of prepared.rows) if (typeof row.id === 'string') refs.push({ resource: 'properties', id: row.id });
     for (const action of prepared.actions) if (action.kind === 'existing_operation' && typeof action.body.propertyId === 'string') refs.push({ resource: 'properties', id: action.body.propertyId });
   } else if (name === 'conversation_history') {

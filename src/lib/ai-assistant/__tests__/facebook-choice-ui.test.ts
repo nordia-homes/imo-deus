@@ -24,3 +24,7 @@ it('offers named group checkboxes and an initially disabled batch action',()=>{
  expect(html).toContain('Publică în grupurile selectate (0)');expect(html).toContain('disabled');
  expect(html.replace(/<[^>]*>/g,'')).not.toContain('a'.repeat(24));
 });
+
+it('does not expose internal semantic continuation data in the panel',()=>{
+ expect(render({type:'data',source:'facebookSemanticRequest',title:'intern',rows:[{id:'pending',prompt:'private original',input:{propertyId:'opaque'}}]})).toBe('');
+});

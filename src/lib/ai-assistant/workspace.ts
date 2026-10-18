@@ -109,7 +109,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     const selectedPrompt = input.choice ? resolveNamedChoice(input.choice, input.prompt, conversationHistory) : input.prompt;
     const editPrompt = conversationEditPrompt(selectedPrompt, conversationHistory);
     const planningPrompt = prospectPlanningPrompt(editPrompt, conversationHistory);
-    ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.prompt } };
+    ctx = { ...ctx, prospectingRequest: { sessionId: input.sessionId, requestId: input.requestId, prompt: input.choice?.source === 'facebookSemanticProperty' || input.choice?.source === 'facebookSemanticAccount' ? selectedPrompt : input.prompt } };
     const restored = await loadRequestCheckpoint(ctx, input);
     const result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
     if (!restored) await saveRequestCheckpoint(ctx, input, result);
@@ -148,7 +148,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     }
     const planId = result.actions.length ? randomUUID() : undefined;
     const pendingProspect = pendingProspectRequest(planningPrompt, result.metrics.status, history);
-    const message: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.choiceSource || ['facebookImmediateRequest','facebookAccountRequest','facebookScheduleRequest','metaStatusReview', 'metaAssetsReview', 'metaImageResumeSelection', 'metaImageSelection', 'metaImageApproval', 'metaImageReview', 'metaPerformanceSelection', 'metaPerformanceReview', 'metaPublishSelection', 'metaPublishReview', 'metaCampaignReview', 'metaMediaSelection'].includes(card.source) ? card.rows : card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
+    const message: AssistantMessage = { id: reply.id, role: 'assistant', outputType: 'TEXT', text: result.text, cards: result.cards.map(card => ({ ...card, rows: card.choiceSource || ['facebookSemanticRequest','facebookImmediateRequest','facebookAccountRequest','facebookScheduleRequest','metaStatusReview', 'metaAssetsReview', 'metaImageResumeSelection', 'metaImageSelection', 'metaImageApproval', 'metaImageReview', 'metaPerformanceSelection', 'metaPerformanceReview', 'metaPublishSelection', 'metaPublishReview', 'metaCampaignReview', 'metaMediaSelection'].includes(card.source) ? card.rows : card.rows.map(row => cardPreview(row)) })), accessRefs: [...result.accessRefs, ...actionReferences(result.actions)], createdAt: new Date().toISOString(), ...(planId ? { planId, actions: result.actions } : {}) };
     if (pendingProspect) message.prospectContinuation = pendingProspect;
     if (result.ownerHistoryContinuation) message.ownerHistoryContinuation = result.ownerHistoryContinuation;
     await ctx.adminDb.runTransaction(async tx => {

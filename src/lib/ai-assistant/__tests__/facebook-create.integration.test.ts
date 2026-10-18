@@ -1,3 +1,5 @@
+import { dispatchTool } from '../tool-dispatch';
+import { OpenAIAdapter } from '../provider';
 import { namedChoiceText, namedGroupChoiceText } from '../named-choice-contract';
 import { prepareFacebookPublication } from '../facebook-natural';
 import { executeSafePrefix } from '../autonomy';
@@ -60,6 +62,29 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     await chatTurn(f.ctx,input);expect((await f.jobs.get()).size).toBe(1);expect(mocks.runner).toHaveBeenCalledTimes(1);
     await expect(chatTurn(f.ctx,{...input,choice:{...input.choice,rowIds:input.choice.rowIds.slice(0,1)}})).rejects.toThrow();
     expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+  it('persists semantic clarification and resumes the complete original request without granting publication',async()=>{
+    const f=await fixture(),sessionId=randomUUID();
+    await f.property.update({defaultFacebookConnectionId:null});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Al doilea cont'});
+    const original='Pentru apartamentul Cișmigiu pregătește publicarea doar în grupul de vânzări, dar nu publica încă. Apoi verifică vizionările.';
+    const preflight=await dispatchTool('facebook_publication_preflight',f.ctx,{query:'Cișmigiu',groupUrls:f.body.groupUrls},original,{});
+    const card=preflight.cards.find(card=>card.choiceSource==='facebookSemanticAccount')!;
+    expect(card.rows).toHaveLength(2);expect(preflight.refs).toContainEqual({resource:'properties',id:'property'});
+    const session=f.agency.collection('assistantSessions').doc(sessionId);
+    await session.set({ownerId:f.ctx.uid});
+    await session.collection('messages').doc('offer').set({role:'assistant',text:'Alege contul',cards:preflight.cards,accessRefs:preflight.refs,createdAt:new Date().toISOString()});
+    const selected=card.rows[1];
+    vi.stubEnv('OPENAI_API_KEY','test-only');
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockResolvedValue({items:[],calls:[],text:'Clarificare păstrată.',intentStatus:'clarification',usage:{inputTokens:100,outputTokens:20,cachedTokens:0,cacheWriteTokens:0,estimated:false},latencyMs:1,status:'completed'});
+    try {
+      const input={sessionId,requestId:randomUUID(),prompt:namedChoiceText('facebookSemanticAccount',selected),choice:{messageId:'offer',source:'facebookSemanticAccount' as const,rowId:String(selected.id)},currentRecord:null};
+      await chatTurn(f.ctx,input);
+      expect(model).toHaveBeenCalled();const supplied=JSON.stringify(model.mock.calls);
+      expect(supplied).toContain(original);expect(supplied).toContain('facebook_publication_preflight');expect(supplied).toContain(f.body.groupUrls[0]);
+      expect((await f.jobs.get()).empty).toBe(true);expect(mocks.runner).not.toHaveBeenCalled();expect(mocks.fetch).not.toHaveBeenCalled();
+      const saved=(await session.collection('messages').doc(input.requestId+'-user').get()).data();expect(saved?.text).toBe(input.prompt);expect(saved?.text).not.toContain(selected.id);
+    } finally {model.mockRestore();vi.unstubAllEnvs();}
   });
   async function call(body: any) { return POST(new NextRequest('http://localhost/api/marketing/facebook-cloud/jobs', { method: 'POST', headers: { authorization: 'Bearer fixture', 'content-type': 'application/json' }, body: JSON.stringify(body) })); }
   it('executes master-0395 after scheduling and detects a subsequent persisted time change', async () => {

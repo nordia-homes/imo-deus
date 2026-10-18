@@ -94,6 +94,7 @@ export function AssistantResultCard({
   const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
   const groupRows = card.rows.filter(row => selectedGroups.includes(String(row.id)));
   const groupChoice = card.choiceSource === 'facebookPublicationGroups';
+  if (card.source === "facebookSemanticRequest") return null;
   const property = ["owners", "crm", "properties"].includes(card.source),
     calendar = card.source === "viewings",
     task = card.source === "tasks",

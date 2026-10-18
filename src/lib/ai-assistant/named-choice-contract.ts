@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Public selection metadata is not an executable command or a permission grant.
-export const choiceSources = ['facebookPublicationGroups','facebookPublicationProperty','facebookPublicationAccount','facebookDefaultAccount','facebookScheduleProperty','metaImageResumeSelection','metaImageSelection','metaImageApproval','metaPerformanceSelection','metaPublishSelection','metaStatusSelection','metaPauseSelection','metaMediaSelection','metaMediaCampaignSelection','metaReviewSelection','metaDraftSelection'] as const;
+export const choiceSources = ['facebookSemanticProperty','facebookSemanticAccount','facebookPublicationGroups','facebookPublicationProperty','facebookPublicationAccount','facebookDefaultAccount','facebookScheduleProperty','metaImageResumeSelection','metaImageSelection','metaImageApproval','metaPerformanceSelection','metaPublishSelection','metaStatusSelection','metaPauseSelection','metaMediaSelection','metaMediaCampaignSelection','metaReviewSelection','metaDraftSelection'] as const;
 export type ChoiceSource = typeof choiceSources[number];
 export const namedChoiceSchema = z.object({
  messageId: z.string().min(1).max(180).regex(/^[^/\u0000-\u001f]+$/),
@@ -12,7 +12,7 @@ export const namedChoiceSchema = z.object({
 export type NamedChoice = z.infer<typeof namedChoiceSchema>;
 export type CardChoice = Omit<NamedChoice, 'messageId'>;
 export const choiceLabels: Record<ChoiceSource,string> = {
- facebookPublicationGroups:'Publică în grupurile selectate',facebookPublicationProperty:'Publică proprietatea',facebookPublicationAccount:'Publică folosind contul',facebookDefaultAccount:'Setează contul proprietății',facebookScheduleProperty:'Programează publicarea proprietății',
+ facebookSemanticProperty:'Alege proprietatea',facebookSemanticAccount:'Alege contul Facebook',facebookPublicationGroups:'Publică în grupurile selectate',facebookPublicationProperty:'Publică proprietatea',facebookPublicationAccount:'Publică folosind contul',facebookDefaultAccount:'Setează contul proprietății',facebookScheduleProperty:'Programează publicarea proprietății',
  metaImageResumeSelection:'Continuă optimizarea aprobată',metaImageSelection:'Pregătește această fotografie',metaImageApproval:'Confirmă schimbarea fotografiei',metaPerformanceSelection:'Consultă statisticile',metaPublishSelection:'Confirmă publicarea în pauză',metaStatusSelection:'Consultă starea campaniei',metaPauseSelection:'Confirmă pauza',metaMediaSelection:'Selectează fotografia',metaMediaCampaignSelection:'Selectează campania pentru material',metaReviewSelection:'Selectează campania',metaDraftSelection:'Selectează ciorna',
 };
 export function namedGroupChoiceText(rows: Record<string,unknown>[]) {

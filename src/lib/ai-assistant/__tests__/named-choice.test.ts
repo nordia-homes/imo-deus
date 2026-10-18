@@ -5,7 +5,7 @@ import { choiceSources,namedChoiceText,namedGroupChoiceText,namedChoiceSchema } 
 import { requestCheckpointHash } from '../request-checkpoint';
 import type { AssistantMessage } from '../contracts';
 const message=(source:string,rows:any[]=[{id:'opaque',campaignName:'Cișmigiu'}]):AssistantMessage=>({id:'offer',role:'assistant',text:'Alege',createdAt:'2026-10-18T10:00:00Z',cards:[{type:'data',source,title:'Opțiuni',rows}]});
-it.each(choiceSources)('resolves only an offered %s choice from the current response',source=>{
+it.each(choiceSources.filter(source=>source!=='facebookSemanticProperty' && source!=='facebookSemanticAccount'))('resolves only an offered %s choice from the current response',source=>{
  const m=message(source),row=m.cards![0].rows[0],choice={messageId:m.id,source,rowId:'opaque'};
  const visible=namedChoiceText(source,row);
  expect(visible).toContain('Cișmigiu');expect(visible).not.toContain('opaque');
@@ -76,4 +76,15 @@ it('retains all 200 destinations while explicitly abbreviating only the visible 
  const prompt=namedGroupChoiceText(rows);expect(prompt.length).toBeLessThan(6000);expect(prompt).toContain('încă 180');
  expect(resolveNamedChoice(choice,prompt,[m]).split(', ')).toHaveLength(200);
  expect(resolveNamedChoice(choice,prompt,[m])).toContain(rows[199].id);
+});
+
+it.each(['facebookSemanticProperty','facebookSemanticAccount'] as const)('preserves original restrictions and the whole compound request for %s',source=>{
+ const original='Verifică apartamentul, pregătește publicarea doar în Titan; nu publica încă. Apoi verifică vizionările.';
+ const m=message('properties',[{id:'p',title:'Cișmigiu'}]);m.cards![0].choiceSource=source;
+ m.cards!.push({type:'data',source:'facebookSemanticRequest',title:'intern',rows:[{id:'pending',prompt:original,input:{query:'Cișmigiu',groupUrls:['https://www.facebook.com/groups/titan']},choiceSource:source}]});
+ const prompt=namedChoiceText(source,m.cards![0].rows[0]),choice={messageId:m.id,source,rowId:'p'};
+ const resolved=resolveNamedChoice(choice,prompt,[m]);
+ expect(resolved).toContain(original);expect(resolved).toContain('https://www.facebook.com/groups/titan');expect(resolved).toContain(source==='facebookSemanticProperty'?'"propertyId":"p"':'"connectionId":"p"');
+ expect(resolved).toContain('nu schimbă intenția');
+ m.cards!.pop();expect(()=>resolveNamedChoice(choice,prompt,[m])).toThrow();
 });

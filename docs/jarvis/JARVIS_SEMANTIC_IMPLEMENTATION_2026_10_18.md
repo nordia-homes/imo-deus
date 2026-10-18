@@ -105,3 +105,18 @@ Remaining: semantic preflight continuation across clarifications, other legacy j
 Rollback: revert this lot's commit or inspect cad36b218f5cb9ac122aac5bb7eba7271a68789f in a separate worktree. Preserve request records, execution ledgers and business data; do not resend effects. No incompatible data migration.
 
 Final group-selection verification: full npm run build passed, including TypeScript and page generation; git diff --check passed. The pre-existing standalone playwright-core browser-copy skip remains; production browser packaging and live Facebook posting are not certified. No deployment performed.
+
+
+## Continuation: semantic Facebook clarification handoff
+
+Local implementation after 8105602602b2d48ec08ae3f3640639dc4e6a9fcf. Policy request-crm-20 / tools 208. No deployment.
+
+- The semantic publication preflight now emits named property/account choices and a separate persisted continuation card containing the complete original request and structured preflight input, including explicit group restrictions and the resolved property. Property ACL references accompany account choices. Internal state is not rendered in the result panel or truncated by card preview persistence.
+- A verified choice returns the complete original request and selected preflight input to planning, with an explicit instruction to preserve conditions, prohibitions and other goals. It does not convert selection into a publication command or call the legacy publication shortcut. The semantic authority and executor use the same continued request text; the visible saved user message remains the chosen name.
+- Verification: 43 unit/component/authority checks and 52 Firestore emulator integration checks passed. The new integration uses real preflight output saved as an offer, then the application chat handler and a simulated model: the complete compound request and subset reach the model after account selection, and a preparation-only request produces no publication job. The first run lacked test provider configuration and was fixed by a test-only sentinel key; no real API call occurred. Existing job creation/replay regressions passed. ESLint passed with zero warnings and the parity manifest passed.
+
+Limits: this is the clarification handoff, not full certification of a live-model, multi-turn publication. Correct re-planning and completion of every remaining compound goal are not proven by the simulated clarification response. Multiple simultaneous ambiguous preflight offers are rejected rather than guessed. Durable unresolved goals, durable checkpoints inside planning, cross-turn completed-effect reconciliation and the remaining legacy job choices are still outstanding. No live posting, messaging, paid model evaluation, browser QA or corpus certification increment.
+
+Rollback: revert this lot's commit or inspect 8105602602b2d48ec08ae3f3640639dc4e6a9fcf in a separate worktree. Preserve business data, request records and execution ledgers. No incompatible migration or external replay.
+
+Final clarification verification: full npm run build passed, including TypeScript and page generation; git diff --check passed. The pre-existing standalone playwright-core copy skip remains, so production browser packaging is not certified. No deployment performed.

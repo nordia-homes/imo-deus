@@ -1301,3 +1301,8 @@ Implemented four Facebook choices using human-readable names and bound server-si
 ### Named Facebook group multi-selection — 18 October 2026
 
 The existing group clarification path now uses named checkboxes and validates all selected rows server-side. Exact destinations survive saved state and queued work; changed replay selections are rejected. Local evidence: 72 unit/component/worker checks and 51 emulator checks, including one job for seven selected groups out of eight with unchanged CRM content. The existing 200-group API limit is retained. Semantic preflight clarification, other legacy job selections and durable planner-loop continuation remain open; no production rollout, live-language claim or corpus certification increment. Details and rollback are in JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
+
+
+### Semantic Facebook clarification handoff — 18 October 2026
+
+Preflight property/account clarifications now retain the full original request and structured selection, then return them to semantic planning through server-validated named choices. Selection does not grant publication and internal continuation data stays out of the panel. Evidence: 43 unit/component checks and 52 emulator integration checks, with a simulated model confirming preservation of a preparation-only compound request after account selection. Full live semantic completion, multiple simultaneous offers, durable goal/effect reconciliation and planner-loop checkpoints remain open. No deployment or corpus certification increase. See JARVIS_SEMANTIC_IMPLEMENTATION_2026_10_18.md.
