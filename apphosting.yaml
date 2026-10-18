@@ -8,6 +8,12 @@ runConfig:
   maxInstances: 10
 
 env:
+  # TypeScript checking exceeds Node's default build heap; runtime stays unchanged.
+  - variable: NODE_OPTIONS
+    value: --max-old-space-size=4096
+    availability:
+      - BUILD
+
   - variable: TYPESAFE_API_KEY
     secret: TYPESAFE_API_KEY
     availability:
