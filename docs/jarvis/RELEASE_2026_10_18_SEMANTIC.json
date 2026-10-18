@@ -1,0 +1,43 @@
+{
+  "verifiedAt": "2026-10-18T11:31:37.447Z",
+  "project": "studio-652232171-42fb6",
+  "builds": [
+    {
+      "name": "projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-174",
+      "state": "READY",
+      "commit": "0a54c5b30bffd392371a0819d3b20f21d0964902",
+      "percent": 100
+    }
+  ],
+  "reconciling": false,
+  "revision": "projects/studio-652232171-42fb6/locations/us-central1/services/studio/revisions/studio-build-20261018-jarvis-174",
+  "runTraffic": [
+    {
+      "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_REVISION",
+      "revision": "studio-build-20261018-jarvis-174",
+      "percent": 100,
+      "tag": "t-3497659119",
+      "uri": "https://t-3497659119---studio-lz5qfusjya-uc.a.run.app"
+    }
+  ],
+  "jevMode": "off",
+  "probes": [
+    {
+      "path": "/ai-assistant",
+      "status": 200
+    },
+    {
+      "path": "/api/ai-assistant/workspace",
+      "status": 401
+    },
+    {
+      "path": "/api/ai-assistant/metrics",
+      "status": 401
+    }
+  ],
+  "outboundTestActions": 0,
+  "rollbackBuild": "build-20261018-jarvis-171",
+  "rollbackCommit": "0182bc7eeed3dcb20f322584b6a966cde2b7c5e0",
+  "applicationCommitsPublished": 15,
+  "validationScope": "Cloud build including TypeScript and 227 pages passed. Latest application lot: 198 tests passed locally. Production probes are read-only availability checks; no authenticated CRM workflow or external message/post test was performed."
+}

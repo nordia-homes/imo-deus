@@ -53,3 +53,13 @@ Aplicația desktop încarcă backendul App Hosting de producție; nu este necesa
 Aceste probe confirmă publicarea și infrastructura. Nu au fost create comenzi CRM în numele unui agent și nu au fost trimise mesaje sau publicate campanii de test. Aprobările și limitele conturilor Meta, WhatsApp, TikTok și portaluri rămân cele existente; deployul nu schimbă modul WhatsApp `test` și nu activează MCP fără configurație explicită.
 
 Verificările locale anterioare rămân în [TESTING.md](TESTING.md). Mențiunile despre lipsa deployului din raportul implementării descriu etapa locală, anterioară acestei publicări.
+
+## 2026-10-18 — semantic recovery release, verified 11:31 UTC
+
+Production now serves `build-20261018-jarvis-174` at commit `0a54c5b30bffd392371a0819d3b20f21d0964902`, READY, 100% traffic in both App Hosting and Cloud Run. Evidence: `RELEASE_2026_10_18_SEMANTIC.json`. This supersedes the production version recorded above.
+
+Includes all 14 unpublished commits through `781fcda4`, plus a build-only `NODE_OPTIONS=--max-old-space-size=4096` correction. Build 173 failed on the default Node heap during TypeScript checking; build 174 passed TypeScript, all 227 pages, packaging and deployment. Runtime allocation and Jev mode (`off`) remain unchanged. No rules, indexes, functions or data migration changed in this release. Source branch: `codex/jarvis-semantic-20261018`; deployment pins the exact commit without changing the auto-rollout branch.
+
+Read-only production probes: `/ai-assistant` 200; `/api/ai-assistant/workspace` and `/api/ai-assistant/metrics` 401 without authentication. No live outbound test messages/posts were sent. These probes do not certify arbitrary-phrase task completion; authenticated user acceptance remains pending. Latest application lot previously passed 198 local checks.
+
+Rollback: create a new App Hosting rollout for existing READY build `projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-171` (commit `0182bc7eeed3dcb20f322584b6a966cde2b7c5e0`), then verify every traffic split and Cloud Run allocation returns to that build at 100%. Use a fresh rollout ID. No database rollback, deletion or replay is required. Do not replay uncertain external effects. Historical request checkpoints may be version-incompatible; use a fresh conversation for initial acceptance testing.
