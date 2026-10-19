@@ -1,0 +1,6 @@
+# Voice waiting and quantity agreement — 19 October 2026
+
+- Removed elapsed-seconds narration. Trusted stage identifiers select distinct stage descriptions, followed by unique neutral waiting messages. Timing remains first at five seconds and then every ten seconds. Raw tool output is not narrated; messages do not invent success or completion times.
+- Deduplication lasts for the current request, including returning to an earlier stage. The phrase pool covers the current three-minute voice request window. After exhaustion, silence is preferable to repetition or invented progress; a new actual stage can still be narrated. Wording may recur in a separate request.
+- Shared text/speech normalization handles singular/plural, feminine/masculine/neuter nouns, parenthetical duplicate quantities such as “un (1) proprietăți”, missing diacritics, and plural “de”. Added model instructions for natural agreement. Examples: o proprietate, un proprietar, doi proprietari, două conturi. This is not an unrestricted Romanian grammar proofreader.
+- 82 tests passed across all eight voice suites; targeted ESLint, TypeScript and git diff whitespace checks passed. No external speech-provider listening session or production deployment performed. Full production build was not rerun for this change.

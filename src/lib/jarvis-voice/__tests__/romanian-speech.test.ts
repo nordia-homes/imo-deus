@@ -26,3 +26,15 @@ it('never repeats narration during a long stage, including returning to a previo
  p.update('','search_properties');await vi.advanceTimersByTimeAsync(120000);
  expect(new Set(say.mock.calls.map(call=>call[0])).size).toBe(say.mock.calls.length);p.stop();vi.useRealTimers();
 });
+
+it.each([
+ ['un (1) proprietăți','o proprietate'],['Sunt un (1) proprietati','Este o proprietate'],
+ ['un proprietari','un proprietar'],['doi proprietar','doi proprietari'],['o proprietăți','o proprietate'],
+ ['2 proprietate','două proprietăți'],['12 conturi','douăsprezece conturi'],['20 proprietate','douăzeci de proprietăți'],
+ ['21 de proprietăți','douăzeci și una de proprietăți'],['101 proprietăți','o sută una proprietăți'],
+ ['Am găsit 3 proprietate și un (1) cumpărători.','Am găsit trei proprietăți și un cumpărător.']
+])('normalizes quantity agreement without duplicate numbers: %s',(input,expected)=>expect(romanianSpeech(input)).toBe(expected));
+it('normalizes display agreement without changing unrelated numeric data',()=>{
+ expect(humanReply('Sunt un (1) proprietăți. Am găsit 20 proprietate și doi cont.',[])).toBe('Este o proprietate. Am găsit 20 de proprietăți și două conturi.');
+ expect(humanReply('Preț: 130000 euro; telefon 0722123456; 1,5 camere.',[])).toBe('Preț: 130000 euro; telefon 0722123456; 1,5 camere.');
+});

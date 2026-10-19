@@ -30,7 +30,7 @@ export function romanianSpeech(text:string){
  s=s.replace(new RegExp('\\b(?:1|unu|un) ('+feminineNouns+')\\b','giu'),'o $1');
  s=s.replace(/\b(?:1|una) (apartament|cumpărător|client|cont|grup|mesaj|pas|rezultat)\b/giu,'un $1');
  s=s.replace(/\b2 (rezervări|vizionări|proprietăți|oferte|acțiuni|sarcini|publicări|cereri|conversații|potriviri|apartamente|grupuri|mesaje|rezultate)\b/giu,'două $1');
- s=s.replace(/\b(\d+) (rezervări|vizionări|proprietăți|oferte|acțiuni|sarcini|publicări|cereri|conversații|potriviri|apartamente|grupuri|mesaje|rezultate)(?![\p{L}])/gu,(_all,n,noun)=>romanianNumber(Number(n),true)+de(Number(n))+noun);
+ s=s.replace(/\b(\d+) (?:de )?(rezervări|vizionări|proprietăți|oferte|acțiuni|sarcini|publicări|cereri|conversații|potriviri|apartamente|grupuri|mesaje|rezultate|conturi|anunțuri|case|camere|fotografii|imagini|programări|notificări)(?![\p{L}])/gu,(_all,n,noun)=>romanianNumber(Number(n),true)+de(Number(n))+noun);
  s=s.replace(/\b\d+\b/g,n=>romanianNumber(Number(n)));
  return s;
 }

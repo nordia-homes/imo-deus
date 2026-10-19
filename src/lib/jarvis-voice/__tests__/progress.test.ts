@@ -22,3 +22,20 @@ it('creates a fresh conversation without reading or deleting history',()=>{
  const a=newJarvisSession('u','a'),b=newJarvisSession('u','a');expect(a.id).not.toBe(b.id);expect(b.hasHistory).toBe(false);expect(getItem).not.toHaveBeenCalled();expect(setItem).toHaveBeenCalledTimes(2);
 });
 it('mutes physical microphone tracks without invalidating the captured utterance and allows reactivation',()=>{const audio=new VoiceAudio(vi.fn(),vi.fn(),vi.fn(),vi.fn());const track={enabled:true};audio.stream={getAudioTracks:()=>[track]} as any;audio.epoch=4;audio.setMicMuted(true);expect(track.enabled).toBe(false);expect(audio.epoch).toBe(4);audio.setMicMuted(false);expect(track.enabled).toBe(true);});
+
+it('gives unique truthful waiting messages throughout the request window without counting time',async()=>{
+ vi.useFakeTimers();const say=vi.fn(async(_text:string)=>{}),p=startVoiceProgress(say,()=>{});
+ p.update('Secret raw result','facebook_publication_preflight');await vi.advanceTimersByTimeAsync(180000);
+ const messages=say.mock.calls.map(call=>call[0]);expect(messages).toHaveLength(18);
+ expect(new Set(messages).size).toBe(messages.length);
+ expect(messages.join(' ')).not.toMatch(/secund|minut|Au trecut|Secret|\d|am publicat/i);
+ expect(messages.slice(0,3).every(text=>/Facebook/.test(text))).toBe(true);
+ p.stop();
+});
+it('does not repeat or invent progress after wording is exhausted, but speaks a new actual stage',async()=>{
+ vi.useFakeTimers();const say=vi.fn(async(_text:string)=>{}),p=startVoiceProgress(say,()=>{});
+ await vi.advanceTimersByTimeAsync(600000);const before=say.mock.calls.length;
+ await vi.advanceTimersByTimeAsync(600000);expect(say).toHaveBeenCalledTimes(before);
+ p.update('','search_properties');await vi.advanceTimersByTimeAsync(10000);
+ expect(say.mock.calls.at(-1)?.[0]).toBe('Caut proprietatea potrivită în portofoliu.');p.stop();
+});
