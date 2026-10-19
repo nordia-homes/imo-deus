@@ -88,3 +88,12 @@ Verified at 18:37 UTC: build-20261018-jarvis-180, commit a46ef6c09e018ce810ef10b
 Cloud compilation, TypeScript, generation and deployment passed. Firestore rules were deployed from src/firestore.rules and their live content was compared successfully with the source. No functions, indexes or incompatible data migrations changed. Live read-only checks: Jarvis 200; anonymous workspace/metrics 401. No real outbound acceptance messages/posts or paid speech tests were performed.
 
 Rollback: create a fresh rollout for projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-179 (commit f46bc71c13a6231dca729f69e13663ffb0eb794c) and verify 100% traffic. Preserve the additive delivery-batch rules and all new data; never replay external effects. Previous ruleset was 0a21547c-11d1-4486-9c40-b546558f872a, retained in a local backup; do not restore it blindly because existing batch links must remain readable.
+
+
+## 2026-10-19 — Facebook continuation and voice waiting
+
+Verified at 08:34 UTC: build-20261019-jarvis-181, commit 1f942b21c2ecd21c8595024e2e8cab4757e1d37f, READY with 100% traffic in both App Hosting and Cloud Run, no reconciliation pending. Evidence: RELEASE_2026_10_19_FACEBOOK_VOICE.json. Includes all unpublished work through the Facebook continuation fix (4265f215) and waiting narration/quantity agreement (1f942b21). Jev remains active.
+
+Cloud build and publisher succeeded. Local checks: 87 Facebook unit/planner tests, 175 emulator integration tests, and 82 voice tests; TypeScript and targeted ESLint passed. Live probes: Jarvis page 200, unauthenticated workspace/metrics 401. Live Firestore rules match source; no rules/config/data migrations required. No real external posts or paid speech acceptance tests were performed. Earlier implementation notes saying “not deployed” describe their pre-release state and are superseded by this release record.
+
+Rollback: create a fresh App Hosting rollout for existing READY build projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-180 (commit a46ef6c09e018ce810ef10b922147a46e13bf92d), then verify 100% traffic in both services. Preserve current data and rules. Do not replay uncertain external operations.
