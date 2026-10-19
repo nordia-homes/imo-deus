@@ -97,3 +97,12 @@ Verified at 08:34 UTC: build-20261019-jarvis-181, commit 1f942b21c2ecd21c8595024
 Cloud build and publisher succeeded. Local checks: 87 Facebook unit/planner tests, 175 emulator integration tests, and 82 voice tests; TypeScript and targeted ESLint passed. Live probes: Jarvis page 200, unauthenticated workspace/metrics 401. Live Firestore rules match source; no rules/config/data migrations required. No real external posts or paid speech acceptance tests were performed. Earlier implementation notes saying “not deployed” describe their pre-release state and are superseded by this release record.
 
 Rollback: create a fresh App Hosting rollout for existing READY build projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261018-jarvis-180 (commit a46ef6c09e018ce810ef10b922147a46e13bf92d), then verify 100% traffic in both services. Preserve current data and rules. Do not replay uncertain external operations.
+
+
+## 2026-10-19 — spoken account names and pending publication recovery
+
+Verified at 09:17 UTC (12:17 Bucharest): build-20261019-jarvis-182, commit f115a2a9667c59a20628ab2d245f182345443eeb, READY with 100% traffic in both App Hosting and Cloud Run, no reconciliation pending. Evidence: RELEASE_2026_10_19_SPOKEN_NAMES.json. Includes bounded spoken-name matching for the reported “Cristiana Vădăni” reply, preservation of pending publication on unmatched short account answers, and validated internal choice handling. Jev remains active.
+
+All cloud build steps succeeded. Local verification: 69 unit tests, 177 emulator integration tests, TypeScript and targeted ESLint passed. Read-only production checks: Jarvis page 200, anonymous workspace/metrics 401, live Firestore rules match source. No database migration, rules or runtime configuration change. No real Facebook post or paid speech acceptance test performed. This supersedes the pre-release note in FACEBOOK_SPOKEN_NAMES_2026_10_19.md.
+
+Rollback: create a fresh App Hosting rollout for existing READY build projects/studio-652232171-42fb6/locations/us-central1/backends/studio/builds/build-20261019-jarvis-181 (commit 1f942b21c2ecd21c8595024e2e8cab4757e1d37f), then verify 100% traffic in both services. Preserve current data and rules; do not replay external operations.
