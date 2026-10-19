@@ -14,7 +14,7 @@ Production incident: the Corbeanca publication request followed by “Vreau să 
 
 - 87 unit/planner tests passed, including Jev off/active with an incorrect communications-domain selection.
 - 175 emulator integration tests passed (92 Facebook, 83 media): real application handlers and Firestore, simulated external providers. Added exact Corbeanca/Diana full-sentence dialogue, duplicate request replay, and confirmation after an inaccurate address suggestion. Verified resulting job and account, not a real Facebook publication.
-- TypeScript validation and targeted ESLint passed. Production build status is recorded separately after completion.
+- TypeScript validation and targeted ESLint passed. Production build completed successfully (exit 0), including Next TypeScript and 227 static pages. Existing dependency warning: optional OpenTelemetry Jaeger exporter; the standalone browser-copy script reported no playwright-core folder and skipped browser copying. No browser packaging change was made in this fix.
 - No real external post or message sent. No production deployment performed by this fix.
 
 ## Limits
