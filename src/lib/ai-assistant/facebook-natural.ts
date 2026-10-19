@@ -8,7 +8,7 @@ import { assertFacebookPropertyAvailable } from '@/lib/facebook-job-control';
 
 export function facebookNaturalRequest(prompt: string) {
   const text = normalized(prompt).replace(/[.!?]+$/, '');
-  const match = /^(?:publica|posteaza) (apartamentul|proprietatea|anuntul|casa|garsoniera)(.*?) (?:pe|in) (?:toate )?grupurile facebook(?: eligibile)?$/.exec(text);
+  const match = /^(?:publica|posteaza) (apartamentul|proprietatea|anuntul|casa|garsoniera)(.*?) (?:pe|in) (?:toate )?grupurile (?:de )?facebook(?: eligibile)?$/.exec(text);
   if (!match || /\b(?:nu|maine|poimaine|ora|apoi|dupa|doar|numai|fara|exceptand|si trimite|si contacteaza)\b/.test(match[2])) return null;
   const query = match[2].trim().replace(/^(?:din|de pe)\s+/, '').replace(/^[„”"']|[„”"']$/g, '').replace(/,+$/, '').trim();
   return { query: /^(?:aceasta|acesta|selectata|selectat)$/.test(query) ? '' : query, propertyType: match[1] === 'apartamentul' ? 'apartament' : match[1] === 'casa' ? 'casa' : match[1] === 'garsoniera' ? 'garsoniera' : null };
@@ -23,9 +23,9 @@ export function facebookNaturalExecutionPrompt(prompt: string, history: Assistan
 export function matchesFacebookProperty(row: Record<string, unknown>, query: string) {
   // Join initials (C.A. / C A / CA) and spacing variants (ultra central).
   const canonical = (s: unknown) => normalizeCrmSearch(s).replace(/\b([a-z])\s+(?=[a-z]\b)/g, '$1');
-  const fields = [row.title, row.location, row.address].filter(v => typeof v === 'string').map(canonical);
-  const tokens = canonical(query).split(' ').filter(token => token && !['din','de','pe','la','strada','str','bulevardul','bd'].includes(token));
-  return tokens.length > 0 && tokens.every(token => fields.some(field => field.includes(token) || field.replace(/ /g, '').includes(token)));
+  const fields = [row.title, row.location, row.address, row.streetName, row.streetNumber].filter(v => typeof v === 'string').map(canonical);
+  const tokens = canonical(query).split(' ').filter(token => token && !['din','de','pe','la','strada','str','bulevardul','bulevard','bd','b','dul','soseaua','sos','numarul','nr','numar'].includes(token));
+  return tokens.length > 0 && tokens.every(token => fields.some(field => (token.length<3 || /\d/.test(token)) ? field.split(' ').includes(token) : field.includes(token) || field.replace(/ /g, '').includes(token)));
 }
 export type FacebookPublicationInput = { query: string; propertyId?: string; connectionId?: string; connectionQuery?: string; groupUrls?: string[] };
 export async function prepareFacebookPublication(ctx: AssistantContext, input: FacebookPublicationInput) {
@@ -49,15 +49,15 @@ export async function prepareFacebookNatural(ctx: AssistantContext, prompt: stri
   const docs = propertyId ? [await agency.collection('properties').doc(propertyId).get()] : (await agency.collection('properties').get()).docs;
   const matches = docs.filter(doc => {
     const row = doc.data();
-    return row && (!request.propertyType || !row.propertyType || (request.propertyType === 'apartament' ? /apartament|garsonier/.test(normalizeCrmSearch(row.propertyType)) : normalizeCrmSearch(row.propertyType).includes(request.propertyType))) && !row.deletedAt && canReadResource(ctx, 'properties', row) && (!request.query || matchesFacebookProperty(row, request.query));
+    return row && (!request.propertyType || !row.propertyType || (request.propertyType === 'apartament' ? /apartament|garsonier/.test(normalizeCrmSearch(row.propertyType)) : normalizeCrmSearch(row.propertyType).includes(request.propertyType))) && !row.deletedAt && canReadResource(ctx, 'properties', row) && (!!propertyId || !request.query || matchesFacebookProperty(row, request.query));
   });
   if (!matches.length && !propertyId && request.query) {
     // Partial textual matches are suggestions only: never silently publish one.
     const terms = normalizeCrmSearch(request.query).split(' ').filter(token => token.length >= 4 && !['apartament','apartamentul','proprietate','proprietatea','publica','posteaza','facebook','grupurile','strada'].includes(token));
     const candidates = docs.filter(doc => {const row=doc.data(); return row && !row.deletedAt && canReadResource(ctx,'properties',row) && terms.some(term=>matchesFacebookProperty(row,term));});
-    if(candidates.length) return {...empty,rows:candidates.map(doc=>({id:doc.id,title:String(doc.data()?.title || 'Proprietate')})),pending:{id:'pending',prompt:effective,propertyIds:candidates.map(doc=>doc.id)},text:'Nu am o potrivire exactă pentru toate detaliile, dar am găsit aceste proprietăți cu elemente comune. Care este cea dorită? Confirmă titlul sau adresa; nu am pregătit încă publicarea.'};
+    if(candidates.length) return {...empty,rows:candidates.map(doc=>({id:doc.id,title:String(doc.data()?.title || 'Proprietate'),address:doc.data()?.address||'',location:doc.data()?.location||''})),pending:{id:'pending',prompt:effective,propertyIds:candidates.map(doc=>doc.id)},text:'Nu am o potrivire exactă pentru toate detaliile, dar am găsit aceste proprietăți cu elemente comune. Care este cea dorită? Confirmă titlul sau adresa; nu am pregătit încă publicarea.'};
   }
-  const rows = matches.map(doc => ({ id: doc.id, title: String(doc.data()?.title || 'Proprietate') }));
+  const rows = matches.map(doc => ({ id: doc.id, title: String(doc.data()?.title || 'Proprietate'), address:doc.data()?.address||'', location:doc.data()?.location||'' }));
   if (matches.length !== 1) return { ...empty, rows, pending: matches.length ? { id: 'pending', prompt: effective, propertyIds: matches.map(d => d.id) } : null, text: matches.length ? 'Am găsit mai multe proprietăți care corespund. Pe care vrei să o public? Poți scrie titlul ori adresa sau o poți alege din listă.' : 'Nu am găsit proprietatea cerută în CRM. Precizează titlul sau adresa.' };
   const property = matches[0].data()!, selectedId = matches[0].id;
   assertFacebookPropertyAvailable(property, ctx.agencyId);

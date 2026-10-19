@@ -16,3 +16,11 @@ describe('natural Facebook command', () => {
   expect(matchesFacebookProperty(row, 'Rosetti Titan')).toBe(false);
  });
 });
+
+it('recognizes the Corbeanca wording and full or partial street addresses with exact numbers',()=>{
+ expect(facebookNaturalRequest('Publică casa din Corbeanca pe grupurile de Facebook.')?.query).toBe('corbeanca');
+ const row={title:'Casă Corbeanca',address:'Strada Florilor 12',location:'Corbeanca'};
+ expect(matchesFacebookProperty(row,'Corbeanca, strada Florilor, numărul 12')).toBe(true);
+ expect(matchesFacebookProperty(row,'Florilor 12')).toBe(true);
+ expect(matchesFacebookProperty({...row,address:'Strada Florilor 120'},'Florilor 12')).toBe(false);
+});

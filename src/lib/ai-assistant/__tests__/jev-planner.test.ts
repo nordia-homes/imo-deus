@@ -179,3 +179,12 @@ it.each(['off','shadow','active'])('reads complete distribution workflows throug
  expect(result.actions).toHaveLength(0);
  expect(executeAction).not.toHaveBeenCalled();
 });
+
+it.each(['off','active'])('keeps verified Facebook choices available even when Jev chooses another domain (%s)',async mode=>{
+ vi.stubEnv('JARVIS_JEV_MODE',mode);
+ const respond=vi.fn(async (_request:import('../provider').ProviderRequest)=>final);
+ const facebookSelection={query:'Corbeanca',propertyId:'house',connectionId:'diana',groupUrls:['https://www.facebook.com/groups/sale']};
+ await planTurn(ctx,'Continuă cererea originală cu selecția verificată.',[],{provider:{id:'fixture',respond},facebookSelection,jevSelector:{select:async()=>chosen(['communications'])}});
+ expect(respond.mock.calls[0][0].tools.map(t=>t.name)).toContain('facebook_publication_preflight');
+ expect(JSON.stringify(respond.mock.calls[0][0].input)).toContain(JSON.stringify(facebookSelection).replaceAll('"','\\"'));
+});

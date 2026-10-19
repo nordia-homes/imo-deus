@@ -1530,3 +1530,7 @@ Implementare izolată pe codex/jev-modular-20261018, checkpoint local 8dcee44c, 
 Jarvis-172: comenzile naturale de publicare în grupuri folosesc fluxul determinist și executorul existent, fără creșterea plafonului de tokenuri. Căutarea acceptă C.A./CA, ultra central/ultracentral și diacritice; apartamentele includ garsoniere. Contul implicit este respectat; dacă lipsește și există mai multe conturi proprii eligibile, selecția continuă aceeași comandă. Automatizarea locală existentă publică singură și este diferită de runnerul desktop manual exclus. Descrierea și pozele CRM sunt păstrate.
 
 Validare: 12 teste unitare, 141 regresii, 46 teste de integrare, TypeScript și lint. Proba Rosetti verifică și 13 conturi locale, selecția contului, salvarea jobului, preluarea de către runner și replay fără duplicate. Nu s-a publicat pe Facebook pentru testare; confirmarea publicării efective rămâne dependentă de rezultatul runnerului. Niciun scenariu nou adăugat contorului de 1000. Dovezi: evals/FACEBOOK_NATURAL_COMMAND_2026_10_18.json.
+
+
+## 2026-10-19 — Facebook continuation regression
+See [Facebook continuation verification](FACEBOOK_CONTINUATION_2026_10_19.md). Fixed full-sentence account choices, property confirmation and address matching; 87 unit/planner and 175 emulator integration checks passed. External publication not exercised; not deployed.

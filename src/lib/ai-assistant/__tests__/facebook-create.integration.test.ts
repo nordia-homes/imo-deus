@@ -73,6 +73,32 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     const reply=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Stefan Nodia'});
     expect((await f.jobs.get()).size).toBe(0);expect(reply.message.text).toContain('nu este disponibil');
   });
+
+  it('completes Corbeanca publication with a full-sentence account choice and replays without duplicate jobs',async()=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();
+    await f.property.update({title:'Casă 5 camere în Corbeanca | Mobilata si utilata',address:'Strada Florilor 12',location:'Corbeanca',defaultFacebookConnectionId:null});
+    await f.connection.update({label:'Diana Radu',displayName:'Diana Radu'});
+    await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont',displayName:'Alt Cont'});
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockRejectedValue(new Error('No model required'));
+    try{
+      const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică casa din Corbeanca pe grupurile de Facebook.'});
+      expect(first.message.text).toContain('cont Facebook');
+      const input={sessionId,requestId:randomUUID(),prompt:'Vreau să publici de pe contul Diana Radu.'};
+      const result=await chatTurn(f.ctx,input);await chatTurn(f.ctx,input);
+      const jobs=await f.jobs.get();expect(jobs.size).toBe(1);expect(jobs.docs[0].data().connectionId).toBe('connection');
+      expect(result.message.text).not.toContain('Limita');expect(model).not.toHaveBeenCalled();
+    }finally{model.mockRestore();}
+  });
+  it('continues after confirming a suggested property by voice',async()=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();await f.property.update({address:'Strada Florilor 12',location:'Corbeanca'});
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockRejectedValue(new Error('No model required'));
+    try{
+      const first=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Corbeanca Florilor 14 pe grupurile Facebook.'});
+      expect((await f.jobs.get()).size).toBe(0);expect(first.message.text).toContain('potrivire');
+      await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Da, aceasta'});
+      expect((await f.jobs.get()).size).toBe(1);expect(model).not.toHaveBeenCalled();
+    }finally{model.mockRestore();}
+  });
   it('carries the original semantic scope and group restrictions through a plain account-name reply',async()=>{
     const f=await fixture(),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Ștefan Nordia'});
     await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont'});
@@ -82,7 +108,7 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
     await session.collection('messages').doc('offer').set({role:'assistant',text:'Ce cont?',cards:offer.cards,accessRefs:offer.refs,createdAt:new Date().toISOString()});
     const planner=vi.spyOn(plannerModule,'planTurn').mockResolvedValue({text:'Pregătit fără publicare.',cards:[],actions:[],accessRefs:offer.refs,metrics:{status:'success',models:[],tools:[],elapsedMs:1}} as any);
     try{await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Nordia Stefan'});
-      expect(planner.mock.calls[0][1]).toContain(original);expect(planner.mock.calls[0][1]).toContain(f.body.groupUrls[0]);expect(planner.mock.calls[0][1]).toContain('connection');expect((await f.jobs.get()).size).toBe(0);
+      expect(planner.mock.calls[0][3]?.facebookSelection).toMatchObject({propertyId:'property',connectionId:'connection',groupUrls:f.body.groupUrls});expect(planner.mock.calls[0][1]).toContain(original);expect(planner.mock.calls[0][1]).toContain(f.body.groupUrls[0]);expect(planner.mock.calls[0][1]).toContain('connection');expect((await f.jobs.get()).size).toBe(0);
     }finally{planner.mockRestore();}
   });
   it('completes the reported Croatian Avadanii -> direct Cristian Avadanii publication',async()=>{

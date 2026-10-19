@@ -31,3 +31,16 @@ export function resolveNamedChoice(choice: NamedChoice, prompt: string, history:
  }
  return prefixes[parsed.source]+': '+parsed.rowId;
 }
+
+export function facebookChoiceInput(choice: NamedChoice | undefined, history: AssistantMessage[]) {
+ if (!choice || !['facebookSemanticProperty','facebookSemanticAccount'].includes(choice.source)) return undefined;
+ const latest=history.filter(m=>m.role==='assistant'&&m.id!=='current-page-context').at(-1);
+ const card=latest?.cards?.find(c=>c.choiceSource===choice.source&&c.choiceOfferId===choice.offerId);
+ const row=card?.rows.find(r=>r.id===choice.rowId);
+ if(!row)return undefined;
+ resolveNamedChoice(choice,namedChoiceText(choice.source,row),history);
+ const state=latest!.cards!.find(c=>c.source==='facebookSemanticRequest'&&c.choiceOfferId===choice.offerId)!.rows[0];
+ const input: Record<string, unknown>={...(state.input as Record<string, unknown>),...(choice.source==='facebookSemanticProperty'?{propertyId:choice.rowId}:{connectionId:choice.rowId})};
+ if(choice.source==='facebookSemanticAccount')delete input.connectionQuery;
+ return input as import('./facebook-natural').FacebookPublicationInput;
+}

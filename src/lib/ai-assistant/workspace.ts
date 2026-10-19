@@ -2,6 +2,7 @@ import { humanReplyForActor } from './human-reply-server';
 import { beginRequestRecovery, readRequestRecovery } from './request-recovery';
 import { executionScope } from './execution-scope';
 import { retainSemanticChoices, deferredSemanticCard } from './semantic-clarification';
+import { facebookChoiceInput } from './named-choice';
 import { facebookConversationChoice } from './facebook-conversation-choice';
 import { resolveNamedChoice } from './named-choice';
 import type { NamedChoice } from './named-choice-contract';
@@ -125,7 +126,7 @@ export async function chatTurn(ctx: AssistantContext, input: { sessionId: string
     let sourceCheckpointInput: Parameters<typeof saveRequestCheckpoint>[1] | undefined;
     let replaceIncompleteCheckpoint = false;
     const restored = await loadRequestCheckpoint(ctx, input);
-    let result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary });
+    let result = restored || await planTurn(ctx, planningPrompt, history, { progress, summary: session.data()?.summary, facebookSelection: facebookChoiceInput(effectiveChoice, conversationHistory) });
     if (result.recoveryRequestId) {
       const selectionMetrics = result.metrics;
       const recovered = await readRequestRecovery(ctx, result.recoveryRequestId);

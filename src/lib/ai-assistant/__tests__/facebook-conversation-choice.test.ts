@@ -19,3 +19,18 @@ it('keeps an ambiguous pronunciation as a question with original constraints',()
 it('proposes the reported transcription without silently selecting an account',()=>{const result=facebookNameMatches([{id:'c',label:'Cristian Avadanii'}],'Croatian Avadanii');expect(result.exact).toHaveLength(0);expect(result.suggestions.map(row=>row.id)).toEqual(['c']);});
 
 it('selects the unique close name directly from the current offer',()=>{const result=facebookConversationChoice('Croatian Avadanii',[{id:'offer',role:'assistant',text:'Cont?',cards:[{type:'data',source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows:[{id:'c',label:'Cristian Avadanii'},{id:'other',label:'Alt Cont'}]}]}] as any);expect(result?.choice?.rowId).toBe('c');expect(result?.suggestion).toBeUndefined();});
+
+it.each(['Vreau să publici de pe contul Diana Radu.','Publică de pe contul Diana Radu','Folosește contul Facebook Diana Radu','Contul Diana Radu'])('resolves full selection sentences: %s',prompt=>{
+ const offer={id:'offer',role:'assistant',cards:[{type:'data',source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows:[{id:'diana',label:'Diana Radu'},{id:'cristian',label:'Cristian Radu'}]}]} as any;
+ expect(facebookConversationChoice(prompt,[offer])?.choice?.rowId).toBe('diana');
+});
+it.each(['Nu publica de pe contul Diana Radu','Publică de pe contul Diana Radu mâine','Diana Radu și trimite și pe WhatsApp'])('keeps additional intent intact: %s',prompt=>{
+ expect(facebookNameMatches([{id:'diana',label:'Diana Radu'}],prompt).exact).toEqual([]);
+});
+it('confirms the current property and resolves partial addresses without selecting ambiguous offers',()=>{
+ const card={type:'data',source:'properties',choiceSource:'facebookPublicationProperty',rows:[{id:'p',title:'Casă Corbeanca',address:'Strada Florilor 12'}]};
+ const offer={id:'offer',role:'assistant',cards:[card]} as any;
+ expect(facebookConversationChoice('Da, aceasta',[offer])?.choice?.rowId).toBe('p');
+ expect(facebookConversationChoice('Florilor 12',[offer])?.choice?.rowId).toBe('p');
+ expect(facebookConversationChoice('Da',[{...offer,cards:[{...card,rows:[...card.rows,{id:'p2',title:'Altă casă'}]}]}])?.choice).toBeUndefined();
+});
