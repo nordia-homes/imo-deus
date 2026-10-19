@@ -65,6 +65,24 @@ describe.skipIf(!process.env.FIRESTORE_EMULATOR_HOST)('Facebook creation through
       expect((await f.agency.collection('assistantSessions').doc(sessionId).get()).data()?.pendingRecoveryId).toBeNull();
     }finally{model.mockRestore();}
   });
+
+  it.each([false,true])('finishes the reported Rosetti spoken-account dialogue among thirteen accounts, unknown name first=%s',async unknownFirst=>{
+    const f=await fixture('cloud'),sessionId=randomUUID();
+    await f.property.update({title:'CA Rosetti | Ultra central | Complet renovat | Balcon generos',defaultFacebookConnectionId:null});
+    await f.connection.update({label:'Cristian Avadanii',displayName:'Cristian Avadanii'});
+    const otherNames=['Alexandra Enache','Cosmina Lacramioara','Costel Costy','Cristian Matei','Diana Radu','Elena Popescu','Florin Ionescu','Gabriel Marin','Ion Pavel','Marius Tudor','Nicoleta Stan','Oana Dinu'];
+    for(const [i,label] of otherNames.entries())await f.agency.collection('facebookCloudConnections').doc('other-'+i).set({...((await f.connection.get()).data()),label,displayName:label});
+    const model=vi.spyOn(OpenAIAdapter.prototype,'respond').mockRejectedValue(new Error('Account choice must not restart model planning'));
+    try{
+      await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Publică apartamentul din Rosetti pe grupurile Facebook.'});
+      if(unknownFirst){const clarification=await chatTurn(f.ctx,{sessionId,requestId:randomUUID(),prompt:'Vasile Ionescu'});expect(clarification.message.text).toContain('numele');expect((await f.jobs.get()).size).toBe(0);}
+      const input={sessionId,requestId:randomUUID(),prompt:'Cristiana Vădăni.'};
+      const result=await chatTurn(f.ctx,input);await chatTurn(f.ctx,input);
+      const jobs=await f.jobs.get();expect(jobs.size).toBe(1);expect(jobs.docs[0].data()).toMatchObject({connectionId:'connection',propertyId:'property'});
+      expect(result.message.text).toContain('Cristian Avadanii');expect(result.message.text).not.toContain('Limita');
+      expect(mocks.runner).toHaveBeenCalledTimes(1);expect(model).not.toHaveBeenCalled();
+    }finally{model.mockRestore();}
+  });
   it('revalidates the account before executing a unique pronunciation match',async()=>{
     const f=await fixture(),sessionId=randomUUID();await f.property.update({defaultFacebookConnectionId:null});await f.connection.update({label:'Ștefan Nordia'});
     await f.agency.collection('facebookCloudConnections').doc('second').set({...((await f.connection.get()).data()),label:'Alt Cont'});

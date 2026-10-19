@@ -34,3 +34,29 @@ it('confirms the current property and resolves partial addresses without selecti
  expect(facebookConversationChoice('Florilor 12',[offer])?.choice?.rowId).toBe('p');
  expect(facebookConversationChoice('Da',[{...offer,cards:[{...card,rows:[...card.rows,{id:'p2',title:'Altă casă'}]}]}])?.choice).toBeUndefined();
 });
+
+it.each(['Cristiana Vădăni.','Vădăni Cristiana','Cristian Avadani','Publică de pe contul Cristiana Vădăni.'])('matches a unique multi-token spoken name: %s',prompt=>{
+ const rows=[{id:'c',label:'Cristian Avadanii'},{id:'m',label:'Cristian Matei'},{id:'d',label:'Diana Radu'}];
+ const offer={id:'offer',role:'assistant',cards:[{source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows}]};
+ expect(facebookConversationChoice(prompt,[offer] as any)?.choice?.rowId).toBe('c');
+});
+it('does not silently select between similar offered people or reuse one name token twice',()=>{
+ const rows=[{id:'c',label:'Cristian Avadanii'},{id:'x',label:'Cristiana Avadani'}];
+ const offer={id:'offer',role:'assistant',cards:[{source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows}]};
+ expect(facebookConversationChoice('Cristiana Vădăni',[offer] as any)?.choice).toBeUndefined();
+ expect(facebookConversationChoice('Cristiana Vădăni',[offer] as any)?.suggestion?.cards[0].rows).toHaveLength(2);
+ expect(facebookNameMatches([{id:'c',label:'Cristian Avadanii'}],'Cristian Cristian').suggestions).toEqual([]);
+});
+it('keeps an unmatched name in the current account selection instead of restarting the property search',()=>{
+ const pending={source:'facebookImmediateRequest',rows:[{prompt:'Publică apartamentul din Rosetti pe grupurile Facebook.',propertyId:'p'}]};
+ const offer={id:'offer',role:'assistant',cards:[{source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows:[{id:'c',label:'Cristian Avadanii'}]},pending]};
+ const answer=facebookConversationChoice('Vasile Ionescu',[offer] as any);
+ expect(answer?.choice).toBeUndefined();expect(answer?.suggestion?.cards[1]).toEqual(pending);
+ for(const prompt of ['Câte vizionări sunt mâine?','Arată proprietățile din Titan','Nu Cristian Avadanii','Publică de pe contul Cristian Avadanii mâine'])expect(facebookConversationChoice(prompt,[offer] as any)).toBeNull();
+});
+
+it('preserves exact choices for account labels containing numbers',()=>{expect(facebookNameMatches([{id:'n',label:'Nordia 2'}],'Nordia 2').exact.map(r=>r.id)).toEqual(['n']);});
+
+it('does not reinterpret the validated internal choice as another spoken name',()=>{const offer={id:'offer',role:'assistant',cards:[{source:'facebookConnections',choiceSource:'facebookPublicationAccount',rows:[{id:'connection',label:'Cristian Avadanii'}]}]};expect(facebookConversationChoice('Cont Facebook: connection',[offer] as any)).toBeNull();});
+
+it('labels ambiguous property matches as properties, not Facebook accounts',()=>{const rows=[{id:'one',title:'Rosetti apartament'},{id:'two',title:'Rosetti garsonieră'}];const offer={id:'offer',role:'assistant',cards:[{source:'properties',choiceSource:'facebookPublicationProperty',rows}]};const result=facebookConversationChoice('Rosetti',[offer] as any);expect(result?.choice).toBeUndefined();expect(result?.suggestion?.text).toContain('proprietăți');expect(result?.suggestion?.text).toContain('Rosetti garsonieră');});

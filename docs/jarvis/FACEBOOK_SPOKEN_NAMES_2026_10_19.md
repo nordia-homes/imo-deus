@@ -1,0 +1,9 @@
+# Facebook spoken names and pending choices
+
+Incident after release 181: Rosetti was correctly selected, but “Cristiana Vădăni” did not match “Cristian Avadanii”; the planner restarted CRM searching and exhausted steps.
+
+Changes: multi-token name matching permits bounded vowel omissions/repetitions where consonants agree, while preserving exact-match priority, distinct token assignment and ambiguity checks. No person-specific alias or hardcoded account ID. An unmatched short account-name answer keeps the current offer and pending request and asks for the complete name or a list choice. Additional instructions, negations and new-topic questions remain available to the planner. Internal validated selection commands bypass conversational name reinterpretation. Numeric account labels remain supported. Ambiguous property choices retain property labels.
+
+Verification: 69 unit tests passed; 177 emulator integration tests passed (94 Facebook plus 83 media). New end-to-end application-handler checks use thirteen account candidates and the exact Rosetti dialogue, both directly and after an unknown name. Assert one saved job, correct property/account, one external runner invocation, no model call for the selection and no duplicate on replay. External runner is simulated; no actual Facebook post or paid speech request. TypeScript, targeted ESLint and whitespace checks passed. The final ambiguity-label adjustment was covered by the unit suite. Full production build not rerun for this fix.
+
+Limitations: bounded similarity is not a universal speech-recognition guarantee. Multiple matching people require disambiguation; no match preserves the pending request rather than inventing an account. This correction has not been deployed; release 181 remains the last verified production release.
