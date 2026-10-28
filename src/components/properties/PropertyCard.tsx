@@ -2,7 +2,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share2, ArrowRight, Facebook, CalendarClock, Eye, FolderCheck, LockKeyhole } from "lucide-react";
+import { Heart, BedDouble, Bath, Ruler, Edit, Trash2, Calendar, Link as LinkIcon, Check, Share, ArrowRight, Facebook, CalendarClock, Eye, FolderCheck, LockKeyhole } from "lucide-react";
+import publicActionStyles from './PublicPropertyActions.module.css';
 import type { FacebookCloudPublishingJob, Property } from "@/lib/types";
 import { Card, CardContent } from "../ui/card";
 import { AddPropertyDialog } from "./add-property-dialog";
@@ -365,10 +366,10 @@ export function PropertyCard({
                     onClick={handleShare}
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-stone-100 transition-colors hover:bg-white/[0.12] hover:text-white"
                   >
-                    <Share2 className="h-4 w-4" strokeWidth={2.2} />
+                    <Share className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
                   </button>
                   <Button asChild size="sm" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-stone-100 hover:bg-white/[0.08]">
-                      <Link href={href} className="inline-flex items-center gap-2">
+                      <Link href={href} className={`inline-flex items-center gap-2 ${publicActionStyles.details}`}>
                         Vezi Detalii
                         <ArrowRight className="h-4 w-4" />
                       </Link>

@@ -44,7 +44,6 @@ export function AgencyHomeHero({ properties = [], featuredProperties = [], isLoa
     });
   }, [properties, category, query]);
   const shown = hasFilters ? filtered.slice(0, visibleCount) : featuredProperties;
-  const heroImage = featuredProperties.find(property => property.images?.[0]?.url)?.images[0];
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     document.getElementById('proprietati-recomandate')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
@@ -54,7 +53,7 @@ export function AgencyHomeHero({ properties = [], featuredProperties = [], isLoa
     <>
       <section className={styles.hero} aria-labelledby="agency-home-title">
         <div className={styles.heroImage} aria-hidden="true">
-          {heroImage && <Image src={heroImage.url} alt="" fill priority sizes="(max-width: 767px) 100vw, 70vw" className={styles.photo} />}
+          <Image src="/images/nordia/hero-evening.jpg" alt="" fill priority sizes="100vw" className={styles.photo} />
         </div>
         <div className={styles.heroInner}>
           <p className={styles.eyebrow}>PROPRIETĂȚI. OAMENI. ACASĂ.</p>
