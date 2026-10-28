@@ -7,6 +7,8 @@ import type { Property, UserProfile } from '@/lib/types';
 import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 
+import homeStyles from '@/components/public/AgencyHomeHero.module.css';
+import detailStyles from '@/components/public/PublicPropertyDetail.module.css';
 import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
@@ -341,7 +343,7 @@ export default function PublicPropertyDetailPage() {
 
     if (isMobile) {
         return (
-          <div className={cn("min-h-screen bg-transparent pb-24", isAgentfinderTheme ? "text-slate-950" : "text-stone-100")}>
+          <div className={cn(homeStyles.page, detailStyles.page, "min-h-screen pb-24", isAgentfinderTheme ? "text-slate-950" : "text-stone-100")}>
              <div className="space-y-0">
                  <MediaColumn property={property} showMatchPrompt={true} showVideoTour={false} shareImageUrl={propertyShareImageUrl} />
 
@@ -373,35 +375,26 @@ export default function PublicPropertyDetailPage() {
                     
                     <PublicInfoColumn property={property} isMobile={true} />
 
-                    <div className="h-80">
-                        <PublicPropertyDetailsMap properties={[property]} />
-                    </div>
+                    <section className={detailStyles.location} aria-labelledby="property-location-title">
+  <p className={detailStyles.eyebrow}>02 / ÎMPREJURIMILE TALE</p>
+  <h2 id="property-location-title">Un loc. O nouă perspectivă.</h2>
+  <p>{[property.address, property.city].filter(Boolean).join(', ')}</p>
+  <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
+</section>
 
-                    <SimilarProperties properties={similarProperties} />
+                    <section className={detailStyles.mobileContact}>
+  <p className={detailStyles.eyebrow}>03 / HAI SĂ ÎL VEZI</p>
+  <h2>Următorul pas: o vizionare.</h2>
+  <PublicScheduleViewingCard property={property} agent={agentForCard} agencyId={agencyId} whatsappHref={whatsappHref} isAgentfinderTheme={isAgentfinderTheme} />
+</section>
+<div className={homeStyles.cards}><SimilarProperties properties={similarProperties} /></div>
 
-                    <Card className={cn(financeCardClassName, isAgentfinderTheme && "public-premium-panel border-slate-200 bg-none")}>
-                        <CardContent className="p-5">
-                            <div className="space-y-4">
-                                <div className={cn("inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em]", isAgentfinderTheme ? "border border-sky-200 bg-sky-50 text-sky-700" : "border border-emerald-300/20 bg-emerald-400/10 text-emerald-200")}>
-                                    Mai multe optiuni
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className={cn("text-2xl font-semibold tracking-tight", isAgentfinderTheme ? "text-slate-950" : "text-white")}>
-                                        Continua cautarea in portofoliul complet al agentiei.
-                                    </h3>
-                                    <p className={cn("text-sm leading-7 md:text-base", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/85")}>
-                                        Descopera toate proprietatile disponibile, compara stiluri, bugete si zone, apoi alege varianta care ti se potriveste cel mai bine.
-                                    </p>
-                                </div>
-                                <Button asChild className={cn("w-full rounded-full", isAgentfinderTheme ? "public-premium-primary-button" : "bg-[#22c55e] text-black hover:bg-[#4ade80]")}>
-                                    <Link href={publicPath('/properties')} className="inline-flex items-center justify-center gap-2">
-                                        Vezi toate proprietatile
-                                        <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <section className={detailStyles.invitation}>
+  <p className={detailStyles.eyebrow}>MAI MULTE POSIBILITĂȚI</p>
+  <h2>Locul potrivit<br /><em>merită descoperit.</em></h2>
+  <p>Explorează întregul portofoliu și compară proprietățile care ți se potrivesc.</p>
+  <Link href={publicPath('/properties')}>Vezi toate proprietățile <ArrowRight size={18} /></Link>
+</section>
 
                 </div>
             </div>
@@ -449,42 +442,28 @@ export default function PublicPropertyDetailPage() {
     }
 
     return (
-        <div className="bg-transparent">
+        <div className={cn(homeStyles.page, detailStyles.page)}>
              <div className="container mx-auto px-4 py-8">
                 <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     <div className="col-span-12 lg:col-span-8 space-y-8">
                         <PublicPropertyHeader property={property} />
                         <MediaColumn property={property} showMatchPrompt={true} showVideoTour={false} shareImageUrl={propertyShareImageUrl} />
                         <PublicInfoColumn property={property} isMobile={false} />
-                        <div className="h-80">
-                            <PublicPropertyDetailsMap properties={[property]} />
-                        </div>
+                        <section className={detailStyles.location} aria-labelledby="property-location-title">
+  <p className={detailStyles.eyebrow}>02 / ÎMPREJURIMILE TALE</p>
+  <h2 id="property-location-title">Un loc. O nouă perspectivă.</h2>
+  <p>{[property.address, property.city].filter(Boolean).join(', ')}</p>
+  <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
+</section>
 
-                        <SimilarProperties properties={similarProperties} />
+                        <div className={homeStyles.cards}><SimilarProperties properties={similarProperties} /></div>
 
-                        <Card className={cn(financeCardClassName, isAgentfinderTheme && "public-premium-panel border-slate-200 bg-none")}>
-                            <CardContent className="p-6">
-                                <div className="space-y-4">
-                                    <div className={cn("inline-flex items-center rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em]", isAgentfinderTheme ? "border border-sky-200 bg-sky-50 text-sky-700" : "border border-emerald-300/20 bg-emerald-400/10 text-emerald-200")}>
-                                        Mai multe optiuni
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className={cn("text-2xl font-semibold tracking-tight", isAgentfinderTheme ? "text-slate-950" : "text-white")}>
-                                            Continua cautarea in portofoliul complet al agentiei.
-                                        </h3>
-                                        <p className={cn("text-sm leading-7 md:text-base", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/85")}>
-                                            Descopera toate proprietatile disponibile, compara stiluri, bugete si zone, apoi alege varianta care ti se potriveste cel mai bine.
-                                        </p>
-                                    </div>
-                                    <Button asChild className={cn("rounded-full", isAgentfinderTheme ? "public-premium-primary-button" : "bg-[#22c55e] text-black hover:bg-[#4ade80]")}>
-                                        <Link href={publicPath('/properties')} className="inline-flex items-center justify-center gap-2">
-                                            Vezi toate proprietatile
-                                            <ArrowRight className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <section className={detailStyles.invitation}>
+  <p className={detailStyles.eyebrow}>MAI MULTE POSIBILITĂȚI</p>
+  <h2>Locul potrivit<br /><em>merită descoperit.</em></h2>
+  <p>Explorează întregul portofoliu și compară proprietățile care ți se potrivesc.</p>
+  <Link href={publicPath('/properties')}>Vezi toate proprietățile <ArrowRight size={18} /></Link>
+</section>
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 lg:sticky top-24 space-y-4">

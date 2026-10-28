@@ -1,123 +1,23 @@
 'use client';
 
 import type { Property } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import Image from 'next/image';
-import Link from 'next/link';
-import { BedDouble, Bath, Ruler, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { PropertyCard } from '@/components/properties/PropertyCard';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { PublicPropertyCard } from './PublicPropertyCard';
-import { getAgencyThemePreset } from '@/lib/theme';
-import { cn } from '@/lib/utils';
-
-
-function SimilarPropertyCard({ property }: { property: Property }) {
-  const publicPath = usePublicPath();
-  const href = publicPath(`/properties/${property.id}`);
-  const financeCardClassName = "flex h-full flex-col overflow-hidden rounded-[2rem] border [border-color:var(--public-card-border)] [background:var(--public-card-bg)] text-stone-100 shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)]";
-
-  return (
-    <div className="p-1">
-      <Card className={financeCardClassName}>
-        <Link href={href} className="block group">
-          <div className="relative aspect-video">
-            <Image
-              src={property.images?.[0]?.url || 'https://placehold.co/800x600'}
-              alt={property.title || 'Proprietate'}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="100vw"
-            />
-          </div>
-          <div className="p-4 space-y-2">
-            <h3 className="font-semibold truncate group-hover:underline" title={property.title}>
-              {property.title}
-            </h3>
-            <p className="flex items-center gap-1 text-xs text-stone-400">
-              <MapPin className="h-3 w-3" /> {property.location}
-            </p>
-            <div className="flex items-center gap-4 pt-1 text-xs text-stone-400">
-              <span className="flex items-center gap-1"><BedDouble className="h-4 w-4" /> {property.rooms}</span>
-              <span className="flex items-center gap-1"><Bath className="h-4 w-4" /> {property.bathrooms}</span>
-              <span className="flex items-center gap-1"><Ruler className="h-4 w-4" /> {property.squareFootage} mp</span>
-            </div>
-            <p className="pt-2 text-xl font-bold text-[var(--public-accent)]">
-              €{property.price.toLocaleString()}
-            </p>
-          </div>
-        </Link>
-      </Card>
-    </div>
-  );
-}
+import styles from './PublicPropertyDetail.module.css';
 
 export function SimilarProperties({ properties }: { properties: Property[] }) {
-  const { agencyId, agency } = usePublicAgency();
-  const isMobile = useIsMobile();
-  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
-
-  if (properties.length === 0) {
-    return null;
-  }
-
-  if (!isMobile && agencyId) {
-    return (
-      <div className="space-y-5">
-        <h2 className={cn("text-center text-2xl font-bold", isAgentfinderTheme ? "text-slate-950" : "text-stone-50")}>Proprietati similare</h2>
-        <Carousel
-          opts={{
-            align: 'start',
-            loop: properties.length > 3,
-          }}
-          className="w-full"
-        >
-          <CarouselContent className="-ml-4">
-            {properties.map((prop) => (
-              <CarouselItem key={prop.id} className="pl-4 md:basis-1/2 xl:basis-1/3">
-                <div className="h-full">
-                  <PublicPropertyCard property={prop} agencyId={agencyId} variant="compact" />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          {properties.length > 3 && (
-            <>
-              <CarouselPrevious className={cn("-left-4", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
-              <CarouselNext className={cn("-right-4", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
-            </>
-          )}
-        </Carousel>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4 px-2">
-        <h2 className={cn("text-center text-xl font-bold", isAgentfinderTheme ? "text-slate-950" : "text-stone-50")}>Proprietati similare</h2>
-        <Carousel
-            opts={{
-                align: "start",
-                loop: properties.length > 1,
-            }}
-            className="w-full"
-        >
-            <CarouselContent>
-                {properties.map((prop) => (
-                    <CarouselItem key={prop.id}>
-                        <SimilarPropertyCard property={prop} />
-                    </CarouselItem>
-                ))}
-            </CarouselContent>
-            {properties.length > 1 && (
-                <>
-                    <CarouselPrevious className={cn("left-2", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
-                    <CarouselNext className={cn("right-2", isAgentfinderTheme ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50" : "border-white/10 bg-black/70 text-stone-100 hover:bg-black/85")} />
-                </>
-            )}
-        </Carousel>
-    </div>
-  );
+  const { agencyId } = usePublicAgency();
+  const publicPath = usePublicPath();
+  if (!properties.length || !agencyId) return null;
+  return <section className={styles.similar} aria-labelledby="similar-title">
+    <p className={styles.eyebrow}>CONTINUĂ SĂ EXPLOREZI</p>
+    <h2 id="similar-title">Alte locuri. Aceeași promisiune.</h2>
+    <Carousel opts={{ align: 'start', loop: properties.length > 2 }}>
+      <CarouselContent>
+        {properties.map(property => <CarouselItem key={property.id} className="md:basis-1/2"><PropertyCard property={property} agencyId={agencyId} publicBasePath={publicPath()} /></CarouselItem>)}
+      </CarouselContent>
+      {properties.length > 1 && <div className={styles.carouselControls}><CarouselPrevious className="static translate-y-0" /><CarouselNext className="static translate-y-0" /></div>}
+    </Carousel>
+  </section>;
 }
