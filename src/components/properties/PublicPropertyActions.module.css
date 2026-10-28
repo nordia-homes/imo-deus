@@ -1,4 +1,44 @@
 /* Used only by the public card action; dashboard buttons are unchanged. */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.footer {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.labels {
+  right: 54px;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.labels.labels :global(.ui-badge), .highlight {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  padding: 5px 9px !important;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 10px !important;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: .035em !important;
+  flex-shrink: 0;
+}
+
+.highlight { color: #fff; }
+.highlight[data-color='red'] { background: #d52d43; }
+.highlight[data-color='purple'] { background: #8538d1; }
+.highlight[data-color='green'] { background: #167a47; }
+.highlight[data-color='blue'] { background: #245bd6; }
+
 .details {
   position: relative;
   isolation: isolate;

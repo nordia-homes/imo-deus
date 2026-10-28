@@ -27,6 +27,22 @@ import { FacebookCloudPublishDialog } from "./FacebookCloudPublishDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isPublicPropertyFavorite, setPublicPropertyFavorite, trackPublicPropertyEvent } from "@/lib/public-property-analytics";
 
+const publicHighlights = [
+  { label: 'HOT', color: 'red' },
+  { label: 'EXCLUSIV', color: 'purple' },
+  { label: 'RECOMANDAT', color: 'green' },
+  { label: 'FAST SALE', color: 'blue' },
+] as const;
+
+// Stable pseudo-random assignment avoids labels changing on hydration or filtering.
+function getPublicHighlight(id: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index++) {
+    hash = Math.imul(hash ^ id.charCodeAt(index), 16777619);
+  }
+  return publicHighlights[(hash >>> 0) % publicHighlights.length];
+}
+
 export function PropertyCard({
   property,
   agencyId,
@@ -60,6 +76,7 @@ export function PropertyCard({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const isPublicCard = Boolean(agencyId);
+  const publicHighlight = isPublicCard ? getPublicHighlight(property.id) : null;
   const isAgentfinderTheme = isPublicCard && getAgencyThemePreset(publicAgency) === 'agentfinder';
   const formattedPrice =
     typeof property.price === 'number' && Number.isFinite(property.price)
@@ -190,7 +207,7 @@ export function PropertyCard({
       )}>
         <CardContent className="p-0">
           <div className="relative">
-            <Link href={href} className="block aspect-[16/10] relative overflow-hidden rounded-t-[1.75rem]">
+            <Link href={href} className={cn("block relative overflow-hidden rounded-t-[1.75rem]", isPublicCard ? "aspect-[4/3]" : "aspect-[16/10]")}>
               <Image
                 src={primaryImageUrl}
                 alt={property.title || 'Proprietate'}
@@ -199,8 +216,9 @@ export function PropertyCard({
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </Link>
-            <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
+            <div className={cn("absolute top-3 left-3 flex flex-wrap items-center gap-2", isPublicCard && publicActionStyles.labels)}>
                <Badge variant="outline" className={cn("font-semibold", isPublicCard ? (isAgentfinderTheme ? "border-white bg-white text-slate-900" : "border-[#22c55e]/25 bg-black/55 text-[#86efac]") : "bg-white/90 text-black")}>{property.transactionType}</Badge>
+               {publicHighlight && <span className={publicActionStyles.highlight} data-color={publicHighlight.color}>{publicHighlight.label}</span>}
             </div>
             {isReserved ? (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
@@ -322,7 +340,7 @@ export function PropertyCard({
                 )}
             </div>
 
-            <div className="flex justify-between items-center pt-2">
+            <div className={cn("flex justify-between items-center pt-2", isPublicCard && publicActionStyles.footer)}>
               <p className={cn("text-xl font-bold", isPublicCard ? "text-[#4ade80]" : "text-white")}>
                 {formattedPrice}
               </p>
@@ -358,7 +376,7 @@ export function PropertyCard({
                     </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className={publicActionStyles.actions}>
                   <button
                     type="button"
                     title="Distribuie proprietatea"

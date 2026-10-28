@@ -83,7 +83,7 @@ export function AgencyHomeHero({ properties = [], featuredProperties = [], isLoa
           <Link href={publicPath('/properties')}>Vezi toate <ArrowRight size={18} /></Link>
         </div>
         {hasFilters && <div className={styles.resultStatus}><p role="status" aria-live="polite">{isLoading ? 'Se încarcă proprietățile…' : `${filtered.length} ${filtered.length === 1 ? 'proprietate găsită' : 'proprietăți găsite'}`}</p><button type="button" onClick={() => { setQuery(''); setCategory('all'); setVisibleCount(8); }}>Resetează <X size={14} /></button></div>}
-        {isLoading ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">{[0,1,2,3].map(item => <div key={item} className={styles.skeleton}><div className="aspect-[16/10]" /><span /></div>)}</div> : shown.length && agencyId ? (
+        {isLoading ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8">{[0,1,2,3].map(item => <div key={item} className={styles.skeleton}><div className="aspect-[4/3]" /><span /></div>)}</div> : shown.length && agencyId ? (
           <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-8 ${styles.cards}`}>
             {shown.map(property => <PropertyCard key={property.id} property={property} agencyId={agencyId} publicBasePath={publicPath()} />)}
           </div>
