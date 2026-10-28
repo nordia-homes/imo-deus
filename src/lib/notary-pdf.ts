@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, type PDFFont } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
+import { mediumFontBase64, boldFontBase64 } from './notary-pdf-fonts';
 import { calculatePublicNotaryFees, splitNotaryCosts, type NotaryInputs } from './public-notary';
 
 export async function createNotaryPdf(inputs: NotaryInputs, fontBytes: Uint8Array, options: { date?: Date; fallbackRate?: boolean; boldFontBytes?: Uint8Array } = {}) {
@@ -61,11 +62,7 @@ export async function createNotaryPdf(inputs: NotaryInputs, fontBytes: Uint8Arra
 }
 
 export async function downloadNotaryPdf(inputs: NotaryInputs, fallbackRate: boolean) {
-  const fonts = await Promise.all(['Medium','Bold'].map(async weight => {
-    const response = await fetch(`/fonts/manrope/Manrope-${weight}.ttf`);
-    if(!response.ok) throw new Error('Fontul documentului nu a putut fi încărcat.');
-    return new Uint8Array(await response.arrayBuffer());
-  }));
+  const fonts = [mediumFontBase64, boldFontBase64].map(encoded => Uint8Array.from(atob(encoded), character => character.charCodeAt(0)));
   const bytes = await createNotaryPdf(inputs,fonts[0],{fallbackRate,boldFontBytes:fonts[1]});
   const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)],{type:'application/pdf'}));
   const anchor = document.createElement('a');
