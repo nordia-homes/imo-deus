@@ -19,7 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, Mail, Phone, Loader2 } from 'lucide-react';
-import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
+import { PublicPriceStatusCard as PriceStatusCard } from '@/components/public/PublicPriceStatusCard';
 import { Button } from '@/components/ui/button';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

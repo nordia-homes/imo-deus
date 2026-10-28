@@ -42,6 +42,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 
 import { PriceStatusCard } from '@/components/properties/detail/actions/PriceStatusCard';
+import { NotaryCalculatorButton } from '@/components/properties/detail/actions/NotaryCalculatorButton';
 import { AgentCard } from '@/components/properties/detail/actions/AgentCard';
 import { ScheduledViewingsCard } from '@/components/properties/detail/actions/ScheduledViewingsCard';
 import { PotentialBuyersCard } from '@/components/properties/detail/actions/PotentialBuyersCard';
@@ -240,6 +241,7 @@ export default function PropertyDetailPage() {
                                 <p className="text-center text-sm text-white/70">{property.address}</p>
                             </div>
                             <PriceStatusCard property={property} variant="admin" isMobile={true} />
+                            <NotaryCalculatorButton price={property.price} />
                              <AgentCard agent={{
                                 name: agentProfile?.name || property.agentName,
                                 email: agentProfile?.email || null,

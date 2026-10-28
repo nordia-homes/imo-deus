@@ -2,6 +2,7 @@
 
 import type { MatchedBuyer, Property, Viewing, UserProfile } from "@/lib/types";
 import { PriceStatusCard } from "./actions/PriceStatusCard";
+import { NotaryCalculatorButton } from "./actions/NotaryCalculatorButton";
 import { AgentCard } from "./actions/AgentCard";
 import { PublishCard } from "./actions/PublishCard";
 import { SocialMediaCard } from "./actions/SocialMediaCard";
@@ -26,6 +27,7 @@ export function ActionsColumn({ property, allProperties, viewings, agentProfile,
     return (
         <div className="sticky top-28 flex h-full flex-col gap-4">
             <PriceStatusCard property={property} variant="admin" />
+            <NotaryCalculatorButton price={property.price} />
             <AgentCard agent={agentForCard} />
             <OwnerCard property={property} />
             <PublishCard property={property} />
