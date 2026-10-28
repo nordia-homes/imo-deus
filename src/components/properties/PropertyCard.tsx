@@ -77,6 +77,10 @@ export function PropertyCard({
   const [copied, setCopied] = useState(false);
   const isPublicCard = Boolean(agencyId);
   const publicHighlight = isPublicCard ? getPublicHighlight(property.id) : null;
+  const pricePerSquareMeter = isPublicCard && Number.isFinite(property.price) && property.price > 0
+    && typeof displaySurface === 'number' && Number.isFinite(displaySurface) && displaySurface > 0
+    ? `~${Math.round(property.price / displaySurface).toLocaleString('en-US')} €/mp`
+    : null;
   const isAgentfinderTheme = isPublicCard && getAgencyThemePreset(publicAgency) === 'agentfinder';
   const formattedPrice =
     typeof property.price === 'number' && Number.isFinite(property.price)
@@ -216,6 +220,17 @@ export function PropertyCard({
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </Link>
+            {isPublicCard && (
+              <button
+                type="button"
+                title="Distribuie proprietatea"
+                aria-label="Distribuie proprietatea"
+                onClick={handleShare}
+                className={publicActionStyles.imageShare}
+              >
+                <Share className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
             <div className={cn("absolute top-3 left-3 flex flex-wrap items-center gap-2", isPublicCard && publicActionStyles.labels)}>
                <Badge variant="outline" className={cn("font-semibold", isPublicCard ? (isAgentfinderTheme ? "border-white bg-white text-slate-900" : "border-[#22c55e]/25 bg-black/55 text-[#86efac]") : "bg-white/90 text-black")}>{property.transactionType}</Badge>
                {publicHighlight && <span className={publicActionStyles.highlight} data-color={publicHighlight.color}>{publicHighlight.label}</span>}
@@ -341,9 +356,12 @@ export function PropertyCard({
             </div>
 
             <div className={cn("flex justify-between items-center pt-2", isPublicCard && publicActionStyles.footer)}>
-              <p className={cn("text-xl font-bold", isPublicCard ? "text-[#4ade80]" : "text-white")}>
-                {formattedPrice}
-              </p>
+              {isPublicCard ? (
+                <div className={publicActionStyles.prices}>
+                  <p className="text-xl font-bold text-[#4ade80]">{formattedPrice}</p>
+                  {pricePerSquareMeter && <span className={publicActionStyles.unitPrice}>{pricePerSquareMeter}</span>}
+                </div>
+              ) : <p className="text-xl font-bold text-white">{formattedPrice}</p>}
               {!agencyId ? (
                 <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:bg-white/10" onClick={handleCopyLink}>
@@ -377,15 +395,6 @@ export function PropertyCard({
                 </div>
               ) : (
                 <div className={publicActionStyles.actions}>
-                  <button
-                    type="button"
-                    title="Distribuie proprietatea"
-                    aria-label="Distribuie proprietatea"
-                    onClick={handleShare}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-stone-100 transition-colors hover:bg-white/[0.12] hover:text-white"
-                  >
-                    <Share className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
-                  </button>
                   <Button asChild size="sm" variant="outline" className="rounded-full border-white/10 bg-white/[0.04] text-stone-100 hover:bg-white/[0.08]">
                       <Link href={href} className={`inline-flex items-center gap-2 ${publicActionStyles.details}`}>
                         Vezi Detalii
