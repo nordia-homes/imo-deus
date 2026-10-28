@@ -58,7 +58,7 @@ export function AgencyHomeHero({ properties = [], featuredProperties = [], isLoa
         </div>
         <div className={styles.heroInner}>
           <p className={styles.eyebrow}>PROPRIETĂȚI. OAMENI. ACASĂ.</p>
-          <h1 id="agency-home-title" className={styles.title}>Locuințe reale.<br /><span>Oameni reali.</span></h1>
+          <h1 id="agency-home-title" className={styles.title}>Locuințe reale.<br /><span>Acasă începe cu noi</span></h1>
           <p className={styles.description}>Un loc potrivit pentru următorul tău capitol.<br />Simplu, clar, cu noi alături.</p>
           <form className={styles.search} onSubmit={submitSearch} role="search">
             <Search size={23} aria-hidden="true" />

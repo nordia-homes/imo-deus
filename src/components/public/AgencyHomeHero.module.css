@@ -40,7 +40,7 @@
 .heroInner { position: relative; max-width: 1280px; margin: auto; padding: 64px 32px 28px; }
 .eyebrow { margin-bottom: 16px; font-size: 11px; font-weight: 500; letter-spacing: .2em; color: #ddb979; }
 .hero .title { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(44px,5vw,70px); font-weight: 400; letter-spacing: -.035em; line-height: 1.04; color: #f7f3ec; }
-.title span { color: #e8bf79; }
+.title span { color: #e8bf79; white-space: nowrap; }
 .description { margin-top: 18px; color: #c0c1bd; font-size: 16px; line-height: 1.5; }
 .heroInner > .eyebrow, .heroInner > .title, .heroInner > .description { text-align: center; }
 .search { display: flex; align-items: center; gap: 15px; max-width: 760px; margin-top: 32px; padding: 6px 7px 6px 22px; border: 1px solid #ffffff26; border-radius: 40px; background: #151a1de8; box-shadow: 0 10px 35px #0003; }
@@ -50,7 +50,7 @@
 .search:focus-within { border-color: #e8bf79; box-shadow: 0 0 0 3px #e8bf7918; }
 .search button { display: grid; place-items: center; width: 54px; height: 54px; flex-shrink: 0; border-radius: 50%; background: linear-gradient(120deg,#f2d398,#dbac60); color: #121719; transition: filter .2s; }
 .search button:hover { filter: brightness(1.1); }
-.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .filters button { min-height: 40px; padding: 8px 25px; border: 1px solid #ffffff29; border-radius: 30px; color: #e4e2df; font-size: 13px; background: #0b1012b8; transition: border-color .2s, background .2s; }
 .filters button:hover { border-color: #e8bf79; }
 .filters button[aria-pressed='true'] { background: linear-gradient(110deg,#f2d398,#dfb36d); color: #17191a; border-color: transparent; }
@@ -116,7 +116,7 @@
   .search input { font-size: 16px; }
   .search > svg { width: 19px; }
   .search button { width: 44px; height: 44px; }
-  .filters { gap: 6px; flex-wrap: nowrap; margin-top: 10px; }
+  .filters { gap: 6px; flex-wrap: nowrap; margin-top: 20px; }
   .filters button { flex: 1; padding: 7px 4px; font-size: 9px; min-height: 34px; white-space: nowrap; }
   .benefits { padding: 18px 12px 22px; }
   .benefits > div { padding: 0 4px; }
