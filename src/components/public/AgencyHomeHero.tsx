@@ -8,6 +8,7 @@ import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { PropertyCard } from '@/components/properties/PropertyCard';
 import type { Property } from '@/lib/types';
 import styles from './AgencyHomeHero.module.css';
+import heroImage from './assets/hero-evening.jpg';
 
 const categories = [
   { id: 'all', label: 'Toate' },
@@ -53,7 +54,7 @@ export function AgencyHomeHero({ properties = [], featuredProperties = [], isLoa
     <>
       <section className={styles.hero} aria-labelledby="agency-home-title">
         <div className={styles.heroImage} aria-hidden="true">
-          <Image src="/images/nordia/hero-evening.jpg" alt="" fill priority sizes="100vw" className={styles.photo} />
+          <Image src={heroImage} alt="" fill priority sizes="100vw" className={styles.photo} />
         </div>
         <div className={styles.heroInner}>
           <p className={styles.eyebrow}>PROPRIETĂȚI. OAMENI. ACASĂ.</p>
