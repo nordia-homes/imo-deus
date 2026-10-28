@@ -32,12 +32,13 @@ const propertyFilterSchema = z.object({
 export type PropertyFiltersType = z.infer<typeof propertyFilterSchema>;
 
 interface PropertyFiltersProps {
+  initialFilters?: PropertyFiltersType | null;
   onApplyFilters: (filters: PropertyFiltersType) => void;
   onResetFilters: () => void;
   children: React.ReactNode;
 }
 
-export function PropertyFilters({ onApplyFilters, onResetFilters, children }: PropertyFiltersProps) {
+export function PropertyFilters({ onApplyFilters, onResetFilters, children, initialFilters }: PropertyFiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [zoneSearch, setZoneSearch] = useState('');
 
@@ -53,6 +54,12 @@ export function PropertyFilters({ onApplyFilters, onResetFilters, children }: Pr
   });
 
   const watchedCity = form.watch('city') as City | 'all' | undefined;
+
+  useEffect(() => {
+    if (isOpen && initialFilters !== undefined) {
+      form.reset({ transactionType: 'all', city: 'all', zones: [], furnishing: 'all', heatingSystem: 'all', ...initialFilters });
+    }
+  }, [isOpen, initialFilters, form]);
 
   const availableZones = useMemo<string[]>(() => {
     if (watchedCity && watchedCity !== 'all') {

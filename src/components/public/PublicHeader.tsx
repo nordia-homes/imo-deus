@@ -27,7 +27,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   const { agency: contextAgency } = usePublicAgency();
   const publicPath = usePublicPath();
   const isAgentfinderTheme = getAgencyThemePreset(contextAgency || agency) === 'agentfinder';
-  const isEditorialHome = isAgentfinderTheme && (displayPath === publicPath() || /^\/domains\/[^/]+\/?$/.test(displayPath));
+  const isEditorialHome = isAgentfinderTheme && (displayPath === publicPath() || displayPath === publicPath('/properties') || /^\/domains\/[^/]+\/?$/.test(displayPath));
   const headerLogoUrl = isAgentfinderTheme
     ? 'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Logo_Nordia_Website.png?alt=media&token=a4ac649c-de17-4131-9734-9e0e3b928df6'
     : agency?.logoUrl;
