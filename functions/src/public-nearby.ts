@@ -2,7 +2,7 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 
 const appBaseUrl = defineSecret('OWNER_LISTINGS_APP_BASE_URL');
-const cronSecret = defineSecret('OWNER_LISTINGS_FUNCTIONS_CRON_SECRET');
+const cronSecret = defineSecret('OWNER_LISTINGS_CRON_SECRET');
 const agencyId = 'lTLGa8vkfrQOEZQ9iQwW'; // Nordia public website only.
 
 // No admin UI or page-view hooks. Firestore creation is the only automatic trigger.
