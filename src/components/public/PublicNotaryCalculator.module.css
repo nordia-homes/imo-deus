@@ -15,6 +15,7 @@
 .submit { min-height: 50px; border-radius: 30px; background: linear-gradient(110deg, #f2d59b, #ddb16a); color: #10171a; font-weight: 700; padding: 12px 20px; }
 .rate, .note { font-size: 13px; color: #aeb5b5; line-height: 1.65; }
 .results h3 { font-family: Georgia, serif; font-size: 26px; margin-bottom: 18px; }
+.costHeading { color: #e8bf79; font-size: 18px; font-weight: 700; margin-top: 20px; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 0; border-bottom: 1px solid #ffffff12; font-size: 14px; color: #bcc3c3; }
 .row dd { white-space: nowrap; color: #f7f3eb; font-weight: 600; }
 .total { margin: 22px 0; padding: 20px; border-radius: 16px; background: #e8bf7910; border: 1px solid #e8bf7940; display: grid; gap: 8px; text-align: center; }

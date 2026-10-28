@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Calculator, Download, X } from 'lucide-react';
-import { calculatePublicNotaryFees, type NotaryInputs } from '@/lib/public-notary';
+import { calculatePublicNotaryFees, splitNotaryCosts, type NotaryInputs } from '@/lib/public-notary';
 import styles from './PublicNotaryCalculator.module.css';
 
 let rateRequest: Promise<{ rate: number; fallback: boolean }> | undefined;
@@ -93,17 +93,22 @@ function CalculatorForm({ price }: { price: number }) {
     <section ref={resultRef} className={styles.results} id={`${id}-result`} aria-live="polite" aria-atomic="true">
       <h3>Estimarea costurilor</h3>
       {result ? <>
+        <h4 className={styles.costHeading}>Costuri cumpărător</h4>
         <dl>
           <div className={styles.row}><dt>Onorariu notarial vânzare, cu TVA</dt><dd>{lei(result.notaryFee)}</dd></div>
           <div className={styles.row}><dt>Taxă ANCPI vânzare</dt><dd>{lei(result.ancpiFee)}</dd></div>
-          <div className={styles.row}><dt>Impozit vânzător</dt><dd>{lei(result.saleTax)}</dd></div>
           {mortgage && <>
             <div className={styles.row}><dt>Onorariu ipotecă, cu TVA</dt><dd>{lei(result.mortgageNotaryFee)}</dd></div>
             <div className={styles.row}><dt>Taxă ANCPI ipotecă</dt><dd>{lei(result.mortgageAncpiFee)}</dd></div>
           </>}
           <div className={styles.row}><dt>Extras de autentificare</dt><dd>{lei(result.authenticationFee)}</dd></div>
         </dl>
-        <div className={styles.total}><span>Total estimat al tranzacției</span><strong>{lei(result.totalFees)}</strong><span className={styles.note}>Include impozitul datorat de vânzător.</span></div>
+        {calculatedInputs && <p className={styles.note}>Bază ANCPI: {lei(calculatedInputs.price * (calculatedInputs.currency === 'eur' ? calculatedInputs.exchangeRate : 1))} × {calculatedInputs.buyerType === 'individual' ? '0,15%' : '0,5%'}; minimum 60 lei, rotunjit în sus.</p>}
+        <div className={styles.total}><span>Total cumpărător</span><strong>{lei(splitNotaryCosts(result).buyerTotal)}</strong></div>
+        <h4 className={styles.costHeading}>Costuri vânzător</h4>
+        <dl><div className={styles.row}><dt>Impozit vânzător</dt><dd>{lei(result.saleTax)}</dd></div></dl>
+        <div className={styles.total}><span>Total vânzător</span><strong>{lei(splitNotaryCosts(result).sellerTotal)}</strong></div>
+        <p className={styles.note}>Total tranzacție (ambele părți): <strong>{lei(result.totalFees)}</strong>. Repartizare orientativă; părțile pot conveni altfel pentru costurile contractuale.</p>
         <button type="button" className={styles.exportButton} disabled={exporting || !calculatedInputs} onClick={async () => {
           if (!calculatedInputs || exporting) return;
           setExporting(true);

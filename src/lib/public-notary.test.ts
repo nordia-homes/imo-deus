@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { calculatePublicNotaryFees, type NotaryInputs } from './public-notary';
+import { calculatePublicNotaryFees, splitNotaryCosts, type NotaryInputs } from './public-notary';
 
 const base: NotaryInputs = { price: 100000, currency: 'ron', exchangeRate: 5, ownershipDuration: 'over3', buyerType: 'individual', sellerType: 'individual', mortgage: false, mortgageValue: 0, mortgageCurrency: 'ron' };
 describe('public notary calculator — source tariff compatibility', () => {
+  it('separates buyer fees from seller tax without counting costs twice', () => {
+    for (const mortgage of [false, true]) {
+      const fees = calculatePublicNotaryFees({ ...base, mortgage, mortgageValue: 50000 });
+      const split = splitNotaryCosts(fees);
+      expect(split.sellerTotal).toBe(1000);
+      expect(split.buyerTotal).toBe(mortgage ? 2905 : 2249);
+      expect(split.buyerTotal + split.sellerTotal).toBe(fees.totalFees);
+    }
+  });
   it('matches the source sale breakdown', () => {
     expect(calculatePublicNotaryFees(base)).toEqual({ notaryFee: 2059, ancpiFee: 150, saleTax: 1000, authenticationFee: 40, mortgageNotaryFee: 0, mortgageAncpiFee: 0, totalFees: 3249 });
   });

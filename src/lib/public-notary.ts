@@ -12,6 +12,10 @@ export type NotaryInputs = {
   mortgageCurrency: 'eur' | 'ron';
 };
 
+export function splitNotaryCosts(fees: ReturnType<typeof calculatePublicNotaryFees>) {
+  return { buyerTotal: fees.notaryFee + fees.ancpiFee + fees.mortgageNotaryFee + fees.mortgageAncpiFee + fees.authenticationFee, sellerTotal: fees.saleTax };
+}
+
 export function calculatePublicNotaryFees(input: NotaryInputs) {
   if (!Number.isFinite(input.price) || input.price <= 0 || !Number.isFinite(input.exchangeRate) || input.exchangeRate <= 0) {
     throw new Error('Introduceți un preț și un curs valutar valide.');
