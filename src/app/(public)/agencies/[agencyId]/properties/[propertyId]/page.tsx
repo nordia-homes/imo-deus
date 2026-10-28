@@ -379,7 +379,7 @@ export default function PublicPropertyDetailPage() {
                     <PublicInfoColumn property={property} isMobile={true} />
 
                     <section className={detailStyles.location} aria-labelledby="property-location-title">
-  <p className={detailStyles.eyebrow}>02 / ÎMPREJURIMILE TALE</p>
+  <p className={detailStyles.eyebrow}>ÎMPREJURIMILE TALE</p>
   <h2 id="property-location-title">Un loc. O nouă perspectivă.</h2>
   <p>{[property.address, property.city].filter(Boolean).join(', ')}</p>
   <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
@@ -388,7 +388,7 @@ export default function PublicPropertyDetailPage() {
 <PublicPropertyFinancing />
 
                     <section className={detailStyles.mobileContact}>
-  <p className={detailStyles.eyebrow}>03 / HAI SĂ ÎL VEZI</p>
+  <p className={detailStyles.eyebrow}>HAI SĂ ÎL VEZI</p>
   <h2>Următorul pas: o vizionare.</h2>
   <PublicScheduleViewingCard property={property} agent={agentForCard} agencyId={agencyId} whatsappHref={whatsappHref} isAgentfinderTheme={isAgentfinderTheme} />
 </section>
@@ -455,7 +455,7 @@ export default function PublicPropertyDetailPage() {
                         <MediaColumn property={property} showMatchPrompt={true} showVideoTour={false} shareImageUrl={propertyShareImageUrl} />
                         <PublicInfoColumn property={property} isMobile={false} />
                         <section className={detailStyles.location} aria-labelledby="property-location-title">
-  <p className={detailStyles.eyebrow}>02 / ÎMPREJURIMILE TALE</p>
+  <p className={detailStyles.eyebrow}>ÎMPREJURIMILE TALE</p>
   <h2 id="property-location-title">Un loc. O nouă perspectivă.</h2>
   <p>{[property.address, property.city].filter(Boolean).join(', ')}</p>
   <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
