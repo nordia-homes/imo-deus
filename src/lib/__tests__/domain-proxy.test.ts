@@ -12,6 +12,11 @@ function request(path: string, forwardedHost: string) {
 }
 
 describe('custom domain proxy', () => {
+  it('serves the PDF font directly on custom domains', () => {
+    const response = proxy(request('/fonts/manrope/Manrope.ttf', 'nordia.ro'));
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  });
   it('rewrites a Firebase-forwarded custom domain to its public site route', () => {
     const response = proxy(request('/properties?city=brasov', 'nordia.ro'));
     expect(response.headers.get('x-middleware-rewrite')).toBe('http://0.0.0.0/domains/nordia.ro/properties?city=brasov');

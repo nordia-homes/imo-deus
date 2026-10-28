@@ -12,6 +12,7 @@ function shouldBypass(pathname: string) {
     pathname.startsWith('/manifest') ||
     pathname.startsWith('/icons') ||
     pathname.startsWith('/images') ||
+    pathname.startsWith('/fonts/') ||
     pathname.startsWith('/domains')
   );
 }
