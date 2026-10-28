@@ -1,4 +1,25 @@
 .page { background: #090d0f; color: #eeeae5; min-height: 100vh; --public-card-bg: #101619; --public-card-bg-soft: #101619; --public-header-bg: #101619; --public-card-border: #b8975f30; --public-accent: #e8bf79; --public-accent-soft: #e8bf79; }
+.page { text-align: center; }
+.page :is(h1,h2,h3,p,label,input,textarea) { text-align: center; }
+.page .description, .page .description :is(h2,h3,p) { text-align: left; }
+.descriptionText { text-align: left; white-space: pre-wrap; font-size: 16px; line-height: 1.8; }
+@media (min-width: 768px) { .descriptionText { font-size: 18px; } }
+.page .facts > div { padding-left: 12px; padding-right: 12px; }
+.facts svg { margin-left: auto; margin-right: auto; }
+.financing > p { margin-left: auto; margin-right: auto; }
+.financing li, .carouselControls { justify-content: center; }
+.nearby { padding: 36px 16px 0; }
+.nearby h2 { font-size: clamp(28px,3vw,36px); line-height: 1.2; margin-bottom: 24px; }
+.nearbyGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.nearbyGrid > :is(a,div) { display: flex; flex-direction: column; align-items: center; gap: 10px; min-width: 0; padding: 22px 14px; border: 1px solid #e8bf7930; border-radius: 20px; background: #101619; overflow-wrap: anywhere; }
+.nearbyGrid a:hover { border-color: #e8bf7990; }
+.nearbyGrid svg { color: #e8bf79; width: 25px; height: 25px; }
+.nearbyGrid strong { font-size: 16px; color: #eeeae5; }
+.nearbyGrid span { font-size: 12px; color: #b3bab9; }
+.nearbyGrid .nearbyLabel { color: #e8bf79; }
+.nearbyGrid b { font-size: 13px; color: #e8bf79; margin-top: auto; padding-top: 6px; }
+.nearbyNote { color: #aeb5b5; font-size: 12px; line-height: 1.7; margin-top: 18px; }
+@media (max-width: 360px) { .nearbyGrid { grid-template-columns: 1fr; } }
 /* Only public detail descendants: preserve gallery and description geometry. */
 .page.page :is([class*='bg-white'], [class*='bg-slate-'], [class*='bg-sky-']) { background-color: #101619 !important; }
 .page.page :is([class*='text-slate-950'], [class*='text-slate-900'], [class*='text-slate-700']) { color: #eeeae5 !important; }
@@ -13,6 +34,7 @@
 .similar { margin: 32px 0; padding: 0 8px; }
 .similar h2 { font-size: clamp(26px,3vw,36px); margin-bottom: 24px; }
 .carouselControls { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.page .carouselControls { justify-content: center; }
 .story { padding: 28px 0 0; }
 .eyebrow { font: 600 10px/1.6 sans-serif; letter-spacing: .19em; color: #e8bf79; margin-bottom: 16px; }
 .factsSection { padding: 12px 16px 32px; }

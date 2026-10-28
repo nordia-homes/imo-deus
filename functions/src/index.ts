@@ -1,4 +1,5 @@
 import { onRequest } from 'firebase-functions/v2/https';
+export { publicPropertyNearbyCreated } from './public-nearby';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';

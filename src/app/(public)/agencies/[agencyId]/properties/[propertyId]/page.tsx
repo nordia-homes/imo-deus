@@ -11,6 +11,8 @@ import homeStyles from '@/components/public/AgencyHomeHero.module.css';
 import detailStyles from '@/components/public/PublicPropertyDetail.module.css';
 import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
+import { PublicNearbyObjectives } from '@/components/public/PublicNearbyObjectives';
+import type { PropertyWithPublicNearby } from '@/lib/public-nearby';
 import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -216,7 +218,7 @@ export default function PublicPropertyDetailPage() {
         if (!agencyId || !propertyId) return null;
         return doc(firestore, 'agencies', agencyId, 'properties', propertyId);
     }, [firestore, agencyId, propertyId]);
-    const { data: property, isLoading: isPropertyLoading, error } = useDoc<Property>(propertyDocRef);
+    const { data: property, isLoading: isPropertyLoading, error } = useDoc<Property & PropertyWithPublicNearby>(propertyDocRef);
     
     // Fetch all active properties for the agency to find similar ones
     const allPropertiesQuery = useMemoFirebase(() => {
@@ -380,6 +382,7 @@ export default function PublicPropertyDetailPage() {
   <h2 id="property-location-title">Un loc. O nouă perspectivă.</h2>
   <p>{[property.address, property.city].filter(Boolean).join(', ')}</p>
   <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
+  <PublicNearbyObjectives property={property} />
 </section>
 
                     <section className={detailStyles.mobileContact}>
@@ -454,6 +457,7 @@ export default function PublicPropertyDetailPage() {
   <h2 id="property-location-title">Un loc. O nouă perspectivă.</h2>
   <p>{[property.address, property.city].filter(Boolean).join(', ')}</p>
   <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
+  <PublicNearbyObjectives property={property} />
 </section>
 
                         <div className={homeStyles.cards}><SimilarProperties properties={similarProperties} /></div>

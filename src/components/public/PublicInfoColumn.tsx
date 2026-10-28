@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { usePublicAgency } from '@/context/PublicAgencyContext';
 import { getAgencyThemePreset } from '@/lib/theme';
 import { cn } from '@/lib/utils';
+import styles from './PublicPropertyDetail.module.css';
 
 
 export function PublicInfoColumn({ property, isMobile = false }: { property: Property, isMobile?: boolean }) {
@@ -36,7 +37,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     const panelBodyClassName = "px-4 pb-4 pt-0 md:px-6 md:pb-6";
 
     const DescriptionText = ({ mobile = false }: { mobile?: boolean }) => (
-        <div className={cn(`whitespace-pre-wrap leading-7 ${mobile ? 'text-sm' : 'text-sm md:text-base'}`, isAgentfinderTheme ? 'text-slate-600' : 'text-emerald-50/85')}>
+        <div className={cn(styles.descriptionText, isAgentfinderTheme ? 'text-slate-600' : 'text-emerald-50/85')}>
             <span className={cn("font-semibold", isAgentfinderTheme ? "text-slate-950" : "text-white")}>{descriptionIntro}</span>
             {descriptionBody ? ` ${descriptionBody}` : null}
         </div>
@@ -45,7 +46,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
     if (!isMobile) {
         return (
             <div className="space-y-6">
-                <Card className={cn("overflow-hidden rounded-[2rem] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]", isAgentfinderTheme ? "public-premium-soft-panel" : "border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)]")}>
+                <Card className={cn(styles.description, "overflow-hidden rounded-[2rem] shadow-[0_34px_94px_-44px_rgba(0,0,0,0.92)]", isAgentfinderTheme ? "public-premium-soft-panel" : "border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.08),transparent_24%),linear-gradient(145deg,rgba(5,8,7,0.98)_0%,rgba(8,10,10,0.99)_52%,rgba(10,16,12,0.98)_100%)]")}>
                     <CardHeader className={panelHeaderClassName}>
                         <CardTitle className={cn("max-w-2xl text-2xl font-semibold tracking-tight md:text-3xl", panelTitleClassName)}>Descriere</CardTitle>
                     </CardHeader>
@@ -72,7 +73,7 @@ export function PublicInfoColumn({ property, isMobile = false }: { property: Pro
 
     return (
         <div className="space-y-4">
-                <Card className={detailsCardClassName}>
+                <Card className={cn(styles.description, detailsCardClassName)}>
                 <CardHeader className="p-4">
                     <CardTitle className={cn("text-2xl font-semibold tracking-tight", panelTitleClassName)}>Descriere</CardTitle>
                 </CardHeader>
