@@ -42,6 +42,7 @@
 .hero .title { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(44px,5vw,70px); font-weight: 400; letter-spacing: -.035em; line-height: 1.04; color: #f7f3ec; }
 .title span { color: #e8bf79; }
 .description { margin-top: 18px; color: #c0c1bd; font-size: 16px; line-height: 1.5; }
+.heroInner > .eyebrow, .heroInner > .title, .heroInner > .description { text-align: center; }
 .search { display: flex; align-items: center; gap: 15px; max-width: 760px; margin-top: 32px; padding: 6px 7px 6px 22px; border: 1px solid #ffffff26; border-radius: 40px; background: #151a1de8; box-shadow: 0 10px 35px #0003; }
 .search > svg { color: #f0eee8; flex-shrink: 0; }
 .search input { flex: 1; width: 0; min-width: 0; padding: 10px 0; background: transparent; color: #f4efe5; font: inherit; font-size: 15px; outline: none; }
