@@ -11,14 +11,13 @@ export function PublicNearbyObjectives({ property }: { property: PropertyWithPub
     <p className={styles.eyebrow}>CARTIERUL TĂU, PAS CU PAS</p>
     <h2>Tot ce contează, aproape.</h2>
     {objectives.length ? <>
-      <div className={styles.nearbyGrid}>{objectives.map(item => {
+      <ul className={styles.nearbyList}>{objectives.map(item => {
         const Icon = icons[item.kind] || MapPin;
-        const content = <><Icon aria-hidden="true" /><span className={styles.nearbyLabel}>{item.label}</span><strong>{item.name}</strong>{item.address && <span>{item.address}</span>}<b>{item.walkingText}</b></>;
-        return item.mapsUrl?.startsWith('https://www.google.com/maps/')
-          ? <a key={item.kind} href={item.mapsUrl} target="_blank" rel="noopener noreferrer">{content}</a>
-          : <div key={item.kind}>{content}</div>;
-      })}</div>
-      <p className={styles.nearbyNote}>Timpi estimativi de mers pe jos · Date Google Maps, salvate la {new Date(property.publicNearby!.calculatedAt).toLocaleDateString('ro-RO')}.</p>
+        const content = <><Icon aria-hidden="true" /><span className={styles.nearbyContent}><span className={styles.nearbyLabel}>{item.label}</span><strong>{item.name}</strong>{item.address && <span>{item.address}</span>}</span><b>{item.walkingText}</b></>;
+        return <li key={item.kind}>{item.mapsUrl?.startsWith('https://www.google.com/maps/')
+          ? <a href={item.mapsUrl} target="_blank" rel="noopener noreferrer">{content}</a>
+          : <div>{content}</div>}</li>;
+      })}</ul>
     </> : <p className={styles.nearbyNote}>Informațiile despre obiectivele din apropiere nu sunt încă disponibile pentru acest anunț.</p>}
   </section>;
 }

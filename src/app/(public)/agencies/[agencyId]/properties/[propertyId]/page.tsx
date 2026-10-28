@@ -13,6 +13,7 @@ import { PublicPropertyHeader } from '@/components/public/PublicPropertyHeader';
 import { MediaColumn } from '@/components/properties/detail/MediaColumn';
 import { PublicNearbyObjectives } from '@/components/public/PublicNearbyObjectives';
 import type { PropertyWithPublicNearby } from '@/lib/public-nearby';
+import { PublicPropertyFinancing } from '@/components/public/PublicPropertyStory';
 import { PublicInfoColumn } from '@/components/public/PublicInfoColumn';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -384,6 +385,7 @@ export default function PublicPropertyDetailPage() {
   <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
   <PublicNearbyObjectives property={property} />
 </section>
+<PublicPropertyFinancing />
 
                     <section className={detailStyles.mobileContact}>
   <p className={detailStyles.eyebrow}>03 / HAI SĂ ÎL VEZI</p>
@@ -459,6 +461,7 @@ export default function PublicPropertyDetailPage() {
   <div className={detailStyles.map}><PublicPropertyDetailsMap properties={[property]} /></div>
   <PublicNearbyObjectives property={property} />
 </section>
+<PublicPropertyFinancing />
 
                         <div className={homeStyles.cards}><SimilarProperties properties={similarProperties} /></div>
 

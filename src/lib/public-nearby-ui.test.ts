@@ -15,7 +15,7 @@ it('renders saved objectives and walking time without network requests', () => {
   } }));
   expect(html).toContain('Stație de test');
   expect(html).toContain('6 minute pe jos');
-  expect(html).toContain('Date Google Maps');
+  expect(html).not.toContain('Date Google Maps');
   expect(fetch).not.toHaveBeenCalled();
 });
 it('does not start a lookup when a legacy property has no snapshot', () => {
