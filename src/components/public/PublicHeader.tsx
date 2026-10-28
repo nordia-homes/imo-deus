@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { ModernMenuIcon } from '../icons/ModernMenuIcon';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { getAgencyThemePreset } from '@/lib/theme';
+import homeStyles from './AgencyHomeHero.module.css';
 
 interface PublicHeaderProps {
   agency: Agency | null;
@@ -26,6 +27,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   const { agency: contextAgency } = usePublicAgency();
   const publicPath = usePublicPath();
   const isAgentfinderTheme = getAgencyThemePreset(contextAgency || agency) === 'agentfinder';
+  const isEditorialHome = isAgentfinderTheme && (displayPath === publicPath() || /^\/domains\/[^/]+\/?$/.test(displayPath));
   const headerLogoUrl = isAgentfinderTheme
     ? 'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Logo_Nordia_Website.png?alt=media&token=a4ac649c-de17-4131-9734-9e0e3b928df6'
     : agency?.logoUrl;
@@ -65,7 +67,9 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
     <header
       className={cn(
         'sticky top-0 z-50 backdrop-blur-xl',
-        isAgentfinderTheme
+        isEditorialHome
+          ? homeStyles.header
+          : isAgentfinderTheme
           ? 'bg-transparent px-4 py-2.5 sm:px-5 sm:py-3 lg:px-6 xl:px-8'
           : 'border-b border-white/10 bg-[var(--public-header-bg)] text-stone-100 shadow-[0_18px_44px_-24px_rgba(0,0,0,0.82)]'
       )}
@@ -73,7 +77,9 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
       <div
         className={cn(
           'container relative mx-auto flex items-center justify-between',
-          isAgentfinderTheme
+          isEditorialHome
+            ? homeStyles.headerInner
+            : isAgentfinderTheme
             ? 'landing-glass-panel rounded-[30px] px-5 py-4 md:px-6'
             : 'h-16 px-4 md:h-20'
         )}
@@ -98,7 +104,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
               <span
                 className={cn(
                   'whitespace-nowrap pl-1 md:pl-2',
-                  isAgentfinderTheme ? 'text-[8px] font-semibold uppercase tracking-[0.08em] text-slate-500 sm:text-[9px] md:text-[11px] md:tracking-[0.14em]' : 'text-lg text-[var(--public-accent)] md:text-2xl'
+                  isEditorialHome ? 'hidden text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500 xl:inline' : isAgentfinderTheme ? 'text-[8px] font-semibold uppercase tracking-[0.08em] text-slate-500 sm:text-[9px] md:text-[11px] md:tracking-[0.14em]' : 'text-lg text-[var(--public-accent)] md:text-2xl'
                 )}
                 style={isAgentfinderTheme ? undefined : { fontFamily: '"Brush Script MT", "Segoe Script", cursive', lineHeight: 1 }}
               >
@@ -108,7 +114,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
           )}
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className={isEditorialHome ? 'hidden items-center gap-1 md:flex lg:gap-4' : 'hidden items-center gap-6 md:flex'}>
           {agencyId && navLinks.map(link => {
             const isActive = displayPath === link.href;
             return (
@@ -154,6 +160,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
               hideClose={isAgentfinderTheme}
               className={cn(
                 'p-4',
+                isEditorialHome && homeStyles.menu,
                 isAgentfinderTheme
                   ? 'w-[86vw] max-w-[360px] border-r border-slate-200 bg-[#f7fbff] p-5 pt-20 text-slate-950 shadow-[0_24px_64px_rgba(37,55,88,0.18)]'
                   : 'w-[80vw] border-r border-white/10 bg-[#101113]/98 text-stone-100 backdrop-blur-xl'

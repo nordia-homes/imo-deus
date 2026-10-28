@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FeaturedProperties } from '@/components/public/FeaturedProperties';
 import { Hero } from '@/components/public/Hero';
+import { AgencyHomeHero } from '@/components/public/AgencyHomeHero';
+import homeStyles from '@/components/public/AgencyHomeHero.module.css';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { getAgencyThemePreset } from '@/lib/theme';
@@ -94,8 +96,8 @@ export default function AgencyHomePage() {
 
   if (isLoading) {
     return (
-      <>
-        <Hero />
+      <div className={isAgentfinderTheme ? homeStyles.page : undefined}>
+        {isAgentfinderTheme ? <AgencyHomeHero isLoading /> : <Hero />}
         <div className="container mx-auto space-y-8 px-4 py-8 md:space-y-12 md:py-12">
           <Skeleton className="h-72 rounded-[2rem]" />
           <div className="space-y-6">
@@ -108,15 +110,15 @@ export default function AgencyHomePage() {
           </div>
           <Skeleton className="h-80 rounded-[2rem]" />
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <Hero />
+    <div className={isAgentfinderTheme ? homeStyles.page : undefined}>
+      {isAgentfinderTheme ? <AgencyHomeHero properties={properties || []} featuredProperties={featuredProperties} /> : <Hero />}
       <div className={cn("container mx-auto space-y-8 px-4 pb-5 md:space-y-12 md:pb-8", isAgentfinderTheme ? "pt-0 md:pt-1" : "pt-8 md:pt-12")}>
-        <section className="rounded-[1.9rem] border border-emerald-300/22 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(145deg,rgba(10,19,14,0.98)_0%,rgba(9,11,11,0.99)_55%,rgba(15,26,19,0.97)_100%)] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,0.9)] md:p-7">
+        {!isAgentfinderTheme && <section className="rounded-[1.9rem] border border-emerald-300/22 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.2),transparent_28%),linear-gradient(145deg,rgba(10,19,14,0.98)_0%,rgba(9,11,11,0.99)_55%,rgba(15,26,19,0.97)_100%)] p-5 shadow-[0_28px_90px_-38px_rgba(0,0,0,0.9)] md:p-7">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="max-w-3xl">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-200/80">Avantaj pentru cumparator</p>
@@ -131,9 +133,11 @@ export default function AgencyHomePage() {
               Zero comision pentru cumparator
             </div>
           </div>
-        </section>
+        </section>}
 
-        <FeaturedProperties properties={featuredProperties} agencyId={agencyId!} />
+        {!isAgentfinderTheme && <div id="proprietati-recomandate" className="scroll-mt-28">
+          <FeaturedProperties properties={featuredProperties} agencyId={agencyId!} />
+        </div>}
 
         <section className={`${sectionShellClassName} p-6 md:p-8`}>
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -357,6 +361,6 @@ export default function AgencyHomePage() {
           </article>
         </section>
       </div>
-    </>
+    </div>
   );
 }
