@@ -20,7 +20,7 @@ export async function createNotaryPdf(inputs: NotaryInputs, fontBytes: Uint8Arra
   const right = (value: string, y: number, size = 11, color = ink, face: PDFFont = bold) => text(value, 551 - face.widthOfTextAtSize(value, size), y, size, color, face);
   const rule = (y: number) => page.drawLine({ start: {x:44,y}, end:{x:551,y}, thickness:.6, color:rgb(.78,.80,.79) });
   page.drawRectangle({x:0,y:733,width:595.28,height:109,color:rgb(.06,.10,.11)});
-  text('TAXELE PENTRU NOUL TĂU ACASĂ',44,803,11,gold,bold);
+  text('TAXE LA NOTARIATUL NOSTRU',44,803,11,gold,bold);
   text('Cine plătește. Cât plătește.',44,768,25,rgb(1,1,1),bold);
   text('Estimare taxe notariale | Vânzare - cumpărare',44,747,10,rgb(.86,.88,.87));
   text('DATELE TRANZACȚIEI',44,709,11,ink,bold);
@@ -37,7 +37,7 @@ export async function createNotaryPdf(inputs: NotaryInputs, fontBytes: Uint8Arra
   rule(579);
   text('COSTURI CUMPĂRĂTOR',44,555,13,ink,bold);
   const rows: Array<[string,number]> = [
-    ['Onorariu notarial vânzare, cu TVA',fees.notaryFee], ['Taxă ANCPI vânzare',fees.ancpiFee], ['Extras de autentificare',fees.authenticationFee],
+    ['Onorariu notarial vânzare, cu TVA',fees.notaryFee], ['Taxă ANCPI vânzare',fees.ancpiFee],
     ...(inputs.mortgage ? [['Onorariu notarial ipotecă, cu TVA',fees.mortgageNotaryFee],['Taxă ANCPI ipotecă',fees.mortgageAncpiFee]] as Array<[string,number]> : []),
   ];
   y=528;
@@ -52,6 +52,9 @@ export async function createNotaryPdf(inputs: NotaryInputs, fontBytes: Uint8Arra
   totalBar('TOTAL CUMPĂRĂTOR',buyerTotal,y+6);
   y-=70; text('COSTURI VÂNZĂTOR',44,y,13,ink,bold);
   y-=28; text('Impozit datorat de vânzător',44,y,11);right(money(fees.saleTax),y,12);
+  y-=29;
+  page.drawRectangle({x:36,y:y-9,width:523,height:28,color:rgb(.95,.96,.95)});
+  text('Extras de autentificare',44,y,11);right(money(fees.authenticationFee),y,12);
   y-=23; totalBar('TOTAL VÂNZĂTOR',sellerTotal,y);
   y-=77; text('Total tranzacție (ambele părți)',44,y,11,muted);right(money(fees.totalFees),y,13);
   text('Repartizare orientativă. Părțile pot conveni altfel pentru costurile contractuale.',44,113,9,muted);

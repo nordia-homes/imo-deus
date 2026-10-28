@@ -30,7 +30,7 @@ export function PublicNotaryCalculator({ price, trigger }: { price: number; trig
       <Dialog.Overlay className={styles.overlay} />
       <Dialog.Content className={styles.modal}>
         <header className={styles.header}>
-          <Dialog.Title className={styles.title}>Taxele pentru noul tău acasă</Dialog.Title>
+          <Dialog.Title className={styles.title}>Taxe la notariatul nostru</Dialog.Title>
           <Dialog.Description className={styles.subtitle}>Calculator de taxe notariale pentru vânzare și cumpărare</Dialog.Description>
           <Dialog.Close className={styles.close} aria-label="Închide calculatorul"><X size={24} aria-hidden /></Dialog.Close>
         </header>
@@ -101,12 +101,14 @@ function CalculatorForm({ price }: { price: number }) {
             <div className={styles.row}><dt>Onorariu ipotecă, cu TVA</dt><dd>{lei(result.mortgageNotaryFee)}</dd></div>
             <div className={styles.row}><dt>Taxă ANCPI ipotecă</dt><dd>{lei(result.mortgageAncpiFee)}</dd></div>
           </>}
-          <div className={styles.row}><dt>Extras de autentificare</dt><dd>{lei(result.authenticationFee)}</dd></div>
         </dl>
         {calculatedInputs && <p className={styles.note}>Bază ANCPI: {lei(calculatedInputs.price * (calculatedInputs.currency === 'eur' ? calculatedInputs.exchangeRate : 1))} × {calculatedInputs.buyerType === 'individual' ? '0,15%' : '0,5%'}; minimum 60 lei, rotunjit în sus.</p>}
         <div className={styles.total}><span>Total cumpărător</span><strong>{lei(splitNotaryCosts(result).buyerTotal)}</strong></div>
         <h4 className={styles.costHeading}>Costuri vânzător</h4>
-        <dl><div className={styles.row}><dt>Impozit vânzător</dt><dd>{lei(result.saleTax)}</dd></div></dl>
+        <dl>
+          <div className={styles.row}><dt>Impozit vânzător</dt><dd>{lei(result.saleTax)}</dd></div>
+          <div className={styles.row}><dt>Extras de autentificare</dt><dd>{lei(result.authenticationFee)}</dd></div>
+        </dl>
         <div className={styles.total}><span>Total vânzător</span><strong>{lei(splitNotaryCosts(result).sellerTotal)}</strong></div>
         <p className={styles.note}>Total tranzacție (ambele părți): <strong>{lei(result.totalFees)}</strong>. Repartizare orientativă; părțile pot conveni altfel pentru costurile contractuale.</p>
         <button type="button" className={styles.exportButton} disabled={exporting || !calculatedInputs} onClick={async () => {

@@ -13,7 +13,7 @@ export type NotaryInputs = {
 };
 
 export function splitNotaryCosts(fees: ReturnType<typeof calculatePublicNotaryFees>) {
-  return { buyerTotal: fees.notaryFee + fees.ancpiFee + fees.mortgageNotaryFee + fees.mortgageAncpiFee + fees.authenticationFee, sellerTotal: fees.saleTax };
+  return { buyerTotal: fees.notaryFee + fees.ancpiFee + fees.mortgageNotaryFee + fees.mortgageAncpiFee, sellerTotal: fees.saleTax + fees.authenticationFee };
 }
 
 export function calculatePublicNotaryFees(input: NotaryInputs) {

@@ -295,7 +295,7 @@ export default function PublicPropertyDetailPage() {
     const isLoading = isPropertyLoading || isAgentLoading || areAllPropertiesLoading;
     
     if (isLoading) {
-        return <div className="h-full bg-background"><PageSkeleton /></div>;
+        return <div className={cn(detailStyles.page, detailStyles.loading)} aria-busy="true" aria-label="Se încarcă proprietatea"><PageSkeleton /></div>;
     }
     
     if (!property || error || property.status !== 'Activ') {

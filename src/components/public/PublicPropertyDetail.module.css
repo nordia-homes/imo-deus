@@ -1,5 +1,15 @@
 .page { background: #090d0f; color: #eeeae5; min-height: 100vh; --public-card-bg: #101619; --public-card-bg-soft: #101619; --public-header-bg: #101619; --public-card-border: #b8975f30; --public-accent: #e8bf79; --public-accent-soft: #e8bf79; }
 .page { text-align: center; }
+
+.loading {
+  padding: 24px 16px;
+  --muted: 200 15% 13%;
+  color-scheme: dark;
+}
+
+.loading :global(.animate-pulse) {
+  background: #1c2529;
+}
 .page :is(h1,h2,h3,p,label,input,textarea) { text-align: center; }
 .page .description, .page .description :is(h2,h3,p) { text-align: left; }
 .descriptionText { text-align: left; white-space: pre-wrap; font-size: 16px; line-height: 1.8; }
