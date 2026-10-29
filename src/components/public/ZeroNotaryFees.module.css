@@ -1,0 +1,8 @@
+.giftCard { position: relative; overflow: hidden; text-align: center; padding: 42px 24px; border: 1px solid #e8bf7950; border-radius: 30px; background: radial-gradient(ellipse at top right,#e8bf7920,transparent 65%),linear-gradient(145deg,#192123,#0e1416); box-shadow: 0 24px 80px #0005; }
+.giftCard > svg { color: #e8bf79; margin: 0 auto 22px; }
+.zero { font-family: Georgia,serif; color: #e8bf79; font-size: clamp(100px,12vw,160px); line-height: 1.15; margin: 12px 0; }
+.zero span { font-family: inherit; font-size: 28px; margin-left: 10px; }
+.giftCard h2 { font-size: 34px; line-height: 1.2; }
+.giftCard > p:last-of-type { color: #b4bcb9; font-size: 14px; line-height: 1.8; margin: 22px auto; max-width: 290px; }
+.badge { display: inline-block; background: #047857; color: white; border: 1px solid #34d39950; border-radius: 30px; padding: 10px 20px; font-size: 14px; font-weight: 600; white-space: nowrap; }
+@media(max-width:700px) { .giftCard { padding: 28px 20px; } .zero { font-size: 110px; } }

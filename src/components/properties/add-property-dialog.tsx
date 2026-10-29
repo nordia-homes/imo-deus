@@ -388,6 +388,7 @@ const propertySchema = z.object({
   description: z.string().optional(),
   status: z.string().optional(),
   featured: z.boolean().default(false),
+  zeroNotaryFees: z.boolean().default(false),
   
   ownerName: z.string().optional(),
   ownerPhone: z.string().optional(),
@@ -438,6 +439,7 @@ const getEmptyPropertyFormValues = (userId?: string): PropertyFormValues => ({
   description: '',
   status: 'Activ',
   featured: false,
+  zeroNotaryFees: false,
   ownerName: '',
   ownerPhone: '',
   ownerListingUrl: '',
@@ -513,6 +515,7 @@ const getPropertyFormValues = (propertyData: Property | null, userId?: string): 
         inchiriat: 'Închiriat',
       }) || 'Activ',
     featured: propertyData.featured || false,
+    zeroNotaryFees: propertyData.zeroNotaryFees === true,
     ownerName: propertyData.ownerName || '',
     ownerPhone: propertyData.ownerPhone || '',
     ownerListingUrl: propertyData.ownerListingUrl || '',
@@ -1062,6 +1065,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                     inchiriat: 'Închiriat',
                 }) || 'Activ',
                 featured: propertyData.featured || false,
+                zeroNotaryFees: propertyData.zeroNotaryFees === true,
                 ownerName: propertyData.ownerName || '',
                 ownerPhone: propertyData.ownerPhone || '',
                 ownerListingUrl: propertyData.ownerListingUrl || '',
@@ -1122,7 +1126,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 rooms: 2, bathrooms: 1, squareFootage: 55, totalSurface: '', constructionYear: '',
                 floor: '', totalFloors: '', orientation: '', comfort: '', interiorState: '', furnishing: '', heatingSystem: '',
                 parking: '', keyFeatures: 'bucătărie renovată, balcon spațios, aproape de metrou',
-                description: '', status: 'Activ', featured: false, ownerName: '', ownerPhone: '', ownerListingUrl: '', salesScore: 'Mediu',
+                description: '', status: 'Activ', featured: false, zeroNotaryFees: false, ownerName: '', ownerPhone: '', ownerListingUrl: '', salesScore: 'Mediu',
                 agentId: user?.uid || 'unassigned',
                 defaultFacebookConnectionId: 'none',
                 buildingState: '', seismicRisk: '', balconyTerrace: '', partitioning: '', kitchen: '', lift: '', nearMetro: false,
@@ -1618,6 +1622,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
               amenities: (values.keyFeatures || '').split(',').map((f) => f.trim()).filter(Boolean),
               status: resolvedStatus,
               featured: values.featured,
+              zeroNotaryFees: values.zeroNotaryFees,
               ownerName: values.ownerName,
               ownerPhone: values.ownerPhone,
               ownerListingUrl: values.ownerListingUrl?.trim() || null,
@@ -2089,6 +2094,12 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                                           )}
                                         />
                                     </div>
+                                    <FormField control={form.control} name="zeroNotaryFees" render={({ field }) => (
+                                      <FormItem className="flex flex-row items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4">
+                                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        <div><FormLabel className="text-white">Zero taxe notariale pentru cumpărător</FormLabel><p className="mt-1 text-xs text-white/70">Activează oferta și eticheta verde pe pagina publică a proprietății.</p></div>
+                                      </FormItem>
+                                    )} />
                                     <FormField control={form.control} name="featured" render={({ field }) => ( <FormItem className="flex flex-row items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"/></FormControl><FormLabel className="!mt-0 text-white/80">Proprietate Recomandată</FormLabel></FormItem> )}/>
                                 </CardContent>
                             </Card>

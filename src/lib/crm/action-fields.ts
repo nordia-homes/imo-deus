@@ -8,6 +8,7 @@ export const propertyLifecycleSchema = z.object({ status: z.enum(['Activ', 'Inac
 const text = (max = 500) => z.string().max(max).nullable().optional();
 export const propertyExtraFields = {
   featured: z.boolean().optional(),
+  zeroNotaryFees: z.boolean().optional(),
   location: text(), city: text(100), zone: text(100), imobiliareLocationId: text(180),
   propertyType: text(100), transactionType: text(100),
   totalSurface: z.number().positive().nullable().optional(),

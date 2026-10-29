@@ -27,7 +27,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
   const { agency: contextAgency } = usePublicAgency();
   const publicPath = usePublicPath();
   const isAgentfinderTheme = getAgencyThemePreset(contextAgency || agency) === 'agentfinder';
-  const isEditorialHome = isAgentfinderTheme && (displayPath === publicPath() || displayPath === publicPath('/contact') || displayPath === publicPath('/proprietari') || displayPath === publicPath('/properties') || displayPath.startsWith(`${publicPath('/properties')}/`) || /^\/domains\/[^/]+\/?$/.test(displayPath));
+  const isEditorialHome = isAgentfinderTheme && (displayPath === publicPath() || displayPath === publicPath('/contact') || displayPath === publicPath('/proprietari') || displayPath === publicPath('/zero-taxe-notariale') || displayPath === publicPath('/properties') || displayPath.startsWith(`${publicPath('/properties')}/`) || /^\/domains\/[^/]+\/?$/.test(displayPath));
   const headerLogoUrl = isAgentfinderTheme
     ? 'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Logo_Nordia_Website.png?alt=media&token=a4ac649c-de17-4131-9734-9e0e3b928df6'
     : agency?.logoUrl;
@@ -36,6 +36,7 @@ export function PublicHeader({ agency, isLoading }: PublicHeaderProps) {
     { href: publicPath(), label: 'Acasă', icon: <Home /> },
     { href: publicPath('/properties'), label: 'Proprietăți', icon: <Building2 /> },
     { href: publicPath('/proprietari'), label: 'Proprietari', icon: <KeyRound /> },
+    { href: publicPath('/zero-taxe-notariale'), label: 'Zero taxe notariale', icon: <KeyRound /> },
     { href: publicPath('/contact'), label: 'Contact', icon: <Mail /> },
   ];
 

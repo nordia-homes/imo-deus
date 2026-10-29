@@ -26,6 +26,7 @@ export function PropertyGallery({
   title,
   propertyId,
   showMatchPrompt = true,
+  zeroNotaryFees = false,
   shareUrl,
   shareImageUrl,
   videoAction,
@@ -39,6 +40,7 @@ export function PropertyGallery({
   title: string;
   propertyId: string;
   showMatchPrompt?: boolean;
+  zeroNotaryFees?: boolean;
   shareUrl?: string;
   shareImageUrl?: string;
   videoAction?: React.ReactNode;
@@ -288,13 +290,17 @@ export function PropertyGallery({
             </Button>
           </div>
         ) : null}
-        <div className={cn("absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-md:left-2 max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
+        {zeroNotaryFees && <div className="absolute bottom-4 left-3 right-3 z-20 flex items-center justify-between gap-3">
+          <span className="whitespace-nowrap rounded-full bg-emerald-700 px-3 py-2.5 text-[clamp(11px,3.5vw,16px)] font-semibold text-white shadow-lg">taxe notariale zero</span>
+          <Button type="button" size="icon" onClick={handleShare} aria-label={isCopied ? 'Link copiat' : 'Distribuie'} className="h-11 w-11 shrink-0 rounded-full border border-white/40 bg-black/60 text-white hover:bg-black/80"><Share2 className="h-5 w-5" /></Button>
+        </div>}
+        <div className={cn(zeroNotaryFees && "!bottom-20", "absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-md:left-2 max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
           {rlvAction}
           {pdfAction}
           {videoAction}
           <Button
             variant="secondary"
-            className={cn("w-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white md:w-auto", rlvAction && "max-md:hidden")}
+            className={cn("w-10 rounded-full border border-white/30 bg-white/12 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-white/18 hover:text-white md:w-auto", rlvAction && "max-md:hidden", zeroNotaryFees && "!hidden")}
             aria-label={isCopied ? "Link copiat" : "Distribuie"}
             title={isCopied ? "Link copiat" : "Distribuie"}
             onClick={handleShare}

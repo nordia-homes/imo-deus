@@ -966,6 +966,7 @@ export type Property = {
   // Commission fields
   commissionType?: 'percentage' | 'fixed';
   commissionValue?: number;
+  zeroNotaryFees?: boolean;
   buyerCommissionType?: 'percentage' | 'fixed';
   buyerCommissionValue?: number;
   soldPrice?: number | null;

@@ -12,6 +12,7 @@ export function MediaColumn({
     shareUrl,
     shareImageUrl,
     showMobileActions = false,
+    showZeroNotaryFees = false,
 }: {
     property: Property;
     showMatchPrompt?: boolean;
@@ -19,6 +20,7 @@ export function MediaColumn({
     shareUrl?: string;
     shareImageUrl?: string;
     showMobileActions?: boolean;
+    showZeroNotaryFees?: boolean;
 }) {
     const propertyImages = (property.images || []).map(img => img.url).filter(Boolean);
     
@@ -26,6 +28,7 @@ export function MediaColumn({
         <div className="space-y-6 md:px-3 lg:px-0">
              <PropertyGallery
                 images={propertyImages}
+                zeroNotaryFees={showZeroNotaryFees && property.zeroNotaryFees === true}
                 title={property.title}
                 propertyId={property.id}
                 showMatchPrompt={showMatchPrompt}
