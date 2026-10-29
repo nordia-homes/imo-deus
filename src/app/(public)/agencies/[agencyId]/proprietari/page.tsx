@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight, BadgeCheck, Camera, ChartColumn, FileSearch, Handshake, MessageCircle, ShieldCheck, ChevronDown } from 'lucide-react';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
 import styles from '@/components/public/AgencyOwners.module.css';
+import ownersVideoPoster from '@/components/public/assets/owners-video-poster.jpg';
 
 const ownersIntroVideoUrl = 'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Video%20introducere%20pentru%20proprietari.mp4?alt=media&token=f4163f0e-2265-4d02-b2ef-3f3a70fa2c48';
 const services = [
@@ -41,7 +42,7 @@ export default function AgencyOwnersPage() {
       </div>
       <div className={styles.videoWrap}>
         <div className={styles.videoTop}><span className={styles.dot} /><span>OAMENI. PROPRIETĂȚI. ÎNCREDERE.</span></div>
-        <video className={styles.video} src={ownersIntroVideoUrl} preload="metadata" playsInline controls aria-label="Prezentarea serviciilor pentru proprietari" />
+        <video className={styles.video} src={ownersIntroVideoUrl} poster={ownersVideoPoster.src} preload="metadata" playsInline controls aria-label="Prezentarea serviciilor pentru proprietari" />
         <p>Fă cunoștință cu felul nostru de a lucra.</p>
       </div>
     </section>
