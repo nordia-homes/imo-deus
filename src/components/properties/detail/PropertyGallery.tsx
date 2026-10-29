@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/carousel"
 import { ExternalLink, Grid, Heart, Play, Share2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import offerStyles from "./PropertyGalleryOffer.module.css"
 import { useIsMobile } from "@/hooks/use-mobile"
 
 export function PropertyGallery({
@@ -290,11 +291,12 @@ export function PropertyGallery({
             </Button>
           </div>
         ) : null}
-        {zeroNotaryFees && <div className="absolute bottom-4 left-3 right-3 z-20 flex items-center justify-between gap-3">
-          <span className="whitespace-nowrap rounded-full bg-emerald-700 px-3 py-2.5 text-[clamp(11px,3.5vw,16px)] font-semibold text-white shadow-lg">taxe notariale zero</span>
-          <Button type="button" size="icon" onClick={handleShare} aria-label={isCopied ? 'Link copiat' : 'Distribuie'} className="h-11 w-11 shrink-0 rounded-full border border-white/40 bg-black/60 text-white hover:bg-black/80"><Share2 className="h-5 w-5" /></Button>
+        {zeroNotaryFees && <div className={offerStyles.row}>
+          <span className={offerStyles.text}>Taxe notariale zero</span>
+          <Button type="button" size="icon" onClick={handleShare} aria-label={isCopied ? 'Link copiat' : 'Distribuie'} className={offerStyles.share}><Share2 aria-hidden className="h-4 w-4" /></Button>
+          <Button type="button" onClick={() => handleOpenGallery(0)} className={offerStyles.photos}><Grid aria-hidden className="h-4 w-4" />Vezi Fotografiile</Button>
         </div>}
-        <div className={cn(zeroNotaryFees && "!bottom-20", "absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-md:left-2 max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
+        <div className={cn(zeroNotaryFees && "!hidden", "absolute bottom-4 right-2 z-10 flex max-w-[calc(100%-1rem)] flex-nowrap items-center justify-end gap-1 md:right-4 md:max-w-[calc(100%-2rem)] md:flex-wrap md:gap-2 max-md:[&>button]:shrink-0 max-md:[&>button]:gap-1 max-md:[&>button]:!px-2 max-md:[&>button]:text-xs", pdfAction && "max-md:left-2 max-[360px]:[&>button]:!px-1.5 max-[360px]:[&>button]:text-[11px] max-[360px]:[&>button]:gap-0.5")}>
           {rlvAction}
           {pdfAction}
           {videoAction}
