@@ -1,346 +1,73 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, BadgeCheck, Camera, ChartColumn, FileSearch, Handshake, ShieldCheck, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ArrowRight, BadgeCheck, Camera, ChartColumn, FileSearch, Handshake, MessageCircle, ShieldCheck, ChevronDown } from 'lucide-react';
 import { usePublicAgency, usePublicPath } from '@/context/PublicAgencyContext';
-import { getAgencyThemePreset } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import styles from '@/components/public/AgencyOwners.module.css';
 
-const ownersIntroVideoUrl =
-  'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Video%20introducere%20pentru%20proprietari.mp4?alt=media&token=f4163f0e-2265-4d02-b2ef-3f3a70fa2c48';
+const ownersIntroVideoUrl = 'https://firebasestorage.googleapis.com/v0/b/studio-652232171-42fb6.firebasestorage.app/o/Video%20introducere%20pentru%20proprietari.mp4?alt=media&token=f4163f0e-2265-4d02-b2ef-3f3a70fa2c48';
+const services = [
+  { icon: ChartColumn, title: 'Prețul potrivit. De la început.', text: 'Analizăm proprietatea, concurența și ritmul pieței pentru o poziționare competitivă și credibilă.' },
+  { icon: Camera, title: 'O prezentare care atrage.', text: 'Fotografii bune, informații clare și promovare care pun în valoare ceea ce face proprietatea ta specială.' },
+  { icon: BadgeCheck, title: 'Interes real, timp câștigat.', text: 'Discutăm cu potențialii clienți și organizăm vizionările în funcție de nevoile și interesul lor.' },
+  { icon: MessageCircle, title: 'Știi mereu ce urmează.', text: 'Primești feedback și explicații la fiecare pas important. Rămâi conectat la evoluția colaborării.' },
+  { icon: Handshake, title: 'Negociere cu argumente.', text: 'Gestionăm ofertele și susținem valoarea proprietății tale în discuțiile cu potențialii cumpărători.' },
+  { icon: FileSearch, title: 'Alături de tine, până la semnare.', text: 'Coordonăm documentele, comunicarea dintre părți și pașii care duc la încheierea tranzacției.' },
+];
+const steps = [
+  { title: 'Ne cunoaștem.', text: 'Discutăm despre proprietate, obiectivele tale și intervalul în care vrei să vinzi sau să închiriezi.' },
+  { title: 'Pregătim lansarea.', text: 'Stabilim poziționarea, pregătim prezentarea și alegem direcția de promovare.' },
+  { title: 'Aducem oamenii potriviți.', text: 'Gestionăm solicitările, organizăm vizionările și discutăm ofertele împreună.' },
+  { title: 'Facem pasul final.', text: 'Te sprijinim în negociere și coordonăm pașii către semnarea documentelor.' },
+];
+const questions = [
+  { title: 'Cum stabilim prețul proprietății?', text: 'Analizăm caracteristicile proprietății, oferta concurentă și ritmul pieței. Discutăm împreună un preț de pornire argumentat, nu doar prețurile cerute pentru alte anunțuri.' },
+  { title: 'Cum sunt organizate vizionările?', text: 'Clarificăm nevoile potențialilor clienți înainte de vizionare și stabilim programările împreună cu tine. După vizionări, îți comunicăm feedbackul primit.' },
+  { title: 'Mă puteți ajuta și cu închirierea?', text: 'Da. Discutăm obiectivul tău și adaptăm prezentarea, promovarea și selecția clienților pentru închiriere.' },
+  { title: 'Ce presupune colaborarea?', text: 'Începem cu o discuție despre proprietate. Stabilim serviciile, condițiile și pașii colaborării înainte de a porni promovarea, astfel încât să știi la ce să te aștepți.' },
+];
 
 export default function AgencyOwnersPage() {
-  const { agency, agencyId } = usePublicAgency();
+  const { agency } = usePublicAgency();
   const publicPath = usePublicPath();
-  const isAgentfinderTheme = getAgencyThemePreset(agency) === 'agentfinder';
-  const sectionShellClassName = isAgentfinderTheme
-    ? 'public-premium-panel rounded-[2rem]'
-    : 'rounded-[2rem] border border-emerald-400/15 bg-[linear-gradient(160deg,rgba(7,10,9,0.96)_0%,rgba(10,15,13,0.95)_55%,rgba(13,23,18,0.98)_100%)] shadow-[0_30px_90px_-44px_rgba(0,0,0,0.82)]';
-  const highlightCardClassName = isAgentfinderTheme
-    ? 'public-premium-soft-panel rounded-[1.75rem]'
-    : 'rounded-[1.75rem] border border-emerald-400/15 bg-[linear-gradient(180deg,rgba(14,18,17,0.96)_0%,rgba(10,13,12,0.98)_100%)] shadow-[0_24px_70px_-42px_rgba(0,0,0,0.72)]';
-  const eyebrowClassName = isAgentfinderTheme ? 'text-sky-700/80' : 'text-emerald-300/70';
-  const titleClassName = isAgentfinderTheme ? 'text-slate-950' : 'text-white';
-  const bodyClassName = isAgentfinderTheme ? 'text-slate-600' : 'text-emerald-50/78';
-  const chipClassName = isAgentfinderTheme
-    ? 'border-sky-200 bg-sky-50 text-sky-700'
-    : 'border-emerald-300/20 bg-emerald-400/10 text-emerald-200';
-  const primaryButtonClassName = isAgentfinderTheme
-    ? 'public-premium-primary-button border-0 shadow-none'
-    : 'rounded-full bg-emerald-400 px-7 text-black shadow-[0_18px_44px_-18px_rgba(74,222,128,0.7)] hover:bg-emerald-300';
-  const outlineButtonClassName = isAgentfinderTheme
-    ? 'public-premium-outline-button text-slate-700'
-    : 'rounded-full border-white/10 bg-white/[0.04] px-7 text-white hover:bg-white/[0.08]';
-  const infoPillClassName = isAgentfinderTheme
-    ? 'rounded-2xl border border-slate-200 bg-white/84 px-4 py-4 text-sm text-slate-600'
-    : 'rounded-2xl border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(8,14,11,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] px-4 py-4 text-sm text-white md:border-white/10 md:bg-white/[0.04] md:text-emerald-50/80';
-  const featureLeadCardClassName = isAgentfinderTheme
-    ? 'public-premium-panel rounded-[1.9rem] md:col-span-2 xl:col-span-2'
-    : 'rounded-[1.9rem] border border-emerald-300/25 bg-[radial-gradient(circle_at_top_left,rgba(74,222,128,0.18),transparent_34%),linear-gradient(145deg,rgba(8,20,14,0.98)_0%,rgba(11,14,13,0.98)_55%,rgba(16,28,20,0.96)_100%)] shadow-[0_30px_90px_-40px_rgba(0,0,0,0.88)] md:col-span-2 xl:col-span-2';
-  const darkFeatureSectionClassName = isAgentfinderTheme
-    ? 'public-premium-panel rounded-[2rem] p-6 md:p-8'
-    : 'rounded-[2rem] border border-emerald-400/18 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.14),transparent_34%),linear-gradient(160deg,rgba(7,12,10,0.98)_0%,rgba(9,18,14,0.97)_52%,rgba(8,12,10,0.99)_100%)] p-6 shadow-[0_26px_74px_-42px_rgba(0,0,0,0.84)] md:p-8';
-  const stepCardClassName = isAgentfinderTheme
-    ? 'flex gap-4 rounded-[1.5rem] border border-slate-200 bg-white/84 p-4'
-    : 'flex gap-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4 shadow-[0_18px_48px_-38px_rgba(0,0,0,0.7)]';
-
-  const ownerServices = [
-    {
-      icon: <ChartColumn className="h-5 w-5" />,
-      badge: 'Strategie',
-      title: 'Pozitionare corecta in piata',
-      description:
-        'Analizam proprietatea, concurenta si ritmul pietei, astfel incat pretul de pornire sa fie competitiv si credibil.',
-    },
-    {
-      icon: <Camera className="h-5 w-5" />,
-      badge: 'Prezentare',
-      title: 'Promovare care pune proprietatea in valoare',
-      description:
-        'Construim prezentari clare, cu fotografii bune, text relevant si un anunt care atrage exact tipul potrivit de interes.',
-    },
-    {
-      icon: <BadgeCheck className="h-5 w-5" />,
-      badge: 'Calificare',
-      title: 'Selectam clientii cu potential real',
-      description:
-        'Nu iti ocupam timpul cu discutii fara directie. Filtram interesul si programam doar interactiuni care au sens.',
-    },
-    {
-      icon: <BadgeCheck className="h-5 w-5" />,
-      badge: 'Relatie',
-      title: 'Comunicare clara pe tot parcursul colaborarii',
-      description:
-        'Ramai conectat la fiecare pas important, stii ce urmeaza si primesti feedback clar, astfel incat procesul sa nu para niciodata opac sau greu de urmarit.',
-    },
-    {
-      icon: <Handshake className="h-5 w-5" />,
-      badge: 'Negociere',
-      title: 'Te reprezentam in fiecare discutie importanta',
-      description:
-        'Gestionam ofertele, argumentam corect valoarea proprietatii si pastram controlul asupra negocierii.',
-    },
-    {
-      icon: <FileSearch className="h-5 w-5" />,
-      badge: 'Organizare',
-      title: 'Coordonare pana la semnare',
-      description:
-        'Punem in ordine pasii importanti, documentele si comunicarea dintre parti, astfel incat procesul sa fie mai simplu.',
-    },
-    {
-      icon: <ShieldCheck className="h-5 w-5" />,
-      badge: 'Siguranta',
-      title: 'Mai putin stres, mai multa claritate',
-      description:
-        'Iti spunem din timp ce conteaza, ce riscuri trebuie evitate si unde merita sa fii atent in tranzactie.',
-    },
-  ];
-
-  const ownerSteps = [
-    'Stabilim impreuna obiectivul, pretul si ritmul potrivit de promovare.',
-    'Pregatim proprietatea pentru listare si construim prezentarea publica.',
-    'Filtram interesul, organizam vizionari si gestionam discutiile importante.',
-    'Mergem mai departe spre negociere, documente si inchiderea tranzactiei.',
-  ];
-
-  return (
-    <>
-      <section className="relative overflow-hidden bg-black lg:hidden">
-        <div className="relative mx-auto w-full max-w-[1600px] overflow-hidden">
-          <video
-            className="h-auto w-full object-contain"
-            src={ownersIntroVideoUrl}
-            autoPlay
-            muted={false}
-            loop
-            playsInline
-            controls
-          />
-        </div>
-      </section>
-
-      <section className={`${sectionShellClassName} overflow-hidden rounded-t-none border-t-0 p-6 md:rounded-t-[2rem] md:border-t md:p-8`}>
-        <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-          <div>
-            <div className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium", chipClassName)}>
-              <Sparkles className="h-4 w-4" />
-              Pentru proprietari
-            </div>
-            <h1 className={cn("mt-5 max-w-3xl text-[clamp(2rem,5vw,4rem)] font-semibold leading-[1.12] tracking-tight", titleClassName)}>
-              Servicii dedicate proprietarilor care vor mai multa claritate si mai putin stres.
-            </h1>
-            <p className={cn("mt-4 max-w-2xl text-base leading-7 md:text-lg", bodyClassName)}>
-              Daca vrei sa vinzi sau sa inchiriezi, {agency?.name || 'echipa noastra'} te ajuta sa stabilesti corect pretul,
-              sa iti promovezi proprietatea relevant si sa mergi mai sigur spre clientul potrivit si spre tranzactie.
-            </p>
-
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className={cn("rounded-full px-7", primaryButtonClassName)}>
-                <Link href={publicPath('/contact')}>
-                  Discutam despre proprietatea ta
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className={cn("hidden rounded-full px-7 sm:inline-flex", outlineButtonClassName)}>
-                <Link href={publicPath('/properties')}>Vezi proprietatile active</Link>
-              </Button>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className={infoPillClassName}>
-                Pret stabilit in functie de piata, nu din presupuneri.
-              </div>
-              <div className={infoPillClassName}>
-                Promovare care atrage interes relevant, nu doar trafic.
-              </div>
-              <div className={infoPillClassName}>
-                Comunicare clara si pasii importanti explicati din timp.
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden overflow-hidden rounded-[1.9rem] border border-emerald-300/18 bg-black shadow-[0_30px_90px_-40px_rgba(0,0,0,0.9)] lg:block">
-            <video
-              className="max-h-[560px] w-full object-contain"
-              src={ownersIntroVideoUrl}
-              autoPlay
-              muted={false}
-              loop
-              playsInline
-              controls
-            />
-          </div>
-        </div>
-      </section>
-
-      <div className="container mx-auto space-y-8 px-4 pb-5 pt-8 md:space-y-14 md:pb-8 md:pt-12">
-      <section className="space-y-8">
-        <div className={`${sectionShellClassName} p-6 md:p-8`}>
-          <div className="max-w-4xl">
-            <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Ce oferim proprietarilor</p>
-            <h2 className={cn("mt-3 text-[clamp(1.7rem,4vw,3.2rem)] font-semibold tracking-tight", titleClassName)}>
-              Servicii gandite pentru rezultate, nu doar pentru prezenta in piata.
-            </h2>
-            <p className={cn("mt-4 max-w-3xl text-base leading-7 md:text-lg", bodyClassName)}>
-              Fiecare proprietate are un context diferit. De aceea, modul in care o prezentam, o promovam si o negociem trebuie adaptat, nu tratat generic.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {ownerServices.map((service, index) => (
-            <article
-              key={service.title}
-              className={`p-6 ${
-                index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii'
-                  ? featureLeadCardClassName
-                  : highlightCardClassName
-              }`}
-            >
-              <div className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]", chipClassName)}>
-                {service.icon}
-                {service.badge}
-              </div>
-              <h3 className={cn(`mt-4 font-semibold tracking-tight ${index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'text-3xl md:max-w-xl' : 'text-2xl'}`, titleClassName)}>
-                {service.title}
-              </h3>
-              <p className={cn(`mt-3 leading-7 ${index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'max-w-2xl text-base' : 'text-sm'}`, isAgentfinderTheme ? 'text-slate-600' : index === 0 || service.title === 'Comunicare clara pe tot parcursul colaborarii' ? 'text-emerald-50/82' : 'text-emerald-50/72')}>
-                {service.description}
-              </p>
-            </article>
-          ))}
-        </div>
-
-        <article className={darkFeatureSectionClassName}>
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-2xl">
-              <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>De ce proprietarii lucreaza cu noi</p>
-              <h3 className={cn("mt-3 text-3xl font-semibold tracking-tight", titleClassName)}>
-                Nu ne limitam la publicarea unui anunt.
-              </h3>
-              <p className={cn("mt-3 text-base leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/76")}>
-                Construim un proces complet: pozitionare, prezentare, selectie de clienti, negociere si coordonare pana la semnare.
-              </p>
-            </div>
-
-            <Button
-              asChild
-              size="lg"
-              className={cn("rounded-full px-7", primaryButtonClassName)}
-            >
-              <Link href={publicPath('/contact')}>
-                Cere o evaluare initiala
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        </article>
-
-        <article className={`${sectionShellClassName} p-6 md:p-8`}>
-          <div className="max-w-3xl">
-            <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Intrebari frecvente ale proprietarilor</p>
-            <h3 className={cn("mt-3 text-3xl font-semibold tracking-tight", titleClassName)}>
-              Cele mai importante lucruri se clarifica de la inceput.
-            </h3>
-          </div>
-
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
-            <article className={`${highlightCardClassName} p-5`}>
-              <h4 className={cn("text-lg font-semibold", titleClassName)}>Cum stabilim pretul?</h4>
-              <p className={cn("mt-3 text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/72")}>
-                Ne uitam la proprietate, la concurenta si la ritmul real al pietei, nu doar la preturile cerute in jur.
-              </p>
-            </article>
-            <article className={`${highlightCardClassName} p-5`}>
-              <h4 className={cn("text-lg font-semibold", titleClassName)}>Cum filtram interesul?</h4>
-              <p className={cn("mt-3 text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/72")}>
-                Calificam discutiile si programam doar interactiuni care au sens, astfel incat sa nu iti consumi timpul inutil.
-              </p>
-            </article>
-            <article className={`${highlightCardClassName} p-5`}>
-              <h4 className={cn("text-lg font-semibold", titleClassName)}>Cum arata colaborarea?</h4>
-              <p className={cn("mt-3 text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/72")}>
-                Clar, ordonat si cu pasi explicati din timp, de la promovare si vizionari pana la negociere si inchiderea tranzactiei.
-              </p>
-            </article>
-          </div>
-        </article>
-      </section>
-
-      <section className={darkFeatureSectionClassName}>
-        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-          <div>
-            <p className={cn("text-sm font-semibold uppercase tracking-[0.2em]", eyebrowClassName)}>Cum lucram</p>
-            <h2 className={cn("mt-3 text-3xl font-semibold tracking-tight md:text-4xl", titleClassName)}>
-              Un proces clar pentru proprietari care vor sa stie ce urmeaza.
-            </h2>
-            <p className={cn("mt-4 max-w-xl text-base leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/76")}>
-              Comunicarea buna si organizarea conteaza la fel de mult ca promovarea. De aceea, iti explicam de la inceput cum arata drumul pana la tranzactie.
-            </p>
-          </div>
-
-          <div className="grid gap-3">
-            {ownerSteps.map((step, index) => (
-              <article key={step} className={stepCardClassName}>
-                <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold", isAgentfinderTheme ? "border-sky-200 bg-sky-50 text-sky-700" : "border-emerald-300/18 bg-emerald-400/10 text-emerald-200")}>
-                  0{index + 1}
-                </div>
-                <p className={cn("text-sm leading-7", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/78")}>{step}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="pt-4 md:pt-6">
-        <article className={darkFeatureSectionClassName}>
-          <div className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]", chipClassName)}>
-            <Sparkles className="h-4 w-4" />
-            Pentru proprietari
-          </div>
-          <h2 className={cn("mt-5 max-w-3xl text-3xl font-semibold tracking-tight md:text-5xl", titleClassName)}>
-            Daca vrei sa discutam despre proprietatea ta, putem incepe simplu.
-          </h2>
-          <p className={cn("mt-4 max-w-2xl text-base leading-7 md:text-lg", isAgentfinderTheme ? "text-slate-600" : "text-emerald-50/80")}>
-            Spune-ne ce tip de proprietate ai, ce obiectiv urmaresti si in ce orizont de timp vrei sa te misti. De acolo construim pasii potriviti.
-          </p>
-
-          <div className="mt-8 grid gap-3 md:grid-cols-3">
-            <div className={infoPillClassName}>
-              Stabilim daca discutam despre vanzare, inchiriere sau repozitionare in piata.
-            </div>
-            <div className={infoPillClassName}>
-              Iti spunem ce putem face concret pentru proprietatea ta si cum ar arata colaborarea.
-            </div>
-            <div className={infoPillClassName}>
-              Intri rapid intr-o discutie clara, fara pasi inutili si fara promisiuni vagi.
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button
-              asChild
-              size="lg"
-              className={cn("rounded-full px-7", primaryButtonClassName)}
-            >
-              <Link href={publicPath('/contact')}>
-                Stabilim urmatorii pasi
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className={cn("rounded-full px-7", outlineButtonClassName)}
-            >
-              <Link href={publicPath()}>Inapoi la prima pagina</Link>
-            </Button>
-          </div>
-        </article>
-      </section>
+  return <div className={styles.page}>
+    <section className={styles.hero}>
+      <div className={styles.heroCopy}>
+        <p className={styles.eyebrow}>PENTRU PROPRIETARI · {agency?.name || 'NORDIA'}</p>
+        <h1>Proprietatea ta.<br /><span>Prioritatea noastră.</span></h1>
+        <p className={styles.lead}>Un nou capitol începe cu un partener potrivit. De la preț și promovare, până la negociere și semnare, suntem alături de tine.</p>
+        <Link className={styles.primary} href={publicPath('/contact')}>Vreau să îmi vând proprietatea <ArrowRight size={20} aria-hidden /></Link>
+        <a className={styles.textLink} href="#servicii-proprietari">Descoperă cum te ajutăm <ChevronDown size={17} aria-hidden /></a>
       </div>
-    </>
-  );
+      <div className={styles.videoWrap}>
+        <div className={styles.videoTop}><span className={styles.dot} /><span>OAMENI. PROPRIETĂȚI. ÎNCREDERE.</span></div>
+        <video className={styles.video} src={ownersIntroVideoUrl} preload="metadata" playsInline controls aria-label="Prezentarea serviciilor pentru proprietari" />
+        <p>Fă cunoștință cu felul nostru de a lucra.</p>
+      </div>
+    </section>
+    <div className={styles.trustStrip}>
+      <span><ChartColumn aria-hidden />Strategie de preț</span><span><Camera aria-hidden />Promovare atentă</span><span><Handshake aria-hidden />Reprezentare dedicată</span>
+    </div>
+    <section className={styles.section} id="servicii-proprietari" aria-labelledby="services-title">
+      <header className={styles.sectionHeading}><p className={styles.eyebrow}>CE FACEM PENTRU TINE</p><h2 id="services-title">Fiecare proprietate are o poveste.<br /><span>Noi o punem în valoare.</span></h2><p>Un proces complet, construit în jurul proprietății și obiectivelor tale.</p></header>
+      <div className={styles.services}>{services.map(({icon: Icon,title,text}) => <article key={title}><Icon aria-hidden /><h3>{title}</h3><p>{text}</p></article>)}</div>
+      <div className={styles.assurance}><ShieldCheck size={30} aria-hidden /><div><h3>Mai multă claritate. Mai puțin stres.</h3><p>Îți explicăm opțiunile, documentele și aspectele la care merită să fii atent, pentru decizii informate.</p></div></div>
+    </section>
+    <section className={styles.process} aria-labelledby="process-title">
+      <div className={styles.processInner}>
+        <header className={styles.processHeading}><p className={styles.eyebrow}>CUM LUCRĂM ÎMPREUNĂ</p><h2 id="process-title">De la prima discuție.<br /><span>Până la cheile predate.</span></h2><p>Comunicare simplă, pași clari și un consultant care cunoaște povestea proprietății tale.</p><Link className={styles.textLink} href={publicPath('/contact')}>Hai să vorbim <ArrowRight size={18} aria-hidden /></Link></header>
+        <ol className={styles.steps}>{steps.map(step => <li key={step.title}><span className={styles.stepDot} aria-hidden /><div><h3>{step.title}</h3><p>{step.text}</p></div></li>)}</ol>
+      </div>
+    </section>
+    <section className={styles.section} aria-labelledby="questions-title">
+      <header className={styles.sectionHeading}><p className={styles.eyebrow}>ÎNTREBĂRI FIREȘTI. RĂSPUNSURI CLARE.</p><h2 id="questions-title">Începem cu încredere.</h2></header>
+      <div className={styles.questions}>{questions.map(question => <details key={question.title}><summary>{question.title}<ChevronDown size={20} aria-hidden /></summary><p>{question.text}</p></details>)}</div>
+    </section>
+    <section className={styles.finalCta}>
+      <p className={styles.eyebrow}>URMĂTORUL CAPITOL AL PROPRIETĂȚII TALE</p>
+      <h2>Tu ai proprietatea.<br /><span>Împreună facem următorul pas.</span></h2>
+      <p>Spune-ne unde se află și ce îți dorești. Începem cu o conversație.</p>
+      <Link className={styles.primary} href={publicPath('/contact')}>Hai să discutăm despre vânzare <ArrowRight size={20} aria-hidden /></Link>
+    </section>
+  </div>;
 }

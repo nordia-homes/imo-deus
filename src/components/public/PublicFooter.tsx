@@ -17,7 +17,7 @@ export function PublicFooter() {
     const isClassicTheme = themePreset === 'classic';
     const isAgentfinderTheme = themePreset === 'agentfinder';
 
-    if (displayPath === publicPath('/contact')) {
+    if (displayPath === publicPath('/contact') || displayPath === publicPath('/proprietari')) {
         return <footer className="border-t border-[#e8bf7925] bg-[#090d0f] px-5 py-6 text-center text-xs text-[#aeb5b5]">
             <p>© {new Date().getFullYear()} {agency?.name || 'Nordia Homes'}</p>
             <div className="mt-3 flex flex-wrap justify-center gap-4">
