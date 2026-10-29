@@ -7,13 +7,15 @@ vi.mock('@/firebase/admin', () => ({ adminDb: {
 } }));
 vi.mock('firebase-admin/firestore', () => ({ FieldValue: { arrayUnion: (value: unknown) => value } }));
 import { submitPublicContact } from './public-contact';
-const input = () => ({ agencyId: 'agency', name: 'Test Client', phone: '0720000000', email: 'TEST@example.com', intent: 'Vânzare', message: 'Apartament în București', consent: true, website: '', formStartedAt: Date.now() - 10000 });
+const input = () => ({ agencyId: 'agency', name: 'Test Client', phone: '0720000000', email: 'TEST@example.com', city: ' București ', message: 'Apartament în București', consent: true, website: '', formStartedAt: Date.now() - 10000 });
 beforeEach(() => { vi.clearAllMocks(); mock.get.mockResolvedValue({ exists: true, data: () => ({ ownerId: 'owner' }) }); mock.find.mockResolvedValue({ empty: true }); mock.commit.mockResolvedValue(undefined); });
 describe('public contact lead capture', () => {
-  it('saves a general lead and follow-up atomically without requiring a property', async () => {
+  it('saves an owner sale lead and city without requiring an existing property', async () => {
     expect((await submitPublicContact(input())).success).toBe(true);
     expect(mock.set).toHaveBeenCalledTimes(2);
-    expect(mock.set.mock.calls[0][1]).toMatchObject({ email: 'test@example.com', source: 'Website', contactType: 'Client' });
+    expect(mock.set.mock.calls[0][1]).toMatchObject({ email: 'test@example.com', source: 'Website', contactType: 'Client', leadIntent: 'Vânzare', propertyCity: 'București' });
+    expect(mock.set.mock.calls[0][1].description).toContain('Orașul proprietății: București');
+    expect(mock.set.mock.calls[1][1].description).toContain('vânzare în București');
     expect(mock.set.mock.calls[1][1]).toMatchObject({ agentId: 'owner', contactId: 'new-id', status: 'open' });
     expect(mock.commit).toHaveBeenCalledOnce();
   });
@@ -21,10 +23,11 @@ describe('public contact lead capture', () => {
     mock.find.mockResolvedValue({ empty: false, docs: [{ ref: { id: 'existing' } }] });
     await submitPublicContact(input());
     expect(mock.update).toHaveBeenCalledOnce(); expect(mock.set).toHaveBeenCalledTimes(1);
+    expect(mock.update.mock.calls[0][1].interactionHistory.notes).toContain('Orașul proprietății: București');
     expect(mock.set.mock.calls[0][1].contactId).toBe('existing');
   });
   it('rejects invalid or automated submissions without writes', async () => {
-    for (const change of [{ consent: false }, { phone: 'abc' }, { website: 'spam' }, { formStartedAt: Date.now() }, { agencyId: 'a/b' }]) expect((await submitPublicContact({ ...input(), ...change })).success).toBe(false);
+    for (const change of [{ city: '' }, { city: '  ' }, { city: undefined }, { consent: false }, { phone: 'abc' }, { website: 'spam' }, { formStartedAt: Date.now() }, { agencyId: 'a/b' }]) expect((await submitPublicContact({ ...input(), ...change })).success).toBe(false);
     expect(mock.set).not.toHaveBeenCalled();
   });
   it('does not show success when persistence fails or agency is absent', async () => {
