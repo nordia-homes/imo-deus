@@ -32,7 +32,7 @@ export function ContactLeadForm({ agencyId }: { agencyId: string }) {
       <div className={styles.visual} aria-hidden="true"><Image src={heroImage} alt="" fill sizes="(max-width: 800px) 100vw, 50vw" priority /></div>
       <div className={styles.introContent}>
         <p className={styles.eyebrow}><span /> PENTRU PROPRIETARII CARE VOR SĂ VÂNDĂ</p>
-        <h1 id="owner-contact-title">Vrei să vinzi?<br /><span>Hai să găsim<br className={styles.desktopBreak} /> cumpărătorul.</span></h1>
+        <h1 id="owner-contact-title">Vrei să vinzi?<br /><span>Îți găsim cumpărător</span></h1>
         <p className={styles.description}>Proprietatea ta merită să fie văzută.<br />Spune-ne unde se află și hai să discutăm despre vânzarea ei.</p>
         <div className={styles.signature}><MoveUpRight size={20} aria-hidden /><span>De la primul contact.<br /><strong>Până la următorul capitol.</strong></span></div>
       </div>

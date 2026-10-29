@@ -52,6 +52,9 @@
 @media(max-width:480px) { .inputPair { grid-template-columns: 1fr; gap: 23px; } .formHeading .eyebrow { font-size: 9px; } .formHeading h2 { font-size: 28px; } .submit { padding: 18px 16px; font-size: 14px; } }
 @media(prefers-reduced-motion:reduce) { .submit,.fields input,.fields textarea { transition: none; } .submit:hover { transform: none; } }
 .fields label.consent > span { color: #aeb5b5; }
+@media (max-width:480px) {
+  .intro h1 { margin-left: -16px; margin-right: -16px; }
+}
 @media(max-width:800px) {
   .intro { padding-top: 30px; padding-bottom: 20px; }
   .formHeading { padding-top: 20px; margin-bottom: 22px; }
