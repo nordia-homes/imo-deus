@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { guardMapsRequest, mapsGuardError } from '@/lib/maps-request-guard';
 
 export const runtime = 'nodejs';
 
@@ -165,6 +166,7 @@ async function geocodeViaGoogle(address?: string | null, zone?: string | null, c
 }
 
 export async function GET(request: NextRequest) {
+  try { await guardMapsRequest(request); } catch (error) { return mapsGuardError(error); }
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
   const zone = searchParams.get('zone');

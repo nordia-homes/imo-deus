@@ -1191,7 +1191,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
         const normalizedAddress = (watchedAddress || '').trim();
         const hasEnoughContext = normalizedAddress.length >= 4 && (!!watchedCity || !!watchedZone);
 
-        if (!normalizedAddress || (!hasEnoughContext && normalizedAddress.length < 6)) {
+        if (!user || !normalizedAddress || (!hasEnoughContext && normalizedAddress.length < 6)) {
             setAddressSuggestions([]);
             setIsLoadingAddressSuggestions(false);
             setAddressSuggestionsError('');
@@ -1217,6 +1217,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                 }
 
                 const response = await fetch(searchUrl.toString(), {
+                    headers: { Authorization: `Bearer ${await user!.getIdToken()}` },
                     cache: 'no-store',
                     signal: controller.signal,
                 });
@@ -1264,13 +1265,13 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
             } finally {
                 setIsLoadingAddressSuggestions(false);
             }
-        }, 350);
+        }, 650);
 
         return () => {
             controller.abort();
             clearTimeout(timeoutId);
         };
-    }, [selectedAddressLabel, selectedCoordinates, watchedAddress, watchedCity, watchedZone]);
+    }, [selectedAddressLabel, selectedCoordinates, watchedAddress, watchedCity, watchedZone, user]);
 
     const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
         const nextAddressValue = fixRomanianDiacritics(suggestion.addressLine || suggestion.label);
@@ -1563,7 +1564,7 @@ function PropertyForm({ propertyData, onClose, isMobile }: { propertyData: Prope
                   geocodeUrl.searchParams.set('city', values.city);
               }
 
-              const geocodeResponse = await fetch(geocodeUrl.toString(), { cache: 'no-store' });
+              const geocodeResponse = await fetch(geocodeUrl.toString(), { cache: 'no-store', headers: { Authorization: `Bearer ${await user!.getIdToken()}` } });
               if (geocodeResponse.ok) {
                   const geocodeResult = await geocodeResponse.json() as { latitude?: number; longitude?: number };
                   if (typeof geocodeResult.latitude === 'number' && typeof geocodeResult.longitude === 'number') {

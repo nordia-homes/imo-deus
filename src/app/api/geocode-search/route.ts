@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { guardMapsRequest, mapsGuardError } from '@/lib/maps-request-guard';
 
 export const runtime = 'nodejs';
 const REQUEST_TIMEOUT_MS = 4500;
@@ -254,71 +255,7 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
   const queries = buildQueries(address, zone, city);
   const unique = new Map<string, AddressSuggestion>();
 
-  for (const query of queries.slice(0, 4)) {
-    const autocompleteResponse = await fetchWithTimeout('https://places.googleapis.com/v1/places:autocomplete', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask':
-          'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text.text',
-      },
-      body: JSON.stringify({
-        input: query,
-        languageCode: 'ro',
-        regionCode: 'RO',
-        includedRegionCodes: ['ro'],
-        includePureServiceAreaBusinesses: false,
-      }),
-      cache: 'no-store',
-    });
-
-    if (!autocompleteResponse.ok) {
-      continue;
-    }
-
-    const autocompletePayload = (await autocompleteResponse.json()) as {
-      suggestions?: Array<{
-        placePrediction?: {
-          place?: string;
-          placeId?: string;
-          text?: { text?: string };
-        };
-      }>;
-    };
-
-    const candidates = autocompletePayload.suggestions
-      ?.map((entry) => entry.placePrediction)
-      .filter(Boolean)
-      .slice(0, 6) || [];
-
-    const detailedResults = await Promise.all(
-      candidates.map(async (prediction) => {
-        const placeId =
-          prediction?.placeId ||
-          prediction?.place?.replace(/^places\//, '') ||
-          '';
-
-        if (!placeId) {
-          return null;
-        }
-
-        return googlePlaceDetails(placeId, apiKey);
-      })
-    );
-
-    for (const suggestion of detailedResults) {
-      if (!suggestion) {
-        continue;
-      }
-      const key = `${normalizeText(suggestion.addressLine || suggestion.label)}-${suggestion.latitude}-${suggestion.longitude}`;
-      if (!unique.has(key)) {
-        unique.set(key, suggestion);
-      }
-    }
-  }
-
-  for (const query of queries.slice(0, 4)) {
+  for (const query of queries.slice(0, 2)) {
     const geocodeResponse = await fetchWithTimeout(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&region=ro&language=ro&key=${encodeURIComponent(apiKey)}`,
       { cache: 'no-store' }
@@ -364,66 +301,7 @@ async function searchViaGoogle(address?: string | null, zone?: string | null, ci
         unique.set(key, suggestion);
       }
     }
-  }
-
-  for (const query of queries.slice(0, 4)) {
-    const textSearchResponse = await fetchWithTimeout('https://places.googleapis.com/v1/places:searchText', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask':
-          'places.id,places.formattedAddress,places.shortFormattedAddress,places.location,places.addressComponents',
-      },
-      body: JSON.stringify({
-        textQuery: query,
-        languageCode: 'ro',
-        regionCode: 'RO',
-        maxResultCount: 6,
-      }),
-      cache: 'no-store',
-    });
-
-    if (!textSearchResponse.ok) {
-      continue;
-    }
-
-    const textSearchPayload = (await textSearchResponse.json()) as {
-      places?: Array<{
-        id?: string;
-        formattedAddress?: string;
-        shortFormattedAddress?: string;
-        location?: { latitude?: number; longitude?: number };
-        addressComponents?: GoogleAddressComponent[];
-      }>;
-    };
-
-    for (const place of textSearchPayload.places || []) {
-      const latitude = place.location?.latitude;
-      const longitude = place.location?.longitude;
-      if (!latitude || !longitude || !place.formattedAddress) {
-        continue;
-      }
-
-      const suggestion: AddressSuggestion = {
-        label: fixRomanianDiacritics(place.formattedAddress),
-        addressLine:
-          fixRomanianDiacritics(
-            extractStreetLineFromGoogleComponents(place.addressComponents) ||
-              place.shortFormattedAddress ||
-              place.formattedAddress
-          ),
-        city: fixRomanianDiacritics(extractCityFromGoogleComponents(place.addressComponents)),
-        zone: fixRomanianDiacritics(extractZoneFromGoogleComponents(place.addressComponents)),
-        latitude: Number(latitude),
-        longitude: Number(longitude),
-      };
-
-      const key = `${normalizeText(suggestion.addressLine || suggestion.label)}-${suggestion.latitude}-${suggestion.longitude}`;
-      if (!unique.has(key)) {
-        unique.set(key, suggestion);
-      }
-    }
+    if (unique.size > 0) break;
   }
 
   if (unique.size > 0) {
@@ -544,6 +422,7 @@ async function searchViaPhoton(query: string) {
 }
 
 export async function GET(request: NextRequest) {
+  try { await guardMapsRequest(request); } catch (error) { return mapsGuardError(error); }
   const searchParams = request.nextUrl.searchParams;
   const address = searchParams.get('address');
   const zone = searchParams.get('zone');

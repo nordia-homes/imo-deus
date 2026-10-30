@@ -100,7 +100,7 @@ export function NearbyObjectivesCard({ property }: { property: Property }) {
         {isLoading ? (
           <div className="flex min-h-28 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] text-sm text-white/60">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Se calculează timpii reali de mers pe jos…
+            Se încarcă obiectivele salvate…
           </div>
         ) : error ? (
           <div className="rounded-2xl border border-rose-300/15 bg-rose-400/5 px-4 py-5 text-sm text-rose-100/85">{error}</div>

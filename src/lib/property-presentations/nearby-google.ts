@@ -174,7 +174,7 @@ async function textSearch(params: {
 }) {
   const { apiKey, location, textBias, config } = params;
   const responses = await Promise.all(
-    config.textQueries.map(async (query) => {
+    config.textQueries.slice(0, 1).map(async (query) => {
       const search = new URLSearchParams({
         query,
         location,
@@ -221,10 +221,9 @@ async function findPlaces(params: {
   textBias: string;
   config: ObjectiveConfig;
 }) {
-  const [nearby, text] = await Promise.all([
-    nearbySearch(params),
-    textSearch(params),
-  ]);
+  // Text Search is a fallback, not an extra paid search for every category.
+  const nearby = (await nearbySearch(params)).filter(place => isRelevantPlace(params.config, place));
+  const text = nearby.length ? [] : await textSearch(params);
 
   const byPlaceId = new Map<string, NearbySearchPlace>();
   [...nearby, ...text].forEach((place) => {

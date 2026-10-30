@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyUserFromBearerToken } from '@/lib/firebase-app-hosting';
-import { getNearbyObjectivesForProperty } from '@/lib/property-presentations/nearby-google';
+import type { PropertyWithPublicNearby } from '@/lib/public-nearby';
 import type { Property } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -23,11 +23,12 @@ export async function GET(
       return NextResponse.json({ message: 'Proprietatea nu a fost găsită.' }, { status: 404 });
     }
 
-    const property = { id: snapshot.id, ...snapshot.data() } as Property;
-    const objectives = await getNearbyObjectivesForProperty(property);
+    const property = { id: snapshot.id, ...snapshot.data() } as Property & PropertyWithPublicNearby;
+    const saved = property.publicNearby;
+    const objectives = Array.isArray(saved?.objectives) ? saved.objectives : [];
 
     return NextResponse.json(
-      { objectives, updatedAt: new Date().toISOString() },
+      { objectives, updatedAt: saved?.calculatedAt || null, status: saved?.status || 'not-calculated' },
       { status: 200, headers: { 'Cache-Control': 'private, no-store' } }
     );
   } catch (error) {
